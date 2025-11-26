@@ -1,0 +1,1711 @@
+[
+  {
+    "genre": "Alternative",
+    "subgenres": [
+      {
+        "subgenre": "Art Punk",
+        "playlistId": "alt_art_punk"
+      },
+      {
+        "subgenre": "Alternative Rock",
+        "playlistId": "alt_rock"
+      },
+      {
+        "subgenre": "Britpunk",
+        "playlistId": "alt_britpunk"
+      },
+      {
+        "subgenre": "College Rock",
+        "playlistId": "alt_college_rock"
+      },
+      {
+        "subgenre": "Crossover Thrash",
+        "playlistId": "alt_crossover_thrash"
+      },
+      {
+        "subgenre": "Crust Punk",
+        "playlistId": "alt_crust_punk"
+      },
+      {
+        "subgenre": "Emotional Hardcore",
+        "playlistId": "alt_emo"
+      },
+      {
+        "subgenre": "Experimental Rock",
+        "playlistId": "alt_experimental"
+      },
+      {
+        "subgenre": "Folk Punk",
+        "playlistId": "alt_folk_punk"
+      },
+      {
+        "subgenre": "Goth/Gothic Rock",
+        "playlistId": "alt_goth"
+      },
+      {
+        "subgenre": "Grunge",
+        "playlistId": "alt_grunge"
+      },
+      {
+        "subgenre": "Hardcore Punk",
+        "playlistId": "alt_hardcore_punk"
+      },
+      {
+        "subgenre": "Hard Rock",
+        "playlistId": "alt_hard_rock"
+      },
+      {
+        "subgenre": "Indie Rock",
+        "playlistId": "alt_indie_rock"
+      },
+      {
+        "subgenre": "Lo-fi",
+        "playlistId": "alt_lo_fi"
+      },
+      {
+        "subgenre": "Musique Concrète",
+        "playlistId": "alt_musique_concrete"
+      },
+      {
+        "subgenre": "New Wave",
+        "playlistId": "alt_new_wave"
+      },
+      {
+        "subgenre": "Progressive Rock",
+        "playlistId": "alt_progressive_rock"
+      },
+      {
+        "subgenre": "Punk",
+        "playlistId": "alt_punk"
+      },
+      {
+        "subgenre": "Shoegaze",
+        "playlistId": "alt_shoegaze"
+      },
+      {
+        "subgenre": "Steampunk",
+        "playlistId": "alt_steampunk"
+      }
+    ]
+  },
+  {
+    "genre": "Dance",
+    "subgenres": [
+      {
+        "subgenre": "4-Beat",
+        "playlistId": "dance_4_beat"
+      },
+      {
+        "subgenre": "Acid Breaks",
+        "playlistId": "dance_acid_breaks"
+      },
+      {
+        "subgenre": "Acid House",
+        "playlistId": "dance_acid_house"
+      },
+      {
+        "subgenre": "Acid Trance",
+        "playlistId": "dance_acid_trance"
+      },
+      {
+        "subgenre": "Baltimore Club",
+        "playlistId": "dance_baltimore_club"
+      },
+      {
+        "subgenre": "Balearic Trance",
+        "playlistId": "dance_balearic_trance"
+      },
+      {
+        "subgenre": "Big Beat",
+        "playlistId": "dance_big_beat"
+      },
+      {
+        "subgenre": "Bouncy House",
+        "playlistId": "dance_bouncy_house"
+      },
+      {
+        "subgenre": "Bouncy Techno",
+        "playlistId": "dance_bouncy_techno"
+      },
+      {
+        "subgenre": "Breakbeat/Breakstep",
+        "playlistId": "dance_breakbeat"
+      },
+      {
+        "subgenre": "Breakbeat Hardcore",
+        "playlistId": "dance_breakbeat_hardcore"
+      },
+      {
+        "subgenre": "Breakcore",
+        "playlistId": "dance_breakcore"
+      },
+      {
+        "subgenre": "Broken Beat",
+        "playlistId": "dance_broken_beat"
+      },
+      {
+        "subgenre": "Brostep",
+        "playlistId": "dance_brostep"
+      },
+      {
+        "subgenre": "Chillstep",
+        "playlistId": "dance_chillstep"
+      },
+      {
+        "subgenre": "Chicago House",
+        "playlistId": "dance_chicago_house"
+      },
+      {
+        "subgenre": "Club/Club Dance",
+        "playlistId": "dance_club"
+      },
+      {
+        "subgenre": "Dark Psy",
+        "playlistId": "dance_dark_psy"
+      },
+      {
+        "subgenre": "Darkstep",
+        "playlistId": "dance_darkstep"
+      },
+      {
+        "subgenre": "Darkcore Jungle",
+        "playlistId": "dance_darkcore_jungle"
+      },
+      {
+        "subgenre": "Deep House",
+        "playlistId": "dance_deep_house"
+      },
+      {
+        "subgenre": "Detroit Techno",
+        "playlistId": "dance_detroit_techno"
+      },
+      {
+        "subgenre": "Digital Hardcore",
+        "playlistId": "dance_digital_hardcore"
+      },
+      {
+        "subgenre": "Diva House",
+        "playlistId": "dance_diva_house"
+      },
+      {
+        "subgenre": "Doomcore",
+        "playlistId": "dance_doomcore"
+      },
+      {
+        "subgenre": "Dream Trance",
+        "playlistId": "dance_dream_trance"
+      },
+      {
+        "subgenre": "Drum and Bass",
+        "playlistId": "dance_drum_bass"
+      },
+      {
+        "subgenre": "Drumfunk",
+        "playlistId": "dance_drumfunk"
+      },
+      {
+        "subgenre": "Dubstep",
+        "playlistId": "dance_dubstep"
+      },
+      {
+        "subgenre": "Dubstyle",
+        "playlistId": "dance_dubstyle"
+      },
+      {
+        "subgenre": "Dutch House",
+        "playlistId": "dance_dutch_house"
+      },
+      {
+        "subgenre": "Electro House",
+        "playlistId": "dance_electro_house"
+      },
+      {
+        "subgenre": "Electrostep",
+        "playlistId": "dance_electrostep"
+      },
+      {
+        "subgenre": "Electroswing",
+        "playlistId": "dance_electroswing"
+      },
+      {
+        "subgenre": "Exercise",
+        "playlistId": "dance_exercise"
+      },
+      {
+        "subgenre": "Florida Breaks",
+        "playlistId": "dance_florida_breaks"
+      },
+      {
+        "subgenre": "Free Tekno",
+        "playlistId": "dance_free_tekno"
+      },
+      {
+        "subgenre": "Freestyle House",
+        "playlistId": "dance_freestyle_house"
+      },
+      {
+        "subgenre": "French House",
+        "playlistId": "dance_french_house"
+      },
+      {
+        "subgenre": "Full On",
+        "playlistId": "dance_full_on"
+      },
+      {
+        "subgenre": "Funky House",
+        "playlistId": "dance_funky_house"
+      },
+      {
+        "subgenre": "Future Garage",
+        "playlistId": "dance_future_garage"
+      },
+      {
+        "subgenre": "Gabber",
+        "playlistId": "dance_gabber"
+      },
+      {
+        "subgenre": "Garage",
+        "playlistId": "dance_garage"
+      },
+      {
+        "subgenre": "Garage House",
+        "playlistId": "dance_garage_house"
+      },
+      {
+        "subgenre": "Ghetto House",
+        "playlistId": "dance_ghetto_house"
+      },
+      {
+        "subgenre": "Ghettotech",
+        "playlistId": "dance_ghettotech"
+      },
+      {
+        "subgenre": "Glitch Hop",
+        "playlistId": "dance_glitch_hop"
+      },
+      {
+        "subgenre": "Glitch Pop",
+        "playlistId": "dance_glitch_pop"
+      },
+      {
+        "subgenre": "Goa Trance",
+        "playlistId": "dance_goa_trance"
+      },
+      {
+        "subgenre": "Grime",
+        "playlistId": "dance_grime"
+      },
+      {
+        "subgenre": "Hardbag",
+        "playlistId": "dance_hardbag"
+      },
+      {
+        "subgenre": "Hardcore",
+        "playlistId": "dance_hardcore"
+      },
+      {
+        "subgenre": "Hardcore Jungle",
+        "playlistId": "dance_hardcore_jungle"
+      },
+      {
+        "subgenre": "Hardcore Techno",
+        "playlistId": "dance_hardcore_techno"
+      },
+      {
+        "subgenre": "Hard Dance",
+        "playlistId": "dance_hard_dance"
+      },
+      {
+        "subgenre": "Hard House",
+        "playlistId": "dance_hard_house"
+      },
+      {
+        "subgenre": "Hard Trance",
+        "playlistId": "dance_hard_trance"
+      },
+      {
+        "subgenre": "Hardstyle",
+        "playlistId": "dance_hardstyle"
+      },
+      {
+        "subgenre": "Happy Hardcore",
+        "playlistId": "dance_happy_hardcore"
+      },
+      {
+        "subgenre": "Hip House",
+        "playlistId": "dance_hip_house"
+      },
+      {
+        "subgenre": "Hi-NRG/Eurodance",
+        "playlistId": "dance_hi_nrg"
+      },
+      {
+        "subgenre": "Horrorcore",
+        "playlistId": "dance_horrorcore"
+      },
+      {
+        "subgenre": "House",
+        "playlistId": "dance_house"
+      },
+      {
+        "subgenre": "Italo House",
+        "playlistId": "dance_italo_house"
+      },
+      {
+        "subgenre": "Jackin House",
+        "playlistId": "dance_jackin_house"
+      },
+      {
+        "subgenre": "Jumpstyle",
+        "playlistId": "dance_jumpstyle"
+      },
+      {
+        "subgenre": "Jump-Up",
+        "playlistId": "dance_jump_up"
+      },
+      {
+        "subgenre": "Jungle/Drum'n'bass",
+        "playlistId": "dance_jungle"
+      },
+      {
+        "subgenre": "Latin House",
+        "playlistId": "dance_latin_house"
+      },
+      {
+        "subgenre": "Liquid Dub",
+        "playlistId": "dance_liquid_dub"
+      },
+      {
+        "subgenre": "Liquid Funk",
+        "playlistId": "dance_liquid_funk"
+      },
+      {
+        "subgenre": "Makina",
+        "playlistId": "dance_makina"
+      },
+      {
+        "subgenre": "Microhouse",
+        "playlistId": "dance_microhouse"
+      },
+      {
+        "subgenre": "Minimal House",
+        "playlistId": "dance_minimal_house"
+      },
+      {
+        "subgenre": "Minimal Techno",
+        "playlistId": "dance_minimal_techno"
+      },
+      {
+        "subgenre": "Neurofunk",
+        "playlistId": "dance_neurofunk"
+      },
+      {
+        "subgenre": "Nitzhonot",
+        "playlistId": "dance_nitzhonot"
+      },
+      {
+        "subgenre": "Nu Skool Breaks",
+        "playlistId": "dance_nu_skool_breaks"
+      },
+      {
+        "subgenre": "Oldschool Jungle",
+        "playlistId": "dance_oldschool_jungle"
+      },
+      {
+        "subgenre": "Progressive House",
+        "playlistId": "dance_progressive_house"
+      },
+      {
+        "subgenre": "Progressive Trance",
+        "playlistId": "dance_progressive_trance"
+      },
+      {
+        "subgenre": "Psybreaks",
+        "playlistId": "dance_psybreaks"
+      },
+      {
+        "subgenre": "Psychedelic Trance",
+        "playlistId": "dance_psychedelic_trance"
+      },
+      {
+        "subgenre": "Psyprog",
+        "playlistId": "dance_psyprog"
+      },
+      {
+        "subgenre": "Ragga Jungle",
+        "playlistId": "dance_ragga_jungle"
+      },
+      {
+        "subgenre": "Rave Music",
+        "playlistId": "dance_rave_music"
+      },
+      {
+        "subgenre": "Regstep",
+        "playlistId": "dance_regstep"
+      },
+      {
+        "subgenre": "Schranz",
+        "playlistId": "dance_schranz"
+      },
+      {
+        "subgenre": "Speedcore",
+        "playlistId": "dance_speedcore"
+      },
+      {
+        "subgenre": "Suomisaundi",
+        "playlistId": "dance_suomisaundi"
+      },
+      {
+        "subgenre": "Swing House",
+        "playlistId": "dance_swing_house"
+      },
+      {
+        "subgenre": "Tech House",
+        "playlistId": "dance_tech_house"
+      },
+      {
+        "subgenre": "Techno",
+        "playlistId": "dance_techno"
+      },
+      {
+        "subgenre": "Techno-Dnb",
+        "playlistId": "dance_techno_dnb"
+      },
+      {
+        "subgenre": "Techstep",
+        "playlistId": "dance_techstep"
+      },
+      {
+        "subgenre": "Tech Trance",
+        "playlistId": "dance_tech_trance"
+      },
+      {
+        "subgenre": "Tribal House",
+        "playlistId": "dance_tribal_house"
+      },
+      {
+        "subgenre": "Trance",
+        "playlistId": "dance_trance"
+      },
+      {
+        "subgenre": "Tropical House",
+        "playlistId": "dance_tropical_house"
+      },
+      {
+        "subgenre": "UK Garage",
+        "playlistId": "dance_uk_garage"
+      },
+      {
+        "subgenre": "UK Hard House",
+        "playlistId": "dance_uk_hard_house"
+      },
+      {
+        "subgenre": "UK Hardcore",
+        "playlistId": "dance_uk_hardcore"
+      },
+      {
+        "subgenre": "Uplifting Trance",
+        "playlistId": "dance_uplifting_trance"
+      },
+      {
+        "subgenre": "US Garage",
+        "playlistId": "dance_us_garage"
+      },
+      {
+        "subgenre": "Vocal House",
+        "playlistId": "dance_vocal_house"
+      }
+    ]
+  },
+  {
+    "genre": "Electronic",
+    "subgenres": [
+      {
+        "subgenre": "2-Step",
+        "playlistId": "electronic_2_step"
+      },
+      {
+        "subgenre": "Ambient",
+        "playlistId": "electronic_ambient"
+      },
+      {
+        "subgenre": "Ambient Dub",
+        "playlistId": "electronic_ambient_dub"
+      },
+      {
+        "subgenre": "Ambient House",
+        "playlistId": "electronic_ambient_house"
+      },
+      {
+        "subgenre": "Ambient Techno",
+        "playlistId": "electronic_ambient_techno"
+      },
+      {
+        "subgenre": "Breakbeat",
+        "playlistId": "electronic_breakbeat"
+      },
+      {
+        "subgenre": "Chiptune",
+        "playlistId": "electronic_chiptune"
+      },
+      {
+        "subgenre": "Dark Ambient",
+        "playlistId": "electronic_dark_ambient"
+      },
+      {
+        "subgenre": "Downtempo",
+        "playlistId": "electronic_downtempo"
+      },
+      {
+        "subgenre": "Drone Music",
+        "playlistId": "electronic_drone"
+      },
+      {
+        "subgenre": "Electro",
+        "playlistId": "electronic_electro"
+      },
+      {
+        "subgenre": "Electro Backbeat",
+        "playlistId": "electronic_electro_backbeat"
+      },
+      {
+        "subgenre": "Electroclash",
+        "playlistId": "electronic_electroclash"
+      },
+      {
+        "subgenre": "Electronic Dance Music",
+        "playlistId": "electronic_edm"
+      },
+      {
+        "subgenre": "Electronica",
+        "playlistId": "electronic_electronica"
+      },
+      {
+        "subgenre": "Electropop",
+        "playlistId": "electronic_electropop"
+      },
+      {
+        "subgenre": "Electronic Body Music",
+        "playlistId": "electronic_ebm"
+      },
+      {
+        "subgenre": "Electronicore",
+        "playlistId": "electronic_electronicore"
+      },
+      {
+        "subgenre": "Future Bass",
+        "playlistId": "electronic_future_bass"
+      },
+      {
+        "subgenre": "Future House",
+        "playlistId": "electronic_future_house"
+      },
+      {
+        "subgenre": "Future Pop",
+        "playlistId": "electronic_future_pop"
+      },
+      {
+        "subgenre": "Garage",
+        "playlistId": "electronic_garage"
+      },
+      {
+        "subgenre": "Glitch",
+        "playlistId": "electronic_glitch"
+      },
+      {
+        "subgenre": "IDM",
+        "playlistId": "electronic_idm"
+      },
+      {
+        "subgenre": "Illbient",
+        "playlistId": "electronic_illbient"
+      },
+      {
+        "subgenre": "Industrial",
+        "playlistId": "electronic_industrial"
+      },
+      {
+        "subgenre": "Isolationism",
+        "playlistId": "electronic_isolationism"
+      },
+      {
+        "subgenre": "Lowercase",
+        "playlistId": "electronic_lowercase"
+      },
+      {
+        "subgenre": "Synthpop",
+        "playlistId": "electronic_synthpop"
+      },
+      {
+        "subgenre": "Synthwave",
+        "playlistId": "electronic_synthwave"
+      },
+      {
+        "subgenre": "Trip Hop",
+        "playlistId": "electronic_trip_hop"
+      },
+      {
+        "subgenre": "Vaporwave",
+        "playlistId": "electronic_vaporwave"
+      },
+      {
+        "subgenre": "Witch House",
+        "playlistId": "electronic_witch_house"
+      }
+    ]
+  },
+  {
+    "genre": "French Pop",
+    "subgenres": [
+      {
+        "subgenre": "Chanson",
+        "playlistId": "french_chanson"
+      },
+      {
+        "subgenre": "French House",
+        "playlistId": "french_house"
+      },
+      {
+        "subgenre": "French Touch",
+        "playlistId": "french_touch"
+      },
+      {
+        "subgenre": "Nouvelle Chanson",
+        "playlistId": "french_nouvelle_chanson"
+      },
+      {
+        "subgenre": "Yé-yé",
+        "playlistId": "french_ye_ye"
+      }
+    ]
+  },
+  {
+    "genre": "Folk Music",
+    "subgenres": [
+      {
+        "subgenre": "Acoustic Folk",
+        "playlistId": "folk_acoustic"
+      },
+      {
+        "subgenre": "American Folk",
+        "playlistId": "folk_american"
+      },
+      {
+        "subgenre": "Anti-Folk",
+        "playlistId": "folk_anti_folk"
+      },
+      {
+        "subgenre": "Celtic Folk",
+        "playlistId": "folk_celtic"
+      },
+      {
+        "subgenre": "Contemporary Folk",
+        "playlistId": "folk_contemporary"
+      },
+      {
+        "subgenre": "Folk Rock",
+        "playlistId": "folk_rock"
+      },
+      {
+        "subgenre": "Indie Folk",
+        "playlistId": "folk_indie"
+      },
+      {
+        "subgenre": "Neofolk",
+        "playlistId": "folk_neofolk"
+      },
+      {
+        "subgenre": "Progressive Folk",
+        "playlistId": "folk_progressive"
+      },
+      {
+        "subgenre": "Psychedelic Folk",
+        "playlistId": "folk_psychedelic"
+      },
+      {
+        "subgenre": "Traditional Folk",
+        "playlistId": "folk_traditional"
+      },
+      {
+        "subgenre": "World Folk",
+        "playlistId": "folk_world"
+      }
+    ]
+  },
+  {
+    "genre": "Hip-Hop/Rap",
+    "subgenres": [
+      {
+        "subgenre": "Alternative Hip-Hop",
+        "playlistId": "hiphop_alternative"
+      },
+      {
+        "subgenre": "Boom Bap",
+        "playlistId": "hiphop_boom_bap"
+      },
+      {
+        "subgenre": "Chopped and Screwed",
+        "playlistId": "hiphop_chopped_screwed"
+      },
+      {
+        "subgenre": "Cloud Rap",
+        "playlistId": "hiphop_cloud_rap"
+      },
+      {
+        "subgenre": "Conscious Hip-Hop",
+        "playlistId": "hiphop_conscious"
+      },
+      {
+        "subgenre": "Crunk",
+        "playlistId": "hiphop_crunk"
+      },
+      {
+        "subgenre": "Drill",
+        "playlistId": "hiphop_drill"
+      },
+      {
+        "subgenre": "East Coast Hip-Hop",
+        "playlistId": "hiphop_east_coast"
+      },
+      {
+        "subgenre": "Freestyle",
+        "playlistId": "hiphop_freestyle"
+      },
+      {
+        "subgenre": "Gangsta Rap",
+        "playlistId": "hiphop_gangsta"
+      },
+      {
+        "subgenre": "Hardcore Hip-Hop",
+        "playlistId": "hiphop_hardcore"
+      },
+      {
+        "subgenre": "Horrorcore",
+        "playlistId": "hiphop_horrorcore"
+      },
+      {
+        "subgenre": "Jazz Rap",
+        "playlistId": "hiphop_jazz_rap"
+      },
+      {
+        "subgenre": "Mumble Rap",
+        "playlistId": "hiphop_mumble_rap"
+      },
+      {
+        "subgenre": "Old School Hip-Hop",
+        "playlistId": "hiphop_old_school"
+      },
+      {
+        "subgenre": "Political Hip-Hop",
+        "playlistId": "hiphop_political"
+      },
+      {
+        "subgenre": "Pop Rap",
+        "playlistId": "hiphop_pop_rap"
+      },
+      {
+        "subgenre": "Southern Hip-Hop",
+        "playlistId": "hiphop_southern"
+      },
+      {
+        "subgenre": "Trap",
+        "playlistId": "hiphop_trap"
+      },
+      {
+        "subgenre": "West Coast Hip-Hop",
+        "playlistId": "hiphop_west_coast"
+      }
+    ]
+  },
+  {
+    "genre": "Industrial",
+    "subgenres": [
+      {
+        "subgenre": "Aggrotech",
+        "playlistId": "industrial_aggrotech"
+      },
+      {
+        "subgenre": "Coldwave",
+        "playlistId": "industrial_coldwave"
+      },
+      {
+        "subgenre": "Dark Ambient",
+        "playlistId": "industrial_dark_ambient"
+      },
+      {
+        "subgenre": "Dark Electro",
+        "playlistId": "industrial_dark_electro"
+      },
+      {
+        "subgenre": "Darkwave",
+        "playlistId": "industrial_darkwave"
+      },
+      {
+        "subgenre": "EBM",
+        "playlistId": "industrial_ebm"
+      },
+      {
+        "subgenre": "Electro-Industrial",
+        "playlistId": "industrial_electro"
+      },
+      {
+        "subgenre": "Futurepop",
+        "playlistId": "industrial_futurepop"
+      },
+      {
+        "subgenre": "Industrial Metal",
+        "playlistId": "industrial_metal"
+      },
+      {
+        "subgenre": "Industrial Rock",
+        "playlistId": "industrial_rock"
+      },
+      {
+        "subgenre": "Martial Industrial",
+        "playlistId": "industrial_martial"
+      },
+      {
+        "subgenre": "Neofolk",
+        "playlistId": "industrial_neofolk"
+      },
+      {
+        "subgenre": "Noise",
+        "playlistId": "industrial_noise"
+      },
+      {
+        "subgenre": "Power Electronics",
+        "playlistId": "industrial_power_electronics"
+      },
+      {
+        "subgenre": "Rhythmic Noise",
+        "playlistId": "industrial_rhythmic_noise"
+      },
+      {
+        "subgenre": "Synthpop",
+        "playlistId": "industrial_synthpop"
+      },
+      {
+        "subgenre": "Techno-Industrial",
+        "playlistId": "industrial_techno"
+      }
+    ]
+  },
+  {
+    "genre": "Jazz",
+    "subgenres": [
+      {
+        "subgenre": "Acid Jazz",
+        "playlistId": "jazz_acid"
+      },
+      {
+        "subgenre": "Afro-Cuban Jazz",
+        "playlistId": "jazz_afro_cuban"
+      },
+      {
+        "subgenre": "Avant-Garde Jazz",
+        "playlistId": "jazz_avant_garde"
+      },
+      {
+        "subgenre": "Bebop",
+        "playlistId": "jazz_bebop"
+      },
+      {
+        "subgenre": "Big Band",
+        "playlistId": "jazz_big_band"
+      },
+      {
+        "subgenre": "Blue Note",
+        "playlistId": "jazz_blue_note"
+      },
+      {
+        "subgenre": "Bossa Nova",
+        "playlistId": "jazz_bossa_nova"
+      },
+      {
+        "subgenre": "Cool Jazz",
+        "playlistId": "jazz_cool"
+      },
+      {
+        "subgenre": "Dixieland",
+        "playlistId": "jazz_dixieland"
+      },
+      {
+        "subgenre": "Ethio-Jazz",
+        "playlistId": "jazz_ethio"
+      },
+      {
+        "subgenre": "Fusion",
+        "playlistId": "jazz_fusion"
+      },
+      {
+        "subgenre": "Hard Bop",
+        "playlistId": "jazz_hard_bop"
+      },
+      {
+        "subgenre": "Jazz Blues",
+        "playlistId": "jazz_blues"
+      },
+      {
+        "subgenre": "Jazz-Funk",
+        "playlistId": "jazz_funk"
+      },
+      {
+        "subgenre": "Jazz Rap",
+        "playlistId": "jazz_rap"
+      },
+      {
+        "subgenre": "Latin Jazz",
+        "playlistId": "jazz_latin"
+      },
+      {
+        "subgenre": "Modal Jazz",
+        "playlistId": "jazz_modal"
+      },
+      {
+        "subgenre": "Post-Bop",
+        "playlistId": "jazz_post_bop"
+      },
+      {
+        "subgenre": "Ragtime",
+        "playlistId": "jazz_ragtime"
+      },
+      {
+        "subgenre": "Smooth Jazz",
+        "playlistId": "jazz_smooth"
+      },
+      {
+        "subgenre": "Swing",
+        "playlistId": "jazz_swing"
+      },
+      {
+        "subgenre": "Third Stream",
+        "playlistId": "jazz_third_stream"
+      },
+      {
+        "subgenre": "Trad Jazz",
+        "playlistId": "jazz_trad"
+      },
+      {
+        "subgenre": "Vocal Jazz",
+        "playlistId": "jazz_vocal"
+      }
+    ]
+  },
+  {
+    "genre": "Latin",
+    "subgenres": [
+      {
+        "subgenre": "Bachata",
+        "playlistId": "latin_bachata"
+      },
+      {
+        "subgenre": "Banda",
+        "playlistId": "latin_banda"
+      },
+      {
+        "subgenre": "Bossa Nova",
+        "playlistId": "latin_bossa_nova"
+      },
+      {
+        "subgenre": "Cumbia",
+        "playlistId": "latin_cumbia"
+      },
+      {
+        "subgenre": "Flamenco",
+        "playlistId": "latin_flamenco"
+      },
+      {
+        "subgenre": "Latin Jazz",
+        "playlistId": "latin_jazz"
+      },
+      {
+        "subgenre": "Latin Pop",
+        "playlistId": "latin_pop"
+      },
+      {
+        "subgenre": "Latin Rock",
+        "playlistId": "latin_rock"
+      },
+      {
+        "subgenre": "Mariachi",
+        "playlistId": "latin_mariachi"
+      },
+      {
+        "subgenre": "Merengue",
+        "playlistId": "latin_merengue"
+      },
+      {
+        "subgenre": "Norteño",
+        "playlistId": "latin_norteno"
+      },
+      {
+        "subgenre": "Ranchera",
+        "playlistId": "latin_ranchera"
+      },
+      {
+        "subgenre": "Reggaeton",
+        "playlistId": "latin_reggaeton"
+      },
+      {
+        "subgenre": "Salsa",
+        "playlistId": "latin_salsa"
+      },
+      {
+        "subgenre": "Samba",
+        "playlistId": "latin_samba"
+      },
+      {
+        "subgenre": "Sertanejo",
+        "playlistId": "latin_sertanejo"
+      },
+      {
+        "subgenre": "Tango",
+        "playlistId": "latin_tango"
+      },
+      {
+        "subgenre": "Tejano",
+        "playlistId": "latin_tejano"
+      },
+      {
+        "subgenre": "Tropical",
+        "playlistId": "latin_tropical"
+      },
+      {
+        "subgenre": "Vallenato",
+        "playlistId": "latin_vallenato"
+      }
+    ]
+  },
+  {
+    "genre": "Metal",
+    "subgenres": [
+      {
+        "subgenre": "Alternative Metal",
+        "playlistId": "metal_alternative"
+      },
+      {
+        "subgenre": "Avant-Garde Metal",
+        "playlistId": "metal_avant_garde"
+      },
+      {
+        "subgenre": "Black Metal",
+        "playlistId": "metal_black"
+      },
+      {
+        "subgenre": "Death Metal",
+        "playlistId": "metal_death"
+      },
+      {
+        "subgenre": "Doom Metal",
+        "playlistId": "metal_doom"
+      },
+      {
+        "subgenre": "Folk Metal",
+        "playlistId": "metal_folk"
+      },
+      {
+        "subgenre": "Glam Metal",
+        "playlistId": "metal_glam"
+      },
+      {
+        "subgenre": "Gothic Metal",
+        "playlistId": "metal_gothic"
+      },
+      {
+        "subgenre": "Grindcore",
+        "playlistId": "metal_grindcore"
+      },
+      {
+        "subgenre": "Groove Metal",
+        "playlistId": "metal_groove"
+      },
+      {
+        "subgenre": "Heavy Metal",
+        "playlistId": "metal_heavy"
+      },
+      {
+        "subgenre": "Industrial Metal",
+        "playlistId": "metal_industrial"
+      },
+      {
+        "subgenre": "Melodic Death Metal",
+        "playlistId": "metal_melodic_death"
+      },
+      {
+        "subgenre": "Metalcore",
+        "playlistId": "metal_metalcore"
+      },
+      {
+        "subgenre": "Neo-Classical Metal",
+        "playlistId": "metal_neo_classical"
+      },
+      {
+        "subgenre": "Nu Metal",
+        "playlistId": "metal_nu"
+      },
+      {
+        "subgenre": "Power Metal",
+        "playlistId": "metal_power"
+      },
+      {
+        "subgenre": "Progressive Metal",
+        "playlistId": "metal_progressive"
+      },
+      {
+        "subgenre": "Speed Metal",
+        "playlistId": "metal_speed"
+      },
+      {
+        "subgenre": "Symphonic Metal",
+        "playlistId": "metal_symphonic"
+      },
+      {
+        "subgenre": "Thrash Metal",
+        "playlistId": "metal_thrash"
+      }
+    ]
+  },
+  {
+    "genre": "New Age",
+    "subgenres": [
+      {
+        "subgenre": "Ambient",
+        "playlistId": "newage_ambient"
+      },
+      {
+        "subgenre": "Celtic",
+        "playlistId": "newage_celtic"
+      },
+      {
+        "subgenre": "Contemporary Instrumental",
+        "playlistId": "newage_contemporary"
+      },
+      {
+        "subgenre": "Electronic",
+        "playlistId": "newage_electronic"
+      },
+      {
+        "subgenre": "Environmental",
+        "playlistId": "newage_environmental"
+      },
+      {
+        "subgenre": "Ethnic Fusion",
+        "playlistId": "newage_ethnic_fusion"
+      },
+      {
+        "subgenre": "Healing",
+        "playlistId": "newage_healing"
+      },
+      {
+        "subgenre": "Meditation",
+        "playlistId": "newage_meditation"
+      },
+      {
+        "subgenre": "Nature",
+        "playlistId": "newage_nature"
+      },
+      {
+        "subgenre": "Neoclassical",
+        "playlistId": "newage_neoclassical"
+      },
+      {
+        "subgenre": "Relaxation",
+        "playlistId": "newage_relaxation"
+      },
+      {
+        "subgenre": "Spa",
+        "playlistId": "newage_spa"
+      },
+      {
+        "subgenre": "Spiritual",
+        "playlistId": "newage_spiritual"
+      },
+      {
+        "subgenre": "World Fusion",
+        "playlistId": "newage_world_fusion"
+      }
+    ]
+  },
+  {
+    "genre": "Pop",
+    "subgenres": [
+      {
+        "subgenre": "Adult Contemporary",
+        "playlistId": "pop_adult_contemporary"
+      },
+      {
+        "subgenre": "Art Pop",
+        "playlistId": "pop_art"
+      },
+      {
+        "subgenre": "Baroque Pop",
+        "playlistId": "pop_baroque"
+      },
+      {
+        "subgenre": "Britpop",
+        "playlistId": "pop_britpop"
+      },
+      {
+        "subgenre": "Bubblegum Pop",
+        "playlistId": "pop_bubblegum"
+      },
+      {
+        "subgenre": "Chamber Pop",
+        "playlistId": "pop_chamber"
+      },
+      {
+        "subgenre": "Dance Pop",
+        "playlistId": "pop_dance"
+      },
+      {
+        "subgenre": "Dream Pop",
+        "playlistId": "pop_dream"
+      },
+      {
+        "subgenre": "Electropop",
+        "playlistId": "pop_electro"
+      },
+      {
+        "subgenre": "Indie Pop",
+        "playlistId": "pop_indie"
+      },
+      {
+        "subgenre": "Jangle Pop",
+        "playlistId": "pop_jangle"
+      },
+      {
+        "subgenre": "K-Pop",
+        "playlistId": "pop_k_pop"
+      },
+      {
+        "subgenre": "Latin Pop",
+        "playlistId": "pop_latin"
+      },
+      {
+        "subgenre": "New Wave",
+        "playlistId": "pop_new_wave"
+      },
+      {
+        "subgenre": "Operatic Pop",
+        "playlistId": "pop_operatic"
+      },
+      {
+        "subgenre": "Pop Punk",
+        "playlistId": "pop_punk"
+      },
+      {
+        "subgenre": "Pop Rock",
+        "playlistId": "pop_rock"
+      },
+      {
+        "subgenre": "Power Pop",
+        "playlistId": "pop_power"
+      },
+      {
+        "subgenre": "Psychedelic Pop",
+        "playlistId": "pop_psychedelic"
+      },
+      {
+        "subgenre": "Sophisti-Pop",
+        "playlistId": "pop_sophisti"
+      },
+      {
+        "subgenre": "Sunshine Pop",
+        "playlistId": "pop_sunshine"
+      },
+      {
+        "subgenre": "Synthpop",
+        "playlistId": "pop_synth"
+      },
+      {
+        "subgenre": "Teen Pop",
+        "playlistId": "pop_teen"
+      },
+      {
+        "subgenre": "Traditional Pop",
+        "playlistId": "pop_traditional"
+      },
+      {
+        "subgenre": "World Pop",
+        "playlistId": "pop_world"
+      }
+    ]
+  },
+  {
+    "genre": "Progressive",
+    "subgenres": [
+      {
+        "subgenre": "Progressive Rock",
+        "playlistId": "prog_rock"
+      },
+      {
+        "subgenre": "Progressive Metal",
+        "playlistId": "prog_metal"
+      },
+      {
+        "subgenre": "Progressive Electronic",
+        "playlistId": "prog_electronic"
+      },
+      {
+        "subgenre": "Progressive Folk",
+        "playlistId": "prog_folk"
+      },
+      {
+        "subgenre": "Progressive House",
+        "playlistId": "prog_house"
+      },
+      {
+        "subgenre": "Progressive Trance",
+        "playlistId": "prog_trance"
+      },
+      {
+        "subgenre": "Progressive Breaks",
+        "playlistId": "prog_breaks"
+      },
+      {
+        "subgenre": "Progressive Ambient",
+        "playlistId": "prog_ambient"
+      },
+      {
+        "subgenre": "Progressive Jazz",
+        "playlistId": "prog_jazz"
+      },
+      {
+        "subgenre": "Progressive Pop",
+        "playlistId": "prog_pop"
+      }
+    ]
+  },
+  {
+    "genre": "R&B/Soul",
+    "subgenres": [
+      {
+        "subgenre": "Alternative R&B",
+        "playlistId": "rnb_alternative"
+      },
+      {
+        "subgenre": "Contemporary R&B",
+        "playlistId": "rnb_contemporary"
+      },
+      {
+        "subgenre": "Doo-Wop",
+        "playlistId": "rnb_doo_wop"
+      },
+      {
+        "subgenre": "Funk",
+        "playlistId": "rnb_funk"
+      },
+      {
+        "subgenre": "Gospel",
+        "playlistId": "rnb_gospel"
+      },
+      {
+        "subgenre": "Motown",
+        "playlistId": "rnb_motown"
+      },
+      {
+        "subgenre": "Neo-Soul",
+        "playlistId": "rnb_neo_soul"
+      },
+      {
+        "subgenre": "New Jack Swing",
+        "playlistId": "rnb_new_jack_swing"
+      },
+      {
+        "subgenre": "Quiet Storm",
+        "playlistId": "rnb_quiet_storm"
+      },
+      {
+        "subgenre": "Rhythm and Blues",
+        "playlistId": "rnb_rhythm_blues"
+      },
+      {
+        "subgenre": "Smooth R&B",
+        "playlistId": "rnb_smooth"
+      },
+      {
+        "subgenre": "Soul",
+        "playlistId": "rnb_soul"
+      },
+      {
+        "subgenre": "Southern Soul",
+        "playlistId": "rnb_southern_soul"
+      },
+      {
+        "subgenre": "Urban Contemporary",
+        "playlistId": "rnb_urban_contemporary"
+      }
+    ]
+  },
+  {
+    "genre": "Reggae",
+    "subgenres": [
+      {
+        "subgenre": "Dancehall",
+        "playlistId": "reggae_dancehall"
+      },
+      {
+        "subgenre": "Dub",
+        "playlistId": "reggae_dub"
+      },
+      {
+        "subgenre": "Dub Poetry",
+        "playlistId": "reggae_dub_poetry"
+      },
+      {
+        "subgenre": "Early Reggae",
+        "playlistId": "reggae_early"
+      },
+      {
+        "subgenre": "Lovers Rock",
+        "playlistId": "reggae_lovers_rock"
+      },
+      {
+        "subgenre": "Modern Roots",
+        "playlistId": "reggae_modern_roots"
+      },
+      {
+        "subgenre": "Ragga",
+        "playlistId": "reggae_ragga"
+      },
+      {
+        "subgenre": "Reggae Fusion",
+        "playlistId": "reggae_fusion"
+      },
+      {
+        "subgenre": "Reggaeton",
+        "playlistId": "reggae_reggaeton"
+      },
+      {
+        "subgenre": "Rocksteady",
+        "playlistId": "reggae_rocksteady"
+      },
+      {
+        "subgenre": "Roots Reggae",
+        "playlistId": "reggae_roots"
+      },
+      {
+        "subgenre": "Ska",
+        "playlistId": "reggae_ska"
+      },
+      {
+        "subgenre": "Ska Punk",
+        "playlistId": "reggae_ska_punk"
+      },
+      {
+        "subgenre": "Steppers",
+        "playlistId": "reggae_steppers"
+      },
+      {
+        "subgenre": "Two-Tone",
+        "playlistId": "reggae_two_tone"
+      }
+    ]
+  },
+  {
+    "genre": "Rock",
+    "subgenres": [
+      {
+        "subgenre": "Acid Rock",
+        "playlistId": "rock_acid"
+      },
+      {
+        "subgenre": "Alternative Rock",
+        "playlistId": "rock_alternative"
+      },
+      {
+        "subgenre": "Art Rock",
+        "playlistId": "rock_art"
+      },
+      {
+        "subgenre": "Blues Rock",
+        "playlistId": "rock_blues"
+      },
+      {
+        "subgenre": "Britpop",
+        "playlistId": "rock_britpop"
+      },
+      {
+        "subgenre": "Classic Rock",
+        "playlistId": "rock_classic"
+      },
+      {
+        "subgenre": "Country Rock",
+        "playlistId": "rock_country"
+      },
+      {
+        "subgenre": "Desert Rock",
+        "playlistId": "rock_desert"
+      },
+      {
+        "subgenre": "Electronic Rock",
+        "playlistId": "rock_electronic"
+      },
+      {
+        "subgenre": "Experimental Rock",
+        "playlistId": "rock_experimental"
+      },
+      {
+        "subgenre": "Folk Rock",
+        "playlistId": "rock_folk"
+      },
+      {
+        "subgenre": "Funk Rock",
+        "playlistId": "rock_funk"
+      },
+      {
+        "subgenre": "Garage Rock",
+        "playlistId": "rock_garage"
+      },
+      {
+        "subgenre": "Glam Rock",
+        "playlistId": "rock_glam"
+      },
+      {
+        "subgenre": "Grunge",
+        "playlistId": "rock_grunge"
+      },
+      {
+        "subgenre": "Hard Rock",
+        "playlistId": "rock_hard"
+      },
+      {
+        "subgenre": "Indie Rock",
+        "playlistId": "rock_indie"
+      },
+      {
+        "subgenre": "Jazz Rock",
+        "playlistId": "rock_jazz"
+      },
+      {
+        "subgenre": "Krautrock",
+        "playlistId": "rock_krautrock"
+      },
+      {
+        "subgenre": "Math Rock",
+        "playlistId": "rock_math"
+      },
+      {
+        "subgenre": "Noise Rock",
+        "playlistId": "rock_noise"
+      },
+      {
+        "subgenre": "Pop Rock",
+        "playlistId": "rock_pop"
+      },
+      {
+        "subgenre": "Post-Rock",
+        "playlistId": "rock_post"
+      },
+      {
+        "subgenre": "Progressive Rock",
+        "playlistId": "rock_progressive"
+      },
+      {
+        "subgenre": "Psychedelic Rock",
+        "playlistId": "rock_psychedelic"
+      },
+      {
+        "subgenre": "Punk Rock",
+        "playlistId": "rock_punk"
+      },
+      {
+        "subgenre": "Rap Rock",
+        "playlistId": "rock_rap"
+      },
+      {
+        "subgenre": "Rock and Roll",
+        "playlistId": "rock_roll"
+      },
+      {
+        "subgenre": "Soft Rock",
+        "playlistId": "rock_soft"
+      },
+      {
+        "subgenre": "Space Rock",
+        "playlistId": "rock_space"
+      },
+      {
+        "subgenre": "Surf Rock",
+        "playlistId": "rock_surf"
+      },
+      {
+        "subgenre": "Symphonic Rock",
+        "playlistId": "rock_symphonic"
+      }
+    ]
+  },
+  {
+    "genre": "World",
+    "subgenres": [
+      {
+        "subgenre": "African",
+        "playlistId": "world_african"
+      },
+      {
+        "subgenre": "Asian",
+        "playlistId": "world_asian"
+      },
+      {
+        "subgenre": "Balkan",
+        "playlistId": "world_balkan"
+      },
+      {
+        "subgenre": "Celtic",
+        "playlistId": "world_celtic"
+      },
+      {
+        "subgenre": "Eastern European",
+        "playlistId": "world_eastern_european"
+      },
+      {
+        "subgenre": "Flamenco",
+        "playlistId": "world_flamenco"
+      },
+      {
+        "subgenre": "Indian Classical",
+        "playlistId": "world_indian_classical"
+      },
+      {
+        "subgenre": "Klezmer",
+        "playlistId": "world_klezmer"
+      },
+      {
+        "subgenre": "Latin American",
+        "playlistId": "world_latin_american"
+      },
+      {
+        "subgenre": "Middle Eastern",
+        "playlistId": "world_middle_eastern"
+      },
+      {
+        "subgenre": "Nordic",
+        "playlistId": "world_nordic"
+      },
+      {
+        "subgenre": "Polynesian",
+        "playlistId": "world_polynesian"
+      },
+      {
+        "subgenre": "Russian",
+        "playlistId": "world_russian"
+      },
+      {
+        "subgenre": "Traditional",
+        "playlistId": "world_traditional"
+      },
+      {
+        "subgenre": "Worldbeat",
+        "playlistId": "world_worldbeat"
+      },
+      {
+        "subgenre": "World Fusion",
+        "playlistId": "world_fusion"
+      },
+      {
+        "subgenre": "Zydeco",
+        "playlistId": "world_zydeco"
+      }
+    ]
+  }
+]

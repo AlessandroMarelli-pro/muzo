@@ -1,0 +1,497 @@
+[
+  {
+    "genre": "Alternative",
+    "subgenres": [
+      {
+        "subgenre": "Alternative Rock",
+        "playlistId": "RDCLAK5uy_mQEtDIVgkJ1SRa_c7GnPWP9-FH7hAqarw"
+      },
+
+      {
+        "subgenre": "Grunge",
+        "playlistId": "RDCLAK5uy_kQDX7ciH8Pm8h48FWNLv5suF7U6abRhU4"
+      },
+
+      {
+        "subgenre": "Hard Rock",
+        "playlistId": "RDCLAK5uy_k6CicQMBYujmwL9DB5xBripE9EfgeKpHM"
+      },
+      {
+        "subgenre": "Indie Rock",
+        "playlistId": "RDCLAK5uy_msWUtf_FgfSoTVUSP6qaBnhjTJsCfyLVo"
+      },
+      {
+        "subgenre": "New Wave",
+        "playlistId": "PLEXox2R2RxZKD0KvMoTYSiKnxwOn2joVU"
+      },
+      {
+        "subgenre": "Progressive Rock",
+        "playlistId": "PLbouzmFCyUKZUZkyRZRX06N230bDX1hE8"
+      },
+      {
+        "subgenre": "Punk",
+        "playlistId": "PLUa6nRap6dEe6rzUXBWtsz4tKdHmrNwa2"
+      },
+      {
+        "subgenre": "Shoegaze",
+        "playlistId": "RDCLAK5uy_nwousilOXg-bLqinsmjg489Ubhml0-wPI"
+      }
+    ]
+  },
+
+  {
+    "genre": "Country",
+    "subgenres": [
+      {
+        "subgenre": "Americana",
+        "playlistId": "RDCLAK5uy_lXjH0l0C1stU-ZtZQtjHYIC4VXg7qEt0Y"
+      },
+      {
+        "subgenre": "Bluegrass",
+        "playlistId": "RDCLAK5uy_lGQ-0FFaPuWq8QI-KDIg8SaADWGUEPTjo"
+      },
+
+      {
+        "subgenre": "Traditional Country",
+        "playlistId": "RDCLAK5uy_kVfoKrYSsJaHx3SLO8mp3WYuRHMrS8U_Q"
+      }
+    ]
+  },
+  {
+    "genre": "Dance_EDM",
+    "subgenres": [
+      {
+        "subgenre": "Acid House",
+        "playlistId": "PLtTEwg-53k6oGpIKmMS-qVirsq2ZAv9ch"
+      },
+      {
+        "subgenre": "Acid Trance",
+        "playlistId": "PLEjaQL7PEhFWqGBsL5mm8cia1OsqA1fKM"
+      },
+      {
+        "subgenre": "French House",
+        "playlistId": "RDCLAK5uy_kf6c8Ga41e1bLKYCaulkiZ1NIVYJnr3Jk"
+      },
+      {
+        "subgenre": "Breakbeat",
+        "playlistId": "PLi98TwUHGR5IBdSC-0BNSVJxTdJJqWPs9"
+      },
+
+      {
+        "subgenre": "Balearic Trance",
+        "playlistId": "PLFBZT3CIdFxIpmv6UV0kjpkSRQDnCuN-v"
+      },
+      {
+        "subgenre": "Dubstep",
+        "playlistId": "PLJtpjlkBVF4zJ4jyr7ZKw7zDGTBEX3TO3"
+      },
+      {
+        "subgenre": "Chicago House",
+        "playlistId": "PLkVv8ACu5JVpvXFZkZ7HYqSNvm9qTDGfe"
+      },
+      {
+        "subgenre": "Garage",
+        "playlistId": "PLLp1H6g8VZtpKribh6xztu3t0DTdlnwgZ"
+      },
+      {
+        "subgenre": "Progressive House",
+        "playlistId": "PLH1X6Tda-vuNmEizzg39VXiOYjj863RQI"
+      },
+      {
+        "subgenre": "Progressive Trance",
+        "playlistId": "PL7KK1uyCfOmf0bOx4NSI5QcJ_SVcPcy7t"
+      },
+      {
+        "subgenre": "Hard Dance",
+        "playlistId": "PLz4Jfuo7gdAu8t-KnW9ON9F9dcclD8cA_"
+      },
+      {
+        "subgenre": "Hi-NRG_Eurodance",
+        "playlistId": "PLTRhfduiKb1wgNU_W40_gaXSJ4g3tqUuM"
+      },
+      {
+        "subgenre": "Tech House",
+        "playlistId": "PLwtEXso1LyDX8wQd2nS2bfn3fZwiFt26J"
+      },
+      {
+        "subgenre": "House",
+        "playlistId": "PLSr_oFUba1judA7aR922SdJsI34MHv0d-"
+      },
+      {
+        "subgenre": "Jackin House",
+        "playlistId": "PL3FGWwglq6wYbPAsO-fQjRljci-nxLAJ4"
+      },
+      {
+        "subgenre": "Jungle/Drum'n'bass",
+        "playlistId": "PL0rn5w6V9IyrHVkLDKxOWJNTnlve5St-F"
+      },
+      {
+        "subgenre": "Techno",
+        "playlistId": "PLO1aq8T09SVOozHha-dRnVVenNZXvLX35"
+      },
+      {
+        "subgenre": "Trance",
+        "playlistId": "PLjBdICPNt9p3z-UmqYPoBAPLwi-h5b9mX"
+      }, 
+      {
+        "subgenre": "Grime",
+        "playlistId": "PL3FGWwglq6wYjWCzb9n130SoxUA2ToVRn"
+      }
+    ]
+  },
+
+  {
+    "genre": "Electronic",
+    "subgenres": [
+      {
+        "subgenre": "2-Step",
+        "playlistId": "PLxqtI5phYseXWMdewdShSf-aSQ-fiJDkA"
+      },
+      {
+        "subgenre": "Ambient",
+        "playlistId": "PLvJbnR0Jlrwdex_Dlxr5to7D7vUf2hI8u"
+      },
+
+      {
+        "subgenre": "Downtempo",
+        "playlistId": "PLx_UzEETR7OtXcXNP3C9zq3ef4NIO2oWD"
+      },
+      {
+        "subgenre": "Balearic",
+        "playlistId": "PLFBZT3CIdFxKtdurp1kW7hQ03bGcUfPUw"
+      },
+      {
+        "subgenre": "Electro",
+        "playlistId": "PLCsKXcfWESm5_tUOfZjyP0CTFT-afGymR"
+      },
+      {
+        "subgenre": "Electronica",
+        "playlistId": "PLRjl4bzcB9X6f-7rm2vIZcU8Wq1XpV-_L"
+      },
+
+      {
+        "subgenre": "IDM/Experimental",
+        "playlistId": "PLhVD7VlfzvFo_fwIUzA0OeGyUChsRWA-G"
+      },
+      {
+        "subgenre": "New Age",
+        "playlistId": "PL35EF19BEA37914D7"
+      }
+    ]
+  },
+
+  {
+    "genre": "French Pop",
+    "subgenres": [
+      {
+        "subgenre": "French House",
+        "playlistId": "PLu9JKsP0iwg1jnMs6rVPX5Nvi8uHgW9og"
+      },
+      {
+        "subgenre": "French Touch",
+        "playlistId": "PLItIAe--XpfN2Ss2f9JcgmdKwcwVPjhDo"
+      }
+    ]
+  },
+
+  {
+    "genre": "Hip-Hop_Rap",
+    "subgenres": [
+      {
+        "subgenre": "Alternative Rap",
+        "playlistId": "PLUu1jGRCbFzirF6MuAblEqU5i2-iNATPW"
+      },
+
+      {
+        "subgenre": "East Coast Rap",
+        "playlistId": "PLFm7gulzLnHUmIWSNj-g-AoeXdycEIbp1"
+      },
+      {
+        "subgenre": "Gangsta Rap",
+        "playlistId": "PLKeLOVL9lnYfDnVKL4tJ05akG6gTyoU3D"
+      },
+
+      {
+        "subgenre": "Hip-Hop",
+        "playlistId": "PLwNv9Hhd8gZjeee8SBwokNf2JhqBvYqeB"
+      },
+
+      {
+        "subgenre": "Old School Rap",
+        "playlistId": "RDCLAK5uy_kjWs8kYE7G6CkEijcEvsO9MVdE5doD3uY"
+      },
+      {
+        "subgenre": "Rap",
+        "playlistId": "PLob0npZw9QXGjUkWeOj816g5jNMwQgs_X"
+      },
+      {
+        "subgenre": "Underground Rap",
+        "playlistId": "PLm7wnjUQm_FAd_pmjhhWz0MRnGdUDptg4"
+      },
+      {
+        "subgenre": "West Coast Rap",
+        "playlistId": "PLem3R_LuT7QjdSWBbfjYzXIsAmFIVHPMi"
+      }
+    ]
+  },
+
+  {
+    "genre": "Indie Pop",
+    "subgenres": [
+      {
+        "subgenre": "Indie Pop",
+        "playlistId": "RDCLAK5uy_lY6JFrs7W9yIhFjUN_yxQ_ubkjcrqQaVs"
+      }
+    ]
+  },
+  {
+    "genre": "Industrial",
+    "subgenres": [
+      {
+        "subgenre": "Industrial",
+        "playlistId": "PLbHtATVoSUDbKj25EBzSgJJ4VYwuN2iVO"
+      }
+    ]
+  },
+  {
+    "genre": "R&B_Soul",
+    "subgenres": [
+      {
+        "subgenre": "Contemporary R&B",
+        "playlistId": "PLHUPapYSc2W2EZn76GEfjz-dkImQZPWa4"
+      },
+      {
+        "subgenre": "Disco",
+        "playlistId": "PLEXox2R2RxZKUmrWKNF61K-kZSov14Snr"
+      },
+
+      {
+        "subgenre": "Funk",
+        "playlistId": "PLBA986EF6C0FAA1D9"
+      },
+      {
+        "subgenre": "Motown",
+        "playlistId": "PL3ITtsekBI4_Jzgrh4Ri4LgIjatpHl9sH"
+      },
+      {
+        "subgenre": "Neo-Soul",
+        "playlistId": "PLxgRj-sFI57ChVko24XjBaHVGmTJNpqiM"
+      },
+
+      {
+        "subgenre": "Soul",
+        "playlistId": "PLGBuKfnErZlAq0H6P6doTx1EiUP5L_Q3-"
+      }
+    ]
+  },
+  {
+    "genre": "Reggae",
+    "subgenres": [
+      {
+        "subgenre": "Dancehall",
+        "playlistId": "PL4WM_yzutHMYU9xKA1eKl1e6o88Iv4FGA"
+      },
+      {
+        "subgenre": "Dub",
+        "playlistId": "PL2Asl2EiSOtwFwEJhDAUUSpc2U_MoTSpL"
+      },
+      {
+        "subgenre": "Roots Reggae",
+        "playlistId": "PLNhpYVHHK7-7rgjgUgO5UoPyEFVRYIAlc"
+      },
+      {
+        "subgenre": "Ska",
+        "playlistId": "PL3ozWt4qBKSZR48uiloqftc4Tm2K7rBg5"
+      }
+    ]
+  },
+  {
+    "genre": "Jazz",
+    "subgenres": [
+      {
+        "subgenre": "Acid Jazz",
+        "playlistId": "PLG2gSkBXr1Ccx3a4uI_QmPh_nvIaw4K_U"
+      },
+
+      {
+        "subgenre": "Big Band",
+        "playlistId": "PLFnSDjdK1HIKHzybMktlfrOB96oOuQn18"
+      },
+
+      {
+        "subgenre": "Contemporary Jazz",
+        "playlistId": "PL92u5KjjJTYKyAmWUozGTJd_yw_1tKzRx"
+      },
+
+      {
+        "subgenre": "Ethio-jazz",
+        "playlistId": "PLc87ZFRvRrODDa8LNVUAxXqgIOlkKBAbi"
+      },
+      {
+        "subgenre": "Fusion",
+        "playlistId": "RDCLAK5uy_lzki7nUlzgW62wBDmL__RL8DiBx5Xhd8o"
+      },
+
+      {
+        "subgenre": "Latin Jazz",
+        "playlistId": "RDCLAK5uy_lDA1IUXJfnEH78l7lLI-CcD7pwXSuAyNY"
+      },
+      {
+        "subgenre": "Mainstream Jazz",
+        "playlistId": "PLp7pAH9am84Ob30GsWK-W-xsx_XEdJ9cO"
+      },
+      {
+        "subgenre": "Ragtime",
+        "playlistId": "PLLMkuz4vEFoPEaVLP1LgRgr1Y0uLtieMN"
+      },
+      {
+        "subgenre": "Smooth Jazz",
+        "playlistId": "PLiy0XOfUv4hFHmPs0a8RqkDzfT-2nw7WV"
+      },
+      {
+        "subgenre": "Trad Jazz",
+        "playlistId": "PLTvY_DAQprurbK6NTbZfRBROtZOHyeJAN"
+      }
+    ]
+  },
+
+  {
+    "genre": "New Age",
+    "subgenres": [
+      {
+        "subgenre": "Environmental",
+        "playlistId": "PLZcqqXkr2cGkVqrcpz_GrVmBBrg3iDomI"
+      }
+    ]
+  },
+
+  {
+    "genre": "Pop",
+    "subgenres": [
+      {
+        "subgenre": "Adult Contemporary",
+        "playlistId": "PLXdWlbm6gHC6-XhCgF8bMzvQzwiRhgGaH"
+      },
+      {
+        "subgenre": "Britpop",
+        "playlistId": "PLJIN4yerwBlFOjuxrHfLtSYe3Fzm1pl7x"
+      },
+      {
+        "subgenre": "Pop/Rock",
+        "playlistId": "PLzl4tXhs8LO7_TVm5bGZL8k-dBhgr0Jt_"
+      },
+      {
+        "subgenre": "Soft Rock",
+        "playlistId": "PLGBuKfnErZlBJ5tACWpjPJMUXjxHlQ8Id"
+      }
+    ]
+  },
+  
+  {
+    "genre": "Rock",
+    "subgenres": [
+      {
+        "subgenre": "American Trad Rock",
+        "playlistId": "PLWOI3Qmgyh4RTMPlQcvBHxN2SSPo2-d5T"
+      },
+      {
+        "subgenre": "Arena Rock",
+        "playlistId": "PLl0bg1KdeEKSHFxRWBqI6-SvMXYHWSG0F"
+      },
+      {
+        "subgenre": "Blues-Rock",
+        "playlistId": "PLjzeyhEA84sQKuXp-rpM1dFuL2aQM_a3S"
+      },
+
+      {
+        "subgenre": "Death Metal/Black Metal",
+        "playlistId": "PLpCUne3ytHCT04aD_z_DKnh5nrVRjqJ5u"
+      },
+
+      {
+        "subgenre": "Hard Rock",
+        "playlistId": "PLpoUYdDxb6P4-KapXl76dLxXVVJYkQK12"
+      },
+      {
+        "subgenre": "Metal",
+        "playlistId": "PLhQCJTkrHOwSX8LUnIMgaTq3chP1tiTut"
+      },
+
+      {
+        "subgenre": "Prog-Rock/Art Rock",
+        "playlistId": "PLqcKPnlw6mFcoyOJ1dc90pLkMThzr7eVU"
+      },
+      {
+        "subgenre": "Psychedelic",
+        "playlistId": "PLELxUWvPhsmb7x6VvsvWR6LL7JttDIOUj"
+      },
+      {
+        "subgenre": "Rock & Roll",
+        "playlistId": "PLCtoGpZmcaeGjGaHvwpAcWNlckUSBPW3N"
+      },
+
+      {
+        "subgenre": "Surf",
+        "playlistId": "PLjppdWymG1Jh8LoN_yNNZ2bAh-ijRiwN8"
+      }
+    ]
+  },
+
+  {
+    "genre": "World",
+    "subgenres": [
+      {
+        "subgenre": "Afro-House",
+        "playlistId": "PLGXS-mZTPY4TfOpJYaEptFIWLWQtMSGMF"
+      },
+
+      {
+        "subgenre": "Kwaito",
+        "playlistId": "PLZNn0pUBEuejWGnaUgfNMQZWlZYZJ12dd"
+      },
+      {
+        "subgenre": "RaÏ",
+        "playlistId": "PL_5x_pM18-ePhiJ6hEWwySr2ETlgyeJ_K"
+      },
+      {
+        "subgenre": "Bhangra",
+        "playlistId": "PLzcRZlELEnADvVFwpUJ079QVKpRwTPZTq"
+      }
+    ]
+  },
+  {
+    "genre": "Latino",
+    "subgenres": [
+      {
+        "subgenre": "Brazilian",
+        "playlistId": "PLfFHwpGsy7emKDjyNhFo331TDBNFBTqtf"
+      },
+
+      {
+        "subgenre": "Latin Jazz",
+        "playlistId": "PLgP_WFDJWjxTbI0rGSDgYFEJEtNMtcW6-"
+      },
+      {
+        "subgenre": "Pop Latino",
+        "playlistId": "RDCLAK5uy_kb9VsP3UHTddsaLV_LvfUnZW7i01Il_5c"
+      },
+
+      {
+        "subgenre": "Reggaeton y Hip-Hop",
+        "playlistId": "PLoRkzHpodcIDTsjtDJVl4mQVdh8trqWco"
+      },
+      {
+        "subgenre": "Reggaeton ",
+        "playlistId": "PLGQ8pTmtKE3LEy0h9NrVfci89psGTCQH6"
+      },
+      {
+        "subgenre": "Regional Mexicano",
+        "playlistId": "RDCLAK5uy_nwXBPoLpOs2P4gmnlaKo2-HeQIwW2MYg4"
+      },
+      {
+        "subgenre": "Salsa y Tropical",
+        "playlistId": "PLwYHjqQr6OIXkNkG44XCFBoO2MAmaqgo0"
+      }
+    ]
+  }
+]

@@ -1,0 +1,722 @@
+# ------------------------------------------------------
+# THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+# ------------------------------------------------------
+
+type AIAnalysisResult {
+  albumSuggestion: String
+  artistSuggestion: String
+  createdAt: DateTime!
+  errorMessage: String
+  fingerprintId: ID!
+  genreClassification: String!
+  id: ID!
+  modelVersion: String!
+  processingTime: Float!
+  trackId: ID!
+  updatedAt: DateTime!
+}
+
+input AddTrackInput {
+  filePath: String!
+  libraryId: ID!
+}
+
+input AddTrackToPlaylistInput {
+  position: Int
+  trackId: ID!
+}
+
+type AnalysisPreferences {
+  autoAnalyze: Boolean!
+  confidenceThreshold: Float!
+  preferredGenres: [String!]
+  skipLowConfidence: Boolean!
+}
+
+input AnalysisPreferencesInput {
+  autoAnalyze: Boolean
+  confidenceThreshold: Float
+  preferredGenres: [String!]
+  skipLowConfidence: Boolean
+}
+
+type AudioAnalysisResult {
+  acousticness: Float!
+  analysisVersion: String!
+  beats: [BeatData!]!
+  danceability: Float!
+  duration: Float!
+  energy: [EnergyData!]!
+  instrumentalness: Float!
+  key: String!
+  liveness: Float!
+  mode: String!
+  speechiness: Float!
+  tempo: Float!
+  valence: Float!
+}
+
+type AudioFingerprint {
+  acousticness: Float
+  chroma: [Float!]
+  createdAt: DateTime!
+  danceability: Float
+  energy: Float
+  id: ID!
+  instrumentalness: Float
+  key: String
+  mfcc: [Float!]
+  spectralCentroid: Float
+  spectralContrast: [Float!]
+  spectralRolloff: Float
+  speechiness: Float
+  tempo: Float
+  trackId: ID!
+  updatedAt: DateTime!
+  valence: Float
+  zeroCrossingRate: Float
+}
+
+type AudioInfo {
+  bitrate: Float
+  contentType: String!
+  duration: Float!
+  fileName: String!
+  fileSize: Float!
+  format: String!
+  sampleRate: Int
+  trackId: ID!
+}
+
+type BeatData {
+  confidence: Float!
+  strength: Float!
+  timestamp: Float!
+}
+
+input CreateLibraryInput {
+  autoScan: Boolean
+  includeSubdirectories: Boolean
+  maxFileSize: Int
+  name: String!
+  rootPath: String!
+  scanInterval: Int
+  supportedFormats: [String!]
+}
+
+input CreatePlaylistInput {
+  description: String
+  isPublic: Boolean
+  name: String!
+  userId: String
+}
+
+input CreateSavedFilterInput {
+  criteria: FilterCriteriaInput!
+  name: String!
+}
+
+"""
+A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
+"""
+scalar DateTime
+
+type DeleteImageResponse {
+  success: Boolean!
+}
+
+type EditorPreferences {
+  autoSave: Boolean!
+  batchMode: Boolean!
+  showConfidenceScores: Boolean!
+  undoLevels: Float!
+}
+
+input EditorPreferencesInput {
+  autoSave: Boolean
+  batchMode: Boolean
+  showConfidenceScores: Boolean
+  undoLevels: Float
+}
+
+type EnergyData {
+  energy: Float!
+  frequency: Float!
+  timestamp: Float!
+}
+
+input FilterCriteriaInput {
+  acousticness: RangeInput
+  arousalMood: [String!]
+  artist: String
+  danceabilityFeeling: [String!]
+  genres: [String!]
+  instrumentalness: RangeInput
+  keys: [String!]
+  liveness: RangeInput
+  speechiness: RangeInput
+  subgenres: [String!]
+  tempo: RangeInput
+  valenceMood: [String!]
+}
+
+type FilterCriteriaType {
+  acousticness: Range
+  arousalMood: [String!]
+  artist: String
+  danceabilityFeeling: [String!]
+  genres: [String!]
+  instrumentalness: Range
+  keys: [String!]
+  liveness: Range
+  speechiness: Range
+  subgenres: [String!]
+  tempo: Range
+  valenceMood: [String!]
+}
+
+type FilterOptions {
+  acousticnessRange: Range!
+  instrumentalnessRange: Range!
+  livenessRange: Range!
+  speechinessRange: Range!
+  tempoRange: Range!
+}
+
+type FormatDistribution {
+  count: Int!
+  format: String!
+}
+
+type GenreDistribution {
+  count: Int!
+  genre: String!
+}
+
+type ImageSearch {
+  id: ID!
+  imagePath: String!
+  imageUrl: String!
+  source: String!
+}
+
+type ImageSearchResultType {
+  createdAt: DateTime!
+  error: String
+  id: ID!
+  imagePath: String
+  imageUrl: String
+  searchUrl: String!
+  status: String!
+  trackId: ID!
+  updatedAt: DateTime!
+}
+
+type ImageUrlResponse {
+  url: String
+}
+
+type IntelligentEditorSession {
+  confidenceThreshold: Float
+  createdAt: DateTime!
+  id: ID!
+  sessionDuration: Float
+  sessionStatus: String!
+  suggestions: String!
+  trackId: ID!
+  updatedAt: DateTime!
+  userActions: String!
+  userId: ID
+}
+
+type LibraryMetrics {
+  artistCount: Int!
+  formatDistribution: [FormatDistribution!]!
+  genreDistribution: [GenreDistribution!]!
+  listeningStats: ListeningStats!
+  recentActivity: [RecentActivity!]!
+  subgenreDistribution: [SubgenreDistribution!]!
+  topArtists: [TopArtist!]!
+  topGenres: [TopGenre!]!
+  totalListeningTime: Float!
+  totalTracks: Int!
+  yearDistribution: [YearDistribution!]!
+}
+
+input LibraryQueryOptions {
+  limit: Float
+  offset: Float
+  orderBy: String
+  orderDirection: String
+}
+
+type LibraryScanProgressUpdate {
+  estimatedCompletion: DateTime
+  libraryId: ID!
+  libraryName: String!
+  processedFiles: Float!
+  progressPercentage: Float!
+  remainingFiles: Float!
+  status: String!
+  totalFiles: Float!
+}
+
+type LibraryScanResult {
+  errors: Float!
+  estimatedCompletion: DateTime
+  libraryId: ID!
+  newTracks: Float!
+  processedFiles: Float!
+  scanId: ID!
+  status: String!
+  totalFiles: Float!
+  updatedTracks: Float!
+}
+
+type LibrarySettings {
+  autoScan: Boolean!
+  includeSubdirectories: Boolean!
+  maxFileSize: Float
+  scanInterval: Float
+  supportedFormats: [String!]!
+}
+
+type ListeningStats {
+  averageConfidence: Float!
+  favoriteCount: Int!
+  totalPlayTime: Float!
+  totalPlays: Int!
+}
+
+type MusicLibrary {
+  analyzedTracks: Float!
+  autoScan: Boolean!
+  createdAt: DateTime!
+  failedTracks: Float!
+  id: ID!
+  includeSubdirectories: Boolean!
+  lastIncrementalScanAt: DateTime
+  lastScanAt: DateTime
+  maxFileSize: Float
+  name: String!
+  pendingTracks: Float!
+  rootPath: String!
+  scanInterval: Float
+  scanStatus: String!
+  settings: LibrarySettings!
+  supportedFormats: String!
+  totalTracks: Float!
+  updatedAt: DateTime!
+}
+
+type MusicTrack {
+  aiAlbum: String
+  aiArtist: String
+  aiConfidence: Float
+  aiGenre: String
+  aiSubgenre: String
+  aiSubgenreConfidence: Float
+  aiTitle: String
+  albumArtPath: String
+  analysisCompletedAt: DateTime
+  analysisError: String
+  analysisResult: AIAnalysisResult
+  analysisStartedAt: DateTime
+  analysisStatus: String!
+  audioFingerprint: AudioFingerprint
+  bitrate: Float
+  createdAt: DateTime!
+  duration: Float!
+  editorSession: IntelligentEditorSession
+  fileName: String!
+  filePath: String!
+  fileSize: Float!
+  format: String!
+  id: ID!
+  imageSearches: [ImageSearch!]
+  isFavorite: Boolean!
+  lastPlayedAt: DateTime
+  libraryId: ID!
+  listeningCount: Float!
+  originalAlbum: String
+  originalArtist: String
+  originalGenre: String
+  originalTitle: String
+  originalYear: Float
+  sampleRate: Float
+  updatedAt: DateTime!
+  userAlbum: String
+  userArtist: String
+  userGenre: String
+  userTags: [String!]
+  userTitle: String
+}
+
+type MusicTrackByCategoriesGraphQL {
+  category: ID!
+  name: String!
+  trackCount: Float!
+  tracks: [SimpleMusicTrack!]!
+}
+
+type MusicTrackListPaginated {
+  limit: Float!
+  page: Float!
+  total: Float!
+  tracks: [SimpleMusicTrack!]!
+}
+
+type Mutation {
+  addTrack(input: AddTrackInput!): MusicTrack!
+  addTrackToPlaylist(input: AddTrackToPlaylistInput!, playlistId: ID!, userId: String!): PlaylistTrack!
+  clearCurrentFilter: Boolean!
+  createLibrary(input: CreateLibraryInput!): MusicLibrary!
+  createPlaylist(input: CreatePlaylistInput!): Playlist!
+  createSavedFilter(input: CreateSavedFilterInput!): SavedFilter!
+  deleteImageForTrack(trackId: ID!): DeleteImageResponse!
+  deleteLibrary(id: ID!): Boolean!
+  deletePlaylist(id: ID!, userId: String!): Boolean!
+  deleteSavedFilter(id: ID!): Boolean!
+  deleteTrack(id: ID!): Boolean!
+  pauseTrack(trackId: String!): PlaybackState!
+  playTrack(startTime: Float! = 0, trackId: String!): PlaybackState!
+  recordPlayback(duration: Float!, trackId: ID!): MusicTrack!
+  removeTrackFromPlaylist(playlistId: ID!, trackId: ID!, userId: String!): Boolean!
+  reorderPlaylistTracks(input: ReorderTracksInput!, playlistId: ID!, userId: String!): Playlist!
+  resumeTrack(trackId: String!): PlaybackState!
+  scheduleLibraryScan(libraryId: ID!): LibraryScanResult!
+  seekTrack(timeInSeconds: Float!, trackId: String!): PlaybackState!
+  setCurrentFilter(criteria: FilterCriteriaInput!): FilterCriteriaType!
+  setPlaybackRate(rate: Float!, trackId: String!): PlaybackState!
+  setVolume(trackId: String!, volume: Float!): PlaybackState!
+  startLibraryScan(incremental: Boolean, libraryId: ID!): LibraryScanResult!
+  stopLibraryScan(libraryId: ID!): Boolean!
+  stopTrack(trackId: String!): Boolean!
+  toggleFavorite(trackId: String!): MusicTrack!
+  updateLibrary(id: ID!, input: UpdateLibraryInput!): MusicLibrary!
+  updatePlaylist(id: ID!, input: UpdatePlaylistInput!, userId: String!): Playlist!
+  updatePreferences(input: UpdatePreferencesInput!): UserPreferencesGraphQL!
+  updateSavedFilter(id: ID!, input: UpdateSavedFilterInput!): SavedFilter!
+  updateTrack(id: ID!, input: UpdateTrackInput!): MusicTrack!
+}
+
+type OrganizationPreferences {
+  autoOrganize: Boolean!
+  createPlaylists: Boolean!
+  exportToDJSoftware: Boolean!
+  organizationMethod: String!
+}
+
+input OrganizationPreferencesInput {
+  autoOrganize: Boolean
+  createPlaylists: Boolean
+  exportToDJSoftware: Boolean
+  organizationMethod: String
+}
+
+type PlaybackSession {
+  currentTime: Float!
+  duration: Float!
+  id: ID!
+  isActive: Boolean!
+  startTime: DateTime!
+  trackId: ID!
+}
+
+type PlaybackState {
+  currentTime: Float!
+  duration: Float!
+  isFavorite: Boolean!
+  isPlaying: Boolean!
+  playbackRate: Float!
+  trackId: ID!
+  volume: Float!
+}
+
+type Playlist {
+  bpmRange: Range!
+  createdAt: DateTime!
+  description: String!
+  energyRange: Range!
+  genresCount: Int!
+  id: ID!
+  images: [String!]!
+  name: String!
+  numberOfTracks: Int!
+  subgenresCount: Int!
+  topGenres: [String!]!
+  topSubgenres: [String!]!
+  totalDuration: Float!
+  tracks: [PlaylistTrack!]!
+  updatedAt: DateTime!
+}
+
+type PlaylistItem {
+  bpmRange: Range!
+  createdAt: DateTime!
+  description: String!
+  energyRange: Range!
+  genresCount: Int!
+  id: ID!
+  images: [String!]!
+  name: String!
+  numberOfTracks: Int!
+  subgenresCount: Int!
+  topGenres: [String!]!
+  topSubgenres: [String!]!
+  totalDuration: Float!
+  updatedAt: DateTime!
+}
+
+type PlaylistStats {
+  averageDuration: Int!
+  genreDistribution: String
+  totalDuration: Int!
+  totalTracks: Int!
+}
+
+type PlaylistTrack {
+  addedAt: String!
+  id: ID!
+  position: Int!
+  track: SimpleMusicTrack!
+}
+
+type Query {
+  getActiveSessions: [PlaybackSession!]!
+  getAudioAnalysis(trackId: String!): AudioAnalysisResult!
+  getAudioInfo(trackId: String!): AudioInfo!
+  getAudioStreamUrl(trackId: String!): String!
+  getBeatData(trackId: String!): [BeatData!]!
+  getCurrentFilter: FilterCriteriaType
+  getDetailedWaveformData(trackId: String!): WaveformData!
+  getEnergyData(trackId: String!): [EnergyData!]!
+  getFilterOptions: FilterOptions!
+  getImageForTrack(trackId: ID!): ImageSearchResultType
+  getImageSearchStatus(searchId: ID!): ImageSearchResultType
+  getImageSearchesForTrack(trackId: ID!): [ImageSearchResultType!]!
+  getImageUrl(trackId: ID!): ImageUrlResponse!
+  getPlaybackState(trackId: String!): PlaybackState
+  getRealTimeAnalysis(currentTime: Float!, trackId: String!): RealTimeAnalysis!
+  getSavedFilter(id: ID!): SavedFilter
+  getSavedFilters: [SavedFilter!]!
+  getStaticFilterOptions: StaticFilterOptions!
+  getWaveformData(trackId: String!): [Float!]!
+  libraries(options: LibraryQueryOptions): [MusicLibrary!]!
+  library(id: ID!): MusicLibrary
+  libraryMetrics: LibraryMetrics!
+  mostPlayed(limit: Float! = 20): [MusicTrack!]!
+  playlist(id: ID!, userId: String!): Playlist!
+  playlistByName(name: String!): Playlist!
+  playlistRecommendations(excludeTrackIds: [String!], limit: Int, playlistId: ID!): [TrackRecommendation!]!
+  playlistStats(playlistId: ID!, userId: String!): PlaylistStats!
+  playlistTracks(playlistId: ID!, userId: String!): [PlaylistTrack!]!
+  playlists(userId: String!): [PlaylistItem!]!
+  preferences: UserPreferencesGraphQL!
+  queueStats: String!
+  randomTrack(id: String): SimpleMusicTrack!
+  recentlyPlayed(limit: Float! = 20): [SimpleMusicTrack!]!
+  searchTracks(libraryId: ID, query: String!): [MusicTrack!]!
+  track(id: ID!): MusicTrack
+  trackRecommendations(criteria: String, id: String!): [TrackRecommendation!]!
+  tracks(options: TrackQueryOptions): [SimpleMusicTrack!]!
+  tracksByCategories(options: TrackQueryOptionsByCategories): [MusicTrackByCategoriesGraphQL!]!
+  tracksList(options: TrackQueryOptions): MusicTrackListPaginated!
+}
+
+type Range {
+  max: Float!
+  min: Float!
+}
+
+input RangeInput {
+  max: Float
+  min: Float
+}
+
+type RealTimeAnalysis {
+  beatConfidence: Float!
+  currentBeat: BeatData!
+  currentEnergy: Float!
+  energyTrend: String!
+  nextBeatEstimate: Float!
+}
+
+type RecentActivity {
+  date: String!
+  tracksAdded: Int!
+  tracksAnalyzed: Int!
+}
+
+input ReorderTracksInput {
+  trackOrders: [TrackOrderInput!]!
+}
+
+type SavedFilter {
+  createdAt: DateTime!
+  criteria: FilterCriteriaType!
+  id: ID!
+  name: String!
+  updatedAt: DateTime!
+}
+
+type SimpleMusicTrack {
+  acousticness: Float
+  arousalMood: String
+  artist: String
+  createdAt: DateTime
+  danceabilityFeeling: String
+  date: DateTime
+  duration: Float!
+  genre: String
+  id: ID!
+  imagePath: String
+  instrumentalness: Float
+  isFavorite: Boolean
+  key: String
+  lastPlayedAt: DateTime
+  lastScannedAt: DateTime
+  listeningCount: Float
+  speechiness: Float
+  subgenre: String
+  tempo: Float
+  title: String
+  updatedAt: DateTime
+  valenceMood: String
+}
+
+type StaticFilterOptions {
+  genres: [String!]!
+  keys: [String!]!
+  subgenres: [String!]!
+}
+
+type SubgenreDistribution {
+  count: Int!
+  subgenre: String!
+}
+
+type Subscription {
+  libraryScanProgress(libraryId: ID): LibraryScanProgressUpdate!
+}
+
+type TopArtist {
+  artist: String!
+  averageConfidence: Float!
+  totalDuration: Float!
+  trackCount: Int!
+}
+
+type TopGenre {
+  averageConfidence: Float!
+  averageDuration: Float!
+  genre: String!
+  trackCount: Int!
+}
+
+input TrackOrderInput {
+  position: Int!
+  trackId: ID!
+}
+
+input TrackQueryOptions {
+  analysisStatus: String
+  format: String
+  isFavorite: Boolean
+  libraryId: ID
+  limit: Float
+  offset: Float
+  orderBy: String
+  orderDirection: String
+}
+
+input TrackQueryOptionsByCategories {
+  analysisStatus: String
+  category: String
+  format: String
+  genre: String
+  isFavorite: Boolean
+  libraryId: ID
+  limit: Float
+  offset: Float
+  orderBy: String
+  orderDirection: String
+}
+
+type TrackRecommendation {
+  reasons: [String!]!
+  similarity: Float!
+  track: SimpleMusicTrack!
+}
+
+type UIPreferences {
+  defaultView: String!
+  language: String!
+  theme: String!
+}
+
+input UIPreferencesInput {
+  defaultView: String
+  language: String
+  theme: String
+}
+
+input UpdateLibraryInput {
+  autoScan: Boolean
+  includeSubdirectories: Boolean
+  maxFileSize: Int
+  name: String
+  rootPath: String
+  scanInterval: Int
+  supportedFormats: [String!]
+}
+
+input UpdatePlaylistInput {
+  description: String
+  isPublic: Boolean
+  name: String
+}
+
+input UpdatePreferencesInput {
+  analysisPreferences: AnalysisPreferencesInput
+  editorPreferences: EditorPreferencesInput
+  organizationPreferences: OrganizationPreferencesInput
+  uiPreferences: UIPreferencesInput
+}
+
+input UpdateSavedFilterInput {
+  criteria: FilterCriteriaInput
+  name: String
+}
+
+input UpdateTrackInput {
+  userAlbum: String
+  userArtist: String
+  userGenre: String
+  userTags: [String!]
+  userTitle: String
+}
+
+type UserPreferencesGraphQL {
+  analysisPreferences: AnalysisPreferences!
+  createdAt: DateTime!
+  editorPreferences: EditorPreferences!
+  id: ID!
+  organizationPreferences: OrganizationPreferences!
+  uiPreferences: UIPreferences!
+  updatedAt: DateTime!
+  userId: ID
+}
+
+type WaveformData {
+  bitDepth: Int!
+  channels: Int!
+  duration: Float!
+  peaks: [Float!]!
+  sampleRate: Int!
+}
+
+type YearDistribution {
+  count: Int
+  year: Int
+}

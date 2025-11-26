@@ -1,0 +1,75 @@
+Balanced Music Dataset Summary (GPU Accelerated)
+============================================================
+GPU: NVIDIA GeForce RTX 3070
+Acceleration: GPU + CPU
+Parallel workers: 16
+Target samples per genre: 1000
+Chunk duration range: 10.0s - 180.0s
+Sample rate: 44100Hz
+Total samples: 9036
+Processing time: 6815.3 seconds
+Processing rate: 1.3 samples/second
+Genres: 9
+
+Balanced Genre Distribution:
+  Dance_EDM: 1370 samples
+  Industrial: 1057 samples
+  Alternative: 997 samples
+  Reggae: 996 samples
+  Hip-Hop_Rap: 992 samples
+  Electronic: 978 samples
+  French Pop: 922 samples
+  Country: 895 samples
+  Indie Pop: 829 samples
+
+Subgenre Distribution:
+  Alternative/Alternative Rock: 122 samples
+  Alternative/Grunge: 127 samples
+  Alternative/Hard Rock: 129 samples
+  Alternative/Indie Rock: 119 samples
+  Alternative/New Wave: 120 samples
+  Alternative/Progressive Rock: 108 samples
+  Alternative/Punk: 163 samples
+  Alternative/Shoegaze: 109 samples
+  Country/Americana: 273 samples
+  Country/Bluegrass: 330 samples
+  Country/Traditional Country: 292 samples
+  Dance_EDM/Acid House: 71 samples
+  Dance_EDM/Acid Trance: 136 samples
+  Dance_EDM/Balearic Trance: 95 samples
+  Dance_EDM/Breakbeat: 70 samples
+  Dance_EDM/Chicago House: 49 samples
+  Dance_EDM/Dubstep: 43 samples
+  Dance_EDM/French House: 73 samples
+  Dance_EDM/Garage: 64 samples
+  Dance_EDM/Grime: 64 samples
+  Dance_EDM/Hard Dance: 61 samples
+  Dance_EDM/Hi-NRG_Eurodance: 72 samples
+  Dance_EDM/House: 83 samples
+  Dance_EDM/Jackin House: 80 samples
+  Dance_EDM/Progressive House: 101 samples
+  Dance_EDM/Progressive Trance: 61 samples
+  Dance_EDM/Tech House: 72 samples
+  Dance_EDM/Techno: 72 samples
+  Dance_EDM/Trance: 103 samples
+  Electronic/2-Step: 111 samples
+  Electronic/Ambient: 127 samples
+  Electronic/Balearic: 158 samples
+  Electronic/Downtempo: 122 samples
+  Electronic/Electro: 169 samples
+  Electronic/Electronica: 100 samples
+  Electronic/New Age: 191 samples
+  French Pop/Chanson: 310 samples
+  French Pop/French House: 323 samples
+  French Pop/French Touch: 289 samples
+  Hip-Hop_Rap/Alternative Rap: 161 samples
+  Hip-Hop_Rap/East Coast Rap: 113 samples
+  Hip-Hop_Rap/Gangsta Rap: 98 samples
+  Hip-Hop_Rap/Hip-Hop: 135 samples
+  Hip-Hop_Rap/Old School Rap: 78 samples
+  Hip-Hop_Rap/Rap: 152 samples
+  Hip-Hop_Rap/Underground Rap: 128 samples
+  Hip-Hop_Rap/West Coast Rap: 127 samples
+  Indie Pop/Indie Pop: 829 samples
+  Industrial/Industrial: 1057 samples
+  Reggae/Dancehall: 996 samples

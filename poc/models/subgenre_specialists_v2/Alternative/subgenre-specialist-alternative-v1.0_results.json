@@ -1,0 +1,93 @@
+{
+  "specialist_info": {
+    "target_genre": "Alternative",
+    "model_name": "subgenre-specialist-alternative-v1.0",
+    "architecture": "hybrid",
+    "model_path": "models\\subgenre_specialists_v2\\Alternative\\subgenre-specialist-alternative-v1.0.pth",
+    "subgenre_classes": [
+      "Alternative Rock",
+      "Grunge",
+      "Hard Rock",
+      "Indie Rock",
+      "New Wave",
+      "Progressive Rock",
+      "Punk",
+      "Shoegaze"
+    ],
+    "num_subgenres": 8
+  },
+  "training_results": {
+    "model_name": "subgenre-specialist-alternative-v1.0",
+    "architecture": "hybrid",
+    "training_samples": 8000,
+    "num_classes": 8,
+    "classes": [
+      "Alternative Rock",
+      "Grunge",
+      "Hard Rock",
+      "Indie Rock",
+      "New Wave",
+      "Progressive Rock",
+      "Punk",
+      "Shoegaze"
+    ],
+    "num_epochs_trained": 8,
+    "training_time": 1277.0833730697632,
+    "avg_epoch_time": 159.6354216337204,
+    "best_val_loss": 0.26691339913522827,
+    "final_train_acc": 91.859375,
+    "final_val_acc": 90.8125,
+    "train_losses": [
+      1.909843978881836,
+      1.5464566659927368,
+      1.2320548170804977,
+      0.9377521707862616,
+      0.6933050333335996,
+      0.46000551618635654,
+      0.31592973647639155,
+      0.24622699601575732
+    ],
+    "val_losses": [
+      1.8569634982943535,
+      1.4763355067372321,
+      2.263946593105793,
+      1.2958531488478184,
+      0.6485960593819619,
+      0.4650732941320166,
+      0.2731953434366733,
+      0.26691339913522827
+    ],
+    "train_accuracies": [
+      23.671875,
+      43.0,
+      56.28125,
+      66.6875,
+      76.3125,
+      84.359375,
+      89.6875,
+      91.859375
+    ],
+    "val_accuracies": [
+      32.75,
+      46.375,
+      40.875,
+      54.75,
+      74.6875,
+      85.3125,
+      90.9375,
+      90.8125
+    ],
+    "device": "cuda"
+  },
+  "timing": {
+    "preprocessing_time": 69.52373003959656,
+    "training_time": 1280.8192117214203,
+    "total_time": 1350.3495380878448
+  },
+  "dataset_info": {
+    "total_samples": 8000,
+    "target_samples_per_subgenre": 1000,
+    "segment_duration": 90.0,
+    "use_preprocessing": true
+  }
+}

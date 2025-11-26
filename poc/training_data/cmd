@@ -1,0 +1,12 @@
+cd C:\Users\Alessandro\dev\muzo\muzo\poc\training_data
+python download_playlists.py pdf_music_genres.json "C:\Users\Alessandro\dev\muzo\personnal_dataset"  --vpn --vpn-location fr --max-retries 5
+
+
+
+Jeanmichiol78@gmail.com
+PLi98TwUHGR5IBdSC-0BNSVJxTdJJqWPs9
+
+python src\\cnn_model_training.py --dataset "C:\\Users\\Alessandro\\dev\\muzo\\personnal_dataset" --output "models\\hierarchical_cnn"    --model-name hierarchical-cnn-v1.0 --architecture hybrid --use-preprocessing --target-samples 2000 --segment-duration 10.0 --epochs 100 --lr 0.001 --workers 8 --val-split 0.2
+
+
+python src\\cnn_model_training.py --dataset "C:\\Users\\Alessandro\\dev\\muzo\\personnal_dataset" --output "models\\hierarchical_cnn"    --model-name hierarchical-cnn-v1.0 --architecture cnn --use-preprocessing --target-samples 500 --segment-duration 3.0 --epochs 15 --lr 0.001 --workers 8 --val-split 0.2

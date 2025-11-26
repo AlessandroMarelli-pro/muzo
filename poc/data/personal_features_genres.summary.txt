@@ -1,0 +1,14 @@
+Personal Music Dataset Summary
+========================================
+Total files: 359
+Successful extractions: 359
+Success rate: 100.0%
+Features: 21
+Genres: 5
+
+Genre Distribution:
+  electronic: 119 files
+  hiphop: 80 files
+  jazz: 60 files
+  rock: 51 files
+  reggae: 49 files

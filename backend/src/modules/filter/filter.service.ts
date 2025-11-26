@@ -1,0 +1,356 @@
+import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  CreateFilterDto,
+  FilterCriteria,
+  FilterOptions,
+  SavedFilter,
+  StaticFilterOptions,
+  UpdateFilterDto,
+} from '../../models/filter.model';
+import { PrismaService } from '../../shared/services/prisma.service';
+
+@Injectable()
+export class FilterService {
+  private currentFilter: FilterCriteria | null = null;
+
+  constructor(private readonly prisma: PrismaService) {}
+
+  async getStaticFilterOptions(): Promise<StaticFilterOptions> {
+    // Get distinct genres from both AI and user fields
+    const genreResults = await this.prisma.musicTrack.findMany({
+      select: {
+        aiGenre: true,
+        userGenre: true,
+      },
+      where: {
+        OR: [{ aiGenre: { not: null } }, { userGenre: { not: null } }],
+      },
+    });
+
+    // Get distinct subgenres
+    const subgenreResults = await this.prisma.musicTrack.findMany({
+      select: {
+        aiSubgenre: true,
+      },
+      where: {
+        aiSubgenre: { not: null },
+      },
+    });
+
+    // Get distinct keys from audio fingerprints
+    const keyResults = await this.prisma.audioFingerprint.findMany({
+      select: {
+        key: true,
+      },
+    });
+
+    // Extract and deduplicate genres
+    const genres = new Set<string>();
+    genreResults.forEach((track) => {
+      if (track.aiGenre) genres.add(track.aiGenre);
+      if (track.userGenre) genres.add(track.userGenre);
+    });
+
+    // Extract and deduplicate subgenres
+    const subgenres = new Set<string>();
+    subgenreResults.forEach((track) => {
+      if (track.aiSubgenre) subgenres.add(track.aiSubgenre);
+    });
+
+    // Extract and deduplicate keys
+    const keys = new Set<string>();
+    keyResults.forEach((fp) => {
+      if (fp.key) keys.add(fp.key);
+    });
+
+    return {
+      genres: Array.from(genres).sort(),
+      subgenres: Array.from(subgenres).sort(),
+      keys: Array.from(keys).sort(),
+    };
+  }
+
+  async getFilterOptions(): Promise<FilterOptions> {
+    // Get audio features from audio fingerprints
+    const fingerprintResults = await this.prisma.audioFingerprint.findMany({
+      select: {
+        tempo: true,
+        speechiness: true,
+        instrumentalness: true,
+        liveness: true,
+        acousticness: true,
+      },
+    });
+
+    const tempoValues = fingerprintResults
+      .filter((fp) => fp.tempo !== null)
+      .map((fp) => fp.tempo!);
+
+    const speechinessValues = fingerprintResults
+      .filter((fp) => fp.speechiness !== null)
+      .map((fp) => fp.speechiness!);
+    const instrumentalnessValues = fingerprintResults
+      .filter((fp) => fp.instrumentalness !== null)
+      .map((fp) => fp.instrumentalness!);
+    const livenessValues = fingerprintResults
+      .filter((fp) => fp.liveness !== null)
+      .map((fp) => fp.liveness!);
+    const acousticnessValues = fingerprintResults
+      .filter((fp) => fp.acousticness !== null)
+      .map((fp) => fp.acousticness!);
+
+    return {
+      tempoRange: {
+        min: tempoValues.length > 0 ? Math.min(...tempoValues) : 60,
+        max: tempoValues.length > 0 ? Math.max(...tempoValues) : 200,
+      },
+
+      speechinessRange: {
+        min: speechinessValues.length > 0 ? Math.min(...speechinessValues) : 0,
+        max: speechinessValues.length > 0 ? Math.max(...speechinessValues) : 1,
+      },
+      instrumentalnessRange: {
+        min:
+          instrumentalnessValues.length > 0
+            ? Math.min(...instrumentalnessValues)
+            : 0,
+        max:
+          instrumentalnessValues.length > 0
+            ? Math.max(...instrumentalnessValues)
+            : 1,
+      },
+      livenessRange: {
+        min: livenessValues.length > 0 ? Math.min(...livenessValues) : 0,
+        max: livenessValues.length > 0 ? Math.max(...livenessValues) : 1,
+      },
+      acousticnessRange: {
+        min:
+          acousticnessValues.length > 0 ? Math.min(...acousticnessValues) : 0,
+        max:
+          acousticnessValues.length > 0 ? Math.max(...acousticnessValues) : 1,
+      },
+    };
+  }
+
+  setCurrentFilter(criteria: FilterCriteria): FilterCriteria {
+    this.currentFilter = criteria;
+    return this.currentFilter;
+  }
+
+  getCurrentFilter(): FilterCriteria | null {
+    return this.currentFilter;
+  }
+
+  clearCurrentFilter(): void {
+    this.currentFilter = null;
+  }
+
+  async createSavedFilter(dto: CreateFilterDto): Promise<SavedFilter> {
+    const filter = await this.prisma.savedFilter.create({
+      data: {
+        name: dto.name,
+        criteria: JSON.stringify(dto.criteria),
+      },
+    });
+
+    return {
+      id: filter.id,
+      name: filter.name,
+      criteria: JSON.parse(filter.criteria),
+      createdAt: filter.createdAt,
+      updatedAt: filter.updatedAt,
+    };
+  }
+
+  async findAllSavedFilters(): Promise<SavedFilter[]> {
+    const filters = await this.prisma.savedFilter.findMany({
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return filters.map((filter) => ({
+      id: filter.id,
+      name: filter.name,
+      criteria: JSON.parse(filter.criteria),
+      createdAt: filter.createdAt,
+      updatedAt: filter.updatedAt,
+    }));
+  }
+
+  async findOneSavedFilter(id: string): Promise<SavedFilter> {
+    const filter = await this.prisma.savedFilter.findUnique({
+      where: { id },
+    });
+
+    if (!filter) {
+      throw new NotFoundException(`Saved filter with ID ${id} not found`);
+    }
+
+    return {
+      id: filter.id,
+      name: filter.name,
+      criteria: JSON.parse(filter.criteria),
+      createdAt: filter.createdAt,
+      updatedAt: filter.updatedAt,
+    };
+  }
+
+  async updateSavedFilter(
+    id: string,
+    dto: UpdateFilterDto,
+  ): Promise<SavedFilter> {
+    const existingFilter = await this.prisma.savedFilter.findUnique({
+      where: { id },
+    });
+
+    if (!existingFilter) {
+      throw new NotFoundException(`Saved filter with ID ${id} not found`);
+    }
+
+    const updatedFilter = await this.prisma.savedFilter.update({
+      where: { id },
+      data: {
+        name: dto.name ?? existingFilter.name,
+        criteria: dto.criteria
+          ? JSON.stringify(dto.criteria)
+          : existingFilter.criteria,
+      },
+    });
+
+    return {
+      id: updatedFilter.id,
+      name: updatedFilter.name,
+      criteria: JSON.parse(updatedFilter.criteria),
+      createdAt: updatedFilter.createdAt,
+      updatedAt: updatedFilter.updatedAt,
+    };
+  }
+
+  async deleteSavedFilter(id: string): Promise<void> {
+    const filter = await this.prisma.savedFilter.findUnique({
+      where: { id },
+    });
+
+    if (!filter) {
+      throw new NotFoundException(`Saved filter with ID ${id} not found`);
+    }
+
+    await this.prisma.savedFilter.delete({
+      where: { id },
+    });
+  }
+
+  buildPrismaWhereClause(
+    criteria: FilterCriteria,
+    skipGenres: boolean = false,
+    skipSubgenres: boolean = false,
+  ) {
+    const where: any = {};
+
+    if (criteria.genres && criteria.genres.length > 0 && !skipGenres) {
+      where.OR = [
+        { aiGenre: { in: criteria.genres } },
+        { userGenre: { in: criteria.genres } },
+      ];
+    }
+
+    if (criteria.subgenres && criteria.subgenres.length > 0 && !skipSubgenres) {
+      where.aiSubgenre = { in: criteria.subgenres };
+    }
+
+    if (
+      criteria.artist ||
+      criteria.keys ||
+      criteria.tempo ||
+      criteria.valenceMood ||
+      criteria.arousalMood ||
+      criteria.danceabilityFeeling ||
+      criteria.speechiness ||
+      criteria.instrumentalness ||
+      criteria.liveness ||
+      criteria.acousticness
+    ) {
+      const fingerprintWhere: any = {};
+
+      if (criteria.artist && criteria.artist.length > 0) {
+        where.OR = [
+          { originalArtist: { contains: criteria.artist } },
+          { userArtist: { contains: criteria.artist } },
+        ];
+      }
+
+      if (criteria.keys && criteria.keys.length > 0) {
+        fingerprintWhere.key = { in: criteria.keys };
+      }
+
+      if (criteria.valenceMood && criteria.valenceMood?.length > 0) {
+        fingerprintWhere.valenceMood = { in: criteria.valenceMood };
+      }
+
+      if (criteria.arousalMood && criteria.arousalMood?.length > 0) {
+        fingerprintWhere.arousalMood = { in: criteria.arousalMood };
+      }
+
+      if (
+        criteria.danceabilityFeeling &&
+        criteria.danceabilityFeeling?.length > 0
+      ) {
+        fingerprintWhere.danceabilityFeeling = {
+          in: criteria.danceabilityFeeling,
+        };
+      }
+
+      if (criteria.tempo) {
+        fingerprintWhere.tempo = {};
+        if (criteria.tempo.min !== undefined) {
+          fingerprintWhere.tempo.gte = criteria.tempo.min;
+        }
+        if (criteria.tempo.max !== undefined) {
+          fingerprintWhere.tempo.lte = criteria.tempo.max;
+        }
+      }
+
+      if (criteria.speechiness) {
+        fingerprintWhere.speechiness = {};
+        if (criteria.speechiness.min !== undefined) {
+          fingerprintWhere.speechiness.gte = criteria.speechiness.min;
+        }
+        if (criteria.speechiness.max !== undefined) {
+          fingerprintWhere.speechiness.lte = criteria.speechiness.max;
+        }
+      }
+
+      if (criteria.instrumentalness) {
+        fingerprintWhere.instrumentalness = {};
+        if (criteria.instrumentalness.min !== undefined) {
+          fingerprintWhere.instrumentalness.gte = criteria.instrumentalness.min;
+        }
+        if (criteria.instrumentalness.max !== undefined) {
+          fingerprintWhere.instrumentalness.lte = criteria.instrumentalness.max;
+        }
+      }
+
+      if (criteria.liveness) {
+        fingerprintWhere.liveness = {};
+        if (criteria.liveness.min !== undefined) {
+          fingerprintWhere.liveness.gte = criteria.liveness.min;
+        }
+        if (criteria.liveness.max !== undefined) {
+          fingerprintWhere.liveness.lte = criteria.liveness.max;
+        }
+      }
+
+      if (criteria.acousticness) {
+        fingerprintWhere.acousticness = {};
+        if (criteria.acousticness.min !== undefined) {
+          fingerprintWhere.acousticness.gte = criteria.acousticness.min;
+        }
+        if (criteria.acousticness.max !== undefined) {
+          fingerprintWhere.acousticness.lte = criteria.acousticness.max;
+        }
+      }
+
+      where.audioFingerprint = fingerprintWhere;
+    }
+    return where;
+  }
+}

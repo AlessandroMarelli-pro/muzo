@@ -1,0 +1,16 @@
+Personal Music Dataset Summary (GPU Accelerated)
+==================================================
+GPU: NVIDIA GeForce RTX 3070
+Acceleration: GPU + CPU
+Total files: 1518
+Successful extractions: 1518
+Success rate: 100.0%
+Features: 58
+Genres: 5
+
+Genre Distribution:
+  Dance_EDM: 710 files
+  Alternative: 381 files
+  Electronic: 265 files
+  Country: 150 files
+  French Pop: 12 files

@@ -1,0 +1,268 @@
+{
+  "hierarchical_music_classification": {
+    "version": "1.0",
+    "description": "World-class hierarchical CNN music classification system",
+    "performance": {
+      "genre_accuracy": "82.38%",
+      "expected_subgenre_accuracy": "67-98% per specialist",
+      "processing_time": "2-3 seconds per file",
+      "deployment_ready": true
+    },
+    "models": {
+      "genre_classifier": {
+        "path": "models/final_optimized_7genres/final_optimized_7genres-v1.0.pth",
+        "type": "Hybrid CNN-RNN",
+        "architecture": "CNN feature extraction + LSTM temporal modeling + Attention",
+        "input_format": "mel-spectrogram (128 bands, 30s duration)",
+        "output": "7 genre probabilities",
+        "training_data": "10,500 balanced segments",
+        "validation_accuracy": "82.38%",
+        "training_accuracy": "85.14%",
+        "classes": [
+          "Alternative",
+          "Dance_EDM",
+          "Electronic",
+          "Hip-Hop_Rap",
+          "Jazz",
+          "R&B_Soul",
+          "Reggae"
+        ],
+        "training_time": "1406.87 seconds",
+        "epochs_trained": 8,
+        "best_val_loss": 0.5237
+      },
+      "subgenre_specialists": {
+        "directory": "models/subgenre_specialists",
+        "type": "per-genre CNN specialists",
+        "architecture": "Same as genre classifier but focused per genre",
+        "training_strategy": "500 samples per subgenre, balanced segmentation",
+        "total_specialists": 6,
+        "successful_training": 6,
+        "failed_training": 0,
+        "expected_models": {
+          "Alternative": {
+            "model_file": "subgenre-specialist-alternative-v1.0.pth",
+            "subgenres": [
+              "Alternative Rock",
+              "Grunge",
+              "Hard Rock",
+              "Indie Rock",
+              "New Wave",
+              "Progressive Rock",
+              "Punk",
+              "Shoegaze"
+            ],
+            "validation_accuracy": "67.38%",
+            "training_accuracy": "71.84%",
+            "training_samples": 4000,
+            "num_subgenres": 8,
+            "training_time": "648.91 seconds",
+            "best_val_loss": 0.8573
+          },
+          "Dance_EDM": {
+            "model_file": "subgenre-specialist-dance_edm-v1.0.pth",
+            "subgenres": [
+              "Acid House",
+              "Acid Trance",
+              "Balearic Trance",
+              "Breakbeat",
+              "Chicago House",
+              "Drum'n'bass",
+              "Dubstep",
+              "French House",
+              "Garage",
+              "Grime",
+              "Hard Dance",
+              "Hi-NRG_Eurodance",
+              "House",
+              "Jackin House",
+              "Progressive House",
+              "Progressive Trance",
+              "Tech House",
+              "Techno",
+              "Trance"
+            ],
+            "validation_accuracy": "79.68%",
+            "training_accuracy": "80.32%",
+            "training_samples": 9500,
+            "num_subgenres": 19,
+            "training_time": "1243.55 seconds",
+            "best_val_loss": 0.6178
+          },
+          "Electronic": {
+            "model_file": "subgenre-specialist-electronic-v1.0.pth",
+            "subgenres": [
+              "2-Step",
+              "Ambient",
+              "Balearic",
+              "Downtempo",
+              "Electro",
+              "Electronica",
+              "Experimental",
+              "New Age"
+            ],
+            "validation_accuracy": "82.88%",
+            "training_accuracy": "82.38%",
+            "training_samples": 4000,
+            "num_subgenres": 8,
+            "training_time": "686.46 seconds",
+            "best_val_loss": 0.5287
+          },
+          "Hip-Hop_Rap": {
+            "model_file": "subgenre-specialist-hip-hop_rap-v1.0.pth",
+            "subgenres": [
+              "Alternative Rap",
+              "East Coast Rap",
+              "Gangsta Rap",
+              "Hip-Hop",
+              "Old School Rap",
+              "Rap",
+              "Underground Rap",
+              "West Coast Rap"
+            ],
+            "validation_accuracy": "70.63%",
+            "training_accuracy": "71.84%",
+            "training_samples": 4000,
+            "num_subgenres": 8,
+            "training_time": "660.53 seconds",
+            "best_val_loss": 0.7486
+          },
+          "Jazz": {
+            "model_file": "subgenre-specialist-jazz-v1.0.pth",
+            "subgenres": [
+              "Acid Jazz",
+              "Big Band",
+              "Contemporary Jazz",
+              "Ethio-jazz",
+              "Fusion",
+              "Latin Jazz",
+              "Mainstream Jazz",
+              "Ragtime",
+              "Smooth Jazz",
+              "Trad Jazz"
+            ],
+            "validation_accuracy": "89.70%",
+            "training_accuracy": "91.20%",
+            "training_samples": 5000,
+            "num_subgenres": 10,
+            "training_time": "752.80 seconds",
+            "best_val_loss": 0.301
+          },
+          "R&B_Soul": {
+            "model_file": "subgenre-specialist-r&b_soul-v1.0.pth",
+            "subgenres": [
+              "Contemporary R&B",
+              "Disco",
+              "Funk",
+              "Motown",
+              "Neo-Soul",
+              "Soul"
+            ],
+            "validation_accuracy": "77.33%",
+            "training_accuracy": "76.67%",
+            "training_samples": 3000,
+            "num_subgenres": 6,
+            "training_time": "515.33 seconds",
+            "best_val_loss": 0.5786
+          },
+          "Reggae": {
+            "model_file": "subgenre-specialist-reggae-v1.0.pth",
+            "subgenres": ["Dancehall", "Dub", "Roots Reggae", "Ska"],
+            "validation_accuracy": "98.75%",
+            "training_accuracy": "98.75%",
+            "training_samples": 2000,
+            "num_subgenres": 4,
+            "training_time": "382.85 seconds",
+            "best_val_loss": 0.0369
+          }
+        }
+      }
+    },
+    "deployment": {
+      "environment_variables": {
+        "HF_TOKEN": "true/false - Whether to download models from HuggingFace Hub",
+        "HF_REPO_ID_GENRE": "CosmicSurfer/muzo-genre-classifier - HuggingFace repository for genre classifier",
+        "HF_REPO_ID_SPECIALISTS": "CosmicSurfer/muzo-subgenre-specialists - HuggingFace repository for subgenre specialists",
+        "HIERARCHICAL_GENRE_MODEL_PATH": "Path to the main genre classifier model (fallback)",
+        "HIERARCHICAL_SPECIALISTS_DIR": "Directory containing all subgenre specialists (fallback)",
+        "HIERARCHICAL_PRELOAD_SPECIALISTS": "true/false - Whether to load all specialists at startup",
+        "HIERARCHICAL_MAX_CONCURRENT": "4 - Maximum concurrent predictions",
+        "HIERARCHICAL_BATCH_SIZE": "32 - Batch size for model inference"
+      },
+      "system_requirements": {
+        "python_version": ">=3.8",
+        "pytorch_version": ">=1.9.0",
+        "cuda_support": "recommended for optimal performance",
+        "memory_requirement": "4GB+ RAM (with all specialists loaded)",
+        "disk_space": "2-5GB for all models",
+        "cpu_cores": "4+ cores recommended"
+      },
+      "api_endpoints": {
+        "single_classification": "POST /api/v1/audio/analyze/classification",
+        "batch_classification": "POST /api/v1/audio/hierarchical/batch",
+        "system_status": "GET /api/v1/audio/hierarchical/status",
+        "available_genres": "GET /api/v1/audio/hierarchical/genres",
+        "performance_stats": "GET /api/v1/audio/hierarchical/performance",
+        "health_check": "POST /api/v1/audio/hierarchical/health",
+        "usage_examples": "GET /api/v1/audio/hierarchical/example"
+      }
+    },
+    "usage_workflow": {
+      "step_1": "Upload audio file or provide file path",
+      "step_2": "Genre classifier predicts main genre (Alternative, Dance_EDM, etc.)",
+      "step_3": "Corresponding subgenre specialist predicts specific subgenre",
+      "step_4": "Combined result with confidence scores returned",
+      "example_result": {
+        "genre": "Alternative",
+        "subgenre": "Grunge",
+        "confidence": {
+          "genre": 0.8912,
+          "subgenre": 0.7634,
+          "combined": 0.6804
+        }
+      }
+    },
+    "training_summary": {
+      "total_training_time": "4147.62 seconds (69.13 minutes)",
+      "genre_classifier_training_time": "1406.87 seconds",
+      "specialists_training_time": "4147.62 seconds",
+      "total_samples_processed": "36500",
+      "average_accuracy_by_genre": {
+        "Alternative": "67.38%",
+        "Dance_EDM": "79.68%",
+        "Electronic": "82.88%",
+        "Hip-Hop_Rap": "70.63%",
+        "Jazz": "89.70%",
+        "R&B_Soul": "77.33%",
+        "Reggae": "98.75%"
+      }
+    },
+    "integration_examples": {
+      "python_service": {
+        "import": "from services.hierarchical_music_classifier import get_hierarchical_classification_service",
+        "usage": "service = await get_hierarchical_classification_service(use_huggingface=True)",
+        "classify": "result = await service.classify_audio('song.flac')"
+      },
+      "curl_api": {
+        "single_file": "curl -X POST 'http://localhost:4000/api/v1/audio/hierarchical' -H 'Content-Type: multipart/form-data' -F 'audio_file=@song.flac'",
+        "batch_files": "curl -X POST 'http://localhost:4000/api/v1/audio/hierarchical/batch' -H 'Content-Type: application/json' -d '{\"audio_files\": [\"song1.flac\", \"song2.mp3\"]}'"
+      }
+    },
+    "monitoring": {
+      "metrics_to_track": [
+        "prediction_count",
+        "average_prediction_time",
+        "system_accuracy",
+        "error_rate",
+        "memory_usage",
+        "gpu_utilization"
+      ],
+      "health_indicators": [
+        "system_initialized",
+        "models_loaded",
+        "specialists_coverage",
+        "prediction_success_rate"
+      ]
+    }
+  }
+}

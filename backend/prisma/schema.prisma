@@ -1,0 +1,391 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Core Entities
+
+model MusicLibrary {
+  id                    String   @id @default(uuid())
+  name                  String
+  rootPath              String
+  totalTracks           Int      @default(0)
+  analyzedTracks        Int      @default(0)
+  pendingTracks         Int      @default(0)
+  failedTracks          Int      @default(0)
+  lastScanAt            DateTime?
+  lastIncrementalScanAt DateTime?
+  scanStatus            ScanStatus @default(IDLE)
+  
+  // Settings
+  autoScan              Boolean  @default(true)
+  scanInterval          Int?     // in hours
+  includeSubdirectories Boolean  @default(true)
+  supportedFormats      String   @default("MP3,FLAC,WAV,AAC,OGG") // comma-separated
+  maxFileSize           Int?     // in MB
+  
+  // Timestamps
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  
+  // Relations
+  tracks                MusicTrack[]
+  
+  @@map("music_libraries")
+}
+
+model MusicTrack {
+  id                    String   @id @default(uuid())
+  filePath              String   @unique
+  fileName              String
+  fileSize              Int
+  duration              Float
+  format                String
+  bitrate               Int?
+  sampleRate            Int?
+  
+
+  // Original Metadata
+  originalTitle         String?
+  originalArtist        String?
+  originalAlbum         String?
+  originalGenre         String?
+  originalYear          Int?
+  originalAlbumartist   String?
+  originalDate          DateTime?
+  originalBpm           Int?
+  originalTrack_number  Int?
+  originalDisc_number   String?
+  originalComment       String?
+  originalComposer      String?
+  originalCopyright     String?
+
+  // AI-Generated Metadata
+  aiTitle               String?
+  aiArtist              String?
+  aiAlbum               String?
+  aiGenre               String?
+  aiConfidence           Float?
+  aiSubgenre            String?
+  aiSubgenreConfidence   Float?
+
+  // User Modifications
+  userTitle             String?
+  userArtist            String?
+  userAlbum             String?
+  userGenre             String?
+  userTags              String?  // JSON array as string
+  
+  // Listening Data
+  listeningCount        Int      @default(0)
+  lastPlayedAt          DateTime?
+  isFavorite            Boolean @default(false)
+
+  // Analysis Status
+  analysisStatus        AnalysisStatus @default(PENDING)
+  analysisStartedAt     DateTime?
+  analysisCompletedAt   DateTime?
+  analysisError         String?
+  hasMusicbrainz        Boolean?
+  hasDiscogs            Boolean?
+
+  // Timestamps
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  
+  // Relations
+  libraryId             String
+  library               MusicLibrary @relation(fields: [libraryId], references: [id], onDelete: Cascade)
+  audioFingerprint      AudioFingerprint?
+  aiAnalysisResult      AIAnalysisResult?
+  editorSessions        IntelligentEditorSession[]
+  playbackSessions      PlaybackSession[]
+  playlistTracks        PlaylistTrack[]
+  imageSearches         ImageSearch[]
+  
+  @@map("music_tracks")
+}
+
+model AudioFingerprint {
+  id                    String   @id @default(uuid())
+  trackId               String   @unique
+  
+  // Audio Features
+  mfcc                  String  @default("[]") // JSON array as string
+  spectralCentroid      String  @default("{}") // JSON  as string
+  spectralRolloff       String  @default("{}") // JSON  as string
+  spectralSpread        String  @default("{}") // JSON  as string
+  spectralBandwith      String  @default("{}") // JSON  as string
+  spectralFlatness      String  @default("{}") // JSON  as string
+  spectralContrast      String  @default("{}") // JSON  as string
+  chroma                String  @default("{}") // JSON  as string
+  tonnetz               String  @default("{}") // JSON  as string
+  zeroCrossingRate      String  @default("{}")// JSON  as string
+  rms                   String  @default("{}") // JSON  as string
+  tempo                 Float
+  key                   String
+  camelotKey           String @default("")
+  valence               Float @default(0.0)
+  valenceMood          String @default("")
+  arousal               Float @default(0.0)
+  arousalMood          String @default("")
+  danceability          Float
+  danceabilityFeeling  String @default("")
+  rhythmStability      Float @default(0.0)
+  bassPresence         Float @default(0.0)
+  tempoRegularity      Float @default(0.0)
+  tempoAppropriateness Float @default(0.0)
+  energyFactor         Float @default(0.0)
+  syncopation           Float @default(0.0)
+  acousticness          Float
+  instrumentalness      Float
+  speechiness           Float @default(0.0)
+  liveness              Float @default(0.0)
+  modeFactor           Float @default(0.0)
+  modeConfidence       Float @default(0.0)
+  modeWeight           Float @default(0.0)
+  tempoFactor          Float @default(0.0)
+  brightnessFactor     Float @default(0.0) 
+  harmonicFactor       Float @default(0.0)
+  spectralBalance      Float @default(0.0)  
+  beatStrength         Float @default(0.0)
+  audioHash             String
+  fileHash              String
+  energyComment        String @default("")
+  energyKeywords       String @default("[]") //JSON array as string
+  energyByBand        String @default("[]") //JSON array as string
+
+  // Timestamps
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  
+  // Relations
+  track                 MusicTrack @relation(fields: [trackId], references: [id], onDelete: Cascade)
+  aiAnalysisResult      AIAnalysisResult?
+  
+  @@map("audio_fingerprints")
+}
+
+model AIAnalysisResult {
+  id                    String   @id @default(uuid())
+  trackId               String   @unique
+  fingerprintId         String   @unique
+  
+  modelVersion          String
+  genreClassification   String   // JSON object as string
+  artistSuggestion      String?  // JSON object as string
+  albumSuggestion       String?  // JSON object as string
+  processingTime        Float
+  errorMessage          String?
+  
+  // Timestamps
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  
+  // Relations
+  track                 MusicTrack @relation(fields: [trackId], references: [id], onDelete: Cascade)
+  fingerprint           AudioFingerprint @relation(fields: [fingerprintId], references: [id], onDelete: Cascade)
+  
+  @@map("ai_analysis_results")
+}
+
+model IntelligentEditorSession {
+  id                    String   @id @default(uuid())
+  trackId               String
+  userId                String?  // For V2 multi-user support
+  sessionStatus         SessionStatus @default(ACTIVE)
+  suggestions           String   // JSON object as string
+  userActions           String   // JSON array as string
+  confidenceThreshold   Float?
+  sessionDuration       Int?     // in seconds
+  
+  // Timestamps
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  
+  // Relations
+  track                 MusicTrack @relation(fields: [trackId], references: [id], onDelete: Cascade)
+  
+  @@map("intelligent_editor_sessions")
+}
+
+model PlaybackSession {
+  id                    String   @id @default(uuid())
+  trackId               String
+  userId                String?  // For V2 multi-user support
+  sessionType           PlaybackType @default(MANUAL)
+  startTime             DateTime
+  endTime               DateTime?
+  duration              Int?     // in seconds
+  volume                Float?   // 0-1
+  quality               String?  // audio quality setting
+  
+  // Timestamps
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  
+  // Relations
+  track                 MusicTrack @relation(fields: [trackId], references: [id], onDelete: Cascade)
+  
+  @@map("playback_sessions")
+}
+
+model UserPreferences {
+  id                    String   @id @default(uuid())
+  userId                String?  // For V2 multi-user support
+  
+  // UI Preferences
+  theme                 String   @default("system") // light, dark, system
+  language              String   @default("en")
+  timezone              String   @default("UTC")
+  
+  // Music Preferences
+  defaultVolume         Float    @default(0.7)
+  autoPlay              Boolean  @default(false)
+  shuffleMode           Boolean  @default(false)
+  repeatMode            RepeatMode @default(NONE)
+  
+  // Analysis Preferences
+  autoAnalyze           Boolean  @default(true)
+  confidenceThreshold   Float    @default(0.8)
+  preferredGenres       String?  // JSON array as string
+  
+  // Library Preferences
+  autoScan              Boolean  @default(true)
+  scanInterval          Int      @default(24) // in hours
+  includeSubdirectories Boolean  @default(true)
+  supportedFormats      String   @default("MP3,FLAC,WAV,AAC,OGG")
+  
+  // Privacy Preferences
+  shareListeningData    Boolean  @default(false)
+  shareAnalysisData     Boolean  @default(false)
+  
+  // Timestamps
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  
+  @@map("user_preferences")
+}
+
+model Playlist {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  userId      String?  // For future multi-user support
+  isPublic    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relations
+  tracks      PlaylistTrack[]
+  
+  @@map("playlists")
+}
+
+model PlaylistTrack {
+  id         String   @id @default(uuid())
+  playlistId String
+  trackId    String
+  position   Int
+  addedAt    DateTime @default(now())
+  
+  // Relations
+  playlist   Playlist @relation(fields: [playlistId], references: [id], onDelete: Cascade)
+  track      MusicTrack @relation(fields: [trackId], references: [id], onDelete: Cascade)
+  
+  @@unique([playlistId, trackId])
+  @@map("playlist_tracks")
+}
+
+model ImageSearch {
+  id         String   @id @default(uuid())
+  trackId    String
+  searchUrl  String
+  status     ImageSearchStatus @default(PENDING)
+  imagePath  String?
+  imageUrl   String?
+  error      String?
+  source     String?
+  
+  // Timestamps
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  
+  // Relations
+  track      MusicTrack @relation(fields: [trackId], references: [id], onDelete: Cascade)
+  
+  @@map("image_searches")
+}
+
+model SavedFilter {
+  id        String   @id @default(uuid())
+  name      String
+  criteria  String   // JSON string containing filter criteria
+  
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@map("saved_filters")
+}
+
+model UserRecommendationPreferences {
+  id        String   @id @default(uuid())
+  userId    String
+  weights   String   // JSON string containing recommendation weights
+  isDefault Boolean  @default(false)
+  
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@map("user_recommendation_preferences")
+}
+
+// Enums
+
+enum ScanStatus {
+  IDLE
+  SCANNING
+  ANALYZING
+  ERROR
+}
+
+enum AnalysisStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum SessionStatus {
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum PlaybackType {
+  MANUAL
+  AUTO_PLAY
+  PLAYLIST
+  RADIO
+}
+
+enum RepeatMode {
+  NONE
+  ONE
+  ALL
+}
+
+enum ImageSearchStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}

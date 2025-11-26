@@ -1,0 +1,85 @@
+{
+  "specialist_info": {
+    "target_genre": "Reggae",
+    "model_name": "subgenre-specialist-reggae-v1.0",
+    "architecture": "hybrid",
+    "model_path": "models\\dance_EDM\\Reggae\\subgenre-specialist-reggae-v1.0.pth",
+    "subgenre_classes": [
+      "Dancehall",
+      "Dub",
+      "Roots Reggae",
+      "Ska"
+    ],
+    "num_subgenres": 4
+  },
+  "training_results": {
+    "model_name": "subgenre-specialist-reggae-v1.0",
+    "architecture": "hybrid",
+    "training_samples": 2000,
+    "num_classes": 4,
+    "classes": [
+      "Dancehall",
+      "Dub",
+      "Roots Reggae",
+      "Ska"
+    ],
+    "num_epochs_trained": 8,
+    "training_time": 382.85286021232605,
+    "avg_epoch_time": 47.856607526540756,
+    "best_val_loss": 0.03690600422676653,
+    "final_train_acc": 98.75,
+    "final_val_acc": 98.75,
+    "train_losses": [
+      1.0671082258224487,
+      0.5663078618049622,
+      0.42719788521528246,
+      0.3153840517997742,
+      0.21836452290415764,
+      0.09360540822148324,
+      0.04934651464223862,
+      0.043390552401542666
+    ],
+    "val_losses": [
+      1.4014116847515106,
+      0.39981394082307814,
+      0.21105548672378063,
+      0.3097402669861913,
+      0.10322560712695122,
+      0.05674350229091942,
+      0.0475510180555284,
+      0.03690600422676653
+    ],
+    "train_accuracies": [
+      54.1875,
+      78.125,
+      84.125,
+      88.3125,
+      92.25,
+      97.1875,
+      98.8125,
+      98.75
+    ],
+    "val_accuracies": [
+      44.25,
+      87.75,
+      94.25,
+      88.5,
+      97.0,
+      98.0,
+      98.25,
+      98.75
+    ],
+    "device": "cuda"
+  },
+  "timing": {
+    "preprocessing_time": 30.30467987060547,
+    "training_time": 386.71785402297974,
+    "total_time": 417.02367901802063
+  },
+  "dataset_info": {
+    "total_samples": 2000,
+    "target_samples_per_subgenre": 500,
+    "segment_duration": 45.0,
+    "use_preprocessing": true
+  }
+}

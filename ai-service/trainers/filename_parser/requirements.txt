@@ -1,0 +1,27 @@
+#!/usr/bin/env python3
+"""
+Requirements file for Filename Parser Training
+
+This file contains all the dependencies needed for the filename parser training system.
+"""
+
+# Core dependencies
+pandas>=1.5.0
+numpy>=1.21.0
+scikit-learn>=1.1.0
+
+# Optional ML dependencies (uncomment if needed)
+# torch>=1.12.0
+# transformers>=4.20.0
+# tensorflow>=2.9.0
+
+# Development dependencies
+pytest>=7.0.0
+black>=22.0.0
+flake8>=4.0.0
+mypy>=0.950
+
+# Logging and utilities
+loguru>=0.6.0
+tqdm>=4.64.0
+

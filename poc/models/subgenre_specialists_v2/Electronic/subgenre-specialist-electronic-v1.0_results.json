@@ -1,0 +1,93 @@
+{
+  "specialist_info": {
+    "target_genre": "Electronic",
+    "model_name": "subgenre-specialist-electronic-v1.0",
+    "architecture": "hybrid",
+    "model_path": "models\\subgenre_specialists_v2\\Electronic\\subgenre-specialist-electronic-v1.0.pth",
+    "subgenre_classes": [
+      "2-Step",
+      "Ambient",
+      "Balearic",
+      "Downtempo",
+      "Electro",
+      "Electronica",
+      "Experimental",
+      "New Age"
+    ],
+    "num_subgenres": 8
+  },
+  "training_results": {
+    "model_name": "subgenre-specialist-electronic-v1.0",
+    "architecture": "hybrid",
+    "training_samples": 8000,
+    "num_classes": 8,
+    "classes": [
+      "2-Step",
+      "Ambient",
+      "Balearic",
+      "Downtempo",
+      "Electro",
+      "Electronica",
+      "Experimental",
+      "New Age"
+    ],
+    "num_epochs_trained": 8,
+    "training_time": 1081.5365090370178,
+    "avg_epoch_time": 135.19206362962723,
+    "best_val_loss": 0.0959676316761761,
+    "final_train_acc": 97.515625,
+    "final_val_acc": 96.4375,
+    "train_losses": [
+      1.7655237579345704,
+      1.2608442801237105,
+      0.8738264428079128,
+      0.5410723210312426,
+      0.32225757516920567,
+      0.18539457025006414,
+      0.10922404799610376,
+      0.08764636730775237
+    ],
+    "val_losses": [
+      1.4954982137680053,
+      1.0656028207391501,
+      0.6638783980160952,
+      0.36609147797338665,
+      0.3035489943111315,
+      0.15929247682914138,
+      0.10230949836957734,
+      0.0959676316761761
+    ],
+    "train_accuracies": [
+      32.453125,
+      54.328125,
+      69.125,
+      81.875,
+      89.65625,
+      93.9375,
+      96.890625,
+      97.515625
+    ],
+    "val_accuracies": [
+      43.0625,
+      62.5,
+      78.6875,
+      88.625,
+      89.9375,
+      94.625,
+      96.875,
+      96.4375
+    ],
+    "device": "cuda"
+  },
+  "timing": {
+    "preprocessing_time": 95.50061297416687,
+    "training_time": 1085.2706332206726,
+    "total_time": 1180.7723784446716
+  },
+  "dataset_info": {
+    "total_samples": 8000,
+    "target_samples_per_subgenre": 1000,
+    "segment_duration": 90.0,
+    "use_preprocessing": true
+  }
+}

@@ -1,0 +1,272 @@
+{
+  "filename": "Leon Vynehall, Tyson - Scab.flac",
+  "metadata": {
+    "file_info": {
+      "filename": "tmpm33d74qx.flac",
+      "filepath": "/var/folders/zv/2rc8q3ks52l1ggf5f0mnj02h0000gn/T/tmpm33d74qx.flac",
+      "file_extension": ".flac",
+      "mime_type": "audio/x-flac",
+      "file_size_bytes": 28222933,
+      "file_size_mb": 26.92,
+      "created_at": "2025-09-22T18:38:19.230755",
+      "modified_at": "2025-09-22T18:38:19.230755",
+      "accessed_at": "2025-09-22T18:38:19.212174"
+    },
+    "audio_technical": {
+      "sample_rate": 44100,
+      "channels": 2,
+      "frames": 11465466,
+      "duration_seconds": 259.9878911564626,
+      "subtype": "PCM_16",
+      "format": "FLAC",
+      "duration_minutes": 4.33,
+      "estimated_bit_depth": 16,
+      "estimated_bitrate_kbps": 868.4,
+      "is_stereo": true,
+      "is_mono": false
+    },
+    "audio_content": {
+      "rms_energy": 0.22067545354366302,
+      "zero_crossing_rate": 0.03744559438354023,
+      "spectral_centroid": 2209.316433029577,
+      "spectral_rolloff": 4439.452429448876,
+      "spectral_bandwidth": 3200.9351867783093,
+      "tempo_bpm": 129.19921875,
+      "estimated_key": "F minor",
+      "harmonic_ratio": 0.8720014691352844,
+      "percussive_ratio": 0.12799853086471558,
+      "beat_count": 485,
+      "beats_per_minute": 111.9282897005669
+    },
+    "id3_tags": {
+      "title": "Scab",
+      "artist": "Leon Vynehall, Tyson",
+      "album": "Scab",
+      "albumartist": "Leon Vynehall",
+      "date": "2025-08-15",
+      "year": 2025,
+      "copyright": "Studio Ooze",
+      "track_number": "1",
+      "disc_number": "1"
+    }
+  },
+  "features": {
+    "mfcc": [
+      -195.5012969970703,
+      138.5264434814453,
+      10.66782283782959,
+      34.160892486572266,
+      9.98661994934082,
+      24.6976375579834,
+      -2.583871603012085,
+      13.491418838500977,
+      3.2482078075408936,
+      2.8611977100372314,
+      7.949414253234863,
+      3.441187620162964,
+      0.6198729276657104,
+      91.10714721679688,
+      41.14626693725586,
+      31.235368728637695,
+      23.268173217773438,
+      19.242740631103516,
+      16.401023864746094,
+      16.746410369873047,
+      12.392102241516113,
+      11.108892440795898,
+      11.348769187927246,
+      9.703791618347168,
+      8.780059814453125,
+      8.82542896270752
+    ],
+    "zero_crossing_rate": 0.03744559438354023,
+    "spectral_centroid": 2209.316433029577,
+    "spectral_rolloff": 4439.452429448876,
+    "spectral_contrast": [
+      14.93663373711663,
+      11.936223380695498,
+      15.476769911987661,
+      17.376066420895953,
+      17.003755257840297,
+      18.525345095850273,
+      36.96284572017059
+    ],
+    "chroma": [
+      0.5827081203460693,
+      0.5322557091712952,
+      0.4815208315849304,
+      0.4923267364501953,
+      0.48484161496162415,
+      0.5551607608795166,
+      0.5097076892852783,
+      0.5190216898918152,
+      0.5994301438331604,
+      0.6047801971435547,
+      0.5915415287017822,
+      0.5435055494308472
+    ],
+    "tempo": 129.19921875,
+    "key": "E",
+    "energy": 0.22067545354366302,
+    "valence": 0.7364388110098591,
+    "danceability": 1,
+    "file_path": "/var/folders/zv/2rc8q3ks52l1ggf5f0mnj02h0000gn/T/tmpm33d74qx.flac",
+    "duration": 259.9878911564626,
+    "length": 259.9878911564626,
+    "sample_rate": 44100
+  },
+  "fingerprint": {
+    "file_hash": "9b4f33bfcf338af46e8e2dafef79abd0608e314eb2933e0028e1679d67468ec8",
+    "audio_hash": "f399239b4e17813d21cdfd506b7b09b7fd6505ab78bb4f82c8c7ce203e34ffa9",
+    "spectral_fingerprint": {
+      "centroid_mean": 2209.316433029577,
+      "centroid_std": 1543.4111394480556,
+      "rolloff_mean": 4439.452429448876,
+      "rolloff_std": 3495.7851346865164,
+      "bandwidth_mean": 3200.9351867783093,
+      "bandwidth_std": 1011.8979833129074
+    },
+    "rhythm_fingerprint": {
+      "tempo": 129.19921875,
+      "beat_count": 485,
+      "zcr_mean": 0.03744559438354023,
+      "zcr_std": 0.04819869327520076,
+      "rhythm_density": 1.8654714950094484
+    },
+    "melodic_fingerprint": {
+      "chroma_mean": [
+        0.5827081203460693,
+        0.5322557091712952,
+        0.4815208315849304,
+        0.4923267364501953,
+        0.48484161496162415,
+        0.5551607608795166,
+        0.5097076892852783,
+        0.5190216898918152,
+        0.5994301438331604,
+        0.6047801971435547,
+        0.5915415287017822,
+        0.5435055494308472
+      ],
+      "chroma_std": [
+        0.32698866724967957,
+        0.31101006269454956,
+        0.29495516419410706,
+        0.3175373673439026,
+        0.3090896010398865,
+        0.33769461512565613,
+        0.27807945013046265,
+        0.26282748579978943,
+        0.288555383682251,
+        0.2904495894908905,
+        0.2779006361961365,
+        0.28275352716445923
+      ],
+      "tonnetz_mean": [
+        -0.015212218887229572,
+        0.034190408903880254,
+        -0.043847161277062646,
+        0.025993670525067226,
+        0.00966413436260391,
+        0.005741240309587832
+      ],
+      "tonnetz_std": [
+        0.08715952678469846,
+        0.08437094246598113,
+        0.11626763894978519,
+        0.11997336616444337,
+        0.053095267352585164,
+        0.047302748604121196
+      ]
+    },
+    "metadata": {
+      "duration": 259.9878911564626,
+      "sample_rate": 44100,
+      "filename": "tmpm33d74qx.flac"
+    }
+  },
+  "genre_classification": {
+    "predicted_genre": "electronic",
+    "confidence": 0.422531746031746,
+    "all_scores": {
+      "electronic": 0.422531746031746,
+      "hiphop": 0.34995238095238096,
+      "jazz": 0.011666666666666667,
+      "reggae": 0.15145238095238098,
+      "rock": 0.0643968253968254
+    },
+    "top_genres": [
+      [
+        "electronic",
+        0.422531746031746
+      ],
+      [
+        "hiphop",
+        0.34995238095238096
+      ],
+      [
+        "reggae",
+        0.15145238095238098
+      ],
+      [
+        "rock",
+        0.0643968253968254
+      ],
+      [
+        "jazz",
+        0.011666666666666667
+      ]
+    ],
+    "model_used": true,
+    "model_name": "personal-genres-v1.0"
+  },
+  "subgenre_classification": {
+    "predicted_subgenre": "electronic_techno",
+    "confidence": 0.33615273615273616,
+    "all_scores": {
+      "electronic_downtempo": 0.037115440115440115,
+      "electronic_drum_and_bass": 0.03920598845598846,
+      "electronic_house": 0.05498124098124098,
+      "electronic_jungle": 0.05682839382839384,
+      "electronic_techno": 0.33615273615273616,
+      "electronic_trance": 0.014816197691197693,
+      "hiphop_gangsta_rap": 0.18927006327006324,
+      "hiphop_grime": 0.08013178488178488,
+      "hiphop_rap": 0.0413881673881674,
+      "hiphop_uk_rap": 0.011957070707070708,
+      "jazz_bebop": 0.002,
+      "jazz_fusion": 0.0030952380952380953,
+      "jazz_latin": 0.003666666666666667,
+      "jazz_traditional": 0,
+      "reggae_dub": 0.09066446053946053,
+      "reggae_lover_rock": 0.013152777777777777,
+      "reggae_two-tone": 0.004722222222222222,
+      "rock_indie": 0.012575757575757575,
+      "rock_progressive": 0,
+      "rock_psychedelic": 0.008275793650793652
+    },
+    "top_subgenres": [
+      [
+        "electronic_techno",
+        0.33615273615273616
+      ],
+      [
+        "hiphop_gangsta_rap",
+        0.18927006327006324
+      ],
+      [
+        "reggae_dub",
+        0.09066446053946053
+      ],
+      [
+        "hiphop_grime",
+        0.08013178488178488
+      ],
+      [
+        "electronic_jungle",
+        0.05682839382839384
+      ]
+    ],
+    "model_used": true,
+    "model_name": "personal-subgenres-v1.2"
+  },

@@ -1,0 +1,679 @@
+{
+  "training_summary": {
+    "total_genres": 6,
+    "successful_training": 6,
+    "failed_training": 0,
+    "start_time": 1758887322.6299794,
+    "total_time": 4147.62096452713,
+    "end_time": 1758891470.2509694
+  },
+  "specialist_results": {
+    "Alternative": {
+      "specialist_info": {
+        "target_genre": "Alternative",
+        "model_name": "subgenre-specialist-alternative-v1.0",
+        "architecture": "hybrid",
+        "model_path": "models\\dance_EDM\\Alternative\\subgenre-specialist-alternative-v1.0.pth",
+        "subgenre_classes": [
+          "Alternative Rock",
+          "Grunge",
+          "Hard Rock",
+          "Indie Rock",
+          "New Wave",
+          "Progressive Rock",
+          "Punk",
+          "Shoegaze"
+        ],
+        "num_subgenres": 8
+      },
+      "training_results": {
+        "model_name": "subgenre-specialist-alternative-v1.0",
+        "architecture": "hybrid",
+        "training_samples": 4000,
+        "num_classes": 8,
+        "classes": [
+          "Alternative Rock",
+          "Grunge",
+          "Hard Rock",
+          "Indie Rock",
+          "New Wave",
+          "Progressive Rock",
+          "Punk",
+          "Shoegaze"
+        ],
+        "num_epochs_trained": 8,
+        "training_time": 648.907687664032,
+        "avg_epoch_time": 81.113460958004,
+        "best_val_loss": 0.8572894844412804,
+        "final_train_acc": 71.84375,
+        "final_val_acc": 67.375,
+        "train_losses": [
+          1.9860699462890625,
+          1.8121710205078125,
+          1.532356357574463,
+          1.3554166412353517,
+          1.1993092060089112,
+          1.0127832287549972,
+          0.8626853466033936,
+          0.8010660183429718
+        ],
+        "val_losses": [
+          1.8429335963726043,
+          2.619984451532364,
+          2.6307743155956267,
+          1.3711757332086563,
+          1.3916152179241181,
+          0.9668936040997506,
+          0.8634572510421276,
+          0.8572894844412804
+        ],
+        "train_accuracies": [
+          19.9375,
+          28.34375,
+          43.40625,
+          50.28125,
+          56.75,
+          63.25,
+          68.78125,
+          71.84375
+        ],
+        "val_accuracies": [
+          22.75,
+          16.75,
+          23.75,
+          50.75,
+          47.375,
+          63.25,
+          67.625,
+          67.375
+        ],
+        "device": "cuda"
+      },
+      "timing": {
+        "preprocessing_time": 139.92159962654114,
+        "training_time": 652.7190132141113,
+        "total_time": 792.6481378078461
+      },
+      "dataset_info": {
+        "total_samples": 4000,
+        "target_samples_per_subgenre": 500,
+        "segment_duration": 45.0,
+        "use_preprocessing": true
+      }
+    },
+
+    "Dance_EDM": {
+      "specialist_info": {
+        "target_genre": "Dance_EDM",
+        "model_name": "subgenre-specialist-dance_edm-v1.0",
+        "architecture": "hybrid",
+        "model_path": "models\\dance_EDM\\Dance_EDM\\subgenre-specialist-dance_edm-v1.0.pth",
+        "subgenre_classes": [
+          "Acid House",
+          "Acid Trance",
+          "Balearic Trance",
+          "Breakbeat",
+          "Chicago House",
+          "Drum'n'bass",
+          "Dubstep",
+          "French House",
+          "Garage",
+          "Grime",
+          "Hard Dance",
+          "Hi-NRG_Eurodance",
+          "House",
+          "Jackin House",
+          "Progressive House",
+          "Progressive Trance",
+          "Tech House",
+          "Techno",
+          "Trance"
+        ],
+        "num_subgenres": 19
+      },
+      "training_results": {
+        "model_name": "subgenre-specialist-dance_edm-v1.0",
+        "architecture": "hybrid",
+        "training_samples": 9500,
+        "num_classes": 19,
+        "classes": [
+          "Acid House",
+          "Acid Trance",
+          "Balearic Trance",
+          "Breakbeat",
+          "Chicago House",
+          "Drum'n'bass",
+          "Dubstep",
+          "French House",
+          "Garage",
+          "Grime",
+          "Hard Dance",
+          "Hi-NRG_Eurodance",
+          "House",
+          "Jackin House",
+          "Progressive House",
+          "Progressive Trance",
+          "Tech House",
+          "Techno",
+          "Trance"
+        ],
+        "num_epochs_trained": 8,
+        "training_time": 1243.5513758659363,
+        "avg_epoch_time": 155.44392198324203,
+        "best_val_loss": 0.6178244753044193,
+        "final_train_acc": 80.3157894736842,
+        "final_val_acc": 79.6842105263158,
+        "train_losses": [
+          2.746716404965049,
+          2.25241435000771,
+          1.724182685425407,
+          1.3402889901713322,
+          1.0731784712013446,
+          0.8584256971980396,
+          0.677926322911915,
+          0.6184178383413114
+        ],
+        "val_losses": [
+          2.8109767632324156,
+          2.078627538280327,
+          1.5659912531616307,
+          1.1574760958427142,
+          0.9661694324317098,
+          0.7350680944861985,
+          0.6545399597399876,
+          0.6178244753044193
+        ],
+        "train_accuracies": [
+          13.157894736842104,
+          28.0,
+          43.53947368421053,
+          54.96052631578947,
+          64.51315789473684,
+          71.69736842105263,
+          78.19736842105263,
+          80.3157894736842
+        ],
+        "val_accuracies": [
+          16.0,
+          32.0,
+          48.421052631578945,
+          62.10526315789474,
+          67.63157894736842,
+          76.57894736842105,
+          78.94736842105263,
+          79.6842105263158
+        ],
+        "device": "cuda"
+      },
+      "timing": {
+        "preprocessing_time": 168.88977098464966,
+        "training_time": 1247.314903974533,
+        "total_time": 1416.2108676433563
+      },
+      "dataset_info": {
+        "total_samples": 9500,
+        "target_samples_per_subgenre": 500,
+        "segment_duration": 45.0,
+        "use_preprocessing": true
+      }
+    },
+    "Electronic": {
+      "specialist_info": {
+        "target_genre": "Electronic",
+        "model_name": "subgenre-specialist-electronic-v1.0",
+        "architecture": "hybrid",
+        "model_path": "models\\dance_EDM\\Electronic\\subgenre-specialist-electronic-v1.0.pth",
+        "subgenre_classes": [
+          "2-Step",
+          "Ambient",
+          "Balearic",
+          "Downtempo",
+          "Electro",
+          "Electronica",
+          "Experimental",
+          "New Age"
+        ],
+        "num_subgenres": 8
+      },
+      "training_results": {
+        "model_name": "subgenre-specialist-electronic-v1.0",
+        "architecture": "hybrid",
+        "training_samples": 4000,
+        "num_classes": 8,
+        "classes": [
+          "2-Step",
+          "Ambient",
+          "Balearic",
+          "Downtempo",
+          "Electro",
+          "Electronica",
+          "Experimental",
+          "New Age"
+        ],
+        "num_epochs_trained": 8,
+        "training_time": 686.4640581607819,
+        "avg_epoch_time": 85.80800727009773,
+        "best_val_loss": 0.5287005760893225,
+        "final_train_acc": 82.375,
+        "final_val_acc": 82.875,
+        "train_losses": [
+          1.8653866004943849,
+          1.6344251108169556,
+          1.426219630241394,
+          1.1618496727943421,
+          0.9358681058883667,
+          0.7339590185880661,
+          0.5924027430266142,
+          0.5183417772129179
+        ],
+        "val_losses": [
+          1.621254375576973,
+          1.6307256865501403,
+          1.651629569530487,
+          0.9835736894607544,
+          0.9458717705309391,
+          0.6348785682767629,
+          0.5323727276176214,
+          0.5287005760893225
+        ],
+        "train_accuracies": [
+          28.8125,
+          37.0625,
+          47.90625,
+          58.4375,
+          67.53125,
+          75.0,
+          80.3125,
+          82.375
+        ],
+        "val_accuracies": [
+          40.875,
+          39.625,
+          38.625,
+          63.75,
+          66.125,
+          78.25,
+          82.375,
+          82.875
+        ],
+        "device": "cuda"
+      },
+      "timing": {
+        "preprocessing_time": 99.81930804252625,
+        "training_time": 690.7311930656433,
+        "total_time": 790.5517196655273
+      },
+      "dataset_info": {
+        "total_samples": 4000,
+        "target_samples_per_subgenre": 500,
+        "segment_duration": 45.0,
+        "use_preprocessing": true
+      }
+    },
+    "Hip-Hop_Rap": {
+      "specialist_info": {
+        "target_genre": "Hip-Hop_Rap",
+        "model_name": "subgenre-specialist-hip-hop_rap-v1.0",
+        "architecture": "hybrid",
+        "model_path": "models\\dance_EDM\\Hip-Hop_Rap\\subgenre-specialist-hip-hop_rap-v1.0.pth",
+        "subgenre_classes": [
+          "Alternative Rap",
+          "East Coast Rap",
+          "Gangsta Rap",
+          "Hip-Hop",
+          "Old School Rap",
+          "Rap",
+          "Underground Rap",
+          "West Coast Rap"
+        ],
+        "num_subgenres": 8
+      },
+      "training_results": {
+        "model_name": "subgenre-specialist-hip-hop_rap-v1.0",
+        "architecture": "hybrid",
+        "training_samples": 4000,
+        "num_classes": 8,
+        "classes": [
+          "Alternative Rap",
+          "East Coast Rap",
+          "Gangsta Rap",
+          "Hip-Hop",
+          "Old School Rap",
+          "Rap",
+          "Underground Rap",
+          "West Coast Rap"
+        ],
+        "num_epochs_trained": 8,
+        "training_time": 660.5283942222595,
+        "avg_epoch_time": 82.56604927778244,
+        "best_val_loss": 0.7486121100187302,
+        "final_train_acc": 71.84375,
+        "final_val_acc": 70.625,
+        "train_losses": [
+          1.9464334106445313,
+          1.671867790222168,
+          1.5605584144592286,
+          1.3967048931121826,
+          1.1889611077308655,
+          0.9796042558550835,
+          0.8296634602546692,
+          0.7340507958829403
+        ],
+        "val_losses": [
+          1.670997576713562,
+          1.5435779213905334,
+          1.6609378135204316,
+          1.2652738392353058,
+          1.038374306857586,
+          0.8980899748206138,
+          0.7777014392614364,
+          0.7486121100187302
+        ],
+        "train_accuracies": [
+          20.375,
+          28.28125,
+          35.40625,
+          42.40625,
+          52.71875,
+          61.15625,
+          67.15625,
+          71.84375
+        ],
+        "val_accuracies": [
+          32.25,
+          30.75,
+          30.25,
+          49.875,
+          61.0,
+          63.75,
+          68.875,
+          70.625
+        ],
+        "device": "cuda"
+      },
+      "timing": {
+        "preprocessing_time": 63.26326584815979,
+        "training_time": 664.5740237236023,
+        "total_time": 727.8384578227997
+      },
+      "dataset_info": {
+        "total_samples": 4000,
+        "target_samples_per_subgenre": 500,
+        "segment_duration": 45.0,
+        "use_preprocessing": true
+      }
+    },
+    "Jazz": {
+      "specialist_info": {
+        "target_genre": "Jazz",
+        "model_name": "subgenre-specialist-jazz-v1.0",
+        "architecture": "hybrid",
+        "model_path": "models\\dance_EDM\\Jazz\\subgenre-specialist-jazz-v1.0.pth",
+        "subgenre_classes": [
+          "Acid Jazz",
+          "Big Band",
+          "Contemporary Jazz",
+          "Ethio-jazz",
+          "Fusion",
+          "Latin Jazz",
+          "Mainstream Jazz",
+          "Ragtime",
+          "Smooth Jazz",
+          "Trad Jazz"
+        ],
+        "num_subgenres": 10
+      },
+      "training_results": {
+        "model_name": "subgenre-specialist-jazz-v1.0",
+        "architecture": "hybrid",
+        "training_samples": 5000,
+        "num_classes": 10,
+        "classes": [
+          "Acid Jazz",
+          "Big Band",
+          "Contemporary Jazz",
+          "Ethio-jazz",
+          "Fusion",
+          "Latin Jazz",
+          "Mainstream Jazz",
+          "Ragtime",
+          "Smooth Jazz",
+          "Trad Jazz"
+        ],
+        "num_epochs_trained": 8,
+        "training_time": 752.7954664230347,
+        "avg_epoch_time": 94.09943330287933,
+        "best_val_loss": 0.3010235961228609,
+        "final_train_acc": 91.2,
+        "final_val_acc": 89.7,
+        "train_losses": [
+          1.6778634128570558,
+          1.111034188747406,
+          0.8010192033648491,
+          0.6326222977936268,
+          0.5275796189010143,
+          0.4022536634206772,
+          0.30243113070726396,
+          0.2591533028483391
+        ],
+        "val_losses": [
+          1.29717125749588,
+          0.8981481143236161,
+          0.7854742022752762,
+          0.6049823544025421,
+          0.4751125686466694,
+          0.38564414402842523,
+          0.3308109230622649,
+          0.3010235961228609
+        ],
+        "train_accuracies": [
+          41.4,
+          61.275,
+          70.95,
+          77.025,
+          80.825,
+          85.175,
+          89.3,
+          91.2
+        ],
+        "val_accuracies": [
+          51.4,
+          65.0,
+          69.4,
+          77.3,
+          80.4,
+          86.2,
+          87.6,
+          89.7
+        ],
+        "device": "cuda"
+      },
+      "timing": {
+        "preprocessing_time": 62.064334869384766,
+        "training_time": 756.5601315498352,
+        "total_time": 818.6255776882172
+      },
+      "dataset_info": {
+        "total_samples": 5000,
+        "target_samples_per_subgenre": 500,
+        "segment_duration": 45.0,
+        "use_preprocessing": true
+      }
+    },
+    "R&B_Soul": {
+      "specialist_info": {
+        "target_genre": "R&B_Soul",
+        "model_name": "subgenre-specialist-r&b_soul-v1.0",
+        "architecture": "hybrid",
+        "model_path": "models\\dance_EDM\\R&B_Soul\\subgenre-specialist-r&b_soul-v1.0.pth",
+        "subgenre_classes": [
+          "Contemporary R&B",
+          "Disco",
+          "Funk",
+          "Motown",
+          "Neo-Soul",
+          "Soul"
+        ],
+        "num_subgenres": 6
+      },
+      "training_results": {
+        "model_name": "subgenre-specialist-r&b_soul-v1.0",
+        "architecture": "hybrid",
+        "training_samples": 3000,
+        "num_classes": 6,
+        "classes": [
+          "Contemporary R&B",
+          "Disco",
+          "Funk",
+          "Motown",
+          "Neo-Soul",
+          "Soul"
+        ],
+        "num_epochs_trained": 8,
+        "training_time": 515.3272757530212,
+        "avg_epoch_time": 64.41590946912766,
+        "best_val_loss": 0.5785926143328349,
+        "final_train_acc": 76.66666666666667,
+        "final_val_acc": 77.33333333333333,
+        "train_losses": [
+          1.6437699381510418,
+          1.382539742787679,
+          1.1673178799947104,
+          1.023288083076477,
+          0.9064093577861786,
+          0.7678872346878052,
+          0.6589700746536254,
+          0.6104081499576569
+        ],
+        "val_losses": [
+          1.5060052275657654,
+          1.2681081326802572,
+          1.6364857403437296,
+          0.9526132128636042,
+          0.820083291331927,
+          0.7208871754010518,
+          0.5879659716288249,
+          0.5785926143328349
+        ],
+        "train_accuracies": [
+          29.291666666666668,
+          43.583333333333336,
+          50.791666666666664,
+          56.5,
+          61.583333333333336,
+          69.0,
+          73.83333333333333,
+          76.66666666666667
+        ],
+        "val_accuracies": [
+          38.333333333333336,
+          46.166666666666664,
+          40.666666666666664,
+          61.166666666666664,
+          66.83333333333333,
+          70.83333333333333,
+          76.33333333333333,
+          77.33333333333333
+        ],
+        "device": "cuda"
+      },
+      "timing": {
+        "preprocessing_time": 81.62645101547241,
+        "training_time": 519.0462834835052,
+        "total_time": 600.674159526825
+      },
+      "dataset_info": {
+        "total_samples": 3000,
+        "target_samples_per_subgenre": 500,
+        "segment_duration": 45.0,
+        "use_preprocessing": true
+      }
+    },
+    "Reggae": {
+      "specialist_info": {
+        "target_genre": "Reggae",
+        "model_name": "subgenre-specialist-reggae-v1.0",
+        "architecture": "hybrid",
+        "model_path": "models\\dance_EDM\\Reggae\\subgenre-specialist-reggae-v1.0.pth",
+        "subgenre_classes": [
+          "Dancehall",
+          "Dub",
+          "Roots Reggae",
+          "Ska"
+        ],
+        "num_subgenres": 4
+      },
+      "training_results": {
+        "model_name": "subgenre-specialist-reggae-v1.0",
+        "architecture": "hybrid",
+        "training_samples": 2000,
+        "num_classes": 4,
+        "classes": [
+          "Dancehall",
+          "Dub",
+          "Roots Reggae",
+          "Ska"
+        ],
+        "num_epochs_trained": 8,
+        "training_time": 382.85286021232605,
+        "avg_epoch_time": 47.856607526540756,
+        "best_val_loss": 0.03690600422676653,
+        "final_train_acc": 98.75,
+        "final_val_acc": 98.75,
+        "train_losses": [
+          1.0671082258224487,
+          0.5663078618049622,
+          0.42719788521528246,
+          0.3153840517997742,
+          0.21836452290415764,
+          0.09360540822148324,
+          0.04934651464223862,
+          0.043390552401542666
+        ],
+        "val_losses": [
+          1.4014116847515106,
+          0.39981394082307814,
+          0.21105548672378063,
+          0.3097402669861913,
+          0.10322560712695122,
+          0.05674350229091942,
+          0.0475510180555284,
+          0.03690600422676653
+        ],
+        "train_accuracies": [
+          54.1875,
+          78.125,
+          84.125,
+          88.3125,
+          92.25,
+          97.1875,
+          98.8125,
+          98.75
+        ],
+        "val_accuracies": [
+          44.25,
+          87.75,
+          94.25,
+          88.5,
+          97.0,
+          98.0,
+          98.25,
+          98.75
+        ],
+        "device": "cuda"
+      },
+      "timing": {
+        "preprocessing_time": 30.30467987060547,
+        "training_time": 386.71785402297974,
+        "total_time": 417.02367901802063
+      },
+      "dataset_info": {
+        "total_samples": 2000,
+        "target_samples_per_subgenre": 500,
+        "segment_duration": 45.0,
+        "use_preprocessing": true
+      }
+    }
+  },
+  "failed_genres": []
+}

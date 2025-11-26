@@ -1,0 +1,115 @@
+{
+  "specialist_info": {
+    "target_genre": "Dance_EDM",
+    "model_name": "subgenre-specialist-dance_edm-v1.0",
+    "architecture": "hybrid",
+    "model_path": "models\\dance_EDM\\Dance_EDM\\subgenre-specialist-dance_edm-v1.0.pth",
+    "subgenre_classes": [
+      "Acid House",
+      "Acid Trance",
+      "Balearic Trance",
+      "Breakbeat",
+      "Chicago House",
+      "Drum'n'bass",
+      "Dubstep",
+      "French House",
+      "Garage",
+      "Grime",
+      "Hard Dance",
+      "Hi-NRG_Eurodance",
+      "House",
+      "Jackin House",
+      "Progressive House",
+      "Progressive Trance",
+      "Tech House",
+      "Techno",
+      "Trance"
+    ],
+    "num_subgenres": 19
+  },
+  "training_results": {
+    "model_name": "subgenre-specialist-dance_edm-v1.0",
+    "architecture": "hybrid",
+    "training_samples": 9500,
+    "num_classes": 19,
+    "classes": [
+      "Acid House",
+      "Acid Trance",
+      "Balearic Trance",
+      "Breakbeat",
+      "Chicago House",
+      "Drum'n'bass",
+      "Dubstep",
+      "French House",
+      "Garage",
+      "Grime",
+      "Hard Dance",
+      "Hi-NRG_Eurodance",
+      "House",
+      "Jackin House",
+      "Progressive House",
+      "Progressive Trance",
+      "Tech House",
+      "Techno",
+      "Trance"
+    ],
+    "num_epochs_trained": 8,
+    "training_time": 1243.5513758659363,
+    "avg_epoch_time": 155.44392198324203,
+    "best_val_loss": 0.6178244753044193,
+    "final_train_acc": 80.3157894736842,
+    "final_val_acc": 79.6842105263158,
+    "train_losses": [
+      2.746716404965049,
+      2.25241435000771,
+      1.724182685425407,
+      1.3402889901713322,
+      1.0731784712013446,
+      0.8584256971980396,
+      0.677926322911915,
+      0.6184178383413114
+    ],
+    "val_losses": [
+      2.8109767632324156,
+      2.078627538280327,
+      1.5659912531616307,
+      1.1574760958427142,
+      0.9661694324317098,
+      0.7350680944861985,
+      0.6545399597399876,
+      0.6178244753044193
+    ],
+    "train_accuracies": [
+      13.157894736842104,
+      28.0,
+      43.53947368421053,
+      54.96052631578947,
+      64.51315789473684,
+      71.69736842105263,
+      78.19736842105263,
+      80.3157894736842
+    ],
+    "val_accuracies": [
+      16.0,
+      32.0,
+      48.421052631578945,
+      62.10526315789474,
+      67.63157894736842,
+      76.57894736842105,
+      78.94736842105263,
+      79.6842105263158
+    ],
+    "device": "cuda"
+  },
+  "timing": {
+    "preprocessing_time": 168.88977098464966,
+    "training_time": 1247.314903974533,
+    "total_time": 1416.2108676433563
+  },
+  "dataset_info": {
+    "total_samples": 9500,
+    "target_samples_per_subgenre": 500,
+    "segment_duration": 45.0,
+    "use_preprocessing": true
+  }
+}

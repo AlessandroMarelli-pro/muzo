@@ -1,0 +1,60 @@
+{
+  "song_info": {
+    "filename": "UB40 - Kingston Town.flac",
+    "file_path": "/Users/alessandro/Music/tidal/Tracks/UB40 - Kingston Town.flac",
+    "duration": 226.18666666666667,
+    "sample_rate": 22050,
+    "tempo": 103.359375,
+    "key": "E",
+    "energy": 0.11206332594156265,
+    "valence": 0.7236719485587119,
+    "danceability": 0.7
+  },
+  "feature_extraction": {
+    "gtzan_features_extracted": 58,
+    "feature_format": "GTZAN compatible"
+  },
+  "classification": {
+    "model_name": "personal-subgenres-gtzan-v1.0",
+    "model_file": "models/personal-subgenres-gtzan-v1.0.pkl",
+    "predicted_subgenre": "lover_rock",
+    "confidence": 0.26781306204688565,
+    "alternatives": [
+      {
+        "genre": "lover_rock",
+        "confidence": 0.26781306204688565
+      },
+      {
+        "genre": "grime",
+        "confidence": 0.07782119585207821
+      },
+      {
+        "genre": "rap",
+        "confidence": 0.07351047808400751
+      }
+    ],
+    "all_probabilities": {
+      "bebop": 0.009116666666666667,
+      "downtempo": 0.046860535760535754,
+      "drum_and_bass": 0.030166666666666665,
+      "dub": 0.05387438024938025,
+      "gangsta_rap": 0.052276666307548646,
+      "grime": 0.07782119585207821,
+      "house": 0.009175586178527354,
+      "indie": 0.0294207965237377,
+      "jungle": 0.024989177489177495,
+      "latin": 0.04371786084286084,
+      "lover_rock": 0.26781306204688565,
+      "progressive": 0.04803896103896105,
+      "psychedelic": 0.029596422096422093,
+      "rap": 0.07351047808400751,
+      "techno": 0.03406921781921782,
+      "traditional": 0.023185064935064933,
+      "trance": 0.04476811475561476,
+      "two-tone": 0.032402589077589077,
+      "uk_rap": 0.0691965576090576
+    }
+  },
+  "success": true,
+  "timestamp": "2025-09-20T09:30:00"
+}

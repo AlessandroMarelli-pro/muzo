@@ -1,0 +1,97 @@
+{
+  "specialist_info": {
+    "target_genre": "Jazz",
+    "model_name": "subgenre-specialist-jazz-v1.0",
+    "architecture": "hybrid",
+    "model_path": "models\\subgenre_specialists_v2\\Jazz\\subgenre-specialist-jazz-v1.0.pth",
+    "subgenre_classes": [
+      "Acid Jazz",
+      "Big Band",
+      "Contemporary Jazz",
+      "Ethio-jazz",
+      "Fusion",
+      "Latin Jazz",
+      "Mainstream Jazz",
+      "Ragtime",
+      "Smooth Jazz",
+      "Trad Jazz"
+    ],
+    "num_subgenres": 10
+  },
+  "training_results": {
+    "model_name": "subgenre-specialist-jazz-v1.0",
+    "architecture": "hybrid",
+    "training_samples": 10000,
+    "num_classes": 10,
+    "classes": [
+      "Acid Jazz",
+      "Big Band",
+      "Contemporary Jazz",
+      "Ethio-jazz",
+      "Fusion",
+      "Latin Jazz",
+      "Mainstream Jazz",
+      "Ragtime",
+      "Smooth Jazz",
+      "Trad Jazz"
+    ],
+    "num_epochs_trained": 8,
+    "training_time": 1313.1060910224915,
+    "avg_epoch_time": 164.13826137781143,
+    "best_val_loss": 0.03441786356747616,
+    "final_train_acc": 98.7125,
+    "final_val_acc": 99.15,
+    "train_losses": [
+      1.4380400634407997,
+      0.7923183368742466,
+      0.5288181589245796,
+      0.3794509104639292,
+      0.23880279275774957,
+      0.1447742106318474,
+      0.07048751348257065,
+      0.047022976770997045
+    ],
+    "val_losses": [
+      1.0090895183086395,
+      0.6942450815439224,
+      0.49464963558875025,
+      0.7522042292598635,
+      0.15954554357286543,
+      0.09599651047994848,
+      0.04261751581099816,
+      0.03441786356747616
+    ],
+    "train_accuracies": [
+      49.7875,
+      71.4375,
+      80.85,
+      86.1875,
+      91.6,
+      94.975,
+      97.9,
+      98.7125
+    ],
+    "val_accuracies": [
+      61.25,
+      75.1,
+      83.0,
+      73.35,
+      93.95,
+      97.0,
+      99.05,
+      99.15
+    ],
+    "device": "cuda"
+  },
+  "timing": {
+    "preprocessing_time": 56.6927707195282,
+    "training_time": 1316.9061892032623,
+    "total_time": 1373.6000714302063
+  },
+  "dataset_info": {
+    "total_samples": 10000,
+    "target_samples_per_subgenre": 1000,
+    "segment_duration": 90.0,
+    "use_preprocessing": true
+  }
+}

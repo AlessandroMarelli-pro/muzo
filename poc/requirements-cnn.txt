@@ -1,0 +1,35 @@
+# CNN-based Music Classification Requirements
+# Additional dependencies for PyTorch-based CNN training
+
+# Core deep learning framework
+torch>=2.0.0
+torchvision>=0.15.0
+torchaudio>=2.0.0
+
+# Alternative framework (optional)
+# tensorflow>=2.13.0
+# keras>=2.13.0
+
+# Audio processing (already in main requirements)
+librosa>=0.10.0
+soundfile>=0.12.0
+
+# Visualization
+matplotlib>=3.7.0
+seaborn>=0.12.0
+
+# Scientific computing (already in main requirements)
+numpy>=1.24.0
+pandas>=2.0.0
+scikit-learn>=1.3.0
+
+# Progress bars and utilities
+tqdm>=4.65.0
+
+# GPU acceleration (optional, for CUDA)
+# cupy-cuda11x>=12.0.0  # For CUDA 11.x
+# cupy-cuda12x>=12.0.0  # For CUDA 12.x
+
+# Memory profiling (optional)
+# memory-profiler>=0.61.0
+# psutil>=5.9.0

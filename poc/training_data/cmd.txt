@@ -1,0 +1,39 @@
+cd C:\Users\Alessandro\dev\muzo\muzo\poc\training_data
+python download_playlists.py pdf_music_genres.json "C:\Users\Alessandro\dev\muzo\personnal_dataset"  --vpn --vpn-location fr --max-retries 5
+
+
+
+Jeanmichiol78@gmail.com
+PLi98TwUHGR5IBdSC-0BNSVJxTdJJqWPs9
+
+python src\\cnn_model_training.py --dataset "C:\\Users\\Alessandro\\dev\\muzo\\personnal_dataset" --output "models\\hierarchical_cnn"    --model-name hierarchical-cnn-v1.0 --architecture hybrid --use-preprocessing --target-samples 2000 --segment-duration 10.0 --epochs 100 --lr 0.001 --workers 8 --val-split 0.2
+
+
+python src\\cnn_model_training.py --dataset "C:\\Users\\Alessandro\\dev\\muzo\\personnal_dataset" --output "models\\hierarchical_cnn"    --model-name hierarchical-cnn-v1.0 --architecture cnn --use-preprocessing --target-samples 500 --segment-duration 3.0 --epochs 15 --lr 0.001 --workers 8 --val-split 0.2
+
+python src\\cnn_model_training.py --dataset "C:\\Users\\Alessandro\\dev\\muzo\\personnal_dataset" --output "models\\hierarchical_cnn"    --model-name hierarchical-cnn-v1.0 --architecture cnn --use-preprocessing --target-samples 300 --segment-duration 3.0 --epochs 12 --lr 0.001 --batch-size 32 --workers 8 --val-split 0.2
+
+python src\\cnn_model_training.py --dataset "C:\\Users\\Alessandro\\dev\\muzo\\personnal_dataset" --output "models\\genre_only_cnn"    --model-name genre-only-cnn-v1.0 --architecture cnn --use-preprocessing --target-samples 1000 --segment-duration 3.0 --epochs 15 --lr 0.0005 --workers 8 --val-split 0.2 --genre-only
+
+
+python src\\cnn_model_training.py --dataset "C:\\Users\\Alessandro\\dev\\muzo\\personnal_dataset" --output "models\\simple_genre_cnn"    --model-name simple-genre-cnn-v1.0 --architecture cnn --use-preprocessing --target-samples 200 --segment-duration 5.0 --epochs 15 --lr 0.003 --workers 8 --val-split 0.2 --genre-only
+
+WORKING for 2 genres
+python src\\cnn_model_training.py --dataset "C:\\Users\\Alessandro\\dev\\muzo\\dataset" --output "models\\simple_genre_cnn"    --model-name simple-genre-cnn-v1.0 --architecture cnn --use-preprocessing --target-samples 30 --segment-duration 15.0 --epochs 3 --lr 0.0001 --batch-size 4 --workers 8 --val-split 0.2 --genre-only
+
+Working for 4 genres 
+python src\\cnn_model_training.py --dataset "C:\\Users\\Alessandro\\dev\\muzo\\dataset" --output "models\\simple_genre_cnn"    --model-name simple-genre-cnn-v1.0 --architecture hybrid --use-preprocessing --target-samples 500 --segment-duration 45 --epochs 5 --lr 0.0001 --batch-size 6 --workers 8 --val-split 0.2 --genre-only
+
+
+Working for 75.75+ target : 
+python src\\cnn_model_training.py --dataset "C:\\Users\\Alessandro\\dev\\muzo\\dataset" --output "models\\final_optimized_4genres"    --model-name final_optimized_4genres-v1.0 --architecture hybrid --use-preprocessing --target-samples 1000 --segment-duration 45 --epochs 8 --lr 0.0001 --batch-size 8 --workers 8 --val-split 0.2 --genre-only
+
+Best result for 75.75+ target : 
+python src\\cnn_model_training.py --dataset "C:\\Users\\Alessandro\\dev\\muzo\\dataset" --output "models\\final_optimized_7genres"    --model-name final_optimized_7genres-v1.0 --architecture hybrid --use-preprocessing --target-samples 1500 --segment-duration 45 --epochs 8 --lr 0.0001 --batch-size 8 --workers 8 --val-split 0.2 --genre-only
+
+Test subgenre : 📈 Final Validation Accuracy: 79.68
+python src\\cnn_model_training_subgenre.py --dataset "C:\\Users\\Alessandro\\dev\\muzo\\dataset" --output "models\\dance_EDM"   --architecture hybrid --target-samples 500 --segment-duration 45 --epochs 8 --lr 0.0001 --batch-size 8 --workers 8 --val-split 0.2 --target-genre "Dance_EDM"
+
+
+Add subgenres : 
+python src\\cnn_model_training_subgenre.py --dataset "C:\\Users\\Alessandro\\dev\\muzo\\dataset" --output "models\\dance_EDM"   --architecture hybrid --target-samples 500 --segment-duration 45 --epochs 8 --lr 0.0001 --batch-size 8 --workers 8 --val-split 0.2 --genres "Alternative,Dance_EDM,Electronic,Hip-Hop_Rap,Jazz,R&B_Soul,Reggae"

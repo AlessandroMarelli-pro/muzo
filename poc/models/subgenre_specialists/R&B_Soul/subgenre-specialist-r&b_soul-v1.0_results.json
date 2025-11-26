@@ -1,0 +1,89 @@
+{
+  "specialist_info": {
+    "target_genre": "R&B_Soul",
+    "model_name": "subgenre-specialist-r&b_soul-v1.0",
+    "architecture": "hybrid",
+    "model_path": "models\\dance_EDM\\R&B_Soul\\subgenre-specialist-r&b_soul-v1.0.pth",
+    "subgenre_classes": [
+      "Contemporary R&B",
+      "Disco",
+      "Funk",
+      "Motown",
+      "Neo-Soul",
+      "Soul"
+    ],
+    "num_subgenres": 6
+  },
+  "training_results": {
+    "model_name": "subgenre-specialist-r&b_soul-v1.0",
+    "architecture": "hybrid",
+    "training_samples": 3000,
+    "num_classes": 6,
+    "classes": [
+      "Contemporary R&B",
+      "Disco",
+      "Funk",
+      "Motown",
+      "Neo-Soul",
+      "Soul"
+    ],
+    "num_epochs_trained": 8,
+    "training_time": 515.3272757530212,
+    "avg_epoch_time": 64.41590946912766,
+    "best_val_loss": 0.5785926143328349,
+    "final_train_acc": 76.66666666666667,
+    "final_val_acc": 77.33333333333333,
+    "train_losses": [
+      1.6437699381510418,
+      1.382539742787679,
+      1.1673178799947104,
+      1.023288083076477,
+      0.9064093577861786,
+      0.7678872346878052,
+      0.6589700746536254,
+      0.6104081499576569
+    ],
+    "val_losses": [
+      1.5060052275657654,
+      1.2681081326802572,
+      1.6364857403437296,
+      0.9526132128636042,
+      0.820083291331927,
+      0.7208871754010518,
+      0.5879659716288249,
+      0.5785926143328349
+    ],
+    "train_accuracies": [
+      29.291666666666668,
+      43.583333333333336,
+      50.791666666666664,
+      56.5,
+      61.583333333333336,
+      69.0,
+      73.83333333333333,
+      76.66666666666667
+    ],
+    "val_accuracies": [
+      38.333333333333336,
+      46.166666666666664,
+      40.666666666666664,
+      61.166666666666664,
+      66.83333333333333,
+      70.83333333333333,
+      76.33333333333333,
+      77.33333333333333
+    ],
+    "device": "cuda"
+  },
+  "timing": {
+    "preprocessing_time": 81.62645101547241,
+    "training_time": 519.0462834835052,
+    "total_time": 600.674159526825
+  },
+  "dataset_info": {
+    "total_samples": 3000,
+    "target_samples_per_subgenre": 500,
+    "segment_duration": 45.0,
+    "use_preprocessing": true
+  }
+}

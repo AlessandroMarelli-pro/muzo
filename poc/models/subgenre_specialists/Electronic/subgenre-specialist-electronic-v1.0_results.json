@@ -1,0 +1,93 @@
+{
+  "specialist_info": {
+    "target_genre": "Electronic",
+    "model_name": "subgenre-specialist-electronic-v1.0",
+    "architecture": "hybrid",
+    "model_path": "models\\dance_EDM\\Electronic\\subgenre-specialist-electronic-v1.0.pth",
+    "subgenre_classes": [
+      "2-Step",
+      "Ambient",
+      "Balearic",
+      "Downtempo",
+      "Electro",
+      "Electronica",
+      "Experimental",
+      "New Age"
+    ],
+    "num_subgenres": 8
+  },
+  "training_results": {
+    "model_name": "subgenre-specialist-electronic-v1.0",
+    "architecture": "hybrid",
+    "training_samples": 4000,
+    "num_classes": 8,
+    "classes": [
+      "2-Step",
+      "Ambient",
+      "Balearic",
+      "Downtempo",
+      "Electro",
+      "Electronica",
+      "Experimental",
+      "New Age"
+    ],
+    "num_epochs_trained": 8,
+    "training_time": 686.4640581607819,
+    "avg_epoch_time": 85.80800727009773,
+    "best_val_loss": 0.5287005760893225,
+    "final_train_acc": 82.375,
+    "final_val_acc": 82.875,
+    "train_losses": [
+      1.8653866004943849,
+      1.6344251108169556,
+      1.426219630241394,
+      1.1618496727943421,
+      0.9358681058883667,
+      0.7339590185880661,
+      0.5924027430266142,
+      0.5183417772129179
+    ],
+    "val_losses": [
+      1.621254375576973,
+      1.6307256865501403,
+      1.651629569530487,
+      0.9835736894607544,
+      0.9458717705309391,
+      0.6348785682767629,
+      0.5323727276176214,
+      0.5287005760893225
+    ],
+    "train_accuracies": [
+      28.8125,
+      37.0625,
+      47.90625,
+      58.4375,
+      67.53125,
+      75.0,
+      80.3125,
+      82.375
+    ],
+    "val_accuracies": [
+      40.875,
+      39.625,
+      38.625,
+      63.75,
+      66.125,
+      78.25,
+      82.375,
+      82.875
+    ],
+    "device": "cuda"
+  },
+  "timing": {
+    "preprocessing_time": 99.81930804252625,
+    "training_time": 690.7311930656433,
+    "total_time": 790.5517196655273
+  },
+  "dataset_info": {
+    "total_samples": 4000,
+    "target_samples_per_subgenre": 500,
+    "segment_duration": 45.0,
+    "use_preprocessing": true
+  }
+}

@@ -1,0 +1,99 @@
+import { SimpleMusicTrack } from '@/__generated__/types';
+import { cn } from '@/lib/utils';
+import { useTrackRecommendations } from '@/services/api-hooks';
+import { Check, PlusCircle } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Loading } from '../loading';
+import { TrackRecommandationsComponent } from '../playlist/track-recommendations';
+import { DetailedTrackCard } from '../track/detailed-track-card';
+import { Button } from '../ui/button';
+
+const DashedButton = ({
+  children,
+  onClick,
+  selected,
+}: {
+  children: React.ReactNode;
+  onClick: () => void;
+  selected: boolean;
+}) => {
+  return (
+    <Button
+      onClick={onClick}
+      className={cn(
+        'border-dashed',
+        selected && 'bg-green-500 text-white !border-green-500',
+      )}
+      variant={selected ? 'outline-success' : 'outline'}
+      size="sm"
+    >
+      {selected ? (
+        <Check className="w-4 h-4 text-green-500" />
+      ) : (
+        <PlusCircle className="w-4 h-4" />
+      )}
+      {children}
+    </Button>
+  );
+};
+
+export function Research({
+  track,
+  refetch,
+}: {
+  track: SimpleMusicTrack;
+  refetch: () => void;
+}) {
+  const [selectedBoost, setSelectedBoost] = useState<string[]>([]);
+  const {
+    data: trackRecommendations,
+    isLoading: isLoadingTrackRecommendations,
+    refetch: refetchTrackRecommendations,
+  } = useTrackRecommendations(track?.id, selectedBoost.join(','));
+
+  useEffect(() => {
+    if (selectedBoost) {
+      refetchTrackRecommendations();
+    }
+  }, [selectedBoost]);
+
+  const handleSelectedBoost = (key: string) => {
+    console.log('selectedBoost', selectedBoost);
+    if (selectedBoost?.some((k) => k === key)) {
+      setSelectedBoost((prev) => prev?.filter((k) => k !== key));
+    } else {
+      setSelectedBoost((prev) => [...prev, key]);
+    }
+  };
+  console.log(track);
+  return (
+    <div className="p-4 space-y-4 flex flex-col z-0">
+      <DetailedTrackCard track={track} refetch={refetch} />
+      <div className="flex flex-wrap gap-2">
+        {[
+          { key: 'audioSimilarity', label: 'Audio Similarity' },
+          { key: 'genreSimilarity', label: 'Genre Similarity' },
+          { key: 'metadataSimilarity', label: 'Metadata Similarity' },
+          { key: 'userBehavior', label: 'User Behavior' },
+          { key: 'audioFeatures', label: 'Audio Features' },
+        ].map(({ key, label }) => (
+          <DashedButton
+            key={key}
+            onClick={() => handleSelectedBoost(key)}
+            selected={selectedBoost?.some((k) => k === key)}
+          >
+            {label}
+          </DashedButton>
+        ))}
+      </div>
+      {isLoadingTrackRecommendations ? (
+        <Loading />
+      ) : (
+        <TrackRecommandationsComponent
+          recommendations={trackRecommendations || []}
+          setQueue={() => {}}
+        />
+      )}
+    </div>
+  );
+}

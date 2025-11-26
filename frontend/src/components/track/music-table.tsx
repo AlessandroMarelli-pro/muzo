@@ -1,0 +1,518 @@
+'use client';
+
+import { SimpleMusicTrack } from '@/__generated__/types';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { cn } from '@/lib/utils';
+import { ColumnDef } from '@tanstack/react-table';
+import { Brain, Heart, MoreHorizontal, Pause, Play } from 'lucide-react';
+import * as React from 'react';
+
+import { DataTable } from '@/components/data-table/data-table';
+import { DataTableColumnHeader } from '@/components/data-table/data-table-column-header';
+import { DataTableSortList } from '@/components/data-table/data-table-sort-list';
+import { DataTableToolbar } from '@/components/data-table/data-table-toolbar';
+import { useDataTable } from '@/hooks/use-data-table';
+import { StaticFilterOptionsData } from '@/hooks/useFilterOptions';
+import { useNavigate } from '@tanstack/react-router';
+import { format } from 'date-fns';
+
+interface MusicTableProps {
+  data: SimpleMusicTrack[];
+  pageCount: number;
+  onAddToQueue?: (tracks: SimpleMusicTrack[]) => void;
+  onPlayTrack: (track: SimpleMusicTrack) => void;
+  isLoading?: boolean;
+  staticFilterOptions: StaticFilterOptionsData;
+  initialPageSize?: number;
+  playingTrackId?: string;
+}
+const danceabilityFeelingOptions = [
+  { label: 'Highly Danceable', value: 'highly-danceable' },
+  { label: 'Danceable', value: 'danceable' },
+  { label: 'Moderately Danceable', value: 'moderately-danceable' },
+  { label: 'Slightly Danceable', value: 'slightly-danceable' },
+  { label: 'Minimally Danceable', value: 'minimally-danceable' },
+  { label: 'Ambient', value: 'ambient' },
+  { label: 'Experimental', value: 'experimental' },
+];
+const arousalMoodOptions = [
+  { label: 'Very Calm', value: 'very calm' },
+  { label: 'Calm', value: 'calm' },
+  { label: 'Moderate Energy', value: 'moderate energy' },
+  { label: 'Energetic', value: 'energetic' },
+  { label: 'Very Energetic', value: 'very energetic' },
+];
+const valenceMoodOptions = [
+  { label: 'Very Positive', value: 'very positive' },
+  { label: 'Positive', value: 'positive' },
+  { label: 'Neutral', value: 'neutral' },
+  { label: 'Negative', value: 'negative' },
+  { label: 'Very Negative', value: 'very negative' },
+];
+
+const CamelotKeyOptions = [
+  // Major keys (inner circle)
+  { label: 'C major', value: '8B', color: 'rgba(221, 160, 221,0.5)' }, // Plum/Lavender
+  { label: 'G major', value: '9B', color: 'rgba(128, 0, 128,0.5)' }, // Purple
+  { label: 'D major', value: '10B', color: 'rgba(0, 0, 139,0.5)' }, // Dark Blue
+  { label: 'A major', value: '11B', color: 'rgba(0, 0, 255,0.5)' }, // Blue
+  { label: 'E major', value: '12B', color: 'rgba(0, 128, 128,0.5)' }, // Teal
+  { label: 'B major', value: '1B', color: 'rgba(0, 255, 255,0.5)' }, // Cyan
+  { label: 'F# major', value: '2B', color: 'rgba(144, 238, 144,0.5)' }, // Light Green
+  { label: 'C# major', value: '3B', color: 'rgba(0, 128, 0,0.5)' }, // Green
+  { label: 'G# major', value: '4B', color: 'rgba(255, 215, 0,0.5)' }, // Gold
+  { label: 'D# major', value: '5B', color: 'rgba(255, 165, 0,0.5)' }, // Orange
+  { label: 'A# major', value: '6B', color: 'rgba(255, 69, 0,0.5)' }, // Orange Red
+  { label: 'F major', value: '7B', color: 'rgba(255, 20, 147,0.5)' }, // Deep Pink
+  // Minor keys (outer circle)
+  { label: 'A minor', value: '8A', color: 'rgba(221, 160, 221,0.5)' }, // Plum/Lavender
+  { label: 'E minor', value: '9A', color: 'rgba(128, 0, 128,0.5)' }, // Purple
+  { label: 'B minor', value: '10A', color: 'rgba(0, 0, 139,0.5)' }, // Dark Blue
+  { label: 'F# minor', value: '11A', color: 'rgba(0, 0, 255,0.5)' }, // Blue
+  { label: 'C# minor', value: '12A', color: 'rgba(0, 128, 128,0.5)' }, // Teal
+  { label: 'G# minor', value: '1A', color: 'rgba(0, 255, 255,0.5)' }, // Cyan
+  { label: 'D# minor', value: '2A', color: 'rgba(144, 238, 144,0.5)' }, // Light Green
+  { label: 'A# minor', value: '3A', color: 'rgba(0, 128, 0,0.5)' }, // Green
+  { label: 'F minor', value: '4A', color: 'rgba(255, 215, 0,0.5)' }, // Gold
+  { label: 'C minor', value: '5A', color: 'rgba(255, 165, 0,0.5)' }, // Orange
+  { label: 'G minor', value: '6A', color: 'rgba(255, 69, 0,0.5)' }, // Orange Red
+  { label: 'D minor', value: '7A', color: 'rgba(255, 20, 147,0.5)' }, // Deep Pink
+];
+
+export function MusicTable({
+  data,
+  pageCount,
+  onAddToQueue,
+  onPlayTrack,
+  isLoading,
+  staticFilterOptions,
+  initialPageSize = 10,
+  playingTrackId,
+}: MusicTableProps) {
+  const navigate = useNavigate();
+
+  const columns = React.useMemo<ColumnDef<SimpleMusicTrack>[]>(
+    () => [
+      {
+        id: 'select',
+        header: ({ table }) => (
+          <Checkbox
+            checked={
+              table.getIsAllPageRowsSelected() ||
+              (table.getIsSomePageRowsSelected() && 'indeterminate')
+            }
+            onCheckedChange={(value) =>
+              table.toggleAllPageRowsSelected(!!value)
+            }
+            aria-label="Select all"
+          />
+        ),
+        cell: ({ row }) => (
+          <Checkbox
+            checked={row.getIsSelected()}
+            onCheckedChange={(value) => row.toggleSelected(!!value)}
+            aria-label="Select row"
+          />
+        ),
+        enableSorting: false,
+        enableHiding: false,
+        size: 40,
+      },
+      {
+        id: 'image',
+        cell: ({ row }) => {
+          const track = row.original;
+          const imagePath = track.imagePath || 'Unknown Image';
+
+          return (
+            <div className="flex items-center justify-cente h-10 w-10">
+              <img
+                src={`http://localhost:3000/api/images/serve?imagePath=${imagePath}`}
+                alt="Album Art"
+                className="h-10 w-10 rounded object-cover"
+              />
+            </div>
+          );
+        },
+        enableSorting: false,
+        enableHiding: false,
+      },
+      {
+        id: 'artist',
+        accessorKey: 'artist',
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Artist" />
+        ),
+        cell: ({ row }) => {
+          const artist = row.getValue('artist') as string;
+
+          return (
+            <div
+              className="max-w-[200px] truncate font-medium capitalize"
+              title={artist}
+            >
+              {artist}
+            </div>
+          );
+        },
+        meta: {
+          label: 'Artist',
+          placeholder: 'Search artist...',
+          variant: 'text',
+        },
+        enableColumnFilter: true,
+      },
+      {
+        id: 'title',
+        accessorKey: 'title',
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Title" />
+        ),
+        cell: ({ row }) => {
+          const title = row.getValue('title') as string;
+
+          return (
+            <div className="max-w-[200px] truncate capitalize" title={title}>
+              {title}
+            </div>
+          );
+        },
+        enableColumnFilter: true,
+      },
+      {
+        id: 'duration',
+        accessorKey: 'duration',
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Duration" />
+        ),
+        cell: ({ row }) => {
+          const duration = row.getValue('duration') as number;
+          const minutes = Math.floor(duration / 60);
+          const seconds = Math.floor(duration % 60);
+          return (
+            <div className="text-right font-mono">
+              {minutes}:{seconds.toString().padStart(2, '0')}
+            </div>
+          );
+        },
+
+        enableColumnFilter: true,
+      },
+      {
+        id: 'listeningCount',
+        accessorKey: 'listeningCount',
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Plays" />
+        ),
+        cell: ({ row }) => {
+          const count = row.getValue('listeningCount') as number;
+          return <div className="text-right">{count.toLocaleString()}</div>;
+        },
+        enableColumnFilter: true,
+      },
+      {
+        id: 'genre',
+        accessorKey: 'genre',
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Genre" />
+        ),
+        cell: ({ row }) => {
+          const genre = row.getValue('genre') as string;
+
+          return (
+            <Badge variant="secondary" className="capitalize">
+              {genre}
+            </Badge>
+          );
+        },
+        meta: {
+          label: 'Genre',
+          variant: 'multiSelect',
+          options: staticFilterOptions.genres,
+        },
+        enableColumnFilter: true,
+      },
+      {
+        id: 'subgenre',
+        accessorKey: 'subgenre',
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Subgenre" />
+        ),
+        cell: ({ row }) => {
+          const subgenre = row.getValue('subgenre') as string;
+
+          return (
+            <Badge variant="outline" className="capitalize">
+              {subgenre}
+            </Badge>
+          );
+        },
+        meta: {
+          label: 'Subgenre',
+          variant: 'multiSelect',
+          options: staticFilterOptions.subgenres,
+        },
+        enableColumnFilter: true,
+      },
+      {
+        id: 'tempo',
+        accessorKey: 'tempo',
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Tempo" />
+        ),
+        cell: ({ row }) => {
+          const tempo = row.getValue('tempo') as number;
+
+          return (
+            <div className="text-right font-mono">
+              {tempo >= 0 ? `${Math.round(tempo)} BPM` : 'N/A'}
+            </div>
+          );
+        },
+        meta: {
+          label: 'Tempo',
+          unit: 'BPM',
+          variant: 'range',
+          range: [0, 200],
+        },
+        enableColumnFilter: true,
+      },
+      {
+        id: 'key',
+        accessorKey: 'key',
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Key" />
+        ),
+        cell: ({ row }) => {
+          const key = row.getValue('key') as string;
+
+          return (
+            <Badge
+              variant="outline"
+              className={cn('text-center font-mono')}
+              style={{
+                backgroundColor: CamelotKeyOptions.find(
+                  (option) => option.label === key,
+                )?.color,
+              }}
+            >
+              {CamelotKeyOptions.find((option) => option.label === key)
+                ?.label || 'N/A'}
+            </Badge>
+          );
+        },
+        meta: {
+          label: 'Key',
+          variant: 'multiSelect',
+          options: staticFilterOptions.keys,
+        },
+        enableColumnFilter: true,
+      },
+
+      {
+        id: 'danceabilityFeeling',
+        accessorKey: 'danceabilityFeeling',
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Danceability Feeling" />
+        ),
+        cell: ({ row }) => {
+          const danceabilityFeeling = row.getValue(
+            'danceabilityFeeling',
+          ) as string;
+
+          return (
+            <Badge variant="outline" className={cn('text-center font-mono')}>
+              {danceabilityFeelingOptions.find(
+                (option) => option.value === danceabilityFeeling,
+              )?.label || 'N/A'}
+            </Badge>
+          );
+        },
+        meta: {
+          label: 'Danceability',
+          variant: 'multiSelect',
+          options: danceabilityFeelingOptions,
+        },
+        enableColumnFilter: true,
+      },
+      {
+        id: 'arousalMood',
+        accessorKey: 'arousalMood',
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Arousal Mood" />
+        ),
+        cell: ({ row }) => {
+          const arousalMood = row.getValue('arousalMood') as string;
+
+          return (
+            <Badge variant="outline" className={cn('text-center font-mono')}>
+              {arousalMoodOptions.find((option) => option.value === arousalMood)
+                ?.label || 'N/A'}
+            </Badge>
+          );
+        },
+        meta: {
+          label: 'Mood',
+          variant: 'multiSelect',
+          options: arousalMoodOptions,
+        },
+        enableColumnFilter: true,
+      },
+      {
+        id: 'valenceMood',
+        accessorKey: 'valenceMood',
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Valence Mood" />
+        ),
+        cell: ({ row }) => {
+          const valenceMood = row.getValue('valenceMood') as string;
+
+          return (
+            <Badge variant="outline" className={cn('text-center font-mono')}>
+              {valenceMoodOptions.find((option) => option.value === valenceMood)
+                ?.label || 'N/A'}
+            </Badge>
+          );
+        },
+        meta: {
+          label: 'Mood',
+          variant: 'multiSelect',
+          options: valenceMoodOptions,
+        },
+        enableColumnFilter: true,
+      },
+      {
+        id: 'isFavorite',
+        accessorKey: 'isFavorite',
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Favorite" />
+        ),
+        cell: ({ row }) => {
+          const isFavorite = row.getValue('isFavorite') as boolean;
+
+          return (
+            <div className="flex items-center justify-center">
+              <Heart
+                className={cn(
+                  'h-4 w-4',
+                  isFavorite
+                    ? 'fill-red-500 text-red-500'
+                    : 'text-muted-foreground',
+                )}
+              />
+            </div>
+          );
+        },
+        meta: {
+          label: 'Favorite',
+          variant: 'boolean',
+        },
+        enableColumnFilter: true,
+      },
+      {
+        id: 'lastScannedAt',
+        accessorKey: 'lastScannedAt',
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Last Scanned At" />
+        ),
+        cell: ({ row }) => {
+          const lastScannedAt = row.getValue('lastScannedAt') as string;
+          return (
+            <div className="text-right">
+              {format(lastScannedAt, 'MM/dd/yyyy HH:mm')}
+            </div>
+          );
+        },
+        enableColumnFilter: true,
+      },
+      {
+        id: 'actions',
+        enableHiding: false,
+        cell: ({ row }) => {
+          const track = row.original;
+
+          const isThisTrackPlaying = playingTrackId === track.id;
+
+          return (
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onPlayTrack(track)}
+              >
+                {isThisTrackPlaying ? (
+                  <Pause className="h-4 w-4" />
+                ) : (
+                  <Play className="h-4 w-4" />
+                )}
+              </Button>
+              <Button
+                size="sm"
+                onClick={() => navigate({ to: `/research/${track.id}` })}
+                variant="ghost"
+              >
+                <Brain className="h-4 w-4 " />
+              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="h-8 w-8 p-0">
+                    <span className="sr-only">Open menu</span>
+                    <MoreHorizontal className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem
+                    onClick={() => {
+                      if (onAddToQueue) {
+                        onAddToQueue([track]);
+                      }
+                    }}
+                  >
+                    Add to Queue
+                  </DropdownMenuItem>
+                  <DropdownMenuItem>Add to Playlist</DropdownMenuItem>
+                  <DropdownMenuItem>View Details</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          );
+        },
+      },
+    ],
+    [playingTrackId, onPlayTrack, onAddToQueue],
+  );
+
+  const { table } = useDataTable({
+    data,
+    columns,
+    pageCount: pageCount,
+    initialState: {
+      sorting: [{ id: 'title', desc: false }],
+      columnPinning: { right: ['actions'] },
+      pagination: {
+        pageIndex: 0,
+        pageSize: initialPageSize,
+      },
+    },
+    getRowId: (row) => row.id,
+    enableAdvancedFilter: false,
+  });
+
+  return (
+    <div className="w-full space-y-4">
+      <DataTable table={table} isLoading={isLoading}>
+        <DataTableToolbar table={table}>
+          <DataTableSortList table={table} />
+        </DataTableToolbar>
+      </DataTable>
+    </div>
+  );
+}

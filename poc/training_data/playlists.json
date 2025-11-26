@@ -1,0 +1,11 @@
+[
+  {
+    "genre": "rock",
+    "subgenres": [
+      {
+        "subgenre": "alternative",
+        "playlistId": "qsdklmqksd"
+      }
+    ]
+  }
+]

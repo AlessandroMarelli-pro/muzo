@@ -1,0 +1,46 @@
+{
+  "song_info": {
+    "filename": "UB40 - Kingston Town.flac",
+    "file_path": "/Users/alessandro/Music/tidal/Tracks/UB40 - Kingston Town.flac",
+    "duration": 226.18666666666667,
+    "sample_rate": 22050,
+    "tempo": 103.359375,
+    "key": "E",
+    "energy": 0.11206332594156265,
+    "valence": 0.7236719485587119,
+    "danceability": 0.7
+  },
+  "feature_extraction": {
+    "gtzan_features_extracted": 58,
+    "feature_format": "GTZAN compatible"
+  },
+  "classification": {
+    "model_name": "personal-genres-gtzan-v1.0",
+    "model_file": "models/personal-genres-gtzan-v1.0.pkl",
+    "predicted_genre": "reggae",
+    "confidence": 0.4014345238095238,
+    "alternatives": [
+      {
+        "genre": "reggae",
+        "confidence": 0.4014345238095238
+      },
+      {
+        "genre": "hiphop",
+        "confidence": 0.25136111111111115
+      },
+      {
+        "genre": "electronic",
+        "confidence": 0.22983928571428572
+      }
+    ],
+    "all_probabilities": {
+      "electronic": 0.22983928571428572,
+      "hiphop": 0.25136111111111115,
+      "jazz": 0.03544047619047619,
+      "reggae": 0.4014345238095238,
+      "rock": 0.08192460317460318
+    }
+  },
+  "success": true,
+  "timestamp": "2025-09-20T09:45:00"
+}

@@ -1,0 +1,93 @@
+{
+  "specialist_info": {
+    "target_genre": "Alternative",
+    "model_name": "subgenre-specialist-alternative-v1.0",
+    "architecture": "hybrid",
+    "model_path": "models\\dance_EDM\\Alternative\\subgenre-specialist-alternative-v1.0.pth",
+    "subgenre_classes": [
+      "Alternative Rock",
+      "Grunge",
+      "Hard Rock",
+      "Indie Rock",
+      "New Wave",
+      "Progressive Rock",
+      "Punk",
+      "Shoegaze"
+    ],
+    "num_subgenres": 8
+  },
+  "training_results": {
+    "model_name": "subgenre-specialist-alternative-v1.0",
+    "architecture": "hybrid",
+    "training_samples": 4000,
+    "num_classes": 8,
+    "classes": [
+      "Alternative Rock",
+      "Grunge",
+      "Hard Rock",
+      "Indie Rock",
+      "New Wave",
+      "Progressive Rock",
+      "Punk",
+      "Shoegaze"
+    ],
+    "num_epochs_trained": 8,
+    "training_time": 648.907687664032,
+    "avg_epoch_time": 81.113460958004,
+    "best_val_loss": 0.8572894844412804,
+    "final_train_acc": 71.84375,
+    "final_val_acc": 67.375,
+    "train_losses": [
+      1.9860699462890625,
+      1.8121710205078125,
+      1.532356357574463,
+      1.3554166412353517,
+      1.1993092060089112,
+      1.0127832287549972,
+      0.8626853466033936,
+      0.8010660183429718
+    ],
+    "val_losses": [
+      1.8429335963726043,
+      2.619984451532364,
+      2.6307743155956267,
+      1.3711757332086563,
+      1.3916152179241181,
+      0.9668936040997506,
+      0.8634572510421276,
+      0.8572894844412804
+    ],
+    "train_accuracies": [
+      19.9375,
+      28.34375,
+      43.40625,
+      50.28125,
+      56.75,
+      63.25,
+      68.78125,
+      71.84375
+    ],
+    "val_accuracies": [
+      22.75,
+      16.75,
+      23.75,
+      50.75,
+      47.375,
+      63.25,
+      67.625,
+      67.375
+    ],
+    "device": "cuda"
+  },
+  "timing": {
+    "preprocessing_time": 139.92159962654114,
+    "training_time": 652.7190132141113,
+    "total_time": 792.6481378078461
+  },
+  "dataset_info": {
+    "total_samples": 4000,
+    "target_samples_per_subgenre": 500,
+    "segment_duration": 45.0,
+    "use_preprocessing": true
+  }
+}

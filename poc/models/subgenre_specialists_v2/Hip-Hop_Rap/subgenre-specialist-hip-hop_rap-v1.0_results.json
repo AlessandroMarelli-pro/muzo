@@ -1,0 +1,93 @@
+{
+  "specialist_info": {
+    "target_genre": "Hip-Hop_Rap",
+    "model_name": "subgenre-specialist-hip-hop_rap-v1.0",
+    "architecture": "hybrid",
+    "model_path": "models\\subgenre_specialists_v2\\Hip-Hop_Rap\\subgenre-specialist-hip-hop_rap-v1.0.pth",
+    "subgenre_classes": [
+      "Alternative Rap",
+      "East Coast Rap",
+      "Gangsta Rap",
+      "Hip-Hop",
+      "Old School Rap",
+      "Rap",
+      "Underground Rap",
+      "West Coast Rap"
+    ],
+    "num_subgenres": 8
+  },
+  "training_results": {
+    "model_name": "subgenre-specialist-hip-hop_rap-v1.0",
+    "architecture": "hybrid",
+    "training_samples": 8000,
+    "num_classes": 8,
+    "classes": [
+      "Alternative Rap",
+      "East Coast Rap",
+      "Gangsta Rap",
+      "Hip-Hop",
+      "Old School Rap",
+      "Rap",
+      "Underground Rap",
+      "West Coast Rap"
+    ],
+    "num_epochs_trained": 8,
+    "training_time": 1233.806928396225,
+    "avg_epoch_time": 154.22586604952812,
+    "best_val_loss": 0.2672836451465264,
+    "final_train_acc": 90.6875,
+    "final_val_acc": 90.375,
+    "train_losses": [
+      1.8293015670776367,
+      1.5093473410606384,
+      1.216217010617256,
+      0.9380978199839592,
+      0.6861487817764282,
+      0.4962211960926652,
+      0.3389025466516614,
+      0.2883552037365735
+    ],
+    "val_losses": [
+      1.581382122039795,
+      1.3363974618911743,
+      1.1015863400697707,
+      1.0600517968088388,
+      0.662684607245028,
+      0.33653021551668644,
+      0.27753200246021154,
+      0.2672836451465264
+    ],
+    "train_accuracies": [
+      24.78125,
+      37.515625,
+      50.703125,
+      63.328125,
+      73.953125,
+      82.171875,
+      88.578125,
+      90.6875
+    ],
+    "val_accuracies": [
+      34.875,
+      45.0,
+      54.75,
+      63.0,
+      75.5,
+      87.9375,
+      90.125,
+      90.375
+    ],
+    "device": "cuda"
+  },
+  "timing": {
+    "preprocessing_time": 56.060046911239624,
+    "training_time": 1237.5708310604095,
+    "total_time": 1293.6323008537292
+  },
+  "dataset_info": {
+    "total_samples": 8000,
+    "target_samples_per_subgenre": 1000,
+    "segment_duration": 90.0,
+    "use_preprocessing": true
+  }
+}

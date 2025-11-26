@@ -1,0 +1,97 @@
+{
+  "specialist_info": {
+    "target_genre": "Jazz",
+    "model_name": "subgenre-specialist-jazz-v1.0",
+    "architecture": "hybrid",
+    "model_path": "models\\dance_EDM\\Jazz\\subgenre-specialist-jazz-v1.0.pth",
+    "subgenre_classes": [
+      "Acid Jazz",
+      "Big Band",
+      "Contemporary Jazz",
+      "Ethio-jazz",
+      "Fusion",
+      "Latin Jazz",
+      "Mainstream Jazz",
+      "Ragtime",
+      "Smooth Jazz",
+      "Trad Jazz"
+    ],
+    "num_subgenres": 10
+  },
+  "training_results": {
+    "model_name": "subgenre-specialist-jazz-v1.0",
+    "architecture": "hybrid",
+    "training_samples": 5000,
+    "num_classes": 10,
+    "classes": [
+      "Acid Jazz",
+      "Big Band",
+      "Contemporary Jazz",
+      "Ethio-jazz",
+      "Fusion",
+      "Latin Jazz",
+      "Mainstream Jazz",
+      "Ragtime",
+      "Smooth Jazz",
+      "Trad Jazz"
+    ],
+    "num_epochs_trained": 8,
+    "training_time": 752.7954664230347,
+    "avg_epoch_time": 94.09943330287933,
+    "best_val_loss": 0.3010235961228609,
+    "final_train_acc": 91.2,
+    "final_val_acc": 89.7,
+    "train_losses": [
+      1.6778634128570558,
+      1.111034188747406,
+      0.8010192033648491,
+      0.6326222977936268,
+      0.5275796189010143,
+      0.4022536634206772,
+      0.30243113070726396,
+      0.2591533028483391
+    ],
+    "val_losses": [
+      1.29717125749588,
+      0.8981481143236161,
+      0.7854742022752762,
+      0.6049823544025421,
+      0.4751125686466694,
+      0.38564414402842523,
+      0.3308109230622649,
+      0.3010235961228609
+    ],
+    "train_accuracies": [
+      41.4,
+      61.275,
+      70.95,
+      77.025,
+      80.825,
+      85.175,
+      89.3,
+      91.2
+    ],
+    "val_accuracies": [
+      51.4,
+      65.0,
+      69.4,
+      77.3,
+      80.4,
+      86.2,
+      87.6,
+      89.7
+    ],
+    "device": "cuda"
+  },
+  "timing": {
+    "preprocessing_time": 62.064334869384766,
+    "training_time": 756.5601315498352,
+    "total_time": 818.6255776882172
+  },
+  "dataset_info": {
+    "total_samples": 5000,
+    "target_samples_per_subgenre": 500,
+    "segment_duration": 45.0,
+    "use_preprocessing": true
+  }
+}

@@ -1,0 +1,109 @@
+{
+  "name": "muzo-desktop",
+  "version": "1.0.0",
+  "description": "Muzo AI-powered music library organization desktop application",
+  "main": "dist/main.js",
+  "author": "Alessandro Marelli",
+  "license": "MIT",
+  "homepage": "./",
+  "scripts": {
+    "dev": "concurrently \"npm run dev:frontend\" \"npm run dev:electron\"",
+    "dev:frontend": "cd ../frontend && npm run dev",
+    "dev:electron": "wait-on http://localhost:5173 && electron .",
+    "build": "npm run build:frontend && npm run build:electron",
+    "build:frontend": "cd ../frontend && npm run build",
+    "build:electron": "tsc && electron-builder",
+    "dist": "npm run build && electron-builder --publish=never",
+    "pack": "npm run build && electron-builder --dir",
+    "postinstall": "electron-builder install-app-deps",
+    "start": "electron .",
+    "lint": "eslint . --ext ts,js --report-unused-disable-directives --max-warnings 0",
+    "lint:fix": "eslint . --ext ts,js --fix",
+    "type-check": "tsc --noEmit"
+  },
+  "keywords": [
+    "music",
+    "library",
+    "organization",
+    "ai",
+    "desktop",
+    "electron"
+  ],
+  "dependencies": {
+    "electron": "^32.0.0",
+    "electron-updater": "^6.6.0"
+  },
+  "devDependencies": {
+    "@types/electron-is-dev": "^0.3.0",
+    "@types/node": "^24.5.2",
+    "concurrently": "^9.1.0",
+    "electron-builder": "^25.1.8",
+    "electron-is-dev": "^3.0.1",
+    "electron-log": "^5.4.3",
+    "electron-reload": "^2.0.0-alpha.1",
+    "eslint": "^9.36.0",
+    "typescript": "^5.9.2",
+    "wait-on": "^8.0.1"
+  },
+  "build": {
+    "appId": "com.alessandromarelli.muzo",
+    "productName": "Muzo",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "node_modules/**/*",
+      "../frontend/dist/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "../frontend/dist",
+        "to": "frontend",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ],
+    "mac": {
+      "category": "public.app-category.music",
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ],
+      "icon": "assets/icon.icns"
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "assets/icon.ico"
+    },
+    "linux": {
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "category": "AudioVideo",
+      "icon": "assets/icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
+  }
+}

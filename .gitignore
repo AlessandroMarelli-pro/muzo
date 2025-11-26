@@ -1,0 +1,98 @@
+poc/venv/**
+venv
+.DS_Store
+node_modules/
+backend/dist/*
+# Keep environment variables out of version control
+.env
+
+backend/generated/prisma
+backend/dist/app.module.js
+backend/dist/app.module.js.map
+muzo/images/
+backend/dist/tsconfig.tsbuildinfo
+frontend/dist/
+frontend/node_modules/**
+
+.vite/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+*.pyd
+*.pdb
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+pip-wheel-metadata/
+*.manifest
+*.spec
+
+# Virtual environments
+.env/
+.venv/
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# PyInstaller
+*.spec
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre type checker
+.pyre/
+
+# Coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
+
+# PyCharm
+.idea/
+*.iml
+
+# VS Code
+.vscode/
+
+# Local config
+*.env
+.env.*
+!.env.template
+
+# Test output
+test-output/
+# End Generation Here
+*.wav
+*.pth
+
+segment_manifest.csv
+
+huggingface_cache/
+
+specs/**
+docs/** 
+.specify/**
+**/.cursor/*
+.claude/**
+todo
