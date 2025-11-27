@@ -190,7 +190,6 @@ muzo/
 - [Backend README](backend/README.md)
 - [AI Service README](ai-service/README.md)
 - [Model Trainer README](model-trainer/README.md)
-- [Initial Specification](specs/001-init/spec.md)
 
 ## 📄 License
 
