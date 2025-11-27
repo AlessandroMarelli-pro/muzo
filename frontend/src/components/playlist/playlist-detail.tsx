@@ -84,11 +84,6 @@ export function PlaylistDetail({ id, onBack }: PlaylistDetailProps) {
     actions.togglePlayPause(playlist?.tracks[0].track.id);
   };
 
-  const handleShuffle = () => {
-    // TODO: Implement shuffle playlist functionality
-    console.log('Shuffle playlist:', playlist?.id);
-  };
-
   if (loading) {
     return (
       <div className="space-y-6">
@@ -204,7 +199,8 @@ export function PlaylistDetail({ id, onBack }: PlaylistDetailProps) {
             position: index,
             tempo: Math.round((track.track?.tempo || 0) * 100) / 100,
             key: track.track?.key || '',
-            name: `${track.track?.title || track.track?.artist}`,
+            name: `${track.track?.artist} - ${track.track?.title}`,
+            duration: track.track?.duration,
           }))}
         />
       </div>

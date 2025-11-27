@@ -8,11 +8,13 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from '@/components/ui/chart';
+import { formatTime } from '@/lib/utils';
 
 export interface PlaylistChartData {
   key?: string;
   tempo?: number;
   name?: string;
+  duration: number;
 }
 
 export const description = 'A multiple line chart';
@@ -26,10 +28,16 @@ const chartConfig = {
 
 export function PlaylistChart({ data }: { data: PlaylistChartData[] }) {
   const minTempo = Math.min(...data.map((item) => item.tempo || 0)) - 1;
-  const dataWithTempoAdjusted = data.map((item) => ({
-    ...item,
-    tempo: item.tempo ? ((item.tempo - minTempo) / 10).toFixed(2) : 0,
-  }));
+  const dataWithTempoAdjusted = data.map((item, index) => {
+    const cumulatedDuration = data
+      .slice(0, index)
+      .reduce((acc, curr) => acc + curr.duration, 0);
+    return {
+      ...item,
+      tempo: item.tempo ? ((item.tempo - minTempo) / 10).toFixed(2) : 0,
+      duration: formatTime(cumulatedDuration),
+    };
+  });
   return (
     <ChartContainer config={chartConfig} className="h-[30vh] aspect-auto">
       <AreaChart
@@ -58,9 +66,9 @@ export function PlaylistChart({ data }: { data: PlaylistChartData[] }) {
             <stop offset="95%" stopColor="var(--chart-3)" stopOpacity={0.1} />
           </linearGradient>
         </defs>
-        <CartesianGrid vertical={false} />
+        <CartesianGrid vertical={true} />
         <XAxis
-          dataKey="position"
+          dataKey="duration"
           tickLine={false}
           axisLine={false}
           tickMargin={8}

@@ -3,7 +3,6 @@
 import { SimpleMusicTrack } from '@/__generated__/types';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -101,7 +100,7 @@ export function MusicTable({
 
   const columns = React.useMemo<ColumnDef<SimpleMusicTrack>[]>(
     () => [
-      {
+      /*   {
         id: 'select',
         header: ({ table }) => (
           <Checkbox
@@ -125,7 +124,7 @@ export function MusicTable({
         enableSorting: false,
         enableHiding: false,
         size: 40,
-      },
+      }, */
       {
         id: 'image',
         cell: ({ row }) => {
@@ -156,7 +155,7 @@ export function MusicTable({
 
           return (
             <div
-              className="max-w-[200px] truncate font-medium capitalize"
+              className="max-w-[100px] truncate font-medium capitalize"
               title={artist}
             >
               {artist}
@@ -180,12 +179,13 @@ export function MusicTable({
           const title = row.getValue('title') as string;
 
           return (
-            <div className="max-w-[200px] truncate capitalize" title={title}>
+            <div className="max-w-[150px] truncate capitalize" title={title}>
               {title}
             </div>
           );
         },
         enableColumnFilter: true,
+        width: 200,
       },
       {
         id: 'duration',
@@ -198,7 +198,7 @@ export function MusicTable({
           const minutes = Math.floor(duration / 60);
           const seconds = Math.floor(duration % 60);
           return (
-            <div className="text-right font-mono">
+            <div className="max-w-[50px] text-right font-mono">
               {minutes}:{seconds.toString().padStart(2, '0')}
             </div>
           );
@@ -214,7 +214,11 @@ export function MusicTable({
         ),
         cell: ({ row }) => {
           const count = row.getValue('listeningCount') as number;
-          return <div className="text-right">{count.toLocaleString()}</div>;
+          return (
+            <div className="max-w-[25px] text-right">
+              {count.toLocaleString()}
+            </div>
+          );
         },
         enableColumnFilter: true,
       },
@@ -272,7 +276,7 @@ export function MusicTable({
           const tempo = row.getValue('tempo') as number;
 
           return (
-            <div className="text-right font-mono">
+            <div className="max-w-[50px] text-right font-mono">
               {tempo >= 0 ? `${Math.round(tempo)} BPM` : 'N/A'}
             </div>
           );
@@ -297,7 +301,7 @@ export function MusicTable({
           return (
             <Badge
               variant="outline"
-              className={cn('text-center font-mono')}
+              className={cn('max-w-[70px] text-center font-mono')}
               style={{
                 backgroundColor: CamelotKeyOptions.find(
                   (option) => option.label === key,
@@ -321,7 +325,7 @@ export function MusicTable({
         id: 'danceabilityFeeling',
         accessorKey: 'danceabilityFeeling',
         header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Danceability Feeling" />
+          <DataTableColumnHeader column={column} title="Danceability" />
         ),
         cell: ({ row }) => {
           const danceabilityFeeling = row.getValue(
@@ -347,7 +351,7 @@ export function MusicTable({
         id: 'arousalMood',
         accessorKey: 'arousalMood',
         header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Arousal Mood" />
+          <DataTableColumnHeader column={column} title="Arousal" />
         ),
         cell: ({ row }) => {
           const arousalMood = row.getValue('arousalMood') as string;
@@ -370,7 +374,7 @@ export function MusicTable({
         id: 'valenceMood',
         accessorKey: 'valenceMood',
         header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Valence Mood" />
+          <DataTableColumnHeader column={column} title="Mood" />
         ),
         cell: ({ row }) => {
           const valenceMood = row.getValue('valenceMood') as string;

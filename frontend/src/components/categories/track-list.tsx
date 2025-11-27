@@ -63,7 +63,9 @@ export const CategoriesTrackList: React.FC<TrackListProps> = ({
           >
             <CardTitle className="flex flex-row  items-center justify-between p-0 px-4 w-full bg-secondary rounded-t-xl">
               <div className="flex flex-row gap-2 items-center h-9">
-                <p className="text-xs font-bold uppercase">{category.name}</p>
+                <p className="text-xs font-bold uppercase">
+                  {category.name.replace('_', ' ')}
+                </p>
                 <div className="flex ">
                   <Badge variant="secondary" className="text-[10px]">
                     {category.trackCount}
