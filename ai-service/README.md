@@ -1,21 +1,42 @@
 # Muzo AI Service
 
-AI-powered audio analysis and classification service for the Muzo project.
+AI-powered audio analysis and classification service for the Muzo project. Built with Flask and Python, this service provides comprehensive audio analysis capabilities including BPM detection, genre classification, key detection, mood analysis, and audio fingerprinting.
 
 ## Features
 
-- **BPM Detection**: Adaptive FFT-based tempo detection
-- **Hierarchical Music Classification**: Multi-level genre classification using HuggingFace models
-- **Simple Audio Analysis**: Feature extraction, fingerprinting, and metadata extraction
-- **Key Detection**: Musical key and scale identification
-- **Mood Analysis**: Audio mood and danceability analysis
+### 🎵 Audio Analysis
+- **BPM Detection**: Adaptive FFT-based tempo detection with multiple algorithm support (madmom, librosa)
+- **Key Detection**: Musical key and scale identification (major/minor)
+- **Mood Analysis**: Audio mood classification and emotional characteristics
+- **Danceability Analysis**: Rhythm and groove analysis for dance suitability
+
+### 🎭 Genre Classification
+- **Hierarchical Classification**: Multi-level genre/subgenre classification using CNN models
+- **HuggingFace Integration**: Pre-trained models downloaded from HuggingFace Hub
+- **Batch Processing**: Process multiple files efficiently
+
+### 🔍 Audio Fingerprinting & Metadata
+- **Feature Extraction**: MFCC, spectral, rhythm, and melodic features
+- **Metadata Extraction**: ID3 tags, file properties, and technical details
+- **Third-party Integration**: Discogs, MusicBrainz lookups
+
+### 📊 Supported Formats
+WAV, MP3, FLAC, M4A, AAC, OGG
 
 ## Quick Start
+
+### Prerequisites
+- Python 3.10+
+- FFmpeg (for audio format conversion)
+
+### Installation
 
 ```bash
 # Create and activate virtual environment
 python -m venv .venv
-source .venv/bin/activate  # or `source activate.sh`
+source .venv/bin/activate  # Linux/macOS
+# or: .venv\Scripts\activate  # Windows
+# or: source activate.sh
 
 # Install dependencies
 pip install -r requirements.txt
@@ -34,6 +55,9 @@ python run_services.py --hierarchical-only --port=4010
 
 # Full service (both features enabled)
 python run_services.py --port=4000
+
+# With debug mode
+python run_services.py --debug --port=4000
 ```
 
 | Mode            | Flag                  | Use Case                                                     |
@@ -42,7 +66,7 @@ python run_services.py --port=4000
 | Hierarchical    | `--hierarchical-only` | CNN-based genre classification using HuggingFace models      |
 | Full            | (no flag)             | All features enabled                                         |
 
-Additional options: `--host`, `--debug`
+Additional options: `--host <address>`, `--debug`
 
 ## API Endpoints
 
@@ -61,24 +85,71 @@ Additional options: `--host`, `--debug`
 curl -X POST -F "audio_file=@track.mp3" http://localhost:4000/api/v1/audio/bpm/detect
 ```
 
-### Hierarchical Classification (Optional)
+**Response:**
+```json
+{
+  "bpm": 128.0,
+  "confidence": 0.95,
+  "method": "adaptive_fft"
+}
+```
 
-Enable with `ENABLE_HIERARCHICAL_CLASSIFICATION=true`
+### Hierarchical Classification
 
-| Endpoint                               | Description                |
-| -------------------------------------- | -------------------------- |
-| `/api/v1/audio/analyze/classification` | Single file classification |
-| `/api/v1/audio/hierarchical/batch`     | Batch classification       |
-| `/api/v1/audio/hierarchical/status`    | Service status             |
-| `/api/v1/audio/hierarchical/genres`    | Available genres           |
-| `/api/v1/audio/hierarchical/health`    | Health check               |
+Enable with `--hierarchical-only` or full mode.
 
-### Simple Analysis (Optional)
+| Endpoint                               | Method | Description                |
+| -------------------------------------- | ------ | -------------------------- |
+| `/api/v1/audio/analyze/classification` | POST   | Single file classification |
+| `/api/v1/audio/hierarchical/batch`     | POST   | Batch classification       |
+| `/api/v1/audio/hierarchical/status`    | GET    | Service status             |
+| `/api/v1/audio/hierarchical/genres`    | GET    | Available genres           |
+| `/api/v1/audio/hierarchical/health`    | GET    | Health check               |
+| `/api/v1/audio/hierarchical/example`   | GET    | Example response           |
 
-Enable with `ENABLE_SIMPLE_ANALYSIS=true`
+**Example:**
+```bash
+curl -X POST -F "audio_file=@track.mp3" http://localhost:4000/api/v1/audio/analyze/classification
+```
+
+**Response:**
+```json
+{
+  "genre": "Electronic",
+  "subgenre": "House",
+  "confidence": 0.87,
+  "all_genres": {
+    "Electronic": 0.87,
+    "Pop": 0.08,
+    "Hip-Hop": 0.05
+  }
+}
+```
+
+### Simple Analysis
+
+Enable with `--simple-only` or full mode.
 
 ```bash
 curl -X POST -F "audio_file=@track.mp3" http://localhost:4000/api/v1/audio/analyze/simple
+```
+
+**Response:**
+```json
+{
+  "filename": "track.mp3",
+  "duration": 180.5,
+  "sample_rate": 44100,
+  "bpm": 128.0,
+  "key": "A minor",
+  "mood": "energetic",
+  "danceability": 0.82,
+  "features": {
+    "mfcc": [...],
+    "spectral_centroid": 2500.0,
+    "spectral_rolloff": 8000.0
+  }
+}
 ```
 
 ## Configuration
@@ -93,7 +164,7 @@ curl -X POST -F "audio_file=@track.mp3" http://localhost:4000/api/v1/audio/analy
 | `FLASK_PORT`   | `4000`              | Port number                     |
 | `FLASK_DEBUG`  | `False`             | Debug mode                      |
 | `SECRET_KEY`   | `dev-secret-key...` | Flask secret key                |
-| `LOG_LEVEL`    | `INFO`              | Logging level                   |
+| `LOG_LEVEL`    | `INFO`              | Logging level (DEBUG, INFO, WARNING, ERROR) |
 | `LOG_FILE`     | -                   | Optional log file path          |
 | `CORS_ORIGINS` | `*`                 | Comma-separated allowed origins |
 
@@ -110,7 +181,7 @@ curl -X POST -F "audio_file=@track.mp3" http://localhost:4000/api/v1/audio/analy
 
 | Variable              | Default           | Description                    |
 | --------------------- | ----------------- | ------------------------------ |
-| `SAMPLE_RATE`         | `44100`           | Audio sample rate              |
+| `SAMPLE_RATE`         | `44100`           | Audio sample rate (Hz)         |
 | `HOP_LENGTH`          | `512`             | Hop length for analysis        |
 | `N_MELS`              | `128`             | Number of mel bands            |
 | `N_MFCC`              | `13`              | Number of MFCC coefficients    |
@@ -136,7 +207,7 @@ curl -X POST -F "audio_file=@track.mp3" http://localhost:4000/api/v1/audio/analy
 
 | Variable                | Default     | Description              |
 | ----------------------- | ----------- | ------------------------ |
-| `CACHE_TYPE`            | `simple`    | Cache type               |
+| `CACHE_TYPE`            | `simple`    | Cache type (simple, redis) |
 | `CACHE_DEFAULT_TIMEOUT` | `300`       | Cache timeout in seconds |
 | `REDIS_HOST`            | `localhost` | Redis host               |
 | `REDIS_PORT`            | `6379`      | Redis port               |
@@ -162,32 +233,64 @@ curl -X POST -F "audio_file=@track.mp3" http://localhost:4000/api/v1/audio/analy
 
 Models are downloaded from HuggingFace Hub and cached locally in `models/huggingface_cache`:
 
-- **Genre Classifier**: `CosmicSurfer/muzo-genre-classifier` → `genre_classifier.pth`
-- **Subgenre Specialists**: `CosmicSurfer/muzo-subgenre-specialists` → `{genre}_specialist.pth`
+| Model | Repository | File |
+|-------|------------|------|
+| Genre Classifier | `CosmicSurfer/muzo-genre-classifier` | `genre_classifier.pth` |
+| Subgenre Specialists | `CosmicSurfer/muzo-subgenre-specialists` | `{genre}_specialist.pth` |
 
 ## Project Structure
 
 ```
 ai-service/
 ├── app.py                      # Flask application entry point
+├── run_services.py             # Service runner with configuration flags
 ├── requirements.txt            # Python dependencies
+├── LICENSE                     # MIT License
 ├── src/
-│   ├── api/                    # API endpoints
+│   ├── api/                    # API endpoints (Flask-RESTful resources)
 │   │   ├── bpm_detection.py
 │   │   ├── health.py
 │   │   ├── hierarchical_classification.py
 │   │   └── simple_analysis.py
-│   ├── services/               # Business logic
+│   ├── services/               # Business logic and audio processing
 │   │   ├── enhanced_adaptive_bpm_detector.py
 │   │   ├── fft_bpm_detector.py
 │   │   ├── hierarchical_music_classifier.py
 │   │   ├── huggingface_model_manager.py
-│   │   ├── simple_*.py         # Simple analysis services
-│   │   └── features/           # Audio feature extractors
+│   │   ├── simple_audio_loader.py
+│   │   ├── simple_feature_extractor.py
+│   │   ├── simple_fingerprint_generator.py
+│   │   ├── simple_metadata_extractor.py
+│   │   ├── simple_technical_analyzer.py
+│   │   ├── simple_filename_parser.py
+│   │   ├── simple_analysis.py
+│   │   ├── features/           # Audio feature extractors
+│   │   │   ├── audio_mood_analyzer.py
+│   │   │   ├── danceability_analyzer.py
+│   │   │   ├── key_detector.py
+│   │   │   └── shared_features.py
+│   │   └── third_parties/      # External API integrations
+│   │       ├── discogs.py
+│   │       └── musicbrainz.py
+│   ├── scrappers/              # Web scrapers for metadata
+│   │   ├── apple_music_scrapper.py
+│   │   ├── bancamp_scrapper.py
+│   │   ├── lastfm_scrapper.py
+│   │   └── musicbrainz_scrapper.py
 │   ├── config/                 # Configuration
+│   │   ├── settings.py
+│   │   ├── music_identification_config.py
+│   │   └── redis_config.py
 │   └── utils/                  # Utilities
-├── models/                     # Trained models
+│       ├── keyfinder.py
+│       ├── performance_analyzer.py
+│       ├── performance_optimizer.py
+│       └── redis_cache.py
+├── models/                     # Trained models and HuggingFace cache
 ├── tests/                      # Test suite
+│   ├── unit/
+│   ├── integration/
+│   └── contract/
 └── trainers/                   # Model training scripts
 ```
 
@@ -196,25 +299,107 @@ ai-service/
 ### Running Tests
 
 ```bash
+# Run all tests
 pytest tests/
+
+# Run with coverage
+pytest tests/ --cov=src --cov-report=html
+
+# Run specific test file
+pytest tests/unit/test_bpm_detection.py
+
+# Run async tests
+pytest tests/ -v --asyncio-mode=auto
 ```
 
 ### Code Quality
 
 ```bash
-black src/
-flake8 src/
+# Format code
+black src/ tests/
+
+# Lint code
+flake8 src/ tests/
+
+# Type checking
 mypy src/
+
+# All checks
+black src/ && flake8 src/ && mypy src/
+```
+
+### Performance Analysis
+
+```bash
+# Analyze service performance
+python analyze_performance.py
 ```
 
 ## Dependencies
 
-- **Flask**: Web framework with Flask-RESTful
-- **librosa**: Audio analysis
-- **transformers**: HuggingFace models for classification
+### Core Framework
+- **Flask** (3.0+): Web framework
+- **Flask-RESTful**: REST API extensions
+- **Flask-CORS**: Cross-origin resource sharing
+
+### Audio Processing
+- **librosa** (0.10+): Audio analysis and feature extraction
+- **audioflux**: Advanced audio feature extraction
+- **madmom**: Beat and tempo detection
+- **soundfile**: Audio file I/O
+- **pydub**: Audio manipulation
+- **mutagen**: Audio metadata
+
+### Machine Learning
+- **PyTorch** (2.0+): Deep learning framework
+- **transformers**: HuggingFace transformers
+- **huggingface_hub**: Model downloads
 - **scikit-learn**: ML utilities
-- **numpy/pandas**: Data processing
+
+### Data Processing
+- **numpy**: Numerical computing
+- **pandas**: Data manipulation
+- **scipy**: Scientific computing
+
+### External APIs
+- **python3-discogs-client**: Discogs API
+- **musicbrainzngs**: MusicBrainz API
+- **pylast**: Last.fm API
+- **pyacoustid**: AcoustID fingerprinting
+
+### Caching & Storage
+- **redis**: Redis client for caching
+
+### Development
+- **pytest**: Testing framework
+- **black**: Code formatter
+- **flake8**: Linter
+- **mypy**: Type checker
 - **loguru**: Logging
+
+## Troubleshooting
+
+### Common Issues
+
+**audioFlux threading conflicts:**
+Use `--simple-only` mode to avoid threading issues with audioFlux.
+
+**Model download failures:**
+Ensure `HF_TOKEN` is set if using private HuggingFace repositories.
+
+**Memory issues with large files:**
+Adjust `MAX_AUDIO_FILE_SIZE` and ensure sufficient system memory.
+
+**Redis connection errors:**
+Check Redis is running and `REDIS_HOST`/`REDIS_PORT` are correct.
+
+### Logs
+
+Logs are written to stdout by default. Set `LOG_FILE` to write to a file.
+
+```bash
+LOG_LEVEL=DEBUG python run_services.py --port=4000
+```
 
 ## License
 
