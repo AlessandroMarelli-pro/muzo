@@ -79,6 +79,7 @@ class SimpleMetadataExtractor:
                 ".m4a": "audio/mp4",
                 ".aac": "audio/aac",
                 ".ogg": "audio/ogg",
+                ".opus": "audio/opus",
             }
 
             metadata = {

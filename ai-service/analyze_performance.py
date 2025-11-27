@@ -25,13 +25,14 @@ def find_test_audio():
         "tests/data/test.flac",
         "tests/data/test.mp3",
         "tests/data/test.wav",
+        "tests/data/test.opus",
         "temp_segments",
         ".",
     ]
 
     for location in test_locations:
         if os.path.exists(location):
-            for ext in [".flac", ".mp3", ".wav", ".m4a"]:
+            for ext in [".flac", ".mp3", ".wav", ".m4a", ".aac", ".ogg", ".opus"]:
                 for file in Path(location).glob(f"*{ext}"):
                     if file.is_file():
                         return str(file)

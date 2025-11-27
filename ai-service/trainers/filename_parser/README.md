@@ -41,7 +41,7 @@ The system automatically generates variations of your training data:
 - **Separator Variations**: `-`, `–`, `—`, `~`, `:`
 - **Spacing Changes**: Add/remove spaces around separators
 - **Case Variations**: lowercase, UPPERCASE, Title Case, random case
-- **File Extensions**: `.mp3`, `.wav`, `.flac`, `.m4a`, `.aac`
+- **File Extensions**: `.mp3`, `.wav`, `.flac`, `.m4a`, `.aac`, `.opus`
 - **Unicode Characters**: Emojis and special characters
 - **Combinations**: Multiple augmentations applied together
 
@@ -110,4 +110,3 @@ python train.py --input-csv my_data.csv --augmented-csv augmented.csv --output-d
 ```bash
 python train.py --create-sample
 ```
-

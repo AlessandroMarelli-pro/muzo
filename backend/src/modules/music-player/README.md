@@ -17,7 +17,7 @@ This module provides comprehensive music playback functionality with support for
 - **Visual Waveform**: Generate waveform data for audio visualization
 - **Configurable Resolution**: Adjust waveform detail level
 - **Segment Support**: Get waveform data for specific time ranges
-- **Multiple Formats**: Support for MP3, WAV, FLAC, M4A, AAC, OGG
+- **Multiple Formats**: Support for MP3, WAV, FLAC, M4A, AAC, OGG, OPUS
 
 ### Audio Analysis
 

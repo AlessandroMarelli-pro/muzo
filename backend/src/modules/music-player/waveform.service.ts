@@ -28,6 +28,7 @@ export class WaveformService {
     '.m4a',
     '.aac',
     '.ogg',
+    '.opus',
   ];
   private readonly DEFAULT_SAMPLES_PER_PIXEL = 100;
   private readonly MAX_WAVEFORM_POINTS = 200;

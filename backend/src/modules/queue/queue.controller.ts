@@ -328,7 +328,6 @@ export class QueueController {
       const filteredTracks = tracksWithNullArtist.filter(
         (track) => track.fileSize <= 100000000, // 100MB
       );
-      console.log('filteredTracks', filteredTracks);
       if (filteredTracks.length === 0) {
         this.logger.log('No tracks found with null originalArtist');
         return {

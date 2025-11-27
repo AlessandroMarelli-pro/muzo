@@ -631,6 +631,7 @@ export class AiIntegrationService {
         '.m4a',
         '.aac',
         '.ogg',
+        '.opus',
       ];
       if (!supportedExtensions.includes(fileExtension)) {
         throw new HttpException(

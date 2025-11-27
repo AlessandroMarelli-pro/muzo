@@ -40,7 +40,17 @@ class HybridFilenameParser:
             return filename
 
         # Common audio extensions
-        extensions = [".mp3", ".wav", ".flac", ".m4a", ".aac", ".ogg", ".wma", ".aiff"]
+        extensions = [
+            ".mp3",
+            ".wav",
+            ".flac",
+            ".m4a",
+            ".aac",
+            ".ogg",
+            ".wma",
+            ".aiff",
+            ".opus",
+        ]
 
         for ext in extensions:
             if filename.lower().endswith(ext):

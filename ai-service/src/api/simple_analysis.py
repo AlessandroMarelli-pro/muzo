@@ -4,6 +4,7 @@ Simple audio analysis API endpoint for minimal operations.
 
 import atexit
 import gc
+import json
 import os
 import tempfile
 import threading
@@ -98,7 +99,7 @@ class SimpleAnalysisResource(Resource):
             if not self._is_valid_audio_file(audio_file.filename):
                 return {
                     "error": "Invalid file type",
-                    "message": "Please provide a valid audio file (wav, mp3, flac, m4a, aac, ogg)",
+                    "message": "Please provide a valid audio file (wav, mp3, flac, m4a, aac, ogg, opus)",
                 }, 400
 
             # Validate file size
@@ -189,6 +190,7 @@ class SimpleAnalysisResource(Resource):
                     )
                     _refresh_thread_pool()
 
+                print(json.dumps(result, indent=4))
                 return result, 200
 
             finally:
@@ -271,6 +273,6 @@ class SimpleAnalysisResource(Resource):
         file_ext = os.path.splitext(filename)[1].lower().lstrip(".")
 
         # Valid audio extensions
-        valid_extensions = ["wav", "mp3", "flac", "m4a", "aac", "ogg"]
+        valid_extensions = ["wav", "mp3", "flac", "m4a", "aac", "ogg", "opus"]
 
         return file_ext in valid_extensions

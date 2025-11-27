@@ -46,6 +46,7 @@ export class AudioAnalysisService {
     '.m4a',
     '.aac',
     '.ogg',
+    '.opus',
   ];
   private readonly ANALYSIS_VERSION = '1.0.0';
 

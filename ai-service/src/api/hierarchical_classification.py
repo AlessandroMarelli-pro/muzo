@@ -15,6 +15,7 @@ Ready for production deployment with the Muzo AI service.
 """
 
 import asyncio
+import json
 import os
 import tempfile
 import time
@@ -146,7 +147,7 @@ class HierarchicalClassificationResource(Resource):
         **Expected Performance:**
         - Genre Accuracy: 82.38%
         - Processing Time: 2-3 seconds
-        - Supported Formats: .flac, .mp3, .wav, .m4a
+        - Supported Formats: .flac, .mp3, .wav, .m4a, .aac, .ogg, .opus
         """
         try:
             # Check if file is present in request
@@ -187,7 +188,7 @@ class HierarchicalClassificationResource(Resource):
             if not self._is_valid_audio_file(audio_file.filename):
                 return {
                     "error": "Invalid file type",
-                    "message": "Please provide a valid audio file (.mp3, .wav, .flac, .m4a)",
+                    "message": "Please provide a valid audio file (.mp3, .wav, .flac, .m4a, .aac, .ogg, .opus)",
                 }, 400
 
             logger.info(
@@ -226,7 +227,7 @@ class HierarchicalClassificationResource(Resource):
                 result["file_path"] = audio_file.filename
 
                 logger.info(f"✅ Classification complete for {audio_file.filename}")
-
+                print(json.dumps(result, indent=4))
                 return result, 200
 
             finally:
@@ -259,7 +260,7 @@ class HierarchicalClassificationResource(Resource):
         file_ext = os.path.splitext(filename)[1].lower().lstrip(".")
 
         # Valid audio extensions
-        valid_extensions = ["mp3", "wav", "flac", "m4a"]
+        valid_extensions = ["mp3", "wav", "flac", "m4a", "aac", "ogg", "opus"]
 
         return file_ext in valid_extensions
 
@@ -478,7 +479,15 @@ class HierarchicalPerformanceResource(Resource):
                     "expected_genre_accuracy": "82.38%",
                     "expected_subgenre_accuracy": "70-85% per specialist",
                     "expected_processing_time": "2-3 seconds per file",
-                    "supported_formats": [".flac", ".mp3", ".wav", ".m4a"],
+                    "supported_formats": [
+                        ".flac",
+                        ".mp3",
+                        ".wav",
+                        ".m4a",
+                        ".aac",
+                        ".ogg",
+                        ".opus",
+                    ],
                     "concurrent_processing": True,
                 },
                 "timestamp": time.time(),

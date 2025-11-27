@@ -64,7 +64,7 @@ class FilenameAugmenter:
             "🎻",
             "🥁",
         ]
-        self.file_extensions = [".mp3", ".wav", ".flac", ".m4a", ".aac"]
+        self.file_extensions = [".mp3", ".wav", ".flac", ".m4a", ".aac", ".opus"]
 
         # Feature-aware augmentation patterns
         self.remix_variations = [
@@ -146,7 +146,9 @@ class FilenameAugmenter:
                 for new_sep in self.separators:
                     if new_sep != sep:
                         new_filename = base_name.replace(sep, new_sep)
-                        if filename.endswith((".mp3", ".wav", ".flac", ".m4a", ".aac")):
+                        if filename.endswith(
+                            (".mp3", ".wav", ".flac", ".m4a", ".aac", ".opus")
+                        ):
                             new_filename += os.path.splitext(filename)[1]
                         samples.append((new_filename, metadata))
                 break
@@ -166,13 +168,17 @@ class FilenameAugmenter:
             if sep in base_name:
                 # Add spaces
                 new_filename = base_name.replace(sep, f"  {sep}  ")
-                if filename.endswith((".mp3", ".wav", ".flac", ".m4a", ".aac")):
+                if filename.endswith(
+                    (".mp3", ".wav", ".flac", ".m4a", ".aac", ".opus")
+                ):
                     new_filename += os.path.splitext(filename)[1]
                 samples.append((new_filename, metadata))
 
                 # Remove spaces
                 new_filename = base_name.replace(f" {sep} ", sep)
-                if filename.endswith((".mp3", ".wav", ".flac", ".m4a", ".aac")):
+                if filename.endswith(
+                    (".mp3", ".wav", ".flac", ".m4a", ".aac", ".opus")
+                ):
                     new_filename += os.path.splitext(filename)[1]
                 samples.append((new_filename, metadata))
                 break
@@ -232,7 +238,9 @@ class FilenameAugmenter:
             if " - " in base_name:
                 parts = base_name.split(" - ", 1)
                 new_filename = f"{parts[0]} {char} - {parts[1]}"
-                if filename.endswith((".mp3", ".wav", ".flac", ".m4a", ".aac")):
+                if filename.endswith(
+                    (".mp3", ".wav", ".flac", ".m4a", ".aac", ".opus")
+                ):
                     new_filename += os.path.splitext(filename)[1]
                 samples.append((new_filename, metadata))
 
@@ -240,7 +248,9 @@ class FilenameAugmenter:
             if " - " in base_name:
                 parts = base_name.split(" - ", 1)
                 new_filename = f"{parts[0]} - {char} {parts[1]}"
-                if filename.endswith((".mp3", ".wav", ".flac", ".m4a", ".aac")):
+                if filename.endswith(
+                    (".mp3", ".wav", ".flac", ".m4a", ".aac", ".opus")
+                ):
                     new_filename += os.path.splitext(filename)[1]
                 samples.append((new_filename, metadata))
 
@@ -257,13 +267,13 @@ class FilenameAugmenter:
         if " - " in base_name:
             # Change separator and case
             new_filename = base_name.replace(" - ", "~").lower()
-            if filename.endswith((".mp3", ".wav", ".flac", ".m4a", ".aac")):
+            if filename.endswith((".mp3", ".wav", ".flac", ".m4a", ".aac", ".opus")):
                 new_filename += os.path.splitext(filename)[1]
             samples.append((new_filename, metadata))
 
             # Change separator and add Unicode
             new_filename = base_name.replace(" - ", "–") + " 🎵"
-            if filename.endswith((".mp3", ".wav", ".flac", ".m4a", ".aac")):
+            if filename.endswith((".mp3", ".wav", ".flac", ".m4a", ".aac", ".opus")):
                 new_filename += os.path.splitext(filename)[1]
             samples.append((new_filename, metadata))
 
@@ -281,13 +291,13 @@ class FilenameAugmenter:
             year = str(random.choice(self.year_range))
             # Add year in parentheses
             new_filename = f"{base_name} ({year})"
-            if filename.endswith((".mp3", ".wav", ".flac", ".m4a", ".aac")):
+            if filename.endswith((".mp3", ".wav", ".flac", ".m4a", ".aac", ".opus")):
                 new_filename += os.path.splitext(filename)[1]
             samples.append((new_filename, metadata))
 
             # Add year without parentheses
             new_filename = f"{base_name} {year}"
-            if filename.endswith((".mp3", ".wav", ".flac", ".m4a", ".aac")):
+            if filename.endswith((".mp3", ".wav", ".flac", ".m4a", ".aac", ".opus")):
                 new_filename += os.path.splitext(filename)[1]
             samples.append((new_filename, metadata))
 
@@ -296,13 +306,15 @@ class FilenameAugmenter:
             remix_type = random.choice(self.remix_variations)
             # Add in parentheses
             new_filename = f"{base_name} ({remix_type})"
-            if filename.endswith((".mp3", ".wav", ".flac", ".m4a", ".aac")):
+            if filename.endswith((".mp3", ".wav", ".flac", ".m4a", ".aac", ".opus")):
                 new_filename += os.path.splitext(filename)[1]
             samples.append((new_filename, metadata))
 
             # Add without parentheses
             new_filename = f"{base_name} {remix_type}"
-            if filename.endswith((".mp3", ".wav", ".flac", ".m4a", ".aac")):
+            if filename.endswith(
+                (".mp3", ".wav", ".flac", ".m4a", ".aac", ".opus", ".opus")
+            ):
                 new_filename += os.path.splitext(filename)[1]
             samples.append((new_filename, metadata))
 
@@ -311,7 +323,7 @@ class FilenameAugmenter:
             label_prefix = random.choice(self.label_prefixes)
             label_name = f"{label_prefix} Records"
             new_filename = f"{base_name} [{label_name}]"
-            if filename.endswith((".mp3", ".wav", ".flac", ".m4a", ".aac")):
+            if filename.endswith((".mp3", ".wav", ".flac", ".m4a", ".aac", ".opus")):
                 new_filename += os.path.splitext(filename)[1]
             samples.append((new_filename, metadata))
 
@@ -322,21 +334,23 @@ class FilenameAugmenter:
             if " - " in base_name:
                 parts = base_name.split(" - ", 1)
                 new_filename = f"{parts[0]} - {parts[1]} {feat_artist}"
-                if filename.endswith((".mp3", ".wav", ".flac", ".m4a", ".aac")):
+                if filename.endswith(
+                    (".mp3", ".wav", ".flac", ".m4a", ".aac", ".opus")
+                ):
                     new_filename += os.path.splitext(filename)[1]
                 samples.append((new_filename, metadata))
 
         # Add underscore patterns
         if " - " in base_name and random.random() < 0.1:  # 10% chance
             new_filename = base_name.replace(" - ", "_")
-            if filename.endswith((".mp3", ".wav", ".flac", ".m4a", ".aac")):
+            if filename.endswith((".mp3", ".wav", ".flac", ".m4a", ".aac", ".opus")):
                 new_filename += os.path.splitext(filename)[1]
             samples.append((new_filename, metadata))
 
         # Add dot patterns
         if " - " in base_name and random.random() < 0.1:  # 10% chance
             new_filename = base_name.replace(" - ", ".")
-            if filename.endswith((".mp3", ".wav", ".flac", ".m4a", ".aac")):
+            if filename.endswith((".mp3", ".wav", ".flac", ".m4a", ".aac", ".opus")):
                 new_filename += os.path.splitext(filename)[1]
             samples.append((new_filename, metadata))
 

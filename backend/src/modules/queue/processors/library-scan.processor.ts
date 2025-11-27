@@ -30,6 +30,7 @@ export class LibraryScanProcessor extends WorkerHost {
     '.m4p',
     '.aiff',
     '.au',
+    '.opus',
   ];
 
   constructor(

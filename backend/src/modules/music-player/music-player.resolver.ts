@@ -196,6 +196,7 @@ export class MusicPlayerResolver {
       wma: 'audio/x-ms-wma',
       aiff: 'audio/aiff',
       au: 'audio/basic',
+      opus: 'audio/opus',
     };
 
     return contentTypes[fileExtension] || 'audio/mpeg';

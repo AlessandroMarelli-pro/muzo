@@ -25,7 +25,7 @@ class BPMDetectionResource(Resource):
         Detect BPM (tempo) of an audio file.
 
         Request:
-            - audio_file: Audio file (wav, mp3, flac, m4a, aac, ogg)
+            - audio_file: Audio file (wav, mp3, flac, m4a, aac, ogg, opus)
             - sample_duration: Duration of sample to analyze (default: 10.0 seconds)
             - skip_intro: Seconds to skip from beginning (default: 15.0)
             - skip_outro: Seconds to skip from end (default: 15.0)
@@ -54,7 +54,7 @@ class BPMDetectionResource(Resource):
             if not self._is_valid_audio_file(audio_file.filename):
                 return {
                     "error": "Invalid file type",
-                    "message": "Please provide a valid audio file (wav, mp3, flac, m4a, aac, ogg)",
+                    "message": "Please provide a valid audio file (wav, mp3, flac, m4a, aac, ogg, opus)",
                 }, 400
 
             # Validate file size
@@ -230,6 +230,6 @@ class BPMDetectionResource(Resource):
         file_ext = os.path.splitext(filename)[1].lower().lstrip(".")
 
         # Valid audio extensions
-        valid_extensions = ["wav", "mp3", "flac", "m4a", "aac", "ogg"]
+        valid_extensions = ["wav", "mp3", "flac", "m4a", "aac", "ogg", "opus"]
 
         return file_ext in valid_extensions

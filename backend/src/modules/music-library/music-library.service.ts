@@ -47,7 +47,8 @@ export class MusicLibraryService {
         autoScan: createDto.autoScan ?? true,
         scanInterval: createDto.scanInterval,
         includeSubdirectories: createDto.includeSubdirectories ?? true,
-        supportedFormats: createDto.supportedFormats ?? 'MP3,FLAC,WAV,AAC,OGG',
+        supportedFormats:
+          createDto.supportedFormats ?? 'MP3,FLAC,WAV,AAC,OGG,OPUS',
         maxFileSize: createDto.maxFileSize,
       },
     });
