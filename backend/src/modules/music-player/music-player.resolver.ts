@@ -1,6 +1,5 @@
 import { Args, Float, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { MusicTrackService } from '../music-track/music-track.service';
-import { MusicPlayerWebSocketGateway } from '../websocket/music-player-websocket.gateway';
 import { AudioAnalysisService } from './audio-analysis.service';
 import { MusicPlayerService, SeekRequest } from './music-player.service';
 import {
@@ -22,7 +21,6 @@ export class MusicPlayerResolver {
     private readonly waveformService: WaveformService,
     private readonly audioAnalysisService: AudioAnalysisService,
     private readonly musicTrackService: MusicTrackService,
-    private readonly musicPlayerWebSocketGateway: MusicPlayerWebSocketGateway,
   ) {}
 
   @Query(() => PlaybackState, { nullable: true })
@@ -106,9 +104,6 @@ export class MusicPlayerResolver {
   ): Promise<PlaybackState> {
     const result = await this.musicPlayerService.playTrack(trackId, startTime);
 
-    // Broadcast playback state change via WebSocket
-    this.musicPlayerWebSocketGateway.broadcastPlaybackStateUpdate(result);
-
     return result;
   }
 
@@ -116,18 +111,12 @@ export class MusicPlayerResolver {
   async pauseTrack(@Args('trackId') trackId: string): Promise<PlaybackState> {
     const result = await this.musicPlayerService.pauseTrack(trackId);
 
-    // Broadcast playback state change via WebSocket
-    this.musicPlayerWebSocketGateway.broadcastPlaybackStateUpdate(result);
-
     return result;
   }
 
   @Mutation(() => PlaybackState)
   async resumeTrack(@Args('trackId') trackId: string): Promise<PlaybackState> {
     const result = await this.musicPlayerService.resumeTrack(trackId);
-
-    // Broadcast playback state change via WebSocket
-    this.musicPlayerWebSocketGateway.broadcastPlaybackStateUpdate(result);
 
     return result;
   }
@@ -140,18 +129,12 @@ export class MusicPlayerResolver {
     const seekRequest: SeekRequest = { trackId, timeInSeconds };
     const result = await this.musicPlayerService.seekTrack(seekRequest);
 
-    // Broadcast playback state change via WebSocket
-    this.musicPlayerWebSocketGateway.broadcastPlaybackStateUpdate(result);
-
     return result;
   }
 
   @Mutation(() => Boolean)
   async stopTrack(@Args('trackId') trackId: string): Promise<boolean> {
     await this.musicPlayerService.stopTrack(trackId);
-
-    // Broadcast playback stopped event via WebSocket
-    this.musicPlayerWebSocketGateway.broadcastPlaybackStopped(trackId);
 
     return true;
   }
@@ -163,9 +146,6 @@ export class MusicPlayerResolver {
   ): Promise<PlaybackState> {
     const result = await this.musicPlayerService.setVolume(trackId, volume);
 
-    // Broadcast playback state change via WebSocket
-    this.musicPlayerWebSocketGateway.broadcastPlaybackStateUpdate(result);
-
     return result;
   }
 
@@ -176,14 +156,10 @@ export class MusicPlayerResolver {
   ): Promise<PlaybackState> {
     const result = await this.musicPlayerService.setPlaybackRate(trackId, rate);
 
-    // Broadcast playback state change via WebSocket
-    this.musicPlayerWebSocketGateway.broadcastPlaybackStateUpdate(result);
-
     return result;
   }
 
   // Note: GraphQL subscriptions replaced with WebSocket implementation
-  // Real-time updates are now handled via MusicPlayerWebSocketGateway
 
   private getContentType(fileExtension: string): string {
     const contentTypes: Record<string, string> = {

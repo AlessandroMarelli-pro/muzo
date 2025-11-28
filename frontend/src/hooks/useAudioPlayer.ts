@@ -10,7 +10,6 @@ import {
   useToggleFavorite,
 } from '@/services/music-player-hooks';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useMusicPlayerWebSocket } from './useMusicPlayerWebSocket';
 
 export interface AudioPlayerState {
   trackId: string | null;
@@ -57,38 +56,6 @@ export function useAudioPlayer(options: UseAudioPlayerOptions = {}) {
     onErrorRef.current = onError;
   }, [onError]);
 
-  // WebSocket connection for real-time updates
-  const { isConnected: isWebSocketConnected } = useMusicPlayerWebSocket({
-    trackId,
-    onPlaybackStateUpdate: (playbackState) => {
-      console.log('playbackState update', playbackState);
-      const newState: AudioPlayerState = {
-        trackId: playbackState.trackId,
-        isPlaying: playbackState.isPlaying,
-        currentTime: playbackState.currentTime,
-        duration: playbackState.duration,
-        volume: playbackState.volume,
-        playbackRate: playbackState.playbackRate,
-        isFavorite: playbackState.isFavorite,
-        isLoading: false,
-        error: null,
-      };
-
-      setLocalState(newState);
-      onStateChangeRef.current?.(newState);
-    },
-    onPlaybackStopped: (stoppedTrackId) => {
-      if (stoppedTrackId === trackId) {
-        setLocalState((prev) => ({
-          ...prev,
-          isPlaying: false,
-          currentTime: 0,
-          isLoading: false,
-        }));
-      }
-    },
-  });
-
   const [localState, setLocalState] = useState<AudioPlayerState>({
     trackId: null,
     isPlaying: false,
@@ -105,7 +72,7 @@ export function useAudioPlayer(options: UseAudioPlayerOptions = {}) {
   const { data: playbackState, isLoading: isQueryLoading } = usePlaybackState(
     trackId || '',
     {
-      enabled: !isWebSocketConnected && !!trackId,
+      enabled: !!trackId,
     },
   );
 
@@ -119,9 +86,9 @@ export function useAudioPlayer(options: UseAudioPlayerOptions = {}) {
   const setPlaybackRateMutation = useSetPlaybackRate();
   const toggleFavoriteMutation = useToggleFavorite();
 
-  // Update local state when server state changes (fallback when WebSocket is not connected)
+  // Update local state when server state changes
   useEffect(() => {
-    if (playbackState && !isWebSocketConnected) {
+    if (playbackState) {
       const newState: AudioPlayerState = {
         trackId: playbackState.trackId,
         isPlaying: playbackState.isPlaying,
@@ -137,7 +104,7 @@ export function useAudioPlayer(options: UseAudioPlayerOptions = {}) {
       setLocalState(newState);
       onStateChangeRef.current?.(newState);
     }
-  }, [playbackState, isWebSocketConnected]);
+  }, [playbackState]);
 
   // Reset state when trackId changes
   useEffect(() => {
@@ -357,8 +324,7 @@ export function useAudioPlayer(options: UseAudioPlayerOptions = {}) {
       state: localState,
       actions,
       mutations,
-      isWebSocketConnected,
     }),
-    [localState, actions, mutations, isWebSocketConnected],
+    [localState, actions, mutations],
   );
 }

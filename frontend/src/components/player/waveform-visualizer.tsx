@@ -29,7 +29,6 @@ export function WaveformVisualizer({
 
     const handleTimeUpdate = () => {
       // Only update local state, don't trigger server mutations
-      // The WebSocket will handle server-side time synchronization
       // This prevents unnecessary seek mutations on every timeupdate
       setCurrentTime(audio.currentTime);
     };

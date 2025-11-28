@@ -7,7 +7,6 @@ import {
   useCurrentTrack,
 } from '@/contexts/audio-player-context';
 import { FilterProvider } from '@/contexts/filter-context';
-import { useMusicPlayerWebSocket } from '@/hooks/useMusicPlayerWebSocket';
 import { cn } from '@/lib/utils';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { createRootRoute, Outlet } from '@tanstack/react-router';
@@ -44,11 +43,6 @@ const MusicPlayerInset = React.memo(function MusicPlayerInset({
 });
 
 const RootComponent = React.memo(function RootComponent() {
-  // Initialize music player WebSocket connection
-  useMusicPlayerWebSocket({
-    autoConnect: true,
-  });
-
   // Memoize callback to prevent re-renders
   const handleToggleShuffle = React.useCallback(() => {
     console.log('Toggle shuffle');
