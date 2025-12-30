@@ -29,7 +29,7 @@ import soundfile as sf
 import torch
 
 # Add the poc/src directory to path for imports
-poc_src_path = Path(__file__).parent.parent.parent.parent / "poc" / "src"
+poc_src_path = Path(__file__).parent.parent.parent.parent / "model-trainer" / "src"
 sys.path.insert(0, str(poc_src_path))
 
 try:

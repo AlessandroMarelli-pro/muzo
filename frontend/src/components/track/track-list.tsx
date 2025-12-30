@@ -1,9 +1,4 @@
 import { SimpleMusicTrack } from '@/__generated__/types';
-import {
-  useAudioPlayerActions,
-  useCurrentTrack,
-  useIsPlaying,
-} from '@/contexts/audio-player-context';
 import { useFilterOptionsData } from '@/hooks/useFilterOptions';
 import { getSortingStateParser } from '@/lib/parsers';
 import { AnalysisStatus, useTracksList } from '@/services/api-hooks';
@@ -30,22 +25,14 @@ interface TrackListProps {
 }
 
 export const TrackList: React.FC<TrackListProps> = ({ viewMode = 'grid' }) => {
+  console.log('render', 'TrackList');
+
   const staticFilterOptions = useFilterOptionsData();
 
   // Use URL state management for pagination and sorting
   const [page] = useQueryState('page', { defaultValue: '1' });
   const [perPage] = useQueryState('perPage', { defaultValue: '50' });
-  const { currentTrack, setCurrentTrack } = useCurrentTrack();
-  const actions = useAudioPlayerActions();
-  const isPlaying = useIsPlaying();
 
-  const playMusic = (track: SimpleMusicTrack) => {
-    console.log(track);
-    if (currentTrack?.id !== track.id) {
-      setCurrentTrack(track);
-    }
-    actions.togglePlayPause(track.id);
-  };
   useFilterQueryParams();
 
   // Define valid column IDs for sorting
@@ -154,11 +141,9 @@ export const TrackList: React.FC<TrackListProps> = ({ viewMode = 'grid' }) => {
           onAddToQueue={(tracks: SimpleMusicTrack[]) =>
             console.log('Added to queue:', tracks)
           }
-          onPlayTrack={(track: SimpleMusicTrack) => playMusic(track)}
           isLoading={isLoading}
           staticFilterOptions={staticFilterOptions}
           initialPageSize={limit}
-          playingTrackId={(isPlaying && currentTrack?.id) || undefined}
         />
       </div>
     </div>

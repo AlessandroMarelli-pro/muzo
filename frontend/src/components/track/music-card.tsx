@@ -37,7 +37,6 @@ function MusicCard({ track, className, onAdd, setQueue }: MusicCardProps) {
   const bpm = track.tempo || 'Unknown BPM';
 
   const playMusic = (e: React.SyntheticEvent<any>) => {
-    console.log(currentTrack?.id);
     if (currentTrack?.id !== track.id) {
       setCurrentTrack(track);
     }

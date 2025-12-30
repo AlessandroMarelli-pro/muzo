@@ -32,6 +32,14 @@ export const PlaylistTrackListCard = ({
   const isThisTrackPlaying = isCurrentTrack && isPlaying;
 
   const formattedImage = playlistTrack.track.imagePath || 'Unknown Image';
+  const handlePlay = (e: React.SyntheticEvent<any>) => {
+    e.stopPropagation();
+    if (currentTrack?.id !== playlistTrack.track.id) {
+      setCurrentTrack(playlistTrack.track);
+    }
+    setQueue();
+    actions.togglePlayPause(playlistTrack.track.id);
+  };
   return (
     <div
       key={playlistTrack.id}
@@ -78,18 +86,7 @@ export const PlaylistTrackListCard = ({
 
       {/* Actions */}
       <div className="flex items-center gap-2">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={(e) => {
-            e.stopPropagation();
-            if (currentTrack?.id !== playlistTrack.track.id) {
-              setCurrentTrack(playlistTrack.track);
-            }
-            setQueue();
-            actions.togglePlayPause(playlistTrack.track.id);
-          }}
-        >
+        <Button variant="ghost" size="sm" onClick={handlePlay}>
           {isThisTrackPlaying ? (
             <Pause className="h-5 w-5" />
           ) : (

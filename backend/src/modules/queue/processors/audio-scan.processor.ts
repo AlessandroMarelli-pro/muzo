@@ -80,7 +80,7 @@ export class AudioScanProcessor extends WorkerHost {
         existingTrack.analysisStatus === AnalysisStatus.COMPLETED
       ) {
         this.logger.log(`Track already analyzed: ${fileName}`);
-        return;
+        //return;
       }
 
       // Create or update MusicTrack record

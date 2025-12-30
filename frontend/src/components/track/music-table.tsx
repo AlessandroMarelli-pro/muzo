@@ -18,7 +18,13 @@ import { DataTable } from '@/components/data-table/data-table';
 import { DataTableColumnHeader } from '@/components/data-table/data-table-column-header';
 import { DataTableSortList } from '@/components/data-table/data-table-sort-list';
 import { DataTableToolbar } from '@/components/data-table/data-table-toolbar';
+import {
+  useAudioPlayerActions,
+  useCurrentTrack,
+  useIsPlaying,
+} from '@/contexts/audio-player-context';
 import { useDataTable } from '@/hooks/use-data-table';
+import { AudioPlayerActions } from '@/hooks/useAudioPlayer';
 import { StaticFilterOptionsData } from '@/hooks/useFilterOptions';
 import { useNavigate } from '@tanstack/react-router';
 import { format } from 'date-fns';
@@ -27,7 +33,8 @@ interface MusicTableProps {
   data: SimpleMusicTrack[];
   pageCount: number;
   onAddToQueue?: (tracks: SimpleMusicTrack[]) => void;
-  onPlayTrack: (track: SimpleMusicTrack) => void;
+  setCurrentTrack: (track: SimpleMusicTrack) => void;
+  actions: AudioPlayerActions;
   isLoading?: boolean;
   staticFilterOptions: StaticFilterOptionsData;
   initialPageSize?: number;
@@ -86,18 +93,79 @@ const CamelotKeyOptions = [
   { label: 'D minor', value: '7A', color: 'rgba(255, 20, 147,0.5)' }, // Deep Pink
 ];
 
+const ActionCells = ({
+  row,
+  navigate,
+  onAddToQueue,
+  actions,
+  currentTrack,
+  setCurrentTrack,
+}: any) => {
+  const [isTrackPlaying, setIsTrackPlaying] = React.useState(false);
+
+  const isPlaying = useIsPlaying();
+  const track = row.original;
+  const isCurrentTrack = currentTrack?.id === track.id;
+
+  const playMusic = () => {
+    setIsTrackPlaying((prev) => !prev);
+    setCurrentTrack(track);
+    /*    if (currentTrack?.id !== track.id) {
+    }
+    */
+    actions.togglePlayPause(track.id);
+  };
+  return (
+    <div className="flex items-center gap-2">
+      <Button variant="ghost" size="sm" onClick={playMusic}>
+        {isTrackPlaying ? (
+          <Pause className="h-4 w-4" />
+        ) : (
+          <Play className="h-4 w-4" />
+        )}
+      </Button>
+      <Button
+        size="sm"
+        onClick={() => navigate({ to: `/research/${track.id}` })}
+        variant="ghost"
+      >
+        <Brain className="h-4 w-4 " />
+      </Button>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" className="h-8 w-8 p-0">
+            <span className="sr-only">Open menu</span>
+            <MoreHorizontal className="h-4 w-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem
+            onClick={() => {
+              if (onAddToQueue) {
+                onAddToQueue([track]);
+              }
+            }}
+          >
+            Add to Queue
+          </DropdownMenuItem>
+          <DropdownMenuItem>Add to Playlist</DropdownMenuItem>
+          <DropdownMenuItem>View Details</DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
+  );
+};
 export function MusicTable({
   data,
   pageCount,
   onAddToQueue,
-  onPlayTrack,
   isLoading,
   staticFilterOptions,
   initialPageSize = 10,
-  playingTrackId,
 }: MusicTableProps) {
   const navigate = useNavigate();
-
+  const actions = useAudioPlayerActions();
+  const { currentTrack, setCurrentTrack } = useCurrentTrack();
   const columns = React.useMemo<ColumnDef<SimpleMusicTrack>[]>(
     () => [
       /*   {
@@ -440,58 +508,19 @@ export function MusicTable({
       {
         id: 'actions',
         enableHiding: false,
-        cell: ({ row }) => {
-          const track = row.original;
-
-          const isThisTrackPlaying = playingTrackId === track.id;
-
-          return (
-            <div className="flex items-center gap-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => onPlayTrack(track)}
-              >
-                {isThisTrackPlaying ? (
-                  <Pause className="h-4 w-4" />
-                ) : (
-                  <Play className="h-4 w-4" />
-                )}
-              </Button>
-              <Button
-                size="sm"
-                onClick={() => navigate({ to: `/research/${track.id}` })}
-                variant="ghost"
-              >
-                <Brain className="h-4 w-4 " />
-              </Button>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="h-8 w-8 p-0">
-                    <span className="sr-only">Open menu</span>
-                    <MoreHorizontal className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem
-                    onClick={() => {
-                      if (onAddToQueue) {
-                        onAddToQueue([track]);
-                      }
-                    }}
-                  >
-                    Add to Queue
-                  </DropdownMenuItem>
-                  <DropdownMenuItem>Add to Playlist</DropdownMenuItem>
-                  <DropdownMenuItem>View Details</DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          );
-        },
+        cell: ({ row }) => (
+          <ActionCells
+            row={row}
+            navigate={navigate}
+            onAddToQueue={onAddToQueue}
+            actions={actions}
+            currentTrack={currentTrack}
+            setCurrentTrack={setCurrentTrack}
+          />
+        ),
       },
     ],
-    [playingTrackId, onPlayTrack, onAddToQueue],
+    [onAddToQueue],
   );
 
   const { table } = useDataTable({

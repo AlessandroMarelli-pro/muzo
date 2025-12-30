@@ -229,6 +229,8 @@ class HierarchicalClassificationResource(Resource):
                 logger.info(f"✅ Classification complete for {audio_file.filename}")
                 print(json.dumps(result, indent=4))
                 return result, 200
+            except Exception as e:
+                logger.error(f"❌ Classification failed: {e}")
 
             finally:
                 # Clean up temporary file

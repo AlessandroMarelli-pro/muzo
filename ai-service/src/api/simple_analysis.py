@@ -156,9 +156,11 @@ class SimpleAnalysisResource(Resource):
                             # Submit album art fetching to thread pool with timeout
                             album_art_future = _executor.submit(
                                 self._get_album_art_with_timeout,
-                                artist + " - " + title,
+                                artist,
+                                title,
                                 timeout=5.0,  # 5 second timeout for album art
                             )
+
                     except (KeyError, TypeError) as e:
                         logger.warning(
                             f"Could not extract artist/title for album art: {e}"
@@ -214,7 +216,7 @@ class SimpleAnalysisResource(Resource):
             }, 500
 
     def _get_album_art_with_timeout(
-        self, query: str, timeout: float = 5.0
+        self, artist: str, title: str, timeout: float = 5.0
     ) -> Optional[str]:
         """
         Get album art with timeout handling.
@@ -227,9 +229,17 @@ class SimpleAnalysisResource(Resource):
             Album art URL or None if timeout/failure
         """
         try:
-            return get_album_art(query)
+            album_art = get_album_art(artist.strip() + " - " + title.strip())
+            if not album_art and "-" in title:
+                logger.warning(
+                    f"Album art fetching failed for '{artist} - {title}', trying again with split title"
+                )
+                artist = title.split("-")[0].strip()
+                title = title.split("-")[1].strip()
+                album_art = get_album_art(artist + " - " + title)
+            return album_art
         except Exception as e:
-            logger.warning(f"Album art fetching failed for '{query}': {e}")
+            logger.warning(f"Album art fetching failed for '{artist} - {title}': {e}")
             return None
 
     def _validate_file_size(self, audio_file) -> bool:

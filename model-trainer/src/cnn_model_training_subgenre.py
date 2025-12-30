@@ -157,6 +157,7 @@ class SubgenreSpecialistTrainer:
                     list(subgenre_dir.glob("*.flac"))
                     + list(subgenre_dir.glob("*.mp3"))
                     + list(subgenre_dir.glob("*.wav"))
+                    + list(subgenre_dir.glob("*.opus"))
                 )
 
                 logger.info(f"  📂 {subgenre_name}: {len(subgenre_files)} files")

@@ -394,7 +394,7 @@ def create_balanced_dataset_gpu(
                 # Get audio files for this subgenre
                 subgenre_path = music_dir / genre_name / subgenre_name
                 audio_files = []
-                for ext in ['*.flac', '*.mp3', '*.wav']:
+                for ext in ['*.flac', '*.mp3', '*.wav', '*.opus']:
                     audio_files.extend(list(subgenre_path.glob(ext)))
                 
                 # Create task for each file

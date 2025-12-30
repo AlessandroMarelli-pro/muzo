@@ -9,9 +9,10 @@ import {
 import { FilterProvider } from '@/contexts/filter-context';
 import { cn } from '@/lib/utils';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { createRootRoute, Outlet } from '@tanstack/react-router';
+import { TanStackRouterDevtools } from '@tanstack/router-devtools';
 import * as React from 'react';
-
 // Create a QueryClient instance
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -75,9 +76,8 @@ const RootComponent = React.memo(function RootComponent() {
           </SidebarProvider>
         </AudioPlayerProvider>
       </FilterProvider>
-      {/*       <ReactQueryDevtools initialIsOpen={false} position="bottom" />
+      <ReactQueryDevtools initialIsOpen={false} position="bottom" />
       <TanStackRouterDevtools position="top-right" />
- */}{' '}
     </QueryClientProvider>
   );
 });

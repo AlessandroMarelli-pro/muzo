@@ -337,9 +337,7 @@ export class QueueController {
       }
 
       // Schedule audio scans for these tracks
-      await this.queueService.scheduleAudioScansForNullArtistTracks(
-        filteredTracks,
-      );
+      await this.queueService.scheduleScanForMissingData(filteredTracks);
 
       this.logger.log(
         `Scheduled audio scans for ${tracksWithNullArtist.length} tracks with null originalArtist`,
@@ -356,5 +354,39 @@ export class QueueController {
       );
       throw error;
     }
+  }
+
+  @Get('scan-all-missing-images')
+  async scanAllMissingImages(): Promise<{
+    message: string;
+    imagesScheduled: number;
+  }> {
+    const missingImagesTracks = await this.prismaService.musicTrack.findMany({
+      where: {
+        imageSearches: {
+          none: {},
+        },
+        createdAt: {
+          gte: new Date(Date.now() - 1000 * 60 * 60 * 24 * 10), // 30 days ago
+        },
+      },
+      select: {
+        id: true,
+        filePath: true,
+        libraryId: true,
+        fileName: true,
+        fileSize: true,
+      },
+    });
+    const numberOfImages = missingImagesTracks.length;
+    await this.queueService.scheduleScanForMissingData(
+      missingImagesTracks,
+      false,
+    );
+
+    return {
+      message: `Scheduled ${numberOfImages} images for scanning`,
+      imagesScheduled: numberOfImages,
+    };
   }
 }

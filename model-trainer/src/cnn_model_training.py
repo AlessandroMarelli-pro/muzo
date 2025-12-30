@@ -243,6 +243,7 @@ def create_balanced_audio_segments(
                     list(subgenre_dir.glob("*.flac"))
                     + list(subgenre_dir.glob("*.mp3"))
                     + list(subgenre_dir.glob("*.wav"))
+                    + list(subgenre_dir.glob("*.opus"))
                 )
 
                 genre_structure[genre_name][subgenre_name] = audio_files
@@ -253,6 +254,7 @@ def create_balanced_audio_segments(
                 list(genre_dir.glob("*.flac"))
                 + list(genre_dir.glob("*.mp3"))
                 + list(genre_dir.glob("*.wav"))
+                + list(genre_dir.glob("*.opus"))
             )
 
             genre_structure[genre_name]["_direct"] = audio_files
@@ -2048,6 +2050,7 @@ if __name__ == "__main__":
                         glob.glob(os.path.join(subgenre_path, "*.wav"))
                         + glob.glob(os.path.join(subgenre_path, "*.mp3"))
                         + glob.glob(os.path.join(subgenre_path, "*.flac"))
+                        + glob.glob(os.path.join(subgenre_path, "*.opus"))
                     )
 
                     print(f"      🎵 {subgenre_dir}: {len(subgenre_files)} files")
@@ -2067,6 +2070,7 @@ if __name__ == "__main__":
                     glob.glob(os.path.join(genre_path, "*.wav"))
                     + glob.glob(os.path.join(genre_path, "*.mp3"))
                     + glob.glob(os.path.join(genre_path, "*.flac"))
+                    + glob.glob(os.path.join(genre_path, "*.opus"))
                 )
 
                 print(f"   🎵 Direct files: {len(genre_files)} files")

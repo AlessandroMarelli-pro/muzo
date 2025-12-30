@@ -219,7 +219,7 @@ export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
                 variant="default"
                 size="sm"
                 onClick={handlePlay}
-                disabled={playbackState.isLoading}
+                //disabled={playbackState.isLoading}
                 className="h-8 w-8 p-0"
               >
                 {isPlaying ? (
@@ -242,7 +242,7 @@ export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
                 size="sm"
                 onClick={handleToggleFavorite}
                 className="h-8 w-8 p-0"
-                disabled={playbackState.isLoading}
+                //disabled={playbackState.isLoading}
               >
                 <Heart
                   className={cn(

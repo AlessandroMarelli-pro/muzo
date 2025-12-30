@@ -55,6 +55,7 @@ class TestPersonalValidation(unittest.TestCase):
             list(self.personal_music_dir.glob("*.flac"))
             + list(self.personal_music_dir.glob("*.mp3"))
             + list(self.personal_music_dir.glob("*.wav"))
+            + list(self.personal_music_dir.glob("*.opus"))
         )
         self.assertGreater(
             len(music_files), 0, "No music files found in personal directory"

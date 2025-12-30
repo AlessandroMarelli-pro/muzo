@@ -439,7 +439,7 @@ export class QueueService {
   /**
    * Schedule audio scans for tracks with null originalArtist
    */
-  async scheduleAudioScansForNullArtistTracks(
+  async scheduleScanForMissingData(
     tracks: Array<{
       id: string;
       filePath: string;
@@ -447,6 +447,7 @@ export class QueueService {
       fileName: string;
       fileSize: number;
     }>,
+    skipImageSearch: boolean = true,
   ): Promise<void> {
     try {
       const jobs = tracks.map((track, index) => ({
@@ -460,7 +461,7 @@ export class QueueService {
           index,
           skipClassification: true,
           totalFiles: tracks.length,
-          skipImageSearch: true,
+          skipImageSearch,
         } as AudioScanJobData,
         opts: {
           attempts: this.queueConfig.queues.audioScan.attempts,

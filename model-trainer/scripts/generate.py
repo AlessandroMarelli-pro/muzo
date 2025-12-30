@@ -322,6 +322,7 @@ def create_personal_dataset(
                     list(subgenre_folder.glob("*.flac"))
                     + list(subgenre_folder.glob("*.mp3"))
                     + list(subgenre_folder.glob("*.wav"))
+                    + list(subgenre_folder.glob("*.opus"))
                 )
 
                 if not music_files:
@@ -454,6 +455,7 @@ def create_personal_dataset(
                 list(genre_folder.glob("*.flac"))
                 + list(genre_folder.glob("*.mp3"))
                 + list(genre_folder.glob("*.wav"))
+                + list(genre_folder.glob("*.opus"))
             )
 
             if not music_files:
