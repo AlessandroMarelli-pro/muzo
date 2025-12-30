@@ -75,6 +75,9 @@ model MusicTrack {
   aiConfidence           Float?
   aiSubgenre            String?
   aiSubgenreConfidence   Float?
+  aiDescription         String?
+  aiTags                String?
+ 
 
   // User Modifications
   userTitle             String?

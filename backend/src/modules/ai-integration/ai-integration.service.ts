@@ -8,11 +8,11 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { PrismaService } from 'src/shared/services/prisma.service';
 import { AiServiceConfig } from '../../config';
-import { SimpleAudioAnalysisResponse } from './ai-service-simple.types';
 import {
-  AudioAnalysisResponse,
-  AudioFingerprintResponse,
-} from './ai-service.types';
+  OpenAIMetadataResponse,
+  SimpleAudioAnalysisResponse,
+} from './ai-service-simple.types';
+import { AudioFingerprintResponse } from './ai-service.types';
 
 interface ServiceInstance {
   backendPort: number;
@@ -945,70 +945,6 @@ export class AiIntegrationService {
    * @param audioFilePaths - Array of audio file paths
    * @returns Promise<AudioAnalysisResponse[]> - Array of analysis results
    */
-  async batchAnalyzeAudio(
-    audioFilePaths: string[],
-  ): Promise<AudioAnalysisResponse[]> {
-    try {
-      this.logger.log(
-        `Starting batch analysis of ${audioFilePaths.length} files`,
-      );
-
-      // Process files in parallel with concurrency limit
-      const concurrencyLimit = this.aiServiceConfig.batchConcurrency;
-      const results: any[] = [];
-      const errors: string[] = [];
-
-      // Process files in batches to avoid overwhelming the AI service
-      for (let i = 0; i < audioFilePaths.length; i += concurrencyLimit) {
-        const batch = audioFilePaths.slice(i, i + concurrencyLimit);
-
-        const batchPromises = batch.map(async (filePath) => {
-          try {
-            const result = await this.analyzeAudio(filePath);
-            return { success: true, data: result, filePath };
-          } catch (error) {
-            this.logger.error(
-              `Batch analysis failed for ${filePath}:`,
-              error.message,
-            );
-            return { success: false, error: error.message, filePath };
-          }
-        });
-
-        const batchResults = await Promise.all(batchPromises);
-
-        // Separate successful results from errors
-        batchResults.forEach((result) => {
-          if (result.success) {
-            results.push(result.data);
-          } else {
-            errors.push(`${result.filePath}: ${result.error}`);
-          }
-        });
-
-        // Add delay between batches to prevent overwhelming the service
-        if (i + concurrencyLimit < audioFilePaths.length) {
-          await new Promise((resolve) => setTimeout(resolve, 1000));
-        }
-      }
-
-      this.logger.log(
-        `Batch analysis completed: ${results.length} successful, ${errors.length} failed`,
-      );
-
-      if (errors.length > 0) {
-        this.logger.warn('Batch analysis errors:', errors);
-      }
-
-      return results;
-    } catch (error) {
-      this.logger.error('Batch analysis failed:', error.message);
-      throw new HttpException(
-        `Batch analysis failed: ${error.message}`,
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
-    }
-  }
 
   /**
    * Detect BPM (Beats Per Minute) for an audio file
@@ -1098,6 +1034,89 @@ export class AiIntegrationService {
   }
 
   /**
+   * Extract metadata from filename using OpenAI
+   *
+   * @param filename - Audio filename (with or without extension)
+   * @returns Promise<OpenAIMetadataResponse> - OpenAI metadata extraction result
+   */
+  async extractMetadataWithOpenAI(
+    filename: string,
+  ): Promise<OpenAIMetadataResponse> {
+    try {
+      this.logger.log(
+        `Extracting metadata with OpenAI for filename: ${filename}`,
+      );
+
+      // Validate filename
+      if (!filename || filename.trim() === '') {
+        throw new HttpException('Filename is required', HttpStatus.BAD_REQUEST);
+      }
+
+      // Get assigned simple server (OpenAI endpoint is on simple service)
+      const simpleInstance = this.getAssignedServer('simple');
+
+      const startTime = Date.now();
+
+      // Make request to OpenAI metadata extraction endpoint
+      const response = await this.httpClient.post(
+        `${simpleInstance.url}/api/v1/audio/metadata/openai`,
+        {
+          filename: filename.trim(),
+        },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          timeout: this.aiServiceConfig.timeout,
+        },
+      );
+
+      const processingTime = Date.now() - startTime;
+
+      this.logger.log(
+        `OpenAI metadata extraction completed for ${filename} in ${processingTime}ms`,
+      );
+
+      return {
+        ...response.data,
+        processingTime,
+        serviceInstance: simpleInstance.url,
+      };
+    } catch (error) {
+      this.logger.error(
+        `OpenAI metadata extraction failed for ${filename}:`,
+        error.message,
+      );
+
+      if (error.response) {
+        // AI service returned an error response
+        const statusCode = error.response.status;
+        const errorMessage = error.response.data?.message || error.message;
+
+        throw new HttpException(
+          `OpenAI metadata extraction failed: ${errorMessage}`,
+          statusCode,
+        );
+      } else if (error.code === 'ECONNREFUSED' || error.code === 'ETIMEDOUT') {
+        // Connection issues
+        throw new HttpException(
+          'AI service unavailable for OpenAI metadata extraction',
+          HttpStatus.SERVICE_UNAVAILABLE,
+        );
+      } else if (error instanceof HttpException) {
+        // Re-throw HttpException as-is
+        throw error;
+      } else {
+        // Other errors
+        throw new HttpException(
+          `OpenAI metadata extraction failed: ${error.message}`,
+          HttpStatus.INTERNAL_SERVER_ERROR,
+        );
+      }
+    }
+  }
+
+  /**
    * Get AI service configuration and capabilities
    *
    * @returns Promise<any> - Service configuration and capabilities
@@ -1121,6 +1140,7 @@ export class AiIntegrationService {
           subgenreClassification: true,
           batchProcessing: true,
           connectionPooling: true,
+          openaiMetadataExtraction: true,
         },
         timestamp: new Date().toISOString(),
       };

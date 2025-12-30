@@ -250,3 +250,35 @@ export interface SimpleAiErrorResponse {
   status: 'error';
   message: string;
 }
+
+// OpenAI Metadata Response
+export interface OpenAIMetadataResponse {
+  status: 'success' | 'partial' | 'error';
+  message: string;
+  filename: string;
+  metadata: {
+    artist: string;
+    title: string;
+    mix?: string | null;
+    year?: string | number | null;
+    country?: string | null;
+    label?: string | null;
+    format?: string | null;
+    genre: string[];
+    style: string[];
+    duration?: string | null;
+    credits?: {
+      producer?: string | null;
+      writers: string[];
+      vocals?: string | null;
+    } | null;
+    description?: string | null;
+    availability?: {
+      streaming: string[];
+      physical: string[];
+    } | null;
+    tags: string[];
+  };
+  processingTime?: number;
+  serviceInstance?: string;
+}

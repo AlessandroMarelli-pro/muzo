@@ -134,6 +134,9 @@ class SimpleAnalysisResource(Resource):
                 )  # Reduced from 30s
 
                 has_image = request.form.get("has_image", "false").lower() == "true"
+                skip_openai_metadata = (
+                    request.form.get("skip_openai_metadata", "true").lower() == "true"
+                )
                 original_filename = audio_file.filename
                 # Perform simple analysis
                 result = self.simple_analysis.analyze_audio(
@@ -141,6 +144,7 @@ class SimpleAnalysisResource(Resource):
                     sample_duration=sample_duration,
                     original_filename=original_filename,
                     skip_intro=skip_intro,
+                    skip_openai_metadata=skip_openai_metadata,
                 )
                 # Update filename in result
                 if result.get("status") == "success":

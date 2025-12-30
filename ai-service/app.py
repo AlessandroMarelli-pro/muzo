@@ -19,6 +19,7 @@ load_dotenv()
 # Import API resources
 from src.api.bpm_detection import BPMDetectionResource
 from src.api.health import HealthResource
+from src.api.openai_metadata import OpenAIMetadataResource
 from src.api.simple_analysis import SimpleAnalysisResource
 
 # Conditionally import hierarchical classification resources
@@ -151,6 +152,10 @@ def register_resources(api, app):
     api.add_resource(BPMDetectionResource, "/audio/bpm/detect")
     logger.info("✅ BPM detection endpoints registered")
 
+    # OpenAI metadata extraction endpoints (always enabled if API key is set)
+    api.add_resource(OpenAIMetadataResource, "/audio/metadata/openai")
+    logger.info("✅ OpenAI metadata extraction endpoints registered")
+
     # Hierarchical classification endpoints (if enabled and imported)
     if os.getenv("ENABLE_HIERARCHICAL_CLASSIFICATION") == "true":
         try:
@@ -281,6 +286,13 @@ def create_app_with_routes(config_class=Config):
         endpoints.update(
             {
                 "audio_bpm_detect": "/api/v1/audio/bpm/detect",
+            }
+        )
+
+        # Add OpenAI metadata extraction endpoint (always available)
+        endpoints.update(
+            {
+                "audio_metadata_openai": "/api/v1/audio/metadata/openai",
             }
         )
 

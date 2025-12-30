@@ -5,13 +5,20 @@ import { Job, Queue } from 'bullmq';
 import { isDate } from 'class-validator';
 import * as fs from 'fs';
 import * as path from 'path';
-import { SimpleAudioAnalysisResponse } from 'src/modules/ai-integration/ai-service-simple.types';
+import {
+  OpenAIMetadataResponse,
+  SimpleAudioAnalysisResponse,
+} from 'src/modules/ai-integration/ai-service-simple.types';
 import { ImageService } from 'src/modules/image/image.service';
 import { ElasticsearchSyncService } from 'src/modules/recommendation/services/elasticsearch-sync.service';
 import { AiIntegrationService } from '../../../modules/ai-integration/ai-integration.service';
 import { PrismaService } from '../../../shared/services/prisma.service';
 import { ProgressTrackingService } from '../progress-tracking.service';
-import { AudioScanJobData, EndScanLibraryJobData } from '../queue.service';
+import {
+  AudioScanJobData,
+  EndScanLibraryJobData,
+  OpenAIMetadataJobData,
+} from '../queue.service';
 
 @Processor('audio-scan')
 export class AudioScanProcessor extends WorkerHost {
@@ -32,10 +39,14 @@ export class AudioScanProcessor extends WorkerHost {
   }
 
   async process(
-    job: Job<AudioScanJobData | EndScanLibraryJobData>,
+    job: Job<AudioScanJobData | EndScanLibraryJobData | OpenAIMetadataJobData>,
   ): Promise<void> {
     if (job.name === 'end-scan-library') {
       await this.processEndScanLibrary(job as Job<EndScanLibraryJobData>);
+    } else if (job.name === 'extract-openai-metadata') {
+      await this.processOpenAIMetadataExtraction(
+        job as Job<OpenAIMetadataJobData>,
+      );
     } else {
       await this.processAudioScan(job as Job<AudioScanJobData>);
     }
@@ -55,6 +66,7 @@ export class AudioScanProcessor extends WorkerHost {
       totalFiles,
       skipClassification,
       skipImageSearch,
+      skipOpenAIMetadata,
     } = job.data;
 
     this.logger.log(
@@ -100,6 +112,24 @@ export class AudioScanProcessor extends WorkerHost {
         },
       });
 
+      // Extract OpenAI metadata if not skipped
+      let openaiMetadata: OpenAIMetadataResponse | null = null;
+      if (!skipOpenAIMetadata) {
+        try {
+          openaiMetadata =
+            await this.aiIntegrationService.extractMetadataWithOpenAI(fileName);
+          console.log(openaiMetadata);
+          this.logger.log(
+            `OpenAI metadata extracted for ${fileName}: ${openaiMetadata.metadata.artist} - ${openaiMetadata.metadata.title}`,
+          );
+        } catch (error) {
+          this.logger.warn(
+            `OpenAI metadata extraction failed for ${fileName}: ${error.message}`,
+          );
+          // Continue with analysis even if OpenAI extraction fails
+        }
+      }
+
       // Analyze audio file using AI service
       const analysisResult: SimpleAudioAnalysisResponse =
         await this.aiIntegrationService.analyzeAudio(
@@ -134,6 +164,11 @@ export class AudioScanProcessor extends WorkerHost {
       );
       // Update track with analysis results
       await this.updateTrackWithAnalysis(track.id, analysisResult);
+
+      // Update track with OpenAI metadata if available
+      if (openaiMetadata?.metadata) {
+        await this.updateTrackWithOpenAIMetadata(track.id, openaiMetadata);
+      }
 
       // Update analysis status to COMPLETED
       await this.prismaService.musicTrack.update({
@@ -598,10 +633,128 @@ export class AudioScanProcessor extends WorkerHost {
   }
 
   /**
+   * Process OpenAI metadata extraction job
+   */
+  private async processOpenAIMetadataExtraction(
+    job: Job<OpenAIMetadataJobData>,
+  ): Promise<void> {
+    const { trackId, filePath, fileName, libraryId, index, totalFiles } =
+      job.data;
+
+    this.logger.log(
+      `Starting OpenAI metadata extraction for: ${fileName} (${index !== undefined ? `${index + 1}/${totalFiles}` : 'single'})`,
+    );
+
+    try {
+      // Get track from database
+      const track = await this.prismaService.musicTrack.findUnique({
+        where: { id: trackId },
+      });
+
+      if (!track) {
+        throw new Error(`Track not found: ${trackId}`);
+      }
+
+      // Extract metadata using OpenAI
+      const openaiMetadata =
+        await this.aiIntegrationService.extractMetadataWithOpenAI(filePath);
+      console.log(openaiMetadata);
+      // Update track with OpenAI metadata
+      await this.updateTrackWithOpenAIMetadata(track.id, openaiMetadata);
+
+      this.logger.log(
+        `Successfully extracted OpenAI metadata for: ${fileName}`,
+      );
+
+      // Update job progress
+      await job.updateProgress(100);
+    } catch (error) {
+      this.logger.error(
+        `OpenAI metadata extraction failed for ${fileName}:`,
+        error.message,
+      );
+
+      // Update track with error status if it exists
+      try {
+        const track = await this.prismaService.musicTrack.findUnique({
+          where: { id: trackId },
+        });
+
+        if (track) {
+          await this.prismaService.musicTrack.update({
+            where: { id: track.id },
+            data: {
+              analysisError: `OpenAI metadata extraction failed: ${error.message}`,
+            },
+          });
+        }
+      } catch (updateError) {
+        this.logger.error(
+          'Failed to update track error status:',
+          updateError.message,
+        );
+      }
+
+      throw error;
+    }
+  }
+
+  /**
+   * Update track with OpenAI metadata
+   */
+  private async updateTrackWithOpenAIMetadata(
+    trackId: string,
+    openaiMetadata: OpenAIMetadataResponse,
+  ): Promise<void> {
+    const metadata = openaiMetadata.metadata;
+    const updateData: any = {};
+
+    // Update AI-generated metadata fields
+    if (metadata.artist) {
+      updateData.aiArtist = metadata.artist;
+      updateData.originalArtist = metadata.artist;
+    }
+    if (metadata.title) {
+      updateData.aiTitle = metadata.title;
+      updateData.originalTitle = metadata.title;
+    }
+    if (metadata.description) {
+      updateData.aiDescription = metadata.description;
+    }
+    if (metadata.genre && metadata.genre.length > 0) {
+      updateData.aiGenre = metadata.genre.join(', ');
+    }
+    if (metadata.style && metadata.style.length > 0) {
+      updateData.aiSubgenre = metadata.style.join(', ');
+    }
+
+    // Parse year if available
+    if (metadata.year) {
+      const yearStr = String(metadata.year);
+      const yearMatch = yearStr.match(/^\d{4}/);
+      if (yearMatch) {
+        updateData.originalYear = parseInt(yearMatch[0], 10);
+      }
+    }
+
+    // Store additional metadata in userTags as JSON (if tags exist)
+    if (metadata.tags && metadata.tags.length > 0) {
+      updateData.aiTags = JSON.stringify(metadata.tags);
+    }
+    console.log(updateData);
+
+    // Update track
+    await this.prismaService.musicTrack.update({
+      where: { id: trackId },
+      data: updateData,
+    });
+  }
+
+  /**
    * Handle job failure
    */
   async onFailed(
-    job: Job<AudioScanJobData | EndScanLibraryJobData>,
+    job: Job<AudioScanJobData | EndScanLibraryJobData | OpenAIMetadataJobData>,
     error: Error,
   ): Promise<void> {
     if (job.name === 'end-scan-library') {
@@ -623,7 +776,7 @@ export class AudioScanProcessor extends WorkerHost {
    * Handle job completion
    */
   async onCompleted(
-    job: Job<AudioScanJobData | EndScanLibraryJobData>,
+    job: Job<AudioScanJobData | EndScanLibraryJobData | OpenAIMetadataJobData>,
   ): Promise<void> {
     if (job.name === 'end-scan-library') {
       const data = job.data as EndScanLibraryJobData;

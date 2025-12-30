@@ -20,6 +20,16 @@ export interface AudioScanJobData {
   totalFiles?: number;
   skipClassification?: boolean;
   skipImageSearch?: boolean;
+  skipOpenAIMetadata?: boolean;
+}
+
+export interface OpenAIMetadataJobData {
+  trackId: string;
+  filePath: string;
+  fileName: string;
+  libraryId: string;
+  index?: number;
+  totalFiles?: number;
 }
 
 export interface BPMUpdateJobData {
@@ -48,7 +58,7 @@ export class QueueService {
     private readonly libraryScanQueue: Queue<LibraryScanJobData>,
     @InjectQueue('audio-scan')
     private readonly audioScanQueue: Queue<
-      AudioScanJobData | EndScanLibraryJobData
+      AudioScanJobData | EndScanLibraryJobData | OpenAIMetadataJobData
     >,
     @InjectQueue('bpm-update')
     private readonly bpmUpdateQueue: Queue<BPMUpdateJobData>,
@@ -105,6 +115,7 @@ export class QueueService {
     lastModified: Date,
     skipClassification: boolean = false,
     skipImageSearch: boolean = false,
+    skipOpenAIMetadata: boolean = false,
   ): Promise<void> {
     try {
       const jobData: AudioScanJobData = {
@@ -115,6 +126,7 @@ export class QueueService {
         lastModified,
         skipClassification,
         skipImageSearch,
+        skipOpenAIMetadata,
       };
 
       await this.audioScanQueue.add('scan-audio', jobData, {
@@ -432,6 +444,90 @@ export class QueueService {
       this.logger.log('Resumed all queues');
     } catch (error) {
       this.logger.error('Failed to resume queues:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Schedule OpenAI metadata extraction job for a single track
+   */
+  async scheduleOpenAIMetadataExtraction(
+    trackId: string,
+    filePath: string,
+    fileName: string,
+    libraryId: string,
+  ): Promise<void> {
+    try {
+      const jobData: OpenAIMetadataJobData = {
+        trackId,
+        filePath,
+        fileName,
+        libraryId,
+      };
+
+      await this.audioScanQueue.add('extract-openai-metadata', jobData, {
+        attempts: this.queueConfig.queues.audioScan.attempts,
+        backoff: {
+          type: this.queueConfig.queues.audioScan.backoff.type as any,
+          delay: this.queueConfig.queues.audioScan.backoff.delay,
+        },
+        removeOnComplete: 50,
+        removeOnFail: 1,
+      });
+
+      this.logger.log(`Scheduled OpenAI metadata extraction for: ${fileName}`);
+    } catch (error) {
+      this.logger.error(
+        `Failed to schedule OpenAI metadata extraction for ${fileName}:`,
+        error,
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Schedule OpenAI metadata extraction for multiple tracks in batch
+   */
+  async scheduleBatchOpenAIMetadataExtraction(
+    tracks: Array<{
+      trackId: string;
+      filePath: string;
+      fileName: string;
+      libraryId: string;
+    }>,
+  ): Promise<void> {
+    try {
+      const jobs = tracks.map((track, index) => ({
+        name: 'extract-openai-metadata',
+        data: {
+          trackId: track.trackId,
+          filePath: track.filePath,
+          fileName: track.fileName,
+          libraryId: track.libraryId,
+          index,
+          totalFiles: tracks.length,
+        } as OpenAIMetadataJobData,
+        opts: {
+          attempts: this.queueConfig.queues.audioScan.attempts,
+          backoff: {
+            type: this.queueConfig.queues.audioScan.backoff.type as any,
+            delay: this.queueConfig.queues.audioScan.backoff.delay,
+          },
+          removeOnComplete: 50,
+          removeOnFail: 1,
+        },
+      }));
+
+      await this.audioScanQueue.addBulk(jobs);
+
+      this.logger.log(
+        `Scheduled batch OpenAI metadata extraction for ${tracks.length} tracks`,
+      );
+    } catch (error) {
+      this.logger.error(
+        `Failed to schedule batch OpenAI metadata extraction:`,
+        error,
+      );
       throw error;
     }
   }

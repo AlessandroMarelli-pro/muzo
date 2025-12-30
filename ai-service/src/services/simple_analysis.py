@@ -13,6 +13,7 @@ from typing import Any, Dict
 
 from loguru import logger
 
+from src.services.openai_metadata_extractor import OpenAIMetadataExtractor
 from src.services.simple_audio_loader import SimpleAudioLoader
 from src.services.simple_feature_extractor import SimpleFeatureExtractor
 from src.services.simple_filename_parser import SimpleFilenameParser
@@ -41,6 +42,19 @@ class SimpleAnalysisService:
         self.feature_extractor = SimpleFeatureExtractor()
         self.fingerprint_generator = SimpleFingerprintGenerator()
 
+        # Initialize OpenAI metadata extractor (optional, will be None if API key not set)
+        try:
+            self.openai_extractor = OpenAIMetadataExtractor()
+            if self.openai_extractor._is_available():
+                logger.info("OpenAI metadata extractor initialized and available")
+            else:
+                logger.info(
+                    "OpenAI metadata extractor initialized but not available (no API key)"
+                )
+        except Exception as e:
+            logger.warning(f"Failed to initialize OpenAI metadata extractor: {e}")
+            self.openai_extractor = None
+
         # Performance monitoring thresholds
         self.performance_thresholds = {
             "slow_method_threshold": 1.0,  # 1 second
@@ -56,6 +70,23 @@ class SimpleAnalysisService:
     @monitor_performance("filename_parsing")
     def parse_filename_for_metadata(self, filename: str) -> Dict[str, str]:
         return self.filename_parser.parse_filename_for_metadata(filename)
+
+    @monitor_performance("openai_metadata_extraction")
+    def extract_metadata_with_openai(self, filename: str) -> Dict[str, Any]:
+        """
+        Extract comprehensive metadata from filename using OpenAI.
+
+        Args:
+            filename: Audio filename (with or without extension)
+
+        Returns:
+            Dictionary containing OpenAI-extracted metadata, or empty dict if unavailable
+        """
+        if self.openai_extractor and self.openai_extractor._is_available():
+            return self.openai_extractor.extract_metadata_from_filename(filename)
+        else:
+            logger.debug("OpenAI metadata extraction not available, skipping")
+            return {}
 
     @monitor_performance("audio_conversion")
     def convert_m4a_to_wav(self, file_path: str) -> str:
@@ -251,6 +282,7 @@ class SimpleAnalysisService:
         sample_duration: float = 10.0,
         original_filename: str = "",
         skip_intro: float = 30.0,
+        skip_openai_metadata: bool = False,
     ) -> Dict[str, Any]:
         # Track if we converted an M4A file so we can clean it up
         converted_wav_path = None
@@ -291,6 +323,17 @@ class SimpleAnalysisService:
             fingerprint = self.generate_simple_fingerprint(file_path, y_harmonic, sr)
             id3_tags = self.extract_id3_tags(file_path, original_filename)
 
+            # Extract metadata using OpenAI if available and not skipped
+            openai_metadata = {}
+            if original_filename and not skip_openai_metadata:
+                openai_metadata = self.extract_metadata_with_openai(original_filename)
+                if openai_metadata:
+                    logger.info("OpenAI metadata extracted successfully")
+            elif skip_openai_metadata:
+                logger.debug(
+                    "Skipping OpenAI metadata extraction (skip_openai_metadata=True)"
+                )
+
             # Check performance bottlenecks after analysis
             # performance_status = self.check_performance_bottlenecks()
 
@@ -312,6 +355,10 @@ class SimpleAnalysisService:
                 **fingerprint,
                 **id3_tags,
             }
+
+            # Add OpenAI metadata if available
+            if openai_metadata:
+                analysis_result["openai_metadata"] = openai_metadata
 
             logger.info(
                 f"Simple audio analysis completed in {analysis_result['processing_time']:.3f}s"

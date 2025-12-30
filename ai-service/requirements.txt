@@ -105,3 +105,9 @@ tabulate>=0.9.0
 coverage>=7.11.0
 
 pytest-asyncio>=1.2.0
+
+# OpenAI SDK for metadata extraction
+openai>=1.0.0
+
+# JSON Schema validation for strict response validation
+jsonschema>=4.20.0
