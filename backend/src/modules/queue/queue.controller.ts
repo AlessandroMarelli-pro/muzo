@@ -320,7 +320,7 @@ export class QueueController {
       const tracksWithNullArtist = await this.prismaService.musicTrack.findMany(
         {
           where: {
-            originalTitle: 'Beat That',
+            originalTitle: 'Hot',
           },
         },
       );

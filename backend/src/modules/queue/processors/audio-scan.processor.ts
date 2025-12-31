@@ -717,6 +717,10 @@ export class AudioScanProcessor extends WorkerHost {
     if (metadata.title) {
       updateData.aiTitle = metadata.title;
       updateData.originalTitle = metadata.title;
+      if (metadata.mix) {
+        updateData.originalTitle += ` (${metadata.mix})`;
+        updateData.aiTitle += ` (${metadata.mix})`;
+      }
     }
     if (metadata.description) {
       updateData.aiDescription = metadata.description;
