@@ -43,14 +43,17 @@ class OpenAIMetadataResource(Resource):
     def post(self):
         """
         Extract metadata from a filename using OpenAI.
+        If file_path is provided, ID3 tags will be extracted and used for more accurate results.
 
         Request body (JSON):
             {
-                "filename": "Artist - Title (Mix) [Year].mp3"
+                "filename": "Artist - Title (Mix) [Year].mp3",
+                "file_path": "/path/to/audio/file.mp3"  # Optional
             }
 
         Or form data:
             - filename: Audio filename
+            - file_path: Optional path to audio file
 
         Returns:
             dict: Extracted metadata from OpenAI
@@ -64,17 +67,22 @@ class OpenAIMetadataResource(Resource):
                     "status": "error",
                 }, 503
 
-            # Get filename from request
+            # Get filename and file_path from request
             filename = None
+            file_path = None
 
             # Try to get from JSON body first
             if request.is_json:
                 data = request.get_json()
-                filename = data.get("filename") if data else None
+                if data:
+                    filename = data.get("filename")
+                    file_path = data.get("file_path")
 
             # Fall back to form data
             if not filename:
                 filename = request.form.get("filename")
+            if not file_path:
+                file_path = request.form.get("file_path")
 
             # Validate filename
             if not filename:
@@ -90,9 +98,13 @@ class OpenAIMetadataResource(Resource):
                 }, 400
 
             logger.info(f"Extracting metadata from filename: {filename}")
+            if file_path:
+                logger.info(f"Using file path for ID3 tag extraction: {file_path}")
 
             # Extract metadata using OpenAI
-            metadata = self.openai_extractor.extract_metadata_from_filename(filename)
+            metadata = self.openai_extractor.extract_metadata_from_filename(
+                filename, file_path
+            )
 
             # Check if extraction was successful (has at least artist or title)
             if not metadata or (

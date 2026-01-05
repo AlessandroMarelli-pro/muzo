@@ -320,14 +320,16 @@ export class QueueController {
       const tracksWithNullArtist = await this.prismaService.musicTrack.findMany(
         {
           where: {
-            libraryId: '2a2d812a-c96f-4926-aacf-62f2ea1445be',
-            aiDescription: null,
+            analysisCompletedAt: {
+              gte: new Date(Date.now() - 1000 * 60 * 60 * 24 * 10), // 10 days ago
+            },
           },
         },
       );
       const filteredTracks = tracksWithNullArtist.filter(
         (track) => track.fileSize <= 100000000, // 100MB
       );
+      console.log(filteredTracks);
       if (filteredTracks.length === 0) {
         this.logger.log('No tracks found with null originalArtist');
         return {
@@ -335,6 +337,7 @@ export class QueueController {
           tracksScheduled: 0,
         };
       }
+      //await this.queueService.scheduleScanForMissingData(filteredTracks, false);
       await this.queueService.scheduleBatchOpenAIMetadataExtraction(
         filteredTracks.map((track) => ({
           trackId: track.id,

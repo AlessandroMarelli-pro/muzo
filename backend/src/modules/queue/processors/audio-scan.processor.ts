@@ -117,7 +117,10 @@ export class AudioScanProcessor extends WorkerHost {
       if (!skipOpenAIMetadata) {
         try {
           openaiMetadata =
-            await this.aiIntegrationService.extractMetadataWithOpenAI(fileName);
+            await this.aiIntegrationService.extractMetadataWithOpenAI(
+              fileName,
+              filePath,
+            );
           console.log(openaiMetadata);
           this.logger.log(
             `OpenAI metadata extracted for ${fileName}: ${openaiMetadata.metadata.artist} - ${openaiMetadata.metadata.title}`,
@@ -655,9 +658,12 @@ export class AudioScanProcessor extends WorkerHost {
         throw new Error(`Track not found: ${trackId}`);
       }
 
-      // Extract metadata using OpenAI
+      // Extract metadata using OpenAI (pass both filename and file_path for ID3 tag extraction)
       const openaiMetadata =
-        await this.aiIntegrationService.extractMetadataWithOpenAI(filePath);
+        await this.aiIntegrationService.extractMetadataWithOpenAI(
+          fileName,
+          filePath,
+        );
       console.log(openaiMetadata);
       // Update track with OpenAI metadata
       await this.updateTrackWithOpenAIMetadata(track.id, openaiMetadata);

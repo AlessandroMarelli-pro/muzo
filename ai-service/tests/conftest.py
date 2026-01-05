@@ -888,6 +888,20 @@ def test_audio_files():
     ]
 
 
+@pytest.fixture(scope="session", autouse=True)
+def test_audio_metadata_files():
+    """Test audio files with tempo and key data from the table."""
+    return [
+        "/Users/alessandro/Music/Youtube/Fiesta/Sonho.mp3",
+        "/Users/alessandro/Music/Youtube/Fiesta/Trésor.opus",
+        "/Users/alessandro/Music/Youtube/Fiesta/Minotaur.opus",
+        "/Users/alessandro/Music/Youtube/Fiesta/Rama Rama.opus",
+        "/Users/alessandro/Music/Youtube/bangers/Morena.mp3",
+        "/Users/alessandro/Music/Tidal/Tracks/Jeremy Hyman - Tinted Mirror.flac",
+        "/Users/alessandro/Music/Tidal/Tracks/Across Boundaries, Chris Stussy, Locklead - E-Motion.flac",
+    ]
+
+
 @pytest.fixture(scope="session")
 def test_low_danceability_files() -> list[dict]:
     """Test audio files with low danceability."""

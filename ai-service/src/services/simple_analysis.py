@@ -9,7 +9,7 @@ import gc
 import json
 import os
 import time
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from loguru import logger
 
@@ -72,18 +72,24 @@ class SimpleAnalysisService:
         return self.filename_parser.parse_filename_for_metadata(filename)
 
     @monitor_performance("openai_metadata_extraction")
-    def extract_metadata_with_openai(self, filename: str) -> Dict[str, Any]:
+    def extract_metadata_with_openai(
+        self, filename: str, file_path: Optional[str] = None
+    ) -> Dict[str, Any]:
         """
         Extract comprehensive metadata from filename using OpenAI.
+        If file_path is provided, ID3 tags will be extracted and used for more accurate results.
 
         Args:
             filename: Audio filename (with or without extension)
+            file_path: Optional path to the audio file for ID3 tag extraction
 
         Returns:
             Dictionary containing OpenAI-extracted metadata, or empty dict if unavailable
         """
         if self.openai_extractor and self.openai_extractor._is_available():
-            return self.openai_extractor.extract_metadata_from_filename(filename)
+            return self.openai_extractor.extract_metadata_from_filename(
+                filename, file_path
+            )
         else:
             logger.debug("OpenAI metadata extraction not available, skipping")
             return {}

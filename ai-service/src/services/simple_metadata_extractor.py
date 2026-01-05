@@ -189,6 +189,9 @@ class SimpleMetadataExtractor:
         try:
             logger.info(f"Extracting ID3 tags: {file_path}")
 
+            # Initialize audio_file to None in case extraction fails
+            audio_file = None
+
             # Try to extract ID3 tags using mutagen
             try:
                 audio_file = File(file_path)
@@ -250,6 +253,69 @@ class SimpleMetadataExtractor:
                 id3_tags["title"] = original_filename.lower().strip()
 
             id3_tags = {k: v if v else "" for k, v in id3_tags.items()}
+
+            # Check if this is a YouTube download and fix artist if needed
+            is_youtube_download = False
+            if audio_file is not None:
+                # Check for YouTube indicators: purl tag or description containing youtube.com
+                purl = self.safe_get_tag_value(audio_file, "purl")
+                if purl:
+                    purl_str = self.safe_string_conversion(purl)
+                    if (
+                        "youtube.com" in purl_str.lower()
+                        or "youtu.be" in purl_str.lower()
+                    ):
+                        is_youtube_download = True
+
+                # Also check description for YouTube indicators
+                if not is_youtube_download:
+                    description = self.safe_get_tag_value(audio_file, "description")
+                    if description:
+                        desc_str = self.safe_string_conversion(description)
+                        if (
+                            "youtube.com" in desc_str.lower()
+                            or "youtu.be" in desc_str.lower()
+                        ):
+                            is_youtube_download = True
+
+            # Fallback: check file path for YouTube indicators if metadata check didn't find it
+            if not is_youtube_download:
+                file_path_lower = file_path.lower()
+                if "youtube" in file_path_lower:
+                    is_youtube_download = True
+
+            # If it's a YouTube download and title contains "Artist - Title" pattern,
+            # extract artist from title and use it if it differs from the existing artist
+            if is_youtube_download and id3_tags.get("title"):
+                title = id3_tags.get("title", "")
+                # Try to parse "Artist - Title" pattern from title
+                # Common separators: " - ", " – ", " — ", " | "
+                separators = [" - ", " – ", " — ", " | ", " ~ ", " : ", " _ ", " . "]
+                for sep in separators:
+                    if sep in title:
+                        parts = title.split(sep, 1)
+                        if len(parts) == 2:
+                            potential_artist = parts[0].strip()
+                            potential_title = parts[1].strip()
+
+                            # Only use this if we have a valid artist and title
+                            if potential_artist and potential_title:
+                                current_artist = id3_tags.get("artist", "").strip()
+
+                                # If artist from title doesn't match current artist,
+                                # prefer the one from title (it's more likely correct)
+                                if potential_artist.lower() != current_artist.lower():
+                                    logger.info(
+                                        f"YouTube download detected: Title contains artist info. "
+                                        f"Replacing artist '{current_artist}' with '{potential_artist}' from title"
+                                    )
+                                    id3_tags["artist"] = (
+                                        potential_artist.lower().strip()
+                                    )
+                                    id3_tags["title"] = potential_title.lower().strip()
+                                    id3_tags["youtube_artist_corrected"] = True
+                                break
+
             # Fallback to filename parsing if ID3 tags are missing
             if id3_tags.get("title") and not id3_tags.get("artist"):
                 logger.info("ID3 tags missing, falling back to filename parsing")

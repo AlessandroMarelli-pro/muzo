@@ -18,6 +18,7 @@ from jsonschema.exceptions import ValidationError
 from loguru import logger
 from openai import APIError, OpenAI, RateLimitError
 
+from src.services.simple_metadata_extractor import SimpleMetadataExtractor
 from src.utils.performance_optimizer import monitor_performance
 
 
@@ -128,7 +129,8 @@ class OpenAIMetadataExtractor:
         "",
         "REQUIRED OUTPUT SCHEMA - You MUST return ONLY the fields provided in the example output.",
         "RULES:",
-        "- Use the filename only as an identifier (artist, title, mix).",
+        "- If ID3 tags are provided, use them as the PRIMARY source for artist, title, year, and genre.",
+        "- Use the filename as a secondary identifier (artist, title, mix) if ID3 tags are not available.",
         "- Populate all other fields using reliable, commonly accepted music metadata.",
         "- If multiple sources disagree, choose the most widely accepted value.",
         "- If no reliable public metadata exists, use null (or [] for arrays).",
@@ -171,7 +173,7 @@ class OpenAIMetadataExtractor:
                 "type": "array",
                 "items": {"type": "string"},
             },
-            "image": {"type": ["string", "null"]},
+            "albumArt": {"type": ["string", "null"]},
             "duration": {"type": ["string", "null"]},
             "credits": {
                 "type": ["object", "null"],
@@ -234,6 +236,9 @@ class OpenAIMetadataExtractor:
             max_requests_per_day=self.MAX_REQUESTS_PER_DAY,
         )
 
+        # Initialize ID3 tag extractor for more accurate metadata
+        self.id3_extractor = SimpleMetadataExtractor()
+
     def _is_available(self) -> bool:
         """Check if the service is available (API key configured)."""
         return self.client is not None
@@ -272,12 +277,16 @@ class OpenAIMetadataExtractor:
         }
 
     @monitor_performance("openai_metadata_extraction")
-    def extract_metadata_from_filename(self, filename: str) -> Dict[str, Any]:
+    def extract_metadata_from_filename(
+        self, filename: str, file_path: Optional[str] = None
+    ) -> Dict[str, Any]:
         """
         Extract comprehensive metadata from a filename using OpenAI.
+        If file_path is provided, ID3 tags will be extracted and used for more accurate results.
 
         Args:
             filename: Audio filename (with or without extension)
+            file_path: Optional path to the audio file for ID3 tag extraction
 
         Returns:
             Dictionary containing extracted metadata matching the expected schema
@@ -295,8 +304,27 @@ class OpenAIMetadataExtractor:
             basename = os.path.basename(filename)
             filename_without_ext = os.path.splitext(basename)[0]
 
-            # Build filename message (example is commented out for token savings)
-            filename_content = self._build_filename_message(filename_without_ext)
+            # Extract ID3 tags if file_path is provided
+            id3_tags = None
+            if file_path and os.path.exists(file_path):
+                try:
+                    id3_result = self.id3_extractor.extract_id3_tags(
+                        file_path, filename_without_ext
+                    )
+                    id3_tags = id3_result.get("id3_tags", {})
+                    if id3_tags:
+                        logger.info(
+                            f"Extracted ID3 tags: {id3_tags.get('title', 'N/A')} - {id3_tags.get('artist', 'N/A')}"
+                        )
+                except Exception as e:
+                    logger.warning(
+                        f"Failed to extract ID3 tags from {file_path}: {e}. Continuing with filename only."
+                    )
+
+            # Build filename message with ID3 tags if available
+            filename_content = self._build_filename_message(
+                filename_without_ext, id3_tags
+            )
 
             # Handle rate limiting and retries
             response = self._make_api_call_with_retry(
@@ -500,7 +528,7 @@ class OpenAIMetadataExtractor:
             "genre": metadata.get("genre") or [],
             "style": metadata.get("style") or [],
             "duration": metadata.get("duration"),
-            "image": metadata.get("image"),
+            "albumArt": metadata.get("albumArt"),
             "credits": metadata.get("credits"),
             "description": metadata.get("description"),
             "availability": metadata.get("availability"),
@@ -576,7 +604,7 @@ class OpenAIMetadataExtractor:
             "genre": ["Electronic", "Disco", "Funk"],
             "style": ["Electro", "Boogie", "Dance"],
             "duration": "7:15",
-            "image": "https://example.com/album-art-image.jpg",
+            "albumArt": "https://example.com/album-art-albumArt.jpg",
             "credits": {
                 "producer": "Woolfe Bang",
                 "writers": ["George Kochbek", "Phill Earl Edwards"],
@@ -597,20 +625,52 @@ Output: {json.dumps(example_output, indent=2)}
 Now extract metadata from the filename provided in the next message.
 Return only the JSON object, no markdown, no explanations."""
 
-    def _build_filename_message(self, filename: str) -> str:
+    def _build_filename_message(
+        self, filename: str, id3_tags: Optional[Dict[str, Any]] = None
+    ) -> str:
         """
         Build the dynamic filename message (only part that changes per request).
 
         Args:
             filename: Audio filename without extension
+            id3_tags: Optional ID3 tags dictionary for more accurate metadata
 
         Returns:
-            Formatted prompt string with filename
+            Formatted prompt string with filename and ID3 tags if available
         """
-        return f'''Extract and enrich music metadata from this filename: "{filename}"
+        base_message = (
+            f'''Extract and enrich music metadata from this filename: "{filename}"'''
+        )
 
-Return ONLY a JSON object with these exact fields: artist, title, mix, year, country, label, format, genre, style, duration, image, credits, description, availability, tags.
-Do NOT include any other fields like album, release_year, track_number, etc.'''
+        # Add ID3 tag information if available
+        if id3_tags:
+            id3_info_parts = []
+            if id3_tags.get("title"):
+                id3_info_parts.append(f"Title: {id3_tags.get('title')}")
+            if id3_tags.get("artist"):
+                id3_info_parts.append(f"Artist: {id3_tags.get('artist')}")
+            if id3_tags.get("album"):
+                id3_info_parts.append(f"Album: {id3_tags.get('album')}")
+            if id3_tags.get("year") or id3_tags.get("date"):
+                year = id3_tags.get("year") or id3_tags.get("date", "")
+                if year:
+                    id3_info_parts.append(f"Year: {year}")
+            if id3_tags.get("genre"):
+                id3_info_parts.append(f"Genre: {id3_tags.get('genre')}")
+            if id3_tags.get("bpm"):
+                id3_info_parts.append(f"BPM: {id3_tags.get('bpm')}")
+
+            if id3_info_parts:
+                id3_section = "\n\nID3 tags from the audio file:\n" + "\n".join(
+                    f"- {part}" for part in id3_info_parts
+                )
+                base_message += id3_section
+                base_message += "\n\nUse the ID3 tag information as the primary source for artist, title, year, and genre. Enrich with additional metadata from your knowledge base."
+
+        base_message += "\n\nReturn ONLY a JSON object with these exact fields: artist, title, mix, year, country, label, format, genre, style, duration, albumArt, credits, description, availability, tags."
+        base_message += "\nDo NOT include any other fields like album, release_year, track_number, etc."
+
+        return base_message
 
     def _clean_json_response(self, content: str) -> str:
         """
@@ -650,7 +710,7 @@ Do NOT include any other fields like album, release_year, track_number, etc.'''
             "genre": [],
             "style": [],
             "duration": None,
-            "image": None,
+            "albumArt": None,
             "credits": None,
             "description": None,
             "availability": None,

@@ -1035,16 +1035,26 @@ export class AiIntegrationService {
 
   /**
    * Extract metadata from filename using OpenAI
+   * If filePath is provided, ID3 tags will be extracted and used for more accurate results.
    *
-   * @param filename - Audio filename (with or without extension)
+   * @param filenameOrPath - Audio filename (with or without extension) or full file path
+   * @param filePath - Optional full path to the audio file for ID3 tag extraction
    * @returns Promise<OpenAIMetadataResponse> - OpenAI metadata extraction result
    */
   async extractMetadataWithOpenAI(
-    filename: string,
+    filenameOrPath: string,
+    filePath?: string,
   ): Promise<OpenAIMetadataResponse> {
     try {
+      // Extract filename from path if filePath is provided, otherwise use filenameOrPath as filename
+      const filename = filePath
+        ? filePath.split(/[/\\]/).pop() || filenameOrPath
+        : filenameOrPath;
+
       this.logger.log(
-        `Extracting metadata with OpenAI for filename: ${filename}`,
+        `Extracting metadata with OpenAI for filename: ${filename}${
+          filePath ? ` (with file path: ${filePath})` : ''
+        }`,
       );
 
       // Validate filename
@@ -1057,12 +1067,26 @@ export class AiIntegrationService {
 
       const startTime = Date.now();
 
+      // Build request payload
+      const payload: { filename: string; file_path?: string } = {
+        filename: filename.trim(),
+      };
+
+      // Add file_path if provided
+      if (filePath) {
+        payload.file_path = filePath;
+      } else if (
+        filenameOrPath.includes('/') ||
+        filenameOrPath.includes('\\')
+      ) {
+        // If filenameOrPath looks like a path, use it as file_path
+        payload.file_path = filenameOrPath;
+      }
+
       // Make request to OpenAI metadata extraction endpoint
       const response = await this.httpClient.post(
         `${simpleInstance.url}/api/v1/audio/metadata/openai`,
-        {
-          filename: filename.trim(),
-        },
+        payload,
         {
           headers: {
             'Content-Type': 'application/json',
@@ -1084,7 +1108,7 @@ export class AiIntegrationService {
       };
     } catch (error) {
       this.logger.error(
-        `OpenAI metadata extraction failed for ${filename}:`,
+        `OpenAI metadata extraction failed for ${filenameOrPath}:`,
         error.message,
       );
 
