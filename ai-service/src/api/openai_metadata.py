@@ -12,21 +12,32 @@ from loguru import logger
 from src.services.openai_metadata_extractor import OpenAIMetadataExtractor
 from src.utils.performance_optimizer import monitor_performance
 
+# Shared extractor instance across all requests
+_shared_extractor = None
+
+
+def get_shared_extractor():
+    """Get or create shared OpenAI metadata extractor instance."""
+    global _shared_extractor
+
+    if _shared_extractor is None:
+        try:
+            _shared_extractor = OpenAIMetadataExtractor()
+            logger.info("Shared OpenAI metadata extractor initialized")
+        except Exception as e:
+            logger.error(f"Failed to initialize shared OpenAI metadata extractor: {e}")
+            _shared_extractor = None
+
+    return _shared_extractor
+
 
 class OpenAIMetadataResource(Resource):
     """OpenAI metadata extraction endpoint."""
 
     def __init__(self):
         """Initialize the OpenAI metadata resource."""
-        try:
-            self.openai_extractor = OpenAIMetadataExtractor()
-            if not self.openai_extractor._is_available():
-                logger.warning(
-                    "OpenAI metadata extractor not available (missing API key)"
-                )
-        except Exception as e:
-            logger.error(f"Failed to initialize OpenAI metadata extractor: {e}")
-            self.openai_extractor = None
+        # Use shared extractor instance
+        self.openai_extractor = get_shared_extractor()
 
     @monitor_performance("openai_metadata_api")
     def post(self):
@@ -84,7 +95,9 @@ class OpenAIMetadataResource(Resource):
             metadata = self.openai_extractor.extract_metadata_from_filename(filename)
 
             # Check if extraction was successful (has at least artist or title)
-            if not metadata or (not metadata.get("artist") and not metadata.get("title")):
+            if not metadata or (
+                not metadata.get("artist") and not metadata.get("title")
+            ):
                 return {
                     "status": "partial",
                     "message": "Metadata extraction completed but returned minimal data",
@@ -142,4 +155,3 @@ class OpenAIMetadataResource(Resource):
                 "message": str(e),
                 "service": "openai_metadata_extraction",
             }, 500
-

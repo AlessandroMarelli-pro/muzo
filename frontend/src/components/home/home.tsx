@@ -144,12 +144,11 @@ export function Home() {
         <div className="flex flex-nowrap gap-1 max-w-screen overflow-x-scroll scroll-mb-0 ">
           {recentlyPlayed ? (
             recentlyPlayed?.map((track, index) => (
-              <div
-                className="min-w-[10vw] w-[10vw] max-h-65 h-65"
+              <MusicCard
                 key={`${track.id}-${index}`}
-              >
-                <MusicCard track={track} setQueue={() => {}} />
-              </div>
+                track={track}
+                setQueue={() => {}}
+              />
             ))
           ) : (
             <div>No recently played tracks</div>

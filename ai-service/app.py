@@ -289,7 +289,7 @@ def create_app_with_routes(config_class=Config):
             }
         )
 
-        # Add OpenAI metadata extraction endpoint (always available)
+        # Add OpenAI metadata extraction endpoints (always available)
         endpoints.update(
             {
                 "audio_metadata_openai": "/api/v1/audio/metadata/openai",

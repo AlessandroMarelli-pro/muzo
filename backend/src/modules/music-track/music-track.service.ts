@@ -700,9 +700,16 @@ export class MusicTrackService {
   }
 
   async getRandomTrack(): Promise<MusicTrack> {
-    const tracksCount = await this.prisma.musicTrack.count();
+    const tracksCount = await this.prisma.musicTrack.count({
+      where: {
+        libraryId: '2a2d812a-c96f-4926-aacf-62f2ea1445be',
+      },
+    });
     const skip = Math.floor(Math.random() * tracksCount);
     return this.prisma.musicTrack.findFirst({
+      where: {
+        libraryId: '2a2d812a-c96f-4926-aacf-62f2ea1445be',
+      },
       take: 1,
       skip: skip,
       include: {

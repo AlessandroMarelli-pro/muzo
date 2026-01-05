@@ -136,6 +136,12 @@ export class MusicTrack {
   aiSubgenreConfidence?: number;
 
   @Field({ nullable: true })
+  aiDescription?: string;
+
+  @Field(() => [String], { nullable: true })
+  aiTags?: string[];
+
+  @Field({ nullable: true })
   userTitle?: string;
 
   @Field({ nullable: true })
@@ -357,6 +363,12 @@ export class SimpleMusicTrack {
 
   @Field({ nullable: true })
   date: Date;
+
+  @Field({ nullable: true })
+  description?: string;
+
+  @Field(() => [String], { nullable: true })
+  tags?: string[];
 
   @Field(() => Float, { nullable: true })
   listeningCount?: number;

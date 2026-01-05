@@ -31,6 +31,8 @@ export const simpleMusicTrackFragment = gql`
     danceabilityFeeling
     imagePath
     lastScannedAt
+    description
+    tags
   }
 `;
 

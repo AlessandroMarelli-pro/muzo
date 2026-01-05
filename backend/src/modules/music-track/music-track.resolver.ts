@@ -42,6 +42,8 @@ export function mapToSimpleMusicTrack(
     duration: track.duration,
     genre: track.originalGenre || track.aiGenre || track.userGenre,
     subgenre: track.aiSubgenre,
+    description: track.aiDescription,
+    tags: track.aiTags ? (JSON.parse(track.aiTags) as string[]) : null,
     date: track.originalDate || track.createdAt,
     listeningCount: track.listeningCount,
     lastPlayedAt: track.lastPlayedAt,
@@ -69,6 +71,8 @@ export class MusicTrackResolver {
   private mapToGraphQLTrack(track: MusicTrackModel): MusicTrack {
     return {
       ...track,
+      aiTags: track.aiTags ? JSON.parse(track.aiTags) : null,
+      aiDescription: track.aiDescription,
       userTags: track.userTags ? JSON.parse(track.userTags) : null,
       albumArtPath: '',
     };
@@ -144,6 +148,7 @@ export class MusicTrackResolver {
     const track = !id
       ? await this.musicTrackService.getRandomTrack()
       : await this.musicTrackService.findOne(id);
+    console.log(track);
     return mapToSimpleMusicTrack(track as MusicTrackWithRelations);
   }
 

@@ -29,7 +29,7 @@ export const TrackRecommendationsCard = ({
   const isThisTrackPlaying = isCurrentTrack && isPlaying;
 
   const formattedImage = track.imagePath || 'Unknown Image';
-
+  console.log(recommendation);
   return (
     <div
       key={recommendation.track.id}

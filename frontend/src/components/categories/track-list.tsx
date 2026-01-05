@@ -91,20 +91,15 @@ export const CategoriesTrackList: React.FC<TrackListProps> = ({
               <div>
                 <div
                   className={
-                    'flex flex-nowrap gap-1 max-w-screen overflow-x-scroll scroll-mb-0 bg-background'
+                    'flex flex-nowrap gap-10 max-w-screen overflow-x-scroll scroll-mb-0 bg-background'
                   }
                 >
                   {category.tracks.map((track) => (
-                    <div
-                      className="min-w-[10vw] w-[10vw] max-h-65 h-65"
+                    <MusicCard
                       key={track.id}
-                    >
-                      <MusicCard
-                        key={track.id}
-                        track={track}
-                        setQueue={handleSetQueue}
-                      />
-                    </div>
+                      track={track}
+                      setQueue={handleSetQueue}
+                    />
                   ))}
                 </div>
               </div>

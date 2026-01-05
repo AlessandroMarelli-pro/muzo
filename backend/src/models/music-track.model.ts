@@ -29,6 +29,8 @@ export interface UpdateMusicTrackDto {
   aiAlbum?: string;
   aiSubgenre?: string;
   aiConfidence?: number;
+  aiDescription?: string;
+  aiTags?: string[];
   aiSubgenreConfidence?: number;
   userTitle?: string;
   userArtist?: string;

@@ -84,6 +84,20 @@ export function DetailedTrackCard({ track, refetch }: DetailedTrackCardProps) {
                 {track.artist} - {track.title}
               </h1>
             </div>
+            {track?.description && (
+              <div className="text-sm text-muted-foreground truncate capitalize">
+                {track?.description}
+              </div>
+            )}
+            {track?.tags && (
+              <div className="flex flex-wrap gap-1 mt-2">
+                {track?.tags.map((tag) => (
+                  <Badge key={tag} variant="outline" className="text-xs">
+                    {tag}
+                  </Badge>
+                ))}
+              </div>
+            )}
 
             {/* Metadata Grid */}
             <div className="flex flex-row gap-2">

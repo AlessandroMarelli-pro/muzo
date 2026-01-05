@@ -16,9 +16,10 @@ interface MusicCardProps {
   className?: string;
   onAdd?: (trackId: string) => void;
   setQueue: () => void;
+  key: string;
 }
 
-function MusicCard({ track, className, onAdd, setQueue }: MusicCardProps) {
+function MusicCard({ track, className, onAdd, setQueue, key }: MusicCardProps) {
   const cardRef = useRef<HTMLDivElement>(null);
   const [isHovered, setIsHovered] = useState(false);
   const formattedTitle = track.title || 'Unknown Title';
@@ -46,7 +47,7 @@ function MusicCard({ track, className, onAdd, setQueue }: MusicCardProps) {
   };
 
   return (
-    <>
+    <div className="min-w-75 w-75 max-h-75 h-75" key={key}>
       <Card
         className={cn(
           'relative h-full w-full',
@@ -66,7 +67,7 @@ function MusicCard({ track, className, onAdd, setQueue }: MusicCardProps) {
       >
         <CardContent className="p-0">
           {(isHovered || isThisTrackPlaying) && (
-            <div className="  absolute flex items-center justify-center z-1 h-full w-full rounded-xl">
+            <div className="  absolute flex items-center justify-center z-2 h-full w-full rounded-xl">
               <div className="absolute top-0 left-0 h-full w-full bg-primary/50 opacity-50 rounded-xl" />
               <Button
                 size="sm"
@@ -104,13 +105,24 @@ function MusicCard({ track, className, onAdd, setQueue }: MusicCardProps) {
 
           {/* Track Info */}
           <div className="space-y-1">
-            <img
-              src={`http://localhost:3000/api/images/serve?imagePath=${formattedImage}`}
-              alt="Album Art"
-              className="w-full h-[60%] object-cover rounded-xl rounded-b-none absolute z-[-1]"
-            />
-            <div className="h-34 " />
-            <div className="space-y-2 p-1 z-20 h-full bg-background rounded-xl flex flex-col justify-end shadow-[0px_-5px_10px_-3px_#2e2e2e] ">
+            <div className="w-full h-[60%]  absolute ">
+              <div className="flex items-center justify-center h-full w-full ">
+                <img
+                  src={`http://localhost:3000/api/images/serve?imagePath=${formattedImage}`}
+                  alt="Album Art"
+                  className="w-35 h-35 object-cover rounded-md z-1"
+                />
+              </div>
+              <div className="z-0 absolute top-0 left-1/8 w-full h-full   opacity-50   blur-md">
+                <img
+                  src={`http://localhost:3000/api/images/serve?imagePath=${formattedImage}`}
+                  alt="Album Art"
+                  className="w-55 h-75 object-cover rounded-md "
+                />
+              </div>
+            </div>
+            <div className="h-45 " />
+            <div className="space-y-2 p-1 z-1 h-full bg-background rounded-xl flex flex-col justify-end  ">
               <div className="px-1">
                 <h3
                   className="font-semibold text-sm leading-tight line-clamp-1 capitalize"
@@ -147,7 +159,7 @@ function MusicCard({ track, className, onAdd, setQueue }: MusicCardProps) {
           </div>
         </CardContent>
       </Card>
-    </>
+    </div>
   );
 }
 

@@ -313,9 +313,11 @@ type MusicTrack {
   aiAlbum: String
   aiArtist: String
   aiConfidence: Float
+  aiDescription: String
   aiGenre: String
   aiSubgenre: String
   aiSubgenreConfidence: Float
+  aiTags: [String!]
   aiTitle: String
   albumArtPath: String
   analysisCompletedAt: DateTime
@@ -567,6 +569,7 @@ type SimpleMusicTrack {
   createdAt: DateTime
   danceabilityFeeling: String
   date: DateTime
+  description: String
   duration: Float!
   genre: String
   id: ID!
@@ -579,6 +582,7 @@ type SimpleMusicTrack {
   listeningCount: Float
   speechiness: Float
   subgenre: String
+  tags: [String!]
   tempo: Float
   title: String
   updatedAt: DateTime

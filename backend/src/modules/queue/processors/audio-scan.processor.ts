@@ -745,7 +745,6 @@ export class AudioScanProcessor extends WorkerHost {
     if (metadata.tags && metadata.tags.length > 0) {
       updateData.aiTags = JSON.stringify(metadata.tags);
     }
-    console.log(updateData);
 
     // Update track
     await this.prismaService.musicTrack.update({

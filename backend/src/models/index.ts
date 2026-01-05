@@ -114,6 +114,8 @@ export interface UpdateMusicTrackDto {
   aiSubgenre?: string;
   aiConfidence?: number;
   aiSubgenreConfidence?: number;
+  aiDescription?: string;
+  aiTags?: string[];
   userTitle?: string;
   userArtist?: string;
   userAlbum?: string;

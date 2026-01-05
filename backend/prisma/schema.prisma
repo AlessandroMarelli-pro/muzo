@@ -113,6 +113,22 @@ model MusicTrack {
   playlistTracks        PlaylistTrack[]
   imageSearches         ImageSearch[]
   
+  // Indexes for query performance
+  @@index([libraryId])
+  @@index([analysisStatus])
+  @@index([isFavorite])
+  @@index([format])
+  @@index([aiGenre])
+  @@index([aiSubgenre])
+  @@index([aiConfidence])
+  @@index([createdAt])
+  @@index([listeningCount])
+  @@index([lastPlayedAt])
+  @@index([libraryId, analysisStatus])
+  @@index([libraryId, isFavorite])
+  @@index([analysisStatus, createdAt])
+  @@index([aiGenre, libraryId])
+  @@index([aiSubgenre, libraryId])
   @@map("music_tracks")
 }
 
@@ -173,6 +189,15 @@ model AudioFingerprint {
   track                 MusicTrack @relation(fields: [trackId], references: [id], onDelete: Cascade)
   aiAnalysisResult      AIAnalysisResult?
   
+  // Indexes for query performance (audio features used in filtering and sorting)
+  @@index([key])
+  @@index([tempo])
+  @@index([danceability])
+  @@index([valence])
+  @@index([arousal])
+  @@index([acousticness])
+  @@index([instrumentalness])
+  @@index([speechiness])
   @@map("audio_fingerprints")
 }
 
@@ -216,6 +241,9 @@ model IntelligentEditorSession {
   // Relations
   track                 MusicTrack @relation(fields: [trackId], references: [id], onDelete: Cascade)
   
+  // Indexes for query performance
+  @@index([trackId])
+  @@index([sessionStatus])
   @@map("intelligent_editor_sessions")
 }
 
@@ -237,6 +265,10 @@ model PlaybackSession {
   // Relations
   track                 MusicTrack @relation(fields: [trackId], references: [id], onDelete: Cascade)
   
+  // Indexes for query performance
+  @@index([trackId])
+  @@index([startTime])
+  @@index([sessionType])
   @@map("playback_sessions")
 }
 
@@ -303,6 +335,9 @@ model PlaylistTrack {
   playlist   Playlist @relation(fields: [playlistId], references: [id], onDelete: Cascade)
   track      MusicTrack @relation(fields: [trackId], references: [id], onDelete: Cascade)
   
+  // Indexes for query performance
+  @@index([playlistId])
+  @@index([position])
   @@unique([playlistId, trackId])
   @@map("playlist_tracks")
 }
@@ -324,6 +359,9 @@ model ImageSearch {
   // Relations
   track      MusicTrack @relation(fields: [trackId], references: [id], onDelete: Cascade)
   
+  // Indexes for query performance
+  @@index([trackId])
+  @@index([status])
   @@map("image_searches")
 }
 
@@ -349,6 +387,9 @@ model UserRecommendationPreferences {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   
+  // Indexes for query performance
+  @@index([userId])
+  @@index([isDefault])
   @@map("user_recommendation_preferences")
 }
 

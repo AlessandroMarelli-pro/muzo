@@ -8,14 +8,96 @@ from audio filenames, including artist, title, genre, style, credits, and more.
 import json
 import os
 import re
+import time
+from collections import deque
+from threading import Lock
 from typing import Any, Dict, Optional
 
 from jsonschema import validate
 from jsonschema.exceptions import ValidationError
 from loguru import logger
-from openai import OpenAI
+from openai import APIError, OpenAI, RateLimitError
 
 from src.utils.performance_optimizer import monitor_performance
+
+
+class RateLimiter:
+    """Thread-safe rate limiter for OpenAI API calls with exponential backoff."""
+
+    def __init__(
+        self,
+        max_requests_per_minute: int = 60,
+        max_requests_per_day: Optional[int] = None,
+    ):
+        """
+        Initialize rate limiter.
+
+        Args:
+            max_requests_per_minute: Maximum requests per minute
+            max_requests_per_day: Maximum requests per day (optional)
+        """
+        self.max_requests_per_minute = max_requests_per_minute
+        self.max_requests_per_day = max_requests_per_day
+        self.minute_requests: deque = deque()
+        self.daily_requests: deque = deque()
+        self.lock = Lock()
+
+    def can_make_request(self) -> bool:
+        """
+        Check if a request can be made without hitting rate limits.
+
+        Returns:
+            True if request can be made, False otherwise
+        """
+        with self.lock:
+            now = time.time()
+
+            # Clean up old minute requests
+            minute_ago = now - 60
+            while self.minute_requests and self.minute_requests[0] < minute_ago:
+                self.minute_requests.popleft()
+
+            # Check minute limit
+            if len(self.minute_requests) >= self.max_requests_per_minute:
+                return False
+
+            # Check daily limit if set
+            if self.max_requests_per_day:
+                day_ago = now - 86400  # 24 hours
+                while self.daily_requests and self.daily_requests[0] < day_ago:
+                    self.daily_requests.popleft()
+
+                if len(self.daily_requests) >= self.max_requests_per_day:
+                    return False
+
+            return True
+
+    def record_request(self):
+        """Record that a request was made."""
+        with self.lock:
+            now = time.time()
+            self.minute_requests.append(now)
+            if self.max_requests_per_day:
+                self.daily_requests.append(now)
+
+    def get_wait_time(self) -> float:
+        """
+        Get the time to wait before making the next request.
+
+        Returns:
+            Seconds to wait (0 if no wait needed)
+        """
+        with self.lock:
+            if self.can_make_request():
+                return 0.0
+
+            if not self.minute_requests:
+                return 0.0
+
+            # Calculate time until oldest request expires
+            oldest_request = min(self.minute_requests)
+            wait_time = 60 - (time.time() - oldest_request)
+            return max(0.0, wait_time)
 
 
 class OpenAIMetadataExtractor:
@@ -28,11 +110,21 @@ class OpenAIMetadataExtractor:
     MODEL = "gpt-4o-mini"
     TEMPERATURE = 0.1  # Strict temperature: 0-0.2 range for deterministic output
 
+    # Rate limiting configuration
+    MAX_REQUESTS_PER_MINUTE = int(os.getenv("OPENAI_MAX_REQUESTS_PER_MINUTE", "60"))
+    MAX_REQUESTS_PER_DAY = (
+        int(os.getenv("OPENAI_MAX_REQUESTS_PER_DAY"))
+        if os.getenv("OPENAI_MAX_REQUESTS_PER_DAY")
+        else None
+    )
+    MAX_RETRIES = int(os.getenv("OPENAI_MAX_RETRIES", "3"))
+    INITIAL_BACKOFF = float(os.getenv("OPENAI_INITIAL_BACKOFF", "1.0"))
+
     INSTRUCTIONS = [
         "You are a music metadata resolution agent.",
         "Your task is NOT limited to parsing the filename.",
         "You MUST resolve and enrich metadata using your general music knowledge",
-        "and well-known public music databases (e.g. Discogs, MusicBrainz, Spotify-style metadata).",
+        "and well-known public music databases (e.g. Youtube, Discogs, Amazon, MusicBrainz, Spotify, Bandcamp, Apple Music, LastFM, etc.).",
         "",
         "REQUIRED OUTPUT SCHEMA - You MUST return ONLY the fields provided in the example output.",
         "RULES:",
@@ -49,6 +141,13 @@ class OpenAIMetadataExtractor:
         "- High confidence: widely documented releases → fill all known fields.",
         "- Medium confidence: known artist/track but limited documentation → fill genre/style, leave credits null if unsure.",
         "- Low confidence: obscure or ambiguous tracks → only fill artist/title/mix, others null.",
+        "",
+        "DESCRIPTION REQUIREMENT:",
+        "- If genre, style, or tags are populated, you MUST provide a description.",
+        "- The description should be a brief, informative text describing the track's characteristics,",
+        "  musical style, era, or notable features based on the genre, style, and tags.",
+        "- Description should be 1-3 sentences, written in a natural, informative style.",
+        "- If genre, style, and tags are all empty/null, description can be null.",
     ]
 
     # Response schema matching the expected output structure
@@ -72,6 +171,7 @@ class OpenAIMetadataExtractor:
                 "type": "array",
                 "items": {"type": "string"},
             },
+            "image": {"type": ["string", "null"]},
             "duration": {"type": ["string", "null"]},
             "credits": {
                 "type": ["object", "null"],
@@ -128,9 +228,48 @@ class OpenAIMetadataExtractor:
             self.client = OpenAI(api_key=self.api_key)
             logger.info("OpenAI client initialized successfully")
 
+        # Initialize rate limiter
+        self.rate_limiter = RateLimiter(
+            max_requests_per_minute=self.MAX_REQUESTS_PER_MINUTE,
+            max_requests_per_day=self.MAX_REQUESTS_PER_DAY,
+        )
+
     def _is_available(self) -> bool:
         """Check if the service is available (API key configured)."""
         return self.client is not None
+
+    def get_rate_limit_stats(self) -> Dict[str, Any]:
+        """
+        Get rate limiting statistics.
+
+        Returns:
+            Dictionary with rate limiting information
+        """
+        wait_time = self.rate_limiter.get_wait_time()
+        can_make_request = self.rate_limiter.can_make_request()
+
+        with self.rate_limiter.lock:
+            minute_requests = len(self.rate_limiter.minute_requests)
+            daily_requests = (
+                len(self.rate_limiter.daily_requests)
+                if self.rate_limiter.max_requests_per_day
+                else None
+            )
+
+        return {
+            "can_make_request": can_make_request,
+            "wait_time_seconds": round(wait_time, 2),
+            "current_minute_requests": minute_requests,
+            "max_requests_per_minute": self.rate_limiter.max_requests_per_minute,
+            "current_daily_requests": daily_requests,
+            "max_requests_per_day": self.rate_limiter.max_requests_per_day,
+            "minute_utilization_percent": round(
+                (minute_requests / self.rate_limiter.max_requests_per_minute) * 100,
+                2,
+            )
+            if self.rate_limiter.max_requests_per_minute > 0
+            else 0,
+        }
 
     @monitor_performance("openai_metadata_extraction")
     def extract_metadata_from_filename(self, filename: str) -> Dict[str, Any]:
@@ -159,31 +298,9 @@ class OpenAIMetadataExtractor:
             # Build filename message (example is commented out for token savings)
             filename_content = self._build_filename_message(filename_without_ext)
 
-            # Make API call with structured outputs
-            # Message structure optimized for token efficiency:
-            # - System message: static instructions
-            # - Example message: static few-shot example
-            # - Filename message: dynamic filename (only part that changes)
-            # Note: OpenAI has automatic prompt caching for repeated prefixes,
-            # but explicit cache_control is not supported in the Python SDK
-            response = self.client.chat.completions.create(
-                model=self.MODEL,
-                temperature=self.TEMPERATURE,
-                messages=[
-                    {
-                        "role": "system",
-                        "content": "\n".join(self.INSTRUCTIONS),
-                    },
-                    {
-                        "role": "user",
-                        "content": self._build_example_message(),
-                    },
-                    {
-                        "role": "user",
-                        "content": filename_content,
-                    },
-                ],
-                response_format={"type": "json_object"},
+            # Handle rate limiting and retries
+            response = self._make_api_call_with_retry(
+                filename_content, filename_without_ext
             )
 
             # Log token usage for monitoring
@@ -238,6 +355,129 @@ class OpenAIMetadataExtractor:
             logger.error(f"Failed to extract metadata using OpenAI: {e}")
             return self._get_empty_metadata()
 
+    def _make_api_call_with_retry(self, filename_content: str, filename: str) -> Any:
+        """
+        Make API call with rate limiting and exponential backoff retry logic.
+
+        Args:
+            filename_content: Formatted filename message
+            filename: Original filename for logging
+
+        Returns:
+            OpenAI API response
+
+        Raises:
+            Exception: If all retries fail
+        """
+        last_exception = None
+
+        for attempt in range(self.MAX_RETRIES + 1):
+            try:
+                # Check rate limits before making request
+                if not self.rate_limiter.can_make_request():
+                    wait_time = self.rate_limiter.get_wait_time()
+                    if wait_time > 0:
+                        logger.warning(
+                            f"Rate limit reached. Waiting {wait_time:.2f} seconds before request..."
+                        )
+                        time.sleep(wait_time)
+
+                # Record request attempt
+                self.rate_limiter.record_request()
+
+                # Make API call with structured outputs
+                response = self.client.chat.completions.create(
+                    model=self.MODEL,
+                    temperature=self.TEMPERATURE,
+                    messages=[
+                        {
+                            "role": "system",
+                            "content": "\n".join(self.INSTRUCTIONS),
+                        },
+                        {
+                            "role": "user",
+                            "content": self._build_example_message(),
+                        },
+                        {
+                            "role": "user",
+                            "content": filename_content,
+                        },
+                    ],
+                    response_format={"type": "json_object"},
+                )
+
+                # Success - return response
+                return response
+
+            except RateLimitError as e:
+                last_exception = e
+                error_message = str(e).lower()
+
+                # Extract retry-after from headers if available
+                retry_after = self.INITIAL_BACKOFF * (2**attempt)
+
+                # Check if error message contains retry-after information
+                if "retry after" in error_message:
+                    try:
+                        # Try to extract retry-after seconds from error message
+                        import re
+
+                        match = re.search(r"retry after (\d+)", error_message)
+                        if match:
+                            retry_after = int(match.group(1))
+                    except (ValueError, AttributeError):
+                        pass
+
+                if attempt < self.MAX_RETRIES:
+                    logger.warning(
+                        f"Rate limit error (attempt {attempt + 1}/{self.MAX_RETRIES + 1}): {e}. "
+                        f"Retrying after {retry_after:.2f} seconds..."
+                    )
+                    time.sleep(retry_after)
+                    continue
+                else:
+                    logger.error(
+                        f"Rate limit error after {self.MAX_RETRIES + 1} attempts: {e}"
+                    )
+                    raise
+
+            except APIError as e:
+                last_exception = e
+                error_message = str(e).lower()
+
+                # Determine if error is retryable
+                is_retryable = (
+                    "500" in error_message
+                    or "502" in error_message
+                    or "503" in error_message
+                    or "504" in error_message
+                    or "timeout" in error_message
+                    or "server" in error_message
+                )
+
+                if is_retryable and attempt < self.MAX_RETRIES:
+                    backoff_time = self.INITIAL_BACKOFF * (2**attempt)
+                    logger.warning(
+                        f"API error (attempt {attempt + 1}/{self.MAX_RETRIES + 1}): {e}. "
+                        f"Retrying after {backoff_time:.2f} seconds..."
+                    )
+                    time.sleep(backoff_time)
+                    continue
+                else:
+                    logger.error(f"API error: {e}")
+                    raise
+
+            except Exception as e:
+                # Non-retryable errors or unexpected errors
+                last_exception = e
+                logger.error(f"Unexpected error during API call: {e}")
+                raise
+
+        # Should never reach here, but just in case
+        if last_exception:
+            raise last_exception
+        raise Exception("Failed to make API call after retries")
+
     def _normalize_metadata(self, metadata: Dict[str, Any]) -> Dict[str, Any]:
         """
         Normalize metadata to ensure it matches the expected schema.
@@ -260,6 +500,7 @@ class OpenAIMetadataExtractor:
             "genre": metadata.get("genre") or [],
             "style": metadata.get("style") or [],
             "duration": metadata.get("duration"),
+            "image": metadata.get("image"),
             "credits": metadata.get("credits"),
             "description": metadata.get("description"),
             "availability": metadata.get("availability"),
@@ -277,6 +518,42 @@ class OpenAIMetadataExtractor:
         # Convert year to string if it's an integer
         if isinstance(normalized["year"], int):
             normalized["year"] = str(normalized["year"])
+
+        # Ensure description is populated if genre, style, or tags are present
+        has_ai_metadata = (
+            normalized["genre"] or normalized["style"] or normalized["tags"]
+        )
+
+        if has_ai_metadata and not normalized["description"]:
+            # Generate a description based on available metadata
+            description_parts = []
+
+            if normalized["genre"]:
+                genre_str = ", ".join(
+                    normalized["genre"][:3]
+                )  # Limit to first 3 genres
+                description_parts.append(f"{genre_str} track")
+
+            if normalized["style"]:
+                style_str = ", ".join(
+                    normalized["style"][:2]
+                )  # Limit to first 2 styles
+                if description_parts:
+                    description_parts.append(f"with {style_str} influences")
+                else:
+                    description_parts.append(f"{style_str} style")
+
+            if normalized["tags"]:
+                # Use tags to add context
+                tag_str = ", ".join(normalized["tags"][:2])  # Limit to first 2 tags
+                if description_parts:
+                    description_parts.append(f"characterized by {tag_str}")
+
+            if description_parts:
+                normalized["description"] = ". ".join(description_parts) + "."
+                logger.info(
+                    f"Generated description from metadata: {normalized['description'][:100]}"
+                )
 
         return normalized
 
@@ -299,6 +576,7 @@ class OpenAIMetadataExtractor:
             "genre": ["Electronic", "Disco", "Funk"],
             "style": ["Electro", "Boogie", "Dance"],
             "duration": "7:15",
+            "image": "https://example.com/album-art-image.jpg",
             "credits": {
                 "producer": "Woolfe Bang",
                 "writers": ["George Kochbek", "Phill Earl Edwards"],
@@ -331,7 +609,7 @@ Return only the JSON object, no markdown, no explanations."""
         """
         return f'''Extract and enrich music metadata from this filename: "{filename}"
 
-Return ONLY a JSON object with these exact fields: artist, title, mix, year, country, label, format, genre, style, duration, credits, description, availability, tags.
+Return ONLY a JSON object with these exact fields: artist, title, mix, year, country, label, format, genre, style, duration, image, credits, description, availability, tags.
 Do NOT include any other fields like album, release_year, track_number, etc.'''
 
     def _clean_json_response(self, content: str) -> str:
@@ -372,6 +650,7 @@ Do NOT include any other fields like album, release_year, track_number, etc.'''
             "genre": [],
             "style": [],
             "duration": None,
+            "image": None,
             "credits": None,
             "description": None,
             "availability": None,

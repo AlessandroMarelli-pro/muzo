@@ -286,13 +286,11 @@ export const LibraryDashboard: React.FC<LibraryDashboardProps> = ({
             className={'flex flex-wrap  justify-center gap-3  overflow-y-auto'}
           >
             {tracks?.map((track) => (
-              <div className="min-w-[10vw] w-[10vw] max-h-65 h-65">
-                <MusicCard
-                  key={track.id}
-                  track={track}
-                  setQueue={handleSetQueue}
-                />
-              </div>
+              <MusicCard
+                key={track.id}
+                track={track}
+                setQueue={handleSetQueue}
+              />
             ))}
           </div>
         </CardContent>
