@@ -414,6 +414,10 @@ class OpenAIMetadataExtractor:
                 self.rate_limiter.record_request()
 
                 # Make API call with structured outputs
+                # Combine example and filename into single user message for efficiency
+                combined_user_message = (
+                    self._build_example_message() + "\n\n" + filename_content
+                )
                 response = self.client.chat.completions.create(
                     model=self.MODEL,
                     temperature=self.TEMPERATURE,
@@ -424,14 +428,12 @@ class OpenAIMetadataExtractor:
                         },
                         {
                             "role": "user",
-                            "content": self._build_example_message(),
-                        },
-                        {
-                            "role": "user",
-                            "content": filename_content,
+                            "content": combined_user_message,
                         },
                     ],
                     response_format={"type": "json_object"},
+                    max_tokens=1500,  # Reasonable limit to speed up generation without truncation
+                    timeout=30.0,  # Fail fast if response takes too long
                 )
 
                 # Success - return response
@@ -661,11 +663,10 @@ Return only the JSON object, no markdown, no explanations."""
                 id3_info_parts.append(f"BPM: {id3_tags.get('bpm')}")
 
             if id3_info_parts:
-                id3_section = "\n\nID3 tags from the audio file:\n" + "\n".join(
-                    f"- {part}" for part in id3_info_parts
-                )
+                # More concise ID3 tag format
+                id3_section = "\n\nID3 tags: " + " | ".join(id3_info_parts)
                 base_message += id3_section
-                base_message += "\n\nUse the ID3 tag information as the primary source for artist, title, year, and genre. Enrich with additional metadata from your knowledge base."
+                base_message += "\n\nUse ID3 tags as PRIMARY source for artist, title, year, genre. Enrich with music databases."
 
         base_message += "\n\nReturn ONLY a JSON object with these exact fields: artist, title, mix, year, country, label, format, genre, style, duration, albumArt, credits, description, availability, tags."
         base_message += "\nDo NOT include any other fields like album, release_year, track_number, etc."

@@ -120,9 +120,15 @@ function MusicCard({ track, className, onAdd, setQueue, key }: MusicCardProps) {
                   className="w-55 h-75 object-cover rounded-md "
                 />
               </div>
+              <Badge
+                variant="secondary"
+                className="text-[11px] absolute bottom-0 right-1 z-1000 "
+              >
+                {bpm} bpm
+              </Badge>
             </div>
             <div className="h-45 " />
-            <div className="space-y-2 p-1 z-1 h-full bg-background rounded-xl flex flex-col justify-end  ">
+            <div className="space-y-2 p-2 z-1 h-full bg-background/80 rounded-xl flex flex-col justify-end backdrop-blur-sm  ">
               <div className="px-1">
                 <h3
                   className="font-semibold text-sm leading-tight line-clamp-1 capitalize"
@@ -140,18 +146,15 @@ function MusicCard({ track, className, onAdd, setQueue, key }: MusicCardProps) {
               {/* Genre and Subgenre */}
               <div className="flex flex-col flex-wrap gap-1 ">
                 {formattedGenre && (
-                  <Badge variant="secondary" className="text-[9px]">
+                  <Badge variant="secondary" className="text-xs">
                     {formattedGenre}
                   </Badge>
                 )}
                 {formattedSubgenre && (
-                  <Badge variant="outline" className="text-[9px]">
+                  <Badge variant="outline" className="text-xs">
                     {formattedSubgenre}
                   </Badge>
                 )}
-                <Badge variant="secondary" className="text-[9px] ">
-                  {bpm} bpm
-                </Badge>
               </div>
             </div>
 

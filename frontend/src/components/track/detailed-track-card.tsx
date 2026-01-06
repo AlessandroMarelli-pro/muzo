@@ -51,13 +51,13 @@ export function DetailedTrackCard({ track, refetch }: DetailedTrackCardProps) {
   };
 
   return (
-    <Card className="w-full bg-primary-foreground border-none shadow-none">
+    <Card className="w-full  border-none shadow-none">
       <CardContent className="p-6">
         {/* Header Section */}
         <div className="flex items-start gap-6">
           {/* Album Art */}
           <div className="relative flex-shrink-0">
-            <div className="w-32 h-32 rounded-full overflow-hidden bg-muted flex items-center justify-center shadow-sm hover:scale-105 transition-all duration-300">
+            <div className="w-40 h-40 rounded-full overflow-hidden bg-muted flex items-center justify-center shadow-sm hover:scale-105 transition-all duration-300">
               <img
                 src={`http://localhost:3000/api/images/serve?imagePath=${track.imagePath}`}
                 alt="Album Art"
@@ -78,8 +78,8 @@ export function DetailedTrackCard({ track, refetch }: DetailedTrackCardProps) {
           </div>
 
           {/* Track Info */}
-          <div className="flex-1 min-w-0">
-            <div className="mb-2">
+          <div className="flex flex-col gap-3 flex-1 min-w-0">
+            <div>
               <h1 className="text-xl font-bold text-foreground truncate capitalize">
                 {track.artist} - {track.title}
               </h1>
@@ -90,9 +90,10 @@ export function DetailedTrackCard({ track, refetch }: DetailedTrackCardProps) {
               </div>
             )}
             {track?.tags && (
-              <div className="flex flex-wrap gap-1 mt-2">
+              <div className="flex flex-wrap gap-2">
+                Tags:{' '}
                 {track?.tags.map((tag) => (
-                  <Badge key={tag} variant="outline" className="text-xs">
+                  <Badge key={tag} variant="outline">
                     {tag}
                   </Badge>
                 ))}
@@ -101,54 +102,59 @@ export function DetailedTrackCard({ track, refetch }: DetailedTrackCardProps) {
 
             {/* Metadata Grid */}
             <div className="flex flex-row gap-2">
-              <Badge variant="secondary" className="flex items-center gap-2  ">
+              Metadata:
+              <Badge variant="outline" className="flex items-center gap-2  ">
                 <Clock size={64} />
                 <span>{formatDuration(track.duration)}</span>
               </Badge>
-              <Badge variant="secondary" className="flex items-center gap-2  ">
+              <Badge variant="outline" className="flex items-center gap-2  ">
                 <Activity className="w-4 h-4" />
                 <span>{track.listeningCount} plays</span>
               </Badge>
-              <Badge variant="secondary" className="flex items-center gap-2  ">
+              <Badge variant="outline" className="flex items-center gap-2  ">
                 <Music className="w-4 h-4" />
                 <span>{formatBPM(track.tempo || 0)} BPM</span>
               </Badge>
-              <Badge variant="secondary" className="flex items-center gap-2  ">
+              <Badge variant="outline" className="flex items-center gap-2  ">
                 <Zap className="w-4 h-4" />
                 <span>Energy: {track.arousalMood}</span>
               </Badge>
-              <Badge variant="secondary" className="flex items-center gap-2  ">
+              <Badge variant="outline" className="flex items-center gap-2  ">
                 <Activity className="w-4 h-4" />
                 <span>Dance: {track.danceabilityFeeling}</span>
               </Badge>{' '}
-              <Badge variant="secondary" className="flex items-center gap-2  ">
+              <Badge variant="outline" className="flex items-center gap-2  ">
                 <Activity className="w-4 h-4" />
                 <span>Mood: {track.valenceMood}</span>
               </Badge>
             </div>
 
             {/* Genre Tags */}
-            <div className="flex gap-2 mt-4">
-              {track.genre && (
-                <Badge variant="secondary" className="capitalize">
-                  {track.genre}
+            <div className="flex gap-2 ">
+              Genre:
+              {track.genre?.split(',').map((genre) => (
+                <Badge variant="outline" className="capitalize">
+                  {genre}
                 </Badge>
-              )}
-              {track.subgenre && (
-                <Badge variant="secondary" className="capitalize">
-                  {track.subgenre}
+              ))}
+            </div>
+            <div className="flex gap-2 ">
+              Subgenre:
+              {track.subgenre?.split(',').map((subgenre) => (
+                <Badge variant="outline" className="capitalize">
+                  {subgenre}
                 </Badge>
-              )}
+              ))}
             </div>
           </div>
           {/* Action Buttons */}
           <div className="flex items-center justify-between">
             <div className="flex gap-2">
-              <Button variant="secondary" size="sm" onClick={refetch}>
+              <Button variant="default" size="sm" onClick={refetch}>
                 <Shuffle className="w-4 h-4" />
                 Random Track
               </Button>
-              <Button variant="secondary" size="sm">
+              <Button variant="default" size="sm">
                 <ListPlus className="w-4 h-4" />
                 Add to playlist
               </Button>
