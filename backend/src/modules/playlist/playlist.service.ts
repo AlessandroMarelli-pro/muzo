@@ -26,6 +26,16 @@ export class PlaylistService {
                 audioFingerprint: true,
                 aiAnalysisResult: true,
                 imageSearches: true,
+                trackGenres: {
+                  include: {
+                    genre: true,
+                  },
+                },
+                trackSubgenres: {
+                  include: {
+                    subgenre: true,
+                  },
+                },
               },
             },
           },
@@ -45,6 +55,16 @@ export class PlaylistService {
                 audioFingerprint: true,
                 aiAnalysisResult: true,
                 imageSearches: true,
+                trackGenres: {
+                  include: {
+                    genre: true,
+                  },
+                },
+                trackSubgenres: {
+                  include: {
+                    subgenre: true,
+                  },
+                },
               },
             },
           },
@@ -81,11 +101,31 @@ export class PlaylistService {
           SELECT DISTINCT
             pt.playlistId,
             pt.trackId,
-            t.duration,
-            t.aiGenre,
-            t.aiSubgenre
+            t.duration
           FROM playlist_tracks pt
           JOIN music_tracks t ON pt.trackId = t.id
+          WHERE pt.playlistId = ${playlistId}
+        ),
+        genre_stats AS (
+          -- Get genres for tracks
+          SELECT DISTINCT
+            pt.playlistId,
+            pt.trackId,
+            g.name as genre_name
+          FROM playlist_tracks pt
+          JOIN track_genres tg ON pt.trackId = tg.trackId
+          JOIN genres g ON tg.genreId = g.id
+          WHERE pt.playlistId = ${playlistId}
+        ),
+        subgenre_stats AS (
+          -- Get subgenres for tracks
+          SELECT DISTINCT
+            pt.playlistId,
+            pt.trackId,
+            s.name as subgenre_name
+          FROM playlist_tracks pt
+          JOIN track_subgenres ts ON pt.trackId = ts.trackId
+          JOIN subgenres s ON ts.subgenreId = s.id
           WHERE pt.playlistId = ${playlistId}
         ),
         audio_stats AS (
@@ -114,13 +154,27 @@ export class PlaylistService {
           SELECT 
             ts.playlistId,
             COUNT(DISTINCT ts.trackId) as track_count,
-            SUM(ts.duration) as total_duration,
-            COUNT(DISTINCT ts.aiGenre) as genres_count,
-            COUNT(DISTINCT ts.aiSubgenre) as subgenres_count,
-            GROUP_CONCAT(DISTINCT ts.aiGenre) as all_genres,
-            GROUP_CONCAT(DISTINCT ts.aiSubgenre) as all_subgenres
+            SUM(ts.duration) as total_duration
           FROM track_stats ts
           GROUP BY ts.playlistId
+        ),
+        genre_aggregated AS (
+          -- Aggregate genre data separately
+          SELECT 
+            gs.playlistId,
+            COUNT(DISTINCT gs.genre_name) as genres_count,
+            GROUP_CONCAT(DISTINCT gs.genre_name) as all_genres
+          FROM genre_stats gs
+          GROUP BY gs.playlistId
+        ),
+        subgenre_aggregated AS (
+          -- Aggregate subgenre data separately
+          SELECT 
+            ss.playlistId,
+            COUNT(DISTINCT ss.subgenre_name) as subgenres_count,
+            GROUP_CONCAT(DISTINCT ss.subgenre_name) as all_subgenres
+          FROM subgenre_stats ss
+          GROUP BY ss.playlistId
         ),
         audio_aggregated AS (
           -- Aggregate audio data separately
@@ -151,14 +205,16 @@ export class PlaylistService {
             COALESCE(aa.bpm_max, 0) as bpm_max,
             COALESCE(aa.energy_min, 0) as energy_min,
             COALESCE(aa.energy_max, 0) as energy_max,
-            ps.genres_count,
-            ps.subgenres_count,
-            ps.all_genres,
-            ps.all_subgenres,
+            COALESCE(ga.genres_count, 0) as genres_count,
+            COALESCE(sa.subgenres_count, 0) as subgenres_count,
+            COALESCE(ga.all_genres, '') as all_genres,
+            COALESCE(sa.all_subgenres, '') as all_subgenres,
             COALESCE(ia.all_images, '') as all_images
           FROM playlist_stats ps
           LEFT JOIN audio_aggregated aa ON ps.playlistId = aa.playlistId
           LEFT JOIN image_aggregated ia ON ps.playlistId = ia.playlistId
+          LEFT JOIN genre_aggregated ga ON ps.playlistId = ga.playlistId
+          LEFT JOIN subgenre_aggregated sa ON ps.playlistId = sa.playlistId
         )
         SELECT 
           p.id,
@@ -203,11 +259,29 @@ export class PlaylistService {
           SELECT DISTINCT
             pt.playlistId,
             pt.trackId,
-            t.duration,
-            t.aiGenre,
-            t.aiSubgenre
+            t.duration
           FROM playlist_tracks pt
           JOIN music_tracks t ON pt.trackId = t.id
+        ),
+        genre_stats AS (
+          -- Get genres for tracks
+          SELECT DISTINCT
+            pt.playlistId,
+            pt.trackId,
+            g.name as genre_name
+          FROM playlist_tracks pt
+          JOIN track_genres tg ON pt.trackId = tg.trackId
+          JOIN genres g ON tg.genreId = g.id
+        ),
+        subgenre_stats AS (
+          -- Get subgenres for tracks
+          SELECT DISTINCT
+            pt.playlistId,
+            pt.trackId,
+            s.name as subgenre_name
+          FROM playlist_tracks pt
+          JOIN track_subgenres ts ON pt.trackId = ts.trackId
+          JOIN subgenres s ON ts.subgenreId = s.id
         ),
         audio_stats AS (
           -- Second CTE: Get audio fingerprint data
@@ -233,13 +307,27 @@ export class PlaylistService {
           SELECT 
             ts.playlistId,
             COUNT(DISTINCT ts.trackId) as track_count,
-            SUM(ts.duration) as total_duration,
-            COUNT(DISTINCT ts.aiGenre) as genres_count,
-            COUNT(DISTINCT ts.aiSubgenre) as subgenres_count,
-            GROUP_CONCAT(DISTINCT ts.aiGenre) as all_genres,
-            GROUP_CONCAT(DISTINCT ts.aiSubgenre) as all_subgenres
+            SUM(ts.duration) as total_duration
           FROM track_stats ts
           GROUP BY ts.playlistId
+        ),
+        genre_aggregated AS (
+          -- Aggregate genre data separately
+          SELECT 
+            gs.playlistId,
+            COUNT(DISTINCT gs.genre_name) as genres_count,
+            GROUP_CONCAT(DISTINCT gs.genre_name) as all_genres
+          FROM genre_stats gs
+          GROUP BY gs.playlistId
+        ),
+        subgenre_aggregated AS (
+          -- Aggregate subgenre data separately
+          SELECT 
+            ss.playlistId,
+            COUNT(DISTINCT ss.subgenre_name) as subgenres_count,
+            GROUP_CONCAT(DISTINCT ss.subgenre_name) as all_subgenres
+          FROM subgenre_stats ss
+          GROUP BY ss.playlistId
         ),
         audio_aggregated AS (
           -- Aggregate audio data separately
@@ -270,14 +358,16 @@ export class PlaylistService {
             COALESCE(aa.bpm_max, 0) as bpm_max,
             COALESCE(aa.energy_min, 0) as energy_min,
             COALESCE(aa.energy_max, 0) as energy_max,
-            ps.genres_count,
-            ps.subgenres_count,
-            ps.all_genres,
-            ps.all_subgenres,
+            COALESCE(ga.genres_count, 0) as genres_count,
+            COALESCE(sa.subgenres_count, 0) as subgenres_count,
+            COALESCE(ga.all_genres, '') as all_genres,
+            COALESCE(sa.all_subgenres, '') as all_subgenres,
             COALESCE(ia.all_images, '') as all_images
           FROM playlist_stats ps
           LEFT JOIN audio_aggregated aa ON ps.playlistId = aa.playlistId
           LEFT JOIN image_aggregated ia ON ps.playlistId = ia.playlistId
+          LEFT JOIN genre_aggregated ga ON ps.playlistId = ga.playlistId
+          LEFT JOIN subgenre_aggregated sa ON ps.playlistId = sa.playlistId
         )
         SELECT 
           p.id,
@@ -383,6 +473,16 @@ export class PlaylistService {
                 audioFingerprint: true,
                 aiAnalysisResult: true,
                 imageSearches: true,
+                trackGenres: {
+                  include: {
+                    genre: true,
+                  },
+                },
+                trackSubgenres: {
+                  include: {
+                    subgenre: true,
+                  },
+                },
               },
             },
           },
@@ -410,6 +510,16 @@ export class PlaylistService {
                 audioFingerprint: true,
                 aiAnalysisResult: true,
                 imageSearches: true,
+                trackGenres: {
+                  include: {
+                    genre: true,
+                  },
+                },
+                trackSubgenres: {
+                  include: {
+                    subgenre: true,
+                  },
+                },
               },
             },
           },
@@ -439,6 +549,16 @@ export class PlaylistService {
                 audioFingerprint: true,
                 aiAnalysisResult: true,
                 imageSearches: true,
+                trackGenres: {
+                  include: {
+                    genre: true,
+                  },
+                },
+                trackSubgenres: {
+                  include: {
+                    subgenre: true,
+                  },
+                },
               },
             },
           },
@@ -509,6 +629,16 @@ export class PlaylistService {
             audioFingerprint: true,
             aiAnalysisResult: true,
             imageSearches: true,
+            trackGenres: {
+              include: {
+                genre: true,
+              },
+            },
+            trackSubgenres: {
+              include: {
+                subgenre: true,
+              },
+            },
           },
         },
       },
@@ -608,11 +738,17 @@ export class PlaylistService {
 
     const genreCounts = playlist.tracks.reduce(
       (counts, playlistTrack) => {
-        const genre =
-          playlistTrack.track.aiGenre ||
-          playlistTrack.track.originalGenre ||
-          'Unknown';
-        counts[genre] = (counts[genre] || 0) + 1;
+        if (
+          playlistTrack.track.trackGenres &&
+          playlistTrack.track.trackGenres.length > 0
+        ) {
+          playlistTrack.track.trackGenres.forEach((tg) => {
+            const genreName = tg.genre.name;
+            counts[genreName] = (counts[genreName] || 0) + 1;
+          });
+        } else {
+          counts['Unknown'] = (counts['Unknown'] || 0) + 1;
+        }
         return counts;
       },
       {} as Record<string, number>,

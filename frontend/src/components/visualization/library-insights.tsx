@@ -208,7 +208,7 @@ const generateInsights = (library: MusicLibrary, tracks: MusicTrack[]) => {
   // Genre diversity insight
   const genres = new Set(
     tracks
-      .map((t) => t.userGenre || t.aiGenre || t.originalGenre)
+      .flatMap((t) => t.genres || [])
       .filter(Boolean),
   );
   if (genres.size > 10) {
@@ -362,7 +362,7 @@ export const LibraryInsights: React.FC<LibraryInsightsProps> = ({
                 {
                   new Set(
                     tracks
-                      .map((t) => t.userGenre || t.aiGenre || t.originalGenre)
+                      .flatMap((t) => t.genres || [])
                       .filter(Boolean),
                   ).size
                 }

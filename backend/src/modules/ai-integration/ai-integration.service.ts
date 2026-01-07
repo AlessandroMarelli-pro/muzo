@@ -656,25 +656,6 @@ export class AiIntegrationService {
         ? this.getAssignedServer('hierarchical')
         : null;
       const simpleInstance = this.getAssignedServer('simple');
-
-      // Create form data for file upload
-      const formData = new FormData();
-      formData.append('audio_file', fs.createReadStream(audioFilePath));
-
-      this.logger.log(`Analyzing audio file: ${audioFilePath}`);
-
-      const classificationResponse = !skipClassification
-        ? await this.httpClient.post(
-            `${hierarchicalInstance.url}/api/v1/audio/analyze/classification`,
-            formData,
-            {
-              headers: {
-                ...formData.getHeaders(),
-              },
-            },
-          )
-        : { data: null };
-
       const formDataSimple = new FormData();
       formDataSimple.append('audio_file', fs.createReadStream(audioFilePath));
       if (hasImageSearch) {
@@ -685,10 +666,33 @@ export class AiIntegrationService {
         formDataSimple,
         {
           headers: {
-            ...formData.getHeaders(),
+            ...formDataSimple.getHeaders(),
           },
         },
       );
+
+      // Create form data for file upload
+      const formData = new FormData();
+      formData.append('audio_file', fs.createReadStream(audioFilePath));
+
+      this.logger.log(`Analyzing audio file: ${audioFilePath}`);
+      const simpleResponseData =
+        simpleResponse.data as SimpleAudioAnalysisResponse;
+      const hasClassificationFromOpenAIMetadata =
+        !!simpleResponseData.openai_metadata?.genre &&
+        !!simpleResponseData.openai_metadata?.style;
+      const classificationResponse =
+        !skipClassification && !hasClassificationFromOpenAIMetadata
+          ? await this.httpClient.post(
+              `${hierarchicalInstance.url}/api/v1/audio/analyze/classification`,
+              formData,
+              {
+                headers: {
+                  ...formData.getHeaders(),
+                },
+              },
+            )
+          : { data: null };
 
       this.logger.log(`Audio analysis completed for: ${audioFilePath}`);
       const fullResponse = {

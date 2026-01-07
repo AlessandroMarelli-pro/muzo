@@ -45,7 +45,6 @@ describe('Prisma Models', () => {
           originalTitle: 'Test Song',
           originalArtist: 'Test Artist',
           originalAlbum: 'Test Album',
-          originalGenre: 'Rock',
           originalYear: 2023,
           analysisStatus: AnalysisStatus.PENDING,
           libraryId: 'test-library-id',
@@ -162,6 +161,16 @@ describe('Prisma Models', () => {
         supportedFormats: 'MP3,FLAC,WAV',
       },
     });
+    const genre = await prismaService.genre.create({
+      data: {
+        name: 'Rock',
+      },
+    });
+    const subgenre = await prismaService.subgenre.create({
+      data: {
+        name: 'Rock',
+      },
+    });
 
     // Then create a track
     const track = await prismaService.musicTrack.create({
@@ -176,10 +185,21 @@ describe('Prisma Models', () => {
         originalTitle: 'Test Song',
         originalArtist: 'Test Artist',
         originalAlbum: 'Test Album',
-        originalGenre: 'Rock',
         originalYear: 2023,
         analysisStatus: AnalysisStatus.PENDING,
         libraryId: library.id,
+      },
+    });
+    const trackGenre = await prismaService.trackGenre.create({
+      data: {
+        trackId: track.id,
+        genreId: genre.id,
+      },
+    });
+    const trackSubgenre = await prismaService.trackSubgenre.create({
+      data: {
+        trackId: track.id,
+        subgenreId: subgenre.id,
       },
     });
 
@@ -188,5 +208,9 @@ describe('Prisma Models', () => {
     expect(track.duration).toBe(180.5);
     expect(track.format).toBe('MP3');
     expect(track.analysisStatus).toBe(AnalysisStatus.PENDING);
+    expect(trackGenre).toBeDefined();
+    expect(trackGenre.genreId).toBe(genre.id);
+    expect(trackSubgenre).toBeDefined();
+    expect(trackSubgenre.subgenreId).toBe(subgenre.id);
   });
 });

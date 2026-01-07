@@ -97,9 +97,13 @@ const getGenreData = (tracks: MusicTrack[]) => {
   const genreCounts: Record<string, number> = {};
 
   tracks.forEach((track) => {
-    const genre =
-      track.userGenre || track.aiGenre || track.originalGenre || 'Unknown';
-    genreCounts[genre] = (genreCounts[genre] || 0) + 1;
+    if (track.genres && track.genres.length > 0) {
+      track.genres.forEach((genre) => {
+        genreCounts[genre] = (genreCounts[genre] || 0) + 1;
+      });
+    } else {
+      genreCounts['Unknown'] = (genreCounts['Unknown'] || 0) + 1;
+    }
   });
 
   return Object.entries(genreCounts)

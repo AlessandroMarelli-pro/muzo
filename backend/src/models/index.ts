@@ -2,6 +2,7 @@ import {
   AIAnalysisResult,
   AnalysisStatus,
   AudioFingerprint,
+  Genre,
   ImageSearch,
   IntelligentEditorSession,
   MusicLibrary,
@@ -13,6 +14,9 @@ import {
   RepeatMode,
   ScanStatus,
   SessionStatus,
+  Subgenre,
+  TrackGenre,
+  TrackSubgenre,
   UserPreferences,
 } from '@prisma/client';
 
@@ -21,6 +25,7 @@ export {
   AIAnalysisResult,
   AnalysisStatus,
   AudioFingerprint,
+  Genre,
   IntelligentEditorSession,
   MusicLibrary,
   MusicTrack,
@@ -29,6 +34,9 @@ export {
   RepeatMode,
   ScanStatus,
   SessionStatus,
+  Subgenre,
+  TrackGenre,
+  TrackSubgenre,
   UserPreferences,
 };
 
@@ -44,6 +52,8 @@ export type MusicTrackWithRelations = MusicTrack & {
   editorSessions?: IntelligentEditorSession[];
   playbackSessions?: PlaybackSession[];
   imageSearches?: ImageSearch[];
+  trackGenres?: (TrackGenre & { genre: Genre })[];
+  trackSubgenres?: (TrackSubgenre & { subgenre: Subgenre })[];
 };
 
 export type AudioFingerprintWithRelations = AudioFingerprint & {
@@ -96,7 +106,6 @@ export interface CreateMusicTrackDto {
   originalTitle?: string;
   originalArtist?: string;
   originalAlbum?: string;
-  originalGenre?: string;
   originalYear?: number;
   libraryId: string;
 }
@@ -105,13 +114,10 @@ export interface UpdateMusicTrackDto {
   originalTitle?: string;
   originalArtist?: string;
   originalAlbum?: string;
-  originalGenre?: string;
   originalYear?: number;
   aiTitle?: string;
   aiArtist?: string;
   aiAlbum?: string;
-  aiGenre?: string;
-  aiSubgenre?: string;
   aiConfidence?: number;
   aiSubgenreConfidence?: number;
   aiDescription?: string;
@@ -119,10 +125,11 @@ export interface UpdateMusicTrackDto {
   userTitle?: string;
   userArtist?: string;
   userAlbum?: string;
-  userGenre?: string;
   userTags?: string[];
   analysisStatus?: AnalysisStatus;
   analysisError?: string;
+  genreIds?: string[];
+  subgenreIds?: string[];
 }
 
 export interface CreateAudioFingerprintDto {

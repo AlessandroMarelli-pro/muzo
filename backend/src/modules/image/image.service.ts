@@ -176,13 +176,15 @@ export class ImageService {
     albumArt: SimpleAlbumArt,
   ): Promise<ImageSearchResult> {
     try {
+      const imageUrl =
+        albumArt.imageUrl || path.join(this.imagesDir, albumArt.imagePath);
       const imageSearch = await this.prisma.imageSearch.create({
         data: {
           trackId,
-          searchUrl: albumArt.imageUrl,
+          searchUrl: imageUrl,
           status: ImageSearchStatus.COMPLETED,
           imagePath: albumArt.imagePath,
-          imageUrl: albumArt.imageUrl,
+          imageUrl: imageUrl,
           source: albumArt.source,
         },
       });

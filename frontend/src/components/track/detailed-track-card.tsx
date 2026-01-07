@@ -130,22 +130,26 @@ export function DetailedTrackCard({ track, refetch }: DetailedTrackCardProps) {
             </div>
 
             {/* Genre Tags */}
-            <div className="flex gap-2 ">
-              Genre:
-              {track.genre?.split(',').map((genre) => (
-                <Badge variant="outline" className="capitalize">
-                  {genre}
-                </Badge>
-              ))}
-            </div>
-            <div className="flex gap-2 ">
-              Subgenre:
-              {track.subgenre?.split(',').map((subgenre) => (
-                <Badge variant="outline" className="capitalize">
-                  {subgenre}
-                </Badge>
-              ))}
-            </div>
+            {track.genres && track.genres.length > 0 && (
+              <div className="flex gap-2 flex-wrap">
+                Genre:
+                {track.genres.map((genre, index) => (
+                  <Badge key={index} variant="outline" className="capitalize">
+                    {genre}
+                  </Badge>
+                ))}
+              </div>
+            )}
+            {track.subgenres && track.subgenres.length > 0 && (
+              <div className="flex gap-2 flex-wrap">
+                Subgenre:
+                {track.subgenres.map((subgenre, index) => (
+                  <Badge key={index} variant="outline" className="capitalize">
+                    {subgenre}
+                  </Badge>
+                ))}
+              </div>
+            )}
           </div>
           {/* Action Buttons */}
           <div className="flex items-center justify-between">

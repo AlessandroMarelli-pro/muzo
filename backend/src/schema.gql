@@ -314,8 +314,6 @@ type MusicTrack {
   aiArtist: String
   aiConfidence: Float
   aiDescription: String
-  aiGenre: String
-  aiSubgenre: String
   aiSubgenreConfidence: Float
   aiTags: [String!]
   aiTitle: String
@@ -342,14 +340,12 @@ type MusicTrack {
   listeningCount: Float!
   originalAlbum: String
   originalArtist: String
-  originalGenre: String
   originalTitle: String
   originalYear: Float
   sampleRate: Float
   updatedAt: DateTime!
   userAlbum: String
   userArtist: String
-  userGenre: String
   userTags: [String!]
   userTitle: String
 }
@@ -571,7 +567,7 @@ type SimpleMusicTrack {
   date: DateTime
   description: String
   duration: Float!
-  genre: String
+  genres: [String!]
   id: ID!
   imagePath: String
   instrumentalness: Float
@@ -581,7 +577,7 @@ type SimpleMusicTrack {
   lastScannedAt: DateTime
   listeningCount: Float
   speechiness: Float
-  subgenre: String
+  subgenres: [String!]
   tags: [String!]
   tempo: Float
   title: String
@@ -694,9 +690,10 @@ input UpdateSavedFilterInput {
 }
 
 input UpdateTrackInput {
+  genreIds: [String!]
+  subgenreIds: [String!]
   userAlbum: String
   userArtist: String
-  userGenre: String
   userTags: [String!]
   userTitle: String
 }

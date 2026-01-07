@@ -56,7 +56,6 @@ model MusicTrack {
   originalTitle         String?
   originalArtist        String?
   originalAlbum         String?
-  originalGenre         String?
   originalYear          Int?
   originalAlbumartist   String?
   originalDate          DateTime?
@@ -71,9 +70,7 @@ model MusicTrack {
   aiTitle               String?
   aiArtist              String?
   aiAlbum               String?
-  aiGenre               String?
   aiConfidence           Float?
-  aiSubgenre            String?
   aiSubgenreConfidence   Float?
   aiDescription         String?
   aiTags                String?
@@ -83,7 +80,6 @@ model MusicTrack {
   userTitle             String?
   userArtist            String?
   userAlbum             String?
-  userGenre             String?
   userTags              String?  // JSON array as string
   
   // Listening Data
@@ -112,14 +108,14 @@ model MusicTrack {
   playbackSessions      PlaybackSession[]
   playlistTracks        PlaylistTrack[]
   imageSearches         ImageSearch[]
+  trackGenres           TrackGenre[]
+  trackSubgenres        TrackSubgenre[]
   
   // Indexes for query performance
   @@index([libraryId])
   @@index([analysisStatus])
   @@index([isFavorite])
   @@index([format])
-  @@index([aiGenre])
-  @@index([aiSubgenre])
   @@index([aiConfidence])
   @@index([createdAt])
   @@index([listeningCount])
@@ -127,8 +123,6 @@ model MusicTrack {
   @@index([libraryId, analysisStatus])
   @@index([libraryId, isFavorite])
   @@index([analysisStatus, createdAt])
-  @@index([aiGenre, libraryId])
-  @@index([aiSubgenre, libraryId])
   @@map("music_tracks")
 }
 
@@ -391,6 +385,72 @@ model UserRecommendationPreferences {
   @@index([userId])
   @@index([isDefault])
   @@map("user_recommendation_preferences")
+}
+
+// Genre and Subgenre Models
+
+model Genre {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relations
+  trackGenres TrackGenre[]
+  subgenres   Subgenre[]
+  
+  @@index([name])
+  @@map("genres")
+}
+
+model Subgenre {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  genreId     String?  // Optional parent genre
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relations
+  genre         Genre?         @relation(fields: [genreId], references: [id], onDelete: SetNull)
+  trackSubgenres TrackSubgenre[]
+  
+  @@index([name])
+  @@index([genreId])
+  @@map("subgenres")
+}
+
+model TrackGenre {
+  id        String   @id @default(uuid())
+  trackId   String
+  genreId   String
+  createdAt DateTime @default(now())
+  
+  // Relations
+  track     MusicTrack @relation(fields: [trackId], references: [id], onDelete: Cascade)
+  genre     Genre      @relation(fields: [genreId], references: [id], onDelete: Cascade)
+  
+  @@unique([trackId, genreId])
+  @@index([trackId])
+  @@index([genreId])
+  @@map("track_genres")
+}
+
+model TrackSubgenre {
+  id        String   @id @default(uuid())
+  trackId   String
+  subgenreId String
+  createdAt DateTime @default(now())
+  
+  // Relations
+  track     MusicTrack @relation(fields: [trackId], references: [id], onDelete: Cascade)
+  subgenre  Subgenre   @relation(fields: [subgenreId], references: [id], onDelete: Cascade)
+  
+  @@unique([trackId, subgenreId])
+  @@index([trackId])
+  @@index([subgenreId])
+  @@map("track_subgenres")
 }
 
 // Enums

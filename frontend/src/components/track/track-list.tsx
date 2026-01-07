@@ -80,8 +80,9 @@ export const TrackList: React.FC<TrackListProps> = ({ viewMode = 'grid' }) => {
       danceabilityFeeling: 'danceabilityFeeling',
       arousalMood: 'arousalMood',
       valenceMood: 'valenceMood',
-      genre: 'originalGenre',
-      subgenre: 'aiSubgenre',
+      // Note: genres and subgenres are arrays, so direct sorting by these fields is not supported
+      // genre: 'genres',
+      // subgenre: 'subgenres',
       favorite: 'isFavorite',
       lastPlayed: 'lastPlayedAt',
       lastScannedAt: 'lastScannedAt',

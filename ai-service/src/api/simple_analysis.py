@@ -135,7 +135,7 @@ class SimpleAnalysisResource(Resource):
 
                 has_image = request.form.get("has_image", "false").lower() == "true"
                 skip_openai_metadata = (
-                    request.form.get("skip_openai_metadata", "true").lower() == "true"
+                    request.form.get("skip_openai_metadata", "false").lower() == "true"
                 )
                 original_filename = audio_file.filename
                 # Perform simple analysis
@@ -162,6 +162,7 @@ class SimpleAnalysisResource(Resource):
                                 self._get_album_art_with_timeout,
                                 artist,
                                 title,
+                                temp_file_path,
                                 timeout=5.0,  # 5 second timeout for album art
                             )
 
@@ -220,7 +221,7 @@ class SimpleAnalysisResource(Resource):
             }, 500
 
     def _get_album_art_with_timeout(
-        self, artist: str, title: str, timeout: float = 5.0
+        self, artist: str, title: str, file_path: str, timeout: float = 5.0
     ) -> Optional[str]:
         """
         Get album art with timeout handling.
@@ -233,14 +234,14 @@ class SimpleAnalysisResource(Resource):
             Album art URL or None if timeout/failure
         """
         try:
-            album_art = get_album_art(artist.strip() + " - " + title.strip())
+            album_art = get_album_art(artist.strip() + " - " + title.strip(), file_path)
             if not album_art and "-" in title:
                 logger.warning(
-                    f"Album art fetching failed for '{artist} - {title}', trying again with split title"
+                    f"Album art fetching failed for '{artist} - {title}', trying again with split title and file path {file_path}"
                 )
                 artist = title.split("-")[0].strip()
                 title = title.split("-")[1].strip()
-                album_art = get_album_art(artist + " - " + title)
+                album_art = get_album_art(artist + " - " + title, file_path)
             return album_art
         except Exception as e:
             logger.warning(f"Album art fetching failed for '{artist} - {title}': {e}")

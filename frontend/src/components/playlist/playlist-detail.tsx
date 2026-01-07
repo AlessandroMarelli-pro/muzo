@@ -50,9 +50,17 @@ export function PlaylistDetail({ id, onBack }: PlaylistDetailProps) {
     if (!playlist) return {};
     const genreCounts: Record<string, number> = {};
     playlist.tracks.forEach((playlistTrack) => {
-      const genre =
-        playlistTrack.track.genre || playlistTrack.track.subgenre || 'Unknown';
-      genreCounts[genre] = (genreCounts[genre] || 0) + 1;
+      if (playlistTrack.track.genres && playlistTrack.track.genres.length > 0) {
+        playlistTrack.track.genres.forEach((genre) => {
+          genreCounts[genre] = (genreCounts[genre] || 0) + 1;
+        });
+      } else if (playlistTrack.track.subgenres && playlistTrack.track.subgenres.length > 0) {
+        playlistTrack.track.subgenres.forEach((subgenre) => {
+          genreCounts[subgenre] = (genreCounts[subgenre] || 0) + 1;
+        });
+      } else {
+        genreCounts['Unknown'] = (genreCounts['Unknown'] || 0) + 1;
+      }
     });
     return genreCounts;
   };

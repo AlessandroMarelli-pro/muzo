@@ -24,8 +24,12 @@ function MusicCard({ track, className, onAdd, setQueue, key }: MusicCardProps) {
   const [isHovered, setIsHovered] = useState(false);
   const formattedTitle = track.title || 'Unknown Title';
   const formattedArtist = track.artist || 'Unknown Artist';
-  const formattedGenre = track.genre || 'Unknown Genre';
-  const formattedSubgenre = track.subgenre || 'Unknown Subgenre';
+  const formattedGenres = track.genres && track.genres.length > 0 
+    ? track.genres.join(', ') 
+    : 'Unknown Genre';
+  const formattedSubgenres = track.subgenres && track.subgenres.length > 0 
+    ? track.subgenres.join(', ') 
+    : 'Unknown Subgenre';
   const formattedImage = track.imagePath || 'Unknown Image';
   const { currentTrack, setCurrentTrack } = useCurrentTrack();
   const actions = useAudioPlayerActions();
@@ -122,13 +126,13 @@ function MusicCard({ track, className, onAdd, setQueue, key }: MusicCardProps) {
               </div>
               <Badge
                 variant="secondary"
-                className="text-[11px] absolute bottom-0 right-1 z-1000 "
+                className="text-[11px] absolute bottom-0 right-1 z-1 "
               >
                 {bpm} bpm
               </Badge>
             </div>
             <div className="h-45 " />
-            <div className="space-y-2 p-2 z-1 h-full bg-background/80 rounded-xl flex flex-col justify-end backdrop-blur-sm  ">
+            <div className="space-y-2 p-2 z-1 h-full bg-background/90 rounded-xl flex flex-col justify-end backdrop-blur-sm  ">
               <div className="px-1">
                 <h3
                   className="font-semibold text-sm leading-tight line-clamp-1 capitalize"
@@ -145,14 +149,14 @@ function MusicCard({ track, className, onAdd, setQueue, key }: MusicCardProps) {
               </div>
               {/* Genre and Subgenre */}
               <div className="flex flex-col flex-wrap gap-1 ">
-                {formattedGenre && (
+                {formattedGenres !== 'Unknown Genre' && (
                   <Badge variant="secondary" className="text-xs">
-                    {formattedGenre}
+                    {formattedGenres}
                   </Badge>
                 )}
-                {formattedSubgenre && (
+                {formattedSubgenres !== 'Unknown Subgenre' && (
                   <Badge variant="outline" className="text-xs">
-                    {formattedSubgenre}
+                    {formattedSubgenres}
                   </Badge>
                 )}
               </div>

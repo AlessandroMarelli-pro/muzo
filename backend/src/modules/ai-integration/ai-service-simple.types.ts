@@ -243,6 +243,7 @@ export interface SimpleAudioAnalysisResponse {
   file_info: SimpleFileInfo;
   audio_technical: SimpleAudioTechnical;
   id3_tags: SimpleId3Tags;
+  openai_metadata: OpenAIMetadataResponse['metadata'];
 }
 
 // Error Response

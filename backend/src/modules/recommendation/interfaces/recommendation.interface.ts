@@ -41,8 +41,8 @@ export interface AudioFeatures {
   arousalMood?: string;
   danceability?: number;
   danceabilityFeeling?: string;
-  genre?: string;
-  subgenre?: string;
+  genres?: string[];
+  subgenres?: string[];
   artist?: string;
   album?: string;
   mfcc?: number[];
@@ -77,8 +77,8 @@ export interface PlaylistFeatures {
   energy?: number;
   valence?: number;
   danceability?: number;
-  genre?: string;
-  subgenre?: string;
+  genres?: string[];
+  subgenres?: string[];
   artist?: string;
   album?: string;
   mfcc?: number[];

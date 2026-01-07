@@ -34,7 +34,6 @@ export interface IntelligentEditorSessionWithRelations
     originalTitle?: string;
     originalArtist?: string;
     originalAlbum?: string;
-    originalGenre?: string;
   };
 }
 

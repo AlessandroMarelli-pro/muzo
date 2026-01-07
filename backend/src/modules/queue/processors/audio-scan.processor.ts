@@ -112,27 +112,6 @@ export class AudioScanProcessor extends WorkerHost {
         },
       });
 
-      // Extract OpenAI metadata if not skipped
-      let openaiMetadata: OpenAIMetadataResponse | null = null;
-      if (!skipOpenAIMetadata) {
-        try {
-          openaiMetadata =
-            await this.aiIntegrationService.extractMetadataWithOpenAI(
-              fileName,
-              filePath,
-            );
-          console.log(openaiMetadata);
-          this.logger.log(
-            `OpenAI metadata extracted for ${fileName}: ${openaiMetadata.metadata.artist} - ${openaiMetadata.metadata.title}`,
-          );
-        } catch (error) {
-          this.logger.warn(
-            `OpenAI metadata extraction failed for ${fileName}: ${error.message}`,
-          );
-          // Continue with analysis even if OpenAI extraction fails
-        }
-      }
-
       // Analyze audio file using AI service
       const analysisResult: SimpleAudioAnalysisResponse =
         await this.aiIntegrationService.analyzeAudio(
@@ -140,7 +119,12 @@ export class AudioScanProcessor extends WorkerHost {
           skipClassification,
           skipImageSearch,
         );
-
+      if (analysisResult.openai_metadata) {
+        await this.updateTrackWithOpenAIMetadata(
+          track.id,
+          analysisResult.openai_metadata,
+        );
+      }
       if (
         !analysisResult?.id3_tags?.artist &&
         !analysisResult?.id3_tags?.title
@@ -168,11 +152,6 @@ export class AudioScanProcessor extends WorkerHost {
       // Update track with analysis results
       await this.updateTrackWithAnalysis(track.id, analysisResult);
 
-      // Update track with OpenAI metadata if available
-      if (openaiMetadata?.metadata) {
-        await this.updateTrackWithOpenAIMetadata(track.id, openaiMetadata);
-      }
-
       // Update analysis status to COMPLETED
       await this.prismaService.musicTrack.update({
         where: { id: track.id },
@@ -189,7 +168,10 @@ export class AudioScanProcessor extends WorkerHost {
       });
       await this.elasticsearchSyncService.syncTrackOnUpdate(track.id);
       // Search for image
-      if (analysisResult.album_art?.imageUrl) {
+      if (
+        analysisResult.album_art?.imageUrl ||
+        analysisResult.album_art?.imagePath
+      ) {
         await this.imageService.addImageSearchRecord(
           track.id,
           analysisResult.album_art,
@@ -541,11 +523,20 @@ export class AudioScanProcessor extends WorkerHost {
     }
 
     // Update AI-generated metadata
+    let genreNames: string[] = [];
+    let subgenreNames: string[] = [];
+
     if (analysisResult.hierarchical_classification?.classification) {
-      updateData.aiGenre =
-        analysisResult.hierarchical_classification.classification.genre;
-      updateData.aiSubgenre =
-        analysisResult.hierarchical_classification.classification.subgenre;
+      if (analysisResult.hierarchical_classification.classification.genre) {
+        genreNames.push(
+          analysisResult.hierarchical_classification.classification.genre,
+        );
+      }
+      if (analysisResult.hierarchical_classification.classification.subgenre) {
+        subgenreNames.push(
+          analysisResult.hierarchical_classification.classification.subgenre,
+        );
+      }
     }
 
     if (
@@ -569,7 +560,8 @@ export class AudioScanProcessor extends WorkerHost {
         updateData.originalAlbum = analysisResult.id3_tags.album;
       }
       if (analysisResult.id3_tags.genre) {
-        updateData.originalGenre = analysisResult.id3_tags.genre;
+        // Add original genre to the list
+        genreNames.push(analysisResult.id3_tags.genre);
       }
       if (analysisResult.id3_tags.albumartist) {
         updateData.originalAlbumartist = analysisResult.id3_tags.albumartist;
@@ -632,6 +624,14 @@ export class AudioScanProcessor extends WorkerHost {
         analysisError: null,
       },
     });
+    // Update genres and subgenres
+    if (genreNames.length > 0) {
+      await this.updateTrackGenres(trackId, genreNames);
+    }
+    if (subgenreNames.length > 0) {
+      await this.updateTrackSubgenres(trackId, subgenreNames);
+    }
+
     return updatedTrack;
   }
 
@@ -664,9 +664,11 @@ export class AudioScanProcessor extends WorkerHost {
           fileName,
           filePath,
         );
-      console.log(openaiMetadata);
       // Update track with OpenAI metadata
-      await this.updateTrackWithOpenAIMetadata(track.id, openaiMetadata);
+      await this.updateTrackWithOpenAIMetadata(
+        track.id,
+        openaiMetadata.metadata,
+      );
 
       this.logger.log(
         `Successfully extracted OpenAI metadata for: ${fileName}`,
@@ -710,9 +712,9 @@ export class AudioScanProcessor extends WorkerHost {
    */
   private async updateTrackWithOpenAIMetadata(
     trackId: string,
-    openaiMetadata: OpenAIMetadataResponse,
+    openaiMetadata: OpenAIMetadataResponse['metadata'],
   ): Promise<void> {
-    const metadata = openaiMetadata.metadata;
+    const metadata = openaiMetadata;
     const updateData: any = {};
 
     // Update AI-generated metadata fields
@@ -730,12 +732,6 @@ export class AudioScanProcessor extends WorkerHost {
     }
     if (metadata.description) {
       updateData.aiDescription = metadata.description;
-    }
-    if (metadata.genre && metadata.genre.length > 0) {
-      updateData.aiGenre = metadata.genre.join(', ');
-    }
-    if (metadata.style && metadata.style.length > 0) {
-      updateData.aiSubgenre = metadata.style.join(', ');
     }
 
     // Parse year if available
@@ -757,6 +753,113 @@ export class AudioScanProcessor extends WorkerHost {
       where: { id: trackId },
       data: updateData,
     });
+    // Update genres and subgenres
+    if (metadata.genre && metadata.genre.length > 0) {
+      await this.updateTrackGenres(trackId, metadata.genre);
+    }
+    if (metadata.style && metadata.style.length > 0) {
+      await this.updateTrackSubgenres(trackId, metadata.style);
+    }
+  }
+
+  /**
+   * Helper method to update track genres
+   */
+  private async updateTrackGenres(
+    trackId: string,
+    genreNames: string[],
+  ): Promise<void> {
+    // Remove existing genre associations
+    await this.prismaService.trackGenre.deleteMany({
+      where: { trackId },
+    });
+
+    // Create or find genres and associate them
+    for (const genreName of genreNames) {
+      if (!genreName || genreName.trim() === '') continue;
+
+      // Lowercase the genre name to ensure uniqueness
+      const normalizedName = genreName.trim().toLowerCase();
+
+      let genre = await this.prismaService.genre.findUnique({
+        where: { name: normalizedName },
+      });
+
+      if (!genre) {
+        genre = await this.prismaService.genre.create({
+          data: { name: normalizedName },
+        });
+      }
+
+      // Create association (check if it doesn't already exist)
+      const existing = await this.prismaService.trackGenre.findUnique({
+        where: {
+          trackId_genreId: {
+            trackId,
+            genreId: genre.id,
+          },
+        },
+      });
+
+      if (!existing) {
+        await this.prismaService.trackGenre.create({
+          data: {
+            trackId,
+            genreId: genre.id,
+          },
+        });
+      }
+    }
+  }
+
+  /**
+   * Helper method to update track subgenres
+   */
+  private async updateTrackSubgenres(
+    trackId: string,
+    subgenreNames: string[],
+  ): Promise<void> {
+    // Remove existing subgenre associations
+    await this.prismaService.trackSubgenre.deleteMany({
+      where: { trackId },
+    });
+
+    // Create or find subgenres and associate them
+    for (const subgenreName of subgenreNames) {
+      if (!subgenreName || subgenreName.trim() === '') continue;
+
+      // Lowercase the subgenre name to ensure uniqueness
+      const normalizedName = subgenreName.trim().toLowerCase();
+
+      let subgenre = await this.prismaService.subgenre.findUnique({
+        where: { name: normalizedName },
+      });
+
+      if (!subgenre) {
+        subgenre = await this.prismaService.subgenre.create({
+          data: { name: normalizedName },
+        });
+      }
+
+      // Create association (check if it doesn't already exist)
+      const existing = await this.prismaService.trackSubgenre.findUnique({
+        where: {
+          trackId_subgenreId: {
+            trackId,
+            subgenreId: subgenre.id,
+          },
+        },
+      });
+
+      if (!existing) {
+        await this.prismaService.trackSubgenre.create({
+          data: {
+            trackId,
+            subgenreId: subgenre.id,
+          },
+        });
+      }
+    }
   }
 
   /**

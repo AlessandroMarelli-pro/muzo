@@ -62,40 +62,68 @@ export class MetricsService {
   }
 
   private async getGenreDistribution() {
-    const result = await this.prisma.$queryRaw<
-      Array<{ genre: string; count: bigint }>
-    >`
-      SELECT 
-        COALESCE(aiGenre, originalGenre, 'Unknown') as genre,
-        COUNT(*) as count
-      FROM music_tracks 
-      WHERE aiGenre IS NOT NULL OR originalGenre IS NOT NULL
-      GROUP BY COALESCE(aiGenre, originalGenre)
-      ORDER BY count DESC
-      LIMIT 20
-    `;
+    const result = await this.prisma.trackGenre.groupBy({
+      by: ['genreId'],
+      _count: {
+        id: true,
+      },
+      orderBy: {
+        _count: {
+          id: 'desc',
+        },
+      },
+      take: 20,
+    });
+
+    const genreIds = result.map((r) => r.genreId);
+    const genres = await this.prisma.genre.findMany({
+      where: {
+        id: { in: genreIds },
+      },
+      select: {
+        id: true,
+        name: true,
+      },
+    });
+
+    const genreMap = new Map(genres.map((g) => [g.id, g.name]));
+
     return result.map((row) => ({
-      genre: row.genre,
-      count: Number(row.count),
+      genre: genreMap.get(row.genreId) || 'Unknown',
+      count: Number(row._count.id),
     }));
   }
 
   private async getSubgenreDistribution() {
-    const result = await this.prisma.$queryRaw<
-      Array<{ subgenre: string; count: bigint }>
-    >`
-      SELECT 
-        aiSubgenre as subgenre,
-        COUNT(*) as count
-      FROM music_tracks 
-      WHERE aiSubgenre IS NOT NULL
-      GROUP BY aiSubgenre
-      ORDER BY count DESC
-      LIMIT 15
-    `;
+    const result = await this.prisma.trackSubgenre.groupBy({
+      by: ['subgenreId'],
+      _count: {
+        id: true,
+      },
+      orderBy: {
+        _count: {
+          id: 'desc',
+        },
+      },
+      take: 15,
+    });
+
+    const subgenreIds = result.map((r) => r.subgenreId);
+    const subgenres = await this.prisma.subgenre.findMany({
+      where: {
+        id: { in: subgenreIds },
+      },
+      select: {
+        id: true,
+        name: true,
+      },
+    });
+
+    const subgenreMap = new Map(subgenres.map((s) => [s.id, s.name]));
+
     return result.map((row) => ({
-      subgenre: row.subgenre,
-      count: Number(row.count),
+      subgenre: subgenreMap.get(row.subgenreId) || 'Unknown',
+      count: Number(row._count.id),
     }));
   }
 
@@ -199,31 +227,77 @@ export class MetricsService {
   }
 
   private async getTopGenres() {
-    const result = await this.prisma.$queryRaw<
-      Array<{
-        genre: string;
-        track_count: bigint;
-        avg_confidence: number;
-        avg_duration: number;
-      }>
-    >`
-      SELECT 
-        COALESCE(aiGenre, originalGenre) as genre,
-        COUNT(*) as track_count,
-        AVG(aiConfidence) as avg_confidence,
-        AVG(duration) as avg_duration
-      FROM music_tracks 
-      WHERE aiGenre IS NOT NULL OR originalGenre IS NOT NULL
-      GROUP BY COALESCE(aiGenre, originalGenre)
-      ORDER BY track_count DESC
-      LIMIT 15
-    `;
-    return result.map((row) => ({
-      genre: row.genre,
-      trackCount: Number(row.track_count),
-      averageConfidence: row.avg_confidence || 0,
-      averageDuration: row.avg_duration || 0,
-    }));
+    // Get genre counts
+    const genreCounts = await this.prisma.trackGenre.groupBy({
+      by: ['genreId'],
+      _count: {
+        id: true,
+      },
+      orderBy: {
+        _count: {
+          id: 'desc',
+        },
+      },
+      take: 10,
+    });
+
+    const genreIds = genreCounts.map((gc) => gc.genreId);
+    const genres = await this.prisma.genre.findMany({
+      where: {
+        id: { in: genreIds },
+      },
+    });
+
+    const genreMap = new Map(genres.map((g) => [g.id, g]));
+
+    // Get average confidence and duration for tracks with these genres
+    const result = await Promise.all(
+      genreCounts.map(async (gc) => {
+        const genre = genreMap.get(gc.genreId);
+        if (!genre) return null;
+
+        // Get tracks with this genre to calculate averages
+        const tracks = await this.prisma.musicTrack.findMany({
+          where: {
+            trackGenres: {
+              some: {
+                genreId: gc.genreId,
+              },
+            },
+          },
+          select: {
+            aiConfidence: true,
+            duration: true,
+          },
+        });
+
+        const avgConfidence =
+          tracks.length > 0
+            ? tracks.reduce(
+                (sum, t) => sum + (t.aiConfidence || 0),
+                0,
+              ) / tracks.length
+            : 0;
+        const avgDuration =
+          tracks.length > 0
+            ? tracks.reduce((sum, t) => sum + t.duration, 0) / tracks.length
+            : 0;
+
+        return {
+          genre: genre.name,
+          trackCount: Number(gc._count.id),
+          averageConfidence: avgConfidence,
+          averageDuration: avgDuration,
+        };
+      }),
+    );
+
+    return result.filter((r) => r !== null) as Array<{
+      genre: string;
+      trackCount: number;
+      averageConfidence: number;
+      averageDuration: number;
+    }>;
   }
 
   private async getRecentActivity() {

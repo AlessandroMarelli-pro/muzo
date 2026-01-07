@@ -16,24 +16,23 @@ export class FilterService {
   constructor(private readonly prisma: PrismaService) {}
 
   async getStaticFilterOptions(): Promise<StaticFilterOptions> {
-    // Get distinct genres from both AI and user fields
-    const genreResults = await this.prisma.musicTrack.findMany({
+    // Get distinct genres from trackGenres relation
+    const genres = await this.prisma.genre.findMany({
       select: {
-        aiGenre: true,
-        userGenre: true,
+        name: true,
       },
-      where: {
-        OR: [{ aiGenre: { not: null } }, { userGenre: { not: null } }],
+      orderBy: {
+        name: 'asc',
       },
     });
 
-    // Get distinct subgenres
-    const subgenreResults = await this.prisma.musicTrack.findMany({
+    // Get distinct subgenres from trackSubgenres relation
+    const subgenres = await this.prisma.subgenre.findMany({
       select: {
-        aiSubgenre: true,
+        name: true,
       },
-      where: {
-        aiSubgenre: { not: null },
+      orderBy: {
+        name: 'asc',
       },
     });
 
@@ -44,19 +43,6 @@ export class FilterService {
       },
     });
 
-    // Extract and deduplicate genres
-    const genres = new Set<string>();
-    genreResults.forEach((track) => {
-      if (track.aiGenre) genres.add(track.aiGenre);
-      if (track.userGenre) genres.add(track.userGenre);
-    });
-
-    // Extract and deduplicate subgenres
-    const subgenres = new Set<string>();
-    subgenreResults.forEach((track) => {
-      if (track.aiSubgenre) subgenres.add(track.aiSubgenre);
-    });
-
     // Extract and deduplicate keys
     const keys = new Set<string>();
     keyResults.forEach((fp) => {
@@ -64,8 +50,8 @@ export class FilterService {
     });
 
     return {
-      genres: Array.from(genres).sort(),
-      subgenres: Array.from(subgenres).sort(),
+      genres: genres.map((g) => g.name),
+      subgenres: subgenres.map((s) => s.name),
       keys: Array.from(keys).sort(),
     };
   }
@@ -239,7 +225,7 @@ export class FilterService {
     });
   }
 
-  buildPrismaWhereClause(
+  async buildPrismaWhereClause(
     criteria: FilterCriteria,
     skipGenres: boolean = false,
     skipSubgenres: boolean = false,
@@ -247,14 +233,45 @@ export class FilterService {
     const where: any = {};
 
     if (criteria.genres && criteria.genres.length > 0 && !skipGenres) {
-      where.OR = [
-        { aiGenre: { in: criteria.genres } },
-        { userGenre: { in: criteria.genres } },
-      ];
+      // Find genre IDs from genre names
+      const genreRecords = await this.prisma.genre.findMany({
+        where: {
+          name: { in: criteria.genres },
+        },
+        select: {
+          id: true,
+        },
+      });
+      const genreIds = genreRecords.map((g) => g.id);
+
+      if (genreIds.length > 0) {
+        where.trackGenres = {
+          some: {
+            genreId: { in: genreIds },
+          },
+        };
+      }
     }
 
     if (criteria.subgenres && criteria.subgenres.length > 0 && !skipSubgenres) {
-      where.aiSubgenre = { in: criteria.subgenres };
+      // Find subgenre IDs from subgenre names
+      const subgenreRecords = await this.prisma.subgenre.findMany({
+        where: {
+          name: { in: criteria.subgenres },
+        },
+        select: {
+          id: true,
+        },
+      });
+      const subgenreIds = subgenreRecords.map((s) => s.id);
+
+      if (subgenreIds.length > 0) {
+        where.trackSubgenres = {
+          some: {
+            subgenreId: { in: subgenreIds },
+          },
+        };
+      }
     }
 
     if (

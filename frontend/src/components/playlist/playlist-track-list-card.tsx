@@ -68,12 +68,16 @@ export const PlaylistTrackListCard = ({
       {/* Genre */}
       <div className="hidden md:block">
         <Badge variant="secondary" className="text-xs">
-          {playlistTrack.track.genre || 'Unknown'}
+          {playlistTrack.track.genres && playlistTrack.track.genres.length > 0
+            ? playlistTrack.track.genres.join(', ')
+            : 'Unknown'}
         </Badge>
       </div>
       <div className="hidden md:block">
         <Badge variant="outline" className="text-xs">
-          {playlistTrack.track.subgenre || 'Unknown'}
+          {playlistTrack.track.subgenres && playlistTrack.track.subgenres.length > 0
+            ? playlistTrack.track.subgenres.join(', ')
+            : 'Unknown'}
         </Badge>
       </div>
       <div className="hidden md:block text-xs text-muted-foreground">

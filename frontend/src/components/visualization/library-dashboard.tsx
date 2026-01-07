@@ -204,7 +204,7 @@ export const LibraryDashboard: React.FC<LibraryDashboardProps> = ({
                   {
                     new Set(
                       tracks
-                        .map((t) => t.userGenre || t.aiGenre || t.originalGenre)
+                        .flatMap((t) => t.genres || [])
                         .filter(Boolean),
                     ).size
                   }

@@ -13,7 +13,6 @@ export interface CreateMusicTrackDto {
   originalTitle?: string;
   originalArtist?: string;
   originalAlbum?: string;
-  originalGenre?: string;
   originalYear?: number;
   libraryId: string;
 }
@@ -22,12 +21,10 @@ export interface UpdateMusicTrackDto {
   originalTitle?: string;
   originalArtist?: string;
   originalAlbum?: string;
-  originalGenre?: string;
   originalYear?: number;
   aiTitle?: string;
   aiArtist?: string;
   aiAlbum?: string;
-  aiSubgenre?: string;
   aiConfidence?: number;
   aiDescription?: string;
   aiTags?: string[];
@@ -35,11 +32,12 @@ export interface UpdateMusicTrackDto {
   userTitle?: string;
   userArtist?: string;
   userAlbum?: string;
-  userGenre?: string;
   userTags?: string[];
   analysisStatus?: AnalysisStatus;
   analysisError?: string;
   isFavorite?: boolean;
+  genreIds?: string[];
+  subgenreIds?: string[];
 }
 
 export interface MusicTrackWithRelations extends MusicTrack {
@@ -85,6 +83,22 @@ export interface MusicTrackWithRelations extends MusicTrack {
     imagePath: string;
     imageUrl: string;
     source: string;
+  }>;
+  trackGenres?: Array<{
+    id: string;
+    genreId: string;
+    genre: {
+      id: string;
+      name: string;
+    };
+  }>;
+  trackSubgenres?: Array<{
+    id: string;
+    subgenreId: string;
+    subgenre: {
+      id: string;
+      name: string;
+    };
   }>;
 }
 
@@ -144,7 +158,6 @@ export interface ElasticsearchMusicTrackDocument {
   original_title?: string;
   original_artist?: string;
   original_album?: string;
-  original_genre?: string;
   original_year?: number;
   original_albumartist?: string;
   original_date?: string | Date;
@@ -159,16 +172,15 @@ export interface ElasticsearchMusicTrackDocument {
   ai_title?: string;
   ai_artist?: string;
   ai_album?: string;
-  ai_genre?: string;
   ai_confidence?: number;
-  ai_subgenre?: string;
   ai_subgenre_confidence?: number;
+  ai_description?: string;
+  ai_tags?: string[];
 
   // User Modifications
   user_title?: string;
   user_artist?: string;
   user_album?: string;
-  user_genre?: string;
   user_tags?: string[];
 
   // Listening Data
@@ -248,11 +260,13 @@ export interface ElasticsearchMusicTrackDocument {
     error_message?: string;
   } | null;
 
+  // Genres and Subgenres (normalized)
+  genres?: string[];
+  subgenres?: string[];
+
   // Computed display fields
   title?: string;
   artist?: string;
   album?: string;
-  genre?: string;
-  subgenre?: string;
   image_path?: string;
 }

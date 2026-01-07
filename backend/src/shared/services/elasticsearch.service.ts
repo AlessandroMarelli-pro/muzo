@@ -38,7 +38,6 @@ export class ElasticsearchService implements OnModuleInit {
           analyzer: 'standard',
           fields: { keyword: { type: 'keyword' } },
         },
-        original_genre: { type: 'keyword' },
         original_year: { type: 'integer' },
         original_albumartist: {
           type: 'text',
@@ -59,10 +58,10 @@ export class ElasticsearchService implements OnModuleInit {
         ai_title: { type: 'text', fields: { keyword: { type: 'keyword' } } },
         ai_artist: { type: 'text', fields: { keyword: { type: 'keyword' } } },
         ai_album: { type: 'text', fields: { keyword: { type: 'keyword' } } },
-        ai_genre: { type: 'keyword', index: true },
         ai_confidence: { type: 'float' },
-        ai_subgenre: { type: 'keyword', index: true },
         ai_subgenre_confidence: { type: 'float' },
+        ai_description: { type: 'text', analyzer: 'standard' },
+        ai_tags: { type: 'keyword', index: true },
 
         // User Modifications
         user_title: {
@@ -77,8 +76,11 @@ export class ElasticsearchService implements OnModuleInit {
           type: 'text',
           fields: { keyword: { type: 'keyword' } },
         },
-        user_genre: { type: 'keyword' },
         user_tags: { type: 'keyword' },
+
+        // Genres and Subgenres (normalized)
+        genres: { type: 'keyword', index: true },
+        subgenres: { type: 'keyword', index: true },
 
         // Listening Data
         listening_count: { type: 'integer' },
@@ -327,8 +329,7 @@ export class ElasticsearchService implements OnModuleInit {
           analyzer: 'standard',
           fields: { keyword: { type: 'keyword' } },
         },
-        genre: { type: 'keyword', index: true },
-        subgenre: { type: 'keyword', index: true },
+        image_path: { type: 'keyword' },
       },
     },
   };

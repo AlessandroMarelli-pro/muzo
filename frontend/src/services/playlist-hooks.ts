@@ -16,8 +16,8 @@ export const simpleMusicTrackFragment = gql`
     artist
     title
     duration
-    genre
-    subgenre
+    genres
+    subgenres
     date
     listeningCount
     lastPlayedAt

@@ -340,19 +340,15 @@ export const useTrack = (id: string) => {
               originalTitle
               originalArtist
               originalAlbum
-              originalGenre
               originalYear
               aiTitle
               aiArtist
               aiAlbum
-              aiGenre
-              aiSubgenre
               aiSubgenreConfidence
               aiConfidence
               userTitle
               userArtist
               userAlbum
-              userGenre
               userTags
               listeningCount
               lastPlayedAt
@@ -396,18 +392,14 @@ export const useSearchTracks = (query: string, libraryId?: string) => {
               originalTitle
               originalArtist
               originalAlbum
-              originalGenre
               aiTitle
               aiArtist
               aiAlbum
-              aiGenre
-              aiSubgenre
               aiSubgenreConfidence
               aiConfidence
               userTitle
               userArtist
               userAlbum
-              userGenre
               listeningCount
               analysisStatus
               libraryId
@@ -706,7 +698,6 @@ export const useUpdateTrack = () => {
               userTitle
               userArtist
               userAlbum
-              userGenre
               userTags
               updatedAt
             }

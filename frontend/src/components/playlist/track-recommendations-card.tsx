@@ -68,15 +68,23 @@ export const TrackRecommendationsCard = ({
             {track.tempo} BPM
           </Badge>
         )}
-        {track?.genre && (
-          <Badge variant="secondary" className="text-xs">
-            {track.genre}
-          </Badge>
+        {track?.genres && track.genres.length > 0 && (
+          <>
+            {track.genres.map((genre, index) => (
+              <Badge key={index} variant="secondary" className="text-xs">
+                {genre}
+              </Badge>
+            ))}
+          </>
         )}
-        {track?.subgenre && (
-          <Badge variant="secondary" className="text-xs">
-            {track.subgenre}
-          </Badge>
+        {track?.subgenres && track.subgenres.length > 0 && (
+          <>
+            {track.subgenres.map((subgenre, index) => (
+              <Badge key={index} variant="secondary" className="text-xs">
+                {subgenre}
+              </Badge>
+            ))}
+          </>
         )}
         {track?.duration && (
           <div className="flex items-center gap-1">

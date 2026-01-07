@@ -110,9 +110,6 @@ export class MusicTrack {
   originalAlbum?: string;
 
   @Field({ nullable: true })
-  originalGenre?: string;
-
-  @Field({ nullable: true })
   originalYear?: number;
 
   @Field({ nullable: true })
@@ -123,11 +120,6 @@ export class MusicTrack {
 
   @Field({ nullable: true })
   aiAlbum?: string;
-
-  @Field({ nullable: true })
-  aiGenre?: string;
-  @Field({ nullable: true })
-  aiSubgenre?: string;
 
   @Field({ nullable: true })
   aiConfidence?: number;
@@ -149,9 +141,6 @@ export class MusicTrack {
 
   @Field({ nullable: true })
   userAlbum?: string;
-
-  @Field({ nullable: true })
-  userGenre?: string;
 
   @Field(() => [String], { nullable: true })
   userTags?: string[];
@@ -217,11 +206,14 @@ export class UpdateTrackInput {
   @Field({ nullable: true })
   userAlbum?: string;
 
-  @Field({ nullable: true })
-  userGenre?: string;
-
   @Field(() => [String], { nullable: true })
   userTags?: string[];
+
+  @Field(() => [String], { nullable: true })
+  genreIds?: string[];
+
+  @Field(() => [String], { nullable: true })
+  subgenreIds?: string[];
 }
 
 @InputType()
@@ -355,11 +347,11 @@ export class SimpleMusicTrack {
   @Field(() => Float)
   duration: number;
 
-  @Field({ nullable: true })
-  genre: string;
+  @Field(() => [String], { nullable: true })
+  genres?: string[];
 
-  @Field({ nullable: true })
-  subgenre: string;
+  @Field(() => [String], { nullable: true })
+  subgenres?: string[];
 
   @Field({ nullable: true })
   date: Date;

@@ -40,8 +40,8 @@ export function mapToSimpleMusicTrack(
     artist: track.originalArtist || track.aiArtist || track.userArtist,
     title: track.originalTitle || track.aiTitle || track.userTitle,
     duration: track.duration,
-    genre: track.originalGenre || track.aiGenre || track.userGenre,
-    subgenre: track.aiSubgenre,
+    genres: track.trackGenres?.map((tg) => tg.genre.name) || [],
+    subgenres: track.trackSubgenres?.map((ts) => ts.subgenre.name) || [],
     description: track.aiDescription,
     tags: track.aiTags ? (JSON.parse(track.aiTags) as string[]) : null,
     date: track.originalDate || track.createdAt,
@@ -148,7 +148,6 @@ export class MusicTrackResolver {
     const track = !id
       ? await this.musicTrackService.getRandomTrack()
       : await this.musicTrackService.findOne(id);
-    console.log(track);
     return mapToSimpleMusicTrack(track as MusicTrackWithRelations);
   }
 
@@ -276,8 +275,9 @@ export class MusicTrackResolver {
       userTitle: input.userTitle,
       userArtist: input.userArtist,
       userAlbum: input.userAlbum,
-      userGenre: input.userGenre,
       userTags: input.userTags,
+      genreIds: input.genreIds,
+      subgenreIds: input.subgenreIds,
     };
 
     const track = await this.musicTrackService.update(id, updateDto);

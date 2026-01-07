@@ -108,7 +108,6 @@ export class MusicTrackService {
         originalTitle: createDto.originalTitle,
         originalArtist: createDto.originalArtist,
         originalAlbum: createDto.originalAlbum,
-        originalGenre: createDto.originalGenre,
         originalYear: parsedOriginalYear,
         analysisStatus: AnalysisStatus.PENDING,
         libraryId: createDto.libraryId,
@@ -139,7 +138,7 @@ export class MusicTrackService {
     const filter = this.filterService.getCurrentFilter();
 
     if (filter) {
-      where = this.filterService.buildPrismaWhereClause(filter);
+      where = await this.filterService.buildPrismaWhereClause(filter);
     }
 
     // Build Prisma where clause
@@ -161,6 +160,16 @@ export class MusicTrackService {
         aiAnalysisResult: true,
         editorSessions: true,
         playbackSessions: true,
+        trackGenres: {
+          include: {
+            genre: true,
+          },
+        },
+        trackSubgenres: {
+          include: {
+            subgenre: true,
+          },
+        },
       },
     });
     return tracks;
@@ -248,6 +257,16 @@ export class MusicTrackService {
         },
         imageSearches: true,
         audioFingerprint: true,
+        trackGenres: {
+          include: {
+            genre: true,
+          },
+        },
+        trackSubgenres: {
+          include: {
+            subgenre: true,
+          },
+        },
       },
     });
 
@@ -283,19 +302,14 @@ export class MusicTrackService {
     if (analysisStatus) where.analysisStatus = analysisStatus;
     if (format) where.format = format;
 
-    const key = category === 'genre' ? 'aiGenre' : 'aiSubgenre';
-    // Get genre groups
-    const genreGroups = await this.prisma.musicTrack.groupBy({
-      by: [key],
-      where: {
-        ...where,
-        [key]: { not: null },
-        ...(genre && { aiGenre: genre }),
-      },
-      _count: {
-        id: true,
-      },
-    });
+    const filter = this.filterService.getCurrentFilter();
+    if (filter) {
+      where = await this.filterService.buildPrismaWhereClause(
+        filter,
+        true,
+        true,
+      );
+    }
 
     const result: {
       category: 'genre' | 'subgenre';
@@ -303,34 +317,102 @@ export class MusicTrackService {
       tracks: MusicTrack[];
       trackCount: number;
     }[] = [];
-    const filter = this.filterService.getCurrentFilter();
 
-    if (filter) {
-      where = this.filterService.buildPrismaWhereClause(filter, true, true);
-    }
-    // Process genre groups
-    for (const group of genreGroups) {
-      const tracks = await this.prisma.musicTrack.findMany({
-        where: {
-          ...where,
-          [key]: group[key],
-        },
-        take: limit,
-        skip: offset,
-        orderBy: { [orderBy]: orderDirection },
+    if (category === 'genre') {
+      // Get all genres with their track counts
+      const genres = await this.prisma.genre.findMany({
         include: {
-          imageSearches: true,
-          audioFingerprint: true,
+          trackGenres: {
+            where: {
+              track: where,
+            },
+            include: {
+              track: true,
+            },
+          },
         },
       });
 
-      result.push({
-        category,
-        name: group[key]!,
-        tracks,
-        trackCount: group._count.id,
+      for (const genreItem of genres) {
+        if (genreItem.trackGenres.length === 0) continue;
+        if (genre && genreItem.name !== genre) continue;
+
+        const trackIds = genreItem.trackGenres.map((tg) => tg.trackId);
+        const tracks = await this.prisma.musicTrack.findMany({
+          where: {
+            ...where,
+            id: { in: trackIds },
+          },
+          take: limit,
+          skip: offset,
+          orderBy: { [orderBy]: orderDirection },
+          include: {
+            imageSearches: true,
+            audioFingerprint: true,
+            trackGenres: {
+              include: { genre: true },
+            },
+            trackSubgenres: {
+              include: { subgenre: true },
+            },
+          },
+        });
+
+        result.push({
+          category: 'genre',
+          name: genreItem.name,
+          tracks,
+          trackCount: genreItem.trackGenres.length,
+        });
+      }
+    } else {
+      // Get all subgenres with their track counts
+      const subgenres = await this.prisma.subgenre.findMany({
+        include: {
+          trackSubgenres: {
+            where: {
+              track: where,
+            },
+            include: {
+              track: true,
+            },
+          },
+        },
       });
+
+      for (const subgenre of subgenres) {
+        if (subgenre.trackSubgenres.length === 0) continue;
+
+        const trackIds = subgenre.trackSubgenres.map((ts) => ts.trackId);
+        const tracks = await this.prisma.musicTrack.findMany({
+          where: {
+            ...where,
+            id: { in: trackIds },
+          },
+          take: limit,
+          skip: offset,
+          orderBy: { [orderBy]: orderDirection },
+          include: {
+            imageSearches: true,
+            audioFingerprint: true,
+            trackGenres: {
+              include: { genre: true },
+            },
+            trackSubgenres: {
+              include: { subgenre: true },
+            },
+          },
+        });
+
+        result.push({
+          category: 'subgenre',
+          name: subgenre.name,
+          tracks,
+          trackCount: subgenre.trackSubgenres.length,
+        });
+      }
     }
+
     // Sort by track count descending
     return result.sort((a, b) => b.trackCount - a.trackCount);
   }
@@ -348,45 +430,11 @@ export class MusicTrackService {
     const filter = this.filterService.getCurrentFilter();
 
     if (filter) {
-      where = this.filterService.buildPrismaWhereClause(filter);
+      where = await this.filterService.buildPrismaWhereClause(filter);
     }
     if (libraryId) where.libraryId = libraryId;
     if (analysisStatus) where.analysisStatus = analysisStatus;
     if (format) where.format = format;
-
-    // Get genre groups with counts
-    const genreGroups = await this.prisma.musicTrack.groupBy({
-      by: ['aiGenre'],
-      where: {
-        ...where,
-        aiGenre: { not: null },
-      },
-      _count: {
-        id: true,
-      },
-      orderBy: {
-        _count: {
-          id: 'desc',
-        },
-      },
-    });
-
-    // Get subgenre groups with counts
-    const subgenreGroups = await this.prisma.musicTrack.groupBy({
-      by: ['aiSubgenre'],
-      where: {
-        ...where,
-        aiSubgenre: { not: null },
-      },
-      _count: {
-        id: true,
-      },
-      orderBy: {
-        _count: {
-          id: 'desc',
-        },
-      },
-    });
 
     const result: {
       category: 'genre' | 'subgenre';
@@ -394,22 +442,66 @@ export class MusicTrackService {
       trackCount: number;
     }[] = [];
 
+    // Get genre groups with counts
+    const genres = await this.prisma.genre.findMany({
+      include: {
+        _count: {
+          select: {
+            trackGenres: {
+              where: {
+                track: where,
+              },
+            },
+          },
+        },
+      },
+      orderBy: {
+        trackGenres: {
+          _count: 'desc',
+        },
+      },
+    });
+
+    // Get subgenre groups with counts
+    const subgenres = await this.prisma.subgenre.findMany({
+      include: {
+        _count: {
+          select: {
+            trackSubgenres: {
+              where: {
+                track: where,
+              },
+            },
+          },
+        },
+      },
+      orderBy: {
+        trackSubgenres: {
+          _count: 'desc',
+        },
+      },
+    });
+
     // Add genre groups
-    for (const group of genreGroups) {
-      result.push({
-        category: 'genre',
-        name: group.aiGenre!,
-        trackCount: group._count.id,
-      });
+    for (const genre of genres) {
+      if (genre._count.trackGenres > 0) {
+        result.push({
+          category: 'genre',
+          name: genre.name,
+          trackCount: genre._count.trackGenres,
+        });
+      }
     }
 
     // Add subgenre groups
-    for (const group of subgenreGroups) {
-      result.push({
-        category: 'subgenre',
-        name: group.aiSubgenre!,
-        trackCount: group._count.id,
-      });
+    for (const subgenre of subgenres) {
+      if (subgenre._count.trackSubgenres > 0) {
+        result.push({
+          category: 'subgenre',
+          name: subgenre.name,
+          trackCount: subgenre._count.trackSubgenres,
+        });
+      }
     }
 
     return result;
@@ -425,6 +517,16 @@ export class MusicTrackService {
         editorSessions: true,
         playbackSessions: true,
         imageSearches: true,
+        trackGenres: {
+          include: {
+            genre: true,
+          },
+        },
+        trackSubgenres: {
+          include: {
+            subgenre: true,
+          },
+        },
       },
     });
 
@@ -445,6 +547,16 @@ export class MusicTrackService {
         editorSessions: true,
         playbackSessions: false,
         imageSearches: false,
+        trackGenres: {
+          include: {
+            genre: true,
+          },
+        },
+        trackSubgenres: {
+          include: {
+            subgenre: true,
+          },
+        },
       },
     });
 
@@ -500,10 +612,113 @@ export class MusicTrackService {
       updateData.userTags = JSON.stringify(updateDto.userTags);
     }
 
-    return this.prisma.musicTrack.update({
+    // Handle genre and subgenre updates
+    const { genreIds, subgenreIds, ...restUpdateData } = updateData;
+
+    const track = await this.prisma.musicTrack.update({
       where: { id },
-      data: updateData,
+      data: restUpdateData,
     });
+
+    // Update genres if provided
+    if (genreIds !== undefined) {
+      // Delete existing genre associations
+      await this.prisma.trackGenre.deleteMany({
+        where: { trackId: id },
+      });
+
+      // Create new genre associations
+      if (genreIds.length > 0) {
+        // Get or create genres
+        const genres = await Promise.all(
+          genreIds.map(async (genreId: string) => {
+            // Check if genre exists, if not create it
+            let genre = await this.prisma.genre.findUnique({
+              where: { id: genreId },
+            });
+
+            if (!genre) {
+              // If genreId is actually a name, find or create by name (lowercased for uniqueness)
+              const normalizedName = genreId.trim().toLowerCase();
+              genre = await this.prisma.genre.findUnique({
+                where: { name: normalizedName },
+              });
+
+              if (!genre) {
+                genre = await this.prisma.genre.create({
+                  data: { name: normalizedName },
+                });
+              }
+            }
+
+            return genre;
+          }),
+        );
+
+        // Create track-genre associations
+        await Promise.all(
+          genres.map((genre) =>
+            this.prisma.trackGenre.create({
+              data: {
+                trackId: id,
+                genreId: genre.id,
+              },
+            }),
+          ),
+        );
+      }
+    }
+
+    // Update subgenres if provided
+    if (subgenreIds !== undefined) {
+      // Delete existing subgenre associations
+      await this.prisma.trackSubgenre.deleteMany({
+        where: { trackId: id },
+      });
+
+      // Create new subgenre associations
+      if (subgenreIds.length > 0) {
+        // Get or create subgenres
+        const subgenres = await Promise.all(
+          subgenreIds.map(async (subgenreId: string) => {
+            // Check if subgenre exists, if not create it
+            let subgenre = await this.prisma.subgenre.findUnique({
+              where: { id: subgenreId },
+            });
+
+            if (!subgenre) {
+              // If subgenreId is actually a name, find or create by name (lowercased for uniqueness)
+              const normalizedName = subgenreId.trim().toLowerCase();
+              subgenre = await this.prisma.subgenre.findUnique({
+                where: { name: normalizedName },
+              });
+
+              if (!subgenre) {
+                subgenre = await this.prisma.subgenre.create({
+                  data: { name: normalizedName },
+                });
+              }
+            }
+
+            return subgenre;
+          }),
+        );
+
+        // Create track-subgenre associations
+        await Promise.all(
+          subgenres.map((subgenre) =>
+            this.prisma.trackSubgenre.create({
+              data: {
+                trackId: id,
+                subgenreId: subgenre.id,
+              },
+            }),
+          ),
+        );
+      }
+    }
+
+    return track;
   }
 
   async remove(id: string): Promise<void> {

@@ -291,18 +291,22 @@ export function MusicTable({
         enableColumnFilter: true,
       },
       {
-        id: 'genre',
-        accessorKey: 'genre',
+        id: 'genres',
+        accessorKey: 'genres',
         header: ({ column }) => (
           <DataTableColumnHeader column={column} title="Genre" />
         ),
         cell: ({ row }) => {
-          const genre = row.getValue('genre') as string;
+          const genres = row.getValue('genres') as string[];
 
           return (
-            <Badge variant="secondary" className="capitalize">
-              {genre}
-            </Badge>
+            <>
+              {genres.map((genre) => (
+                <Badge variant="secondary" className="capitalize" size="xs">
+                  {genre}
+                </Badge>
+              ))}
+            </>
           );
         },
         meta: {
@@ -313,18 +317,22 @@ export function MusicTable({
         enableColumnFilter: true,
       },
       {
-        id: 'subgenre',
-        accessorKey: 'subgenre',
+        id: 'subgenres',
+        accessorKey: 'subgenres',
         header: ({ column }) => (
           <DataTableColumnHeader column={column} title="Subgenre" />
         ),
         cell: ({ row }) => {
-          const subgenre = row.getValue('subgenre') as string;
+          const subgenres = row.getValue('subgenres') as string[];
 
           return (
-            <Badge variant="outline" className="capitalize">
-              {subgenre}
-            </Badge>
+            <>
+              {subgenres.map((subgenre) => (
+                <Badge variant="outline" className="capitalize" size="xs">
+                  {subgenre}
+                </Badge>
+              ))}
+            </>
           );
         },
         meta: {
@@ -370,6 +378,7 @@ export function MusicTable({
             <Badge
               variant="outline"
               className={cn('max-w-[70px] text-center font-mono')}
+              size="xs"
               style={{
                 backgroundColor: CamelotKeyOptions.find(
                   (option) => option.label === key,
@@ -401,7 +410,11 @@ export function MusicTable({
           ) as string;
 
           return (
-            <Badge variant="outline" className={cn('text-center font-mono')}>
+            <Badge
+              variant="outline"
+              className={cn('text-center font-mono')}
+              size="xs"
+            >
               {danceabilityFeelingOptions.find(
                 (option) => option.value === danceabilityFeeling,
               )?.label || 'N/A'}
@@ -425,7 +438,11 @@ export function MusicTable({
           const arousalMood = row.getValue('arousalMood') as string;
 
           return (
-            <Badge variant="outline" className={cn('text-center font-mono')}>
+            <Badge
+              variant="outline"
+              className={cn('text-center font-mono')}
+              size="xs"
+            >
               {arousalMoodOptions.find((option) => option.value === arousalMood)
                 ?.label || 'N/A'}
             </Badge>
@@ -448,7 +465,11 @@ export function MusicTable({
           const valenceMood = row.getValue('valenceMood') as string;
 
           return (
-            <Badge variant="outline" className={cn('text-center font-mono')}>
+            <Badge
+              variant="outline"
+              className={cn('text-center font-mono')}
+              size="xs"
+            >
               {valenceMoodOptions.find((option) => option.value === valenceMood)
                 ?.label || 'N/A'}
             </Badge>

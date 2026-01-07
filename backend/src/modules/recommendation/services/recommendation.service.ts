@@ -60,6 +60,16 @@ export class RecommendationService {
               aiAnalysisResult: true,
               imageSearches: true,
               library: true,
+              trackGenres: {
+                include: {
+                  genre: true,
+                },
+              },
+              trackSubgenres: {
+                include: {
+                  subgenre: true,
+                },
+              },
             },
           },
         },
@@ -167,26 +177,29 @@ export class RecommendationService {
           }
         : null;
     const shouldGenre =
-      weights.genreSimilarity > 0
+      weights.genreSimilarity > 0 &&
+      playlistFeatures.genres &&
+      playlistFeatures.genres.length > 0
         ? {
             bool: {
               should: [
                 {
-                  term: {
-                    genre: {
-                      value: playlistFeatures.genre,
-                      boost: Math.max(weights.genreSimilarity * 3.0, 1.0),
-                    },
+                  terms: {
+                    genres: playlistFeatures.genres,
+                    boost: Math.max(weights.genreSimilarity * 3.0, 1.0),
                   },
                 },
-                {
-                  term: {
-                    subgenre: {
-                      value: playlistFeatures.subgenre,
-                      boost: Math.max(weights.genreSimilarity * 4.0, 1),
-                    },
-                  },
-                },
+                ...(playlistFeatures.subgenres &&
+                playlistFeatures.subgenres.length > 0
+                  ? [
+                      {
+                        terms: {
+                          subgenres: playlistFeatures.subgenres,
+                          boost: Math.max(weights.genreSimilarity * 4.0, 1),
+                        },
+                      },
+                    ]
+                  : []),
               ],
               minimum_should_match: 1,
             },
@@ -556,6 +569,16 @@ export class RecommendationService {
             aiAnalysisResult: true,
             imageSearches: true,
             library: true,
+            trackGenres: {
+              include: {
+                genre: true,
+              },
+            },
+            trackSubgenres: {
+              include: {
+                subgenre: true,
+              },
+            },
           },
         },
       },
@@ -575,22 +598,27 @@ export class RecommendationService {
         bool: {
           must_not: [{ terms: { id: excludeTrackIds } }],
           should: [
-            {
-              term: {
-                genre: {
-                  value: playlistFeatures.genre,
-                  boost: 3.0, // weights.genreSimilarity * 3.0 = 1 * 3.0
-                },
-              },
-            },
-            {
-              term: {
-                subgenre: {
-                  value: playlistFeatures.subgenre,
-                  boost: 2.0, // weights.genreSimilarity * 2.0 = 1 * 2.0
-                },
-              },
-            },
+            ...(playlistFeatures.genres && playlistFeatures.genres.length > 0
+              ? [
+                  {
+                    terms: {
+                      genres: playlistFeatures.genres,
+                      boost: 3.0, // weights.genreSimilarity * 3.0 = 1 * 3.0
+                    },
+                  },
+                ]
+              : []),
+            ...(playlistFeatures.subgenres &&
+            playlistFeatures.subgenres.length > 0
+              ? [
+                  {
+                    terms: {
+                      subgenres: playlistFeatures.subgenres,
+                      boost: 2.0, // weights.genreSimilarity * 2.0 = 1 * 2.0
+                    },
+                  },
+                ]
+              : []),
           ],
           minimum_should_match: 1,
         },
@@ -612,23 +640,33 @@ export class RecommendationService {
       };
       return {
         playlistFeatures: {
-          genre: playlistFeatures.genre,
-          subgenre: playlistFeatures.subgenre,
+          genres: playlistFeatures.genres || [],
+          subgenres: playlistFeatures.subgenres || [],
         },
         results: hits.map((hit: any) => {
+          const trackGenres = hit._source.genres || [];
+          const trackSubgenres = hit._source.subgenres || [];
+          const playlistGenres = playlistFeatures.genres || [];
+          const playlistSubgenres = playlistFeatures.subgenres || [];
+
+          const genreMatch =
+            playlistGenres.length > 0 &&
+            trackGenres.some((g: string) => playlistGenres.includes(g));
+          const subgenreMatch =
+            playlistSubgenres.length > 0 &&
+            trackSubgenres.some((s: string) => playlistSubgenres.includes(s));
+
           return {
             id: hit._source.id,
             title: hit._source.title,
             artist: hit._source.artist,
-            genre: hit._source.genre,
-            subgenre: hit._source.subgenre,
+            genres: trackGenres,
+            subgenres: trackSubgenres,
             score: hit._score, // Raw Elasticsearch score
             matches: {
-              genre: hit._source.genre === playlistFeatures.genre,
-              subgenre: hit._source.subgenre === playlistFeatures.subgenre,
-              both:
-                hit._source.genre === playlistFeatures.genre &&
-                hit._source.subgenre === playlistFeatures.subgenre,
+              genre: genreMatch,
+              subgenre: subgenreMatch,
+              both: genreMatch && subgenreMatch,
             },
           };
         }),
@@ -657,6 +695,16 @@ export class RecommendationService {
             aiAnalysisResult: true,
             imageSearches: true,
             library: true,
+            trackGenres: {
+              include: {
+                genre: true,
+              },
+            },
+            trackSubgenres: {
+              include: {
+                subgenre: true,
+              },
+            },
           },
         },
       },
@@ -694,8 +742,8 @@ export class RecommendationService {
             id: hit._source.id,
             title: hit._source.title,
             artist: hit._source.artist,
-            genre: hit._source.genre,
-            subgenre: hit._source.subgenre,
+            genres: hit._source.genres || [],
+            subgenres: hit._source.subgenres || [],
           },
           score: hit._score,
           explanation: hit._explanation,
@@ -715,8 +763,8 @@ export class RecommendationService {
       id: source.id,
       title: source.title,
       artist: source.artist,
-      genre: source.genre,
-      subgenre: source.subgenre,
+      genres: source.genres || [],
+      subgenres: source.subgenres || [],
       duration: source.duration,
       listeningCount: source.listening_count || 0,
       lastPlayedAt: source.last_played_at
@@ -746,11 +794,31 @@ export class RecommendationService {
     const reasons: string[] = [];
 
     // Genre reasons
-    if (trackSource.genre === playlistFeatures.genre) {
-      reasons.push(`Same genre: ${trackSource.genre}`);
+    if (
+      playlistFeatures.genres &&
+      playlistFeatures.genres.length > 0 &&
+      trackSource.genres &&
+      trackSource.genres.length > 0
+    ) {
+      const matchingGenres = playlistFeatures.genres.filter((g) =>
+        trackSource.genres.includes(g),
+      );
+      if (matchingGenres.length > 0) {
+        reasons.push(`Same genre${matchingGenres.length > 1 ? 's' : ''}: ${matchingGenres.join(', ')}`);
+      }
     }
-    if (trackSource.subgenre === playlistFeatures.subgenre) {
-      reasons.push(`Same subgenre: ${trackSource.subgenre}`);
+    if (
+      playlistFeatures.subgenres &&
+      playlistFeatures.subgenres.length > 0 &&
+      trackSource.subgenres &&
+      trackSource.subgenres.length > 0
+    ) {
+      const matchingSubgenres = playlistFeatures.subgenres.filter((s) =>
+        trackSource.subgenres.includes(s),
+      );
+      if (matchingSubgenres.length > 0) {
+        reasons.push(`Same subgenre${matchingSubgenres.length > 1 ? 's' : ''}: ${matchingSubgenres.join(', ')}`);
+      }
     }
 
     // Camelot key matching (harmonic mixing)
@@ -1180,14 +1248,19 @@ export class RecommendationService {
       }
 
       // Count genres and subgenres
-      const genre = track.aiGenre || track.originalGenre;
-      if (genre) {
-        genreCounts[genre] = (genreCounts[genre] || 0) + 1;
+      if (track.trackGenres && track.trackGenres.length > 0) {
+        for (const trackGenre of track.trackGenres) {
+          const genreName = trackGenre.genre.name;
+          genreCounts[genreName] = (genreCounts[genreName] || 0) + 1;
+        }
       }
 
-      const subgenre = track.aiSubgenre;
-      if (subgenre) {
-        subgenreCounts[subgenre] = (subgenreCounts[subgenre] || 0) + 1;
+      if (track.trackSubgenres && track.trackSubgenres.length > 0) {
+        for (const trackSubgenre of track.trackSubgenres) {
+          const subgenreName = trackSubgenre.subgenre.name;
+          subgenreCounts[subgenreName] =
+            (subgenreCounts[subgenreName] || 0) + 1;
+        }
       }
 
       // Count artists and albums
@@ -1270,9 +1343,13 @@ export class RecommendationService {
         zeroCrossingRates.reduce((a, b) => a + b, 0) / zeroCrossingRates.length;
     }
 
-    // Find most common values
-    features.genre = this.findMostCommon(genreCounts);
-    features.subgenre = this.findMostCommon(subgenreCounts);
+    // Get all genres and subgenres (as arrays)
+    features.genres = Object.keys(genreCounts).filter(
+      (genre) => genreCounts[genre] > 0,
+    );
+    features.subgenres = Object.keys(subgenreCounts).filter(
+      (subgenre) => subgenreCounts[subgenre] > 0,
+    );
     features.key = this.findMostCommon(keyCounts);
     features.camelotKey = this.findMostCommon(camelotKeyCounts);
     features.artist = this.findMostCommon(artistCounts);
@@ -1454,6 +1531,7 @@ export class RecommendationService {
     const energyKeywords = safeJsonParse(fingerprint?.energyKeywords, []);
     const energyByBand = safeJsonParse(fingerprint?.energyByBand, []);
     const userTags = safeJsonParse(track.userTags, []);
+    const aiTags = safeJsonParse(track.aiTags, []);
 
     return {
       // MusicTrack core fields
@@ -1470,7 +1548,6 @@ export class RecommendationService {
       original_title: track.originalTitle,
       original_artist: track.originalArtist,
       original_album: track.originalAlbum,
-      original_genre: track.originalGenre,
       original_year: track.originalYear,
       original_albumartist: track.originalAlbumartist,
       original_date: track.originalDate,
@@ -1485,16 +1562,15 @@ export class RecommendationService {
       ai_title: track.aiTitle,
       ai_artist: track.aiArtist,
       ai_album: track.aiAlbum,
-      ai_genre: track.aiGenre,
       ai_confidence: track.aiConfidence,
-      ai_subgenre: track.aiSubgenre,
       ai_subgenre_confidence: track.aiSubgenreConfidence,
+      ai_description: track.aiDescription,
+      ai_tags: aiTags,
 
       // User Modifications
       user_title: track.userTitle,
       user_artist: track.userArtist,
       user_album: track.userAlbum,
-      user_genre: track.userGenre,
       user_tags: userTags,
 
       // Listening Data
@@ -1599,12 +1675,14 @@ export class RecommendationService {
           }
         : null,
 
+      // Genres and Subgenres (from normalized relations)
+      genres: track.trackGenres?.map((tg) => tg.genre.name) || [],
+      subgenres: track.trackSubgenres?.map((ts) => ts.subgenre.name) || [],
+
       // Computed display fields (denormalized for convenience)
       title: track.userTitle || track.originalTitle || track.aiTitle,
       artist: track.userArtist || track.originalArtist || track.aiArtist,
       album: track.userAlbum || track.originalAlbum || track.aiAlbum,
-      genre: track.userGenre || track.aiGenre || track.originalGenre,
-      subgenre: track.aiSubgenre,
       image_path: track.imageSearches?.[0]?.imagePath,
     };
   }

@@ -111,17 +111,21 @@ export const TrackDetails: React.FC<TrackDetailsProps> = ({
     'Unknown Artist';
   const displayAlbum =
     track.userAlbum || track.aiAlbum || track.originalAlbum || 'Unknown Album';
-  const displayGenre = track.userGenre || track.aiGenre || track.originalGenre;
+  const displayGenres = track.genres && track.genres.length > 0 
+    ? track.genres.join(', ') 
+    : undefined;
+  const displaySubgenres = track.subgenres && track.subgenres.length > 0 
+    ? track.subgenres.join(', ') 
+    : undefined;
 
   const hasAIMetadata =
-    track.aiTitle || track.aiArtist || track.aiAlbum || track.aiGenre;
+    track.aiTitle || track.aiArtist || track.aiAlbum;
   const hasUserMetadata =
-    track.userTitle || track.userArtist || track.userAlbum || track.userGenre;
+    track.userTitle || track.userArtist || track.userAlbum;
   const hasOriginalMetadata =
     track.originalTitle ||
     track.originalArtist ||
-    track.originalAlbum ||
-    track.originalGenre;
+    track.originalAlbum;
 
   return (
     <div className="space-y-6">
@@ -250,12 +254,21 @@ export const TrackDetails: React.FC<TrackDetailsProps> = ({
               <div className="text-sm text-muted-foreground">Album</div>
               <div className="font-medium">{displayAlbum}</div>
             </div>
-            {displayGenre && (
+            {displayGenres && (
               <div>
-                <div className="text-sm text-muted-foreground">Genre</div>
-                <div className="font-medium flex items-center">
+                <div className="text-sm text-muted-foreground">Genres</div>
+                <div className="font-medium flex items-center flex-wrap gap-1">
                   <Tag className="h-4 w-4 mr-1" />
-                  {displayGenre}
+                  {displayGenres}
+                </div>
+              </div>
+            )}
+            {displaySubgenres && (
+              <div>
+                <div className="text-sm text-muted-foreground">Subgenres</div>
+                <div className="font-medium flex items-center flex-wrap gap-1">
+                  <Tag className="h-4 w-4 mr-1" />
+                  {displaySubgenres}
                 </div>
               </div>
             )}
@@ -319,12 +332,6 @@ export const TrackDetails: React.FC<TrackDetailsProps> = ({
                       <div className="font-medium">{track.originalAlbum}</div>
                     </div>
                   )}
-                  {track.originalGenre && (
-                    <div>
-                      <span className="text-muted-foreground">Genre:</span>
-                      <div className="font-medium">{track.originalGenre}</div>
-                    </div>
-                  )}
                 </div>
               </div>
             )}
@@ -355,12 +362,6 @@ export const TrackDetails: React.FC<TrackDetailsProps> = ({
                       <div className="font-medium">{track.aiAlbum}</div>
                     </div>
                   )}
-                  {track.aiGenre && (
-                    <div>
-                      <span className="text-muted-foreground">Genre:</span>
-                      <div className="font-medium">{track.aiGenre}</div>
-                    </div>
-                  )}
                 </div>
               </div>
             )}
@@ -389,12 +390,6 @@ export const TrackDetails: React.FC<TrackDetailsProps> = ({
                     <div>
                       <span className="text-muted-foreground">Album:</span>
                       <div className="font-medium">{track.userAlbum}</div>
-                    </div>
-                  )}
-                  {track.userGenre && (
-                    <div>
-                      <span className="text-muted-foreground">Genre:</span>
-                      <div className="font-medium">{track.userGenre}</div>
                     </div>
                   )}
                 </div>

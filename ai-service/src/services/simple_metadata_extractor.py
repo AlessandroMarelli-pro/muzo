@@ -5,9 +5,10 @@ This service provides metadata extraction functionality for both file system
 metadata and audio file ID3 tags with filename parsing fallback.
 """
 
+import base64
 import os
 import time
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from loguru import logger
 from mutagen import File
@@ -31,6 +32,7 @@ class SimpleMetadataExtractor:
         "composer": "",
         "copyright": "",
         "bitrate": "",
+        "image": "",
     }
 
     """
@@ -171,6 +173,115 @@ class SimpleMetadataExtractor:
             # Handle any other exceptions
             pass
         return None
+
+    def extract_embedded_image(self, file_path: str) -> Optional[bytes]:
+        """
+        Extract embedded image/cover art from audio file.
+
+        Args:
+            file_path: Path to audio file
+
+        Returns:
+            Raw image data as bytes, or None if no image found
+        """
+        try:
+            logger.info(f"Extracting embedded image from: {file_path}")
+            audio_file = File(file_path)
+
+            if audio_file is None:
+                return None
+
+            image_data = None
+            file_extension = os.path.splitext(file_path)[1].lower()
+            is_flac = file_extension == ".flac"
+
+            if is_flac:
+                # For FLAC files, use the pictures property
+                try:
+                    if hasattr(audio_file, "pictures") and audio_file.pictures:
+                        # Iterate through pictures and find front cover (type == 3)
+                        for picture in audio_file.pictures:
+                            # Type 3 is Cover (front)
+                            if picture.type == 3:
+                                if hasattr(picture, "data"):
+                                    image_data = picture.data
+                                    break
+                        # If no front cover found, use first picture
+                        if not image_data and len(audio_file.pictures) > 0:
+                            first_picture = audio_file.pictures[0]
+                            if hasattr(first_picture, "data"):
+                                image_data = first_picture.data
+                except Exception as e:
+                    logger.warning(f"Failed to extract FLAC pictures: {e}")
+            else:
+                # For non-FLAC files, check binary image fields
+                # First, try to find APIC tags (they may have keys like 'APIC:"Album cover"')
+                try:
+                    if hasattr(audio_file, "keys"):
+                        # Search for keys starting with "APIC"
+                        for key in audio_file.keys():
+                            if key.startswith("APIC"):
+                                image_tag = self.safe_get_tag_value(audio_file, key)
+                                if image_tag:
+                                    try:
+                                        # Handle list format
+                                        if (
+                                            isinstance(image_tag, list)
+                                            and len(image_tag) > 0
+                                        ):
+                                            image_tag = image_tag[0]
+
+                                        # APIC object has a data attribute
+                                        if hasattr(image_tag, "data"):
+                                            image_data = image_tag.data
+                                            break
+                                    except Exception as e:
+                                        logger.warning(
+                                            f"Failed to extract {key} tag: {e}"
+                                        )
+                                        continue
+                except Exception as e:
+                    logger.warning(f"Failed to search for APIC tags: {e}")
+
+                # If APIC not found, try other binary image fields
+                if not image_data:
+                    binary_fields = [
+                        "PIC",
+                        "covr",
+                        "METADATA_BLOCK_PICTURE",
+                        "TRAKTOR4",
+                    ]
+                    for field in binary_fields:
+                        image_tag = self.safe_get_tag_value(audio_file, field)
+                        if image_tag:
+                            try:
+                                # Handle different formats
+                                if isinstance(image_tag, list) and len(image_tag) > 0:
+                                    image_tag = image_tag[0]
+
+                                # For MP4/M4A (covr) and other formats, extract from data attribute
+                                if hasattr(image_tag, "data"):
+                                    image_data = image_tag.data
+                                # Direct bytes
+                                elif isinstance(image_tag, bytes):
+                                    image_data = image_tag
+
+                                if image_data:
+                                    break
+                            except Exception as e:
+                                logger.warning(f"Failed to extract {field} tag: {e}")
+                                continue
+
+            if image_data:
+                logger.info("Successfully extracted embedded image from audio file")
+                return image_data
+            else:
+                logger.debug("No embedded image found in audio file")
+                return None
+
+        except Exception as e:
+            logger.warning(f"Failed to extract embedded image: {e}")
+            return None
 
     @monitor_performance("simple_id3_tags")
     def extract_id3_tags(
