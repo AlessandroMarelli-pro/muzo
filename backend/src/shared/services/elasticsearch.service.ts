@@ -62,6 +62,10 @@ export class ElasticsearchService implements OnModuleInit {
         ai_subgenre_confidence: { type: 'float' },
         ai_description: { type: 'text', analyzer: 'standard' },
         ai_tags: { type: 'keyword', index: true },
+        vocals_desc: { type: 'text', analyzer: 'standard' },
+        atmosphere_desc: { type: 'keyword', index: true },
+        context_background: { type: 'text', analyzer: 'standard' },
+        context_impact: { type: 'text', analyzer: 'standard' },
 
         // User Modifications
         user_title: {

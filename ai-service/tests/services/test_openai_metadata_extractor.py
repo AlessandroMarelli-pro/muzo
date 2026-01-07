@@ -9,7 +9,6 @@ import json
 from unittest.mock import MagicMock, Mock, patch
 
 import pytest
-
 from src.services.openai_metadata_extractor import OpenAIMetadataExtractor
 
 
@@ -31,7 +30,7 @@ class TestOpenAIMetadataExtractor:
                             "year": 1985,
                             "country": "UK",
                             "label": "Unknown",
-                            "format": "Vinyl, 12\"",
+                            "format": 'Vinyl, 12"',
                             "genre": ["Electronic", "Disco", "Funk"],
                             "style": ["Electro", "Boogie", "Dance"],
                             "duration": "7:15",
@@ -77,7 +76,7 @@ class TestOpenAIMetadataExtractor:
         assert result["year"] == "1985"  # Should be converted to string
         assert result["country"] == "UK"
         assert result["label"] == "Unknown"
-        assert result["format"] == "Vinyl, 12\""
+        assert result["format"] == 'Vinyl, 12"'
         assert isinstance(result["genre"], list)
         assert len(result["genre"]) == 3
         assert "Electronic" in result["genre"]
@@ -444,4 +443,3 @@ class TestOpenAIMetadataExtractor:
         assert "You are a music metadata agent" in system_message
         assert "MUST return ONLY a JSON object" in system_message
         assert "No markdown, no explanations" in system_message
-

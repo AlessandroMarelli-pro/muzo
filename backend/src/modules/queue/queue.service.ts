@@ -20,10 +20,10 @@ export interface AudioScanJobData {
   totalFiles?: number;
   skipClassification?: boolean;
   skipImageSearch?: boolean;
-  skipOpenAIMetadata?: boolean;
+  skipAIMetadata?: boolean;
 }
 
-export interface OpenAIMetadataJobData {
+export interface AIMetadataJobData {
   trackId: string;
   filePath: string;
   fileName: string;
@@ -58,7 +58,7 @@ export class QueueService {
     private readonly libraryScanQueue: Queue<LibraryScanJobData>,
     @InjectQueue('audio-scan')
     private readonly audioScanQueue: Queue<
-      AudioScanJobData | EndScanLibraryJobData | OpenAIMetadataJobData
+      AudioScanJobData | EndScanLibraryJobData | AIMetadataJobData
     >,
     @InjectQueue('bpm-update')
     private readonly bpmUpdateQueue: Queue<BPMUpdateJobData>,
@@ -115,7 +115,7 @@ export class QueueService {
     lastModified: Date,
     skipClassification: boolean = false,
     skipImageSearch: boolean = false,
-    skipOpenAIMetadata: boolean = false,
+    skipAIMetadata: boolean = false,
   ): Promise<void> {
     try {
       const jobData: AudioScanJobData = {
@@ -126,7 +126,7 @@ export class QueueService {
         lastModified,
         skipClassification,
         skipImageSearch,
-        skipOpenAIMetadata,
+        skipAIMetadata,
       };
 
       await this.audioScanQueue.add('scan-audio', jobData, {
@@ -449,23 +449,23 @@ export class QueueService {
   }
 
   /**
-   * Schedule OpenAI metadata extraction job for a single track
+   * Schedule AI metadata extraction job for a single track
    */
-  async scheduleOpenAIMetadataExtraction(
+  async scheduleAIMetadataExtraction(
     trackId: string,
     filePath: string,
     fileName: string,
     libraryId: string,
   ): Promise<void> {
     try {
-      const jobData: OpenAIMetadataJobData = {
+      const jobData: AIMetadataJobData = {
         trackId,
         filePath,
         fileName,
         libraryId,
       };
 
-      await this.audioScanQueue.add('extract-openai-metadata', jobData, {
+      await this.audioScanQueue.add('extract-ai-metadata', jobData, {
         attempts: this.queueConfig.queues.audioScan.attempts,
         backoff: {
           type: this.queueConfig.queues.audioScan.backoff.type as any,
@@ -475,10 +475,10 @@ export class QueueService {
         removeOnFail: 1,
       });
 
-      this.logger.log(`Scheduled OpenAI metadata extraction for: ${fileName}`);
+      this.logger.log(`Scheduled AI metadata extraction for: ${fileName}`);
     } catch (error) {
       this.logger.error(
-        `Failed to schedule OpenAI metadata extraction for ${fileName}:`,
+        `Failed to schedule AI metadata extraction for ${fileName}:`,
         error,
       );
       throw error;
@@ -486,9 +486,9 @@ export class QueueService {
   }
 
   /**
-   * Schedule OpenAI metadata extraction for multiple tracks in batch
+   * Schedule AI metadata extraction for multiple tracks in batch
    */
-  async scheduleBatchOpenAIMetadataExtraction(
+  async scheduleBatchAIMetadataExtraction(
     tracks: Array<{
       trackId: string;
       filePath: string;
@@ -498,7 +498,7 @@ export class QueueService {
   ): Promise<void> {
     try {
       const jobs = tracks.map((track, index) => ({
-        name: 'extract-openai-metadata',
+        name: 'extract-ai-metadata',
         data: {
           trackId: track.trackId,
           filePath: track.filePath,
@@ -506,7 +506,7 @@ export class QueueService {
           libraryId: track.libraryId,
           index,
           totalFiles: tracks.length,
-        } as OpenAIMetadataJobData,
+        } as AIMetadataJobData,
         opts: {
           attempts: this.queueConfig.queues.audioScan.attempts,
           backoff: {
@@ -521,11 +521,11 @@ export class QueueService {
       await this.audioScanQueue.addBulk(jobs);
 
       this.logger.log(
-        `Scheduled batch OpenAI metadata extraction for ${tracks.length} tracks`,
+        `Scheduled batch AI metadata extraction for ${tracks.length} tracks`,
       );
     } catch (error) {
       this.logger.error(
-        `Failed to schedule batch OpenAI metadata extraction:`,
+        `Failed to schedule batch AI metadata extraction:`,
         error,
       );
       throw error;

@@ -6,14 +6,13 @@ using soundfile for fast loading and avoiding redundant operations.
 """
 
 import gc
-import json
 import os
 import time
 from typing import Any, Dict, Optional
 
 from loguru import logger
 
-from src.services.openai_metadata_extractor import OpenAIMetadataExtractor
+from src.services.base_metadata_extractor import create_metadata_extractor
 from src.services.simple_audio_loader import SimpleAudioLoader
 from src.services.simple_feature_extractor import SimpleFeatureExtractor
 from src.services.simple_filename_parser import SimpleFilenameParser
@@ -42,18 +41,62 @@ class SimpleAnalysisService:
         self.feature_extractor = SimpleFeatureExtractor()
         self.fingerprint_generator = SimpleFingerprintGenerator()
 
-        # Initialize OpenAI metadata extractor (optional, will be None if API key not set)
+        # Initialize AI metadata extractor (default: GEMINI, fallback to OPENAI)
+        # Provider can be set via AI_METADATA_PROVIDER env var (GEMINI or OPENAI)
+        provider = os.getenv("AI_METADATA_PROVIDER", "GEMINI").upper()
+        self.ai_extractor = None
+
         try:
-            self.openai_extractor = OpenAIMetadataExtractor()
-            if self.openai_extractor._is_available():
-                logger.info("OpenAI metadata extractor initialized and available")
+            # Try to create extractor with specified provider
+            self.ai_extractor = create_metadata_extractor(provider=provider)
+            if self.ai_extractor and self.ai_extractor._is_available():
+                logger.info("%s metadata extractor initialized and available", provider)
             else:
-                logger.info(
-                    "OpenAI metadata extractor initialized but not available (no API key)"
-                )
+                # Fallback to OPENAI if GEMINI not available and GEMINI was requested
+                if provider == "GEMINI":
+                    logger.info(
+                        "GEMINI metadata extractor not available, trying OPENAI as fallback"
+                    )
+                    try:
+                        self.ai_extractor = create_metadata_extractor(provider="OPENAI")
+                        if self.ai_extractor and self.ai_extractor._is_available():
+                            logger.info(
+                                "OPENAI metadata extractor initialized as fallback"
+                            )
+                        else:
+                            logger.info(
+                                "AI metadata extractor initialized but not available (no API key)"
+                            )
+                    except Exception as fallback_error:
+                        logger.warning(
+                            "Failed to initialize OPENAI fallback: %s", fallback_error
+                        )
+                        self.ai_extractor = None
+                else:
+                    logger.info(
+                        "%s metadata extractor initialized but not available (no API key)",
+                        provider,
+                    )
         except Exception as e:
-            logger.warning(f"Failed to initialize OpenAI metadata extractor: {e}")
-            self.openai_extractor = None
+            logger.warning(
+                "Failed to initialize %s metadata extractor: %s", provider, e
+            )
+            # Try fallback to OPENAI if GEMINI failed
+            if provider == "GEMINI":
+                try:
+                    logger.info("Attempting OPENAI as fallback")
+                    self.ai_extractor = create_metadata_extractor(provider="OPENAI")
+                    if self.ai_extractor and self.ai_extractor._is_available():
+                        logger.info("OPENAI metadata extractor initialized as fallback")
+                    else:
+                        self.ai_extractor = None
+                except Exception as fallback_error:
+                    logger.warning(
+                        "Failed to initialize OPENAI fallback: %s", fallback_error
+                    )
+                    self.ai_extractor = None
+            else:
+                self.ai_extractor = None
 
         # Performance monitoring thresholds
         self.performance_thresholds = {
@@ -71,12 +114,12 @@ class SimpleAnalysisService:
     def parse_filename_for_metadata(self, filename: str) -> Dict[str, str]:
         return self.filename_parser.parse_filename_for_metadata(filename)
 
-    @monitor_performance("openai_metadata_extraction")
-    def extract_metadata_with_openai(
+    @monitor_performance("ai_metadata_extraction")
+    def extract_metadata_with_ai(
         self, filename: str, file_path: Optional[str] = None
     ) -> Dict[str, Any]:
         """
-        Extract comprehensive metadata from filename using OpenAI.
+        Extract comprehensive metadata from filename using AI (default: GEMINI, fallback: OPENAI).
         If file_path is provided, ID3 tags will be extracted and used for more accurate results.
 
         Args:
@@ -84,14 +127,12 @@ class SimpleAnalysisService:
             file_path: Optional path to the audio file for ID3 tag extraction
 
         Returns:
-            Dictionary containing OpenAI-extracted metadata, or empty dict if unavailable
+            Dictionary containing AI-extracted metadata, or empty dict if unavailable
         """
-        if self.openai_extractor and self.openai_extractor._is_available():
-            return self.openai_extractor.extract_metadata_from_filename(
-                filename, file_path
-            )
+        if self.ai_extractor and self.ai_extractor._is_available():
+            return self.ai_extractor.extract_metadata_from_filename(filename, file_path)
         else:
-            logger.debug("OpenAI metadata extraction not available, skipping")
+            logger.debug("AI metadata extraction not available, skipping")
             return {}
 
     @monitor_performance("audio_conversion")
@@ -288,7 +329,7 @@ class SimpleAnalysisService:
         sample_duration: float = 10.0,
         original_filename: str = "",
         skip_intro: float = 30.0,
-        skip_openai_metadata: bool = False,
+        skip_ai_metadata: bool = False,
     ) -> Dict[str, Any]:
         # Track if we converted an M4A file so we can clean it up
         converted_wav_path = None
@@ -330,17 +371,15 @@ class SimpleAnalysisService:
             id3_tags = self.extract_id3_tags(file_path, original_filename)
 
             # Extract metadata using OpenAI if available and not skipped
-            openai_metadata = {}
-            if original_filename and not skip_openai_metadata:
-                openai_metadata = self.extract_metadata_with_openai(
+            ai_metadata = {}
+            if original_filename and not skip_ai_metadata:
+                ai_metadata = self.extract_metadata_with_ai(
                     original_filename, file_path
                 )
-                if openai_metadata:
-                    logger.info("OpenAI metadata extracted successfully")
-            elif skip_openai_metadata:
-                logger.debug(
-                    "Skipping OpenAI metadata extraction (skip_openai_metadata=True)"
-                )
+                if ai_metadata:
+                    logger.info("AI metadata extracted successfully")
+            elif skip_ai_metadata:
+                logger.debug("Skipping AI metadata extraction (skip_ai_metadata=True)")
 
             # Check performance bottlenecks after analysis
             # performance_status = self.check_performance_bottlenecks()
@@ -365,8 +404,8 @@ class SimpleAnalysisService:
             }
 
             # Add OpenAI metadata if available
-            if openai_metadata:
-                analysis_result["openai_metadata"] = openai_metadata
+            if ai_metadata:
+                analysis_result["ai_metadata"] = ai_metadata
 
             logger.info(
                 f"Simple audio analysis completed in {analysis_result['processing_time']:.3f}s"

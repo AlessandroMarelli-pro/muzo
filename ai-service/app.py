@@ -153,7 +153,7 @@ def register_resources(api, app):
     logger.info("✅ BPM detection endpoints registered")
 
     # OpenAI metadata extraction endpoints (always enabled if API key is set)
-    api.add_resource(OpenAIMetadataResource, "/audio/metadata/openai")
+    api.add_resource(OpenAIMetadataResource, "/audio/metadata/ai")
     logger.info("✅ OpenAI metadata extraction endpoints registered")
 
     # Hierarchical classification endpoints (if enabled and imported)
@@ -292,7 +292,7 @@ def create_app_with_routes(config_class=Config):
         # Add OpenAI metadata extraction endpoints (always available)
         endpoints.update(
             {
-                "audio_metadata_openai": "/api/v1/audio/metadata/openai",
+                "audio_metadata_ai": "/api/v1/audio/metadata/ai",
             }
         )
 

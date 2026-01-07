@@ -6,7 +6,7 @@ import { isDate } from 'class-validator';
 import * as fs from 'fs';
 import * as path from 'path';
 import {
-  OpenAIMetadataResponse,
+  AIMetadataResponse,
   SimpleAudioAnalysisResponse,
 } from 'src/modules/ai-integration/ai-service-simple.types';
 import { ImageService } from 'src/modules/image/image.service';
@@ -15,9 +15,9 @@ import { AiIntegrationService } from '../../../modules/ai-integration/ai-integra
 import { PrismaService } from '../../../shared/services/prisma.service';
 import { ProgressTrackingService } from '../progress-tracking.service';
 import {
+  AIMetadataJobData,
   AudioScanJobData,
   EndScanLibraryJobData,
-  OpenAIMetadataJobData,
 } from '../queue.service';
 
 @Processor('audio-scan')
@@ -39,14 +39,12 @@ export class AudioScanProcessor extends WorkerHost {
   }
 
   async process(
-    job: Job<AudioScanJobData | EndScanLibraryJobData | OpenAIMetadataJobData>,
+    job: Job<AudioScanJobData | EndScanLibraryJobData | AIMetadataJobData>,
   ): Promise<void> {
     if (job.name === 'end-scan-library') {
       await this.processEndScanLibrary(job as Job<EndScanLibraryJobData>);
-    } else if (job.name === 'extract-openai-metadata') {
-      await this.processOpenAIMetadataExtraction(
-        job as Job<OpenAIMetadataJobData>,
-      );
+    } else if (job.name === 'extract-ai-metadata') {
+      await this.processAIMetadataExtraction(job as Job<AIMetadataJobData>);
     } else {
       await this.processAudioScan(job as Job<AudioScanJobData>);
     }
@@ -66,7 +64,7 @@ export class AudioScanProcessor extends WorkerHost {
       totalFiles,
       skipClassification,
       skipImageSearch,
-      skipOpenAIMetadata,
+      skipAIMetadata,
     } = job.data;
 
     this.logger.log(
@@ -119,10 +117,10 @@ export class AudioScanProcessor extends WorkerHost {
           skipClassification,
           skipImageSearch,
         );
-      if (analysisResult.openai_metadata) {
-        await this.updateTrackWithOpenAIMetadata(
+      if (analysisResult.ai_metadata) {
+        await this.updateTrackWithAIMetadata(
           track.id,
-          analysisResult.openai_metadata,
+          analysisResult.ai_metadata,
         );
       }
       if (
@@ -636,16 +634,16 @@ export class AudioScanProcessor extends WorkerHost {
   }
 
   /**
-   * Process OpenAI metadata extraction job
+   * Process AI metadata extraction job
    */
-  private async processOpenAIMetadataExtraction(
-    job: Job<OpenAIMetadataJobData>,
+  private async processAIMetadataExtraction(
+    job: Job<AIMetadataJobData>,
   ): Promise<void> {
     const { trackId, filePath, fileName, libraryId, index, totalFiles } =
       job.data;
 
     this.logger.log(
-      `Starting OpenAI metadata extraction for: ${fileName} (${index !== undefined ? `${index + 1}/${totalFiles}` : 'single'})`,
+      `Starting AI metadata extraction for: ${fileName} (${index !== undefined ? `${index + 1}/${totalFiles}` : 'single'})`,
     );
 
     try {
@@ -658,27 +656,21 @@ export class AudioScanProcessor extends WorkerHost {
         throw new Error(`Track not found: ${trackId}`);
       }
 
-      // Extract metadata using OpenAI (pass both filename and file_path for ID3 tag extraction)
-      const openaiMetadata =
-        await this.aiIntegrationService.extractMetadataWithOpenAI(
-          fileName,
-          filePath,
-        );
-      // Update track with OpenAI metadata
-      await this.updateTrackWithOpenAIMetadata(
-        track.id,
-        openaiMetadata.metadata,
+      // Extract metadata using AI (pass both filename and file_path for ID3 tag extraction)
+      const aiMetadata = await this.aiIntegrationService.extractMetadataWithAI(
+        fileName,
+        filePath,
       );
+      // Update track with AI metadata
+      await this.updateTrackWithAIMetadata(track.id, aiMetadata.metadata);
 
-      this.logger.log(
-        `Successfully extracted OpenAI metadata for: ${fileName}`,
-      );
+      this.logger.log(`Successfully extracted AI metadata for: ${fileName}`);
 
       // Update job progress
       await job.updateProgress(100);
     } catch (error) {
       this.logger.error(
-        `OpenAI metadata extraction failed for ${fileName}:`,
+        `AI metadata extraction failed for ${fileName}:`,
         error.message,
       );
 
@@ -692,7 +684,7 @@ export class AudioScanProcessor extends WorkerHost {
           await this.prismaService.musicTrack.update({
             where: { id: track.id },
             data: {
-              analysisError: `OpenAI metadata extraction failed: ${error.message}`,
+              analysisError: `AI metadata extraction failed: ${error.message}`,
             },
           });
         }
@@ -708,13 +700,13 @@ export class AudioScanProcessor extends WorkerHost {
   }
 
   /**
-   * Update track with OpenAI metadata
+   * Update track with AI metadata
    */
-  private async updateTrackWithOpenAIMetadata(
+  private async updateTrackWithAIMetadata(
     trackId: string,
-    openaiMetadata: OpenAIMetadataResponse['metadata'],
+    aiMetadata: AIMetadataResponse['metadata'],
   ): Promise<void> {
-    const metadata = openaiMetadata;
+    const metadata = aiMetadata;
     const updateData: any = {};
 
     // Update AI-generated metadata fields
@@ -746,6 +738,31 @@ export class AudioScanProcessor extends WorkerHost {
     // Store additional metadata in userTags as JSON (if tags exist)
     if (metadata.tags && metadata.tags.length > 0) {
       updateData.aiTags = JSON.stringify(metadata.tags);
+    }
+
+    // Store audioFeatures data
+    if (metadata.audioFeatures) {
+      if (metadata.audioFeatures.vocals) {
+        updateData.vocalsDesc = metadata.audioFeatures.vocals;
+      }
+      if (
+        metadata.audioFeatures.atmosphere &&
+        metadata.audioFeatures.atmosphere.length > 0
+      ) {
+        updateData.atmosphereDesc = JSON.stringify(
+          metadata.audioFeatures.atmosphere,
+        );
+      }
+    }
+
+    // Store context data
+    if (metadata.context) {
+      if (metadata.context.background) {
+        updateData.contextBackground = metadata.context.background;
+      }
+      if (metadata.context.impact) {
+        updateData.contextImpact = metadata.context.impact;
+      }
     }
 
     // Update track
@@ -866,7 +883,7 @@ export class AudioScanProcessor extends WorkerHost {
    * Handle job failure
    */
   async onFailed(
-    job: Job<AudioScanJobData | EndScanLibraryJobData | OpenAIMetadataJobData>,
+    job: Job<AudioScanJobData | EndScanLibraryJobData | AIMetadataJobData>,
     error: Error,
   ): Promise<void> {
     if (job.name === 'end-scan-library') {
@@ -888,7 +905,7 @@ export class AudioScanProcessor extends WorkerHost {
    * Handle job completion
    */
   async onCompleted(
-    job: Job<AudioScanJobData | EndScanLibraryJobData | OpenAIMetadataJobData>,
+    job: Job<AudioScanJobData | EndScanLibraryJobData | AIMetadataJobData>,
   ): Promise<void> {
     if (job.name === 'end-scan-library') {
       const data = job.data as EndScanLibraryJobData;

@@ -243,7 +243,7 @@ export interface SimpleAudioAnalysisResponse {
   file_info: SimpleFileInfo;
   audio_technical: SimpleAudioTechnical;
   id3_tags: SimpleId3Tags;
-  openai_metadata: OpenAIMetadataResponse['metadata'];
+  ai_metadata: AIMetadataResponse['metadata'];
 }
 
 // Error Response
@@ -252,8 +252,8 @@ export interface SimpleAiErrorResponse {
   message: string;
 }
 
-// OpenAI Metadata Response
-export interface OpenAIMetadataResponse {
+// AI Metadata Response
+export interface AIMetadataResponse {
   status: 'success' | 'partial' | 'error';
   message: string;
   filename: string;
@@ -264,20 +264,19 @@ export interface OpenAIMetadataResponse {
     year?: string | number | null;
     country?: string | null;
     label?: string | null;
-    format?: string | null;
     genre: string[];
     style: string[];
-    duration?: string | null;
-    credits?: {
-      producer?: string | null;
-      writers: string[];
+    audioFeatures?: {
+      bpm?: number | null;
+      key?: string | null;
       vocals?: string | null;
+      atmosphere?: string[] | null;
+    } | null;
+    context?: {
+      background?: string | null;
+      impact?: string | null;
     } | null;
     description?: string | null;
-    availability?: {
-      streaming: string[];
-      physical: string[];
-    } | null;
     tags: string[];
   };
   processingTime?: number;

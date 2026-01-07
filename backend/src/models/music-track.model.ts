@@ -176,6 +176,10 @@ export interface ElasticsearchMusicTrackDocument {
   ai_subgenre_confidence?: number;
   ai_description?: string;
   ai_tags?: string[];
+  vocals_desc?: string;
+  atmosphere_desc?: string[];
+  context_background?: string;
+  context_impact?: string;
 
   // User Modifications
   user_title?: string;

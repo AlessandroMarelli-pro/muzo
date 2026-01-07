@@ -74,6 +74,10 @@ model MusicTrack {
   aiSubgenreConfidence   Float?
   aiDescription         String?
   aiTags                String?
+  vocalsDesc            String?  // From audioFeatures.vocals
+  atmosphereDesc        String?  // JSON array as string from audioFeatures.atmosphere
+  contextBackground     String?  // From context.background
+  contextImpact         String?  // From context.impact
  
 
   // User Modifications

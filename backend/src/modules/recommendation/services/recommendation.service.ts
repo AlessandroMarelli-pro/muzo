@@ -1566,6 +1566,10 @@ export class RecommendationService {
       ai_subgenre_confidence: track.aiSubgenreConfidence,
       ai_description: track.aiDescription,
       ai_tags: aiTags,
+      vocals_desc: track.vocalsDesc,
+      atmosphere_desc: safeJsonParse(track.atmosphereDesc, []),
+      context_background: track.contextBackground,
+      context_impact: track.contextImpact,
 
       // User Modifications
       user_title: track.userTitle,

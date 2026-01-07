@@ -338,7 +338,7 @@ export class QueueController {
         };
       }
       //await this.queueService.scheduleScanForMissingData(filteredTracks, false);
-      await this.queueService.scheduleBatchOpenAIMetadataExtraction(
+      await this.queueService.scheduleBatchAIMetadataExtraction(
         filteredTracks.map((track) => ({
           trackId: track.id,
           filePath: track.filePath,

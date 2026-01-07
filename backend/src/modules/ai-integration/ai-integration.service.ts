@@ -9,7 +9,7 @@ import * as path from 'path';
 import { PrismaService } from 'src/shared/services/prisma.service';
 import { AiServiceConfig } from '../../config';
 import {
-  OpenAIMetadataResponse,
+  AIMetadataResponse,
   SimpleAudioAnalysisResponse,
 } from './ai-service-simple.types';
 import { AudioFingerprintResponse } from './ai-service.types';
@@ -678,11 +678,15 @@ export class AiIntegrationService {
       this.logger.log(`Analyzing audio file: ${audioFilePath}`);
       const simpleResponseData =
         simpleResponse.data as SimpleAudioAnalysisResponse;
-      const hasClassificationFromOpenAIMetadata =
-        !!simpleResponseData.openai_metadata?.genre &&
-        !!simpleResponseData.openai_metadata?.style;
+      console.log(
+        'simpleResponseData',
+        JSON.stringify(simpleResponseData.ai_metadata, null, 2),
+      );
+      const hasClassificationFromAIMetadata =
+        !!simpleResponseData.ai_metadata?.genre &&
+        !!simpleResponseData.ai_metadata?.style;
       const classificationResponse =
-        !skipClassification && !hasClassificationFromOpenAIMetadata
+        !skipClassification && !hasClassificationFromAIMetadata
           ? await this.httpClient.post(
               `${hierarchicalInstance.url}/api/v1/audio/analyze/classification`,
               formData,
@@ -1038,17 +1042,17 @@ export class AiIntegrationService {
   }
 
   /**
-   * Extract metadata from filename using OpenAI
+   * Extract metadata from filename using AI
    * If filePath is provided, ID3 tags will be extracted and used for more accurate results.
    *
    * @param filenameOrPath - Audio filename (with or without extension) or full file path
    * @param filePath - Optional full path to the audio file for ID3 tag extraction
-   * @returns Promise<OpenAIMetadataResponse> - OpenAI metadata extraction result
+   * @returns Promise<AIMetadataResponse> - AI metadata extraction result
    */
-  async extractMetadataWithOpenAI(
+  async extractMetadataWithAI(
     filenameOrPath: string,
     filePath?: string,
-  ): Promise<OpenAIMetadataResponse> {
+  ): Promise<AIMetadataResponse> {
     try {
       // Extract filename from path if filePath is provided, otherwise use filenameOrPath as filename
       const filename = filePath
@@ -1056,7 +1060,7 @@ export class AiIntegrationService {
         : filenameOrPath;
 
       this.logger.log(
-        `Extracting metadata with OpenAI for filename: ${filename}${
+        `Extracting metadata with AI for filename: ${filename}${
           filePath ? ` (with file path: ${filePath})` : ''
         }`,
       );
@@ -1066,7 +1070,7 @@ export class AiIntegrationService {
         throw new HttpException('Filename is required', HttpStatus.BAD_REQUEST);
       }
 
-      // Get assigned simple server (OpenAI endpoint is on simple service)
+      // Get assigned simple server (AI endpoint is on simple service)
       const simpleInstance = this.getAssignedServer('simple');
 
       const startTime = Date.now();
@@ -1087,9 +1091,9 @@ export class AiIntegrationService {
         payload.file_path = filenameOrPath;
       }
 
-      // Make request to OpenAI metadata extraction endpoint
+      // Make request to AI metadata extraction endpoint
       const response = await this.httpClient.post(
-        `${simpleInstance.url}/api/v1/audio/metadata/openai`,
+        `${simpleInstance.url}/api/v1/audio/metadata/ai`,
         payload,
         {
           headers: {
@@ -1102,7 +1106,7 @@ export class AiIntegrationService {
       const processingTime = Date.now() - startTime;
 
       this.logger.log(
-        `OpenAI metadata extraction completed for ${filename} in ${processingTime}ms`,
+        `AI metadata extraction completed for ${filename} in ${processingTime}ms`,
       );
 
       return {
@@ -1112,7 +1116,7 @@ export class AiIntegrationService {
       };
     } catch (error) {
       this.logger.error(
-        `OpenAI metadata extraction failed for ${filenameOrPath}:`,
+        `AI metadata extraction failed for ${filenameOrPath}:`,
         error.message,
       );
 
@@ -1122,13 +1126,13 @@ export class AiIntegrationService {
         const errorMessage = error.response.data?.message || error.message;
 
         throw new HttpException(
-          `OpenAI metadata extraction failed: ${errorMessage}`,
+          `AI metadata extraction failed: ${errorMessage}`,
           statusCode,
         );
       } else if (error.code === 'ECONNREFUSED' || error.code === 'ETIMEDOUT') {
         // Connection issues
         throw new HttpException(
-          'AI service unavailable for OpenAI metadata extraction',
+          'AI service unavailable for AI metadata extraction',
           HttpStatus.SERVICE_UNAVAILABLE,
         );
       } else if (error instanceof HttpException) {
@@ -1137,7 +1141,7 @@ export class AiIntegrationService {
       } else {
         // Other errors
         throw new HttpException(
-          `OpenAI metadata extraction failed: ${error.message}`,
+          `AI metadata extraction failed: ${error.message}`,
           HttpStatus.INTERNAL_SERVER_ERROR,
         );
       }
@@ -1168,7 +1172,7 @@ export class AiIntegrationService {
           subgenreClassification: true,
           batchProcessing: true,
           connectionPooling: true,
-          openaiMetadataExtraction: true,
+          aiMetadataExtraction: true,
         },
         timestamp: new Date().toISOString(),
       };
