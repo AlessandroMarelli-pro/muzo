@@ -197,7 +197,6 @@ class SimpleAnalysisResource(Resource):
                     )
                     _refresh_thread_pool()
 
-                print(json.dumps(result, indent=4))
                 return result, 200
 
             finally:

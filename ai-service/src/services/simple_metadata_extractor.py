@@ -174,6 +174,67 @@ class SimpleMetadataExtractor:
             pass
         return None
 
+    def _parse_flac_picture_block(self, data: bytes) -> Optional[bytes]:
+        """
+        Parse FLAC/Vorbis picture block format to extract image data.
+
+        Format: type(4) + mime_len(4) + mime + desc_len(4) + desc +
+                width(4) + height(4) + depth(4) + colors(4) + data_len(4) + data
+
+        Args:
+            data: Binary picture block data
+
+        Returns:
+            Image data bytes or None if parsing fails
+        """
+        try:
+            if len(data) < 32:
+                return None
+
+            pos = 0
+            # Skip picture type (4 bytes)
+            pos += 4
+
+            # Read MIME type length
+            if len(data) < pos + 4:
+                return None
+            mime_len = int.from_bytes(data[pos : pos + 4], "big")
+            pos += 4
+
+            # Skip MIME type
+            if len(data) < pos + mime_len:
+                return None
+            pos += mime_len
+
+            # Read description length
+            if len(data) < pos + 4:
+                return None
+            desc_len = int.from_bytes(data[pos : pos + 4], "big")
+            pos += 4
+
+            # Skip description
+            if len(data) < pos + desc_len:
+                return None
+            pos += desc_len
+
+            # Skip width, height, depth, colors (16 bytes total)
+            pos += 16
+
+            # Read image data length
+            if len(data) < pos + 4:
+                return None
+            data_len = int.from_bytes(data[pos : pos + 4], "big")
+            pos += 4
+
+            # Extract image data
+            if len(data) < pos + data_len:
+                return None
+            return data[pos : pos + data_len]
+
+        except Exception as e:
+            logger.warning(f"Failed to parse FLAC picture block: {e}")
+            return None
+
     def extract_embedded_image(self, file_path: str) -> Optional[bytes]:
         """
         Extract embedded image/cover art from audio file.
@@ -249,6 +310,7 @@ class SimpleMetadataExtractor:
                         "PIC",
                         "covr",
                         "METADATA_BLOCK_PICTURE",
+                        "metadata_block_picture",
                         "TRAKTOR4",
                     ]
                     for field in binary_fields:
@@ -259,8 +321,35 @@ class SimpleMetadataExtractor:
                                 if isinstance(image_tag, list) and len(image_tag) > 0:
                                     image_tag = image_tag[0]
 
+                                # Handle METADATA_BLOCK_PICTURE which is base64-encoded
+                                if field in [
+                                    "METADATA_BLOCK_PICTURE",
+                                    "metadata_block_picture",
+                                ]:
+                                    if isinstance(image_tag, str):
+                                        # Decode base64 string and parse picture block
+                                        try:
+                                            decoded_data = base64.b64decode(image_tag)
+                                            image_data = self._parse_flac_picture_block(
+                                                decoded_data
+                                            )
+                                            if image_data:
+                                                break
+                                        except Exception as decode_error:
+                                            logger.warning(
+                                                f"Failed to decode base64 METADATA_BLOCK_PICTURE: {decode_error}"
+                                            )
+                                            continue
+                                    elif isinstance(image_tag, bytes):
+                                        # Already decoded, parse as picture block
+                                        image_data = self._parse_flac_picture_block(
+                                            image_tag
+                                        )
+                                        if image_data:
+                                            break
+
                                 # For MP4/M4A (covr) and other formats, extract from data attribute
-                                if hasattr(image_tag, "data"):
+                                elif hasattr(image_tag, "data"):
                                     image_data = image_tag.data
                                 # Direct bytes
                                 elif isinstance(image_tag, bytes):
@@ -327,6 +416,8 @@ class SimpleMetadataExtractor:
                     "comment": ["COMM", "COMMENT", "\xa9cmt", "comment"],
                     "composer": ["TCOM", "COMPOSER", "\xa9wrt", "composer"],
                     "copyright": ["TCOP", "COPYRIGHT", "copyright"],
+                    "description": ["COMM", "DESCRIPTION", "description"],
+                    "synopsis": ["COMM", "SYNOPSIS", "synopsis"],
                 }
                 id3_tags = {}
                 if audio_file is not None:

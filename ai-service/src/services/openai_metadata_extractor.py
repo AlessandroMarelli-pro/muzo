@@ -306,7 +306,7 @@ class OpenAIMetadataExtractor:
 
             # Extract ID3 tags if file_path is provided
             id3_tags = None
-            if file_path and os.path.exists(file_path):
+            if file_path:
                 try:
                     id3_result = self.id3_extractor.extract_id3_tags(
                         file_path, filename_without_ext
@@ -640,9 +640,15 @@ Return only the JSON object, no markdown, no explanations."""
         Returns:
             Formatted prompt string with filename and ID3 tags if available
         """
-        base_message = (
-            f'''Extract and enrich music metadata from this filename: "{filename}"'''
-        )
+        # Use "artist - title" format if both are available in id3_tags
+        display_filename = filename
+        if id3_tags:
+            artist = id3_tags.get("artist", "").strip()
+            title = id3_tags.get("title", "").strip()
+            if artist and title:
+                display_filename = f"{artist} - {title}"
+
+        base_message = f'''Extract and enrich music metadata from this filename: "{display_filename}"'''
 
         # Add ID3 tag information if available
         if id3_tags:
@@ -661,7 +667,8 @@ Return only the JSON object, no markdown, no explanations."""
                 id3_info_parts.append(f"Genre: {id3_tags.get('genre')}")
             if id3_tags.get("bpm"):
                 id3_info_parts.append(f"BPM: {id3_tags.get('bpm')}")
-
+            if id3_tags.get("description"):
+                id3_info_parts.append(f"Description: {id3_tags.get('description')}")
             if id3_info_parts:
                 # More concise ID3 tag format
                 id3_section = "\n\nID3 tags: " + " | ".join(id3_info_parts)

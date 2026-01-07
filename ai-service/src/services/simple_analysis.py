@@ -332,7 +332,9 @@ class SimpleAnalysisService:
             # Extract metadata using OpenAI if available and not skipped
             openai_metadata = {}
             if original_filename and not skip_openai_metadata:
-                openai_metadata = self.extract_metadata_with_openai(original_filename)
+                openai_metadata = self.extract_metadata_with_openai(
+                    original_filename, file_path
+                )
                 if openai_metadata:
                     logger.info("OpenAI metadata extracted successfully")
             elif skip_openai_metadata:
