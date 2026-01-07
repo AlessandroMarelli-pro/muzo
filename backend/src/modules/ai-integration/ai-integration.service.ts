@@ -678,10 +678,7 @@ export class AiIntegrationService {
       this.logger.log(`Analyzing audio file: ${audioFilePath}`);
       const simpleResponseData =
         simpleResponse.data as SimpleAudioAnalysisResponse;
-      console.log(
-        'simpleResponseData',
-        JSON.stringify(simpleResponseData.ai_metadata, null, 2),
-      );
+
       const hasClassificationFromAIMetadata =
         !!simpleResponseData.ai_metadata?.genre &&
         !!simpleResponseData.ai_metadata?.style;

@@ -117,12 +117,7 @@ export class AudioScanProcessor extends WorkerHost {
           skipClassification,
           skipImageSearch,
         );
-      if (analysisResult.ai_metadata) {
-        await this.updateTrackWithAIMetadata(
-          track.id,
-          analysisResult.ai_metadata,
-        );
-      }
+
       if (
         !analysisResult?.id3_tags?.artist &&
         !analysisResult?.id3_tags?.title
@@ -149,7 +144,12 @@ export class AudioScanProcessor extends WorkerHost {
       );
       // Update track with analysis results
       await this.updateTrackWithAnalysis(track.id, analysisResult);
-
+      if (analysisResult.ai_metadata) {
+        await this.updateTrackWithAIMetadata(
+          track.id,
+          analysisResult.ai_metadata,
+        );
+      }
       // Update analysis status to COMPLETED
       await this.prismaService.musicTrack.update({
         where: { id: track.id },
@@ -708,7 +708,7 @@ export class AudioScanProcessor extends WorkerHost {
   ): Promise<void> {
     const metadata = aiMetadata;
     const updateData: any = {};
-
+    console.log('aiMetadata', JSON.stringify(aiMetadata, null, 2));
     // Update AI-generated metadata fields
     if (metadata.artist) {
       updateData.aiArtist = metadata.artist;
@@ -766,10 +766,11 @@ export class AudioScanProcessor extends WorkerHost {
     }
 
     // Update track
-    await this.prismaService.musicTrack.update({
+    const updatedTrack = await this.prismaService.musicTrack.update({
       where: { id: trackId },
       data: updateData,
     });
+    console.log('updatedTrack', JSON.stringify(updatedTrack, null, 2));
     // Update genres and subgenres
     if (metadata.genre && metadata.genre.length > 0) {
       await this.updateTrackGenres(trackId, metadata.genre);
