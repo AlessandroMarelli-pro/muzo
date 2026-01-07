@@ -89,11 +89,15 @@ export function DetailedTrackCard({ track, refetch }: DetailedTrackCardProps) {
                 {track.title}
               </h1>
             </div>
-
-            {track?.tags && (
+            {track?.vocalsDescriptions && (
+              <div className="text-sm text-muted-foreground  ">
+                {track?.vocalsDescriptions}
+              </div>
+            )}
+            {track?.atmosphereKeywords && (
               <div className="flex flex-wrap gap-2">
                 Tags:{' '}
-                {track?.tags.map((tag) => (
+                {track?.atmosphereKeywords.map((tag) => (
                   <Badge key={tag} variant="outline" size="xs">
                     {tag}
                   </Badge>
@@ -183,10 +187,19 @@ export function DetailedTrackCard({ track, refetch }: DetailedTrackCardProps) {
                 <span>Mood: {track.valenceMood}</span>
               </Badge>
             </div>
-
             {track?.description && (
               <div className="text-sm text-muted-foreground  ">
                 {track?.description}
+              </div>
+            )}{' '}
+            {track?.contextBackgrounds && (
+              <div className="text-sm text-muted-foreground  ">
+                {track?.contextBackgrounds}
+              </div>
+            )}
+            {track?.contextImpacts && (
+              <div className="text-sm text-muted-foreground  ">
+                {track?.contextImpacts}
               </div>
             )}
           </div>

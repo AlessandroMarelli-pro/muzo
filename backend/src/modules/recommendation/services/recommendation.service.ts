@@ -110,7 +110,6 @@ export class RecommendationService {
     try {
       const response = await this.elasticsearchService.searchTracks(query);
       const hits = response.hits.hits;
-      console.log(hits);
       // Let Elasticsearch handle scoring - no normalization needed
       return hits.map((hit: any) => {
         return {
@@ -543,20 +542,15 @@ export class RecommendationService {
     const shouldVocalsDesc =
       weights.aiMetadataSimilarity > 0 &&
       playlistFeatures.vocalsDescriptions &&
-      playlistFeatures.vocalsDescriptions.length > 0
+      playlistFeatures.vocalsDescriptions.trim().length > 0
         ? {
-            bool: {
-              should: playlistFeatures.vocalsDescriptions.map((vocals) => ({
-                match: {
-                  vocals_desc: {
-                    query: vocals,
-                    boost: Math.max(weights.aiMetadataSimilarity * 1.8, 0.9),
-                    fuzziness: 'AUTO',
-                    minimum_should_match: '60%',
-                  },
-                },
-              })),
-              minimum_should_match: 1,
+            match: {
+              vocals_desc: {
+                query: playlistFeatures.vocalsDescriptions,
+                boost: Math.max(weights.aiMetadataSimilarity * 1.8, 0.9),
+                fuzziness: 'AUTO',
+                minimum_should_match: '60%',
+              },
             },
           }
         : null;
@@ -564,20 +558,15 @@ export class RecommendationService {
     const shouldContextBackground =
       weights.aiMetadataSimilarity > 0 &&
       playlistFeatures.contextBackgrounds &&
-      playlistFeatures.contextBackgrounds.length > 0
+      playlistFeatures.contextBackgrounds.trim().length > 0
         ? {
-            bool: {
-              should: playlistFeatures.contextBackgrounds.map((context) => ({
-                match: {
-                  context_background: {
-                    query: context,
-                    boost: Math.max(weights.aiMetadataSimilarity * 1.6, 0.8),
-                    fuzziness: 'AUTO',
-                    minimum_should_match: '50%',
-                  },
-                },
-              })),
-              minimum_should_match: 1,
+            match: {
+              context_background: {
+                query: playlistFeatures.contextBackgrounds,
+                boost: Math.max(weights.aiMetadataSimilarity * 1.6, 0.8),
+                fuzziness: 'AUTO',
+                minimum_should_match: '50%',
+              },
             },
           }
         : null;
@@ -585,20 +574,15 @@ export class RecommendationService {
     const shouldContextImpact =
       weights.aiMetadataSimilarity > 0 &&
       playlistFeatures.contextImpacts &&
-      playlistFeatures.contextImpacts.length > 0
+      playlistFeatures.contextImpacts.trim().length > 0
         ? {
-            bool: {
-              should: playlistFeatures.contextImpacts.map((impact) => ({
-                match: {
-                  context_impact: {
-                    query: impact,
-                    boost: Math.max(weights.aiMetadataSimilarity * 1.6, 0.8),
-                    fuzziness: 'AUTO',
-                    minimum_should_match: '50%',
-                  },
-                },
-              })),
-              minimum_should_match: 1,
+            match: {
+              context_impact: {
+                query: playlistFeatures.contextImpacts,
+                boost: Math.max(weights.aiMetadataSimilarity * 1.6, 0.8),
+                fuzziness: 'AUTO',
+                minimum_should_match: '50%',
+              },
             },
           }
         : null;
@@ -917,7 +901,7 @@ export class RecommendationService {
     // Map Elasticsearch document back to MusicTrack format
     // Ensure duration is always a number (required non-nullable field)
     const duration = source.duration ?? 0;
-    
+
     const track = {
       id: source.id,
       title: source.title || '',
@@ -1298,16 +1282,15 @@ export class RecommendationService {
       }
     }
 
-    if (
-      trackSource.vocals_desc &&
-      playlistFeatures.vocalsDescriptions &&
-      playlistFeatures.vocalsDescriptions.length > 0
-    ) {
-      const matchingVocals = playlistFeatures.vocalsDescriptions.some(
-        (vocals) =>
-          trackSource.vocals_desc &&
-          trackSource.vocals_desc.toLowerCase().includes(vocals.toLowerCase()),
-      );
+    if (trackSource.vocals_desc && playlistFeatures.vocalsDescriptions) {
+      const matchingVocals =
+        trackSource.vocals_desc &&
+        (trackSource.vocals_desc
+          .toLowerCase()
+          .includes(playlistFeatures.vocalsDescriptions.toLowerCase()) ||
+          playlistFeatures.vocalsDescriptions
+            .toLowerCase()
+            .includes(trackSource.vocals_desc.toLowerCase()));
       if (matchingVocals) {
         reasons.push('Similar vocal characteristics');
       }
@@ -1333,41 +1316,29 @@ export class RecommendationService {
       }
     }
 
-    if (
-      trackSource.context_background &&
-      playlistFeatures.contextBackgrounds &&
-      playlistFeatures.contextBackgrounds.length > 0
-    ) {
-      const matchingContext = playlistFeatures.contextBackgrounds.some(
-        (context) =>
-          trackSource.context_background &&
-          (trackSource.context_background
+    if (trackSource.context_background && playlistFeatures.contextBackgrounds) {
+      const matchingContext =
+        trackSource.context_background &&
+        (trackSource.context_background
+          .toLowerCase()
+          .includes(playlistFeatures.contextBackgrounds.toLowerCase()) ||
+          playlistFeatures.contextBackgrounds
             .toLowerCase()
-            .includes(context.toLowerCase()) ||
-            context
-              .toLowerCase()
-              .includes(trackSource.context_background.toLowerCase())),
-      );
+            .includes(trackSource.context_background.toLowerCase()));
       if (matchingContext) {
         reasons.push('Similar context background');
       }
     }
 
-    if (
-      trackSource.context_impact &&
-      playlistFeatures.contextImpacts &&
-      playlistFeatures.contextImpacts.length > 0
-    ) {
-      const matchingImpact = playlistFeatures.contextImpacts.some(
-        (impact) =>
-          trackSource.context_impact &&
-          (trackSource.context_impact
+    if (trackSource.context_impact && playlistFeatures.contextImpacts) {
+      const matchingImpact =
+        trackSource.context_impact &&
+        (trackSource.context_impact
+          .toLowerCase()
+          .includes(playlistFeatures.contextImpacts.toLowerCase()) ||
+          playlistFeatures.contextImpacts
             .toLowerCase()
-            .includes(impact.toLowerCase()) ||
-            impact
-              .toLowerCase()
-              .includes(trackSource.context_impact.toLowerCase())),
-      );
+            .includes(trackSource.context_impact.toLowerCase()));
       if (matchingImpact) {
         reasons.push('Similar context impact');
       }
@@ -1422,10 +1393,10 @@ export class RecommendationService {
     // AI metadata collections
     const aiDescriptions: string[] = [];
     const aiTags: string[] = [];
-    const vocalsDescriptions: string[] = [];
+    const vocalsDescriptions: string[] = []; // Collect all, then find most common
     const atmosphereKeywords: string[] = [];
-    const contextBackgrounds: string[] = [];
-    const contextImpacts: string[] = [];
+    const contextBackgrounds: string[] = []; // Collect all, then find most common
+    const contextImpacts: string[] = []; // Collect all, then find most common
 
     // Arrays for vector features
     const mfccArrays: number[][] = [];
@@ -1835,7 +1806,17 @@ export class RecommendationService {
         .map(([tag]) => tag);
     }
     if (vocalsDescriptions.length > 0) {
-      features.vocalsDescriptions = [...new Set(vocalsDescriptions)];
+      // Find the most common vocals description
+      const vocalsCounts: Record<string, number> = {};
+      vocalsDescriptions.forEach((vocals) => {
+        vocalsCounts[vocals] = (vocalsCounts[vocals] || 0) + 1;
+      });
+      const mostCommonVocals = Object.entries(vocalsCounts).sort(
+        (a, b) => b[1] - a[1],
+      )[0]?.[0];
+      if (mostCommonVocals) {
+        features.vocalsDescriptions = mostCommonVocals;
+      }
     }
     if (atmosphereKeywords.length > 0) {
       const atmosphereCounts: Record<string, number> = {};
@@ -1848,10 +1829,30 @@ export class RecommendationService {
         .map(([keyword]) => keyword);
     }
     if (contextBackgrounds.length > 0) {
-      features.contextBackgrounds = [...new Set(contextBackgrounds)];
+      // Find the most common context background
+      const contextCounts: Record<string, number> = {};
+      contextBackgrounds.forEach((context) => {
+        contextCounts[context] = (contextCounts[context] || 0) + 1;
+      });
+      const mostCommonContext = Object.entries(contextCounts).sort(
+        (a, b) => b[1] - a[1],
+      )[0]?.[0];
+      if (mostCommonContext) {
+        features.contextBackgrounds = mostCommonContext;
+      }
     }
     if (contextImpacts.length > 0) {
-      features.contextImpacts = [...new Set(contextImpacts)];
+      // Find the most common context impact
+      const impactCounts: Record<string, number> = {};
+      contextImpacts.forEach((impact) => {
+        impactCounts[impact] = (impactCounts[impact] || 0) + 1;
+      });
+      const mostCommonImpact = Object.entries(impactCounts).sort(
+        (a, b) => b[1] - a[1],
+      )[0]?.[0];
+      if (mostCommonImpact) {
+        features.contextImpacts = mostCommonImpact;
+      }
     }
 
     return features;
@@ -2000,7 +2001,6 @@ export class RecommendationService {
   public mapTrackToElasticsearchDocument(
     track: MusicTrackWithRelations,
   ): ElasticsearchMusicTrackDocument {
-    console.log(track);
     const fingerprint = track.audioFingerprint;
     const aiAnalysis = track.aiAnalysisResult;
 

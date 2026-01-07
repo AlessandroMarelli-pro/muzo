@@ -75,10 +75,10 @@ export interface AudioFeatures {
   // AI metadata fields
   aiDescriptions?: string[]; // Aggregated descriptions from playlist tracks
   aiTags?: string[]; // Aggregated tags from playlist tracks
-  vocalsDescriptions?: string[]; // Aggregated vocals descriptions
+  vocalsDescriptions?: string;
   atmosphereKeywords?: string[]; // Aggregated atmosphere keywords
-  contextBackgrounds?: string[]; // Aggregated context backgrounds
-  contextImpacts?: string[]; // Aggregated context impacts
+  contextBackgrounds?: string; // Aggregated context backgrounds
+  contextImpacts?: string; // Aggregated context impacts
 }
 
 export interface PlaylistFeatures {

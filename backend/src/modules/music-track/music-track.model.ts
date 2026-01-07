@@ -359,6 +359,18 @@ export class SimpleMusicTrack {
   @Field({ nullable: true })
   description?: string;
 
+  @Field(() => String, { nullable: true })
+  vocalsDescriptions?: string;
+
+  @Field(() => [String], { nullable: true })
+  atmosphereKeywords?: string[];
+
+  @Field(() => String, { nullable: true })
+  contextBackgrounds?: string;
+
+  @Field(() => String, { nullable: true })
+  contextImpacts?: string;
+
   @Field(() => [String], { nullable: true })
   tags?: string[];
 

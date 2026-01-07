@@ -33,6 +33,10 @@ export const simpleMusicTrackFragment = gql`
     lastScannedAt
     description
     tags
+    vocalsDescriptions
+    atmosphereKeywords
+    contextBackgrounds
+    contextImpacts
   }
 `;
 

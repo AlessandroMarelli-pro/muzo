@@ -562,6 +562,9 @@ type SimpleMusicTrack {
   acousticness: Float
   arousalMood: String
   artist: String
+  atmosphereKeywords: [String!]
+  contextBackgrounds: String
+  contextImpacts: String
   createdAt: DateTime
   danceabilityFeeling: String
   date: DateTime
@@ -583,6 +586,7 @@ type SimpleMusicTrack {
   title: String
   updatedAt: DateTime
   valenceMood: String
+  vocalsDescriptions: String
 }
 
 type StaticFilterOptions {

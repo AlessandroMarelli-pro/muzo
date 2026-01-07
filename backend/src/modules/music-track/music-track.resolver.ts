@@ -43,6 +43,12 @@ export function mapToSimpleMusicTrack(
     genres: track.trackGenres?.map((tg) => tg.genre.name) || [],
     subgenres: track.trackSubgenres?.map((ts) => ts.subgenre.name) || [],
     description: track.aiDescription,
+    vocalsDescriptions: track.vocalsDesc,
+    atmosphereKeywords: track.atmosphereDesc
+      ? (JSON.parse(track.atmosphereDesc) as string[])
+      : null,
+    contextBackgrounds: track.contextBackground,
+    contextImpacts: track.contextImpact,
     tags: track.aiTags ? (JSON.parse(track.aiTags) as string[]) : null,
     date: track.originalDate || track.createdAt,
     listeningCount: track.listeningCount,
