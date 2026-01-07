@@ -23,6 +23,10 @@ export function SwipePage() {
     refetch,
   } = useRandomTrack(trackId);
   const [shouldAutoPlay, setShouldAutoPlay] = useState(false);
+  const [triggerSwipeDirection, setTriggerSwipeDirection] = useState<
+    'left' | 'right' | 'up' | null
+  >(null);
+  const [isAnimating, setIsAnimating] = useState(false);
 
   const likeMutation = useLikeTrack();
   const bangerMutation = useBangerTrack();
@@ -52,46 +56,108 @@ export function SwipePage() {
   const handleLike = useCallback(async () => {
     if (!track) return;
     const wasPlaying = isPlaying && currentTrack?.id === track.id;
-    try {
-      await likeMutation.mutateAsync(track.id);
-      if (wasPlaying) {
-        setShouldAutoPlay(true);
-      }
-      handleSwipeComplete();
-    } catch (error) {
-      console.error('Error liking track:', error);
-    }
+
+    // Trigger swipe animation immediately
+    setIsAnimating(true);
+    setTriggerSwipeDirection('right');
+
+    // Start mutation asynchronously (don't wait)
+    const mutationPromise = likeMutation.mutateAsync(track.id);
+
+    // Wait for animation to complete (400ms)
+    const animationPromise = new Promise<void>((resolve) => {
+      setTimeout(() => resolve(), 400);
+    });
+
+    // Wait for both animation and mutation to complete
+    Promise.all([mutationPromise, animationPromise])
+      .then(() => {
+        if (wasPlaying) {
+          setShouldAutoPlay(true);
+        }
+        // Reset animation and trigger refetch when both are complete
+        setTriggerSwipeDirection(null);
+        setIsAnimating(false);
+        handleSwipeComplete();
+      })
+      .catch((error) => {
+        console.error('Error liking track:', error);
+        setTriggerSwipeDirection(null);
+        setIsAnimating(false);
+      });
   }, [track, likeMutation, handleSwipeComplete, isPlaying, currentTrack]);
 
   const handleDislike = useCallback(async () => {
     if (!track) return;
-    try {
-      await dislikeMutation.mutateAsync(track.id);
-      handleSwipeComplete();
-    } catch (error) {
-      console.error('Error disliking track:', error);
-    }
+
+    // Trigger swipe animation immediately
+    setIsAnimating(true);
+    setTriggerSwipeDirection('left');
+
+    // Start mutation asynchronously (don't wait)
+    const mutationPromise = dislikeMutation.mutateAsync(track.id);
+
+    // Wait for animation to complete (400ms)
+    const animationPromise = new Promise<void>((resolve) => {
+      setTimeout(() => resolve(), 400);
+    });
+
+    // Wait for both animation and mutation to complete
+    Promise.all([mutationPromise, animationPromise])
+      .then(() => {
+        // Reset animation and trigger refetch when both are complete
+        setTriggerSwipeDirection(null);
+        setIsAnimating(false);
+        handleSwipeComplete();
+      })
+      .catch((error) => {
+        console.error('Error disliking track:', error);
+        setTriggerSwipeDirection(null);
+        setIsAnimating(false);
+      });
   }, [track, dislikeMutation, handleSwipeComplete]);
 
   const handleBanger = useCallback(async () => {
     if (!track) return;
     const wasPlaying = isPlaying && currentTrack?.id === track.id;
-    try {
-      await bangerMutation.mutateAsync(track.id);
-      if (wasPlaying) {
-        setShouldAutoPlay(true);
-      }
-      handleSwipeComplete();
-    } catch (error) {
-      console.error('Error banger track:', error);
-    }
+
+    // Trigger swipe animation immediately
+    setIsAnimating(true);
+    setTriggerSwipeDirection('up');
+
+    // Start mutation asynchronously (don't wait)
+    const mutationPromise = bangerMutation.mutateAsync(track.id);
+
+    // Wait for animation to complete (400ms)
+    const animationPromise = new Promise<void>((resolve) => {
+      setTimeout(() => resolve(), 400);
+    });
+
+    // Wait for both animation and mutation to complete
+    Promise.all([mutationPromise, animationPromise])
+      .then(() => {
+        if (wasPlaying) {
+          setShouldAutoPlay(true);
+        }
+        // Reset animation and trigger refetch when both are complete
+        setTriggerSwipeDirection(null);
+        setIsAnimating(false);
+        handleSwipeComplete();
+      })
+      .catch((error) => {
+        console.error('Error banger track:', error);
+        setTriggerSwipeDirection(null);
+        setIsAnimating(false);
+      });
   }, [track, bangerMutation, handleSwipeComplete, isPlaying, currentTrack]);
 
+  // Only show loading if not animating (to prevent loading message during swipe animation)
   const isLoading =
-    isLoadingTrack ||
-    likeMutation.isPending ||
-    bangerMutation.isPending ||
-    dislikeMutation.isPending;
+    !isAnimating &&
+    (isLoadingTrack ||
+      likeMutation.isPending ||
+      bangerMutation.isPending ||
+      dislikeMutation.isPending);
 
   // Keyboard controls
   useEffect(() => {
@@ -183,6 +249,7 @@ export function SwipePage() {
           onDislike={handleDislike}
           onBanger={handleBanger}
           onSwipeComplete={handleSwipeComplete}
+          triggerSwipeDirection={triggerSwipeDirection}
         />
       </div>
       <div className="flex flex-row justify-center mb-8 text-center">

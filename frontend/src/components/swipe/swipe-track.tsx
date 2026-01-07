@@ -18,14 +18,14 @@ import {
   useMotionValueEvent,
   useTransform,
 } from 'motion/react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 interface SwipeTrackProps {
   track: SimpleMusicTrack;
   onLike: () => void;
   onDislike: () => void;
   onBanger: () => void;
-  onSwipeComplete: () => void;
+  triggerSwipeDirection?: 'left' | 'right' | 'up' | null;
 }
 
 const SWIPE_THRESHOLD = 100;
@@ -36,7 +36,7 @@ export function SwipeTrack({
   onLike,
   onDislike,
   onBanger,
-  onSwipeComplete,
+  triggerSwipeDirection,
 }: SwipeTrackProps) {
   const [isExiting, setIsExiting] = useState(false);
   const [swipeDirection, setSwipeDirection] = useState<
@@ -67,6 +67,36 @@ export function SwipeTrack({
   );
 
   const [dragDistance, setDragDistance] = useState(0);
+
+  // Trigger swipe animation when button is clicked
+  useEffect(() => {
+    if (triggerSwipeDirection && !isExiting) {
+      // Simulate the swipe animation
+      setIsExiting(true);
+      setSwipeDirection(triggerSwipeDirection);
+      setCurrentDragDirection(triggerSwipeDirection);
+      setDragDistance(SWIPE_THRESHOLD);
+
+      // Animate the card position based on direction
+      if (triggerSwipeDirection === 'left') {
+        x.set(-50);
+      } else if (triggerSwipeDirection === 'right') {
+        x.set(50);
+      } else if (triggerSwipeDirection === 'up') {
+        y.set(-50);
+      }
+
+      // Reset animation state after it completes (parent handles action)
+      setTimeout(() => {
+        setCurrentDragDirection(null);
+        setDragDistance(0);
+        x.set(0);
+        y.set(0);
+        setIsExiting(false);
+        setSwipeDirection(null);
+      }, 400);
+    }
+  }, [triggerSwipeDirection, isExiting, x, y]);
 
   // Update current drag direction and distance based on x and y values
   useMotionValueEvent(x, 'change', (latestX) => {
@@ -125,11 +155,11 @@ export function SwipeTrack({
       return;
     }
 
+    // Wait for animation to complete before calling onSwipeComplete
     setTimeout(() => {
-      onSwipeComplete();
       setCurrentDragDirection(null);
       setDragDistance(0);
-    }, 300);
+    }, 400);
   };
 
   const handleDragEnd = (
@@ -319,6 +349,7 @@ interface SwipeViewProps {
   onDislike: () => void;
   onBanger: () => void;
   onSwipeComplete: () => void;
+  triggerSwipeDirection?: 'left' | 'right' | 'up' | null;
 }
 
 export function SwipeView({
@@ -327,7 +358,7 @@ export function SwipeView({
   onLike,
   onDislike,
   onBanger,
-  onSwipeComplete,
+  triggerSwipeDirection,
 }: SwipeViewProps) {
   if (isLoading) {
     return (
@@ -351,7 +382,7 @@ export function SwipeView({
       onLike={onLike}
       onDislike={onDislike}
       onBanger={onBanger}
-      onSwipeComplete={onSwipeComplete}
+      triggerSwipeDirection={triggerSwipeDirection}
     />
   );
 }

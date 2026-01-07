@@ -736,7 +736,6 @@ export const useLikeTrack = () => {
       return response.likeTrack;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.randomTrack() });
       queryClient.invalidateQueries({ queryKey: queryKeys.tracks() });
     },
   });
@@ -763,7 +762,6 @@ export const useBangerTrack = () => {
       return response.bangerTrack;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.randomTrack() });
       queryClient.invalidateQueries({ queryKey: queryKeys.tracks() });
     },
   });
@@ -787,7 +785,6 @@ export const useDislikeTrack = () => {
       return response.dislikeTrack;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.randomTrack() });
       queryClient.invalidateQueries({ queryKey: queryKeys.tracks() });
     },
   });
