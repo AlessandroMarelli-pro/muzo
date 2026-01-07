@@ -65,7 +65,6 @@ export function Research({
       setSelectedBoost((prev) => [...prev, key]);
     }
   };
-  console.log(track);
   return (
     <div className="p-4 space-y-4 flex flex-col z-0">
       <DetailedTrackCard track={track} refetch={refetch} />

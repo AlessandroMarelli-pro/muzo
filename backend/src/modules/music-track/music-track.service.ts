@@ -271,7 +271,6 @@ export class MusicTrackService {
         },
       },
     });
-    console.log(tracks);
 
     return {
       tracks: tracks as MusicTrackWithRelations[],

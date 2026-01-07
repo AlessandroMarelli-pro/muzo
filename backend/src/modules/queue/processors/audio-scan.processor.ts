@@ -708,7 +708,6 @@ export class AudioScanProcessor extends WorkerHost {
   ): Promise<void> {
     const metadata = aiMetadata;
     const updateData: any = {};
-    console.log('aiMetadata', JSON.stringify(aiMetadata, null, 2));
     // Update AI-generated metadata fields
     if (metadata.artist) {
       updateData.aiArtist = metadata.artist;
@@ -770,7 +769,6 @@ export class AudioScanProcessor extends WorkerHost {
       where: { id: trackId },
       data: updateData,
     });
-    console.log('updatedTrack', JSON.stringify(updatedTrack, null, 2));
     // Update genres and subgenres
     if (metadata.genre && metadata.genre.length > 0) {
       await this.updateTrackGenres(trackId, metadata.genre);
