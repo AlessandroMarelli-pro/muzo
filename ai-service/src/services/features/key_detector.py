@@ -22,6 +22,35 @@ from src.utils.performance_optimizer import monitor_performance
 
 
 class KeyDetector:
+    camelot_wheel = {
+        # Major keys (inner circle)
+        "C MAJOR": "8B",
+        "G MAJOR": "9B",
+        "D MAJOR": "10B",
+        "A MAJOR": "11B",
+        "E MAJOR": "12B",
+        "B MAJOR": "1B",
+        "F# MAJOR": "2B",
+        "C# MAJOR": "3B",
+        "G# MAJOR": "4B",
+        "D# MAJOR": "5B",
+        "A# MAJOR": "6B",
+        "F MAJOR": "7B",
+        # Minor keys (outer circle)
+        "A MINOR": "8A",
+        "E MINOR": "9A",
+        "B MINOR": "10A",
+        "F# MINOR": "11A",
+        "C# MINOR": "12A",
+        "G# MINOR": "1A",
+        "D# MINOR": "2A",
+        "A# MINOR": "3A",
+        "F MINOR": "4A",
+        "C MINOR": "5A",
+        "G MINOR": "6A",
+        "D MINOR": "7A",
+    }
+
     def __init__(self, shared_features: SharedFeatures):
         self.shared_features = shared_features
 
@@ -115,36 +144,8 @@ class KeyDetector:
         key = KeyFinder(y, sr).key
 
         # Camelot wheel mapping
-        camelot_wheel = {
-            # Major keys (inner circle)
-            "C major": "8B",
-            "G major": "9B",
-            "D major": "10B",
-            "A major": "11B",
-            "E major": "12B",
-            "B major": "1B",
-            "F# major": "2B",
-            "C# major": "3B",
-            "G# major": "4B",
-            "D# major": "5B",
-            "A# major": "6B",
-            "F major": "7B",
-            # Minor keys (outer circle)
-            "A minor": "8A",
-            "E minor": "9A",
-            "B minor": "10A",
-            "F# minor": "11A",
-            "C# minor": "12A",
-            "G# minor": "1A",
-            "D# minor": "2A",
-            "A# minor": "3A",
-            "F minor": "4A",
-            "C minor": "5A",
-            "G minor": "6A",
-            "D minor": "7A",
-        }
 
-        camelot_key = camelot_wheel.get(key, "Unknown")
+        camelot_key = self.camelot_wheel.get(key.upper(), "Unknown")
 
         # Use pre-computed tonnetz from shared_features (already from same audio)
         tonnetz_full = self.shared_features.features["tonnetz"]

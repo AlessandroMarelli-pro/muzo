@@ -226,6 +226,7 @@ export class FileScanningService {
             if (options.newerThan && stats.mtime <= options.newerThan) {
               continue;
             }
+
             files.push({
               path: fullPath,
               name: entry.name,

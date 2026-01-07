@@ -168,10 +168,18 @@ class SimpleAnalysisService:
 
     @monitor_performance("feature_extraction")
     def extract_basic_features(
-        self, y_harmonic, y_percussive, y_bpm, bpm_metadata, sr, file_path: str
+        self,
+        y_harmonic,
+        y_percussive,
+        y_bpm,
+        bpm_metadata,
+        sr,
+        file_path: str,
+        ai_bpm: float = None,
+        ai_key: str = None,
     ) -> Dict[str, Any]:
         return self.feature_extractor.extract_basic_features(
-            y_harmonic, y_percussive, y_bpm, bpm_metadata, sr, file_path
+            y_harmonic, y_percussive, y_bpm, bpm_metadata, sr, file_path, ai_bpm, ai_key
         )
 
     @monitor_performance("fingerprint_generation")
@@ -363,12 +371,6 @@ class SimpleAnalysisService:
             technical_info = self.extract_audio_technical(
                 file_path
             )  # Use full file for duration
-            basic_features = self.extract_basic_features(
-                y_harmonic, y_percussive, y_bpm, bpm_metadata, sr, file_path
-            )  # Use optimized samples for features
-            # Use harmonic sample for fingerprint (more representative of melody/harmony)
-            fingerprint = self.generate_simple_fingerprint(file_path, y_harmonic, sr)
-            id3_tags = self.extract_id3_tags(file_path, original_filename)
 
             # Extract metadata using OpenAI if available and not skipped
             ai_metadata = {}
@@ -380,6 +382,22 @@ class SimpleAnalysisService:
                     logger.info("AI metadata extracted successfully")
             elif skip_ai_metadata:
                 logger.debug("Skipping AI metadata extraction (skip_ai_metadata=True)")
+
+            ai_bpm = ai_metadata.get("audioFeatures", {}).get("bpm", None)
+            ai_key = ai_metadata.get("audioFeatures", {}).get("key", None)
+            basic_features = self.extract_basic_features(
+                y_harmonic,
+                y_percussive,
+                y_bpm,
+                bpm_metadata,
+                sr,
+                file_path,
+                ai_bpm,
+                ai_key,
+            )  # Use optimized samples for features
+            # Use harmonic sample for fingerprint (more representative of melody/harmony)
+            fingerprint = self.generate_simple_fingerprint(file_path, y_harmonic, sr)
+            id3_tags = self.extract_id3_tags(file_path, original_filename)
 
             # Check performance bottlenecks after analysis
             # performance_status = self.check_performance_bottlenecks()

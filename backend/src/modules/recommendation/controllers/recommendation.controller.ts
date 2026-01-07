@@ -82,7 +82,7 @@ export class RecommendationController {
     );
   }
 
-  @Post('recreate-index')
+  @Get('recreate-index')
   @HttpCode(HttpStatus.OK)
   async recreateIndex() {
     await this.recommendationService.recreateElasticsearchIndex();

@@ -15,10 +15,11 @@ import {
 
 export const DEFAULT_RECOMMENDATION_WEIGHTS: RecommendationWeights = {
   audioSimilarity: 0.4, // MFCC/Chroma vector similarity
-  genreSimilarity: 0.4, // Genre/subgenre matching - increased importance
+  genreSimilarity: 0.5, // Genre/subgenre matching - increased importance
   metadataSimilarity: 0.3, // Artist/album similarity
   userBehavior: 0.2, // Listening history/favorites - now enabled
-  audioFeatures: 0.6, // Rich audio features (tempo, energy, arousal, rhythm, etc.) - increased
+  audioFeatures: 0.1, // Rich audio features (tempo, energy, arousal, rhythm, etc.) - increased
+  aiMetadataSimilarity: 0.5, // AI description, tags, vocals, atmosphere, context matching
 };
 
 export const ZERO_RECOMMENDATION_WEIGHTS: RecommendationWeights = {
@@ -27,6 +28,7 @@ export const ZERO_RECOMMENDATION_WEIGHTS: RecommendationWeights = {
   metadataSimilarity: 0,
   userBehavior: 0,
   audioFeatures: 0,
+  aiMetadataSimilarity: 0,
 };
 
 @Injectable()
@@ -108,16 +110,13 @@ export class RecommendationService {
     try {
       const response = await this.elasticsearchService.searchTracks(query);
       const hits = response.hits.hits;
-
+      console.log(hits);
       // Let Elasticsearch handle scoring - no normalization needed
       return hits.map((hit: any) => {
         return {
           track: this.mapElasticsearchHitToTrack(hit._source),
           similarity: hit._score, // Use raw Elasticsearch score directly
-          reasons: this.generateRecommendationReasons(
-            hit._source,
-            playlistFeatures,
-          ),
+          reasons: this.extractReasonsFromElasticsearch(hit, playlistFeatures),
         };
       });
     } catch (error) {
@@ -494,6 +493,115 @@ export class RecommendationService {
             },
           }
         : null;
+
+    // AI metadata similarity queries
+    const shouldAiTags =
+      weights.aiMetadataSimilarity > 0 &&
+      playlistFeatures.aiTags &&
+      playlistFeatures.aiTags.length > 0
+        ? {
+            terms: {
+              ai_tags: playlistFeatures.aiTags,
+              boost: Math.max(weights.aiMetadataSimilarity * 2.5, 1.0),
+            },
+          }
+        : null;
+
+    const shouldAtmosphereKeywords =
+      weights.aiMetadataSimilarity > 0 &&
+      playlistFeatures.atmosphereKeywords &&
+      playlistFeatures.atmosphereKeywords.length > 0
+        ? {
+            terms: {
+              atmosphere_desc: playlistFeatures.atmosphereKeywords,
+              boost: Math.max(weights.aiMetadataSimilarity * 2.0, 1.0),
+            },
+          }
+        : null;
+
+    const shouldAiDescription =
+      weights.aiMetadataSimilarity > 0 &&
+      playlistFeatures.aiDescriptions &&
+      playlistFeatures.aiDescriptions.length > 0
+        ? {
+            bool: {
+              should: playlistFeatures.aiDescriptions.map((description) => ({
+                match: {
+                  ai_description: {
+                    query: description,
+                    boost: Math.max(weights.aiMetadataSimilarity * 1.5, 0.8),
+                    fuzziness: 'AUTO',
+                    minimum_should_match: '50%',
+                  },
+                },
+              })),
+              minimum_should_match: 1,
+            },
+          }
+        : null;
+
+    const shouldVocalsDesc =
+      weights.aiMetadataSimilarity > 0 &&
+      playlistFeatures.vocalsDescriptions &&
+      playlistFeatures.vocalsDescriptions.length > 0
+        ? {
+            bool: {
+              should: playlistFeatures.vocalsDescriptions.map((vocals) => ({
+                match: {
+                  vocals_desc: {
+                    query: vocals,
+                    boost: Math.max(weights.aiMetadataSimilarity * 1.8, 0.9),
+                    fuzziness: 'AUTO',
+                    minimum_should_match: '60%',
+                  },
+                },
+              })),
+              minimum_should_match: 1,
+            },
+          }
+        : null;
+
+    const shouldContextBackground =
+      weights.aiMetadataSimilarity > 0 &&
+      playlistFeatures.contextBackgrounds &&
+      playlistFeatures.contextBackgrounds.length > 0
+        ? {
+            bool: {
+              should: playlistFeatures.contextBackgrounds.map((context) => ({
+                match: {
+                  context_background: {
+                    query: context,
+                    boost: Math.max(weights.aiMetadataSimilarity * 1.6, 0.8),
+                    fuzziness: 'AUTO',
+                    minimum_should_match: '50%',
+                  },
+                },
+              })),
+              minimum_should_match: 1,
+            },
+          }
+        : null;
+
+    const shouldContextImpact =
+      weights.aiMetadataSimilarity > 0 &&
+      playlistFeatures.contextImpacts &&
+      playlistFeatures.contextImpacts.length > 0
+        ? {
+            bool: {
+              should: playlistFeatures.contextImpacts.map((impact) => ({
+                match: {
+                  context_impact: {
+                    query: impact,
+                    boost: Math.max(weights.aiMetadataSimilarity * 1.6, 0.8),
+                    fuzziness: 'AUTO',
+                    minimum_should_match: '50%',
+                  },
+                },
+              })),
+              minimum_should_match: 1,
+            },
+          }
+        : null;
     const should = [
       // k-NN search for MFCC similarity (timbre)
       shouldMfcc,
@@ -542,6 +650,14 @@ export class RecommendationService {
 
       // Metadata similarity with improved scoring
       //shouldMetadataSimilarity,
+
+      // AI metadata similarity
+      shouldAiTags,
+      shouldAtmosphereKeywords,
+      shouldAiDescription,
+      shouldVocalsDesc,
+      shouldContextBackground,
+      shouldContextImpact,
     ]?.filter((s) => s !== null);
     return {
       size: criteria.limit || 20,
@@ -552,6 +668,45 @@ export class RecommendationService {
           // Control scoring behavior to prevent scores exceeding calculated maximum
           minimum_should_match: 1,
         },
+      },
+      highlight: {
+        fields: {
+          genres: {},
+          subgenres: {},
+          ai_tags: {},
+          atmosphere_desc: {},
+          ai_description: { number_of_fragments: 1, fragment_size: 100 },
+          vocals_desc: { number_of_fragments: 1, fragment_size: 100 },
+          context_background: { number_of_fragments: 1, fragment_size: 100 },
+          context_impact: { number_of_fragments: 1, fragment_size: 100 },
+          'audio_fingerprint.energy_keywords': {},
+        },
+        require_field_match: false,
+      },
+      _source: {
+        includes: [
+          'id',
+          'title',
+          'artist',
+          'album',
+          'duration',
+          'genres',
+          'subgenres',
+          'ai_tags',
+          'atmosphere_desc',
+          'ai_description',
+          'vocals_desc',
+          'context_background',
+          'context_impact',
+          'audio_fingerprint',
+          'is_favorite',
+          'listening_count',
+          'last_played_at',
+          'created_at',
+          'updated_at',
+          'original_date',
+          'image_path',
+        ],
       },
     };
   }
@@ -637,6 +792,7 @@ export class RecommendationService {
         audioFeatures: 0,
         userBehavior: 0,
         metadataSimilarity: 0,
+        aiMetadataSimilarity: 0,
       };
       return {
         playlistFeatures: {
@@ -759,18 +915,21 @@ export class RecommendationService {
     source: ElasticsearchMusicTrackDocument,
   ): SimpleMusicTrack {
     // Map Elasticsearch document back to MusicTrack format
+    // Ensure duration is always a number (required non-nullable field)
+    const duration = source.duration ?? 0;
+    
     const track = {
       id: source.id,
-      title: source.title,
-      artist: source.artist,
+      title: source.title || '',
+      artist: source.artist || '',
       genres: source.genres || [],
       subgenres: source.subgenres || [],
-      duration: source.duration,
+      duration: duration,
       listeningCount: source.listening_count || 0,
       lastPlayedAt: source.last_played_at
         ? new Date(source.last_played_at)
         : undefined,
-      isFavorite: source.is_favorite,
+      isFavorite: source.is_favorite ?? false,
       createdAt: source.created_at ? new Date(source.created_at) : undefined,
       updatedAt: source.updated_at ? new Date(source.updated_at) : undefined,
       tempo: source.audio_fingerprint?.tempo,
@@ -783,43 +942,137 @@ export class RecommendationService {
       speechiness: source.audio_fingerprint?.speechiness,
       imagePath: source.image_path,
       date: source.original_date ? new Date(source.original_date) : undefined,
+      description: source.ai_description,
+      tags: source.ai_tags,
+      vocalsDescriptions: source.vocals_desc,
+      atmosphereKeywords: source.atmosphere_desc,
+      contextBackgrounds: source.context_background,
+      contextImpacts: source.context_impact,
     } as SimpleMusicTrack;
     return track;
   }
 
-  private generateRecommendationReasons(
+  /**
+   * Extract recommendation reasons directly from Elasticsearch highlights and matched fields
+   */
+  private extractReasonsFromElasticsearch(
+    hit: any,
+    playlistFeatures: AudioFeatures,
+  ): string[] {
+    const reasons: string[] = [];
+    const trackSource = hit._source;
+    const highlights = hit.highlight || {};
+
+    // Extract reasons from Elasticsearch highlights
+    if (highlights.genres && highlights.genres.length > 0) {
+      const matchedGenres = highlights.genres
+        .map((h: string) => h.replace(/<em>|<\/em>/g, ''))
+        .filter((g: string) => trackSource.genres?.includes(g));
+      if (matchedGenres.length > 0) {
+        reasons.push(
+          `Same genre${matchedGenres.length > 1 ? 's' : ''}: ${matchedGenres.slice(0, 3).join(', ')}`,
+        );
+      }
+    }
+
+    if (highlights.subgenres && highlights.subgenres.length > 0) {
+      const matchedSubgenres = highlights.subgenres
+        .map((h: string) => h.replace(/<em>|<\/em>/g, ''))
+        .filter((s: string) => trackSource.subgenres?.includes(s));
+      if (matchedSubgenres.length > 0) {
+        reasons.push(
+          `Same subgenre${matchedSubgenres.length > 1 ? 's' : ''}: ${matchedSubgenres.slice(0, 3).join(', ')}`,
+        );
+      }
+    }
+
+    if (highlights.ai_tags && highlights.ai_tags.length > 0) {
+      const matchedTags = highlights.ai_tags
+        .map((h: string) => h.replace(/<em>|<\/em>/g, ''))
+        .filter((tag: string) => trackSource.ai_tags?.includes(tag));
+      if (matchedTags.length > 0) {
+        reasons.push(`Similar tags: ${matchedTags.slice(0, 3).join(', ')}`);
+      }
+    }
+
+    if (highlights.atmosphere_desc && highlights.atmosphere_desc.length > 0) {
+      const matchedAtmosphere = highlights.atmosphere_desc
+        .map((h: string) => h.replace(/<em>|<\/em>/g, ''))
+        .filter((keyword: string) =>
+          trackSource.atmosphere_desc?.includes(keyword),
+        );
+      if (matchedAtmosphere.length > 0) {
+        reasons.push(
+          `Similar atmosphere: ${matchedAtmosphere.slice(0, 2).join(', ')}`,
+        );
+      }
+    }
+
+    if (highlights.ai_description && highlights.ai_description.length > 0) {
+      reasons.push('Similar AI description');
+    }
+
+    if (highlights.vocals_desc && highlights.vocals_desc.length > 0) {
+      reasons.push('Similar vocal characteristics');
+    }
+
+    if (
+      highlights.context_background &&
+      highlights.context_background.length > 0
+    ) {
+      reasons.push('Similar context background');
+    }
+
+    if (highlights.context_impact && highlights.context_impact.length > 0) {
+      reasons.push('Similar context impact');
+    }
+
+    if (
+      highlights['audio_fingerprint.energy_keywords'] &&
+      highlights['audio_fingerprint.energy_keywords'].length > 0
+    ) {
+      const matchedKeywords = highlights['audio_fingerprint.energy_keywords']
+        .map((h: string) => h.replace(/<em>|<\/em>/g, ''))
+        .filter((keyword: string) =>
+          trackSource.audio_fingerprint?.energy_keywords?.includes(keyword),
+        );
+      if (matchedKeywords.length > 0) {
+        reasons.push(
+          `Similar energy: ${matchedKeywords.slice(0, 2).join(', ')}`,
+        );
+      }
+    }
+
+    // Add audio feature reasons that can't be highlighted (tempo, key, energy, etc.)
+    // These come from function_score and k-NN queries which don't support highlighting
+    const audioFeatureReasons = this.generateAudioFeatureReasons(
+      trackSource,
+      playlistFeatures,
+    );
+    audioFeatureReasons.forEach((reason) => {
+      // Avoid duplicates
+      if (!reasons.some((r) => r === reason)) {
+        reasons.push(reason);
+      }
+    });
+
+    // If no reasons found at all, fallback to full reason generation
+    if (reasons.length === 0) {
+      return this.generateRecommendationReasons(trackSource, playlistFeatures);
+    }
+
+    return reasons;
+  }
+
+  /**
+   * Generate reasons for audio features that can't be highlighted
+   * (k-NN queries, function_score queries, etc.)
+   */
+  private generateAudioFeatureReasons(
     trackSource: ElasticsearchMusicTrackDocument,
     playlistFeatures: AudioFeatures,
   ): string[] {
     const reasons: string[] = [];
-
-    // Genre reasons
-    if (
-      playlistFeatures.genres &&
-      playlistFeatures.genres.length > 0 &&
-      trackSource.genres &&
-      trackSource.genres.length > 0
-    ) {
-      const matchingGenres = playlistFeatures.genres.filter((g) =>
-        trackSource.genres.includes(g),
-      );
-      if (matchingGenres.length > 0) {
-        reasons.push(`Same genre${matchingGenres.length > 1 ? 's' : ''}: ${matchingGenres.join(', ')}`);
-      }
-    }
-    if (
-      playlistFeatures.subgenres &&
-      playlistFeatures.subgenres.length > 0 &&
-      trackSource.subgenres &&
-      trackSource.subgenres.length > 0
-    ) {
-      const matchingSubgenres = playlistFeatures.subgenres.filter((s) =>
-        trackSource.subgenres.includes(s),
-      );
-      if (matchingSubgenres.length > 0) {
-        reasons.push(`Same subgenre${matchingSubgenres.length > 1 ? 's' : ''}: ${matchingSubgenres.join(', ')}`);
-      }
-    }
 
     // Camelot key matching (harmonic mixing)
     if (
@@ -851,7 +1104,7 @@ export class RecommendationService {
       const energyDiff = Math.abs(
         trackSource.audio_fingerprint.energy_factor - playlistFeatures.energy,
       );
-      if (energyDiff <= 0.2) {
+      if (energyDiff <= 0.1) {
         reasons.push('Similar energy level');
       }
     }
@@ -864,7 +1117,7 @@ export class RecommendationService {
       const valenceDiff = Math.abs(
         trackSource.audio_fingerprint.valence - playlistFeatures.valence,
       );
-      if (valenceDiff <= 0.15) {
+      if (valenceDiff <= 0.1) {
         reasons.push(
           `Similar mood: ${trackSource.audio_fingerprint.valence_mood || 'matching valence'}`,
         );
@@ -878,7 +1131,7 @@ export class RecommendationService {
       const arousalDiff = Math.abs(
         trackSource.audio_fingerprint.arousal - playlistFeatures.arousal,
       );
-      if (arousalDiff <= 0.15) {
+      if (arousalDiff <= 0.1) {
         reasons.push(
           `Similar intensity: ${trackSource.audio_fingerprint.arousal_mood || 'matching arousal'}`,
         );
@@ -894,7 +1147,7 @@ export class RecommendationService {
         trackSource.audio_fingerprint.danceability -
           playlistFeatures.danceability,
       );
-      if (danceabilityDiff <= 0.15) {
+      if (danceabilityDiff <= 0.1) {
         reasons.push(
           `Similar danceability: ${trackSource.audio_fingerprint.danceability_feeling || 'matching groove'}`,
         );
@@ -910,34 +1163,12 @@ export class RecommendationService {
         trackSource.audio_fingerprint.rhythm_stability -
           playlistFeatures.rhythmStability,
       );
-      if (rhythmDiff <= 0.15) {
+      if (rhythmDiff <= 0.1) {
         reasons.push('Similar rhythm pattern');
       }
     }
 
-    // Energy keywords matching
-    if (
-      trackSource.audio_fingerprint?.energy_keywords &&
-      playlistFeatures.energyKeywords
-    ) {
-      const trackKeywords = Array.isArray(
-        trackSource.audio_fingerprint.energy_keywords,
-      )
-        ? trackSource.audio_fingerprint.energy_keywords
-        : [];
-      const commonKeywords = trackKeywords.filter((keyword) =>
-        playlistFeatures.energyKeywords?.includes(keyword),
-      );
-      if (commonKeywords.length > 0) {
-        reasons.push(
-          `Similar energy: ${commonKeywords.slice(0, 2).join(', ')}`,
-        );
-      }
-    }
-
     // Harmonic progression similarity (tonnetz k-NN)
-    // Note: k-NN similarity is already captured in the score
-    // We can add a reason if we want to explain tonnetz matches
     if (
       trackSource.audio_fingerprint?.tonnetz?.overall_mean !== undefined &&
       playlistFeatures.tonnetzOverallMean !== undefined
@@ -964,6 +1195,181 @@ export class RecommendationService {
         reasons.push(
           `Similar pitch content (${trackSource.audio_fingerprint.chroma.dominant_pitch})`,
         );
+      }
+    }
+
+    // User behavior reasons
+    if (trackSource.is_favorite) {
+      reasons.push('User favorite');
+    }
+    if (trackSource.listening_count > 5) {
+      reasons.push('Frequently played');
+    }
+
+    return reasons;
+  }
+
+  private generateRecommendationReasons(
+    trackSource: ElasticsearchMusicTrackDocument,
+    playlistFeatures: AudioFeatures,
+  ): string[] {
+    const reasons: string[] = [];
+
+    // Genre reasons (fallback if not in highlights)
+    if (
+      playlistFeatures.genres &&
+      playlistFeatures.genres.length > 0 &&
+      trackSource.genres &&
+      trackSource.genres.length > 0
+    ) {
+      const matchingGenres = playlistFeatures.genres.filter((g) =>
+        trackSource.genres.includes(g),
+      );
+      if (matchingGenres.length > 0) {
+        reasons.push(
+          `Same genre${matchingGenres.length > 1 ? 's' : ''}: ${matchingGenres.join(', ')}`,
+        );
+      }
+    }
+    if (
+      playlistFeatures.subgenres &&
+      playlistFeatures.subgenres.length > 0 &&
+      trackSource.subgenres &&
+      trackSource.subgenres.length > 0
+    ) {
+      const matchingSubgenres = playlistFeatures.subgenres.filter((s) =>
+        trackSource.subgenres.includes(s),
+      );
+      if (matchingSubgenres.length > 0) {
+        reasons.push(
+          `Same subgenre${matchingSubgenres.length > 1 ? 's' : ''}: ${matchingSubgenres.join(', ')}`,
+        );
+      }
+    }
+
+    // Energy keywords matching (fallback if not in highlights)
+    if (
+      trackSource.audio_fingerprint?.energy_keywords &&
+      playlistFeatures.energyKeywords
+    ) {
+      const trackKeywords = Array.isArray(
+        trackSource.audio_fingerprint.energy_keywords,
+      )
+        ? trackSource.audio_fingerprint.energy_keywords
+        : [];
+      const commonKeywords = trackKeywords.filter((keyword) =>
+        playlistFeatures.energyKeywords?.includes(keyword),
+      );
+      if (commonKeywords.length > 0) {
+        reasons.push(
+          `Similar energy: ${commonKeywords.slice(0, 2).join(', ')}`,
+        );
+      }
+    }
+
+    // AI metadata reasons
+    if (
+      trackSource.ai_tags &&
+      Array.isArray(trackSource.ai_tags) &&
+      playlistFeatures.aiTags &&
+      playlistFeatures.aiTags.length > 0
+    ) {
+      const commonTags = trackSource.ai_tags.filter((tag) =>
+        playlistFeatures.aiTags?.includes(tag),
+      );
+      if (commonTags.length > 0) {
+        reasons.push(`Similar tags: ${commonTags.slice(0, 3).join(', ')}`);
+      }
+    }
+
+    if (
+      trackSource.atmosphere_desc &&
+      Array.isArray(trackSource.atmosphere_desc) &&
+      playlistFeatures.atmosphereKeywords &&
+      playlistFeatures.atmosphereKeywords.length > 0
+    ) {
+      const commonAtmosphere = trackSource.atmosphere_desc.filter((keyword) =>
+        playlistFeatures.atmosphereKeywords?.includes(keyword),
+      );
+      if (commonAtmosphere.length > 0) {
+        reasons.push(
+          `Similar atmosphere: ${commonAtmosphere.slice(0, 2).join(', ')}`,
+        );
+      }
+    }
+
+    if (
+      trackSource.vocals_desc &&
+      playlistFeatures.vocalsDescriptions &&
+      playlistFeatures.vocalsDescriptions.length > 0
+    ) {
+      const matchingVocals = playlistFeatures.vocalsDescriptions.some(
+        (vocals) =>
+          trackSource.vocals_desc &&
+          trackSource.vocals_desc.toLowerCase().includes(vocals.toLowerCase()),
+      );
+      if (matchingVocals) {
+        reasons.push('Similar vocal characteristics');
+      }
+    }
+
+    if (
+      trackSource.ai_description &&
+      playlistFeatures.aiDescriptions &&
+      playlistFeatures.aiDescriptions.length > 0
+    ) {
+      const matchingDescription = playlistFeatures.aiDescriptions.some(
+        (desc) =>
+          trackSource.ai_description &&
+          (trackSource.ai_description
+            .toLowerCase()
+            .includes(desc.toLowerCase()) ||
+            desc
+              .toLowerCase()
+              .includes(trackSource.ai_description.toLowerCase())),
+      );
+      if (matchingDescription) {
+        reasons.push('Similar AI description');
+      }
+    }
+
+    if (
+      trackSource.context_background &&
+      playlistFeatures.contextBackgrounds &&
+      playlistFeatures.contextBackgrounds.length > 0
+    ) {
+      const matchingContext = playlistFeatures.contextBackgrounds.some(
+        (context) =>
+          trackSource.context_background &&
+          (trackSource.context_background
+            .toLowerCase()
+            .includes(context.toLowerCase()) ||
+            context
+              .toLowerCase()
+              .includes(trackSource.context_background.toLowerCase())),
+      );
+      if (matchingContext) {
+        reasons.push('Similar context background');
+      }
+    }
+
+    if (
+      trackSource.context_impact &&
+      playlistFeatures.contextImpacts &&
+      playlistFeatures.contextImpacts.length > 0
+    ) {
+      const matchingImpact = playlistFeatures.contextImpacts.some(
+        (impact) =>
+          trackSource.context_impact &&
+          (trackSource.context_impact
+            .toLowerCase()
+            .includes(impact.toLowerCase()) ||
+            impact
+              .toLowerCase()
+              .includes(trackSource.context_impact.toLowerCase())),
+      );
+      if (matchingImpact) {
+        reasons.push('Similar context impact');
       }
     }
 
@@ -1012,6 +1418,14 @@ export class RecommendationService {
     const arousalMoodCounts: Record<string, number> = {};
     const danceabilityFeelingCounts: Record<string, number> = {};
     const allEnergyKeywords: string[] = [];
+
+    // AI metadata collections
+    const aiDescriptions: string[] = [];
+    const aiTags: string[] = [];
+    const vocalsDescriptions: string[] = [];
+    const atmosphereKeywords: string[] = [];
+    const contextBackgrounds: string[] = [];
+    const contextImpacts: string[] = [];
 
     // Arrays for vector features
     const mfccArrays: number[][] = [];
@@ -1273,6 +1687,40 @@ export class RecommendationService {
       if (album) {
         albumCounts[album] = (albumCounts[album] || 0) + 1;
       }
+
+      // Collect AI metadata
+      if (track.aiDescription) {
+        aiDescriptions.push(track.aiDescription);
+      }
+      if (track.aiTags) {
+        try {
+          const tags = JSON.parse(track.aiTags);
+          if (Array.isArray(tags)) {
+            aiTags.push(...tags);
+          }
+        } catch (e) {
+          // Ignore parsing errors
+        }
+      }
+      if (track.vocalsDesc) {
+        vocalsDescriptions.push(track.vocalsDesc);
+      }
+      if (track.atmosphereDesc) {
+        try {
+          const atmosphere = JSON.parse(track.atmosphereDesc);
+          if (Array.isArray(atmosphere)) {
+            atmosphereKeywords.push(...atmosphere);
+          }
+        } catch (e) {
+          // Ignore parsing errors
+        }
+      }
+      if (track.contextBackground) {
+        contextBackgrounds.push(track.contextBackground);
+      }
+      if (track.contextImpact) {
+        contextImpacts.push(track.contextImpact);
+      }
     });
 
     // Calculate averages
@@ -1372,6 +1820,40 @@ export class RecommendationService {
         .map(([keyword]) => keyword);
     }
 
+    // Aggregate AI metadata (collect unique values and most common)
+    if (aiDescriptions.length > 0) {
+      features.aiDescriptions = [...new Set(aiDescriptions)];
+    }
+    if (aiTags.length > 0) {
+      const tagCounts: Record<string, number> = {};
+      aiTags.forEach((tag) => {
+        tagCounts[tag] = (tagCounts[tag] || 0) + 1;
+      });
+      features.aiTags = Object.entries(tagCounts)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 10)
+        .map(([tag]) => tag);
+    }
+    if (vocalsDescriptions.length > 0) {
+      features.vocalsDescriptions = [...new Set(vocalsDescriptions)];
+    }
+    if (atmosphereKeywords.length > 0) {
+      const atmosphereCounts: Record<string, number> = {};
+      atmosphereKeywords.forEach((keyword) => {
+        atmosphereCounts[keyword] = (atmosphereCounts[keyword] || 0) + 1;
+      });
+      features.atmosphereKeywords = Object.entries(atmosphereCounts)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 10)
+        .map(([keyword]) => keyword);
+    }
+    if (contextBackgrounds.length > 0) {
+      features.contextBackgrounds = [...new Set(contextBackgrounds)];
+    }
+    if (contextImpacts.length > 0) {
+      features.contextImpacts = [...new Set(contextImpacts)];
+    }
+
     return features;
   }
 
@@ -1418,6 +1900,16 @@ export class RecommendationService {
           aiAnalysisResult: true,
           library: true,
           imageSearches: true,
+          trackGenres: {
+            include: {
+              genre: true,
+            },
+          },
+          trackSubgenres: {
+            include: {
+              subgenre: true,
+            },
+          },
         },
       });
       if (!track) {
@@ -1445,6 +1937,16 @@ export class RecommendationService {
           aiAnalysisResult: true,
           library: true,
           imageSearches: true,
+          trackGenres: {
+            include: {
+              genre: true,
+            },
+          },
+          trackSubgenres: {
+            include: {
+              subgenre: true,
+            },
+          },
         },
       });
 
@@ -1498,6 +2000,7 @@ export class RecommendationService {
   public mapTrackToElasticsearchDocument(
     track: MusicTrackWithRelations,
   ): ElasticsearchMusicTrackDocument {
+    console.log(track);
     const fingerprint = track.audioFingerprint;
     const aiAnalysis = track.aiAnalysisResult;
 

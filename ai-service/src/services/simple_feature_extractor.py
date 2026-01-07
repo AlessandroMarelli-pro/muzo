@@ -390,6 +390,8 @@ class SimpleFeatureExtractor:
         bpm_metadata: dict,
         sr: int,
         file_path: str,
+        ai_bpm: float = None,
+        ai_key: str = None,
     ) -> Dict[str, Any]:
         """
         Extract basic audio features using optimized samples.
@@ -415,11 +417,20 @@ class SimpleFeatureExtractor:
             tempo, beat_strength, bpm_results = bpm_detector.detect_bpm_from_file(
                 file_path, bpm_metadata
             )
+            if ai_bpm:
+                tempo = ai_bpm
 
             # Use harmonic sample for key detection (key is based on tonal content)
             key, camelot_key, tonnetz_mode = KeyDetector(
                 self.shared_features
             ).get_simple_key(y_harmonic, sr)
+            if ai_key:
+                key = ai_key
+                camelot_key = KeyDetector(self.shared_features).camelot_wheel.get(
+                    key.upper(), "Unknown"
+                )
+                tonnetz_mode = "major" if "major" in key.lower() else "minor"
+            key = key.capitalize()
             spectral_features = self._get_spectral_features()
             # Use harmonic sample for musical features (mood/valence based on harmony)
 

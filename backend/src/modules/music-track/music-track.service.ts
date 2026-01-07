@@ -944,6 +944,16 @@ export class MusicTrackService {
         editorSessions: true,
         playbackSessions: true,
         imageSearches: true,
+        trackGenres: {
+          include: {
+            genre: true,
+          },
+        },
+        trackSubgenres: {
+          include: {
+            subgenre: true,
+          },
+        },
       },
     });
 

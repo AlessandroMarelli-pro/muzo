@@ -1,9 +1,12 @@
+import { SimpleMusicTrack } from 'src/modules/music-track/music-track.model';
+
 export interface RecommendationWeights {
   audioSimilarity: number; // MFCC, chroma, spectral features
   genreSimilarity: number; // AI genre + subgenre classification
   metadataSimilarity: number; // Artist, album, year patterns
   userBehavior: number; // Listening history, favorites
   audioFeatures: number; // Tempo, key, energy, valence
+  aiMetadataSimilarity: number; // AI description, tags, vocals, atmosphere, context
 }
 
 export interface RecommendationCriteria {
@@ -13,7 +16,7 @@ export interface RecommendationCriteria {
 }
 
 export interface TrackSimilarity {
-  track: any; // MusicTrack type
+  track: SimpleMusicTrack;
   similarity: number;
   reasons: string[];
 }
@@ -69,6 +72,13 @@ export interface AudioFeatures {
   modeFactor?: number;
   energyKeywords?: string[];
   energyComment?: string;
+  // AI metadata fields
+  aiDescriptions?: string[]; // Aggregated descriptions from playlist tracks
+  aiTags?: string[]; // Aggregated tags from playlist tracks
+  vocalsDescriptions?: string[]; // Aggregated vocals descriptions
+  atmosphereKeywords?: string[]; // Aggregated atmosphere keywords
+  contextBackgrounds?: string[]; // Aggregated context backgrounds
+  contextImpacts?: string[]; // Aggregated context impacts
 }
 
 export interface PlaylistFeatures {

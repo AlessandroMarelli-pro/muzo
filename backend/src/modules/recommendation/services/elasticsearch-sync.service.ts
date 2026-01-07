@@ -80,6 +80,16 @@ export class ElasticsearchSyncService implements OnModuleInit {
           aiAnalysisResult: true,
           library: true,
           imageSearches: true,
+          trackGenres: {
+            include: {
+              genre: true,
+            },
+          },
+          trackSubgenres: {
+            include: {
+              subgenre: true,
+            },
+          },
         },
       });
 
