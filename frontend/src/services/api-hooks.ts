@@ -715,6 +715,84 @@ export const useUpdateTrack = () => {
   });
 };
 
+export const useLikeTrack = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (trackId: string) => {
+      const response = await graffleClient.request<{
+        likeTrack: SimpleMusicTrack;
+      }>(
+        gql`
+          ${simpleMusicTrackFragment}
+          mutation LikeTrack($trackId: ID!) {
+            likeTrack(trackId: $trackId) {
+              ...SimpleMusicTrackFragment
+            }
+          }
+        `,
+        { trackId },
+      );
+      return response.likeTrack;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.randomTrack() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.tracks() });
+    },
+  });
+};
+
+export const useBangerTrack = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (trackId: string) => {
+      const response = await graffleClient.request<{
+        bangerTrack: SimpleMusicTrack;
+      }>(
+        gql`
+          ${simpleMusicTrackFragment}
+          mutation BangerTrack($trackId: ID!) {
+            bangerTrack(trackId: $trackId) {
+              ...SimpleMusicTrackFragment
+            }
+          }
+        `,
+        { trackId },
+      );
+      return response.bangerTrack;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.randomTrack() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.tracks() });
+    },
+  });
+};
+
+export const useDislikeTrack = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (trackId: string) => {
+      const response = await graffleClient.request<{
+        dislikeTrack: boolean;
+      }>(
+        gql`
+          mutation DislikeTrack($trackId: ID!) {
+            dislikeTrack(trackId: $trackId)
+          }
+        `,
+        { trackId },
+      );
+      return response.dislikeTrack;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.randomTrack() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.tracks() });
+    },
+  });
+};
+
 export const useUpdatePreferences = () => {
   const queryClient = useQueryClient();
 

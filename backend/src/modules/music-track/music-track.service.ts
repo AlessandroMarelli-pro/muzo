@@ -14,6 +14,7 @@ import {
   MusicTrackStats,
   UpdateMusicTrackDto,
 } from '../../models/music-track.model';
+import { ElasticsearchService } from '../../shared/services/elasticsearch.service';
 import { PrismaService } from '../../shared/services/prisma.service';
 import { FilterService } from '../filter/filter.service';
 import { PlaylistService } from '../playlist/playlist.service';
@@ -30,6 +31,7 @@ export class MusicTrackService {
     private readonly playlistService: PlaylistService,
     private readonly filterService: FilterService,
     private readonly recommendationService: RecommendationService,
+    private readonly elasticsearchService: ElasticsearchService,
   ) {}
 
   async create(createDto: CreateMusicTrackDto): Promise<MusicTrack> {
@@ -915,26 +917,6 @@ export class MusicTrackService {
     });
   }
 
-  async getRandomTrack(): Promise<MusicTrack> {
-    const tracksCount = await this.prisma.musicTrack.count({
-      where: {},
-    });
-    const skip = Math.floor(Math.random() * tracksCount);
-    return this.prisma.musicTrack.findFirst({
-      where: {},
-      take: 1,
-      skip: skip,
-      include: {
-        library: true,
-        audioFingerprint: true,
-        aiAnalysisResult: true,
-        editorSessions: true,
-        playbackSessions: true,
-        imageSearches: true,
-      },
-    });
-  }
-
   async getTrackRecommendations(id: string, criteria?: string) {
     const track = await this.prisma.musicTrack.findUnique({
       where: { id },
@@ -993,5 +975,213 @@ export class MusicTrackService {
       result.push(track);
     }
     return result;
+  }
+
+  async likeTrack(trackId: string): Promise<MusicTrack> {
+    const track = await this.prisma.musicTrack.update({
+      where: { id: trackId },
+      data: { isLiked: true },
+    });
+    return track;
+  }
+
+  async bangerTrack(trackId: string): Promise<MusicTrack> {
+    const track = await this.prisma.musicTrack.update({
+      where: { id: trackId },
+      data: { isBanger: true, isLiked: true },
+    });
+    return track;
+  }
+
+  async dislikeTrack(trackId: string): Promise<void> {
+    // Get the track with all its data
+    const track = await this.prisma.musicTrack.findUnique({
+      where: { id: trackId },
+      include: {
+        audioFingerprint: true,
+        aiAnalysisResult: true,
+        editorSessions: true,
+        playbackSessions: true,
+        playlistTracks: true,
+      },
+    });
+
+    if (!track) {
+      throw new NotFoundException(`Music track with ID ${trackId} not found`);
+    }
+
+    // Delete related data
+    // Use deleteMany which is idempotent and won't throw if record doesn't exist
+    if (track.audioFingerprint?.id) {
+      await this.prisma.audioFingerprint.deleteMany({
+        where: { id: track.audioFingerprint.id },
+      });
+    }
+
+    if (track.aiAnalysisResult?.id) {
+      await this.prisma.aIAnalysisResult.deleteMany({
+        where: { id: track.aiAnalysisResult.id },
+      });
+    }
+
+    if (track.editorSessions.length > 0) {
+      await this.prisma.intelligentEditorSession.deleteMany({
+        where: { trackId },
+      });
+    }
+
+    if (track.playbackSessions.length > 0) {
+      await this.prisma.playbackSession.deleteMany({
+        where: { trackId },
+      });
+    }
+
+    if (track.playlistTracks.length > 0) {
+      await this.prisma.playlistTrack.deleteMany({
+        where: { trackId },
+      });
+    }
+
+    // Delete from Elasticsearch
+    try {
+      await this.elasticsearchService.deleteTrack(trackId);
+    } catch (error) {
+      // Log error but continue - Elasticsearch deletion failure shouldn't block the operation
+      console.error(
+        `Error deleting track ${trackId} from Elasticsearch:`,
+        error,
+      );
+    }
+
+    // Create hidden track entry (without relations)
+    await this.prisma.hiddenMusicTrack.create({
+      data: {
+        filePath: track.filePath,
+        fileName: track.fileName,
+        fileSize: track.fileSize,
+        duration: track.duration,
+        format: track.format,
+        bitrate: track.bitrate,
+        sampleRate: track.sampleRate,
+        originalTitle: track.originalTitle,
+        originalArtist: track.originalArtist,
+        originalAlbum: track.originalAlbum,
+        originalYear: track.originalYear,
+        originalAlbumartist: track.originalAlbumartist,
+        originalDate: track.originalDate,
+        originalBpm: track.originalBpm,
+        originalTrack_number: track.originalTrack_number,
+        originalDisc_number: track.originalDisc_number,
+        originalComment: track.originalComment,
+        originalComposer: track.originalComposer,
+        originalCopyright: track.originalCopyright,
+        aiTitle: track.aiTitle,
+        aiArtist: track.aiArtist,
+        aiAlbum: track.aiAlbum,
+        aiConfidence: track.aiConfidence,
+        aiSubgenreConfidence: track.aiSubgenreConfidence,
+        aiDescription: track.aiDescription,
+        aiTags: track.aiTags,
+        vocalsDesc: track.vocalsDesc,
+        atmosphereDesc: track.atmosphereDesc,
+        contextBackground: track.contextBackground,
+        contextImpact: track.contextImpact,
+        userTitle: track.userTitle,
+        userArtist: track.userArtist,
+        userAlbum: track.userAlbum,
+        userTags: track.userTags,
+        listeningCount: track.listeningCount,
+        lastPlayedAt: track.lastPlayedAt,
+        isFavorite: track.isFavorite,
+        isLiked: track.isLiked,
+        isBanger: track.isBanger,
+        analysisStatus: track.analysisStatus,
+        analysisStartedAt: track.analysisStartedAt,
+        analysisCompletedAt: track.analysisCompletedAt,
+        analysisError: track.analysisError,
+        hasMusicbrainz: track.hasMusicbrainz,
+        hasDiscogs: track.hasDiscogs,
+        libraryId: track.libraryId,
+        createdAt: track.createdAt,
+        updatedAt: track.updatedAt,
+      },
+    });
+
+    // Delete the original track
+    await this.prisma.musicTrack.delete({
+      where: { id: trackId },
+    });
+  }
+
+  async getRandomTrack(): Promise<MusicTrack> {
+    // Exclude tracks that are already liked (or include them? Let's exclude disliked/hidden ones)
+    // Actually, we should exclude tracks that are in hidden_music_tracks
+    // But since we're querying music_tracks, hidden tracks won't be there anyway
+    // We might want to exclude already liked tracks, but the requirement says to use randomTrack
+    // Let's keep it simple and just get a random track that's not liked yet
+    const tracksCount = await this.prisma.musicTrack.count({
+      where: {
+        isLiked: false, // Exclude already liked tracks from random selection
+      },
+    });
+
+    if (tracksCount === 0) {
+      // If all tracks are liked, get any random track
+      const allTracksCount = await this.prisma.musicTrack.count();
+      if (allTracksCount === 0) {
+        throw new NotFoundException('No tracks found');
+      }
+      const skip = Math.floor(Math.random() * allTracksCount);
+      return this.prisma.musicTrack.findFirst({
+        where: {},
+        take: 1,
+        skip: skip,
+        include: {
+          library: true,
+          audioFingerprint: true,
+          aiAnalysisResult: true,
+          editorSessions: true,
+          playbackSessions: true,
+          imageSearches: true,
+          trackGenres: {
+            include: {
+              genre: true,
+            },
+          },
+          trackSubgenres: {
+            include: {
+              subgenre: true,
+            },
+          },
+        },
+      });
+    }
+
+    const skip = Math.floor(Math.random() * tracksCount);
+    return this.prisma.musicTrack.findFirst({
+      where: {
+        isLiked: false,
+      },
+      take: 1,
+      skip: skip,
+      include: {
+        library: true,
+        audioFingerprint: true,
+        aiAnalysisResult: true,
+        editorSessions: true,
+        playbackSessions: true,
+        imageSearches: true,
+        trackGenres: {
+          include: {
+            genre: true,
+          },
+        },
+        trackSubgenres: {
+          include: {
+            subgenre: true,
+          },
+        },
+      },
+    });
   }
 }

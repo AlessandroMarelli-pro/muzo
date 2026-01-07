@@ -1,6 +1,5 @@
 import { SimpleMusicTrack } from '@/__generated__/types';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import {
   useAudioPlayerActions,
   useCurrentTrack,
@@ -10,6 +9,7 @@ import { cn } from '@/lib/utils';
 import { Pause, Play, Plus } from 'lucide-react';
 import { memo, useRef, useState } from 'react';
 import { Button } from '../ui/button';
+import { MusicCardContent } from './music-card-content';
 
 interface MusicCardProps {
   track: SimpleMusicTrack;
@@ -22,15 +22,6 @@ interface MusicCardProps {
 function MusicCard({ track, className, onAdd, setQueue, key }: MusicCardProps) {
   const cardRef = useRef<HTMLDivElement>(null);
   const [isHovered, setIsHovered] = useState(false);
-  const formattedTitle = track.title || 'Unknown Title';
-  const formattedArtist = track.artist || 'Unknown Artist';
-  const formattedGenres = track.genres && track.genres.length > 0 
-    ? track.genres.join(', ') 
-    : 'Unknown Genre';
-  const formattedSubgenres = track.subgenres && track.subgenres.length > 0 
-    ? track.subgenres.join(', ') 
-    : 'Unknown Subgenre';
-  const formattedImage = track.imagePath || 'Unknown Image';
   const { currentTrack, setCurrentTrack } = useCurrentTrack();
   const actions = useAudioPlayerActions();
   const isPlaying = useIsPlaying();
@@ -38,8 +29,6 @@ function MusicCard({ track, className, onAdd, setQueue, key }: MusicCardProps) {
   // Only check if this specific track is the current track and playing
   const isCurrentTrack = currentTrack?.id === track.id;
   const isThisTrackPlaying = isCurrentTrack && isPlaying;
-
-  const bpm = track.tempo || 'Unknown BPM';
 
   const playMusic = (e: React.SyntheticEvent<any>) => {
     if (currentTrack?.id !== track.id) {
@@ -69,24 +58,25 @@ function MusicCard({ track, className, onAdd, setQueue, key }: MusicCardProps) {
         }}
         ref={cardRef}
       >
-        <CardContent className="p-0">
-          {(isHovered || isThisTrackPlaying) && (
-            <div className="  absolute flex items-center justify-center z-2 h-full w-full rounded-xl">
-              <div className="absolute top-0 left-0 h-full w-full bg-primary/50 opacity-50 rounded-xl" />
+        <MusicCardContent
+          track={track}
+          showPlayButton={isHovered || isThisTrackPlaying}
+          playButton={
+            <>
               <Button
                 size="sm"
                 disabled={false}
                 variant="default"
                 className={cn(
-                  '   duration-200',
-                  'h-12 w-12 rounded-full  shadow-lg  z-1000',
+                  'duration-200',
+                  'h-12 w-12 rounded-full shadow-lg z-1000',
                 )}
                 onClick={playMusic}
               >
                 {isThisTrackPlaying ? (
                   <Pause className="h-5 w-5" />
                 ) : (
-                  <Play className="h-5 w-5 " />
+                  <Play className="h-5 w-5" />
                 )}
               </Button>
               {onAdd && (
@@ -104,67 +94,9 @@ function MusicCard({ track, className, onAdd, setQueue, key }: MusicCardProps) {
                   <Plus className="h-5 w-5" />
                 </Button>
               )}
-            </div>
-          )}
-
-          {/* Track Info */}
-          <div className="space-y-1">
-            <div className="w-full h-[60%]  absolute ">
-              <div className="flex items-center justify-center h-full w-full ">
-                <img
-                  src={`http://localhost:3000/api/images/serve?imagePath=${formattedImage}`}
-                  alt="Album Art"
-                  className="w-35 h-35 object-cover rounded-md z-1"
-                />
-              </div>
-              <div className="z-0 absolute top-0 left-1/8 w-full h-full   opacity-50   blur-md">
-                <img
-                  src={`http://localhost:3000/api/images/serve?imagePath=${formattedImage}`}
-                  alt="Album Art"
-                  className="w-55 h-75 object-cover rounded-md "
-                />
-              </div>
-              <Badge
-                variant="secondary"
-                className="text-[11px] absolute bottom-0 right-1 z-1 "
-              >
-                {bpm} bpm
-              </Badge>
-            </div>
-            <div className="h-45 " />
-            <div className="space-y-2 p-2 z-1 h-full bg-background/90 rounded-xl flex flex-col justify-end backdrop-blur-sm  ">
-              <div className="px-1">
-                <h3
-                  className="font-semibold text-sm leading-tight line-clamp-1 capitalize"
-                  title={formattedTitle}
-                >
-                  {formattedTitle}
-                </h3>
-                <p
-                  className="text-xs text-muted-foreground line-clamp-1 capitalize"
-                  title={formattedArtist}
-                >
-                  {formattedArtist}
-                </p>
-              </div>
-              {/* Genre and Subgenre */}
-              <div className="flex flex-col flex-wrap gap-1 ">
-                {formattedGenres !== 'Unknown Genre' && (
-                  <Badge variant="secondary" className="text-xs">
-                    {formattedGenres}
-                  </Badge>
-                )}
-                {formattedSubgenres !== 'Unknown Subgenre' && (
-                  <Badge variant="outline" className="text-xs">
-                    {formattedSubgenres}
-                  </Badge>
-                )}
-              </div>
-            </div>
-
-            {/* Duration */}
-          </div>
-        </CardContent>
+            </>
+          }
+        />
       </Card>
     </div>
   );

@@ -191,6 +191,8 @@ export interface ElasticsearchMusicTrackDocument {
   listening_count?: number;
   last_played_at?: string | Date;
   is_favorite?: boolean;
+  is_liked?: boolean;
+  is_banger?: boolean;
 
   // Analysis Status
   analysis_status?: string;

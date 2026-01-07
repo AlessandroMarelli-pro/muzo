@@ -37,6 +37,7 @@ model MusicLibrary {
   
   // Relations
   tracks                MusicTrack[]
+  hiddenTracks          HiddenMusicTrack[]
   
   @@map("music_libraries")
 }
@@ -90,6 +91,8 @@ model MusicTrack {
   listeningCount        Int      @default(0)
   lastPlayedAt          DateTime?
   isFavorite            Boolean @default(false)
+  isLiked               Boolean @default(false)
+  isBanger              Boolean @default(false)
 
   // Analysis Status
   analysisStatus        AnalysisStatus @default(PENDING)
@@ -455,6 +458,87 @@ model TrackSubgenre {
   @@index([trackId])
   @@index([subgenreId])
   @@map("track_subgenres")
+}
+
+model HiddenMusicTrack {
+  id                    String   @id @default(uuid())
+  filePath              String   @unique
+  fileName              String
+  fileSize              Int
+  duration              Float
+  format                String
+  bitrate               Int?
+  sampleRate            Int?
+  
+  // Original Metadata
+  originalTitle         String?
+  originalArtist        String?
+  originalAlbum         String?
+  originalYear          Int?
+  originalAlbumartist   String?
+  originalDate          DateTime?
+  originalBpm           Int?
+  originalTrack_number  Int?
+  originalDisc_number   String?
+  originalComment       String?
+  originalComposer      String?
+  originalCopyright     String?
+
+  // AI-Generated Metadata
+  aiTitle               String?
+  aiArtist              String?
+  aiAlbum               String?
+  aiConfidence           Float?
+  aiSubgenreConfidence   Float?
+  aiDescription         String?
+  aiTags                String?
+  vocalsDesc            String?
+  atmosphereDesc        String?
+  contextBackground     String?
+  contextImpact         String?
+ 
+  // User Modifications
+  userTitle             String?
+  userArtist            String?
+  userAlbum             String?
+  userTags              String?
+  
+  // Listening Data
+  listeningCount        Int      @default(0)
+  lastPlayedAt          DateTime?
+  isFavorite            Boolean @default(false)
+  isLiked               Boolean @default(false)
+  isBanger              Boolean @default(false)
+
+  // Analysis Status
+  analysisStatus        AnalysisStatus @default(PENDING)
+  analysisStartedAt     DateTime?
+  analysisCompletedAt   DateTime?
+  analysisError         String?
+  hasMusicbrainz        Boolean?
+  hasDiscogs            Boolean?
+
+  // Timestamps
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  
+  // Relations
+  libraryId             String
+  library               MusicLibrary @relation(fields: [libraryId], references: [id], onDelete: Cascade)
+  
+  // Indexes for query performance
+  @@index([libraryId])
+  @@index([analysisStatus])
+  @@index([isFavorite])
+  @@index([format])
+  @@index([aiConfidence])
+  @@index([createdAt])
+  @@index([listeningCount])
+  @@index([lastPlayedAt])
+  @@index([libraryId, analysisStatus])
+  @@index([libraryId, isFavorite])
+  @@index([analysisStatus, createdAt])
+  @@map("hidden_music_tracks")
 }
 
 // Enums

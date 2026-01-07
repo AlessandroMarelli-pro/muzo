@@ -384,6 +384,12 @@ export class SimpleMusicTrack {
   isFavorite: boolean;
 
   @Field({ nullable: true })
+  isLiked: boolean;
+
+  @Field({ nullable: true })
+  isBanger: boolean;
+
+  @Field({ nullable: true })
   createdAt: Date;
 
   @Field({ nullable: true })

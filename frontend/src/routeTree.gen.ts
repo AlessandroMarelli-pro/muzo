@@ -14,6 +14,7 @@ import { Route as MusicRouteImport } from './routes/music'
 import { Route as FavoritesRouteImport } from './routes/favorites'
 import { Route as CategoriesRouteImport } from './routes/categories'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as SwipeIndexRouteImport } from './routes/swipe.index'
 import { Route as ResearchIndexRouteImport } from './routes/research.index'
 import { Route as PlaylistsIndexRouteImport } from './routes/playlists.index'
 import { Route as LibrariesIndexRouteImport } from './routes/libraries.index'
@@ -44,6 +45,11 @@ const CategoriesRoute = CategoriesRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SwipeIndexRoute = SwipeIndexRouteImport.update({
+  id: '/swipe/',
+  path: '/swipe/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ResearchIndexRoute = ResearchIndexRouteImport.update({
@@ -89,6 +95,7 @@ export interface FileRoutesByFullPath {
   '/libraries': typeof LibrariesIndexRoute
   '/playlists': typeof PlaylistsIndexRoute
   '/research': typeof ResearchIndexRoute
+  '/swipe': typeof SwipeIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -102,6 +109,7 @@ export interface FileRoutesByTo {
   '/libraries': typeof LibrariesIndexRoute
   '/playlists': typeof PlaylistsIndexRoute
   '/research': typeof ResearchIndexRoute
+  '/swipe': typeof SwipeIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -116,6 +124,7 @@ export interface FileRoutesById {
   '/libraries/': typeof LibrariesIndexRoute
   '/playlists/': typeof PlaylistsIndexRoute
   '/research/': typeof ResearchIndexRoute
+  '/swipe/': typeof SwipeIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -131,6 +140,7 @@ export interface FileRouteTypes {
     | '/libraries'
     | '/playlists'
     | '/research'
+    | '/swipe'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -144,6 +154,7 @@ export interface FileRouteTypes {
     | '/libraries'
     | '/playlists'
     | '/research'
+    | '/swipe'
   id:
     | '__root__'
     | '/'
@@ -157,6 +168,7 @@ export interface FileRouteTypes {
     | '/libraries/'
     | '/playlists/'
     | '/research/'
+    | '/swipe/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -171,6 +183,7 @@ export interface RootRouteChildren {
   LibrariesIndexRoute: typeof LibrariesIndexRoute
   PlaylistsIndexRoute: typeof PlaylistsIndexRoute
   ResearchIndexRoute: typeof ResearchIndexRoute
+  SwipeIndexRoute: typeof SwipeIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -208,6 +221,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/swipe/': {
+      id: '/swipe/'
+      path: '/swipe'
+      fullPath: '/swipe'
+      preLoaderRoute: typeof SwipeIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/research/': {
@@ -267,6 +287,7 @@ const rootRouteChildren: RootRouteChildren = {
   LibrariesIndexRoute: LibrariesIndexRoute,
   PlaylistsIndexRoute: PlaylistsIndexRoute,
   ResearchIndexRoute: ResearchIndexRoute,
+  SwipeIndexRoute: SwipeIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

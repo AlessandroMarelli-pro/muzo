@@ -926,6 +926,8 @@ export class RecommendationService {
         ? new Date(source.last_played_at)
         : undefined,
       isFavorite: source.is_favorite ?? false,
+      isLiked: source.is_liked ?? false,
+      isBanger: source.is_banger ?? false,
       createdAt: source.created_at ? new Date(source.created_at) : undefined,
       updatedAt: source.updated_at ? new Date(source.updated_at) : undefined,
       tempo: source.audio_fingerprint?.tempo,

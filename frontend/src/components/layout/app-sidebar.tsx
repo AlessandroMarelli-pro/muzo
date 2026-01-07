@@ -18,6 +18,7 @@ import {
   ListMusic,
   Music,
   Settings,
+  Sparkles,
 } from 'lucide-react';
 import * as React from 'react';
 
@@ -49,6 +50,11 @@ const navigationData = [
         title: 'Research',
         url: '/research',
         icon: Brain,
+      },
+      {
+        title: 'Filter Music',
+        url: '/swipe',
+        icon: Sparkles,
       },
       {
         title: 'Playlists',

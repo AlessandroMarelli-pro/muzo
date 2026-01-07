@@ -367,6 +367,7 @@ type MusicTrackListPaginated {
 type Mutation {
   addTrack(input: AddTrackInput!): MusicTrack!
   addTrackToPlaylist(input: AddTrackToPlaylistInput!, playlistId: ID!, userId: String!): PlaylistTrack!
+  bangerTrack(trackId: ID!): SimpleMusicTrack!
   clearCurrentFilter: Boolean!
   createLibrary(input: CreateLibraryInput!): MusicLibrary!
   createPlaylist(input: CreatePlaylistInput!): Playlist!
@@ -376,6 +377,8 @@ type Mutation {
   deletePlaylist(id: ID!, userId: String!): Boolean!
   deleteSavedFilter(id: ID!): Boolean!
   deleteTrack(id: ID!): Boolean!
+  dislikeTrack(trackId: ID!): Boolean!
+  likeTrack(trackId: ID!): SimpleMusicTrack!
   pauseTrack(trackId: String!): PlaybackState!
   playTrack(startTime: Float! = 0, trackId: String!): PlaybackState!
   recordPlayback(duration: Float!, trackId: ID!): MusicTrack!
@@ -574,7 +577,9 @@ type SimpleMusicTrack {
   id: ID!
   imagePath: String
   instrumentalness: Float
+  isBanger: Boolean
   isFavorite: Boolean
+  isLiked: Boolean
   key: String
   lastPlayedAt: DateTime
   lastScannedAt: DateTime

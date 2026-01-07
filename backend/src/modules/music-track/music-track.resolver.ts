@@ -54,6 +54,8 @@ export function mapToSimpleMusicTrack(
     listeningCount: track.listeningCount,
     lastPlayedAt: track.lastPlayedAt,
     isFavorite: track.isFavorite,
+    isLiked: track.isLiked || false,
+    isBanger: track.isBanger || false,
     createdAt: track.createdAt,
     updatedAt: track.updatedAt,
     tempo: Math.round((track.audioFingerprint?.tempo || 0) * 100) / 100,
@@ -312,6 +314,32 @@ export class MusicTrackResolver {
   async toggleFavorite(@Args('trackId') trackId: string): Promise<MusicTrack> {
     const track = await this.musicTrackService.toggleFavorite(trackId);
     return this.mapToGraphQLTrack(track);
+  }
+
+  @Mutation(() => SimpleMusicTrack)
+  async likeTrack(
+    @Args('trackId', { type: () => ID }) trackId: string,
+  ): Promise<SimpleMusicTrack> {
+    const track = await this.musicTrackService.likeTrack(trackId);
+    const trackWithRelations = await this.musicTrackService.findOne(trackId);
+    return mapToSimpleMusicTrack(trackWithRelations as MusicTrackWithRelations);
+  }
+
+  @Mutation(() => SimpleMusicTrack)
+  async bangerTrack(
+    @Args('trackId', { type: () => ID }) trackId: string,
+  ): Promise<SimpleMusicTrack> {
+    const track = await this.musicTrackService.bangerTrack(trackId);
+    const trackWithRelations = await this.musicTrackService.findOne(trackId);
+    return mapToSimpleMusicTrack(trackWithRelations as MusicTrackWithRelations);
+  }
+
+  @Mutation(() => Boolean)
+  async dislikeTrack(
+    @Args('trackId', { type: () => ID }) trackId: string,
+  ): Promise<boolean> {
+    await this.musicTrackService.dislikeTrack(trackId);
+    return true;
   }
 
   /*  @ResolveField(() => AudioFingerprint, { nullable: true })

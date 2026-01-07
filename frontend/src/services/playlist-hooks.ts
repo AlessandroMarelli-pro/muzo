@@ -22,6 +22,8 @@ export const simpleMusicTrackFragment = gql`
     listeningCount
     lastPlayedAt
     isFavorite
+    isLiked
+    isBanger
     createdAt
     updatedAt
     tempo
