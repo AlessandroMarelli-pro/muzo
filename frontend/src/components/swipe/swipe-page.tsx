@@ -5,16 +5,25 @@ import {
   useCurrentTrack,
   useIsPlaying,
 } from '@/contexts/audio-player-context';
-import { useRandomTrack, useBangerTrack, useDislikeTrack, useLikeTrack } from '@/services/api-hooks';
-import { SwipeView } from './swipe-track';
-import { SwipeControls } from './swipe-controls';
+import {
+  useBangerTrack,
+  useDislikeTrack,
+  useLikeTrack,
+  useRandomTrack,
+} from '@/services/api-hooks';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { SwipeControls } from './swipe-controls';
+import { SwipeView } from './swipe-track';
 
 export function SwipePage() {
   const [trackId, setTrackId] = useState<string | undefined>(undefined);
-  const { data: track, isLoading: isLoadingTrack, refetch } = useRandomTrack(trackId);
+  const {
+    data: track,
+    isLoading: isLoadingTrack,
+    refetch,
+  } = useRandomTrack(trackId);
   const [shouldAutoPlay, setShouldAutoPlay] = useState(false);
-  
+
   const likeMutation = useLikeTrack();
   const bangerMutation = useBangerTrack();
   const dislikeMutation = useDislikeTrack();
@@ -78,7 +87,11 @@ export function SwipePage() {
     }
   }, [track, bangerMutation, handleSwipeComplete, isPlaying, currentTrack]);
 
-  const isLoading = isLoadingTrack || likeMutation.isPending || bangerMutation.isPending || dislikeMutation.isPending;
+  const isLoading =
+    isLoadingTrack ||
+    likeMutation.isPending ||
+    bangerMutation.isPending ||
+    dislikeMutation.isPending;
 
   // Keyboard controls
   useEffect(() => {
@@ -106,7 +119,7 @@ export function SwipePage() {
 
       // Keyboard shortcuts for swiping
       const key = event.key.toLowerCase();
-      
+
       if (key === 'a') {
         // Dislike
         event.preventDefault();
@@ -126,46 +139,60 @@ export function SwipePage() {
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [track, currentTrack, setCurrentTrack, actions, isLoading, handleLike, handleDislike, handleBanger]);
+  }, [
+    track,
+    currentTrack,
+    setCurrentTrack,
+    actions,
+    isLoading,
+    handleLike,
+    handleDislike,
+    handleBanger,
+  ]);
 
   return (
     <div
       ref={containerRef}
-      className="container mx-auto p-4 flex flex-col items-center justify-center min-h-screen"
+      className="flex flex-col  justify-center w-full mt-10"
       tabIndex={0}
     >
-      <div className="mb-8 text-center">
+      <div className="flex flex-col mb-8 text-center">
         <h1 className="text-3xl font-bold mb-2">Filter Your Music</h1>
         <p className="text-muted-foreground">
           Swipe right to like, left to dislike, or up for BANGER!
         </p>
         <div className="text-sm text-muted-foreground mt-2 space-y-1">
           <p>
-            <kbd className="px-2 py-1 bg-secondary rounded text-xs">Space</kbd> play/pause
+            <kbd className="px-2 py-1 bg-secondary rounded text-xs">Space</kbd>{' '}
+            play/pause
           </p>
           <p>
-            <kbd className="px-2 py-1 bg-secondary rounded text-xs">E</kbd> like •{' '}
-            <kbd className="px-2 py-1 bg-secondary rounded text-xs">Z</kbd> banger •{' '}
-            <kbd className="px-2 py-1 bg-secondary rounded text-xs">A</kbd> dislike
+            <kbd className="px-2 py-1 bg-secondary rounded text-xs">E</kbd> like
+            • <kbd className="px-2 py-1 bg-secondary rounded text-xs">Z</kbd>{' '}
+            banger •{' '}
+            <kbd className="px-2 py-1 bg-secondary rounded text-xs">A</kbd>{' '}
+            dislike
           </p>
         </div>
       </div>
-
-      <SwipeView
-        track={track || null}
-        isLoading={isLoading}
-        onLike={handleLike}
-        onDislike={handleDislike}
-        onBanger={handleBanger}
-        onSwipeComplete={handleSwipeComplete}
-      />
-
-      <SwipeControls
-        onLike={handleLike}
-        onDislike={handleDislike}
-        onBanger={handleBanger}
-        disabled={isLoading || !track}
-      />
+      <div className="flex flex-row justify-center mb-8 text-center">
+        <SwipeView
+          track={track || null}
+          isLoading={isLoading}
+          onLike={handleLike}
+          onDislike={handleDislike}
+          onBanger={handleBanger}
+          onSwipeComplete={handleSwipeComplete}
+        />
+      </div>
+      <div className="flex flex-row justify-center mb-8 text-center">
+        <SwipeControls
+          onLike={handleLike}
+          onDislike={handleDislike}
+          onBanger={handleBanger}
+          disabled={isLoading || !track}
+        />
+      </div>
     </div>
   );
 }

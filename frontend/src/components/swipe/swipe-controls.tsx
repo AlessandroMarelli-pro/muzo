@@ -1,8 +1,8 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { Flame, Heart, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Flame, Heart, X } from 'lucide-react';
 
 interface SwipeControlsProps {
   onLike: () => void;
@@ -18,7 +18,7 @@ export function SwipeControls({
   disabled = false,
 }: SwipeControlsProps) {
   return (
-    <div className="flex items-center justify-center gap-4 mt-8">
+    <div className="flex flex-row items-center justify-center gap-4 mt-8">
       <Button
         size="lg"
         variant="outline"
