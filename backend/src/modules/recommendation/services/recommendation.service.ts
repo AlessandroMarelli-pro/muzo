@@ -14,12 +14,14 @@ import {
 } from '../interfaces/recommendation.interface';
 
 export const DEFAULT_RECOMMENDATION_WEIGHTS: RecommendationWeights = {
-  audioSimilarity: 0.4, // MFCC/Chroma vector similarity
-  genreSimilarity: 0.5, // Genre/subgenre matching - increased importance
-  metadataSimilarity: 0.3, // Artist/album similarity
-  userBehavior: 0.2, // Listening history/favorites - now enabled
-  audioFeatures: 0.1, // Rich audio features (tempo, energy, arousal, rhythm, etc.) - increased
-  aiMetadataSimilarity: 0.5, // AI description, tags, vocals, atmosphere, context matching
+  // Priority order: Genre > Subgenre > Atmosphere > Tempo > AudioSimilarity
+  // Effective weights (with boosts): Subgenre (4.0) > Genre (3.0) > Atmosphere (1.4) > Tempo (0.5) > AudioSimilarity (0.48)
+  genreSimilarity: 1.0, // Genre/subgenre matching - highest priority (boost: 3.0x for genres, 4.0x for subgenres)
+  aiMetadataSimilarity: 0.7, // Atmosphere matching - second priority (boost: 2.0x for atmosphere = 1.4 effective)
+  audioFeatures: 2.0, // Tempo matching - third priority (tempo weight: 0.25x of this = 0.5 effective)
+  audioSimilarity: 0.3, // MFCC/Chroma vector similarity - fourth priority (boost: 1.6x for MFCC = 0.48 effective)
+  metadataSimilarity: 0.2, // Artist/album similarity - lower priority
+  userBehavior: 0.1, // Listening history/favorites - lowest priority
 };
 
 export const ZERO_RECOMMENDATION_WEIGHTS: RecommendationWeights = {
@@ -228,13 +230,12 @@ export class RecommendationService {
           }
         : null;
 
-    const shouldAudioFeatures =
-      weights.audioFeatures > 0
+    const shouldTempo =
+      weights.audioFeatures > 0 && playlistFeatures.tempo
         ? {
             function_score: {
               query: { match_all: {} },
               functions: [
-                // Core rhythmic features (highest priority)
                 {
                   gauss: {
                     'audio_fingerprint.tempo': {
@@ -244,8 +245,19 @@ export class RecommendationService {
                       offset: 5,
                     },
                   },
-                  weight: Math.max(weights.audioFeatures * 0.25, 0.5),
                 },
+              ],
+            },
+          }
+        : null;
+
+    const shouldAudioFeatures =
+      weights.audioFeatures > 0
+        ? {
+            function_score: {
+              query: { match_all: {} },
+              functions: [
+                // Core rhythmic features (highest priority)
                 {
                   gauss: {
                     'audio_fingerprint.energy_factor': {
@@ -594,20 +606,20 @@ export class RecommendationService {
       shouldChroma,
 
       // k-NN search for tonnetz similarity (harmonic progression)
-      shouldTonnetz,
+      //shouldTonnetz,
 
       // Genre similarity with better scoring
       shouldGenre,
 
       // Camelot key matching for harmonic mixing
-      shouldCamelotKey,
+      //shouldCamelotKey,
 
       // Energy keywords matching
-      shouldEnergyKeywords,
+      // shouldEnergyKeywords,
 
       // Audio features similarity with improved scoring
-      shouldAudioFeatures,
-
+      //shouldAudioFeatures,
+      shouldTempo,
       // User behavior scoring with improved weights
       /*   {
               function_score: {
