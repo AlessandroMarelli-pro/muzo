@@ -13,6 +13,7 @@ export interface FilterCriteria {
   acousticness?: { min?: number; max?: number };
   artist?: string;
   libraryId?: string[];
+  atmospheres?: string[];
 }
 
 export interface SavedFilter {
@@ -42,6 +43,7 @@ export interface StaticFilterOptions {
   subgenres: string[];
   keys: string[];
   libraries: LibraryFilterOption[];
+  atmospheres: string[];
 }
 
 export interface FilterOptions {

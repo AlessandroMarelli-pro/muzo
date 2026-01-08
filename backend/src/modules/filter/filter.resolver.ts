@@ -70,6 +70,9 @@ export class FilterCriteriaInput {
 
   @Field(() => [String], { nullable: true })
   libraryId?: string[];
+
+  @Field(() => [String], { nullable: true })
+  atmospheres?: string[];
 }
 
 @InputType()
@@ -140,6 +143,9 @@ export class FilterCriteriaType {
 
   @Field(() => [String], { nullable: true })
   libraryId?: string[];
+
+  @Field(() => [String], { nullable: true })
+  atmospheres?: string[];
 }
 
 @ObjectType()
@@ -164,6 +170,9 @@ export class StaticFilterOptions {
 
   @Field(() => [LibraryFilterOptionType])
   libraries: LibraryFilterOption[];
+
+  @Field(() => [String])
+  atmospheres: string[];
 }
 
 @ObjectType()
@@ -225,7 +234,6 @@ export class FilterResolver {
   setCurrentFilter(
     @Args('criteria') criteria: FilterCriteriaInput,
   ): FilterCriteria {
-    console.log('criteria', criteria, this.filterService.getCurrentFilter());
     return this.filterService.setCurrentFilter(criteria);
   }
 

@@ -17,9 +17,19 @@ interface MusicCardProps {
   onAdd?: (trackId: string) => void;
   setQueue: () => void;
   key: string;
+  height?: string;
+  width?: string;
 }
 
-function MusicCard({ track, className, onAdd, setQueue, key }: MusicCardProps) {
+function MusicCard({
+  track,
+  className,
+  onAdd,
+  setQueue,
+  key,
+  height = '300',
+  width = '300',
+}: MusicCardProps) {
   const cardRef = useRef<HTMLDivElement>(null);
   const [isHovered, setIsHovered] = useState(false);
   const { currentTrack, setCurrentTrack } = useCurrentTrack();
@@ -40,7 +50,15 @@ function MusicCard({ track, className, onAdd, setQueue, key }: MusicCardProps) {
   };
 
   return (
-    <div className="min-w-75 w-75 max-h-75 h-75" key={key}>
+    <div
+      style={{
+        width: `${width}px`,
+        height: `${height}px`,
+        minWidth: `${width}px`,
+        minHeight: `${height}px`,
+      }}
+      key={key}
+    >
       <Card
         className={cn(
           'relative h-full w-full',

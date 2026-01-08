@@ -196,6 +196,7 @@ export class MusicTrackService {
     let where: any = {};
 
     const filter = this.filterService.getCurrentFilter();
+    console.log(filter);
     if (filter) {
       where = await this.filterService.buildPrismaWhereClause(filter);
     }
@@ -244,29 +245,77 @@ export class MusicTrackService {
     } else {
       orderByClause = { [orderByProp]: orderDirection };
     }
-
+    console.log(where);
     const tracks = await this.prisma.musicTrack.findMany({
       where,
       take: limit,
       skip: offset,
       orderBy: orderByClause,
-      include: {
+      select: {
+        id: true,
+        originalArtist: true,
+        aiArtist: true,
+        userArtist: true,
+        originalTitle: true,
+        aiTitle: true,
+        userTitle: true,
+        duration: true,
+        aiDescription: true,
+        vocalsDesc: true,
+        atmosphereDesc: true,
+        contextBackground: true,
+        contextImpact: true,
+        aiTags: true,
+        originalDate: true,
+        createdAt: true,
+        listeningCount: true,
+        lastPlayedAt: true,
+        isFavorite: true,
+        isLiked: true,
+        isBanger: true,
+        updatedAt: true,
+        analysisCompletedAt: true,
+        fileCreatedAt: true,
+        libraryId: true,
         library: {
           select: {
             id: true,
             name: true,
           },
         },
-        imageSearches: true,
-        audioFingerprint: true,
+        imageSearches: {
+          select: {
+            imagePath: true,
+          },
+        },
+        audioFingerprint: {
+          select: {
+            tempo: true,
+            key: true,
+            valenceMood: true,
+            arousalMood: true,
+            danceabilityFeeling: true,
+            acousticness: true,
+            instrumentalness: true,
+            speechiness: true,
+          },
+        },
         trackGenres: {
-          include: {
-            genre: true,
+          select: {
+            genre: {
+              select: {
+                name: true,
+              },
+            },
           },
         },
         trackSubgenres: {
-          include: {
-            subgenre: true,
+          select: {
+            subgenre: {
+              select: {
+                name: true,
+              },
+            },
           },
         },
       },
@@ -955,7 +1004,7 @@ export class MusicTrackService {
     }
     return this.recommendationService.getRecommendations([{ track }], {
       weights: boostedWeights,
-      limit: 100,
+      limit: 25,
       excludeTrackIds: [track.id],
     });
   }

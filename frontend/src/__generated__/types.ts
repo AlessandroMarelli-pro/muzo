@@ -170,6 +170,7 @@ export type FilterCriteriaInput = {
   genres?: InputMaybe<Array<Scalars['String']['input']>>;
   instrumentalness?: InputMaybe<RangeInput>;
   keys?: InputMaybe<Array<Scalars['String']['input']>>;
+  libraryId?: InputMaybe<Array<Scalars['String']['input']>>;
   liveness?: InputMaybe<RangeInput>;
   speechiness?: InputMaybe<RangeInput>;
   subgenres?: InputMaybe<Array<Scalars['String']['input']>>;
@@ -182,6 +183,7 @@ export type FilterCriteriaType = {
   acousticness?: Maybe<Range>;
   arousalMood?: Maybe<Array<Scalars['String']['output']>>;
   artist?: Maybe<Scalars['String']['output']>;
+  atmospheres?: Maybe<Array<Scalars['String']['output']>>;
   danceabilityFeeling?: Maybe<Array<Scalars['String']['output']>>;
   genres?: Maybe<Array<Scalars['String']['output']>>;
   instrumentalness?: Maybe<Range>;
@@ -1000,6 +1002,7 @@ export type SimpleMusicTrack = {
 
 export type StaticFilterOptions = {
   __typename?: 'StaticFilterOptions';
+  atmospheres: Array<Scalars['String']['output']>;
   genres: Array<Scalars['String']['output']>;
   keys: Array<Scalars['String']['output']>;
   libraries: Array<LibraryFilterOptionType>;
@@ -1203,7 +1206,7 @@ export type GetTracksByCategoriesQuery = { __typename?: 'Query', tracksByCategor
 export type GetStaticFiltersQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type GetStaticFiltersQuery = { __typename?: 'Query', getStaticFilterOptions: { __typename?: 'StaticFilterOptions', genres: Array<string>, subgenres: Array<string>, keys: Array<string>, libraries: Array<{ __typename?: 'LibraryFilterOptionType', id: string, name: string }> } };
+export type GetStaticFiltersQuery = { __typename?: 'Query', getStaticFilterOptions: { __typename?: 'StaticFilterOptions', genres: Array<string>, subgenres: Array<string>, keys: Array<string>, atmospheres: Array<string>, libraries: Array<{ __typename?: 'LibraryFilterOptionType', id: string, name: string }> } };
 
 export type GetRecentlyPlayedQueryVariables = Exact<{
   limit?: InputMaybe<Scalars['Float']['input']>;
@@ -1243,14 +1246,14 @@ export type DislikeTrackMutation = { __typename?: 'Mutation', dislikeTrack: bool
 export type GetCurrentFilterQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type GetCurrentFilterQuery = { __typename?: 'Query', getCurrentFilter?: { __typename?: 'FilterCriteriaType', valenceMood?: Array<string> | null, arousalMood?: Array<string> | null, danceabilityFeeling?: Array<string> | null, genres?: Array<string> | null, keys?: Array<string> | null, subgenres?: Array<string> | null, artist?: string | null, tempo?: { __typename?: 'Range', max: number, min: number } | null, speechiness?: { __typename?: 'Range', max: number, min: number } | null, instrumentalness?: { __typename?: 'Range', max: number, min: number } | null, liveness?: { __typename?: 'Range', max: number, min: number } | null, acousticness?: { __typename?: 'Range', max: number, min: number } | null } | null };
+export type GetCurrentFilterQuery = { __typename?: 'Query', getCurrentFilter?: { __typename?: 'FilterCriteriaType', valenceMood?: Array<string> | null, arousalMood?: Array<string> | null, danceabilityFeeling?: Array<string> | null, genres?: Array<string> | null, keys?: Array<string> | null, subgenres?: Array<string> | null, artist?: string | null, libraryId?: Array<string> | null, atmospheres?: Array<string> | null, tempo?: { __typename?: 'Range', max: number, min: number } | null, speechiness?: { __typename?: 'Range', max: number, min: number } | null, instrumentalness?: { __typename?: 'Range', max: number, min: number } | null, liveness?: { __typename?: 'Range', max: number, min: number } | null, acousticness?: { __typename?: 'Range', max: number, min: number } | null } | null };
 
 export type SetCurrentFilterMutationVariables = Exact<{
   criteria: FilterCriteriaInput;
 }>;
 
 
-export type SetCurrentFilterMutation = { __typename?: 'Mutation', setCurrentFilter: { __typename?: 'FilterCriteriaType', valenceMood?: Array<string> | null, arousalMood?: Array<string> | null, danceabilityFeeling?: Array<string> | null, genres?: Array<string> | null, keys?: Array<string> | null, subgenres?: Array<string> | null, artist?: string | null, tempo?: { __typename?: 'Range', max: number, min: number } | null, speechiness?: { __typename?: 'Range', max: number, min: number } | null, instrumentalness?: { __typename?: 'Range', max: number, min: number } | null, liveness?: { __typename?: 'Range', max: number, min: number } | null, acousticness?: { __typename?: 'Range', max: number, min: number } | null } };
+export type SetCurrentFilterMutation = { __typename?: 'Mutation', setCurrentFilter: { __typename?: 'FilterCriteriaType', valenceMood?: Array<string> | null, arousalMood?: Array<string> | null, danceabilityFeeling?: Array<string> | null, genres?: Array<string> | null, keys?: Array<string> | null, subgenres?: Array<string> | null, artist?: string | null, libraryId?: Array<string> | null, tempo?: { __typename?: 'Range', max: number, min: number } | null, speechiness?: { __typename?: 'Range', max: number, min: number } | null, instrumentalness?: { __typename?: 'Range', max: number, min: number } | null, liveness?: { __typename?: 'Range', max: number, min: number } | null, acousticness?: { __typename?: 'Range', max: number, min: number } | null } };
 
 export type ClearCurrentFilterMutationVariables = Exact<{ [key: string]: never; }>;
 
@@ -1265,19 +1268,19 @@ export type GetFilterOptionsQuery = { __typename?: 'Query', getFilterOptions: { 
 export type GetStaticFilterOptionsQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type GetStaticFilterOptionsQuery = { __typename?: 'Query', getStaticFilterOptions: { __typename?: 'StaticFilterOptions', genres: Array<string>, keys: Array<string>, subgenres: Array<string>, libraries: Array<{ __typename?: 'LibraryFilterOptionType', id: string, name: string }> } };
+export type GetStaticFilterOptionsQuery = { __typename?: 'Query', getStaticFilterOptions: { __typename?: 'StaticFilterOptions', genres: Array<string>, keys: Array<string>, subgenres: Array<string>, atmospheres: Array<string>, libraries: Array<{ __typename?: 'LibraryFilterOptionType', id: string, name: string }> } };
 
 export type GetSavedFiltersQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type GetSavedFiltersQuery = { __typename?: 'Query', getSavedFilters: Array<{ __typename?: 'SavedFilter', id: string, name: string, createdAt: any, updatedAt: any, criteria: { __typename?: 'FilterCriteriaType', valenceMood?: Array<string> | null, arousalMood?: Array<string> | null, danceabilityFeeling?: Array<string> | null, genres?: Array<string> | null, keys?: Array<string> | null, subgenres?: Array<string> | null, artist?: string | null, tempo?: { __typename?: 'Range', max: number, min: number } | null, speechiness?: { __typename?: 'Range', max: number, min: number } | null, instrumentalness?: { __typename?: 'Range', max: number, min: number } | null, liveness?: { __typename?: 'Range', max: number, min: number } | null, acousticness?: { __typename?: 'Range', max: number, min: number } | null } }> };
+export type GetSavedFiltersQuery = { __typename?: 'Query', getSavedFilters: Array<{ __typename?: 'SavedFilter', id: string, name: string, createdAt: any, updatedAt: any, criteria: { __typename?: 'FilterCriteriaType', valenceMood?: Array<string> | null, arousalMood?: Array<string> | null, danceabilityFeeling?: Array<string> | null, genres?: Array<string> | null, keys?: Array<string> | null, subgenres?: Array<string> | null, artist?: string | null, libraryId?: Array<string> | null, tempo?: { __typename?: 'Range', max: number, min: number } | null, speechiness?: { __typename?: 'Range', max: number, min: number } | null, instrumentalness?: { __typename?: 'Range', max: number, min: number } | null, liveness?: { __typename?: 'Range', max: number, min: number } | null, acousticness?: { __typename?: 'Range', max: number, min: number } | null } }> };
 
 export type CreateSavedFilterMutationVariables = Exact<{
   input: CreateSavedFilterInput;
 }>;
 
 
-export type CreateSavedFilterMutation = { __typename?: 'Mutation', createSavedFilter: { __typename?: 'SavedFilter', id: string, name: string, createdAt: any, updatedAt: any, criteria: { __typename?: 'FilterCriteriaType', valenceMood?: Array<string> | null, arousalMood?: Array<string> | null, danceabilityFeeling?: Array<string> | null, genres?: Array<string> | null, keys?: Array<string> | null, subgenres?: Array<string> | null, artist?: string | null, tempo?: { __typename?: 'Range', max: number, min: number } | null, speechiness?: { __typename?: 'Range', max: number, min: number } | null, instrumentalness?: { __typename?: 'Range', max: number, min: number } | null, liveness?: { __typename?: 'Range', max: number, min: number } | null, acousticness?: { __typename?: 'Range', max: number, min: number } | null } } };
+export type CreateSavedFilterMutation = { __typename?: 'Mutation', createSavedFilter: { __typename?: 'SavedFilter', id: string, name: string, createdAt: any, updatedAt: any, criteria: { __typename?: 'FilterCriteriaType', valenceMood?: Array<string> | null, arousalMood?: Array<string> | null, danceabilityFeeling?: Array<string> | null, genres?: Array<string> | null, keys?: Array<string> | null, subgenres?: Array<string> | null, artist?: string | null, libraryId?: Array<string> | null, tempo?: { __typename?: 'Range', max: number, min: number } | null, speechiness?: { __typename?: 'Range', max: number, min: number } | null, instrumentalness?: { __typename?: 'Range', max: number, min: number } | null, liveness?: { __typename?: 'Range', max: number, min: number } | null, acousticness?: { __typename?: 'Range', max: number, min: number } | null } } };
 
 export type DeleteSavedFilterMutationVariables = Exact<{
   id: Scalars['ID']['input'];

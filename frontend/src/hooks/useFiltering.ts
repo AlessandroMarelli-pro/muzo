@@ -20,6 +20,7 @@ export interface FilterState {
   arousalMood: string[];
   danceabilityFeeling: string[];
   libraryId: string[];
+  atmospheres: string[];
 }
 
 export interface SavedFilterState {
@@ -62,6 +63,7 @@ const defaultFilterState: FilterState = {
   acousticness: { min: 0, max: 1 },
   artist: '',
   libraryId: [],
+  atmospheres: [],
 };
 
 export const useFiltering = () => {
@@ -124,6 +126,7 @@ export const useFiltering = () => {
           acousticness: filters.acousticness,
           artist: filters.artist,
           libraryId: filters.libraryId,
+          atmospheres: filters.atmospheres,
         };
 
         const result = await setCurrentFilterMutation.mutateAsync(criteria);
@@ -173,6 +176,7 @@ export const useFiltering = () => {
           acousticness: loadedFilters.acousticness || { min: 0, max: 1 },
           artist: loadedFilters.artist || '',
           libraryId: loadedFilters.libraryId || [],
+          atmospheres: loadedFilters.atmospheres || [],
         });
 
         setSavedFilterState((prev) => ({

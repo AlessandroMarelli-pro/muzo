@@ -159,7 +159,7 @@ export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
   return (
     <div
       className={cn(
-        'fixed bottom-0 left-0 right-0 bg-background border-t border-border z-50',
+        'fixed bottom-0 left-0 right-0 bg-background border-t border-border z-[9999]',
         'flex flex-col',
         className,
       )}

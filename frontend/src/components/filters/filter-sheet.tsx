@@ -128,6 +128,10 @@ export function FilterSheet({ open, onOpenChange }: FilterSheetProps) {
     updateFilter('acousticness', { min: value[0], max: value[1] });
   };
 
+  const handleAtmosphereChange = (selected: string[]) => {
+    updateFilter('atmospheres', selected);
+  };
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
@@ -182,6 +186,18 @@ export function FilterSheet({ open, onOpenChange }: FilterSheetProps) {
               onChange={handleKeyChange}
               placeholder="Select keys..."
               className="w-full "
+              isLoading={options.isLoading}
+            />
+          </div>
+          {/* Atmospheres Filter */}
+          <div className="space-y-2">
+            <Label htmlFor="atmospheres-filter">Atmospheres</Label>
+            <MultiSelect
+              options={options.atmospheres}
+              value={filters.atmospheres}
+              onChange={handleAtmosphereChange}
+              placeholder="Select atmospheres..."
+              className="w-full"
               isLoading={options.isLoading}
             />
           </div>

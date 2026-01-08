@@ -73,6 +73,7 @@ export const useCurrentFilter = () => {
             }
             artist
             libraryId
+            atmospheres
           }
         }
       `);
@@ -122,6 +123,7 @@ export const useSetCurrentFilter = () => {
               }
               artist
               libraryId
+              atmospheres
             }
           }
         `,
@@ -211,6 +213,7 @@ export const useStaticFilterOptions = () => {
           keys: string[];
           subgenres: string[];
           libraries: { id: string; name: string }[];
+          atmospheres: string[];
         };
       }>(gql`
         query GetStaticFilterOptions {
@@ -222,6 +225,7 @@ export const useStaticFilterOptions = () => {
               id
               name
             }
+            atmospheres
           }
         }
       `);
@@ -278,6 +282,7 @@ export const useSavedFilters = () => {
               }
               artist
               libraryId
+              atmospheres
             }
             createdAt
             updatedAt

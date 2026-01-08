@@ -7,7 +7,7 @@ import * as React from 'react';
 import { cn } from '@/lib/utils';
 
 function Sheet({ ...props }: React.ComponentProps<typeof SheetPrimitive.Root>) {
-  return <SheetPrimitive.Root data-slot="sheet" {...props} />;
+  return <SheetPrimitive.Root data-slot="sheet" {...props} modal={false} />;
 }
 
 function SheetTrigger({
@@ -55,9 +55,15 @@ function SheetContent({
   return (
     <SheetPortal>
       <SheetPrimitive.Content
+        onPointerDownOutside={(e) => {
+          console.log('pointer down outside', e);
+          e.preventDefault();
+          e.stopPropagation();
+          return null;
+        }}
         data-slot="sheet-content"
         className={cn(
-          'bg-background data-[state=open]:animate-in data-[state=closed]:animate-out fixed z-50 flex flex-col gap-4 shadow-lg transition ease-in-out data-[state=closed]:duration-300 data-[state=open]:duration-500',
+          'bg-background data-[state=open]:animate-in data-[state=closed]:animate-out fixed z-0 flex flex-col gap-4 shadow-lg transition ease-in-out data-[state=closed]:duration-300 data-[state=open]:duration-500',
           side === 'right' &&
             'data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right inset-y-0 right-0 h-full w-3/4 border-l sm:max-w-sm',
           side === 'left' &&

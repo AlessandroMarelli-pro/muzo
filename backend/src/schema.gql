@@ -149,6 +149,7 @@ input FilterCriteriaInput {
   acousticness: RangeInput
   arousalMood: [String!]
   artist: String
+  atmospheres: [String!]
   danceabilityFeeling: [String!]
   genres: [String!]
   instrumentalness: RangeInput
@@ -165,6 +166,7 @@ type FilterCriteriaType {
   acousticness: Range
   arousalMood: [String!]
   artist: String
+  atmospheres: [String!]
   danceabilityFeeling: [String!]
   genres: [String!]
   instrumentalness: Range
@@ -604,6 +606,7 @@ type SimpleMusicTrack {
 }
 
 type StaticFilterOptions {
+  atmospheres: [String!]!
   genres: [String!]!
   keys: [String!]!
   libraries: [LibraryFilterOptionType!]!

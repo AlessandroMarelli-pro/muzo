@@ -34,6 +34,10 @@ export function useFilterOptionsData(): StaticFilterOptionsData & {
           label: library.name,
           value: library.id,
         })),
+        atmospheres: staticFiltersData.atmospheres.map((atmosphere) => ({
+          label: atmosphere,
+          value: atmosphere,
+        })),
       });
     }
   }, [staticFiltersData, setOptions]);
@@ -59,6 +63,11 @@ export function useFilterOptionsData(): StaticFilterOptionsData & {
       staticFiltersData?.libraries.map((library) => ({
         label: library.name,
         value: library.id,
+      })) || [],
+    atmospheres:
+      staticFiltersData?.atmospheres.map((atmosphere) => ({
+        label: atmosphere,
+        value: atmosphere,
       })) || [],
   };
 }

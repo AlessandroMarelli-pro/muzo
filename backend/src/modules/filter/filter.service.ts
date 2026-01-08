@@ -56,6 +56,17 @@ export class FilterService {
       if (fp.key) keys.add(fp.key);
     });
 
+    // Get distinct atmospheres from atmospheres relation
+    const atmosphereResults = await this.prisma.musicTrack.findMany({
+      select: {
+        atmosphereDesc: true,
+      },
+    });
+
+    const atmospheres = atmosphereResults
+      .map((at) => JSON.parse(at.atmosphereDesc))
+      .flat();
+    const uniqueAtmospheres = new Set(atmospheres);
     return {
       genres: genres.map((g) => g.name),
       subgenres: subgenres.map((s) => s.name),
@@ -64,6 +75,7 @@ export class FilterService {
         id: l.id,
         name: l.name,
       })),
+      atmospheres: Array.from(uniqueAtmospheres).filter((a) => a !== null),
     };
   }
 
@@ -288,14 +300,19 @@ export class FilterService {
     if (
       criteria.artist ||
       criteria.keys ||
-      criteria.tempo ||
+      criteria.tempo?.min !== 0 ||
+      criteria.tempo?.max !== 200 ||
       criteria.valenceMood ||
       criteria.arousalMood ||
       criteria.danceabilityFeeling ||
-      criteria.speechiness ||
-      criteria.instrumentalness ||
-      criteria.liveness ||
-      criteria.acousticness
+      criteria.speechiness?.min !== 0 ||
+      criteria.speechiness?.max !== 1 ||
+      criteria.instrumentalness?.min !== 0 ||
+      criteria.instrumentalness?.max !== 1 ||
+      criteria.liveness?.min !== 0 ||
+      criteria.liveness?.max !== 1 ||
+      criteria.acousticness?.min !== 0 ||
+      criteria.acousticness?.max !== 1
     ) {
       const fingerprintWhere: any = {};
 
@@ -327,17 +344,17 @@ export class FilterService {
         };
       }
 
-      if (criteria.tempo) {
+      if (criteria.tempo?.min !== 0 || criteria.tempo?.max !== 200) {
         fingerprintWhere.tempo = {};
-        if (criteria.tempo.min !== undefined) {
+        if (criteria.tempo.min !== undefined && criteria.tempo.max !== 200) {
           fingerprintWhere.tempo.gte = criteria.tempo.min;
         }
-        if (criteria.tempo.max !== undefined) {
+        if (criteria.tempo.max !== undefined && criteria.tempo.max !== 200) {
           fingerprintWhere.tempo.lte = criteria.tempo.max;
         }
       }
 
-      if (criteria.speechiness) {
+      if (criteria.speechiness?.min !== 0 || criteria.speechiness?.max !== 1) {
         fingerprintWhere.speechiness = {};
         if (criteria.speechiness.min !== undefined) {
           fingerprintWhere.speechiness.gte = criteria.speechiness.min;
@@ -347,7 +364,10 @@ export class FilterService {
         }
       }
 
-      if (criteria.instrumentalness) {
+      if (
+        criteria.instrumentalness?.min !== 0 ||
+        criteria.instrumentalness?.max !== 1
+      ) {
         fingerprintWhere.instrumentalness = {};
         if (criteria.instrumentalness.min !== undefined) {
           fingerprintWhere.instrumentalness.gte = criteria.instrumentalness.min;
@@ -357,7 +377,7 @@ export class FilterService {
         }
       }
 
-      if (criteria.liveness) {
+      if (criteria.liveness?.min !== 0 || criteria.liveness?.max !== 1) {
         fingerprintWhere.liveness = {};
         if (criteria.liveness.min !== undefined) {
           fingerprintWhere.liveness.gte = criteria.liveness.min;
@@ -367,7 +387,10 @@ export class FilterService {
         }
       }
 
-      if (criteria.acousticness) {
+      if (
+        criteria.acousticness?.min !== 0 ||
+        criteria.acousticness?.max !== 1
+      ) {
         fingerprintWhere.acousticness = {};
         if (criteria.acousticness.min !== undefined) {
           fingerprintWhere.acousticness.gte = criteria.acousticness.min;
@@ -380,7 +403,12 @@ export class FilterService {
         where.libraryId = { in: criteria.libraryId };
       }
 
-      where.audioFingerprint = fingerprintWhere;
+      if (criteria.atmospheres && criteria.atmospheres.length > 0) {
+        where.atmosphereDesc = { contains: criteria.atmospheres.join(',') };
+      }
+      if (Object.keys(fingerprintWhere).length > 0) {
+        where.audioFingerprint = fingerprintWhere;
+      }
     }
     return where;
   }

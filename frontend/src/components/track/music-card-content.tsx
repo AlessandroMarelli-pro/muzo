@@ -30,7 +30,7 @@ export function MusicCardContent({
   const bpm = track.tempo || 'Unknown BPM';
 
   return (
-    <CardContent className={`p-0 ${className || ''}`}>
+    <CardContent className={`p-0 ${className || ''} h-full`}>
       <AnimatePresence initial={false}>
         {showPlayButton && playButton && (
           <motion.div
@@ -47,22 +47,13 @@ export function MusicCardContent({
       </AnimatePresence>
 
       {/* Track Info */}
-      <div className="space-y-1">
-        <div className="w-full h-[60%] absolute">
-          <div className="flex items-center justify-center h-full w-full">
-            <img
-              src={`http://localhost:3000/api/images/serve?imagePath=${formattedImage}`}
-              alt="Album Art"
-              className="w-35 h-35 object-cover rounded-md z-1"
-            />
-          </div>
-          <div className="z-0 absolute top-0 left-1/8 w-full h-full opacity-50 blur-md">
-            <img
-              src={`http://localhost:3000/api/images/serve?imagePath=${formattedImage}`}
-              alt="Album Art"
-              className="w-55 h-75 object-cover rounded-md"
-            />
-          </div>
+      <div className="flex flex-col h-full space-around">
+        <div className="z-0 absolute top-0 left-1/8 w-full h-full opacity-50 blur-md">
+          <img
+            src={`http://localhost:3000/api/images/serve?imagePath=${formattedImage}`}
+            alt="Album Art"
+            className="w-3/4 h-full object-cover rounded-md"
+          />
           <Badge
             variant="secondary"
             className="text-[11px] absolute bottom-0 right-1 z-1"
@@ -70,8 +61,16 @@ export function MusicCardContent({
             {bpm} bpm
           </Badge>
         </div>
-        <div className="h-45" />
-        <div className="space-y-2 p-2 z-1 h-full bg-background/90 rounded-xl flex flex-col justify-end backdrop-blur-sm">
+        <div className=" flex-1">
+          <div className="flex items-center justify-center h-full w-full p-4">
+            <img
+              src={`http://localhost:3000/api/images/serve?imagePath=${formattedImage}`}
+              alt="Album Art"
+              className="w-2/3 h-2/3 object-cover rounded-md z-1"
+            />
+          </div>
+        </div>
+        <div className=" space-y-2 p-2 z-1 bg-background/90 rounded-xl flex flex-col justify-between backdrop-blur-sm h-3/8">
           <div className="px-1">
             <h3
               className="font-semibold text-sm leading-tight line-clamp-1 capitalize"

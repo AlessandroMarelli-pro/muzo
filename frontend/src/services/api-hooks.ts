@@ -489,6 +489,7 @@ export const useStaticFilters = () => {
           subgenres: string[];
           keys: string[];
           libraries: { id: string; name: string }[];
+          atmospheres: string[];
         };
       }>(gql`
         query GetStaticFilters {
@@ -500,6 +501,7 @@ export const useStaticFilters = () => {
               id
               name
             }
+            atmospheres
           }
         }
       `);
