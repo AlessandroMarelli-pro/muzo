@@ -52,6 +52,7 @@ export const TrackList: React.FC<TrackListProps> = ({ viewMode = 'grid' }) => {
     'favorite',
     'lastPlayed',
     'lastScannedAt',
+    'fileCreatedAt',
   ];
 
   const [sorting] = useQueryState(

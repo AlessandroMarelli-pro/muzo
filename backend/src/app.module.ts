@@ -4,6 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import { GraphQLModule } from '@nestjs/graphql';
 import { join } from 'path';
 import { ConfigModuleSetup } from './config';
+import { AdminMethodsModule } from './modules/admin-methods/admin-methods.module';
 import { AiIntegrationModule } from './modules/ai-integration/ai-integration.module';
 import { FilterModule } from './modules/filter/filter.module';
 import { HealthModule } from './modules/health/health.module';
@@ -59,6 +60,7 @@ import { SharedModule } from './shared/shared.module';
     WebSocketModule,
     FilterModule,
     MetricsModule,
+    AdminMethodsModule,
   ],
 })
 export class AppModule {}

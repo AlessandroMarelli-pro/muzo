@@ -68,6 +68,7 @@ export function mapToSimpleMusicTrack(
     speechiness: track.audioFingerprint?.speechiness || 0,
     imagePath: track.imageSearches?.[0]?.imagePath || '',
     lastScannedAt: track.analysisCompletedAt || null,
+    fileCreatedAt: track.fileCreatedAt || null,
   };
 }
 

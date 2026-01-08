@@ -33,6 +33,7 @@ export const simpleMusicTrackFragment = gql`
     danceabilityFeeling
     imagePath
     lastScannedAt
+    fileCreatedAt
     description
     tags
     vocalsDescriptions

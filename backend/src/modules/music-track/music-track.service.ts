@@ -819,12 +819,12 @@ export class MusicTrackService {
     if (!track) {
       throw new NotFoundException(`Music track with ID ${id} not found`);
     }
-
     const updatedTrack = await this.prisma.musicTrack.update({
       where: { id },
       data: {
         isFavorite: !track.isFavorite,
-        isBanger: !track.isBanger,
+        isBanger: !track.isFavorite,
+        isLiked: !track.isFavorite,
       },
     });
 

@@ -375,6 +375,7 @@ export class AudioScanProcessor extends WorkerHost {
         fileSize,
         libraryId,
         analysisStatus: AnalysisStatus.PENDING,
+        fileCreatedAt: lastModified,
       },
       create: {
         filePath,

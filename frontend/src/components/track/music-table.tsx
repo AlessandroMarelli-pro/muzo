@@ -527,6 +527,22 @@ export function MusicTable({
         enableColumnFilter: true,
       },
       {
+        id: 'fileCreatedAt',
+        accessorKey: 'fileCreatedAt',
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Created At" />
+        ),
+        cell: ({ row }) => {
+          const fileCreatedAt = row.getValue('fileCreatedAt') as string;
+          return (
+            <div className="text-right">
+              {format(new Date(fileCreatedAt), 'MM/dd/yyyy HH:mm')}
+            </div>
+          );
+        },
+        enableColumnFilter: true,
+      },
+      {
         id: 'actions',
         enableHiding: false,
         cell: ({ row }) => (
