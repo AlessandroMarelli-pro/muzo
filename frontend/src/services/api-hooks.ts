@@ -73,7 +73,8 @@ export const queryKeys = {
   mostPlayed: (limit?: number) => ['tracks', 'most-played', { limit }] as const,
   currentPlayback: ['playback', 'current'] as const,
   staticFilters: ['static-filters'] as const,
-  randomTrack: (id?: string) => ['tracks', 'random', { id }] as const,
+  randomTrack: (id?: string, filterLiked?: boolean) =>
+    ['tracks', 'random', { id, filterLiked }] as const,
   trackRecommendations: (id?: string, criteria?: string) =>
     ['tracks', 'recommendations', { id, criteria }] as const,
 };
@@ -184,22 +185,22 @@ export const useTracks = ({
   });
 };
 
-export const useRandomTrack = (id?: string) => {
+export const useRandomTrack = (id?: string, filterLiked?: boolean) => {
   return useQuery({
-    queryKey: queryKeys.randomTrack(id),
+    queryKey: queryKeys.randomTrack(id, filterLiked),
     queryFn: async () => {
       const response = await graffleClient.request<{
         randomTrack: SimpleMusicTrack;
       }>(
         gql`
           ${simpleMusicTrackFragment}
-          query GetRandomTrack($id: String) {
-            randomTrack(id: $id) {
+          query GetRandomTrack($id: String, $filterLiked: Boolean) {
+            randomTrack(id: $id, filterLiked: $filterLiked) {
               ...SimpleMusicTrackFragment
             }
           }
         `,
-        { id },
+        { id, filterLiked },
       );
       return response.randomTrack;
     },

@@ -133,7 +133,7 @@ const ActionCells = ({
       </Button>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="h-8 w-8 p-0">
+          <Button variant="ghost" className="h-5 w-5 p-0">
             <span className="sr-only">Open menu</span>
             <MoreHorizontal className="h-4 w-4" />
           </Button>
@@ -200,11 +200,11 @@ export function MusicTable({
           const imagePath = track.imagePath || 'Unknown Image';
 
           return (
-            <div className="flex items-center justify-cente h-10 w-10">
+            <div className="flex items-center justify-cente h-5 w-8">
               <img
                 src={`http://localhost:3000/api/images/serve?imagePath=${imagePath}`}
                 alt="Album Art"
-                className="h-10 w-10 rounded object-cover"
+                className="h-8 w-8 rounded object-cover"
               />
             </div>
           );
@@ -300,13 +300,13 @@ export function MusicTable({
           const genres = row.getValue('genres') as string[];
 
           return (
-            <>
+            <div className="flex  gap-1">
               {genres.map((genre) => (
                 <Badge variant="secondary" className="capitalize" size="xs">
                   {genre}
                 </Badge>
               ))}
-            </>
+            </div>
           );
         },
         meta: {
@@ -326,13 +326,13 @@ export function MusicTable({
           const subgenres = row.getValue('subgenres') as string[];
 
           return (
-            <>
+            <div className="flex  gap-1">
               {subgenres.map((subgenre) => (
                 <Badge variant="outline" className="capitalize" size="xs">
                   {subgenre}
                 </Badge>
               ))}
-            </>
+            </div>
           );
         },
         meta: {

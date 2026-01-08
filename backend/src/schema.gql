@@ -515,7 +515,7 @@ type Query {
   playlists(userId: String!): [PlaylistItem!]!
   preferences: UserPreferencesGraphQL!
   queueStats: String!
-  randomTrack(id: String): SimpleMusicTrack!
+  randomTrack(filterLiked: Boolean, id: String): SimpleMusicTrack!
   recentlyPlayed(limit: Float! = 20): [SimpleMusicTrack!]!
   searchTracks(libraryId: ID, query: String!): [MusicTrack!]!
   track(id: ID!): MusicTrack

@@ -21,7 +21,7 @@ export function SwipePage() {
     data: track,
     isLoading: isLoadingTrack,
     refetch,
-  } = useRandomTrack(trackId);
+  } = useRandomTrack(trackId, true);
   const [shouldAutoPlay, setShouldAutoPlay] = useState(false);
   const [triggerSwipeDirection, setTriggerSwipeDirection] = useState<
     'left' | 'right' | 'up' | null

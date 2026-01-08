@@ -152,9 +152,10 @@ export class MusicTrackResolver {
   @Query(() => SimpleMusicTrack)
   async randomTrack(
     @Args('id', { nullable: true }) id: string,
+    @Args('filterLiked', { nullable: true }) filterLiked: boolean,
   ): Promise<SimpleMusicTrack> {
     const track = !id
-      ? await this.musicTrackService.getRandomTrack()
+      ? await this.musicTrackService.getRandomTrack(filterLiked)
       : await this.musicTrackService.findOne(id);
     return mapToSimpleMusicTrack(track as MusicTrackWithRelations);
   }

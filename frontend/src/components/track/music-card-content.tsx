@@ -1,6 +1,7 @@
 import { SimpleMusicTrack } from '@/__generated__/types';
 import { Badge } from '@/components/ui/badge';
 import { CardContent } from '@/components/ui/card';
+import { AnimatePresence, motion } from 'motion/react';
 
 interface MusicCardContentProps {
   track: SimpleMusicTrack;
@@ -19,23 +20,31 @@ export function MusicCardContent({
 }: MusicCardContentProps) {
   const formattedTitle = track.title || 'Unknown Title';
   const formattedArtist = track.artist || 'Unknown Artist';
-  const formattedGenres = track.genres && track.genres.length > 0 
-    ? track.genres.join(', ') 
-    : 'Unknown Genre';
-  const formattedSubgenres = track.subgenres && track.subgenres.length > 0 
-    ? track.subgenres.join(', ') 
-    : 'Unknown Subgenre';
+  const formattedGenres =
+    track.genres && track.genres.length > 0 ? track.genres : 'Unknown Genre';
+  const formattedSubgenres =
+    track.subgenres && track.subgenres.length > 0
+      ? track.subgenres
+      : 'Unknown Subgenre';
   const formattedImage = track.imagePath || 'Unknown Image';
   const bpm = track.tempo || 'Unknown BPM';
 
   return (
     <CardContent className={`p-0 ${className || ''}`}>
-      {showPlayButton && playButton && (
-        <div className="absolute flex items-center justify-center z-2 h-full w-full rounded-xl">
-          <div className="absolute top-0 left-0 h-full w-full bg-primary/50 opacity-50 rounded-xl" />
-          {playButton}
-        </div>
-      )}
+      <AnimatePresence initial={false}>
+        {showPlayButton && playButton && (
+          <motion.div
+            className="absolute flex items-center justify-center z-2 h-full w-full rounded-xl"
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.8 }}
+            transition={{ duration: 0.3, ease: 'easeInOut' }}
+          >
+            <div className="absolute top-0 left-0 h-full w-full bg-primary/50 opacity-50 rounded-xl" />
+            {playButton}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Track Info */}
       <div className="space-y-1">
@@ -78,17 +87,21 @@ export function MusicCardContent({
             </p>
           </div>
           {/* Genre and Subgenre */}
-          <div className="flex flex-col flex-wrap gap-1">
-            {formattedGenres !== 'Unknown Genre' && (
-              <Badge variant="secondary" className="text-xs">
-                {formattedGenres}
-              </Badge>
-            )}
-            {formattedSubgenres !== 'Unknown Subgenre' && (
-              <Badge variant="outline" className="text-xs">
-                {formattedSubgenres}
-              </Badge>
-            )}
+          <div className="flex flex-row  gap-1">
+            {formattedGenres !== 'Unknown Genre' &&
+              formattedGenres.map((genre) => (
+                <Badge variant="secondary" className="text-xs">
+                  {genre}
+                </Badge>
+              ))}
+          </div>
+          <div className="flex flex-row  gap-1 truncate">
+            {formattedSubgenres !== 'Unknown Subgenre' &&
+              formattedSubgenres.map((subgenre) => (
+                <Badge variant="outline" className="text-xs">
+                  {subgenre}
+                </Badge>
+              ))}
           </div>
         </div>
       </div>

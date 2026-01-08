@@ -824,6 +824,7 @@ export class MusicTrackService {
       where: { id },
       data: {
         isFavorite: !track.isFavorite,
+        isBanger: !track.isBanger,
       },
     });
 
@@ -1112,16 +1113,14 @@ export class MusicTrackService {
     });
   }
 
-  async getRandomTrack(): Promise<MusicTrack> {
+  async getRandomTrack(filterLiked: boolean): Promise<MusicTrack> {
     // Exclude tracks that are already liked (or include them? Let's exclude disliked/hidden ones)
     // Actually, we should exclude tracks that are in hidden_music_tracks
     // But since we're querying music_tracks, hidden tracks won't be there anyway
     // We might want to exclude already liked tracks, but the requirement says to use randomTrack
     // Let's keep it simple and just get a random track that's not liked yet
     const tracksCount = await this.prisma.musicTrack.count({
-      where: {
-        isLiked: false, // Exclude already liked tracks from random selection
-      },
+      where: filterLiked ? { isLiked: false } : {},
     });
 
     if (tracksCount === 0) {
