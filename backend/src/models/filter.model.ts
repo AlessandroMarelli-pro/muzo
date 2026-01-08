@@ -12,6 +12,7 @@ export interface FilterCriteria {
   liveness?: { min?: number; max?: number };
   acousticness?: { min?: number; max?: number };
   artist?: string;
+  libraryId?: string[];
 }
 
 export interface SavedFilter {
@@ -31,11 +32,16 @@ export interface UpdateFilterDto {
   name?: string;
   criteria?: FilterCriteria;
 }
+export interface LibraryFilterOption {
+  id: string;
+  name: string;
+}
 
 export interface StaticFilterOptions {
   genres: string[];
   subgenres: string[];
   keys: string[];
+  libraries: LibraryFilterOption[];
 }
 
 export interface FilterOptions {

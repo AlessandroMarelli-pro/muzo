@@ -427,6 +427,9 @@ export class SimpleMusicTrack {
 
   @Field(() => Date, { nullable: true })
   fileCreatedAt?: Date;
+
+  @Field(() => String, { nullable: true })
+  libraryId?: string;
 }
 
 @ObjectType()

@@ -43,6 +43,13 @@ export class FilterService {
       },
     });
 
+    // Get distinct libraries from music libraries
+    const libraryResults = await this.prisma.musicLibrary.findMany({
+      select: {
+        id: true,
+        name: true,
+      },
+    });
     // Extract and deduplicate keys
     const keys = new Set<string>();
     keyResults.forEach((fp) => {
@@ -53,6 +60,10 @@ export class FilterService {
       genres: genres.map((g) => g.name),
       subgenres: subgenres.map((s) => s.name),
       keys: Array.from(keys).sort(),
+      libraries: libraryResults.map((l) => ({
+        id: l.id,
+        name: l.name,
+      })),
     };
   }
 
@@ -364,6 +375,9 @@ export class FilterService {
         if (criteria.acousticness.max !== undefined) {
           fingerprintWhere.acousticness.lte = criteria.acousticness.max;
         }
+      }
+      if (criteria.libraryId && criteria.libraryId.length > 0) {
+        where.libraryId = { in: criteria.libraryId };
       }
 
       where.audioFingerprint = fingerprintWhere;

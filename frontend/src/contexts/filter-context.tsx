@@ -10,6 +10,7 @@ export interface FilterOptions {
   genres: { label: string; value: string }[];
   subgenres: { label: string; value: string }[];
   keys: { label: string; value: string }[];
+  libraries: { label: string; value: string }[];
 }
 
 const FilterContext = createContext<{
@@ -42,6 +43,7 @@ export function FilterProvider({ children }: FilterProviderProps) {
     genres: [],
     subgenres: [],
     keys: [],
+    libraries: [],
   });
 
   const filtering = useFiltering();

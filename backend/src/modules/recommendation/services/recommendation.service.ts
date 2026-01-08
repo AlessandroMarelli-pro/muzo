@@ -112,6 +112,8 @@ export class RecommendationService {
     try {
       const response = await this.elasticsearchService.searchTracks(query);
       const hits = response.hits.hits;
+      console.log('hits', hits);
+
       // Let Elasticsearch handle scoring - no normalization needed
       return hits.map((hit: any) => {
         return {
@@ -885,7 +887,6 @@ export class RecommendationService {
     try {
       const response = await this.elasticsearchService.searchTracks(query);
       const hits = response.hits.hits;
-
       return {
         playlistFeatures,
         query,

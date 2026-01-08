@@ -279,7 +279,8 @@ export class MusicTrackService {
     }
 
     // Build Prisma where clause from filter criteria
-    const where = this.filterService.buildPrismaWhereClause(currentFilter);
+    const where =
+      await this.filterService.buildPrismaWhereClause(currentFilter);
 
     return this.prisma.musicTrack.findMany({
       where,
@@ -302,7 +303,7 @@ const criteria: FilterCriteria = {
   tempo: { min: 120, max: 140 },
 };
 
-const where = filterService.buildPrismaWhereClause(criteria);
+const where = await filterService.buildPrismaWhereClause(criteria);
 
 // Use in Prisma query
 const tracks = await prisma.musicTrack.findMany({
@@ -414,7 +415,7 @@ filterService.setCurrentFilter(criteria);
 
 // 3. Use filter in queries
 const currentFilter = filterService.getCurrentFilter();
-const where = filterService.buildPrismaWhereClause(currentFilter);
+const where = await filterService.buildPrismaWhereClause(currentFilter);
 const tracks = await prisma.musicTrack.findMany({ where });
 
 // 4. Save filter for later use

@@ -22,6 +22,7 @@ export interface FilterCriteriaInput {
   liveness?: RangeInput;
   acousticness?: RangeInput;
   artist?: string;
+  libraryId?: string[];
 }
 
 export interface RangeInput {
@@ -71,6 +72,7 @@ export const useCurrentFilter = () => {
               min
             }
             artist
+            libraryId
           }
         }
       `);
@@ -119,6 +121,7 @@ export const useSetCurrentFilter = () => {
                 min
               }
               artist
+              libraryId
             }
           }
         `,
@@ -207,6 +210,7 @@ export const useStaticFilterOptions = () => {
           genres: string[];
           keys: string[];
           subgenres: string[];
+          libraries: { id: string; name: string }[];
         };
       }>(gql`
         query GetStaticFilterOptions {
@@ -214,6 +218,10 @@ export const useStaticFilterOptions = () => {
             genres
             keys
             subgenres
+            libraries {
+              id
+              name
+            }
           }
         }
       `);
@@ -269,6 +277,7 @@ export const useSavedFilters = () => {
                 min
               }
               artist
+              libraryId
             }
             createdAt
             updatedAt
@@ -330,6 +339,7 @@ export const useCreateSavedFilter = () => {
                   min
                 }
                 artist
+                libraryId
               }
               createdAt
               updatedAt

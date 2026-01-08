@@ -69,6 +69,7 @@ export function mapToSimpleMusicTrack(
     imagePath: track.imageSearches?.[0]?.imagePath || '',
     lastScannedAt: track.analysisCompletedAt || null,
     fileCreatedAt: track.fileCreatedAt || null,
+    libraryId: track.libraryId || '',
   };
 }
 

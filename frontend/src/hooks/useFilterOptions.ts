@@ -30,6 +30,10 @@ export function useFilterOptionsData(): StaticFilterOptionsData & {
           label: key,
           value: key,
         })),
+        libraries: staticFiltersData.libraries.map((library) => ({
+          label: library.name,
+          value: library.id,
+        })),
       });
     }
   }, [staticFiltersData, setOptions]);
@@ -50,6 +54,11 @@ export function useFilterOptionsData(): StaticFilterOptionsData & {
       staticFiltersData?.keys.map((key) => ({
         label: key,
         value: key,
+      })) || [],
+    libraries:
+      staticFiltersData?.libraries.map((library) => ({
+        label: library.name,
+        value: library.id,
       })) || [],
   };
 }

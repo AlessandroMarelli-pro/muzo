@@ -153,6 +153,7 @@ input FilterCriteriaInput {
   genres: [String!]
   instrumentalness: RangeInput
   keys: [String!]
+  libraryId: [String!]
   liveness: RangeInput
   speechiness: RangeInput
   subgenres: [String!]
@@ -168,6 +169,7 @@ type FilterCriteriaType {
   genres: [String!]
   instrumentalness: Range
   keys: [String!]
+  libraryId: [String!]
   liveness: Range
   speechiness: Range
   subgenres: [String!]
@@ -227,6 +229,11 @@ type IntelligentEditorSession {
   updatedAt: DateTime!
   userActions: String!
   userId: ID
+}
+
+type LibraryFilterOptionType {
+  id: ID!
+  name: String!
 }
 
 type LibraryMetrics {
@@ -584,6 +591,7 @@ type SimpleMusicTrack {
   key: String
   lastPlayedAt: DateTime
   lastScannedAt: DateTime
+  libraryId: String
   listeningCount: Float
   speechiness: Float
   subgenres: [String!]
@@ -598,6 +606,7 @@ type SimpleMusicTrack {
 type StaticFilterOptions {
   genres: [String!]!
   keys: [String!]!
+  libraries: [LibraryFilterOptionType!]!
   subgenres: [String!]!
 }
 

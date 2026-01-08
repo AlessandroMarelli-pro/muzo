@@ -40,6 +40,7 @@ export const simpleMusicTrackFragment = gql`
     atmosphereKeywords
     contextBackgrounds
     contextImpacts
+    libraryId
   }
 `;
 

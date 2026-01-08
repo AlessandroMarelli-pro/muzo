@@ -15,12 +15,12 @@ export const useFilterQueryParams = () => {
   // URL query parameter management for filters (read-only)
   const [artistParam] = useQueryState('artist', parseAsString);
   const [genreParam] = useQueryState(
-    'genre',
+    'genres',
     parseAsArrayOf(parseAsString, ',').withDefault([]),
   );
 
   const [subgenreParam] = useQueryState(
-    'subgenre',
+    'subgenres',
     parseAsArrayOf(parseAsString, ',').withDefault([]),
   );
 
@@ -69,8 +69,13 @@ export const useFilterQueryParams = () => {
     ]).withDefault([]),
   );
 
+  const [libraryIdParam] = useQueryState(
+    'libraryId',
+    parseAsArrayOf(parseAsString, ',').withDefault([]),
+  );
+
   useEffect(() => {
-    console.log('artistParam', artistParam);
+    console.log('artistParam', artistParam, genreParam);
     if (artistParam && artistParam.length > 0) {
       updateFilter('artist', artistParam);
     } else {
@@ -112,6 +117,11 @@ export const useFilterQueryParams = () => {
     } else {
       updateFilter('danceabilityFeeling', []);
     }
+    if (libraryIdParam.length > 0) {
+      updateFilter('libraryId', libraryIdParam);
+    } else {
+      updateFilter('libraryId', []);
+    }
   }, [
     genreParam,
     subgenreParam,
@@ -121,6 +131,7 @@ export const useFilterQueryParams = () => {
     arousalMoodParam,
     danceabilityFeelingParam,
     artistParam,
+    libraryIdParam,
   ]);
 
   useEffect(() => {

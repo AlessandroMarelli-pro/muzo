@@ -168,33 +168,10 @@ export function MusicTable({
   const { currentTrack, setCurrentTrack } = useCurrentTrack();
   const columns = React.useMemo<ColumnDef<SimpleMusicTrack>[]>(
     () => [
-      /*   {
-        id: 'select',
-        header: ({ table }) => (
-          <Checkbox
-            checked={
-              table.getIsAllPageRowsSelected() ||
-              (table.getIsSomePageRowsSelected() && 'indeterminate')
-            }
-            onCheckedChange={(value) =>
-              table.toggleAllPageRowsSelected(!!value)
-            }
-            aria-label="Select all"
-          />
-        ),
-        cell: ({ row }) => (
-          <Checkbox
-            checked={row.getIsSelected()}
-            onCheckedChange={(value) => row.toggleSelected(!!value)}
-            aria-label="Select row"
-          />
-        ),
-        enableSorting: false,
-        enableHiding: false,
-        size: 40,
-      }, */
       {
-        id: 'image',
+        id: 'libraryId',
+        accessorKey: 'libraryId',
+        header: () => null,
         cell: ({ row }) => {
           const track = row.original;
           const imagePath = track.imagePath || 'Unknown Image';
@@ -209,8 +186,12 @@ export function MusicTable({
             </div>
           );
         },
-        enableSorting: false,
-        enableHiding: false,
+        enableColumnFilter: true,
+        meta: {
+          label: 'Libray',
+          variant: 'multiSelect',
+          options: staticFilterOptions.libraries,
+        },
       },
       {
         id: 'artist',
@@ -476,7 +457,7 @@ export function MusicTable({
           );
         },
         meta: {
-          label: 'Mood',
+          label: 'Valence',
           variant: 'multiSelect',
           options: valenceMoodOptions,
         },

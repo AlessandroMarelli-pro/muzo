@@ -488,6 +488,7 @@ export const useStaticFilters = () => {
           genres: string[];
           subgenres: string[];
           keys: string[];
+          libraries: { id: string; name: string }[];
         };
       }>(gql`
         query GetStaticFilters {
@@ -495,6 +496,10 @@ export const useStaticFilters = () => {
             genres
             subgenres
             keys
+            libraries {
+              id
+              name
+            }
           }
         }
       `);

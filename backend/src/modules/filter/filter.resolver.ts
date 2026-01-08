@@ -13,6 +13,7 @@ import {
   CreateFilterDto,
   FilterCriteria,
   FilterOptions as FilterOptionsModel,
+  LibraryFilterOption,
   SavedFilter as SavedFilterModel,
   StaticFilterOptions as StaticFilterOptionsModel,
   UpdateFilterDto,
@@ -66,6 +67,9 @@ export class FilterCriteriaInput {
 
   @Field(() => [String], { nullable: true })
   danceabilityFeeling?: string[];
+
+  @Field(() => [String], { nullable: true })
+  libraryId?: string[];
 }
 
 @InputType()
@@ -133,6 +137,18 @@ export class FilterCriteriaType {
 
   @Field(() => String, { nullable: true })
   artist?: string;
+
+  @Field(() => [String], { nullable: true })
+  libraryId?: string[];
+}
+
+@ObjectType()
+export class LibraryFilterOptionType {
+  @Field(() => ID)
+  id: string;
+
+  @Field(() => String)
+  name: string;
 }
 
 @ObjectType()
@@ -145,6 +161,9 @@ export class StaticFilterOptions {
 
   @Field(() => [String])
   keys: string[];
+
+  @Field(() => [LibraryFilterOptionType])
+  libraries: LibraryFilterOption[];
 }
 
 @ObjectType()
@@ -206,6 +225,7 @@ export class FilterResolver {
   setCurrentFilter(
     @Args('criteria') criteria: FilterCriteriaInput,
   ): FilterCriteria {
+    console.log('criteria', criteria, this.filterService.getCurrentFilter());
     return this.filterService.setCurrentFilter(criteria);
   }
 

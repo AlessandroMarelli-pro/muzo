@@ -197,7 +197,7 @@ export class MusicTrackService {
 
     const filter = this.filterService.getCurrentFilter();
     if (filter) {
-      where = this.filterService.buildPrismaWhereClause(filter);
+      where = await this.filterService.buildPrismaWhereClause(filter);
     }
 
     // Build Prisma where clause
