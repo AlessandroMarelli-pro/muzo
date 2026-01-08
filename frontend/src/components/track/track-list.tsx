@@ -59,7 +59,7 @@ export const TrackList: React.FC<TrackListProps> = ({ viewMode = 'grid' }) => {
   const [sorting] = useQueryState(
     'sort',
     getSortingStateParser<SimpleMusicTrack>(validColumnIds).withDefault([
-      { id: 'createdAt', desc: true },
+      { id: 'fileCreatedAt', desc: false },
     ]),
   );
 
@@ -106,8 +106,8 @@ export const TrackList: React.FC<TrackListProps> = ({ viewMode = 'grid' }) => {
     }
 
     const defaultResult = {
-      orderBy: 'createdAt',
-      orderDirection: 'desc' as 'asc' | 'desc',
+      orderBy: 'fileCreatedAt',
+      orderDirection: 'asc' as 'asc' | 'desc',
     };
     console.log('Using default sorting:', defaultResult);
     return defaultResult;
@@ -119,6 +119,7 @@ export const TrackList: React.FC<TrackListProps> = ({ viewMode = 'grid' }) => {
     orderBy,
     orderDirection,
   };
+  console.log('queryParams', queryParams);
 
   const { data, isLoading } = useTracksList(queryParams);
 

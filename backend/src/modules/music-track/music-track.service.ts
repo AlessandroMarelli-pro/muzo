@@ -189,7 +189,7 @@ export class MusicTrackService {
       format,
       limit = 50,
       offset = 0,
-      orderBy = 'aiConfidence',
+      orderBy = 'fileCreatedAt',
       orderDirection = 'asc',
       isFavorite,
     } = options;
