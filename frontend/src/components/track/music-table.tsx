@@ -1,6 +1,7 @@
 'use client';
 
 import { SimpleMusicTrack } from '@/__generated__/types';
+import { SelectPlaylistDialog } from '@/components/playlist/select-playlist-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -21,7 +22,6 @@ import { DataTableToolbar } from '@/components/data-table/data-table-toolbar';
 import {
   useAudioPlayerActions,
   useCurrentTrack,
-  useIsPlaying,
 } from '@/contexts/audio-player-context';
 import { useDataTable } from '@/hooks/use-data-table';
 import { AudioPlayerActions } from '@/hooks/useAudioPlayer';
@@ -100,12 +100,11 @@ const ActionCells = ({
   actions,
   currentTrack,
   setCurrentTrack,
+  onOpenAddToPlaylistDialog,
 }: any) => {
   const [isTrackPlaying, setIsTrackPlaying] = React.useState(false);
 
-  const isPlaying = useIsPlaying();
   const track = row.original;
-  const isCurrentTrack = currentTrack?.id === track.id;
 
   const playMusic = () => {
     setIsTrackPlaying((prev) => !prev);
@@ -148,7 +147,9 @@ const ActionCells = ({
           >
             Add to Queue
           </DropdownMenuItem>
-          <DropdownMenuItem>Add to Playlist</DropdownMenuItem>
+          <DropdownMenuItem onClick={() => onOpenAddToPlaylistDialog(track.id)}>
+            Add to Playlist
+          </DropdownMenuItem>
           <DropdownMenuItem>View Details</DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -166,6 +167,22 @@ export function MusicTable({
   const navigate = useNavigate();
   const actions = useAudioPlayerActions();
   const { currentTrack, setCurrentTrack } = useCurrentTrack();
+  const [isAddToPlaylistDialogOpen, setIsAddToPlaylistDialogOpen] =
+    React.useState(false);
+  const [selectedTrackId, setSelectedTrackId] = React.useState<string | null>(
+    null,
+  );
+
+  const handleOpenAddToPlaylistDialog = React.useCallback((trackId: string) => {
+    setSelectedTrackId(trackId);
+    setIsAddToPlaylistDialogOpen(true);
+  }, []);
+
+  const handleCloseAddToPlaylistDialog = React.useCallback(() => {
+    setIsAddToPlaylistDialogOpen(false);
+    setSelectedTrackId(null);
+  }, []);
+
   const columns = React.useMemo<ColumnDef<SimpleMusicTrack>[]>(
     () => [
       {
@@ -534,11 +551,12 @@ export function MusicTable({
             actions={actions}
             currentTrack={currentTrack}
             setCurrentTrack={setCurrentTrack}
+            onOpenAddToPlaylistDialog={handleOpenAddToPlaylistDialog}
           />
         ),
       },
     ],
-    [onAddToQueue],
+    [onAddToQueue, handleOpenAddToPlaylistDialog],
   );
 
   const { table } = useDataTable({
@@ -564,6 +582,13 @@ export function MusicTable({
           <DataTableSortList table={table} />
         </DataTableToolbar>
       </DataTable>
+      {selectedTrackId && (
+        <SelectPlaylistDialog
+          isOpen={isAddToPlaylistDialogOpen}
+          onClose={handleCloseAddToPlaylistDialog}
+          trackId={selectedTrackId}
+        />
+      )}
     </div>
   );
 }
