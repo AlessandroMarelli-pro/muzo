@@ -56,6 +56,8 @@ function MusicCard({
         height: `${height}px`,
         minWidth: `${width}px`,
         minHeight: `${height}px`,
+        maxWidth: `${width}px`,
+        maxHeight: `${height}px`,
       }}
       key={key}
     >

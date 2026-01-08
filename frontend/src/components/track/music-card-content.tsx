@@ -54,14 +54,8 @@ export function MusicCardContent({
             alt="Album Art"
             className="w-3/4 h-full object-cover rounded-md"
           />
-          <Badge
-            variant="secondary"
-            className="text-[11px] absolute bottom-0 right-1 z-1"
-          >
-            {bpm} bpm
-          </Badge>
         </div>
-        <div className=" flex-1">
+        <div className=" flex-1 h-5/8">
           <div className="flex items-center justify-center h-full w-full p-4">
             <img
               src={`http://localhost:3000/api/images/serve?imagePath=${formattedImage}`}
