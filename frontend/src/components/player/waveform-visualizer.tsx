@@ -46,7 +46,7 @@ export function WaveformVisualizer({
         {formatTime(currentTime)}
       </span>
       <div className={cn('relative ', className)}>
-        <div className="h-10 cursor-pointer flex flex-row  items-center justify-center  transition-opacity opacity-80 gap-0.5 ">
+        <div className="h-10 cursor-pointer flex flex-row  items-center justify-center  transition-opacity opacity-80 ">
           {waveformData.map((amplitude, i) => {
             const timeAtPosition = (i / waveformData.length) * duration;
             const isPlayed = timeAtPosition <= currentTime;
@@ -54,7 +54,7 @@ export function WaveformVisualizer({
             return (
               <div
                 onClick={() => onSeek?.(timeAtPosition)}
-                className="h-full items-center justify-center flex w-full"
+                className="h-full items-center justify-center flex w-[2px] px-[1px]"
                 key={`${amplitude}-${i}`}
               >
                 <div

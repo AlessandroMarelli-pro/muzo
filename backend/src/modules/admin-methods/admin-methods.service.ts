@@ -43,7 +43,7 @@ export class AdminMethodsService {
       this.logger.log(`Found ${tracks.length} tracks to process`);
 
       // Process each track
-      for (const track of [tracks[0]]) {
+      for (const track of tracks) {
         try {
           // Check if file exists
           if (!fs.existsSync(track.filePath)) {

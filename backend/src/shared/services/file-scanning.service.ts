@@ -101,8 +101,8 @@ export class FileScanningService {
     }
 
     // Only scan files modified since last scan
-    //const lastScanTime = library.lastIncrementalScanAt || library.lastScanAt;
-    const lastScanTime = false;
+    const lastScanTime = library.lastIncrementalScanAt || library.lastScanAt;
+    //const lastScanTime = false;
 
     if (!lastScanTime) {
       // No previous scan, do full scan

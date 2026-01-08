@@ -527,7 +527,7 @@ export class RecommendationService {
         ? {
             terms: {
               atmosphere_desc: playlistFeatures.atmosphereKeywords,
-              boost: Math.max(weights.aiMetadataSimilarity * 2.0, 1.0),
+              boost: Math.max(weights.aiMetadataSimilarity * 4.0, 4.0),
             },
           }
         : null;

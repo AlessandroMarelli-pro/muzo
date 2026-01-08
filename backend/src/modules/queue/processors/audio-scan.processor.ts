@@ -90,7 +90,7 @@ export class AudioScanProcessor extends WorkerHost {
         existingTrack.analysisStatus === AnalysisStatus.COMPLETED
       ) {
         this.logger.log(`Track already analyzed: ${fileName}`);
-        //return;
+        return;
       }
 
       // Create or update MusicTrack record
@@ -375,7 +375,6 @@ export class AudioScanProcessor extends WorkerHost {
         fileSize,
         libraryId,
         analysisStatus: AnalysisStatus.PENDING,
-        fileCreatedAt: lastModified,
       },
       create: {
         filePath,
@@ -385,6 +384,7 @@ export class AudioScanProcessor extends WorkerHost {
         duration: 0, // Will be updated after analysis
         format: path.extname(fileName).toLowerCase().substring(1),
         analysisStatus: AnalysisStatus.PENDING,
+        fileCreatedAt: lastModified,
       },
     });
   }

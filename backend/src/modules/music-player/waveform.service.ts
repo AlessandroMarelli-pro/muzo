@@ -1,8 +1,8 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import ffmpeg from 'fluent-ffmpeg';
 import * as fs from 'fs';
-import * as wav from 'node-wav';
 import * as path from 'path';
+import { Writable } from 'stream';
 
 export interface WaveformData {
   peaks: number[];
@@ -154,89 +154,88 @@ export class WaveformService {
     samplesPerPixel: number,
   ): Promise<number[]> {
     return new Promise((resolve, reject) => {
-      const tempWavPath = path.join(
-        path.dirname(filePath),
-        `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}.wav`,
-      );
+      const sampleRate = 44100;
+      const channels = 1; // Mono
+      const bytesPerSample = 2; // 16-bit = 2 bytes
+      const chunks: Buffer[] = [];
 
-      // Convert audio to WAV format for analysis
-      ffmpeg(filePath)
-        .audioChannels(1) // Convert to mono for simpler analysis
-        .audioFrequency(44100) // Standard sample rate
-        .audioBitrate('16k') // Lower bitrate for faster processing
-        .format('wav')
-        .output(tempWavPath)
-        .on('end', async () => {
-          try {
-            // Read the WAV file
-            const wavBuffer = fs.readFileSync(tempWavPath);
-            const wavData = wav.decode(wavBuffer);
+      // Create a writable stream to capture PCM data directly from ffmpeg
+      const outputStream = new Writable({
+        write(chunk: Buffer, encoding, callback) {
+          chunks.push(chunk);
+          callback();
+        },
+      });
 
-            // Clean up temp file
-            fs.unlinkSync(tempWavPath);
+      // Process the accumulated data when stream finishes
+      outputStream.on('finish', () => {
+        try {
+          // Combine all chunks into a single buffer
+          const pcmBuffer = Buffer.concat(chunks);
+          const totalSamples = pcmBuffer.length / bytesPerSample;
 
-            if (
-              !wavData ||
-              !wavData.channelData ||
-              wavData.channelData.length === 0
-            ) {
-              throw new Error('Invalid WAV data');
-            }
+          if (totalSamples === 0) {
+            throw new Error('No audio data extracted');
+          }
 
-            const audioData = wavData.channelData[0]; // Use first channel (mono)
-            const sampleRate = wavData.sampleRate;
-            const totalSamples = audioData.length;
+          // Convert PCM buffer to normalized float array
+          const audioData = new Float32Array(totalSamples);
+          for (let i = 0; i < totalSamples; i++) {
+            // Read 16-bit signed integer (little-endian)
+            const int16 = pcmBuffer.readInt16LE(i * bytesPerSample);
+            // Normalize to [-1, 1] range
+            audioData[i] = int16 / 32768.0;
+          }
 
-            // Calculate how many samples to skip for each pixel
-            const samplesPerPixelActual = Math.max(
-              1,
-              Math.floor(totalSamples / width),
+          // Calculate how many samples to skip for each pixel
+          const samplesPerPixelActual = Math.max(
+            1,
+            Math.floor(totalSamples / width),
+          );
+
+          const waveform: number[] = [];
+
+          for (let i = 0; i < width; i++) {
+            const startSample = i * samplesPerPixelActual;
+            const endSample = Math.min(
+              startSample + samplesPerPixelActual,
+              totalSamples,
             );
 
-            const waveform: number[] = [];
+            // Calculate RMS (Root Mean Square) for this segment
+            let sumSquares = 0;
+            let sampleCount = 0;
 
-            for (let i = 0; i < width; i++) {
-              const startSample = i * samplesPerPixelActual;
-              const endSample = Math.min(
-                startSample + samplesPerPixelActual,
-                totalSamples,
-              );
-
-              // Calculate RMS (Root Mean Square) for this segment
-              let sumSquares = 0;
-              let sampleCount = 0;
-
-              for (let j = startSample; j < endSample; j++) {
-                const sample = audioData[j];
-                sumSquares += sample * sample;
-                sampleCount++;
-              }
-
-              const rms =
-                sampleCount > 0 ? Math.sqrt(sumSquares / sampleCount) : 0;
-
-              // Normalize to 0-1 range
-              const normalizedAmplitude = Math.min(1, Math.max(0, rms));
-              waveform.push(normalizedAmplitude);
+            for (let j = startSample; j < endSample; j++) {
+              const sample = audioData[j];
+              sumSquares += sample * sample;
+              sampleCount++;
             }
 
-            resolve(waveform);
-          } catch (error) {
-            // Clean up temp file on error
-            if (fs.existsSync(tempWavPath)) {
-              fs.unlinkSync(tempWavPath);
-            }
-            reject(error);
+            const rms =
+              sampleCount > 0 ? Math.sqrt(sumSquares / sampleCount) : 0;
+
+            // Normalize to 0-1 range
+            const normalizedAmplitude = Math.min(1, Math.max(0, rms));
+            waveform.push(normalizedAmplitude);
           }
-        })
+
+          resolve(waveform);
+        } catch (error) {
+          reject(error);
+        }
+      });
+
+      // Extract raw PCM data directly from any audio format (FLAC, OPUS, MP3, etc.)
+      // Pipe output directly to memory - no temporary files needed
+      ffmpeg(filePath)
+        .audioChannels(channels) // Convert to mono for simpler analysis
+        .audioFrequency(sampleRate) // Standard sample rate
+        .outputOptions(['-f', 's16le']) // Raw PCM: signed 16-bit little-endian (no WAV header)
         .on('error', (error) => {
-          // Clean up temp file on error
-          if (fs.existsSync(tempWavPath)) {
-            fs.unlinkSync(tempWavPath);
-          }
           reject(error);
         })
-        .run();
+        .pipe(outputStream, { end: true }); // end: true closes the stream when ffmpeg finishes
     });
   }
 
