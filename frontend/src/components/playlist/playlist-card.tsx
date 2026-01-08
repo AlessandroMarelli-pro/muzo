@@ -1,11 +1,15 @@
 import { PlaylistItem } from '@/__generated__/types';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { useDeletePlaylist } from '@/services/playlist-hooks';
+import {
+  useDeletePlaylist,
+  useExportPlaylistToM3U,
+} from '@/services/playlist-hooks';
 import {
   AudioWaveform,
   Clock,
   Disc3,
+  Download,
   Edit,
   HeartPlus,
   Play,
@@ -27,7 +31,9 @@ export function PlaylistCard({
   onViewDetails,
 }: PlaylistCardProps) {
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
   const deletePlaylistMutation = useDeletePlaylist('default');
+  const exportPlaylistMutation = useExportPlaylistToM3U('default');
 
   const formatDuration = (seconds: number) => {
     const hours = Math.floor(seconds / 3600);
@@ -64,6 +70,29 @@ export function PlaylistCard({
     // TODO: Implement playlist editing
     console.log('Editing playlist:', playlist.id);
     onViewDetails(playlist.id);
+  };
+
+  const handleExport = async () => {
+    setIsExporting(true);
+    try {
+      const m3uContent = await exportPlaylistMutation.mutateAsync(playlist.id);
+
+      // Create a blob and download the file
+      const blob = new Blob([m3uContent], { type: 'audio/mpegurl' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${playlist.name.replace(/[^a-z0-9]/gi, '_')}.m3u`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Failed to export playlist:', error);
+      alert('Failed to export playlist. Please try again.');
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   return (
@@ -127,6 +156,15 @@ export function PlaylistCard({
         <Button onClick={handleEdit} size="sm" variant="ghost">
           <Edit className="h-4 w-4" />
           Edit
+        </Button>
+        <Button
+          onClick={handleExport}
+          size="sm"
+          variant="ghost"
+          disabled={isExporting}
+        >
+          <Download className="h-4 w-4" />
+          {isExporting ? 'Exporting...' : 'Export'}
         </Button>
         <Button onClick={handleDelete} size="sm" variant="ghost-destructive">
           <Trash2 />

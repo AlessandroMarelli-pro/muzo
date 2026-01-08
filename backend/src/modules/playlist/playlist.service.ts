@@ -762,4 +762,32 @@ export class PlaylistService {
         playlist.tracks.length > 0 ? totalDuration / playlist.tracks.length : 0,
     };
   }
+
+  async exportPlaylistToM3U(playlistId: string): Promise<string> {
+    const playlist = await this.findPlaylistById(playlistId);
+
+    if (!playlist) {
+      throw new NotFoundException(`Playlist with ID ${playlistId} not found`);
+    }
+
+    // Start with M3U header
+    let m3uContent = '#EXTM3U\n';
+
+    // Add each track
+    for (const playlistTrack of playlist.tracks) {
+      const track = playlistTrack.track;
+      const duration = Math.floor(track.duration || 0);
+      const artist = track.originalArtist || track.aiArtist || track.userArtist || 'Unknown Artist';
+      const title = track.originalTitle || track.aiTitle || track.userTitle || 'Unknown Title';
+      const displayName = `${artist} - ${title}`;
+
+      // Add EXTINF line with duration and display name
+      m3uContent += `#EXTINF:${duration},${displayName}\n`;
+
+      // Add file path (absolute path)
+      m3uContent += `${track.filePath}\n`;
+    }
+
+    return m3uContent;
+  }
 }

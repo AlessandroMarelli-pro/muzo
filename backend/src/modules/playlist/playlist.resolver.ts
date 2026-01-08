@@ -141,4 +141,12 @@ export class PlaylistResolver {
   ) {
     return this.playlistService.reorderTracks(playlistId, input);
   }
+
+  @Mutation(() => String)
+  async exportPlaylistToM3U(
+    @Args('playlistId', { type: () => ID }) playlistId: string,
+    @Args('userId') userId?: string,
+  ) {
+    return this.playlistService.exportPlaylistToM3U(playlistId);
+  }
 }

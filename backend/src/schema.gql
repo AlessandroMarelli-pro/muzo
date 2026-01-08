@@ -387,6 +387,7 @@ type Mutation {
   deleteSavedFilter(id: ID!): Boolean!
   deleteTrack(id: ID!): Boolean!
   dislikeTrack(trackId: ID!): Boolean!
+  exportPlaylistToM3U(playlistId: ID!, userId: String!): String!
   likeTrack(trackId: ID!): SimpleMusicTrack!
   pauseTrack(trackId: String!): PlaybackState!
   playTrack(startTime: Float! = 0, trackId: String!): PlaybackState!

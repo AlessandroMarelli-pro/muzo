@@ -178,6 +178,12 @@ const DELETE_PLAYLIST = gql`
   }
 `;
 
+const EXPORT_PLAYLIST_TO_M3U = gql`
+  mutation ExportPlaylistToM3U($playlistId: ID!, $userId: String!) {
+    exportPlaylistToM3U(playlistId: $playlistId, userId: $userId)
+  }
+`;
+
 const ADD_TRACK_TO_PLAYLIST = gql`
   ${simpleMusicTrackFragment}
   mutation AddTrackToPlaylist(
@@ -299,6 +305,17 @@ const deletePlaylist = async (
     { id, userId },
   );
   return data.deletePlaylist;
+};
+
+const exportPlaylistToM3U = async (
+  playlistId: string,
+  userId: string = 'default',
+): Promise<string> => {
+  const data = await graffleClient.request<{ exportPlaylistToM3U: string }>(
+    EXPORT_PLAYLIST_TO_M3U,
+    { playlistId, userId },
+  );
+  return data.exportPlaylistToM3U;
 };
 
 const addTrackToPlaylist = async (
@@ -475,6 +492,12 @@ export function useDeletePlaylist(userId: string = 'default') {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['playlists'] });
     },
+  });
+}
+
+export function useExportPlaylistToM3U(userId: string = 'default') {
+  return useMutation({
+    mutationFn: (playlistId: string) => exportPlaylistToM3U(playlistId, userId),
   });
 }
 
