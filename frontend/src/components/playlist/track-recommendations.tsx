@@ -31,7 +31,7 @@ export const TrackRecommandationsComponent = ({
   setQueue?: () => void;
 }) => {
   return (
-    <Card>
+    <Card className="py-0">
       <CardContent className="p-0">
         <div className="divide-y">
           {recommendations.map((recommendation) => (
@@ -137,7 +137,7 @@ export function TrackRecommendations({
 
   if (recommendations.length === 0) {
     return (
-      <Card>
+      <Card className="py-0">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Sparkles className="h-5 w-5" />

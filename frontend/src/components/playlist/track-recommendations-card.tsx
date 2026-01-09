@@ -37,7 +37,7 @@ export const TrackRecommendationsCard = ({
       <img
         src={`http://localhost:3000/api/images/serve?imagePath=${formattedImage}`}
         alt="Album Art"
-        className="w-10 h-10 object-cover rounded-md"
+        className="w-15 h-15 object-cover rounded-md"
       />
       {/* Track Info */}
       <div className="flex-1 min-w-0">

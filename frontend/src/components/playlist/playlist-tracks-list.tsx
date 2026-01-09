@@ -66,7 +66,7 @@ export function PlaylistTracksList({
   }
 
   return (
-    <Card>
+    <Card className="py-0">
       <CardContent className="p-0">
         <div className="divide-y">
           {playlist.tracks.map((playlistTrack, index) => (
