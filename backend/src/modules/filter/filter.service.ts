@@ -289,11 +289,23 @@ export class FilterService {
       const subgenreIds = subgenreRecords.map((s) => s.id);
 
       if (subgenreIds.length > 0) {
-        where.trackSubgenres = {
-          some: {
-            subgenreId: { in: subgenreIds },
+        // Filter tracks that have ALL specified subgenres
+        // Use AND at the where level to ensure each subgenre is present
+        // Each condition checks that the track has at least one trackSubgenre with the specific subgenreId
+        const subgenreConditions = subgenreIds.map((subgenreId) => ({
+          trackSubgenres: {
+            some: {
+              subgenreId: subgenreId,
+            },
           },
-        };
+        }));
+
+        // Merge with existing AND conditions if any
+        if (where.AND) {
+          where.AND = [...where.AND, ...subgenreConditions];
+        } else {
+          where.AND = subgenreConditions;
+        }
       }
     }
 
@@ -344,7 +356,10 @@ export class FilterService {
         };
       }
 
-      if (criteria.tempo?.min !== 0 || criteria.tempo?.max !== 200) {
+      if (
+        criteria.tempo &&
+        (criteria.tempo?.min !== 0 || criteria.tempo?.max !== 200)
+      ) {
         fingerprintWhere.tempo = {};
         if (criteria.tempo.min !== undefined && criteria.tempo.max !== 200) {
           fingerprintWhere.tempo.gte = criteria.tempo.min;
@@ -354,7 +369,10 @@ export class FilterService {
         }
       }
 
-      if (criteria.speechiness?.min !== 0 || criteria.speechiness?.max !== 1) {
+      if (
+        criteria.speechiness &&
+        (criteria.speechiness?.min !== 0 || criteria.speechiness?.max !== 1)
+      ) {
         fingerprintWhere.speechiness = {};
         if (criteria.speechiness.min !== undefined) {
           fingerprintWhere.speechiness.gte = criteria.speechiness.min;
@@ -365,8 +383,9 @@ export class FilterService {
       }
 
       if (
-        criteria.instrumentalness?.min !== 0 ||
-        criteria.instrumentalness?.max !== 1
+        criteria.instrumentalness &&
+        (criteria.instrumentalness?.min !== 0 ||
+          criteria.instrumentalness?.max !== 1)
       ) {
         fingerprintWhere.instrumentalness = {};
         if (criteria.instrumentalness.min !== undefined) {
@@ -377,7 +396,10 @@ export class FilterService {
         }
       }
 
-      if (criteria.liveness?.min !== 0 || criteria.liveness?.max !== 1) {
+      if (
+        criteria.liveness &&
+        (criteria.liveness?.min !== 0 || criteria.liveness?.max !== 1)
+      ) {
         fingerprintWhere.liveness = {};
         if (criteria.liveness.min !== undefined) {
           fingerprintWhere.liveness.gte = criteria.liveness.min;
@@ -388,8 +410,8 @@ export class FilterService {
       }
 
       if (
-        criteria.acousticness?.min !== 0 ||
-        criteria.acousticness?.max !== 1
+        criteria.acousticness &&
+        (criteria.acousticness?.min !== 0 || criteria.acousticness?.max !== 1)
       ) {
         fingerprintWhere.acousticness = {};
         if (criteria.acousticness.min !== undefined) {

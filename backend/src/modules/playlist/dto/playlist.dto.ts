@@ -3,12 +3,45 @@ import {
   IsArray,
   IsBoolean,
   IsInt,
+  IsNumber,
   IsOptional,
   IsString,
   IsUUID,
   Min,
   ValidateNested,
 } from 'class-validator';
+
+export class PlaylistFilterDto {
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  genres?: string[];
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  subgenres?: string[];
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  atmospheres?: string[];
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => TempoRangeDto)
+  tempo?: { min?: number; max?: number };
+}
+
+export class TempoRangeDto {
+  @IsOptional()
+  @IsNumber()
+  min?: number;
+
+  @IsOptional()
+  @IsNumber()
+  max?: number;
+}
 
 export class CreatePlaylistDto {
   @IsString()
@@ -25,6 +58,16 @@ export class CreatePlaylistDto {
   @IsOptional()
   @IsBoolean()
   isPublic?: boolean;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => PlaylistFilterDto)
+  filters?: PlaylistFilterDto;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  maxTracks?: number;
 }
 
 export class UpdatePlaylistDto {

@@ -57,6 +57,7 @@ export class RecommendationService {
       // Get playlist tracks with their audio features
       const playlistTracks = await this.prisma.playlistTrack.findMany({
         where: { playlistId },
+        orderBy: { addedAt: 'desc' },
         include: {
           track: {
             include: {
@@ -97,7 +98,10 @@ export class RecommendationService {
     playlistTracks: { track: MusicTrackWithRelations }[],
     criteria: RecommendationCriteria,
   ): Promise<TrackSimilarity[]> {
-    const playlistFeatures = this.calculatePlaylistFeatures(playlistTracks);
+    const limitedSet = playlistTracks.slice(0, 10);
+
+    //Only get features from the limited set
+    const playlistFeatures = this.calculatePlaylistFeatures(limitedSet);
     const excludeTrackIds = [
       ...playlistTracks.map((pt) => pt.track.id),
       ...(criteria.excludeTrackIds || []),

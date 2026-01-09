@@ -3,6 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { FilterService } from '../filter/filter.service';
 import { PrismaService } from '../../shared/services/prisma.service';
 import {
   AddTrackToPlaylistDto,
@@ -13,36 +14,75 @@ import {
 
 @Injectable()
 export class PlaylistService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly filterService: FilterService,
+  ) {}
 
   async createPlaylist(createPlaylistDto: CreatePlaylistDto) {
-    return this.prisma.playlist.create({
-      data: createPlaylistDto,
-      include: {
-        tracks: {
-          include: {
-            track: {
-              include: {
-                audioFingerprint: true,
-                aiAnalysisResult: true,
-                imageSearches: true,
-                trackGenres: {
-                  include: {
-                    genre: true,
-                  },
-                },
-                trackSubgenres: {
-                  include: {
-                    subgenre: true,
-                  },
-                },
-              },
-            },
-          },
-          orderBy: { position: 'asc' },
-        },
-      },
+    const { filters, maxTracks, ...playlistData } = createPlaylistDto;
+
+    // Create the playlist first
+    const playlist = await this.prisma.playlist.create({
+      data: playlistData,
     });
+
+    // If filters are provided, find and add matching tracks
+    if (
+      filters &&
+      (filters.genres?.length ||
+        filters.subgenres?.length ||
+        filters.atmospheres?.length ||
+        (filters.tempo &&
+          (filters.tempo.min !== undefined ||
+            filters.tempo.max !== undefined)))
+    ) {
+      // Build filter criteria for FilterService
+      const filterCriteria: any = {
+        genres: filters.genres,
+        subgenres: filters.subgenres,
+        atmospheres: filters.atmospheres,
+        tempo:
+          filters.tempo &&
+          (filters.tempo.min !== undefined || filters.tempo.max !== undefined)
+            ? {
+                min: filters.tempo.min ?? 0,
+                max: filters.tempo.max ?? 200,
+              }
+            : undefined,
+      };
+
+      // Build Prisma where clause using FilterService
+      const where = await this.filterService.buildPrismaWhereClause(
+        filterCriteria,
+      );
+
+      // Find matching tracks
+      const matchingTracks = await this.prisma.musicTrack.findMany({
+        where,
+        take: maxTracks || 100,
+        include: {
+          audioFingerprint: true,
+        },
+        orderBy: {
+          fileCreatedAt: 'desc',
+        },
+      });
+
+      // Add tracks to playlist
+      if (matchingTracks.length > 0) {
+        await this.prisma.playlistTrack.createMany({
+          data: matchingTracks.map((track, index) => ({
+            playlistId: playlist.id,
+            trackId: track.id,
+            position: index + 1,
+          })),
+        });
+      }
+    }
+
+    // Return the playlist with tracks
+    return this.findPlaylistById(playlist.id);
   }
   async findAllPlaylists() {
     return this.prisma.playlist.findMany({

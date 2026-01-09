@@ -215,45 +215,6 @@ export function FilterSheet({ open, onOpenChange }: FilterSheetProps) {
             handleChange={handleTempoChange}
           />
 
-          {/* Energy Filter */}
-          {/*   <SliderComponent
-            id="energy"
-            label="Energy"
-            unit=""
-            minValue={filters.energy.min}
-            maxValue={filters.energy.max}
-            rangeMinValue={0}
-            rangeMaxValue={1}
-            step={0.1}
-            handleChange={handleEnergyChange}
-          /> */}
-
-          {/* Danceability Filter */}
-          {/*  <SliderComponent
-            id="danceability"
-            label="Danceability"
-            unit=""
-            minValue={filters.danceability.min}
-            maxValue={filters.danceability.max}
-            rangeMinValue={0}
-            rangeMaxValue={1}
-            step={0.1}
-            handleChange={handleDanceabilityChange}
-          />
- */}
-          {/* Valence Filter */}
-          {/*  <SliderComponent
-            id="valence"
-            label="Valence (Mood)"
-            unit=""
-            minValue={filters.valence.min}
-            maxValue={filters.valence.max}
-            rangeMinValue={0}
-            rangeMaxValue={1}
-            step={0.1}
-            handleChange={handleValenceChange}
-          /> */}
-
           {/* Speechiness Filter */}
           <SliderComponent
             id="speechiness"

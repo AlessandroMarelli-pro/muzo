@@ -106,7 +106,9 @@ input CreateLibraryInput {
 
 input CreatePlaylistInput {
   description: String
+  filters: PlaylistFilterInput
   isPublic: Boolean
+  maxTracks: Int
   name: String!
   userId: String
 }
@@ -460,6 +462,13 @@ type Playlist {
   totalDuration: Float!
   tracks: [PlaylistTrack!]!
   updatedAt: DateTime!
+}
+
+input PlaylistFilterInput {
+  atmospheres: [String!]
+  genres: [String!]
+  subgenres: [String!]
+  tempo: RangeInput
 }
 
 type PlaylistItem {

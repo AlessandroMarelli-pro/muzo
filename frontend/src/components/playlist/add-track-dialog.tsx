@@ -53,7 +53,7 @@ export function AddTrackDialog({
 
   return (
     <Sheet open={open} onOpenChange={handleOpenChange}>
-      <SheetContent className="sm:max-w-[500px] z-[9998]">
+      <SheetContent className="sm:max-w-[500px] ">
         <SheetHeader>
           <SheetTitle>Add Track to Playlist</SheetTitle>
           <SheetDescription>Add a track to your playlist.</SheetDescription>

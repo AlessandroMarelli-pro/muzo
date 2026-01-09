@@ -125,7 +125,9 @@ export type CreateLibraryInput = {
 
 export type CreatePlaylistInput = {
   description?: InputMaybe<Scalars['String']['input']>;
+  filters?: InputMaybe<PlaylistFilterInput>;
   isPublic?: InputMaybe<Scalars['Boolean']['input']>;
+  maxTracks?: InputMaybe<Scalars['Int']['input']>;
   name: Scalars['String']['input'];
   userId?: InputMaybe<Scalars['String']['input']>;
 };
@@ -166,6 +168,7 @@ export type FilterCriteriaInput = {
   acousticness?: InputMaybe<RangeInput>;
   arousalMood?: InputMaybe<Array<Scalars['String']['input']>>;
   artist?: InputMaybe<Scalars['String']['input']>;
+  atmospheres?: InputMaybe<Array<Scalars['String']['input']>>;
   danceabilityFeeling?: InputMaybe<Array<Scalars['String']['input']>>;
   genres?: InputMaybe<Array<Scalars['String']['input']>>;
   instrumentalness?: InputMaybe<RangeInput>;
@@ -422,6 +425,7 @@ export type Mutation = {
   deleteSavedFilter: Scalars['Boolean']['output'];
   deleteTrack: Scalars['Boolean']['output'];
   dislikeTrack: Scalars['Boolean']['output'];
+  exportPlaylistToM3U: Scalars['String']['output'];
   likeTrack: SimpleMusicTrack;
   pauseTrack: PlaybackState;
   playTrack: PlaybackState;
@@ -506,6 +510,12 @@ export type MutationDeleteTrackArgs = {
 
 export type MutationDislikeTrackArgs = {
   trackId: Scalars['ID']['input'];
+};
+
+
+export type MutationExportPlaylistToM3UArgs = {
+  playlistId: Scalars['ID']['input'];
+  userId: Scalars['String']['input'];
 };
 
 
@@ -681,6 +691,13 @@ export type Playlist = {
   totalDuration: Scalars['Float']['output'];
   tracks: Array<PlaylistTrack>;
   updatedAt: Scalars['DateTime']['output'];
+};
+
+export type PlaylistFilterInput = {
+  atmospheres?: InputMaybe<Array<Scalars['String']['input']>>;
+  genres?: InputMaybe<Array<Scalars['String']['input']>>;
+  subgenres?: InputMaybe<Array<Scalars['String']['input']>>;
+  tempo?: InputMaybe<RangeInput>;
 };
 
 export type PlaylistItem = {
@@ -1253,7 +1270,7 @@ export type SetCurrentFilterMutationVariables = Exact<{
 }>;
 
 
-export type SetCurrentFilterMutation = { __typename?: 'Mutation', setCurrentFilter: { __typename?: 'FilterCriteriaType', valenceMood?: Array<string> | null, arousalMood?: Array<string> | null, danceabilityFeeling?: Array<string> | null, genres?: Array<string> | null, keys?: Array<string> | null, subgenres?: Array<string> | null, artist?: string | null, libraryId?: Array<string> | null, tempo?: { __typename?: 'Range', max: number, min: number } | null, speechiness?: { __typename?: 'Range', max: number, min: number } | null, instrumentalness?: { __typename?: 'Range', max: number, min: number } | null, liveness?: { __typename?: 'Range', max: number, min: number } | null, acousticness?: { __typename?: 'Range', max: number, min: number } | null } };
+export type SetCurrentFilterMutation = { __typename?: 'Mutation', setCurrentFilter: { __typename?: 'FilterCriteriaType', valenceMood?: Array<string> | null, arousalMood?: Array<string> | null, danceabilityFeeling?: Array<string> | null, genres?: Array<string> | null, keys?: Array<string> | null, subgenres?: Array<string> | null, artist?: string | null, libraryId?: Array<string> | null, atmospheres?: Array<string> | null, tempo?: { __typename?: 'Range', max: number, min: number } | null, speechiness?: { __typename?: 'Range', max: number, min: number } | null, instrumentalness?: { __typename?: 'Range', max: number, min: number } | null, liveness?: { __typename?: 'Range', max: number, min: number } | null, acousticness?: { __typename?: 'Range', max: number, min: number } | null } };
 
 export type ClearCurrentFilterMutationVariables = Exact<{ [key: string]: never; }>;
 
@@ -1273,7 +1290,7 @@ export type GetStaticFilterOptionsQuery = { __typename?: 'Query', getStaticFilte
 export type GetSavedFiltersQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type GetSavedFiltersQuery = { __typename?: 'Query', getSavedFilters: Array<{ __typename?: 'SavedFilter', id: string, name: string, createdAt: any, updatedAt: any, criteria: { __typename?: 'FilterCriteriaType', valenceMood?: Array<string> | null, arousalMood?: Array<string> | null, danceabilityFeeling?: Array<string> | null, genres?: Array<string> | null, keys?: Array<string> | null, subgenres?: Array<string> | null, artist?: string | null, libraryId?: Array<string> | null, tempo?: { __typename?: 'Range', max: number, min: number } | null, speechiness?: { __typename?: 'Range', max: number, min: number } | null, instrumentalness?: { __typename?: 'Range', max: number, min: number } | null, liveness?: { __typename?: 'Range', max: number, min: number } | null, acousticness?: { __typename?: 'Range', max: number, min: number } | null } }> };
+export type GetSavedFiltersQuery = { __typename?: 'Query', getSavedFilters: Array<{ __typename?: 'SavedFilter', id: string, name: string, createdAt: any, updatedAt: any, criteria: { __typename?: 'FilterCriteriaType', valenceMood?: Array<string> | null, arousalMood?: Array<string> | null, danceabilityFeeling?: Array<string> | null, genres?: Array<string> | null, keys?: Array<string> | null, subgenres?: Array<string> | null, artist?: string | null, libraryId?: Array<string> | null, atmospheres?: Array<string> | null, tempo?: { __typename?: 'Range', max: number, min: number } | null, speechiness?: { __typename?: 'Range', max: number, min: number } | null, instrumentalness?: { __typename?: 'Range', max: number, min: number } | null, liveness?: { __typename?: 'Range', max: number, min: number } | null, acousticness?: { __typename?: 'Range', max: number, min: number } | null } }> };
 
 export type CreateSavedFilterMutationVariables = Exact<{
   input: CreateSavedFilterInput;
@@ -1465,6 +1482,14 @@ export type DeletePlaylistMutationVariables = Exact<{
 
 
 export type DeletePlaylistMutation = { __typename?: 'Mutation', deletePlaylist: boolean };
+
+export type ExportPlaylistToM3UMutationVariables = Exact<{
+  playlistId: Scalars['ID']['input'];
+  userId: Scalars['String']['input'];
+}>;
+
+
+export type ExportPlaylistToM3UMutation = { __typename?: 'Mutation', exportPlaylistToM3U: string };
 
 export type AddTrackToPlaylistMutationVariables = Exact<{
   playlistId: Scalars['ID']['input'];

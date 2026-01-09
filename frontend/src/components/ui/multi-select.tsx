@@ -50,6 +50,8 @@ export default function MultiSelect({
     } else {
       onChange([...value, item]);
     }
+    // Don't close the popover on selection for multi-select
+    // setOpen(false);
   };
 
   return (
@@ -117,7 +119,7 @@ export default function MultiSelect({
             </span>
           </div>
         </PopoverTrigger>
-        <PopoverContent className="w-full p-0" align="start">
+        <PopoverContent className="w-full p-0 z-[9999]" align="start">
           <Command>
             <CommandInput autoFocus={false} placeholder="Search items..." />
             <CommandList>
@@ -142,7 +144,9 @@ export default function MultiSelect({
                   <CommandItem
                     key={option.value}
                     value={option.value}
-                    onSelect={() => handleSelect(option.value)}
+                    onSelect={(selectedValue) => {
+                      handleSelect(selectedValue);
+                    }}
                   >
                     <Check
                       className={cn(
