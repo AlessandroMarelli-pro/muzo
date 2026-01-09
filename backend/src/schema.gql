@@ -459,6 +459,7 @@ type Playlist {
 input PlaylistFilterInput {
   atmospheres: [String!]
   genres: [String!]
+  libraryId: [String!]
   subgenres: [String!]
   tempo: RangeInput
 }
@@ -583,6 +584,7 @@ type SimpleMusicTrack {
   description: String
   duration: Float!
   fileCreatedAt: DateTime
+  format: String
   genres: [String!]
   id: ID!
   imagePath: String

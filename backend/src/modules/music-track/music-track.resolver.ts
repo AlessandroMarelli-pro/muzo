@@ -36,6 +36,7 @@ export function mapToSimpleMusicTrack(
 ): SimpleMusicTrack {
   return {
     id: track.id,
+    format: track.format,
     artist: track.originalArtist || track.aiArtist || track.userArtist,
     title: track.originalTitle || track.aiTitle || track.userTitle,
     duration: track.duration,

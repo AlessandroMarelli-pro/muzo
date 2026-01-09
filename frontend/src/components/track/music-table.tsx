@@ -288,9 +288,10 @@ export function MusicTable({
         },
         enableColumnFilter: true,
       },
+
       {
         id: 'atmospheres',
-        accessorKey: 'atmosphereKeywords',
+        accessorKey: 'atmospheres',
         header: ({ column }) => (
           <DataTableColumnHeader column={column} title="Atmosphere" />
         ),
@@ -601,7 +602,7 @@ export function MusicTable({
         pageSize: initialPageSize,
       },
       columnVisibility: {
-        atmosphereKeywords: false,
+        atmospheres: false,
       },
     },
 

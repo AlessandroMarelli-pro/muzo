@@ -55,6 +55,9 @@ export class PlaylistFilterInput {
   @Field(() => [String], { nullable: true })
   atmospheres?: string[];
 
+  @Field(() => [String], { nullable: true })
+  libraryId?: string[];
+
   @Field(() => RangeInput, { nullable: true })
   tempo?: { min?: number; max?: number };
 }

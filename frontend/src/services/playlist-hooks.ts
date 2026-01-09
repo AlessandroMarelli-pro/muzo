@@ -14,6 +14,7 @@ export const simpleMusicTrackFragment = gql`
   fragment SimpleMusicTrackFragment on SimpleMusicTrack {
     id
     artist
+    format
     title
     duration
     genres

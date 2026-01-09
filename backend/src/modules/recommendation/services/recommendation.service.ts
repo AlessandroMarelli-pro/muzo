@@ -194,22 +194,35 @@ export class RecommendationService {
                 {
                   terms: {
                     genres: playlistFeatures.genres,
-                    boost: Math.max(weights.genreSimilarity * 3.0, 1.0),
+                    boost: Math.max(weights.genreSimilarity * 3.0, 3.0),
                   },
                 },
-                ...(playlistFeatures.subgenres &&
-                playlistFeatures.subgenres.length > 0
-                  ? [
-                      {
-                        terms: {
-                          subgenres: playlistFeatures.subgenres,
-                          boost: Math.max(weights.genreSimilarity * 4.0, 1),
-                        },
-                      },
-                    ]
-                  : []),
               ],
-              minimum_should_match: 1,
+              minimum_should_match: Math.max(
+                playlistFeatures.genres.length - 1,
+                1,
+              ),
+            },
+          }
+        : null;
+    const shouldSubgenre =
+      weights.genreSimilarity > 0 &&
+      playlistFeatures.subgenres &&
+      playlistFeatures.subgenres.length > 0
+        ? {
+            bool: {
+              should: [
+                {
+                  terms: {
+                    subgenres: playlistFeatures.subgenres,
+                    boost: Math.max(weights.genreSimilarity * 4.0, 4.0),
+                  },
+                },
+              ],
+              minimum_should_match: Math.max(
+                playlistFeatures.subgenres.length - 1,
+                1,
+              ),
             },
           }
         : null;
@@ -248,13 +261,16 @@ export class RecommendationService {
                   gauss: {
                     'audio_fingerprint.tempo': {
                       origin: playlistFeatures.tempo || 120,
-                      scale: 15,
+                      scale: 10,
                       decay: 0.3,
                       offset: 5,
                     },
                   },
+                  weight: 2.5,
                 },
               ],
+              boost: 2.5,
+              boost_mode: 'multiply',
             },
           }
         : null;
@@ -618,6 +634,7 @@ export class RecommendationService {
 
       // Genre similarity with better scoring
       shouldGenre,
+      shouldSubgenre,
 
       // Camelot key matching for harmonic mixing
       //shouldCamelotKey,

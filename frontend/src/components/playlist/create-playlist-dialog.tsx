@@ -81,6 +81,7 @@ export function CreatePlaylistDialog({
   const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
   const [selectedSubgenres, setSelectedSubgenres] = useState<string[]>([]);
   const [selectedAtmospheres, setSelectedAtmospheres] = useState<string[]>([]);
+  const [selectedLibraries, setSelectedLibraries] = useState<string[]>([]);
   const [bpmRange, setBpmRange] = useState<[number, number]>([0, 200]);
   const [maxTracks, setMaxTracks] = useState<number>(100);
 
@@ -101,6 +102,7 @@ export function CreatePlaylistDialog({
         selectedGenres.length > 0 ||
         selectedSubgenres.length > 0 ||
         selectedAtmospheres.length > 0 ||
+        selectedLibraries.length > 0 ||
         bpmRange[0] !== 0 ||
         bpmRange[1] !== 200
           ? {
@@ -110,6 +112,10 @@ export function CreatePlaylistDialog({
               atmospheres:
                 selectedAtmospheres.length > 0
                   ? selectedAtmospheres
+                  : undefined,
+              libraryId:
+                selectedLibraries.length > 0
+                  ? selectedLibraries
                   : undefined,
               tempo:
                 bpmRange[0] !== 0 || bpmRange[1] !== 200
@@ -136,6 +142,7 @@ export function CreatePlaylistDialog({
       setSelectedGenres([]);
       setSelectedSubgenres([]);
       setSelectedAtmospheres([]);
+      setSelectedLibraries([]);
       setBpmRange([0, 200]);
       setMaxTracks(100);
 
@@ -244,6 +251,20 @@ export function CreatePlaylistDialog({
                   value={selectedAtmospheres}
                   onChange={setSelectedAtmospheres}
                   placeholder="Select atmospheres..."
+                  className="w-full"
+                  isLoading={options.isLoading}
+                  disabled={isCreating}
+                />
+              </div>
+
+              {/* Libraries Filter */}
+              <div className="space-y-2">
+                <Label htmlFor="libraries-filter">Libraries</Label>
+                <MultiSelect
+                  options={options.libraries || []}
+                  value={selectedLibraries}
+                  onChange={setSelectedLibraries}
+                  placeholder="Select libraries..."
                   className="w-full"
                   isLoading={options.isLoading}
                   disabled={isCreating}

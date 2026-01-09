@@ -33,6 +33,7 @@ export class PlaylistService {
       (filters.genres?.length ||
         filters.subgenres?.length ||
         filters.atmospheres?.length ||
+        filters.libraryId?.length ||
         (filters.tempo &&
           (filters.tempo.min !== undefined ||
             filters.tempo.max !== undefined)))
@@ -42,6 +43,7 @@ export class PlaylistService {
         genres: filters.genres,
         subgenres: filters.subgenres,
         atmospheres: filters.atmospheres,
+        libraryId: filters.libraryId,
         tempo:
           filters.tempo &&
           (filters.tempo.min !== undefined || filters.tempo.max !== undefined)

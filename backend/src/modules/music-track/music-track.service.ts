@@ -1097,7 +1097,7 @@ export class MusicTrackService {
       },
       take: 1,
       skip: skip,
-      include: simpleMusicTrackFieldSelectors,
+      select: simpleMusicTrackFieldSelectors,
     });
   }
 }

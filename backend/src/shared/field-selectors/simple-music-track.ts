@@ -49,6 +49,7 @@ type SimpleMusicTrackSelect = {
 
 export const simpleMusicTrackFieldSelectors: SimpleMusicTrackSelect = {
   id: true,
+  format: true,
   originalArtist: true,
   aiArtist: true,
   userArtist: true,

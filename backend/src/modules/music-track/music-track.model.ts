@@ -347,6 +347,9 @@ export class SimpleMusicTrack {
   @Field(() => Float)
   duration: number;
 
+  @Field(() => String, { nullable: true })
+  format?: string;
+
   @Field(() => [String], { nullable: true })
   genres?: string[];
 

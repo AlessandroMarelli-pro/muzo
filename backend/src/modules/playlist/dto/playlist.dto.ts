@@ -28,6 +28,11 @@ export class PlaylistFilterDto {
   atmospheres?: string[];
 
   @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  libraryId?: string[];
+
+  @IsOptional()
   @ValidateNested()
   @Type(() => TempoRangeDto)
   tempo?: { min?: number; max?: number };

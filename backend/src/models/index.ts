@@ -59,6 +59,7 @@ export type MusicTrackWithRelations = MusicTrack & {
 export type SimpleMusicTrackInterface = Pick<
   MusicTrack,
   | 'id'
+  | 'format'
   | 'originalArtist'
   | 'aiArtist'
   | 'userArtist'
