@@ -1,14 +1,6 @@
-import {
-  Body,
-  Controller,
-  Get,
-  NotFoundException,
-  Param,
-  Post,
-} from '@nestjs/common';
+import { Body, Controller, Get, Post } from '@nestjs/common';
 import { MusicTrack } from '../../models/music-track.model';
 
-import { MusicTrackWithRelations } from '../../models/index';
 import { PrismaService } from '../../shared/services/prisma.service';
 import { MusicTrackService } from './music-track.service';
 
@@ -26,18 +18,6 @@ export class MusicTrackController {
         hasMusicbrainz: true,
       },
     });
-  }
-  @Get(':id')
-  async findOne(@Param('id') id: string): Promise<MusicTrackWithRelations> {
-    try {
-      const track = await this.musicTrackService.findOneWithAllRelations(id);
-      return track;
-    } catch (error) {
-      if (error instanceof NotFoundException) {
-        throw error;
-      }
-      throw new NotFoundException(`Music track with ID ${id} not found`);
-    }
   }
 
   @Post('batch-delete')

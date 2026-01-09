@@ -289,6 +289,36 @@ export function MusicTable({
         enableColumnFilter: true,
       },
       {
+        id: 'atmospheres',
+        accessorKey: 'atmosphereKeywords',
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Atmosphere" />
+        ),
+        cell: ({ row }) => {
+          const atmosphereKeywords = (row.getValue('atmosphereKeywords') ||
+            []) as string[];
+
+          return (
+            <div className="flex  gap-1">
+              {atmosphereKeywords?.map((atmosphereKeyword) => (
+                <Badge variant="secondary" className="capitalize" size="xs">
+                  {atmosphereKeyword}
+                </Badge>
+              ))}
+            </div>
+          );
+        },
+        meta: {
+          label: 'Atmosphere',
+          variant: 'multiSelect',
+          options: staticFilterOptions.atmospheres,
+          hidden: true,
+        },
+        enableColumnFilter: true,
+        hidden: true,
+        enableHiding: true,
+      },
+      {
         id: 'genres',
         accessorKey: 'genres',
         header: ({ column }) => (
@@ -570,7 +600,11 @@ export function MusicTable({
         pageIndex: 0,
         pageSize: initialPageSize,
       },
+      columnVisibility: {
+        atmosphereKeywords: false,
+      },
     },
+
     getRowId: (row) => row.id,
     enableAdvancedFilter: false,
   });

@@ -26,14 +26,14 @@ export function AddTrackDialog({
   playlistId,
 }: AddTrackDialog) {
   const { data: tracks = [], isLoading } = useTracks({});
-  const addTrackMutation = useAddTrackToPlaylist();
+  const addTrackToPlaylistMutation = useAddTrackToPlaylist();
   const { setQueue } = useQueue();
   if (isLoading) {
     return <Loading />;
   }
 
-  const addTrack = async (trackId: string) => {
-    addTrackMutation.mutate({
+  const addTrackToPlaylist = async (trackId: string) => {
+    addTrackToPlaylistMutation.mutate({
       playlistId,
       input: {
         trackId,
@@ -69,7 +69,7 @@ export function AddTrackDialog({
             <MusicCard
               key={track.id}
               track={track}
-              onAdd={addTrack}
+              onAdd={addTrackToPlaylist}
               setQueue={handleSetQueue}
               width="200"
               height="200"

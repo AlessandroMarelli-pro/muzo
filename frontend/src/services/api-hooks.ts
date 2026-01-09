@@ -10,7 +10,6 @@ import type {
   TrackRecommendation,
   UpdateLibraryInput,
   UpdatePreferencesInput,
-  UpdateTrackInput,
   UserPreferencesGraphQl as UserPreferences,
 } from '../__generated__/types';
 import { gql, graffleClient } from './graffle-client';
@@ -62,7 +61,7 @@ export const queryKeys = {
       'tracksList',
       { libraryId, status, isFavorite, limit, offset, orderBy, orderDirection },
     ] as const,
-  track: (id: string) => ['tracks', id] as const,
+
   tracksByCategories: (category?: string, genre?: string) =>
     ['tracks', 'by-categories', { genre, category }] as const,
   searchTracks: (query: string, libraryId?: string) =>
@@ -70,7 +69,7 @@ export const queryKeys = {
   preferences: ['preferences'] as const,
   recentlyPlayed: (limit?: number) =>
     ['tracks', 'recently-played', { limit }] as const,
-  mostPlayed: (limit?: number) => ['tracks', 'most-played', { limit }] as const,
+
   currentPlayback: ['playback', 'current'] as const,
   staticFilters: ['static-filters'] as const,
   randomTrack: (id?: string, filterLiked?: boolean) =>
@@ -321,57 +320,6 @@ export const useTracksByCategories = (category?: string, genre?: string) => {
     },
   });
 };
-export const useTrack = (id: string) => {
-  return useQuery({
-    queryKey: queryKeys.track(id),
-    queryFn: async () => {
-      const response = await graffleClient.request<{ track: MusicTrack }>(
-        gql(
-          `
-          query GetTrack($id: ID!) {
-            track(id: $id) {
-              id
-              filePath
-              fileName
-              fileSize
-              duration
-              format
-              bitrate
-              sampleRate
-              originalTitle
-              originalArtist
-              originalAlbum
-              originalYear
-              aiTitle
-              aiArtist
-              aiAlbum
-              aiSubgenreConfidence
-              aiConfidence
-              userTitle
-              userArtist
-              userAlbum
-              userTags
-              listeningCount
-              lastPlayedAt
-              analysisStatus
-              analysisStartedAt
-              analysisCompletedAt
-              analysisError
-              libraryId
-              createdAt
-              updatedAt
-              isFavorite
-            }
-          }
-        ` as any,
-        ),
-        { id },
-      );
-      return response.track;
-    },
-    enabled: !!id,
-  });
-};
 
 export const useSearchTracks = (query: string, libraryId?: string) => {
   return useQuery({
@@ -534,38 +482,6 @@ export const useRecentlyPlayed = (limit = 20) => {
   });
 };
 
-export const useMostPlayed = (limit = 20) => {
-  return useQuery({
-    queryKey: queryKeys.mostPlayed(limit),
-    queryFn: async () => {
-      const response = await graffleClient.request<{
-        mostPlayed: MusicTrack[];
-      }>(
-        gql`
-          query GetMostPlayed($limit: Float) {
-            mostPlayed(limit: $limit) {
-              id
-              fileName
-              duration
-              originalTitle
-              originalArtist
-              originalAlbum
-              aiTitle
-              aiArtist
-              aiAlbum
-              listeningCount
-              lastPlayedAt
-              analysisStatus
-            }
-          }
-        `,
-        { limit },
-      );
-      return response.mostPlayed;
-    },
-  });
-};
-
 // Note: currentPlayback query removed as it doesn't exist in the schema
 // export const useCurrentPlayback = () => { ... };
 
@@ -682,43 +598,6 @@ export const useDeleteLibrary = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.libraries });
-    },
-  });
-};
-
-export const useUpdateTrack = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({
-      id,
-      input,
-    }: {
-      id: string;
-      input: UpdateTrackInput;
-    }) => {
-      const response = await graffleClient.request<{ updateTrack: MusicTrack }>(
-        gql(
-          `
-          mutation UpdateTrack($id: ID!, $input: UpdateTrackInput!) {
-            updateTrack(id: $id, input: $input) {
-              id
-              userTitle
-              userArtist
-              userAlbum
-              userTags
-              updatedAt
-            }
-          }
-        ` as any,
-        ),
-        { id, input },
-      );
-      return response.updateTrack;
-    },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.track(data.id) });
-      queryClient.invalidateQueries({ queryKey: queryKeys.tracks() });
     },
   });
 };

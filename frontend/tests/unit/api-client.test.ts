@@ -263,7 +263,6 @@ describe('API Client Unit Tests', () => {
         'library-1',
         'COMPLETED',
       ]);
-      expect(queryKeys.track('track-1')).toEqual(['track', 'track-1']);
     });
   });
 });

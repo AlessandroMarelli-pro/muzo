@@ -16,11 +16,6 @@ type AIAnalysisResult {
   updatedAt: DateTime!
 }
 
-input AddTrackInput {
-  filePath: String!
-  libraryId: ID!
-}
-
 input AddTrackToPlaylistInput {
   position: Int
   trackId: ID!
@@ -376,7 +371,6 @@ type MusicTrackListPaginated {
 }
 
 type Mutation {
-  addTrack(input: AddTrackInput!): MusicTrack!
   addTrackToPlaylist(input: AddTrackToPlaylistInput!, playlistId: ID!, userId: String!): PlaylistTrack!
   bangerTrack(trackId: ID!): SimpleMusicTrack!
   clearCurrentFilter: Boolean!
@@ -387,7 +381,6 @@ type Mutation {
   deleteLibrary(id: ID!): Boolean!
   deletePlaylist(id: ID!, userId: String!): Boolean!
   deleteSavedFilter(id: ID!): Boolean!
-  deleteTrack(id: ID!): Boolean!
   dislikeTrack(trackId: ID!): Boolean!
   exportPlaylistToM3U(playlistId: ID!, userId: String!): String!
   likeTrack(trackId: ID!): SimpleMusicTrack!
@@ -410,7 +403,6 @@ type Mutation {
   updatePlaylist(id: ID!, input: UpdatePlaylistInput!, userId: String!): Playlist!
   updatePreferences(input: UpdatePreferencesInput!): UserPreferencesGraphQL!
   updateSavedFilter(id: ID!, input: UpdateSavedFilterInput!): SavedFilter!
-  updateTrack(id: ID!, input: UpdateTrackInput!): MusicTrack!
 }
 
 type OrganizationPreferences {
@@ -525,7 +517,6 @@ type Query {
   libraries(options: LibraryQueryOptions): [MusicLibrary!]!
   library(id: ID!): MusicLibrary
   libraryMetrics: LibraryMetrics!
-  mostPlayed(limit: Float! = 20): [MusicTrack!]!
   playlist(id: ID!, userId: String!): Playlist!
   playlistByName(name: String!): Playlist!
   playlistRecommendations(excludeTrackIds: [String!], limit: Int, playlistId: ID!): [TrackRecommendation!]!
@@ -536,8 +527,7 @@ type Query {
   queueStats: String!
   randomTrack(filterLiked: Boolean, id: String): SimpleMusicTrack!
   recentlyPlayed(limit: Float! = 20): [SimpleMusicTrack!]!
-  searchTracks(libraryId: ID, query: String!): [MusicTrack!]!
-  track(id: ID!): MusicTrack
+  searchTracks(libraryId: ID, query: String!): [SimpleMusicTrack!]!
   trackRecommendations(criteria: String, id: String!): [TrackRecommendation!]!
   tracks(options: TrackQueryOptions): [SimpleMusicTrack!]!
   tracksByCategories(options: TrackQueryOptionsByCategories): [MusicTrackByCategoriesGraphQL!]!
@@ -719,15 +709,6 @@ input UpdatePreferencesInput {
 input UpdateSavedFilterInput {
   criteria: FilterCriteriaInput
   name: String
-}
-
-input UpdateTrackInput {
-  genreIds: [String!]
-  subgenreIds: [String!]
-  userAlbum: String
-  userArtist: String
-  userTags: [String!]
-  userTitle: String
 }
 
 type UserPreferencesGraphQL {

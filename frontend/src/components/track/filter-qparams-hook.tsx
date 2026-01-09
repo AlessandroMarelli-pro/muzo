@@ -23,6 +23,10 @@ export const useFilterQueryParams = () => {
     'subgenres',
     parseAsArrayOf(parseAsString, ',').withDefault([]),
   );
+  const [atmosphereParam] = useQueryState(
+    'atmospheres',
+    parseAsArrayOf(parseAsString, ',').withDefault([]),
+  );
 
   const [keyParam] = useQueryState(
     'key',
@@ -81,6 +85,11 @@ export const useFilterQueryParams = () => {
     } else {
       updateFilter('artist', '');
     }
+    if (atmosphereParam.length > 0) {
+      updateFilter('atmospheres', atmosphereParam);
+    } else {
+      updateFilter('atmospheres', []);
+    }
     if (genreParam.length > 0) {
       updateFilter('genres', genreParam);
     } else {
@@ -132,6 +141,7 @@ export const useFilterQueryParams = () => {
     danceabilityFeelingParam,
     artistParam,
     libraryIdParam,
+    atmosphereParam,
   ]);
 
   useEffect(() => {
@@ -147,5 +157,6 @@ export const useFilterQueryParams = () => {
     arousalMoodParam,
     danceabilityFeelingParam,
     artistParam,
+    atmosphereParam,
   };
 };

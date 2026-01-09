@@ -56,6 +56,55 @@ export type MusicTrackWithRelations = MusicTrack & {
   trackSubgenres?: (TrackSubgenre & { subgenre: Subgenre })[];
 };
 
+export type SimpleMusicTrackInterface = Pick<
+  MusicTrack,
+  | 'id'
+  | 'originalArtist'
+  | 'aiArtist'
+  | 'userArtist'
+  | 'originalTitle'
+  | 'aiTitle'
+  | 'userTitle'
+  | 'duration'
+  | 'aiDescription'
+  | 'vocalsDesc'
+  | 'atmosphereDesc'
+  | 'contextBackground'
+  | 'contextImpact'
+  | 'aiTags'
+  | 'originalDate'
+  | 'createdAt'
+  | 'listeningCount'
+  | 'lastPlayedAt'
+  | 'isFavorite'
+  | 'isLiked'
+  | 'isBanger'
+  | 'updatedAt'
+  | 'analysisCompletedAt'
+  | 'fileCreatedAt'
+  | 'libraryId'
+> & {
+  library: Pick<MusicLibrary, 'id' | 'name'>;
+  imageSearches: Array<Pick<ImageSearch, 'imagePath'>>;
+  audioFingerprint?: Pick<
+    AudioFingerprint,
+    | 'tempo'
+    | 'key'
+    | 'valenceMood'
+    | 'arousalMood'
+    | 'danceabilityFeeling'
+    | 'acousticness'
+    | 'instrumentalness'
+    | 'speechiness'
+  > | null;
+  trackGenres: Array<{
+    genre: Pick<Genre, 'name'>;
+  }>;
+  trackSubgenres: Array<{
+    subgenre: Pick<Subgenre, 'name'>;
+  }>;
+};
+
 export type AudioFingerprintWithRelations = AudioFingerprint & {
   track: MusicTrack;
   aiAnalysisResult?: AIAnalysisResult;

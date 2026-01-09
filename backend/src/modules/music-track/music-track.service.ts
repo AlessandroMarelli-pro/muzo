@@ -5,7 +5,11 @@ import {
 } from '@nestjs/common';
 import { AnalysisStatus } from '@prisma/client';
 import * as fs from 'fs';
-import { MusicTrackWithRelations } from '../../models/index';
+import { simpleMusicTrackFieldSelectors } from 'src/shared/field-selectors/simple-music-track';
+import {
+  MusicTrackWithRelations,
+  SimpleMusicTrackInterface,
+} from '../../models/index';
 import {
   CreateMusicTrackDto,
   MusicTrack,
@@ -124,7 +128,7 @@ export class MusicTrackService {
 
   async findAll(
     options: MusicTrackQueryOptions = {},
-  ): Promise<MusicTrackWithRelations[]> {
+  ): Promise<SimpleMusicTrackInterface[]> {
     const {
       libraryId,
       analysisStatus,
@@ -155,30 +159,13 @@ export class MusicTrackService {
       take: limit,
       skip: offset,
       orderBy: { [orderBy]: orderDirection },
-      include: {
-        imageSearches: true,
-        audioFingerprint: true,
-        library: true,
-        aiAnalysisResult: true,
-        editorSessions: true,
-        playbackSessions: true,
-        trackGenres: {
-          include: {
-            genre: true,
-          },
-        },
-        trackSubgenres: {
-          include: {
-            subgenre: true,
-          },
-        },
-      },
+      select: simpleMusicTrackFieldSelectors,
     });
     return tracks;
   }
 
   async findAllPaginated(options: MusicTrackQueryOptions = {}): Promise<{
-    tracks: MusicTrackWithRelations[];
+    tracks: SimpleMusicTrackInterface[];
     total: number;
     page: number;
     limit: number;
@@ -245,84 +232,17 @@ export class MusicTrackService {
     } else {
       orderByClause = { [orderByProp]: orderDirection };
     }
-    console.log(where);
+
     const tracks = await this.prisma.musicTrack.findMany({
       where,
       take: limit,
       skip: offset,
       orderBy: orderByClause,
-      select: {
-        id: true,
-        originalArtist: true,
-        aiArtist: true,
-        userArtist: true,
-        originalTitle: true,
-        aiTitle: true,
-        userTitle: true,
-        duration: true,
-        aiDescription: true,
-        vocalsDesc: true,
-        atmosphereDesc: true,
-        contextBackground: true,
-        contextImpact: true,
-        aiTags: true,
-        originalDate: true,
-        createdAt: true,
-        listeningCount: true,
-        lastPlayedAt: true,
-        isFavorite: true,
-        isLiked: true,
-        isBanger: true,
-        updatedAt: true,
-        analysisCompletedAt: true,
-        fileCreatedAt: true,
-        libraryId: true,
-        library: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
-        imageSearches: {
-          select: {
-            imagePath: true,
-          },
-        },
-        audioFingerprint: {
-          select: {
-            tempo: true,
-            key: true,
-            valenceMood: true,
-            arousalMood: true,
-            danceabilityFeeling: true,
-            acousticness: true,
-            instrumentalness: true,
-            speechiness: true,
-          },
-        },
-        trackGenres: {
-          select: {
-            genre: {
-              select: {
-                name: true,
-              },
-            },
-          },
-        },
-        trackSubgenres: {
-          select: {
-            subgenre: {
-              select: {
-                name: true,
-              },
-            },
-          },
-        },
-      },
+      select: simpleMusicTrackFieldSelectors,
     });
 
     return {
-      tracks: tracks as MusicTrackWithRelations[],
+      tracks: tracks as SimpleMusicTrackInterface[],
       total,
       page: currentPage,
       limit,
@@ -569,14 +489,10 @@ export class MusicTrackService {
         playbackSessions: true,
         imageSearches: true,
         trackGenres: {
-          include: {
-            genre: true,
-          },
+          include: { genre: true },
         },
         trackSubgenres: {
-          include: {
-            subgenre: true,
-          },
+          include: { subgenre: true },
         },
       },
     });
@@ -585,30 +501,15 @@ export class MusicTrackService {
       throw new NotFoundException(`Music track with ID ${id} not found`);
     }
 
-    return track as MusicTrackWithRelations;
+    return track;
   }
 
-  async findOneWithAllRelations(id: string): Promise<MusicTrackWithRelations> {
+  async findOneWithAllRelations(
+    id: string,
+  ): Promise<SimpleMusicTrackInterface> {
     const track = await this.prisma.musicTrack.findUnique({
       where: { id },
-      include: {
-        library: true,
-        audioFingerprint: true,
-        aiAnalysisResult: true,
-        editorSessions: true,
-        playbackSessions: false,
-        imageSearches: false,
-        trackGenres: {
-          include: {
-            genre: true,
-          },
-        },
-        trackSubgenres: {
-          include: {
-            subgenre: true,
-          },
-        },
-      },
+      select: simpleMusicTrackFieldSelectors,
     });
 
     if (!track) {
@@ -1162,7 +1063,9 @@ export class MusicTrackService {
     });
   }
 
-  async getRandomTrack(filterLiked: boolean): Promise<MusicTrack> {
+  async getRandomTrack(
+    filterLiked: boolean,
+  ): Promise<SimpleMusicTrackInterface> {
     // Exclude tracks that are already liked (or include them? Let's exclude disliked/hidden ones)
     // Actually, we should exclude tracks that are in hidden_music_tracks
     // But since we're querying music_tracks, hidden tracks won't be there anyway
@@ -1183,24 +1086,7 @@ export class MusicTrackService {
         where: {},
         take: 1,
         skip: skip,
-        include: {
-          library: true,
-          audioFingerprint: true,
-          aiAnalysisResult: true,
-          editorSessions: true,
-          playbackSessions: true,
-          imageSearches: true,
-          trackGenres: {
-            include: {
-              genre: true,
-            },
-          },
-          trackSubgenres: {
-            include: {
-              subgenre: true,
-            },
-          },
-        },
+        select: simpleMusicTrackFieldSelectors,
       });
     }
 
@@ -1211,24 +1097,7 @@ export class MusicTrackService {
       },
       take: 1,
       skip: skip,
-      include: {
-        library: true,
-        audioFingerprint: true,
-        aiAnalysisResult: true,
-        editorSessions: true,
-        playbackSessions: true,
-        imageSearches: true,
-        trackGenres: {
-          include: {
-            genre: true,
-          },
-        },
-        trackSubgenres: {
-          include: {
-            subgenre: true,
-          },
-        },
-      },
+      include: simpleMusicTrackFieldSelectors,
     });
   }
 }

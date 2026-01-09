@@ -98,7 +98,10 @@ export class RecommendationService {
     playlistTracks: { track: MusicTrackWithRelations }[],
     criteria: RecommendationCriteria,
   ): Promise<TrackSimilarity[]> {
-    const limitedSet = playlistTracks.slice(0, 10);
+    const limitedSet = playlistTracks.slice(
+      0,
+      Math.min(criteria.limit || 20, 50),
+    );
 
     //Only get features from the limited set
     const playlistFeatures = this.calculatePlaylistFeatures(limitedSet);

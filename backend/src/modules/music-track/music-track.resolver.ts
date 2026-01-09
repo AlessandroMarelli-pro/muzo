@@ -7,12 +7,13 @@ import {
   Resolver,
 } from '@nestjs/graphql';
 import { AnalysisStatus } from '@prisma/client';
-import { MusicTrackWithRelations } from '../../models/index';
 import {
-  CreateMusicTrackDto,
+  MusicTrackWithRelations,
+  SimpleMusicTrackInterface,
+} from '../../models/index';
+import {
   MusicTrackByCategories,
   MusicTrackQueryOptions,
-  UpdateMusicTrackDto,
 } from '../../models/music-track.model';
 import { MusicTrackService } from './music-track.service';
 
@@ -20,7 +21,6 @@ import { MusicTrack as MusicTrackModel } from '@prisma/client';
 
 import { TrackRecommendation } from '../playlist/playlist.model';
 import {
-  AddTrackInput,
   AIAnalysisResult,
   IntelligentEditorSession,
   MusicTrack,
@@ -29,11 +29,10 @@ import {
   SimpleMusicTrack,
   TrackQueryOptions,
   TrackQueryOptionsByCategories,
-  UpdateTrackInput,
 } from './music-track.model';
 
 export function mapToSimpleMusicTrack(
-  track: MusicTrackWithRelations,
+  track: MusicTrackWithRelations | SimpleMusicTrackInterface,
 ): SimpleMusicTrack {
   return {
     id: track.id,
@@ -83,18 +82,13 @@ export class MusicTrackResolver {
       ...track,
       aiTags: track.aiTags ? JSON.parse(track.aiTags) : null,
       aiDescription: track.aiDescription,
-      userTags: track.userTags ? JSON.parse(track.userTags) : null,
+      userTags: [],
       albumArtPath: '',
     };
   }
 
-  // Helper function to convert array of Prisma MusicTracks to GraphQL MusicTracks
-  private mapToGraphQLTracks(tracks: MusicTrackModel[]): MusicTrack[] {
-    return tracks.map((track) => this.mapToGraphQLTrack(track));
-  }
-
   private mapToGraphQLTracksList(
-    tracks: MusicTrackWithRelations[],
+    tracks: (MusicTrackWithRelations | SimpleMusicTrackInterface)[],
   ): SimpleMusicTrack[] {
     return tracks.map((track) => mapToSimpleMusicTrack(track));
   }
@@ -194,39 +188,22 @@ export class MusicTrackResolver {
     return this.mapToGraphQLTracksByCategories(tracks);
   }
 
-  @Query(() => MusicTrack, { nullable: true })
-  async track(
-    @Args('id', { type: () => ID }) id: string,
-  ): Promise<MusicTrack | null> {
-    try {
-      const track = await this.musicTrackService.findOne(id);
-      return this.mapToGraphQLTrack(track);
-    } catch (error) {
-      return null;
-    }
-  }
-
-  @Query(() => [MusicTrack])
+  @Query(() => [SimpleMusicTrack])
   async searchTracks(
     @Args('query') query: string,
     @Args('libraryId', { type: () => ID, nullable: true }) libraryId?: string,
-  ): Promise<MusicTrack[]> {
+  ): Promise<SimpleMusicTrack[]> {
     // Simple search implementation - in a real app, you'd use a proper search engine
     const options: MusicTrackQueryOptions = {
       libraryId,
       limit: 50,
     };
+    //TODO: IMPLEMENT SEARCH
 
-    const tracks = await this.musicTrackService.findAll(options);
     const searchQuery = query.toLowerCase();
-    const filteredTracks = tracks.filter(
-      (track) =>
-        track.originalTitle?.toLowerCase().includes(searchQuery) ||
-        track.originalArtist?.toLowerCase().includes(searchQuery) ||
-        track.originalAlbum?.toLowerCase().includes(searchQuery) ||
-        track.fileName.toLowerCase().includes(searchQuery),
-    );
-    return this.mapToGraphQLTracks(filteredTracks);
+    const tracks = await this.musicTrackService.findAll(options);
+
+    return this.mapToGraphQLTracksList(tracks);
   }
 
   @Query(() => [SimpleMusicTrack])
@@ -244,63 +221,6 @@ export class MusicTrackResolver {
       (track) => track.lastPlayedAt !== null,
     );
     return this.mapToGraphQLTracksList(filteredTracks);
-  }
-
-  @Query(() => [MusicTrack])
-  async mostPlayed(
-    @Args('limit', { defaultValue: 20 }) limit: number,
-  ): Promise<MusicTrack[]> {
-    const options: MusicTrackQueryOptions = {
-      limit,
-      orderBy: 'listeningCount',
-      orderDirection: 'desc',
-    };
-
-    const tracks = await this.musicTrackService.findAll(options);
-    return this.mapToGraphQLTracks(tracks);
-  }
-
-  @Mutation(() => MusicTrack)
-  async addTrack(@Args('input') input: AddTrackInput): Promise<MusicTrack> {
-    // This would typically involve file scanning and metadata extraction
-    // For now, we'll create a basic track entry
-    const createDto: CreateMusicTrackDto = {
-      filePath: input.filePath,
-      fileName: input.filePath.split('/').pop() || 'unknown',
-      fileSize: 0, // Would be extracted from file
-      duration: 0, // Would be extracted from file
-      format: input.filePath.split('.').pop()?.toUpperCase() || 'UNKNOWN',
-      libraryId: input.libraryId,
-    };
-
-    const track = await this.musicTrackService.create(createDto);
-    return this.mapToGraphQLTrack(track);
-  }
-
-  @Mutation(() => MusicTrack)
-  async updateTrack(
-    @Args('id', { type: () => ID }) id: string,
-    @Args('input') input: UpdateTrackInput,
-  ): Promise<MusicTrack> {
-    const updateDto: UpdateMusicTrackDto = {
-      userTitle: input.userTitle,
-      userArtist: input.userArtist,
-      userAlbum: input.userAlbum,
-      userTags: input.userTags,
-      genreIds: input.genreIds,
-      subgenreIds: input.subgenreIds,
-    };
-
-    const track = await this.musicTrackService.update(id, updateDto);
-    return this.mapToGraphQLTrack(track);
-  }
-
-  @Mutation(() => Boolean)
-  async deleteTrack(
-    @Args('id', { type: () => ID }) id: string,
-  ): Promise<boolean> {
-    await this.musicTrackService.remove(id);
-    return true;
   }
 
   @Mutation(() => MusicTrack)
