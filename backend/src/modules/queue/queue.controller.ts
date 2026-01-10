@@ -336,6 +336,9 @@ export class QueueController {
                   none: {},
                 },
               },
+              {
+                id: 'edf9418a-c2da-4d8a-b600-b92f4a073922',
+              },
             ],
           },
         },
@@ -345,22 +348,22 @@ export class QueueController {
       );
       console.log(tracksWithNullArtist.map((track) => track.fileName));
 
-      if (filteredTracks.length >= 0) {
+      if (filteredTracks.length === 0) {
         this.logger.log('No tracks found with null originalArtist');
         return {
           message: 'No tracks found with null originalArtist',
           tracksScheduled: 0,
         };
       }
-      //await this.queueService.scheduleScanForMissingData(filteredTracks, false);
-      await this.queueService.scheduleBatchAIMetadataExtraction(
+      await this.queueService.scheduleScanForMissingData(filteredTracks, false);
+      /* await this.queueService.scheduleBatchAudioScans(
         filteredTracks.map((track) => ({
           trackId: track.id,
           filePath: track.filePath,
           fileName: track.fileName,
           libraryId: track.libraryId,
         })),
-      );
+      ); */
       this.logger.log(
         `Scheduled audio scans for ${tracksWithNullArtist.length} tracks with null originalArtist`,
       );

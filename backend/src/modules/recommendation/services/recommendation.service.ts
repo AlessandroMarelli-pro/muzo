@@ -194,14 +194,10 @@ export class RecommendationService {
                 {
                   terms: {
                     genres: playlistFeatures.genres,
-                    boost: Math.max(weights.genreSimilarity * 3.0, 3.0),
+                    boost: weights.genreSimilarity * 3.0,
                   },
                 },
               ],
-              minimum_should_match: Math.max(
-                playlistFeatures.genres.length - 1,
-                1,
-              ),
             },
           }
         : null;
@@ -215,14 +211,10 @@ export class RecommendationService {
                 {
                   terms: {
                     subgenres: playlistFeatures.subgenres,
-                    boost: Math.max(weights.genreSimilarity * 4.0, 4.0),
+                    boost: weights.genreSimilarity * 4.0,
                   },
                 },
               ],
-              minimum_should_match: Math.max(
-                playlistFeatures.subgenres.length - 1,
-                1,
-              ),
             },
           }
         : null;
@@ -262,14 +254,14 @@ export class RecommendationService {
                     'audio_fingerprint.tempo': {
                       origin: playlistFeatures.tempo || 120,
                       scale: 10,
-                      decay: 0.3,
-                      offset: 5,
+                      decay: 0.5,
+                      offset: 0,
                     },
                   },
-                  weight: 2.5,
+                  weight: 3,
                 },
               ],
-              boost: 2.5,
+              score_mode: 'sum',
               boost_mode: 'multiply',
             },
           }
@@ -624,10 +616,10 @@ export class RecommendationService {
         : null;
     const should = [
       // k-NN search for MFCC similarity (timbre)
-      shouldMfcc,
+      //shouldMfcc,
 
       // k-NN search for chroma similarity (pitch content)
-      shouldChroma,
+      //shouldChroma,
 
       // k-NN search for tonnetz similarity (harmonic progression)
       //shouldTonnetz,
@@ -673,12 +665,12 @@ export class RecommendationService {
       //shouldMetadataSimilarity,
 
       // AI metadata similarity
-      shouldAiTags,
-      shouldAtmosphereKeywords,
-      shouldAiDescription,
-      shouldVocalsDesc,
-      shouldContextBackground,
-      shouldContextImpact,
+      //shouldAiTags,
+      //shouldAtmosphereKeywords,
+      //shouldAiDescription,
+      //shouldVocalsDesc,
+      //shouldContextBackground,
+      //shouldContextImpact,
     ]?.filter((s) => s !== null);
     return {
       size: criteria.limit || 20,
@@ -700,7 +692,7 @@ export class RecommendationService {
           vocals_desc: { number_of_fragments: 1, fragment_size: 100 },
           context_background: { number_of_fragments: 1, fragment_size: 100 },
           context_impact: { number_of_fragments: 1, fragment_size: 100 },
-          'audio_fingerprint.energy_keywords': {},
+          'audio_fingerprint.tempo': {},
         },
         require_field_match: false,
       },

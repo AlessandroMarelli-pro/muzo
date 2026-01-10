@@ -6,11 +6,12 @@ with common functionality shared between different providers (OpenAI, Gemini, et
 """
 
 import os
+import re
 import time
 from abc import ABC, abstractmethod
 from collections import deque
 from threading import Lock
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 from loguru import logger
 
@@ -139,12 +140,17 @@ class BaseMetadataExtractor(ABC):
     INSTRUCTIONS = [
         "You are a music metadata expert and resolution agent.",
         "Your task is NOT limited to parsing the filename.",
-        "You MUST resolve and enrich metadata using your general music knowledge",
-        "and well-known public music databases (e.g. Youtube, Discogs, Amazon, MusicBrainz, Spotify, Bandcamp, Apple Music, LastFM, Beatport, Tunebat, etc.).",
-        "",
+        "You MUST resolve and enrich metadata well-known public music databases (e.g. Youtube, Discogs, Amazon, MusicBrainz, Spotify, Bandcamp, Apple Music, LastFM, Beatport, Tunebat, etc.).",
+        "and using your general music knowledge",
         "REQUIRED OUTPUT SCHEMA - You MUST return ONLY the fields provided in the schema.",
         "RULES:",
         "- If ID3 tags are provided, use them as the PRIMARY source for artist, title, year, and genre.",
+        "- CRITICAL: If SOURCE LINKS are provided in the prompt (extracted from ID3 description), you MUST:",
+        "  1. Visit each link and extract metadata from the linked pages",
+        "  2. Use information from these links as the HIGHEST PRIORITY source",
+        "  3. Override any conflicting information from other sources with data from these links",
+        "  4. These links point directly to authoritative music databases (Discogs, Spotify, Bandcamp, etc.)",
+        "- The description field may contain direct links to music databases - these are the most reliable sources and should be prioritized above all other sources.",
         "- Use the filename as a secondary identifier (artist, title, mix) if ID3 tags are not available.",
         "- Populate all other fields using reliable, commonly accepted music metadata.",
         "- If multiple sources disagree, choose the most widely accepted value.",
@@ -553,6 +559,46 @@ class BaseMetadataExtractor(ABC):
 
         return normalized
 
+    def _extract_urls_from_text(self, text: str) -> List[str]:
+        """
+        Extract all URLs from a text string, excluding YouTube links.
+
+        Args:
+            text: Text to search for URLs
+
+        Returns:
+            List of extracted URLs (YouTube links are filtered out)
+        """
+        urls = []
+
+        # Pattern to match full URLs with protocol
+        url_pattern_with_protocol = r'https?://[^\s<>"{}|\\^`\[\]]+'
+        urls_with_protocol = re.findall(url_pattern_with_protocol, text, re.IGNORECASE)
+        urls.extend(urls_with_protocol)
+
+        # Pattern to match URLs without protocol (common music database domains, excluding YouTube)
+        url_pattern_without_protocol = r'(?:discogs|spotify|bandcamp|musicbrainz)\.(?:com|org)/[^\s<>"{}|\\^`\[\]]+'
+        urls_without_protocol = re.findall(
+            url_pattern_without_protocol,
+            text,
+            re.IGNORECASE,
+        )
+        # Add https:// prefix to URLs without protocol
+        for url in urls_without_protocol:
+            full_url = f"https://{url}"
+            if full_url not in urls:
+                urls.append(full_url)
+
+        # Filter out YouTube links (youtube.com, youtu.be)
+        filtered_urls = [
+            url
+            for url in urls
+            if not re.search(r"youtube\.com|youtu\.be", url, re.IGNORECASE)
+        ]
+
+        # Remove duplicates and return
+        return list(set(filtered_urls))
+
     def _build_filename_message(
         self, filename: str, id3_tags: Optional[Dict[str, Any]] = None
     ) -> str:
@@ -575,6 +621,27 @@ class BaseMetadataExtractor(ABC):
                 display_filename = f"{artist} - {title}"
 
         base_message = f'''Extract and enrich music metadata from this filename: "{display_filename}"'''
+
+        # Extract and highlight links from description FIRST, before other ID3 tags
+        extracted_urls = []
+        if id3_tags:
+            description = id3_tags.get("description", "")
+            if description:
+                extracted_urls = self._extract_urls_from_text(description)
+
+        # If URLs found, present them prominently at the top
+        if extracted_urls:
+            base_message += "\n\n" + "=" * 80
+            base_message += (
+                "\n🚨 CRITICAL: AUTHORITATIVE SOURCE LINKS FOUND IN ID3 DESCRIPTION"
+            )
+            base_message += "\n" + "=" * 80
+            base_message += "\n\nYou MUST visit and extract metadata from these URLs. These are the PRIMARY and HIGHEST PRIORITY sources."
+            base_message += "\nIgnore all other sources if these links provide conflicting information."
+            base_message += "\n\nSOURCE LINKS TO USE:\n"
+            for i, url in enumerate(extracted_urls, 1):
+                base_message += f"{i}. {url}\n"
+            base_message += "\n" + "=" * 80 + "\n"
 
         # Add ID3 tag information if available
         if id3_tags:
@@ -600,6 +667,10 @@ class BaseMetadataExtractor(ABC):
                 # More concise ID3 tag format
                 id3_section = "\n\nID3 tags: " + " | ".join(id3_info_parts)
                 base_message += id3_section
+
+            if extracted_urls:
+                base_message += "\n\n⚠️ REMINDER: Use the SOURCE LINKS listed above as your PRIMARY data source. Extract all metadata from those URLs first."
+            else:
                 base_message += "\n\nUse ID3 tags as PRIMARY source for artist, title, year, genre. Enrich with music databases."
 
         base_message += "\n\nReturn ONLY a JSON object with these exact fields: artist, title, mix, year, country, label, genre, style, audioFeatures (with bpm, key, vocals, atmosphere), context (with background, impact), description, tags."

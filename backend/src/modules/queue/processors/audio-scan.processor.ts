@@ -83,14 +83,21 @@ export class AudioScanProcessor extends WorkerHost {
         include: {
           audioFingerprint: true,
           aiAnalysisResult: true,
+          trackGenres: true,
+          trackSubgenres: true,
         },
       });
       if (
         existingTrack &&
         existingTrack.analysisStatus === AnalysisStatus.COMPLETED
       ) {
-        this.logger.log(`Track already analyzed: ${fileName}`);
-        return;
+        if (
+          existingTrack.trackGenres.length !== 0 &&
+          existingTrack.trackSubgenres.length !== 0
+        ) {
+          this.logger.log(`Track already analyzed: ${fileName}`);
+          return;
+        }
       }
 
       // Create or update MusicTrack record
@@ -117,7 +124,6 @@ export class AudioScanProcessor extends WorkerHost {
           skipClassification,
           skipImageSearch,
         );
-
       if (
         !analysisResult?.id3_tags?.artist &&
         !analysisResult?.id3_tags?.title
