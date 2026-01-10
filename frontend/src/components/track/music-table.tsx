@@ -603,6 +603,10 @@ export function MusicTable({
       },
       columnVisibility: {
         atmosphereKeywords: false,
+        listeningCount: false,
+        danceabilityFeeling: false,
+        arousalMood: false,
+        valenceMood: false,
       },
     },
 

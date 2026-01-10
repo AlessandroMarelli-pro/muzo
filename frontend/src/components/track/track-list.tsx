@@ -1,4 +1,5 @@
 import { SimpleMusicTrack } from '@/__generated__/types';
+import { useQueue } from '@/contexts/audio-player-context';
 import { useFilterOptionsData } from '@/hooks/useFilterOptions';
 import { getSortingStateParser } from '@/lib/parsers';
 import { AnalysisStatus, useTracksList } from '@/services/api-hooks';
@@ -28,7 +29,7 @@ export const TrackList: React.FC<TrackListProps> = ({ viewMode = 'grid' }) => {
   console.log('render', 'TrackList');
 
   const staticFilterOptions = useFilterOptionsData();
-
+  const { setQueue } = useQueue();
   // Use URL state management for pagination and sorting
   const [page] = useQueryState('page', { defaultValue: '1' });
   const [perPage] = useQueryState('perPage', { defaultValue: '50' });
@@ -129,7 +130,7 @@ export const TrackList: React.FC<TrackListProps> = ({ viewMode = 'grid' }) => {
   const tracks = data?.tracks || [];
   const totalTracks = data?.total || 0;
   const totalPages = Math.ceil(totalTracks / limit);
-
+  setQueue(tracks);
   return (
     <div className="p-4 space-y-4 flex flex-col z-0">
       {/* Header */}
