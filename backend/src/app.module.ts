@@ -16,6 +16,7 @@ import { MusicTrackModule } from './modules/music-track/music-track.module';
 import { PlaylistModule } from './modules/playlist/playlist.module';
 import { QueueModule } from './modules/queue/queue.module';
 import { RecommendationModule } from './modules/recommendation/recommendation.module';
+import { ThirdPartySyncModule } from './modules/third-party-sync/third-party-sync.module';
 import { UserPreferencesModule } from './modules/user-preferences/user-preferences.module';
 import { WebSocketModule } from './modules/websocket/websocket.module';
 import { SharedModule } from './shared/shared.module';
@@ -55,6 +56,7 @@ import { SharedModule } from './shared/shared.module';
     MusicPlayerModule,
     PlaylistModule,
     RecommendationModule,
+    ThirdPartySyncModule,
     UserPreferencesModule,
     AiIntegrationModule,
     WebSocketModule,

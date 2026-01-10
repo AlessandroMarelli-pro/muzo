@@ -1,7 +1,20 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useDeletePlaylist, usePlaylist } from '@/services/playlist-hooks';
+import {
+  useDeletePlaylist,
+  usePlaylist,
+  useYouTubeAuth,
+} from '@/services/playlist-hooks';
 import {
   ArrowLeft,
   AudioWaveform,
@@ -13,6 +26,7 @@ import {
   Plus,
   Sparkles,
   Trash2,
+  Youtube,
 } from 'lucide-react';
 import { useState } from 'react';
 import { Badge } from '../ui/badge';
@@ -42,9 +56,21 @@ export function PlaylistDetail({ id, onBack }: PlaylistDetailProps) {
   const [activeTab, setActiveTab] = useState('tracks');
   const [isDeleting, setIsDeleting] = useState(false);
   const [isAddTrackDialogOpen, setIsAddTrackDialogOpen] = useState(false);
-  const { playlist, loading, error, refetch } = usePlaylist(id, 'default');
+  const [isAuthDialogOpen, setIsAuthDialogOpen] = useState(false);
+  const [authUrl, setAuthUrl] = useState<string | null>(null);
+  const [authCode, setAuthCode] = useState('');
+  const {
+    playlist,
+    loading,
+    error,
+    refetch,
+    syncToYouTube,
+    isSyncingToYouTube,
+  } = usePlaylist(id, 'default');
   const { setQueue } = useQueue();
   const deletePlaylistMutation = useDeletePlaylist('default');
+  const { getAuthUrl, authenticate, isGettingAuthUrl, isAuthenticating } =
+    useYouTubeAuth('default');
 
   const getGenreCounts = () => {
     if (!playlist) return {};
@@ -54,7 +80,10 @@ export function PlaylistDetail({ id, onBack }: PlaylistDetailProps) {
         playlistTrack.track.genres.forEach((genre) => {
           genreCounts[genre] = (genreCounts[genre] || 0) + 1;
         });
-      } else if (playlistTrack.track.subgenres && playlistTrack.track.subgenres.length > 0) {
+      } else if (
+        playlistTrack.track.subgenres &&
+        playlistTrack.track.subgenres.length > 0
+      ) {
         playlistTrack.track.subgenres.forEach((subgenre) => {
           genreCounts[subgenre] = (genreCounts[subgenre] || 0) + 1;
         });
@@ -90,6 +119,119 @@ export function PlaylistDetail({ id, onBack }: PlaylistDetailProps) {
     setCurrentTrack(playlist?.tracks[0].track);
     setQueue(playlist?.tracks.map((track) => track.track));
     actions.togglePlayPause(playlist?.tracks[0].track.id);
+  };
+
+  const handleSyncToYouTube = async () => {
+    if (!playlist) return;
+    try {
+      const result = await syncToYouTube();
+      if (result.success) {
+        if (result.playlistUrl) {
+          window.open(result.playlistUrl, '_blank');
+        }
+        alert(
+          `Successfully synced ${result.syncedCount} tracks to YouTube!${
+            result.skippedCount > 0
+              ? ` ${result.skippedCount} tracks were skipped.`
+              : ''
+          }`,
+        );
+      } else {
+        // Check if any error is an authentication error
+        const errorMessages = result.errors.join(' ');
+        const isAuthError =
+          errorMessages.includes('not authenticated') ||
+          errorMessages.includes('Unauthorized') ||
+          errorMessages.includes('authorize') ||
+          errorMessages.includes('authentication') ||
+          errorMessages.includes('YouTube not authenticated');
+
+        if (isAuthError) {
+          // Trigger authentication flow
+          console.log('Authentication error detected, starting auth flow...');
+          await handleStartAuth();
+        } else {
+          alert(`Failed to sync playlist. Errors: ${result.errors.join(', ')}`);
+        }
+      }
+    } catch (error: any) {
+      console.error('Failed to sync playlist to YouTube:', error);
+
+      // Check if it's an authentication error
+      // GraphQL errors can be in different formats
+      const errorMessage =
+        error?.message ||
+        error?.response?.errors?.[0]?.message ||
+        error?.errors?.[0]?.message ||
+        error?.toString() ||
+        JSON.stringify(error);
+
+      console.log('Error message:', errorMessage);
+
+      const isAuthError =
+        errorMessage.includes('not authenticated') ||
+        errorMessage.includes('Unauthorized') ||
+        errorMessage.includes('authorize') ||
+        errorMessage.includes('authentication') ||
+        errorMessage.includes('YouTube not authenticated');
+
+      if (isAuthError) {
+        // Trigger authentication flow
+        console.log('Authentication error detected, starting auth flow...');
+        await handleStartAuth();
+      } else {
+        alert(`Failed to sync playlist to YouTube: ${errorMessage}`);
+      }
+    }
+  };
+
+  const handleStartAuth = async () => {
+    try {
+      console.log('Getting YouTube auth URL...');
+      const url = await getAuthUrl();
+      console.log('YouTube auth URL received:', url);
+      if (!url) {
+        throw new Error('No authorization URL received');
+      }
+      setAuthUrl(url);
+      setIsAuthDialogOpen(true);
+      console.log('Auth dialog should be open now');
+    } catch (error: any) {
+      console.error('Failed to get auth URL:', error);
+      const errorMsg =
+        error?.message ||
+        error?.response?.errors?.[0]?.message ||
+        'Unknown error';
+      alert(
+        `Failed to get authentication URL: ${errorMsg}. Please check your backend configuration.`,
+      );
+    }
+  };
+
+  const handleCompleteAuth = async () => {
+    if (!authCode.trim()) {
+      alert('Please enter the authorization code');
+      return;
+    }
+
+    try {
+      const result = await authenticate(authCode);
+      if (result.success) {
+        setIsAuthDialogOpen(false);
+        setAuthCode('');
+        setAuthUrl(null);
+        alert('Successfully authenticated with YouTube! Retrying sync...');
+        // Retry the sync
+        setTimeout(() => {
+          handleSyncToYouTube();
+        }, 500);
+      } else {
+        alert(`Authentication failed: ${result.message || 'Unknown error'}`);
+      }
+    } catch (error: any) {
+      console.error('Failed to authenticate:', error);
+      alert(`Failed to authenticate: ${error.message || 'Unknown error'}`);
+    }
   };
 
   if (loading) {
@@ -189,6 +331,15 @@ export function PlaylistDetail({ id, onBack }: PlaylistDetailProps) {
             )}
           </Button>
           <Button
+            onClick={handleSyncToYouTube}
+            disabled={isSyncingToYouTube || !playlist}
+            size="sm"
+            variant="ghost"
+          >
+            <Youtube className="h-4 w-4 " />
+            {isSyncingToYouTube ? 'Syncing...' : 'Sync to YouTube'}
+          </Button>
+          <Button
             onClick={handleDelete}
             disabled={isDeleting}
             size="sm"
@@ -240,6 +391,106 @@ export function PlaylistDetail({ id, onBack }: PlaylistDetailProps) {
         onSuccess={refetch}
         playlistId={id}
       />
+
+      {/* YouTube Authentication Dialog */}
+      <Dialog open={isAuthDialogOpen} onOpenChange={setIsAuthDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Authenticate with YouTube</DialogTitle>
+            <DialogDescription>
+              To sync playlists to YouTube, you need to authenticate first.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <p className="text-sm text-muted-foreground mb-2">
+                1. Click the button below to open YouTube authorization page
+              </p>
+              {authUrl ? (
+                <>
+                  <Button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      console.log('Opening auth URL:', authUrl);
+                      const newWindow = window.open(
+                        authUrl,
+                        '_blank',
+                        'noopener,noreferrer',
+                      );
+                      if (!newWindow || newWindow.closed) {
+                        // Fallback if popup is blocked - redirect current window
+                        alert(
+                          'Popup blocked. Please click the link below to open the authorization page.',
+                        );
+                      }
+                    }}
+                    disabled={isGettingAuthUrl}
+                    className="w-full"
+                    variant="outline"
+                  >
+                    {isGettingAuthUrl
+                      ? 'Loading...'
+                      : 'Open YouTube Authorization'}
+                  </Button>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Or{' '}
+                    <a
+                      href={authUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-primary underline hover:no-underline"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        window.open(authUrl, '_blank', 'noopener,noreferrer');
+                      }}
+                    >
+                      click here to open in a new tab
+                    </a>
+                  </p>
+                </>
+              ) : (
+                <Button disabled className="w-full" variant="outline">
+                  {isGettingAuthUrl
+                    ? 'Loading authorization URL...'
+                    : 'No URL available'}
+                </Button>
+              )}
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground mb-2">
+                2. After authorizing, copy the authorization code from the URL
+                and paste it below
+              </p>
+              <Input
+                placeholder="Enter authorization code"
+                value={authCode}
+                onChange={(e) => setAuthCode(e.target.value)}
+                disabled={isAuthenticating}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsAuthDialogOpen(false);
+                setAuthCode('');
+                setAuthUrl(null);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleCompleteAuth}
+              disabled={!authCode.trim() || isAuthenticating}
+            >
+              {isAuthenticating
+                ? 'Authenticating...'
+                : 'Complete Authentication'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

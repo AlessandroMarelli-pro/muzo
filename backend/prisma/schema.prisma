@@ -542,6 +542,26 @@ model HiddenMusicTrack {
   @@map("hidden_music_tracks")
 }
 
+model ThirdPartyOAuthToken {
+  id                String   @id @default(uuid())
+  userId            String
+  provider          String   // 'youtube', 'spotify', 'tidal', etc.
+  accessToken       String
+  refreshToken      String?
+  expiresAt         DateTime?
+  scope             String?  // OAuth scopes
+  
+  // Timestamps
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  // Indexes
+  @@unique([userId, provider])
+  @@index([userId])
+  @@index([provider])
+  @@map("third_party_oauth_tokens")
+}
+
 // Enums
 
 enum ScanStatus {

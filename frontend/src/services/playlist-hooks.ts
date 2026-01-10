@@ -185,6 +185,36 @@ const EXPORT_PLAYLIST_TO_M3U = gql`
   }
 `;
 
+const SYNC_PLAYLIST_TO_YOUTUBE = gql`
+  mutation SyncPlaylistToYouTube($playlistId: ID!, $userId: String!) {
+    syncPlaylistToYouTube(playlistId: $playlistId, userId: $userId) {
+      success
+      playlistId
+      playlistUrl
+      syncedCount
+      skippedCount
+      errors
+    }
+  }
+`;
+
+const GET_YOUTUBE_AUTH_URL = gql`
+  query GetYouTubeAuthUrl {
+    getYouTubeAuthUrl {
+      authUrl
+    }
+  }
+`;
+
+const AUTHENTICATE_YOUTUBE = gql`
+  mutation AuthenticateYouTube($code: String!, $userId: String!) {
+    authenticateYouTube(code: $code, userId: $userId) {
+      success
+      message
+    }
+  }
+`;
+
 const ADD_TRACK_TO_PLAYLIST = gql`
   ${simpleMusicTrackFragment}
   mutation AddTrackToPlaylist(
@@ -319,6 +349,42 @@ const exportPlaylistToM3U = async (
   return data.exportPlaylistToM3U;
 };
 
+export interface SyncResult {
+  success: boolean;
+  playlistId?: string | null;
+  playlistUrl?: string | null;
+  syncedCount: number;
+  skippedCount: number;
+  errors: string[];
+}
+
+const syncPlaylistToYouTube = async (
+  playlistId: string,
+  userId: string = 'default',
+): Promise<SyncResult> => {
+  const data = await graffleClient.request<{
+    syncPlaylistToYouTube: SyncResult;
+  }>(SYNC_PLAYLIST_TO_YOUTUBE, { playlistId, userId });
+  return data.syncPlaylistToYouTube;
+};
+
+const getYouTubeAuthUrl = async (): Promise<string> => {
+  const data = await graffleClient.request<{
+    getYouTubeAuthUrl: { authUrl: string };
+  }>(GET_YOUTUBE_AUTH_URL);
+  return data.getYouTubeAuthUrl.authUrl;
+};
+
+const authenticateYouTube = async (
+  code: string,
+  userId: string = 'default',
+): Promise<{ success: boolean; message?: string }> => {
+  const data = await graffleClient.request<{
+    authenticateYouTube: { success: boolean; message?: string };
+  }>(AUTHENTICATE_YOUTUBE, { code, userId });
+  return data.authenticateYouTube;
+};
+
 const addTrackToPlaylist = async (
   playlistId: string,
   input: AddTrackToPlaylistInput,
@@ -449,12 +515,41 @@ export function usePlaylist(id: string, userId: string = 'default') {
     },
   });
 
+  const syncToYouTubeMutation = useMutation({
+    mutationFn: () => syncPlaylistToYouTube(id, userId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['playlists'] });
+      queryClient.invalidateQueries({ queryKey: ['playlist', id] });
+    },
+  });
+
   return {
     playlist,
     loading,
     error: error?.message,
     refetch,
     updatePlaylist: updatePlaylistMutation.mutateAsync,
+    syncToYouTube: syncToYouTubeMutation.mutateAsync,
+    isSyncingToYouTube: syncToYouTubeMutation.isPending,
+    syncToYouTubeError: syncToYouTubeMutation.error,
+  };
+}
+
+export function useYouTubeAuth(userId: string = 'default') {
+  const getAuthUrlMutation = useMutation({
+    mutationFn: getYouTubeAuthUrl,
+  });
+
+  const authenticateMutation = useMutation({
+    mutationFn: (code: string) => authenticateYouTube(code, userId),
+  });
+
+  return {
+    getAuthUrl: getAuthUrlMutation.mutateAsync,
+    authenticate: authenticateMutation.mutateAsync,
+    isGettingAuthUrl: getAuthUrlMutation.isPending,
+    isAuthenticating: authenticateMutation.isPending,
+    authError: authenticateMutation.error,
   };
 }
 

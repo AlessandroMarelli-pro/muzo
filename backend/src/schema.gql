@@ -372,6 +372,7 @@ type MusicTrackListPaginated {
 
 type Mutation {
   addTrackToPlaylist(input: AddTrackToPlaylistInput!, playlistId: ID!, userId: String!): PlaylistTrack!
+  authenticateYouTube(code: String!, userId: String!): YouTubeAuthResult!
   bangerTrack(trackId: ID!): SimpleMusicTrack!
   clearCurrentFilter: Boolean!
   createLibrary(input: CreateLibraryInput!): MusicLibrary!
@@ -398,6 +399,7 @@ type Mutation {
   startLibraryScan(incremental: Boolean, libraryId: ID!): LibraryScanResult!
   stopLibraryScan(libraryId: ID!): Boolean!
   stopTrack(trackId: String!): Boolean!
+  syncPlaylistToYouTube(playlistId: ID!, userId: String!): SyncResult!
   toggleFavorite(trackId: String!): MusicTrack!
   updateLibrary(id: ID!, input: UpdateLibraryInput!): MusicLibrary!
   updatePlaylist(id: ID!, input: UpdatePlaylistInput!, userId: String!): Playlist!
@@ -515,6 +517,7 @@ type Query {
   getSavedFilters: [SavedFilter!]!
   getStaticFilterOptions: StaticFilterOptions!
   getWaveformData(trackId: String!): [Float!]!
+  getYouTubeAuthUrl: YouTubeAuthUrl!
   libraries(options: LibraryQueryOptions): [MusicLibrary!]!
   library(id: ID!): MusicLibrary
   libraryMetrics: LibraryMetrics!
@@ -622,6 +625,15 @@ type SubgenreDistribution {
 
 type Subscription {
   libraryScanProgress(libraryId: ID): LibraryScanProgressUpdate!
+}
+
+type SyncResult {
+  errors: [String!]!
+  playlistId: String
+  playlistUrl: String
+  skippedCount: Float!
+  success: Boolean!
+  syncedCount: Float!
 }
 
 type TopArtist {
@@ -735,4 +747,13 @@ type WaveformData {
 type YearDistribution {
   count: Int
   year: Int
+}
+
+type YouTubeAuthResult {
+  message: String
+  success: Boolean!
+}
+
+type YouTubeAuthUrl {
+  authUrl: String!
 }
