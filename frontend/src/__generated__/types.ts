@@ -408,6 +408,8 @@ export type MusicTrackListPaginated = {
 export type Mutation = {
   __typename?: 'Mutation';
   addTrackToPlaylist: PlaylistTrack;
+  authenticateTidal: TidalAuthResult;
+  authenticateYouTube: YouTubeAuthResult;
   bangerTrack: SimpleMusicTrack;
   clearCurrentFilter: Scalars['Boolean']['output'];
   createLibrary: MusicLibrary;
@@ -434,6 +436,7 @@ export type Mutation = {
   startLibraryScan: LibraryScanResult;
   stopLibraryScan: Scalars['Boolean']['output'];
   stopTrack: Scalars['Boolean']['output'];
+  syncPlaylistToTidal: SyncResult;
   syncPlaylistToYouTube: SyncResult;
   toggleFavorite: MusicTrack;
   updateLibrary: MusicLibrary;
@@ -446,6 +449,19 @@ export type Mutation = {
 export type MutationAddTrackToPlaylistArgs = {
   input: AddTrackToPlaylistInput;
   playlistId: Scalars['ID']['input'];
+  userId: Scalars['String']['input'];
+};
+
+
+export type MutationAuthenticateTidalArgs = {
+  code: Scalars['String']['input'];
+  codeVerifier: Scalars['String']['input'];
+  userId: Scalars['String']['input'];
+};
+
+
+export type MutationAuthenticateYouTubeArgs = {
+  code: Scalars['String']['input'];
   userId: Scalars['String']['input'];
 };
 
@@ -584,6 +600,12 @@ export type MutationStopLibraryScanArgs = {
 
 export type MutationStopTrackArgs = {
   trackId: Scalars['String']['input'];
+};
+
+
+export type MutationSyncPlaylistToTidalArgs = {
+  playlistId: Scalars['ID']['input'];
+  userId: Scalars['String']['input'];
 };
 
 
@@ -738,7 +760,9 @@ export type Query = {
   getSavedFilter?: Maybe<SavedFilter>;
   getSavedFilters: Array<SavedFilter>;
   getStaticFilterOptions: StaticFilterOptions;
+  getTidalAuthUrl: TidalAuthUrl;
   getWaveformData: Array<Scalars['Float']['output']>;
+  getYouTubeAuthUrl: YouTubeAuthUrl;
   libraries: Array<MusicLibrary>;
   library?: Maybe<MusicLibrary>;
   libraryMetrics: LibraryMetrics;
@@ -1025,6 +1049,18 @@ export type SyncResult = {
   syncedCount: Scalars['Float']['output'];
 };
 
+export type TidalAuthResult = {
+  __typename?: 'TidalAuthResult';
+  message?: Maybe<Scalars['String']['output']>;
+  success: Scalars['Boolean']['output'];
+};
+
+export type TidalAuthUrl = {
+  __typename?: 'TidalAuthUrl';
+  authUrl: Scalars['String']['output'];
+  codeVerifier: Scalars['String']['output'];
+};
+
 export type TopArtist = {
   __typename?: 'TopArtist';
   artist: Scalars['String']['output'];
@@ -1143,6 +1179,17 @@ export type YearDistribution = {
   __typename?: 'YearDistribution';
   count?: Maybe<Scalars['Int']['output']>;
   year?: Maybe<Scalars['Int']['output']>;
+};
+
+export type YouTubeAuthResult = {
+  __typename?: 'YouTubeAuthResult';
+  message?: Maybe<Scalars['String']['output']>;
+  success: Scalars['Boolean']['output'];
+};
+
+export type YouTubeAuthUrl = {
+  __typename?: 'YouTubeAuthUrl';
+  authUrl: Scalars['String']['output'];
 };
 
 export type GetLibrariesQueryVariables = Exact<{ [key: string]: never; }>;
@@ -1465,6 +1512,41 @@ export type SyncPlaylistToYouTubeMutationVariables = Exact<{
 
 
 export type SyncPlaylistToYouTubeMutation = { __typename?: 'Mutation', syncPlaylistToYouTube: { __typename?: 'SyncResult', success: boolean, playlistId?: string | null, playlistUrl?: string | null, syncedCount: number, skippedCount: number, errors: Array<string> } };
+
+export type GetYouTubeAuthUrlQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type GetYouTubeAuthUrlQuery = { __typename?: 'Query', getYouTubeAuthUrl: { __typename?: 'YouTubeAuthUrl', authUrl: string } };
+
+export type AuthenticateYouTubeMutationVariables = Exact<{
+  code: Scalars['String']['input'];
+  userId: Scalars['String']['input'];
+}>;
+
+
+export type AuthenticateYouTubeMutation = { __typename?: 'Mutation', authenticateYouTube: { __typename?: 'YouTubeAuthResult', success: boolean, message?: string | null } };
+
+export type SyncPlaylistToTidalMutationVariables = Exact<{
+  playlistId: Scalars['ID']['input'];
+  userId: Scalars['String']['input'];
+}>;
+
+
+export type SyncPlaylistToTidalMutation = { __typename?: 'Mutation', syncPlaylistToTidal: { __typename?: 'SyncResult', success: boolean, playlistId?: string | null, playlistUrl?: string | null, syncedCount: number, skippedCount: number, errors: Array<string> } };
+
+export type GetTidalAuthUrlQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type GetTidalAuthUrlQuery = { __typename?: 'Query', getTidalAuthUrl: { __typename?: 'TidalAuthUrl', authUrl: string, codeVerifier: string } };
+
+export type AuthenticateTidalMutationVariables = Exact<{
+  code: Scalars['String']['input'];
+  codeVerifier: Scalars['String']['input'];
+  userId: Scalars['String']['input'];
+}>;
+
+
+export type AuthenticateTidalMutation = { __typename?: 'Mutation', authenticateTidal: { __typename?: 'TidalAuthResult', success: boolean, message?: string | null } };
 
 export type AddTrackToPlaylistMutationVariables = Exact<{
   playlistId: Scalars['ID']['input'];

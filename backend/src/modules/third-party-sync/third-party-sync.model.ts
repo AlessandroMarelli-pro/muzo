@@ -35,3 +35,21 @@ export class YouTubeAuthResult {
   @Field({ nullable: true })
   message?: string;
 }
+
+@ObjectType()
+export class TidalAuthUrl {
+  @Field()
+  authUrl: string;
+
+  @Field()
+  codeVerifier: string; // Required for PKCE flow
+}
+
+@ObjectType()
+export class TidalAuthResult {
+  @Field()
+  success: boolean;
+
+  @Field({ nullable: true })
+  message?: string;
+}

@@ -1,6 +1,8 @@
 import { Args, ID, Mutation, Query, Resolver } from '@nestjs/graphql';
 import {
   SyncResult,
+  TidalAuthResult,
+  TidalAuthUrl,
   YouTubeAuthResult,
   YouTubeAuthUrl,
 } from './third-party-sync.model';
@@ -41,5 +43,44 @@ export class ThirdPartySyncResolver {
     @Args('userId') userId: string,
   ): Promise<SyncResult> {
     return this.thirdPartySyncService.syncPlaylistToYouTube(playlistId, userId);
+  }
+
+  @Query(() => TidalAuthUrl)
+  getTidalAuthUrl(): TidalAuthUrl {
+    const { authUrl, codeVerifier } =
+      this.thirdPartySyncService.getTidalAuthUrl();
+    return { authUrl, codeVerifier };
+  }
+
+  @Mutation(() => TidalAuthResult)
+  async authenticateTidal(
+    @Args('code') code: string,
+    @Args('codeVerifier') codeVerifier: string,
+    @Args('userId') userId: string,
+  ): Promise<TidalAuthResult> {
+    try {
+      await this.thirdPartySyncService.exchangeTidalCode(
+        code,
+        codeVerifier,
+        userId,
+      );
+      return {
+        success: true,
+        message: 'Successfully authenticated with TIDAL',
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: error.message || 'Failed to authenticate with TIDAL',
+      };
+    }
+  }
+
+  @Mutation(() => SyncResult)
+  async syncPlaylistToTidal(
+    @Args('playlistId', { type: () => ID }) playlistId: string,
+    @Args('userId') userId: string,
+  ): Promise<SyncResult> {
+    return this.thirdPartySyncService.syncPlaylistToTidal(playlistId, userId);
   }
 }

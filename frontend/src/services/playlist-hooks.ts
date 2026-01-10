@@ -215,6 +215,45 @@ const AUTHENTICATE_YOUTUBE = gql`
   }
 `;
 
+const SYNC_PLAYLIST_TO_TIDAL = gql`
+  mutation SyncPlaylistToTidal($playlistId: ID!, $userId: String!) {
+    syncPlaylistToTidal(playlistId: $playlistId, userId: $userId) {
+      success
+      playlistId
+      playlistUrl
+      syncedCount
+      skippedCount
+      errors
+    }
+  }
+`;
+
+const GET_TIDAL_AUTH_URL = gql`
+  query GetTidalAuthUrl {
+    getTidalAuthUrl {
+      authUrl
+      codeVerifier
+    }
+  }
+`;
+
+const AUTHENTICATE_TIDAL = gql`
+  mutation AuthenticateTidal(
+    $code: String!
+    $codeVerifier: String!
+    $userId: String!
+  ) {
+    authenticateTidal(
+      code: $code
+      codeVerifier: $codeVerifier
+      userId: $userId
+    ) {
+      success
+      message
+    }
+  }
+`;
+
 const ADD_TRACK_TO_PLAYLIST = gql`
   ${simpleMusicTrackFragment}
   mutation AddTrackToPlaylist(
@@ -385,6 +424,37 @@ const authenticateYouTube = async (
   return data.authenticateYouTube;
 };
 
+const syncPlaylistToTidal = async (
+  playlistId: string,
+  userId: string = 'default',
+): Promise<SyncResult> => {
+  const data = await graffleClient.request<{
+    syncPlaylistToTidal: SyncResult;
+  }>(SYNC_PLAYLIST_TO_TIDAL, { playlistId, userId });
+  return data.syncPlaylistToTidal;
+};
+
+const getTidalAuthUrl = async (): Promise<{
+  authUrl: string;
+  codeVerifier: string;
+}> => {
+  const data = await graffleClient.request<{
+    getTidalAuthUrl: { authUrl: string; codeVerifier: string };
+  }>(GET_TIDAL_AUTH_URL);
+  return data.getTidalAuthUrl;
+};
+
+const authenticateTidal = async (
+  code: string,
+  codeVerifier: string,
+  userId: string = 'default',
+): Promise<{ success: boolean; message?: string }> => {
+  const data = await graffleClient.request<{
+    authenticateTidal: { success: boolean; message?: string };
+  }>(AUTHENTICATE_TIDAL, { code, codeVerifier, userId });
+  return data.authenticateTidal;
+};
+
 const addTrackToPlaylist = async (
   playlistId: string,
   input: AddTrackToPlaylistInput,
@@ -523,6 +593,14 @@ export function usePlaylist(id: string, userId: string = 'default') {
     },
   });
 
+  const syncToTidalMutation = useMutation({
+    mutationFn: () => syncPlaylistToTidal(id, userId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['playlists'] });
+      queryClient.invalidateQueries({ queryKey: ['playlist', id] });
+    },
+  });
+
   return {
     playlist,
     loading,
@@ -532,6 +610,9 @@ export function usePlaylist(id: string, userId: string = 'default') {
     syncToYouTube: syncToYouTubeMutation.mutateAsync,
     isSyncingToYouTube: syncToYouTubeMutation.isPending,
     syncToYouTubeError: syncToYouTubeMutation.error,
+    syncToTidal: syncToTidalMutation.mutateAsync,
+    isSyncingToTidal: syncToTidalMutation.isPending,
+    syncToTidalError: syncToTidalMutation.error,
   };
 }
 
@@ -542,6 +623,30 @@ export function useYouTubeAuth(userId: string = 'default') {
 
   const authenticateMutation = useMutation({
     mutationFn: (code: string) => authenticateYouTube(code, userId),
+  });
+
+  return {
+    getAuthUrl: getAuthUrlMutation.mutateAsync,
+    authenticate: authenticateMutation.mutateAsync,
+    isGettingAuthUrl: getAuthUrlMutation.isPending,
+    isAuthenticating: authenticateMutation.isPending,
+    authError: authenticateMutation.error,
+  };
+}
+
+export function useTidalAuth(userId: string = 'default') {
+  const getAuthUrlMutation = useMutation({
+    mutationFn: getTidalAuthUrl,
+  });
+
+  const authenticateMutation = useMutation({
+    mutationFn: ({
+      code,
+      codeVerifier,
+    }: {
+      code: string;
+      codeVerifier: string;
+    }) => authenticateTidal(code, codeVerifier, userId),
   });
 
   return {

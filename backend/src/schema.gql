@@ -372,6 +372,7 @@ type MusicTrackListPaginated {
 
 type Mutation {
   addTrackToPlaylist(input: AddTrackToPlaylistInput!, playlistId: ID!, userId: String!): PlaylistTrack!
+  authenticateTidal(code: String!, codeVerifier: String!, userId: String!): TidalAuthResult!
   authenticateYouTube(code: String!, userId: String!): YouTubeAuthResult!
   bangerTrack(trackId: ID!): SimpleMusicTrack!
   clearCurrentFilter: Boolean!
@@ -399,6 +400,7 @@ type Mutation {
   startLibraryScan(incremental: Boolean, libraryId: ID!): LibraryScanResult!
   stopLibraryScan(libraryId: ID!): Boolean!
   stopTrack(trackId: String!): Boolean!
+  syncPlaylistToTidal(playlistId: ID!, userId: String!): SyncResult!
   syncPlaylistToYouTube(playlistId: ID!, userId: String!): SyncResult!
   toggleFavorite(trackId: String!): MusicTrack!
   updateLibrary(id: ID!, input: UpdateLibraryInput!): MusicLibrary!
@@ -516,6 +518,7 @@ type Query {
   getSavedFilter(id: ID!): SavedFilter
   getSavedFilters: [SavedFilter!]!
   getStaticFilterOptions: StaticFilterOptions!
+  getTidalAuthUrl: TidalAuthUrl!
   getWaveformData(trackId: String!): [Float!]!
   getYouTubeAuthUrl: YouTubeAuthUrl!
   libraries(options: LibraryQueryOptions): [MusicLibrary!]!
@@ -634,6 +637,16 @@ type SyncResult {
   skippedCount: Float!
   success: Boolean!
   syncedCount: Float!
+}
+
+type TidalAuthResult {
+  message: String
+  success: Boolean!
+}
+
+type TidalAuthUrl {
+  authUrl: String!
+  codeVerifier: String!
 }
 
 type TopArtist {

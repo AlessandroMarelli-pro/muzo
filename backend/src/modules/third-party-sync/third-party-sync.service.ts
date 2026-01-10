@@ -5,6 +5,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { PlaylistService } from '../playlist/playlist.service';
+import { TidalService } from './services/tidal.service';
 import { YoutubeService } from './services/youtube.service';
 import { Id3ReaderService } from './utils/id3-reader.service';
 
@@ -24,6 +25,7 @@ export class ThirdPartySyncService {
   constructor(
     private readonly playlistService: PlaylistService,
     private readonly youtubeService: YoutubeService,
+    private readonly tidalService: TidalService,
     private readonly id3Reader: Id3ReaderService,
   ) {}
 
@@ -174,5 +176,156 @@ export class ThirdPartySyncService {
     userId: string,
   ): Promise<{ accessToken: string; refreshToken: string }> {
     return this.youtubeService.exchangeCodeForTokens(code, userId);
+  }
+
+  /**
+   * Sync playlist to TIDAL
+   */
+  async syncPlaylistToTidal(
+    playlistId: string,
+    userId: string,
+  ): Promise<SyncResult> {
+    this.logger.log(`Starting TIDAL sync for playlist ${playlistId}`);
+
+    const result: SyncResult = {
+      success: false,
+      syncedCount: 0,
+      skippedCount: 0,
+      errors: [],
+    };
+
+    try {
+      // Fetch playlist with tracks
+      const playlist = await this.playlistService.findPlaylistById(playlistId);
+
+      if (!playlist) {
+        throw new NotFoundException(`Playlist ${playlistId} not found`);
+      }
+
+      // Check if user has TIDAL authentication
+      try {
+        await this.tidalService.getAccessToken(userId);
+      } catch (error) {
+        throw new UnauthorizedException(
+          'TIDAL not authenticated. Please authorize first.',
+        );
+      }
+
+      // Collect track IDs for all tracks
+      const trackIds: string[] = [];
+      const trackErrors: string[] = [];
+
+      for (const playlistTrack of playlist.tracks) {
+        const track = playlistTrack.track;
+        let trackId: string | null = null;
+
+        try {
+          // Try to get TIDAL URL from ID3 tags (url)
+          const id3Tags = await this.id3Reader.readId3Tags(track.filePath);
+          const tidalUrl = id3Tags.url;
+
+          if (tidalUrl) {
+            // Extract track ID from URL
+            trackId = this.tidalService.extractTrackIdFromUrl(tidalUrl);
+          }
+
+          // If no track ID from url, search TIDAL
+          if (!trackId) {
+            const artist =
+              track.userArtist ||
+              track.originalArtist ||
+              track.aiArtist ||
+              'Unknown Artist';
+            const title =
+              track.userTitle ||
+              track.originalTitle ||
+              track.aiTitle ||
+              'Unknown Title';
+
+            const matchResult = await this.tidalService.findBestMatch(
+              artist,
+              title,
+              track.duration || 0,
+              userId,
+            );
+
+            if (matchResult.trackId) {
+              trackId = matchResult.trackId;
+              this.logger.log(
+                `Found match for "${artist} - ${title}": ${matchResult.confidence} confidence`,
+              );
+            } else {
+              trackErrors.push(`No match found for "${artist} - ${title}"`);
+              result.skippedCount++;
+              continue;
+            }
+          }
+
+          if (trackId) {
+            trackIds.push(trackId);
+            result.syncedCount++;
+          }
+        } catch (error) {
+          const trackName = `${track.originalArtist || 'Unknown'} - ${track.originalTitle || 'Unknown'}`;
+          const errorMsg = `Failed to process track "${trackName}": ${error.message}`;
+          this.logger.error(errorMsg);
+          trackErrors.push(errorMsg);
+          result.skippedCount++;
+        }
+      }
+
+      if (trackIds.length === 0) {
+        result.errors.push('No tracks found to sync');
+        return result;
+      }
+
+      // Create TIDAL playlist
+      const tidalPlaylistId = await this.tidalService.createTidalPlaylist(
+        userId,
+        playlist.name,
+        playlist.description || undefined,
+      );
+
+      // Add tracks to playlist
+      await this.tidalService.addTracksToPlaylist(
+        userId,
+        tidalPlaylistId,
+        trackIds,
+      );
+
+      result.success = true;
+      result.playlistId = tidalPlaylistId;
+      result.playlistUrl = `https://tidal.com/browse/playlist/${tidalPlaylistId}`;
+      result.errors = trackErrors;
+
+      this.logger.log(
+        `TIDAL sync completed: ${result.syncedCount} synced, ${result.skippedCount} skipped`,
+      );
+
+      return result;
+    } catch (error) {
+      this.logger.error(`TIDAL sync failed: ${error.message}`);
+      result.errors.push(error.message);
+      return result;
+    }
+  }
+
+  /**
+   * Get TIDAL authorization URL (with PKCE codeVerifier)
+   */
+  getTidalAuthUrl(): { authUrl: string; codeVerifier: string } {
+    return this.tidalService.getAuthUrl();
+  }
+
+  /**
+   * Exchange TIDAL authorization code for tokens
+   * Note: TIDAL uses PKCE, so we need codeVerifier
+   */
+  async exchangeTidalCode(
+    code: string,
+    codeVerifier: string,
+    userId: string,
+  ): Promise<void> {
+    await this.tidalService.exchangeCodeForTokens(code, codeVerifier, userId);
   }
 }

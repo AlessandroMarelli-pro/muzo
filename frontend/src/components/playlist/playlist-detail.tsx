@@ -13,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   useDeletePlaylist,
   usePlaylist,
+  useTidalAuth,
   useYouTubeAuth,
 } from '@/services/playlist-hooks';
 import {
@@ -21,6 +22,7 @@ import {
   Clock,
   Disc3,
   HeartPlus,
+  Music,
   Pause,
   Play,
   Plus,
@@ -59,6 +61,13 @@ export function PlaylistDetail({ id, onBack }: PlaylistDetailProps) {
   const [isAuthDialogOpen, setIsAuthDialogOpen] = useState(false);
   const [authUrl, setAuthUrl] = useState<string | null>(null);
   const [authCode, setAuthCode] = useState('');
+  const [isTidalAuthDialogOpen, setIsTidalAuthDialogOpen] = useState(false);
+  // PKCE flow
+  const [tidalAuthUrl, setTidalAuthUrl] = useState<string | null>(null);
+  const [tidalCodeVerifier, setTidalCodeVerifier] = useState<string | null>(
+    null,
+  );
+  const [tidalAuthCode, setTidalAuthCode] = useState('');
   const {
     playlist,
     loading,
@@ -66,11 +75,19 @@ export function PlaylistDetail({ id, onBack }: PlaylistDetailProps) {
     refetch,
     syncToYouTube,
     isSyncingToYouTube,
+    syncToTidal,
+    isSyncingToTidal,
   } = usePlaylist(id, 'default');
   const { setQueue } = useQueue();
   const deletePlaylistMutation = useDeletePlaylist('default');
   const { getAuthUrl, authenticate, isGettingAuthUrl, isAuthenticating } =
     useYouTubeAuth('default');
+  const {
+    getAuthUrl: getTidalAuthUrl,
+    authenticate: authenticateTidal,
+    isGettingAuthUrl: isGettingTidalAuthUrl,
+    isAuthenticating: isAuthenticatingTidal,
+  } = useTidalAuth('default');
 
   const getGenreCounts = () => {
     if (!playlist) return {};
@@ -234,6 +251,113 @@ export function PlaylistDetail({ id, onBack }: PlaylistDetailProps) {
     }
   };
 
+  const handleSyncToTidal = async () => {
+    try {
+      const result = await syncToTidal();
+      if (result.success) {
+        alert(
+          `Successfully synced playlist to TIDAL!\n\nSynced: ${result.syncedCount} tracks\nSkipped: ${result.skippedCount} tracks${
+            result.playlistUrl ? `\n\nPlaylist URL: ${result.playlistUrl}` : ''
+          }${
+            result.errors.length > 0
+              ? `\n\nErrors:\n${result.errors.join('\n')}`
+              : ''
+          }`,
+        );
+      } else {
+        // Check if any error is an authentication error
+        const errorMessages = result.errors.join(' ').toLowerCase();
+        console.log('TIDAL sync errors:', result.errors);
+        console.log('Checking for auth error in:', errorMessages);
+
+        const isAuthError =
+          errorMessages.includes('not authenticated') ||
+          errorMessages.includes('unauthorized') ||
+          errorMessages.includes('authorize') ||
+          errorMessages.includes('authentication') ||
+          errorMessages.includes('tidal not authenticated') ||
+          errorMessages.includes('please authorize');
+
+        console.log('Is auth error?', isAuthError);
+
+        if (isAuthError) {
+          // Trigger authentication flow
+          console.log(
+            'Authentication error detected, starting TIDAL auth flow...',
+          );
+          await handleStartTidalAuth();
+        } else {
+          alert(
+            `Failed to sync playlist to TIDAL: ${result.errors.join(', ')}`,
+          );
+        }
+      }
+    } catch (error: any) {
+      console.error('Failed to sync playlist to TIDAL:', error);
+
+      // Check if it's an authentication error
+      const errorMessage =
+        error?.message ||
+        error?.response?.errors?.[0]?.message ||
+        error?.errors?.[0]?.message ||
+        error?.toString() ||
+        JSON.stringify(error);
+
+      console.log('Error message:', errorMessage);
+
+      const isAuthError =
+        errorMessage.includes('not authenticated') ||
+        errorMessage.includes('Unauthorized') ||
+        errorMessage.includes('authorize') ||
+        errorMessage.includes('authentication') ||
+        errorMessage.includes('TIDAL not authenticated');
+
+      if (isAuthError) {
+        // Trigger authentication flow
+        console.log(
+          'Authentication error detected, starting TIDAL auth flow...',
+        );
+        try {
+          await handleStartTidalAuth();
+        } catch (authError: any) {
+          console.error('Failed to start TIDAL auth:', authError);
+          // If auth flow fails, still show the error
+          alert(
+            `Failed to start authentication: ${authError?.message || 'Unknown error'}`,
+          );
+        }
+      } else {
+        alert(`Failed to sync playlist to TIDAL: ${errorMessage}`);
+      }
+    }
+  };
+
+  const handleStartTidalAuth = async () => {
+    try {
+      console.log('Getting TIDAL auth URL (PKCE flow)...');
+      const { authUrl: url, codeVerifier } = await getTidalAuthUrl();
+      console.log('TIDAL auth URL received:', url);
+
+      if (!url || !codeVerifier) {
+        throw new Error('No authorization URL or code verifier received');
+      }
+
+      setTidalAuthUrl(url);
+      setTidalCodeVerifier(codeVerifier);
+      setIsTidalAuthDialogOpen(true);
+      console.log('TIDAL auth dialog opened (PKCE flow)');
+    } catch (error: any) {
+      console.error('Failed to get TIDAL authorization:', error);
+      const errorMsg =
+        error?.message ||
+        error?.response?.errors?.[0]?.message ||
+        'Unknown error';
+      alert(
+        `Failed to get authorization: ${errorMsg}. Please check your backend configuration.`,
+      );
+    }
+  };
+
   if (loading) {
     return (
       <div className="space-y-6">
@@ -338,6 +462,15 @@ export function PlaylistDetail({ id, onBack }: PlaylistDetailProps) {
           >
             <Youtube className="h-4 w-4 " />
             {isSyncingToYouTube ? 'Syncing...' : 'Sync to YouTube'}
+          </Button>
+          <Button
+            onClick={handleSyncToTidal}
+            disabled={isSyncingToTidal || !playlist}
+            size="sm"
+            variant="ghost"
+          >
+            <Music className="h-4 w-4 " />
+            {isSyncingToTidal ? 'Syncing...' : 'Sync to TIDAL'}
           </Button>
           <Button
             onClick={handleDelete}
@@ -489,6 +622,194 @@ export function PlaylistDetail({ id, onBack }: PlaylistDetailProps) {
                 : 'Complete Authentication'}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* TIDAL Authentication Dialog - PKCE Flow */}
+      <Dialog
+        open={isTidalAuthDialogOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            setIsTidalAuthDialogOpen(false);
+            setTidalAuthUrl(null);
+            setTidalCodeVerifier(null);
+            setTidalAuthCode('');
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Authenticate with TIDAL</DialogTitle>
+            <DialogDescription>
+              To sync playlists to TIDAL, you need to authenticate first.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            {isGettingTidalAuthUrl ? (
+              <div className="text-center py-4">
+                <p className="text-sm text-muted-foreground">
+                  Getting authorization URL...
+                </p>
+              </div>
+            ) : tidalAuthUrl ? (
+              <>
+                <div>
+                  <p className="text-sm text-muted-foreground mb-2">
+                    1. Click the button below to open TIDAL authorization page
+                  </p>
+                  <Button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      console.log('Opening TIDAL auth URL:', tidalAuthUrl);
+                      const newWindow = window.open(
+                        tidalAuthUrl,
+                        '_blank',
+                        'noopener,noreferrer',
+                      );
+                      if (!newWindow || newWindow.closed) {
+                        alert(
+                          'Popup blocked. Please click the link below to open the authorization page.',
+                        );
+                      }
+                    }}
+                    className="w-full"
+                    variant="outline"
+                  >
+                    <Music className="h-4 w-4 mr-2" />
+                    Open TIDAL Authorization
+                  </Button>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Or{' '}
+                    <a
+                      href={tidalAuthUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-primary underline hover:no-underline"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        window.open(
+                          tidalAuthUrl,
+                          '_blank',
+                          'noopener,noreferrer',
+                        );
+                      }}
+                    >
+                      click here to open in a new tab
+                    </a>
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground mb-2">
+                    2. After authorizing, TIDAL will redirect you to a page.
+                    Look at the URL in your browser's address bar and copy the{' '}
+                    <code className="text-xs bg-muted px-1 py-0.5 rounded">
+                      code
+                    </code>{' '}
+                    parameter from the URL.
+                  </p>
+                  <p className="text-xs text-muted-foreground mb-2">
+                    The redirect URL will look like:{' '}
+                    <code className="text-xs bg-muted px-1 py-0.5 rounded break-all">
+                      https://tidal-music.github.io/tidal-api-reference/oauth2-redirect.html?code=...
+                    </code>{' '}
+                    or{' '}
+                    <code className="text-xs bg-muted px-1 py-0.5 rounded">
+                      http://localhost:3000?code=...
+                    </code>
+                  </p>
+                  <p className="text-xs text-muted-foreground mb-2">
+                    Copy everything after{' '}
+                    <code className="text-xs bg-muted px-1 py-0.5 rounded">
+                      code=
+                    </code>{' '}
+                    (until the next{' '}
+                    <code className="text-xs bg-muted px-1 py-0.5 rounded">
+                      &
+                    </code>{' '}
+                    or end of URL) and paste it below.
+                  </p>
+                  <Input
+                    placeholder="Enter authorization code (from ?code= parameter in the redirect URL)"
+                    value={tidalAuthCode}
+                    onChange={(e) => setTidalAuthCode(e.target.value)}
+                    disabled={isAuthenticatingTidal}
+                  />
+                </div>
+                <DialogFooter>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setIsTidalAuthDialogOpen(false);
+                      setTidalAuthCode('');
+                      setTidalAuthUrl(null);
+                      setTidalCodeVerifier(null);
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={async () => {
+                      if (!tidalAuthCode.trim()) {
+                        alert('Please enter the authorization code');
+                        return;
+                      }
+
+                      if (!tidalCodeVerifier) {
+                        alert(
+                          'Missing code verifier. Please start the authentication process again.',
+                        );
+                        return;
+                      }
+
+                      try {
+                        const result = await authenticateTidal({
+                          code: tidalAuthCode,
+                          codeVerifier: tidalCodeVerifier,
+                        });
+                        if (result.success) {
+                          setIsTidalAuthDialogOpen(false);
+                          setTidalAuthCode('');
+                          setTidalAuthUrl(null);
+                          setTidalCodeVerifier(null);
+                          alert(
+                            'Successfully authenticated with TIDAL! Retrying sync...',
+                          );
+                          // Retry the sync
+                          setTimeout(() => {
+                            handleSyncToTidal();
+                          }, 500);
+                        } else {
+                          alert(
+                            `Authentication failed: ${result.message || 'Unknown error'}`,
+                          );
+                        }
+                      } catch (error: any) {
+                        console.error('Failed to authenticate:', error);
+                        alert(
+                          `Failed to authenticate: ${error.message || 'Unknown error'}`,
+                        );
+                      }
+                    }}
+                    disabled={
+                      !tidalAuthCode.trim() ||
+                      isAuthenticatingTidal ||
+                      !tidalCodeVerifier
+                    }
+                  >
+                    {isAuthenticatingTidal
+                      ? 'Authenticating...'
+                      : 'Complete Authentication'}
+                  </Button>
+                </DialogFooter>
+              </>
+            ) : (
+              <div className="text-center py-4">
+                <p className="text-sm text-muted-foreground">
+                  Failed to get authorization. Please try again.
+                </p>
+              </div>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
     </div>
