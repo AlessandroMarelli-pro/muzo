@@ -37,7 +37,7 @@ export class YoutubeService implements OnModuleInit {
   }
 
   /**
-   * Initialize on module startup - validate/refresh tokens if available
+   * Initialize on module startup - check for tokens (no API calls to save quota)
    */
   async onModuleInit() {
     const defaultUserId = this.configService.get<string>(
@@ -46,21 +46,46 @@ export class YoutubeService implements OnModuleInit {
     );
 
     try {
-      await this.validateAndRefreshTokens(defaultUserId);
-      this.logger.log(
-        `YouTube authentication validated for user: ${defaultUserId}`,
-      );
-    } catch (error) {
-      // Don't fail startup if authentication fails - just log a warning
-      if (error instanceof UnauthorizedException) {
-        this.logger.warn(
-          `YouTube not authenticated for user ${defaultUserId}. Sync will require manual authentication.`,
+      // Just check if tokens exist, don't validate with API call (saves quota)
+      const tokenRecord = await this.prisma.thirdPartyOAuthToken.findUnique({
+        where: {
+          userId_provider: {
+            userId: defaultUserId,
+            provider: 'youtube',
+          },
+        },
+      });
+
+      if (tokenRecord) {
+        // Check if token needs refresh (but don't call API yet)
+        const needsRefresh =
+          tokenRecord.expiresAt &&
+          tokenRecord.expiresAt.getTime() < Date.now() + 5 * 60 * 1000;
+
+        if (needsRefresh && tokenRecord.refreshToken) {
+          // Silently refresh in background (no validation API call)
+          this.refreshAccessToken(
+            defaultUserId,
+            tokenRecord.refreshToken,
+          ).catch((error) => {
+            this.logger.warn(
+              `Failed to refresh YouTube token on startup: ${error.message}`,
+            );
+          });
+        }
+
+        this.logger.log(
+          `YouTube tokens found for user: ${defaultUserId} (will validate on first use)`,
         );
       } else {
         this.logger.warn(
-          `Failed to validate YouTube tokens on startup: ${error.message}`,
+          `YouTube not authenticated for user ${defaultUserId}. Sync will require manual authentication.`,
         );
       }
+    } catch (error) {
+      this.logger.warn(
+        `Failed to check YouTube tokens on startup: ${error.message}`,
+      );
     }
   }
 
@@ -328,7 +353,14 @@ export class YoutubeService implements OnModuleInit {
       auth: this.oauth2Client,
     });
 
+    this.logger.debug(
+      `YouTube API: Searching for "${query}" (2 API calls: search.list + videos.list)`,
+    );
+
     try {
+      // Optimize: Get both search results and video details in one call by including contentDetails in search
+      // However, search.list doesn't support contentDetails, so we still need videos.list
+      // But we can optimize by requesting only what we need
       const response = await youtube.search.list({
         part: ['snippet', 'id'],
         q: query,
@@ -337,7 +369,7 @@ export class YoutubeService implements OnModuleInit {
         order: 'relevance',
       });
 
-      if (!response.data.items) {
+      if (!response.data.items || response.data.items.length === 0) {
         return [];
       }
 
@@ -350,10 +382,10 @@ export class YoutubeService implements OnModuleInit {
         return [];
       }
 
-      // Get video details including duration
+      // Get video details including duration - batch request for all videos at once
       const videoDetails = await youtube.videos.list({
         part: ['contentDetails', 'snippet'],
-        id: videoIds,
+        id: videoIds, // Batch request - all videos in one call
       });
 
       return (videoDetails.data.items || []).map((item) => {
@@ -545,8 +577,14 @@ export class YoutubeService implements OnModuleInit {
       auth: this.oauth2Client,
     });
 
+    this.logger.log(
+      `YouTube API: Adding ${videoIds.length} videos to playlist (${videoIds.length} API calls: playlistItems.insert)`,
+    );
+
     // Add videos one by one (YouTube API limitation)
-    for (const videoId of videoIds) {
+    // Add small delay between requests to avoid rate limiting
+    for (let i = 0; i < videoIds.length; i++) {
+      const videoId = videoIds[i];
       try {
         await youtube.playlistItems.insert({
           part: ['snippet'],
@@ -560,6 +598,11 @@ export class YoutubeService implements OnModuleInit {
             },
           },
         });
+
+        // Small delay between requests (except for last one) to avoid rate limits
+        if (i < videoIds.length - 1) {
+          await new Promise((resolve) => setTimeout(resolve, 100)); // 100ms delay
+        }
       } catch (error) {
         this.logger.warn(
           `Failed to add video ${videoId} to playlist: ${error.message}`,
