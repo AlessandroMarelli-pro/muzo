@@ -8,21 +8,30 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   useDeletePlaylist,
   usePlaylist,
+  useSpotifyAuth,
   useTidalAuth,
   useYouTubeAuth,
 } from '@/services/playlist-hooks';
 import {
   ArrowLeft,
   AudioWaveform,
+  ChevronDown,
   Clock,
   Disc3,
   HeartPlus,
   Music,
+  Music2,
   Pause,
   Play,
   Plus,
@@ -68,6 +77,13 @@ export function PlaylistDetail({ id, onBack }: PlaylistDetailProps) {
     null,
   );
   const [tidalAuthCode, setTidalAuthCode] = useState('');
+  const [isSpotifyAuthDialogOpen, setIsSpotifyAuthDialogOpen] = useState(false);
+  // PKCE flow
+  const [spotifyAuthUrl, setSpotifyAuthUrl] = useState<string | null>(null);
+  const [spotifyCodeVerifier, setSpotifyCodeVerifier] = useState<string | null>(
+    null,
+  );
+  const [spotifyAuthCode, setSpotifyAuthCode] = useState('');
   const {
     playlist,
     loading,
@@ -77,6 +93,8 @@ export function PlaylistDetail({ id, onBack }: PlaylistDetailProps) {
     isSyncingToYouTube,
     syncToTidal,
     isSyncingToTidal,
+    syncToSpotify,
+    isSyncingToSpotify,
   } = usePlaylist(id, 'default');
   const { setQueue } = useQueue();
   const deletePlaylistMutation = useDeletePlaylist('default');
@@ -88,6 +106,12 @@ export function PlaylistDetail({ id, onBack }: PlaylistDetailProps) {
     isGettingAuthUrl: isGettingTidalAuthUrl,
     isAuthenticating: isAuthenticatingTidal,
   } = useTidalAuth('default');
+  const {
+    getAuthUrl: getSpotifyAuthUrl,
+    authenticate: authenticateSpotify,
+    isGettingAuthUrl: isGettingSpotifyAuthUrl,
+    isAuthenticating: isAuthenticatingSpotify,
+  } = useSpotifyAuth('default');
 
   const getGenreCounts = () => {
     if (!playlist) return {};
@@ -358,6 +382,110 @@ export function PlaylistDetail({ id, onBack }: PlaylistDetailProps) {
     }
   };
 
+  const handleSyncToSpotify = async () => {
+    try {
+      const result = await syncToSpotify();
+      if (result.success) {
+        alert(
+          `Successfully synced playlist to Spotify!\n\nSynced: ${result.syncedCount} tracks\nSkipped: ${result.skippedCount} tracks${
+            result.playlistUrl ? `\n\nPlaylist URL: ${result.playlistUrl}` : ''
+          }${
+            result.errors.length > 0
+              ? `\n\nErrors:\n${result.errors.join('\n')}`
+              : ''
+          }`,
+        );
+        if (result.playlistUrl) {
+          window.open(result.playlistUrl, '_blank');
+        }
+      } else {
+        // Check if any error is an authentication error
+        const errorMessages = result.errors.join(' ').toLowerCase();
+        console.log('Spotify sync errors:', result.errors);
+
+        const isAuthError =
+          errorMessages.includes('not authenticated') ||
+          errorMessages.includes('unauthorized') ||
+          errorMessages.includes('authorize') ||
+          errorMessages.includes('authentication') ||
+          errorMessages.includes('spotify not authenticated') ||
+          errorMessages.includes('please authorize');
+
+        if (isAuthError) {
+          // Trigger authentication flow
+          console.log(
+            'Authentication error detected, starting Spotify auth flow...',
+          );
+          await handleStartSpotifyAuth();
+        } else {
+          alert(
+            `Failed to sync playlist to Spotify: ${result.errors.join(', ')}`,
+          );
+        }
+      }
+    } catch (error: any) {
+      console.error('Failed to sync playlist to Spotify:', error);
+
+      // Check if it's an authentication error
+      const errorMessage =
+        error?.message ||
+        error?.response?.errors?.[0]?.message ||
+        error?.errors?.[0]?.message ||
+        error?.toString() ||
+        JSON.stringify(error);
+
+      const isAuthError =
+        errorMessage.includes('not authenticated') ||
+        errorMessage.includes('Unauthorized') ||
+        errorMessage.includes('authorize') ||
+        errorMessage.includes('authentication') ||
+        errorMessage.includes('Spotify not authenticated');
+
+      if (isAuthError) {
+        // Trigger authentication flow
+        console.log(
+          'Authentication error detected, starting Spotify auth flow...',
+        );
+        try {
+          await handleStartSpotifyAuth();
+        } catch (authError: any) {
+          console.error('Failed to start Spotify auth:', authError);
+          alert(
+            `Failed to start authentication: ${authError?.message || 'Unknown error'}`,
+          );
+        }
+      } else {
+        alert(`Failed to sync playlist to Spotify: ${errorMessage}`);
+      }
+    }
+  };
+
+  const handleStartSpotifyAuth = async () => {
+    try {
+      console.log('Getting Spotify auth URL (PKCE flow)...');
+      const { authUrl: url, codeVerifier } = await getSpotifyAuthUrl();
+      console.log('Spotify auth URL received:', url);
+
+      if (!url || !codeVerifier) {
+        throw new Error('No authorization URL or code verifier received');
+      }
+
+      setSpotifyAuthUrl(url);
+      setSpotifyCodeVerifier(codeVerifier);
+      setIsSpotifyAuthDialogOpen(true);
+      console.log('Spotify auth dialog opened (PKCE flow)');
+    } catch (error: any) {
+      console.error('Failed to get Spotify authorization:', error);
+      const errorMsg =
+        error?.message ||
+        error?.response?.errors?.[0]?.message ||
+        'Unknown error';
+      alert(
+        `Failed to get authorization: ${errorMsg}. Please check your backend configuration.`,
+      );
+    }
+  };
+
   if (loading) {
     return (
       <div className="space-y-6">
@@ -454,24 +582,47 @@ export function PlaylistDetail({ id, onBack }: PlaylistDetailProps) {
               </>
             )}
           </Button>
-          <Button
-            onClick={handleSyncToYouTube}
-            disabled={isSyncingToYouTube || !playlist}
-            size="sm"
-            variant="ghost"
-          >
-            <Youtube className="h-4 w-4 " />
-            {isSyncingToYouTube ? 'Syncing...' : 'Sync to YouTube'}
-          </Button>
-          <Button
-            onClick={handleSyncToTidal}
-            disabled={isSyncingToTidal || !playlist}
-            size="sm"
-            variant="ghost"
-          >
-            <Music className="h-4 w-4 " />
-            {isSyncingToTidal ? 'Syncing...' : 'Sync to TIDAL'}
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                size="sm"
+                variant="ghost"
+                disabled={
+                  isSyncingToYouTube ||
+                  isSyncingToTidal ||
+                  isSyncingToSpotify ||
+                  !playlist
+                }
+              >
+                <Music2 className="h-4 w-4 mr-2" />
+                Sync
+                <ChevronDown className="h-4 w-4 ml-2" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem
+                onClick={handleSyncToYouTube}
+                disabled={isSyncingToYouTube || !playlist}
+              >
+                <Youtube className="h-4 w-4 mr-2" />
+                {isSyncingToYouTube ? 'Syncing...' : 'Sync to YouTube'}
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={handleSyncToTidal}
+                disabled={isSyncingToTidal || !playlist}
+              >
+                <Music className="h-4 w-4 mr-2" />
+                {isSyncingToTidal ? 'Syncing...' : 'Sync to TIDAL'}
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={handleSyncToSpotify}
+                disabled={isSyncingToSpotify || !playlist}
+              >
+                <Music2 className="h-4 w-4 mr-2" />
+                {isSyncingToSpotify ? 'Syncing...' : 'Sync to Spotify'}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <Button
             onClick={handleDelete}
             disabled={isDeleting}
@@ -797,6 +948,190 @@ export function PlaylistDetail({ id, onBack }: PlaylistDetailProps) {
                     }
                   >
                     {isAuthenticatingTidal
+                      ? 'Authenticating...'
+                      : 'Complete Authentication'}
+                  </Button>
+                </DialogFooter>
+              </>
+            ) : (
+              <div className="text-center py-4">
+                <p className="text-sm text-muted-foreground">
+                  Failed to get authorization. Please try again.
+                </p>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Spotify Authentication Dialog - PKCE Flow */}
+      <Dialog
+        open={isSpotifyAuthDialogOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            setIsSpotifyAuthDialogOpen(false);
+            setSpotifyAuthUrl(null);
+            setSpotifyCodeVerifier(null);
+            setSpotifyAuthCode('');
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Authenticate with Spotify</DialogTitle>
+            <DialogDescription>
+              To sync playlists to Spotify, you need to authenticate first.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            {isGettingSpotifyAuthUrl ? (
+              <div className="text-center py-4">
+                <p className="text-sm text-muted-foreground">
+                  Getting authorization URL...
+                </p>
+              </div>
+            ) : spotifyAuthUrl ? (
+              <>
+                <div>
+                  <p className="text-sm text-muted-foreground mb-2">
+                    1. Click the button below to open Spotify authorization page
+                  </p>
+                  <Button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      console.log('Opening Spotify auth URL:', spotifyAuthUrl);
+                      const newWindow = window.open(
+                        spotifyAuthUrl,
+                        '_blank',
+                        'noopener,noreferrer',
+                      );
+                      if (!newWindow || newWindow.closed) {
+                        alert(
+                          'Popup blocked. Please click the link below to open the authorization page.',
+                        );
+                      }
+                    }}
+                    className="w-full"
+                    variant="outline"
+                  >
+                    <Music2 className="h-4 w-4 mr-2" />
+                    Open Spotify Authorization
+                  </Button>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Or{' '}
+                    <a
+                      href={spotifyAuthUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-primary underline hover:no-underline"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        window.open(
+                          spotifyAuthUrl,
+                          '_blank',
+                          'noopener,noreferrer',
+                        );
+                      }}
+                    >
+                      click here to open in a new tab
+                    </a>
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground mb-2">
+                    2. After authorizing, Spotify will redirect you to a page.
+                    Look at the URL in your browser's address bar and copy the{' '}
+                    <code className="text-xs bg-muted px-1 py-0.5 rounded">
+                      code
+                    </code>{' '}
+                    parameter from the URL.
+                  </p>
+                  <p className="text-xs text-muted-foreground mb-2">
+                    The redirect URL will look like:{' '}
+                    <code className="text-xs bg-muted px-1 py-0.5 rounded break-all">
+                      http://localhost:3000?code=...
+                    </code>
+                  </p>
+                  <p className="text-xs text-muted-foreground mb-2">
+                    Copy everything after{' '}
+                    <code className="text-xs bg-muted px-1 py-0.5 rounded">
+                      code=
+                    </code>{' '}
+                    (until the next{' '}
+                    <code className="text-xs bg-muted px-1 py-0.5 rounded">
+                      &
+                    </code>{' '}
+                    or end of URL) and paste it below.
+                  </p>
+                  <Input
+                    placeholder="Enter authorization code (from ?code= parameter in the redirect URL)"
+                    value={spotifyAuthCode}
+                    onChange={(e) => setSpotifyAuthCode(e.target.value)}
+                    disabled={isAuthenticatingSpotify}
+                  />
+                </div>
+                <DialogFooter>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setIsSpotifyAuthDialogOpen(false);
+                      setSpotifyAuthCode('');
+                      setSpotifyAuthUrl(null);
+                      setSpotifyCodeVerifier(null);
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={async () => {
+                      if (!spotifyAuthCode.trim()) {
+                        alert('Please enter the authorization code');
+                        return;
+                      }
+
+                      if (!spotifyCodeVerifier) {
+                        alert(
+                          'Missing code verifier. Please start the authentication process again.',
+                        );
+                        return;
+                      }
+
+                      try {
+                        const result = await authenticateSpotify({
+                          code: spotifyAuthCode,
+                          codeVerifier: spotifyCodeVerifier,
+                        });
+                        if (result.success) {
+                          setIsSpotifyAuthDialogOpen(false);
+                          setSpotifyAuthCode('');
+                          setSpotifyAuthUrl(null);
+                          setSpotifyCodeVerifier(null);
+                          alert(
+                            'Successfully authenticated with Spotify! Retrying sync...',
+                          );
+                          // Retry the sync
+                          setTimeout(() => {
+                            handleSyncToSpotify();
+                          }, 500);
+                        } else {
+                          alert(
+                            `Authentication failed: ${result.message || 'Unknown error'}`,
+                          );
+                        }
+                      } catch (error: any) {
+                        console.error('Failed to authenticate:', error);
+                        alert(
+                          `Failed to authenticate: ${error.message || 'Unknown error'}`,
+                        );
+                      }
+                    }}
+                    disabled={
+                      !spotifyAuthCode.trim() ||
+                      isAuthenticatingSpotify ||
+                      !spotifyCodeVerifier
+                    }
+                  >
+                    {isAuthenticatingSpotify
                       ? 'Authenticating...'
                       : 'Complete Authentication'}
                   </Button>

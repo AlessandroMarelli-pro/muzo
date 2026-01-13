@@ -372,6 +372,7 @@ type MusicTrackListPaginated {
 
 type Mutation {
   addTrackToPlaylist(input: AddTrackToPlaylistInput!, playlistId: ID!, userId: String!): PlaylistTrack!
+  authenticateSpotify(code: String!, codeVerifier: String!, userId: String!): SpotifyAuthResult!
   authenticateTidal(code: String!, codeVerifier: String!, userId: String!): TidalAuthResult!
   authenticateYouTube(code: String!, userId: String!): YouTubeAuthResult!
   bangerTrack(trackId: ID!): SimpleMusicTrack!
@@ -400,6 +401,7 @@ type Mutation {
   startLibraryScan(incremental: Boolean, libraryId: ID!): LibraryScanResult!
   stopLibraryScan(libraryId: ID!): Boolean!
   stopTrack(trackId: String!): Boolean!
+  syncPlaylistToSpotify(playlistId: ID!, userId: String!): SyncResult!
   syncPlaylistToTidal(playlistId: ID!, userId: String!): SyncResult!
   syncPlaylistToYouTube(playlistId: ID!, userId: String!): SyncResult!
   toggleFavorite(trackId: String!): MusicTrack!
@@ -517,6 +519,7 @@ type Query {
   getRealTimeAnalysis(currentTime: Float!, trackId: String!): RealTimeAnalysis!
   getSavedFilter(id: ID!): SavedFilter
   getSavedFilters: [SavedFilter!]!
+  getSpotifyAuthUrl: SpotifyAuthUrl!
   getStaticFilterOptions: StaticFilterOptions!
   getTidalAuthUrl: TidalAuthUrl!
   getWaveformData(trackId: String!): [Float!]!
@@ -611,6 +614,16 @@ type SimpleMusicTrack {
   updatedAt: DateTime
   valenceMood: String
   vocalsDescriptions: String
+}
+
+type SpotifyAuthResult {
+  message: String
+  success: Boolean!
+}
+
+type SpotifyAuthUrl {
+  authUrl: String!
+  codeVerifier: String!
 }
 
 type StaticFilterOptions {

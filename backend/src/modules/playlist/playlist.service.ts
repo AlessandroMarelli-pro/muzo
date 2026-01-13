@@ -3,8 +3,8 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { FilterService } from '../filter/filter.service';
 import { PrismaService } from '../../shared/services/prisma.service';
+import { FilterService } from '../filter/filter.service';
 import {
   AddTrackToPlaylistDto,
   CreatePlaylistDto,
@@ -35,8 +35,7 @@ export class PlaylistService {
         filters.atmospheres?.length ||
         filters.libraryId?.length ||
         (filters.tempo &&
-          (filters.tempo.min !== undefined ||
-            filters.tempo.max !== undefined)))
+          (filters.tempo.min !== undefined || filters.tempo.max !== undefined)))
     ) {
       // Build filter criteria for FilterService
       const filterCriteria: any = {
@@ -55,9 +54,8 @@ export class PlaylistService {
       };
 
       // Build Prisma where clause using FilterService
-      const where = await this.filterService.buildPrismaWhereClause(
-        filterCriteria,
-      );
+      const where =
+        await this.filterService.buildPrismaWhereClause(filterCriteria);
 
       // Find matching tracks
       const matchingTracks = await this.prisma.musicTrack.findMany({
@@ -565,7 +563,7 @@ export class PlaylistService {
               },
             },
           },
-          orderBy: { position: 'asc' },
+          orderBy: { position: 'desc' },
         },
       },
     });
@@ -819,8 +817,16 @@ export class PlaylistService {
     for (const playlistTrack of playlist.tracks) {
       const track = playlistTrack.track;
       const duration = Math.floor(track.duration || 0);
-      const artist = track.originalArtist || track.aiArtist || track.userArtist || 'Unknown Artist';
-      const title = track.originalTitle || track.aiTitle || track.userTitle || 'Unknown Title';
+      const artist =
+        track.originalArtist ||
+        track.aiArtist ||
+        track.userArtist ||
+        'Unknown Artist';
+      const title =
+        track.originalTitle ||
+        track.aiTitle ||
+        track.userTitle ||
+        'Unknown Title';
       const displayName = `${artist} - ${title}`;
 
       // Add EXTINF line with duration and display name

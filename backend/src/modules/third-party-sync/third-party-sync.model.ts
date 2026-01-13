@@ -53,3 +53,21 @@ export class TidalAuthResult {
   @Field({ nullable: true })
   message?: string;
 }
+
+@ObjectType()
+export class SpotifyAuthUrl {
+  @Field()
+  authUrl: string;
+
+  @Field()
+  codeVerifier: string; // Required for PKCE flow
+}
+
+@ObjectType()
+export class SpotifyAuthResult {
+  @Field()
+  success: boolean;
+
+  @Field({ nullable: true })
+  message?: string;
+}

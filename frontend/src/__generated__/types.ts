@@ -408,6 +408,7 @@ export type MusicTrackListPaginated = {
 export type Mutation = {
   __typename?: 'Mutation';
   addTrackToPlaylist: PlaylistTrack;
+  authenticateSpotify: SpotifyAuthResult;
   authenticateTidal: TidalAuthResult;
   authenticateYouTube: YouTubeAuthResult;
   bangerTrack: SimpleMusicTrack;
@@ -436,6 +437,7 @@ export type Mutation = {
   startLibraryScan: LibraryScanResult;
   stopLibraryScan: Scalars['Boolean']['output'];
   stopTrack: Scalars['Boolean']['output'];
+  syncPlaylistToSpotify: SyncResult;
   syncPlaylistToTidal: SyncResult;
   syncPlaylistToYouTube: SyncResult;
   toggleFavorite: MusicTrack;
@@ -449,6 +451,13 @@ export type Mutation = {
 export type MutationAddTrackToPlaylistArgs = {
   input: AddTrackToPlaylistInput;
   playlistId: Scalars['ID']['input'];
+  userId: Scalars['String']['input'];
+};
+
+
+export type MutationAuthenticateSpotifyArgs = {
+  code: Scalars['String']['input'];
+  codeVerifier: Scalars['String']['input'];
   userId: Scalars['String']['input'];
 };
 
@@ -600,6 +609,12 @@ export type MutationStopLibraryScanArgs = {
 
 export type MutationStopTrackArgs = {
   trackId: Scalars['String']['input'];
+};
+
+
+export type MutationSyncPlaylistToSpotifyArgs = {
+  playlistId: Scalars['ID']['input'];
+  userId: Scalars['String']['input'];
 };
 
 
@@ -759,6 +774,7 @@ export type Query = {
   getRealTimeAnalysis: RealTimeAnalysis;
   getSavedFilter?: Maybe<SavedFilter>;
   getSavedFilters: Array<SavedFilter>;
+  getSpotifyAuthUrl: SpotifyAuthUrl;
   getStaticFilterOptions: StaticFilterOptions;
   getTidalAuthUrl: TidalAuthUrl;
   getWaveformData: Array<Scalars['Float']['output']>;
@@ -1012,6 +1028,18 @@ export type SimpleMusicTrack = {
   updatedAt?: Maybe<Scalars['DateTime']['output']>;
   valenceMood?: Maybe<Scalars['String']['output']>;
   vocalsDescriptions?: Maybe<Scalars['String']['output']>;
+};
+
+export type SpotifyAuthResult = {
+  __typename?: 'SpotifyAuthResult';
+  message?: Maybe<Scalars['String']['output']>;
+  success: Scalars['Boolean']['output'];
+};
+
+export type SpotifyAuthUrl = {
+  __typename?: 'SpotifyAuthUrl';
+  authUrl: Scalars['String']['output'];
+  codeVerifier: Scalars['String']['output'];
 };
 
 export type StaticFilterOptions = {
@@ -1547,6 +1575,28 @@ export type AuthenticateTidalMutationVariables = Exact<{
 
 
 export type AuthenticateTidalMutation = { __typename?: 'Mutation', authenticateTidal: { __typename?: 'TidalAuthResult', success: boolean, message?: string | null } };
+
+export type SyncPlaylistToSpotifyMutationVariables = Exact<{
+  playlistId: Scalars['ID']['input'];
+  userId: Scalars['String']['input'];
+}>;
+
+
+export type SyncPlaylistToSpotifyMutation = { __typename?: 'Mutation', syncPlaylistToSpotify: { __typename?: 'SyncResult', success: boolean, playlistId?: string | null, playlistUrl?: string | null, syncedCount: number, skippedCount: number, errors: Array<string> } };
+
+export type GetSpotifyAuthUrlQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type GetSpotifyAuthUrlQuery = { __typename?: 'Query', getSpotifyAuthUrl: { __typename?: 'SpotifyAuthUrl', authUrl: string, codeVerifier: string } };
+
+export type AuthenticateSpotifyMutationVariables = Exact<{
+  code: Scalars['String']['input'];
+  codeVerifier: Scalars['String']['input'];
+  userId: Scalars['String']['input'];
+}>;
+
+
+export type AuthenticateSpotifyMutation = { __typename?: 'Mutation', authenticateSpotify: { __typename?: 'SpotifyAuthResult', success: boolean, message?: string | null } };
 
 export type AddTrackToPlaylistMutationVariables = Exact<{
   playlistId: Scalars['ID']['input'];

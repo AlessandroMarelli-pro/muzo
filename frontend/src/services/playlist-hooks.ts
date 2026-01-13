@@ -254,6 +254,45 @@ const AUTHENTICATE_TIDAL = gql`
   }
 `;
 
+const SYNC_PLAYLIST_TO_SPOTIFY = gql`
+  mutation SyncPlaylistToSpotify($playlistId: ID!, $userId: String!) {
+    syncPlaylistToSpotify(playlistId: $playlistId, userId: $userId) {
+      success
+      playlistId
+      playlistUrl
+      syncedCount
+      skippedCount
+      errors
+    }
+  }
+`;
+
+const GET_SPOTIFY_AUTH_URL = gql`
+  query GetSpotifyAuthUrl {
+    getSpotifyAuthUrl {
+      authUrl
+      codeVerifier
+    }
+  }
+`;
+
+const AUTHENTICATE_SPOTIFY = gql`
+  mutation AuthenticateSpotify(
+    $code: String!
+    $codeVerifier: String!
+    $userId: String!
+  ) {
+    authenticateSpotify(
+      code: $code
+      codeVerifier: $codeVerifier
+      userId: $userId
+    ) {
+      success
+      message
+    }
+  }
+`;
+
 const ADD_TRACK_TO_PLAYLIST = gql`
   ${simpleMusicTrackFragment}
   mutation AddTrackToPlaylist(
@@ -455,6 +494,37 @@ const authenticateTidal = async (
   return data.authenticateTidal;
 };
 
+const syncPlaylistToSpotify = async (
+  playlistId: string,
+  userId: string = 'default',
+): Promise<SyncResult> => {
+  const data = await graffleClient.request<{
+    syncPlaylistToSpotify: SyncResult;
+  }>(SYNC_PLAYLIST_TO_SPOTIFY, { playlistId, userId });
+  return data.syncPlaylistToSpotify;
+};
+
+const getSpotifyAuthUrl = async (): Promise<{
+  authUrl: string;
+  codeVerifier: string;
+}> => {
+  const data = await graffleClient.request<{
+    getSpotifyAuthUrl: { authUrl: string; codeVerifier: string };
+  }>(GET_SPOTIFY_AUTH_URL);
+  return data.getSpotifyAuthUrl;
+};
+
+const authenticateSpotify = async (
+  code: string,
+  codeVerifier: string,
+  userId: string = 'default',
+): Promise<{ success: boolean; message?: string }> => {
+  const data = await graffleClient.request<{
+    authenticateSpotify: { success: boolean; message?: string };
+  }>(AUTHENTICATE_SPOTIFY, { code, codeVerifier, userId });
+  return data.authenticateSpotify;
+};
+
 const addTrackToPlaylist = async (
   playlistId: string,
   input: AddTrackToPlaylistInput,
@@ -601,6 +671,14 @@ export function usePlaylist(id: string, userId: string = 'default') {
     },
   });
 
+  const syncToSpotifyMutation = useMutation({
+    mutationFn: () => syncPlaylistToSpotify(id, userId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['playlists'] });
+      queryClient.invalidateQueries({ queryKey: ['playlist', id] });
+    },
+  });
+
   return {
     playlist,
     loading,
@@ -613,6 +691,9 @@ export function usePlaylist(id: string, userId: string = 'default') {
     syncToTidal: syncToTidalMutation.mutateAsync,
     isSyncingToTidal: syncToTidalMutation.isPending,
     syncToTidalError: syncToTidalMutation.error,
+    syncToSpotify: syncToSpotifyMutation.mutateAsync,
+    isSyncingToSpotify: syncToSpotifyMutation.isPending,
+    syncToSpotifyError: syncToSpotifyMutation.error,
   };
 }
 
@@ -647,6 +728,30 @@ export function useTidalAuth(userId: string = 'default') {
       code: string;
       codeVerifier: string;
     }) => authenticateTidal(code, codeVerifier, userId),
+  });
+
+  return {
+    getAuthUrl: getAuthUrlMutation.mutateAsync,
+    authenticate: authenticateMutation.mutateAsync,
+    isGettingAuthUrl: getAuthUrlMutation.isPending,
+    isAuthenticating: authenticateMutation.isPending,
+    authError: authenticateMutation.error,
+  };
+}
+
+export function useSpotifyAuth(userId: string = 'default') {
+  const getAuthUrlMutation = useMutation({
+    mutationFn: getSpotifyAuthUrl,
+  });
+
+  const authenticateMutation = useMutation({
+    mutationFn: ({
+      code,
+      codeVerifier,
+    }: {
+      code: string;
+      codeVerifier: string;
+    }) => authenticateSpotify(code, codeVerifier, userId),
   });
 
   return {

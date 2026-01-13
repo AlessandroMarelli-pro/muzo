@@ -1,6 +1,8 @@
 import { Args, ID, Mutation, Query, Resolver } from '@nestjs/graphql';
 import {
   SyncResult,
+  SpotifyAuthResult,
+  SpotifyAuthUrl,
   TidalAuthResult,
   TidalAuthUrl,
   YouTubeAuthResult,
@@ -82,5 +84,44 @@ export class ThirdPartySyncResolver {
     @Args('userId') userId: string,
   ): Promise<SyncResult> {
     return this.thirdPartySyncService.syncPlaylistToTidal(playlistId, userId);
+  }
+
+  @Query(() => SpotifyAuthUrl)
+  getSpotifyAuthUrl(): SpotifyAuthUrl {
+    const { authUrl, codeVerifier } =
+      this.thirdPartySyncService.getSpotifyAuthUrl();
+    return { authUrl, codeVerifier };
+  }
+
+  @Mutation(() => SpotifyAuthResult)
+  async authenticateSpotify(
+    @Args('code') code: string,
+    @Args('codeVerifier') codeVerifier: string,
+    @Args('userId') userId: string,
+  ): Promise<SpotifyAuthResult> {
+    try {
+      await this.thirdPartySyncService.exchangeSpotifyCode(
+        code,
+        codeVerifier,
+        userId,
+      );
+      return {
+        success: true,
+        message: 'Successfully authenticated with Spotify',
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: error.message || 'Failed to authenticate with Spotify',
+      };
+    }
+  }
+
+  @Mutation(() => SyncResult)
+  async syncPlaylistToSpotify(
+    @Args('playlistId', { type: () => ID }) playlistId: string,
+    @Args('userId') userId: string,
+  ): Promise<SyncResult> {
+    return this.thirdPartySyncService.syncPlaylistToSpotify(playlistId, userId);
   }
 }

@@ -7,6 +7,7 @@ import { ThirdPartySyncResolver } from './third-party-sync.resolver';
 import { ThirdPartySyncService } from './third-party-sync.service';
 import { YoutubeService } from './services/youtube.service';
 import { TidalService } from './services/tidal.service';
+import { SpotifyService } from './services/spotify.service';
 import { Id3ReaderService } from './utils/id3-reader.service';
 
 @Module({
@@ -17,6 +18,7 @@ import { Id3ReaderService } from './utils/id3-reader.service';
     ThirdPartySyncResolver,
     YoutubeService,
     TidalService,
+    SpotifyService,
     Id3ReaderService,
     PrismaService,
   ],
