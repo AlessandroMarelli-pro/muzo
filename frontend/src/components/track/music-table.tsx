@@ -24,7 +24,6 @@ import {
   useCurrentTrack,
 } from '@/contexts/audio-player-context';
 import { useDataTable } from '@/hooks/use-data-table';
-import { AudioPlayerActions } from '@/hooks/useAudioPlayer';
 import { StaticFilterOptionsData } from '@/hooks/useFilterOptions';
 import { useNavigate } from '@tanstack/react-router';
 import { format } from 'date-fns';
@@ -33,8 +32,6 @@ interface MusicTableProps {
   data: SimpleMusicTrack[];
   pageCount: number;
   onAddToQueue?: (tracks: SimpleMusicTrack[]) => void;
-  setCurrentTrack: (track: SimpleMusicTrack) => void;
-  actions: AudioPlayerActions;
   isLoading?: boolean;
   staticFilterOptions: StaticFilterOptionsData;
   initialPageSize?: number;

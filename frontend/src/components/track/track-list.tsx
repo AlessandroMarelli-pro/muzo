@@ -5,7 +5,6 @@ import { getSortingStateParser } from '@/lib/parsers';
 import { AnalysisStatus, useTracksList } from '@/services/api-hooks';
 import { useQueryState } from 'nuqs';
 import React from 'react';
-import { Loading } from '../loading';
 import { useFilterQueryParams } from './filter-qparams-hook';
 import { MusicTable } from './music-table';
 
@@ -84,9 +83,6 @@ export const TrackList: React.FC<TrackListProps> = ({ viewMode = 'grid' }) => {
       arousalMood: 'arousalMood',
       valenceMood: 'valenceMood',
       libraryId: 'libraryId',
-      // Note: genres and subgenres are arrays, so direct sorting by these fields is not supported
-      // genre: 'genres',
-      // subgenre: 'subgenres',
       favorite: 'isFavorite',
       lastPlayed: 'lastPlayedAt',
       lastScannedAt: 'lastScannedAt',
@@ -125,33 +121,36 @@ export const TrackList: React.FC<TrackListProps> = ({ viewMode = 'grid' }) => {
   const { data, isLoading } = useTracksList(queryParams);
 
   if (staticFilterOptions.isLoading || isLoading) {
-    return <Loading />;
-  }
-  const tracks = data?.tracks || [];
-  const totalTracks = data?.total || 0;
-  const totalPages = Math.ceil(totalTracks / limit);
-  setQueue(tracks);
-  return (
-    <div className="p-4 space-y-4 flex flex-col z-0">
-      {/* Header */}
-
-      {/* Track Grid/List */}
-      <div
-        className={
-          viewMode === 'grid' ? 'flex flex-wrap gap-2 pb-16' : 'space-y-2'
-        }
-      >
+    return (
+      <div className="p-4 space-y-4 flex flex-col" key="loading-track-list">
         <MusicTable
-          data={tracks}
-          pageCount={totalPages}
+          data={[]}
+          pageCount={0}
           onAddToQueue={(tracks: SimpleMusicTrack[]) =>
             console.log('Added to queue:', tracks)
           }
-          isLoading={isLoading}
+          isLoading
           staticFilterOptions={staticFilterOptions}
           initialPageSize={limit}
         />
       </div>
+    );
+  }
+  const tracks = data?.tracks || [];
+  const totalTracks = data?.total || 0;
+  const totalPages = Math.ceil(totalTracks / limit);
+  return (
+    <div className="p-4 space-y-4 flex flex-col z-0" key="track-list">
+      <MusicTable
+        data={tracks}
+        pageCount={totalPages}
+        onAddToQueue={(tracks: SimpleMusicTrack[]) =>
+          console.log('Added to queue:', tracks)
+        }
+        isLoading={isLoading}
+        staticFilterOptions={staticFilterOptions}
+        initialPageSize={limit}
+      />
     </div>
   );
 };
