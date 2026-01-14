@@ -190,31 +190,33 @@ export class RecommendationService {
       playlistFeatures.genres.length > 0
         ? {
             bool: {
-              should: [
-                {
-                  terms: {
-                    genres: playlistFeatures.genres,
+              should: playlistFeatures.genres.map((genre) => ({
+                term: {
+                  genres: {
+                    value: genre,
                     boost: weights.genreSimilarity * 3.0,
                   },
                 },
-              ],
+              })),
+              minimum_should_match: playlistFeatures.genres.length - 1,
             },
           }
         : null;
     const shouldSubgenre =
       weights.genreSimilarity > 0 &&
       playlistFeatures.subgenres &&
-      playlistFeatures.subgenres.length > 0
+      playlistFeatures.subgenres.length >= 2
         ? {
             bool: {
-              should: [
-                {
-                  terms: {
-                    subgenres: playlistFeatures.subgenres,
+              should: playlistFeatures.subgenres.map((subgenre) => ({
+                term: {
+                  subgenres: {
+                    value: subgenre,
                     boost: weights.genreSimilarity * 4.0,
                   },
                 },
-              ],
+              })),
+              minimum_should_match: 2, // Require at least 2 subgenres to match
             },
           }
         : null;
