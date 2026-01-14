@@ -1,7 +1,12 @@
 import { SimpleMusicTrack } from '@/__generated__/types';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+} from '@/components/ui/card';
 import {
   useAudioPlayerActions,
   useCurrentTrack,
@@ -51,7 +56,75 @@ export function DetailedTrackCard({ track, refetch }: DetailedTrackCardProps) {
 
   return (
     <Card className="w-full  border-none ">
-      <CardContent className="p-4">
+      <CardHeader className="flex flex-row justify-between items-center">
+        {/* Genre Tags */}
+        {track.genres && track.genres.length > 0 && (
+          <div className="flex ">
+            {track.genres.map((genre, index) => (
+              <Badge
+                key={index}
+                variant="outline"
+                className="capitalize border-none"
+                size="xs"
+              >
+                {genre}
+              </Badge>
+            ))}
+          </div>
+        )}
+        {/* Metadata Grid */}
+        <div className="flex flex-row gap-2">
+          <Badge
+            variant="outline"
+            className="flex items-center gap-2  "
+            size="xs"
+          >
+            <Clock size={64} />
+            <span>{formatDuration(track.duration)}</span>
+          </Badge>
+          <Badge
+            variant="outline"
+            className="flex items-center gap-2  "
+            size="xs"
+          >
+            <Activity className="w-4 h-4" />
+            <span>{track.listeningCount} plays</span>
+          </Badge>
+          <Badge
+            variant="outline"
+            className="flex items-center gap-2  "
+            size="xs"
+          >
+            <Music className="w-4 h-4" />
+            <span>{formatBPM(track.tempo || 0)} BPM</span>
+          </Badge>
+          <Badge
+            variant="outline"
+            className="flex items-center gap-2  "
+            size="xs"
+          >
+            <Zap className="w-4 h-4" />
+            <span className="capitalize">{track.arousalMood}</span>
+          </Badge>
+          <Badge
+            variant="outline"
+            className="flex items-center gap-2  "
+            size="xs"
+          >
+            <Activity className="w-4 h-4" />
+            <span className="capitalize">{track.danceabilityFeeling}</span>
+          </Badge>{' '}
+          <Badge
+            variant="outline"
+            className="flex items-center gap-2  "
+            size="xs"
+          >
+            <Activity className="w-4 h-4" />
+            <span className="capitalize">{track.valenceMood}</span>
+          </Badge>
+        </div>
+      </CardHeader>
+      <CardContent className="px-4">
         {/* Header Section */}
         <div className="flex items-start gap-6">
           {/* Album Art */}
@@ -79,112 +152,11 @@ export function DetailedTrackCard({ track, refetch }: DetailedTrackCardProps) {
           {/* Track Info */}
           <div className="flex flex-col gap-1 flex-1 min-w-0">
             <div>
-              <h1 className="text-xl font-bold text-foreground truncate capitalize">
+              <h1 className="text-lg  text-foreground truncate capitalize">
                 {track.artist} - {track.title}
               </h1>
             </div>
-            {track?.atmosphereKeywords && (
-              <div className="flex flex-wrap gap-2">
-                <span className="text-sm text-foreground min-w-18">Tags:</span>
-                {track?.atmosphereKeywords.map((tag) => (
-                  <Badge key={tag} variant="foreground" size="xs">
-                    {tag}
-                  </Badge>
-                ))}
-              </div>
-            )}
-            {/* Genre Tags */}
-            {track.genres && track.genres.length > 0 && (
-              <div className="flex gap-2 flex-wrap">
-                <span className="text-sm text-foreground min-w-18">Genre:</span>
-                {track.genres.map((genre, index) => (
-                  <Badge
-                    key={index}
-                    variant="foreground"
-                    className="capitalize"
-                    size="xs"
-                  >
-                    {genre}
-                  </Badge>
-                ))}
-              </div>
-            )}
-            {track.subgenres && track.subgenres.length > 0 && (
-              <div className="flex gap-2 flex-wrap">
-                <span className="text-sm text-foreground min-w-18">
-                  Subgenre:
-                </span>
-                {track.subgenres.map((subgenre, index) => (
-                  <Badge
-                    key={index}
-                    variant="foreground"
-                    className="capitalize"
-                    size="xs"
-                  >
-                    {subgenre}
-                  </Badge>
-                ))}
-              </div>
-            )}
-            {/* Metadata Grid */}
-            <div className="flex flex-row gap-2">
-              <span className="text-sm text-foreground min-w-18">
-                Metadata:
-              </span>
-              <Badge
-                variant="foreground"
-                className="flex items-center gap-2  "
-                size="xs"
-              >
-                <Clock size={64} />
-                <span>{formatDuration(track.duration)}</span>
-              </Badge>
-              <Badge
-                variant="foreground"
-                className="flex items-center gap-2  "
-                size="xs"
-              >
-                <Activity className="w-4 h-4" />
-                <span>{track.listeningCount} plays</span>
-              </Badge>
-              <Badge
-                variant="foreground"
-                className="flex items-center gap-2  "
-                size="xs"
-              >
-                <Music className="w-4 h-4" />
-                <span>{formatBPM(track.tempo || 0)} BPM</span>
-              </Badge>
-              <Badge
-                variant="foreground"
-                className="flex items-center gap-2  "
-                size="xs"
-              >
-                <Zap className="w-4 h-4" />
-                <span>Energy: {track.arousalMood}</span>
-              </Badge>
-              <Badge
-                variant="foreground"
-                className="flex items-center gap-2  "
-                size="xs"
-              >
-                <Activity className="w-4 h-4" />
-                <span>Dance: {track.danceabilityFeeling}</span>
-              </Badge>{' '}
-              <Badge
-                variant="foreground"
-                className="flex items-center gap-2  "
-                size="xs"
-              >
-                <Activity className="w-4 h-4" />
-                <span>Mood: {track.valenceMood}</span>
-              </Badge>
-            </div>
-            {track?.description && (
-              <div className="text-sm text-muted-foreground  ">
-                {track?.description}
-              </div>
-            )}{' '}
+
             {track?.contextBackgrounds && (
               <div className="text-sm text-muted-foreground  ">
                 {track?.contextBackgrounds}
@@ -197,7 +169,7 @@ export function DetailedTrackCard({ track, refetch }: DetailedTrackCardProps) {
             )}
           </div>
           {/* Action Buttons */}
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col items-end justify-center gap-2">
             <div className="flex gap-2">
               <Button variant="outline" size="sm" onClick={refetch}>
                 <Shuffle className="w-4 h-4" />
@@ -215,6 +187,36 @@ export function DetailedTrackCard({ track, refetch }: DetailedTrackCardProps) {
           </div>
         </div>
       </CardContent>
+      <CardFooter className="flex flex-row justify-between items-center">
+        {track.subgenres && track.subgenres.length > 0 && (
+          <div className="flex gap-2 flex-wrap">
+            {track.subgenres.map((subgenre, index) => (
+              <Badge
+                key={index}
+                variant="secondary"
+                className="capitalize"
+                size="xs"
+              >
+                {subgenre}
+              </Badge>
+            ))}
+          </div>
+        )}
+        {track?.atmosphereKeywords && (
+          <div className="flex flex-wrap gap-2">
+            {track?.atmosphereKeywords.map((tag) => (
+              <Badge
+                key={tag}
+                variant="outline"
+                size="xs"
+                className="border-none"
+              >
+                {tag}
+              </Badge>
+            ))}
+          </div>
+        )}
+      </CardFooter>
     </Card>
   );
 }

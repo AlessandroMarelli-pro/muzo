@@ -83,7 +83,7 @@ export const TrackRecommendationsCard = ({
         {recommendation.reasons.length > 0 && (
           <div className="flex flex-wrap gap-2 mt-2">
             {recommendation.reasons.slice(0, 3).map((reason, index) => (
-              <Badge key={index} variant="foreground" className="text-xs">
+              <Badge key={index} variant="accent" className="text-xs">
                 {reason}
               </Badge>
             ))}

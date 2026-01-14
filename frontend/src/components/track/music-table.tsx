@@ -629,7 +629,7 @@ export function MusicTable({
   });
 
   return (
-    <div className="w-full space-y-4">
+    <div className="w-full space-y-4 ">
       <DataTable table={table} isLoading={isLoading}>
         <DataTableToolbar table={table}>
           <DataTableSortList table={table} />

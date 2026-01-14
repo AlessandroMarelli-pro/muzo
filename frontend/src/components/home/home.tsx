@@ -97,9 +97,7 @@ export function Home() {
   const topGenres = metrics?.topGenres;
   return (
     <div className="p-6 space-y-6">
-      <h2 className="text-lg font-semibold text-foreground">
-        Library Statistics
-      </h2>
+      <h2 className="text-lg  text-foreground">Library Statistics</h2>
       <div className="flex flex-row gap-6 *:data-[slot=card]:shadow   *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card ">
         <StatsCard
           title="Total Tracks"
@@ -123,7 +121,7 @@ export function Home() {
         />
       </div>
       <div className="flex flex-row gap-6 items-center flex-wrap">
-        <h2 className="text-lg font-semibold">Top Genres</h2>
+        <h2 className="text-lg  text-foreground">Top Genres</h2>
         {topGenres?.map((genre, index) => (
           <Badge
             key={`${genre.genre}-${index}`}
@@ -136,9 +134,7 @@ export function Home() {
         ))}
       </div>
       <div className="flex flex-col gap-6">
-        <h2 className="text-lg font-semibold text-foreground">
-          Recently Played
-        </h2>
+        <h2 className="text-lg  text-foreground">Recently Played</h2>
         <div className="flex-row  *:data-[slot=card]:shadow-   *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card  flex flex-nowrap gap-6 max-w-screen overflow-x-scroll scroll-mb-0 pb-3">
           {recentlyPlayed ? (
             recentlyPlayed?.map((track, index) => (
