@@ -74,7 +74,7 @@ const StatsCard = ({ title, value }: { title: string; value: string }) => {
     <Card className="flex flex-col gap-2 w-full  rounded-xl border-none bg-card text-card-foreground shadow-2xl @container/card">
       <CardHeader>
         <CardDescription>{title}</CardDescription>
-        <CardTitle className="text-2xl @[250px]/card:text-3xl font-semibold tracking-tight">
+        <CardTitle className="text-2xl @[250px]/card:text-3xl font-normal tracking-tight">
           {value}
         </CardTitle>
       </CardHeader>

@@ -189,7 +189,7 @@ export function MusicTable({
           const imagePath = track.imagePath || 'Unknown Image';
 
           return (
-            <div className="flex items-center justify-cente h-5 w-8">
+            <div className="flex items-center justify-center h-5 w-8">
               <img
                 src={`http://localhost:3000/api/images/serve?imagePath=${imagePath}`}
                 alt="Album Art"
