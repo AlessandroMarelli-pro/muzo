@@ -71,7 +71,7 @@ export function ChartRadar({
 
 const StatsCard = ({ title, value }: { title: string; value: string }) => {
   return (
-    <Card className="flex flex-col gap-2 w-full shadow-xs border-none">
+    <Card className="flex flex-col gap-2 w-full  rounded-xl border-none bg-card text-card-foreground shadow-2xl @container/card">
       <CardHeader>
         <CardDescription>{title}</CardDescription>
         <CardTitle className="text-2xl @[250px]/card:text-3xl font-semibold tracking-tight">
@@ -101,7 +101,7 @@ export function Home() {
         Library Statistics
       </h2>
       <div className="flex flex-col gap-4 md:gap-6">
-        <div className="flex flex-row gap-4 *:shadow-xs">
+        <div className="flex flex-row gap-4 *:data-[slot=card]:shadow  px-4 *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card lg:px-6">
           <StatsCard
             title="Total Tracks"
             value={totalTracks?.toString() || '0'}

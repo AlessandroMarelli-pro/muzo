@@ -2,8 +2,16 @@ import { Separator } from '@/components/ui/separator';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { useLocation } from '@tanstack/react-router';
 
+import { Moon, Sun } from 'lucide-react';
+import { useTheme } from 'next-themes';
+
+import { Switch } from '@/components/ui/switch';
+
 export function SiteHeader() {
   const location = useLocation();
+  const { setTheme, resolvedTheme } = useTheme();
+
+  const isDark = resolvedTheme === 'dark';
 
   // Get the current page title from the pathname
   const getPageTitle = (pathname: string) => {
@@ -28,10 +36,27 @@ export function SiteHeader() {
           orientation="vertical"
           className="mx-2 data-[orientation=vertical]:h-4"
         />
-        <h1 className="text-base font-medium">
-          {getPageTitle(location.pathname)}
-        </h1>
-        {/* <FilterButton /> */}
+        <div className="flex items-center justify-between gap-2 w-full px-2 py-1.5">
+          <span className="font-normal text-foreground">
+            {getPageTitle(location.pathname)}
+          </span>
+          <div className="flex items-center justify-between gap-2 px-2 py-1.5">
+            <Switch
+              checked={isDark}
+              onCheckedChange={(checked: boolean) =>
+                setTheme(checked ? 'dark' : 'light')
+              }
+              aria-label="Toggle night mode"
+              className="data-[state=checked]:bg-sidebar-primary data-[state=unchecked]:bg-sidebar-primary-foreground"
+            >
+              {isDark ? (
+                <Moon className="size-3 text-sidebar-foreground transition-all duration-300" />
+              ) : (
+                <Sun className="size-3 text-sidebar-foreground transition-all duration-300" />
+              )}
+            </Switch>
+          </div>
+        </div>
       </div>
     </header>
   );
