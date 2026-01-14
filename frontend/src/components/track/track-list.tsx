@@ -123,7 +123,7 @@ export const TrackList: React.FC<TrackListProps> = () => {
 
   if (staticFilterOptions.isLoading || isLoading) {
     return (
-      <div className="p-4 space-y-4 flex flex-col" key="loading-track-list">
+      <div className="p-6 flex flex-col" key="loading-track-list">
         <MusicTable
           data={[]}
           pageCount={0}
@@ -141,7 +141,7 @@ export const TrackList: React.FC<TrackListProps> = () => {
   const totalTracks = data?.total || 0;
   const totalPages = Math.ceil(totalTracks / limit);
   return (
-    <div className="p-4 space-y-4 flex flex-col z-0" key="track-list">
+    <div className="p-6  flex flex-col z-0" key="track-list">
       <MusicTable
         data={tracks}
         pageCount={totalPages}

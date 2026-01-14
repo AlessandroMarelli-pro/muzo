@@ -1,9 +1,6 @@
-"use client";
+'use client';
 
-import type { Table } from "@tanstack/react-table";
-import { Settings2 } from "lucide-react";
-import * as React from "react";
-import { Button } from "@/components/ui/button";
+import { Button } from '@/components/ui/button';
 import {
   Command,
   CommandEmpty,
@@ -11,14 +8,17 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-} from "@/components/ui/command";
+} from '@/components/ui/command';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/components/ui/popover";
-import { cn } from "@/lib/utils";
-import { CheckIcon, CaretSortIcon } from "@radix-ui/react-icons";
+} from '@/components/ui/popover';
+import { cn } from '@/lib/utils';
+import { CaretSortIcon, CheckIcon } from '@radix-ui/react-icons';
+import type { Table } from '@tanstack/react-table';
+import { Settings2 } from 'lucide-react';
+import * as React from 'react';
 
 interface DataTableViewOptionsProps<TData> {
   table: Table<TData>;
@@ -33,7 +33,7 @@ export function DataTableViewOptions<TData>({
         .getAllColumns()
         .filter(
           (column) =>
-            typeof column.accessorFn !== "undefined" && column.getCanHide(),
+            typeof column.accessorFn !== 'undefined' && column.getCanHide(),
         ),
     [table],
   );
@@ -46,7 +46,7 @@ export function DataTableViewOptions<TData>({
           role="combobox"
           variant="outline"
           size="sm"
-          className="ml-auto hidden h-8 lg:flex"
+          className="ml-auto hidden h-8 lg:flex shadow-xs"
         >
           <Settings2 />
           View
@@ -71,8 +71,8 @@ export function DataTableViewOptions<TData>({
                   </span>
                   <CheckIcon
                     className={cn(
-                      "ml-auto size-4 shrink-0",
-                      column.getIsVisible() ? "opacity-100" : "opacity-0",
+                      'ml-auto size-4 shrink-0',
+                      column.getIsVisible() ? 'opacity-100' : 'opacity-0',
                     )}
                   />
                 </CommandItem>

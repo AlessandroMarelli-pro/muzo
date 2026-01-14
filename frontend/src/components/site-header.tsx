@@ -4,6 +4,7 @@ import { useLocation } from '@tanstack/react-router';
 
 import { Moon, Sun } from 'lucide-react';
 import { useTheme } from 'next-themes';
+import { useEffect } from 'react';
 
 import { Switch } from '@/components/ui/switch';
 
@@ -12,6 +13,31 @@ export function SiteHeader() {
   const { setTheme, resolvedTheme } = useTheme();
 
   const isDark = resolvedTheme === 'dark';
+
+  // Keyboard shortcut: CMD+J (Mac) or Ctrl+J (Windows/Linux) to toggle theme
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Only handle if not typing in an input field
+      if (
+        event.target instanceof HTMLInputElement ||
+        event.target instanceof HTMLTextAreaElement ||
+        (event.target as HTMLElement)?.isContentEditable
+      ) {
+        return;
+      }
+
+      // Check for CMD+J (Mac) or Ctrl+J (Windows/Linux)
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'j') {
+        event.preventDefault();
+        setTheme(isDark ? 'light' : 'dark');
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isDark, setTheme]);
 
   // Get the current page title from the pathname
   const getPageTitle = (pathname: string) => {

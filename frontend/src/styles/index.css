@@ -186,3 +186,17 @@
   --shadow-xl: var(--shadow-xl);
   --shadow-2xl: var(--shadow-2xl);
 }
+
+/*
+Source - https://stackoverflow.com/a/75359263
+Posted by gokudesu, modified by community. See post 'Timeline' for change history
+Retrieved 2026-01-14, License - CC BY-SA 4.0
+*/
+
+@layer base {
+  *,
+  ::before,
+  ::after {
+    @apply border-border;
+  }
+}

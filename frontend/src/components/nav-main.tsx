@@ -47,7 +47,11 @@ export function NavMain({
           return (
             <Collapsible key={item.title} asChild defaultOpen={isActive}>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip={item.title}>
+                <SidebarMenuButton
+                  asChild
+                  tooltip={item.title}
+                  isActive={isActive}
+                >
                   <Link to={item.url} className="flex items-center gap-2">
                     <Icon className="h-4 w-4" />
                     {item.title}

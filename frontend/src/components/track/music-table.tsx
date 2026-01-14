@@ -338,7 +338,7 @@ export function MusicTable({
               {genres.map((genre, index) => (
                 <Badge
                   key={`genre-${index}-${genre}`}
-                  variant="secondary"
+                  variant="foreground"
                   className="capitalize"
                   size="xs"
                 >
@@ -369,7 +369,7 @@ export function MusicTable({
               {subgenres.map((subgenre, index) => (
                 <Badge
                   key={`subgenre-${index}-${subgenre}`}
-                  variant="outline"
+                  variant="default"
                   className="capitalize"
                   size="xs"
                 >

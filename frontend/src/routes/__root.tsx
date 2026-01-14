@@ -77,7 +77,7 @@ const navigationData = {
       icon: Brain,
     },
     {
-      title: 'Filter Music',
+      title: 'Swipe',
       url: '/swipe',
       icon: Sparkles,
     },
