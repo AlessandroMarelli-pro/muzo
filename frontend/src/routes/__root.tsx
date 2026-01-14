@@ -11,8 +11,19 @@ import { cn } from '@/lib/utils';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { createRootRoute, Outlet } from '@tanstack/react-router';
-import { TanStackRouterDevtools } from '@tanstack/router-devtools';
+import {
+  BookHeadphones,
+  Boxes,
+  Brain,
+  Heart,
+  Home,
+  ListMusic,
+  Settings,
+  Sparkles,
+} from 'lucide-react';
+import { ThemeProvider } from 'next-themes';
 import * as React from 'react';
+
 // Create a QueryClient instance
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -43,6 +54,50 @@ const MusicPlayerInset = React.memo(function MusicPlayerInset({
   );
 });
 
+const navigationData = {
+  navMain: [
+    {
+      title: 'Home',
+      url: '/',
+      icon: Home,
+    },
+    {
+      title: 'Music',
+      url: '/music',
+      icon: ListMusic,
+    },
+    {
+      title: 'Categories',
+      url: '/categories',
+      icon: Boxes,
+    },
+    {
+      title: 'Research',
+      url: '/research',
+      icon: Brain,
+    },
+    {
+      title: 'Filter Music',
+      url: '/swipe',
+      icon: Sparkles,
+    },
+    {
+      title: 'Playlists',
+      url: '/playlists',
+      icon: BookHeadphones,
+    },
+    {
+      title: 'Favorites',
+      url: '/favorites',
+      icon: Heart,
+    },
+    {
+      title: 'Settings',
+      url: '/settings',
+      icon: Settings,
+    },
+  ],
+};
 const RootComponent = React.memo(function RootComponent() {
   // Memoize callback to prevent re-renders
   const handleToggleShuffle = React.useCallback(() => {
@@ -50,35 +105,32 @@ const RootComponent = React.memo(function RootComponent() {
   }, []);
   console.log('render');
   return (
-    <QueryClientProvider client={queryClient}>
-      <FilterProvider>
-        <AudioPlayerProvider>
-          <SidebarProvider defaultOpen={false}>
-            <AppSidebar />
-            <SidebarInset>
-              <MusicPlayerInset>
-                <div className="relative">
-                  <div className="fixed  w-full h-12  bg-primary-foreground z-10">
-                    <SiteHeader />
-                  </div>
-                  <main className="relative pt-12 bg-primary dark:bg-primary-foreground min-h-screen">
-                    <Outlet />
-                  </main>
-                </div>
-              </MusicPlayerInset>
-            </SidebarInset>
+    <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+      <QueryClientProvider client={queryClient}>
+        <FilterProvider>
+          <AudioPlayerProvider>
+            <SidebarProvider defaultOpen={true}>
+              <AppSidebar data={navigationData} />
+              <SidebarInset>
+                <MusicPlayerInset>
+                  <SiteHeader />
 
-            {/* Enhanced Music Player - fixed at bottom, outside SidebarInset */}
-            <EnhancedMusicPlayer
-              onToggleShuffle={handleToggleShuffle}
-              showVisualizations={true}
-            />
-          </SidebarProvider>
-        </AudioPlayerProvider>
-      </FilterProvider>
-      <ReactQueryDevtools initialIsOpen={false} position="bottom" />
-      <TanStackRouterDevtools position="top-right" />
-    </QueryClientProvider>
+                  <Outlet />
+                </MusicPlayerInset>
+              </SidebarInset>
+
+              {/* Enhanced Music Player - fixed at bottom, outside SidebarInset */}
+              <EnhancedMusicPlayer
+                onToggleShuffle={handleToggleShuffle}
+                showVisualizations={true}
+              />
+            </SidebarProvider>
+          </AudioPlayerProvider>
+        </FilterProvider>
+        <ReactQueryDevtools initialIsOpen={false} position="bottom" />
+        {/* <TanStackRouterDevtools position="top-right" initialIsOpen={false} /> */}
+      </QueryClientProvider>
+    </ThemeProvider>
   );
 });
 

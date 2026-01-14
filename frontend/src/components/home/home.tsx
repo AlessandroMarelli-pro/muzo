@@ -47,7 +47,7 @@ export function ChartRadar({
   color: string;
 }) {
   return (
-    <Card className="w-full">
+    <Card className="w-full shadow-xs">
       <CardHeader className="items-center pb-4">
         <CardTitle>{title}</CardTitle>
         <CardDescription>{description}</CardDescription>
@@ -71,10 +71,10 @@ export function ChartRadar({
 
 const StatsCard = ({ title, value }: { title: string; value: string }) => {
   return (
-    <Card className="flex flex-col gap-2 w-full">
+    <Card className="flex flex-col gap-2 w-full shadow-xs">
       <CardHeader>
         <CardDescription>{title}</CardDescription>
-        <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
+        <CardTitle className="text-2xl @[250px]/card:text-3xl font-semibold tracking-tight">
           {value}
         </CardTitle>
       </CardHeader>
@@ -95,13 +95,13 @@ export function Home() {
   const totalArtists = metrics?.artistCount;
 
   const topGenres = metrics?.topGenres;
-  const genreDistribution = metrics?.genreDistribution;
-  const subgenreDistribution = metrics?.subgenreDistribution;
   return (
-    <div className="p-6 min-h-screen space-y-4">
-      <h2 className="text-lg font-semibold ">Library Statistics</h2>
-      <div className="flex flex-col gap-4  md:gap-6">
-        <div className="*:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card flex flex-row gap-4 *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:shadow-xs  ">
+    <div className="p-6 space-y-6">
+      <h2 className="text-lg font-semibold text-foreground">
+        Library Statistics
+      </h2>
+      <div className="flex flex-col gap-4 md:gap-6">
+        <div className="flex flex-row gap-4 *:shadow-xs">
           <StatsCard
             title="Total Tracks"
             value={totalTracks?.toString() || '0'}
@@ -126,13 +126,13 @@ export function Home() {
           />
         </div>
       </div>
-      <div className="flex flex-row gap-4 items-center">
-        <h2 className="text-lg font-semibold ">Top Genres</h2>
+      <div className="flex flex-row gap-4 items-center flex-wrap">
+        <h2 className="text-lg font-semibold">Top Genres</h2>
         {topGenres?.map((genre, index) => (
           <Badge
             key={`${genre.genre}-${index}`}
-            variant="outline"
-            className="text-xs h-6"
+            variant="secondary"
+            className="text-sm h-6 shadow-xs capitalize "
             size="sm"
           >
             <strong>{genre.genre}:</strong> {genre.trackCount}
@@ -140,8 +140,8 @@ export function Home() {
         ))}
       </div>
       <div className="flex flex-col gap-4">
-        <h2 className="text-lg font-semibold ">Recently Played</h2>
-        <div className="flex flex-nowrap gap-1 max-w-screen overflow-x-scroll scroll-mb-0 ">
+        <h2 className="text-lg font-semibold">Recently Played</h2>
+        <div className="flex flex-nowrap gap-4 max-w-screen overflow-x-scroll scroll-mb-0 py-3">
           {recentlyPlayed ? (
             recentlyPlayed?.map((track, index) => (
               <MusicCard
@@ -155,7 +155,7 @@ export function Home() {
           )}
         </div>
       </div>
-      <div className="flex flex-col gap-4 w-full">
+      {/*     <div className="flex flex-col gap-4 w-full">
         <h2 className="text-lg font-semibold">Distributions</h2>
         <div className="*:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card flex flex-row gap-4 *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:shadow-xs  ">
           <ChartRadar
@@ -175,7 +175,7 @@ export function Home() {
             color={chartConfig.subgenre.color as string}
           />
         </div>
-      </div>
+      </div> */}
     </div>
   );
 }

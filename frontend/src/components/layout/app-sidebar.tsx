@@ -1,138 +1,73 @@
+'use client';
+
+import { Command, LucideIcon, Moon, Sun } from 'lucide-react';
+import { useTheme } from 'next-themes';
+import * as React from 'react';
+
+import { NavMain } from '@/components/nav-main';
 import {
   Sidebar,
   SidebarContent,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
+  SidebarFooter,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
 } from '@/components/ui/sidebar';
-import { Link, useLocation } from '@tanstack/react-router';
-import {
-  Brain,
-  Heart,
-  Home,
-  Library,
-  ListMusic,
-  Music,
-  Settings,
-  Sparkles,
-} from 'lucide-react';
-import * as React from 'react';
+import { Switch } from '@/components/ui/switch';
 
-const navigationData = [
-  {
-    title: 'Main',
-    items: [
-      {
-        title: 'Home',
-        url: '/',
-        icon: Home,
-      },
-      {
-        title: 'Music',
-        url: '/music',
-        icon: Music,
-      },
-      {
-        title: 'Categories',
-        url: '/categories',
-        icon: ListMusic,
-      },
-    ],
-  },
-  {
-    title: 'Library',
-    items: [
-      {
-        title: 'Research',
-        url: '/research',
-        icon: Brain,
-      },
-      {
-        title: 'Filter Music',
-        url: '/swipe',
-        icon: Sparkles,
-      },
-      {
-        title: 'Playlists',
-        url: '/playlists',
-        icon: ListMusic,
-      },
-      {
-        title: 'Favorites',
-        url: '/favorites',
-        icon: Heart,
-      },
-    ],
-  },
-  {
-    title: 'Settings',
-    items: [
-      {
-        title: 'Settings',
-        url: '/settings',
-        icon: Settings,
-      },
-      {
-        title: 'Libraries',
-        url: '/libraries',
-        icon: Library,
-      },
-    ],
-  },
-];
+export function AppSidebar({
+  data,
+  ...props
+}: React.ComponentProps<typeof Sidebar> & {
+  data: {
+    navMain: { title: string; url: string; icon: LucideIcon }[];
+  };
+}) {
+  const { setTheme, resolvedTheme } = useTheme();
 
-interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {}
-
-export function AppSidebar({ ...props }: AppSidebarProps) {
-  const location = useLocation();
+  const isDark = resolvedTheme === 'dark';
 
   return (
-    <Sidebar collapsible="icon" {...props}>
+    <Sidebar collapsible="offcanvas" variant="inset" {...props}>
       <SidebarHeader>
-        <div className="flex items-center gap-2 px-2  ">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg  text-primary">
-            <Music className="h-4 w-4" />
-          </div>
-          <div className="flex flex-col">
-            <span className="text-xs font-semibold group-data-[collapsible=icon]:hidden">
-              Muzo
-            </span>
-            <span className="text-xs text-muted-foreground group-data-[collapsible=icon]:hidden">
-              Music Library
-            </span>
-          </div>
-        </div>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton size="lg" asChild>
+              <a href="#">
+                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
+                  <Command className="size-4" />
+                </div>
+                <div className="grid flex-1 text-left text-sm leading-tight">
+                  <span className="truncate font-semibold">Acme Inc</span>
+                  <span className="truncate text-xs">Enterprise</span>
+                </div>
+              </a>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        {navigationData.map((group) => (
-          <SidebarGroup key={group.title}>
-            <SidebarGroupLabel>{group.title}</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {group.items.map((item) => {
-                  const Icon = item.icon;
-                  const isActive = location.pathname === item.url;
-
-                  return (
-                    <SidebarMenuItem key={item.title}>
-                      <SidebarMenuButton asChild isActive={isActive}>
-                        <Link to={item.url} className="flex items-center gap-2">
-                          <Icon className="h-4 w-4" />
-                          {item.title}
-                        </Link>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  );
-                })}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        ))}
+        <NavMain items={data.navMain} />
       </SidebarContent>
+      <SidebarFooter>
+        <div className="flex items-center justify-between gap-2 px-2 py-1.5">
+          <Switch
+            checked={isDark}
+            onCheckedChange={(checked: boolean) =>
+              setTheme(checked ? 'dark' : 'light')
+            }
+            aria-label="Toggle night mode"
+            className="data-[state=checked]:bg-sidebar-primary data-[state=unchecked]:bg-sidebar-primary-foreground"
+          >
+            {isDark ? (
+              <Moon className="size-3 text-sidebar-foreground transition-all duration-300" />
+            ) : (
+              <Sun className="size-3 text-sidebar-foreground transition-all duration-300" />
+            )}
+          </Switch>
+        </div>
+      </SidebarFooter>
     </Sidebar>
   );
 }

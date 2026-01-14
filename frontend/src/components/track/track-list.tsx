@@ -1,5 +1,4 @@
 import { SimpleMusicTrack } from '@/__generated__/types';
-import { useQueue } from '@/contexts/audio-player-context';
 import { useFilterOptionsData } from '@/hooks/useFilterOptions';
 import { getSortingStateParser } from '@/lib/parsers';
 import { AnalysisStatus, useTracksList } from '@/services/api-hooks';
@@ -24,14 +23,13 @@ interface TrackListProps {
   onRefresh: () => void;
 }
 
-export const TrackList: React.FC<TrackListProps> = ({ viewMode = 'grid' }) => {
+export const TrackList: React.FC<TrackListProps> = () => {
   console.log('render', 'TrackList');
 
   const staticFilterOptions = useFilterOptionsData();
-  const { setQueue } = useQueue();
   // Use URL state management for pagination and sorting
   const [page] = useQueryState('page', { defaultValue: '1' });
-  const [perPage] = useQueryState('perPage', { defaultValue: '50' });
+  const [perPage] = useQueryState('perPage', { defaultValue: '10' });
 
   useFilterQueryParams();
 
@@ -110,12 +108,15 @@ export const TrackList: React.FC<TrackListProps> = ({ viewMode = 'grid' }) => {
     return defaultResult;
   }, [sorting, mapSortField]);
 
-  const queryParams = {
-    limit,
-    offset,
-    orderBy,
-    orderDirection,
-  };
+  const queryParams = React.useMemo(
+    () => ({
+      limit,
+      offset,
+      orderBy,
+      orderDirection,
+    }),
+    [limit, offset, orderBy, orderDirection],
+  );
   console.log('queryParams', queryParams);
 
   const { data, isLoading } = useTracksList(queryParams);
@@ -154,3 +155,5 @@ export const TrackList: React.FC<TrackListProps> = ({ viewMode = 'grid' }) => {
     </div>
   );
 };
+
+TrackList.whyDidYouRender = true;

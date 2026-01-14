@@ -3,14 +3,13 @@ import {
   parseAsArrayOf,
   parseAsInteger,
   parseAsString,
-  parseAsStringEnum,
   useQueryState,
 } from 'nuqs';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 export const useFilterQueryParams = () => {
   // Filter state management
-  const { filters, updateFilter, saveCurrentFilter } = useFilters();
+  const { filters, updateFilter, saveCurrentFilter, isLoading } = useFilters();
 
   // URL query parameter management for filters (read-only)
   const [artistParam] = useQueryState('artist', parseAsString);
@@ -40,37 +39,17 @@ export const useFilterQueryParams = () => {
 
   const [valenceMoodParam] = useQueryState(
     'valenceMood',
-    parseAsStringEnum([
-      'very positive',
-      'positive',
-      'neutral',
-      'negative',
-      'very negative',
-    ]).withDefault([]),
+    parseAsArrayOf(parseAsString, ',').withDefault([]),
   );
 
   const [arousalMoodParam] = useQueryState(
     'arousalMood',
-    parseAsStringEnum([
-      'very calm',
-      'calm',
-      'moderate energy',
-      'energetic',
-      'very energetic',
-    ]).withDefault([]),
+    parseAsArrayOf(parseAsString, ',').withDefault([]),
   );
 
   const [danceabilityFeelingParam] = useQueryState(
     'danceabilityFeeling',
-    parseAsStringEnum([
-      'highly-danceable',
-      'danceable',
-      'moderately-danceable',
-      'slightly-danceable',
-      'minimally-danceable',
-      'ambient',
-      'experimental',
-    ]).withDefault([]),
+    parseAsArrayOf(parseAsString, ',').withDefault([]),
   );
 
   const [libraryIdParam] = useQueryState(
@@ -78,58 +57,134 @@ export const useFilterQueryParams = () => {
     parseAsArrayOf(parseAsString, ',').withDefault([]),
   );
 
+  // Use refs to track previous values and only update when they actually change
+  const prevValuesRef = useRef<{
+    artist: string | null;
+    genres: string[];
+    subgenres: string[];
+    atmospheres: string[];
+    keys: string[];
+    tempo: number[];
+    valenceMood: string | string[];
+    arousalMood: string | string[];
+    danceabilityFeeling: string | string[];
+    libraryId: string[];
+  }>({
+    artist: null,
+    genres: [],
+    subgenres: [],
+    atmospheres: [],
+    keys: [],
+    tempo: [],
+    valenceMood: [],
+    arousalMood: [],
+    danceabilityFeeling: [],
+    libraryId: [],
+  });
+
+  // Helper to compare arrays
+  const arraysEqual = (a: string[] | number[], b: string[] | number[]) => {
+    if (a.length !== b.length) return false;
+    return a.every((val, idx) => val === b[idx]);
+  };
+
   useEffect(() => {
     console.log('artistParam', artistParam, genreParam);
-    if (artistParam && artistParam.length > 0) {
-      updateFilter('artist', artistParam);
-    } else {
-      updateFilter('artist', '');
-    }
-    if (atmosphereParam.length > 0) {
-      updateFilter('atmospheres', atmosphereParam);
-    } else {
-      updateFilter('atmospheres', []);
-    }
-    if (genreParam.length > 0) {
-      updateFilter('genres', genreParam);
-    } else {
-      updateFilter('genres', []);
-    }
-    if (subgenreParam.length > 0) {
-      updateFilter('subgenres', subgenreParam);
-    } else {
-      updateFilter('subgenres', []);
-    }
-    if (keyParam.length > 0) {
-      updateFilter('keys', keyParam);
-    } else {
-      updateFilter('keys', []);
-    }
-    if (tempoParam.length > 0) {
-      updateFilter('tempo', { min: tempoParam[0], max: tempoParam[1] });
-    } else {
-      updateFilter('tempo', { min: 0, max: 200 });
+
+    // Only update artist if it changed
+    const artistValue = artistParam || '';
+    if (prevValuesRef.current.artist !== artistValue) {
+      updateFilter('artist', artistValue);
+      prevValuesRef.current.artist = artistValue;
     }
 
-    if (valenceMoodParam.length > 0) {
-      updateFilter('valenceMood', valenceMoodParam);
-    } else {
-      updateFilter('valenceMood', []);
+    // Only update atmospheres if it changed
+    if (!arraysEqual(prevValuesRef.current.atmospheres, atmosphereParam)) {
+      updateFilter(
+        'atmospheres',
+        atmosphereParam.length > 0 ? atmosphereParam : [],
+      );
+      prevValuesRef.current.atmospheres = [...atmosphereParam];
     }
-    if (arousalMoodParam?.length > 0) {
-      updateFilter('arousalMood', arousalMoodParam);
-    } else {
-      updateFilter('arousalMood', []);
+
+    // Only update genres if it changed
+    if (!arraysEqual(prevValuesRef.current.genres, genreParam)) {
+      updateFilter('genres', genreParam.length > 0 ? genreParam : []);
+      prevValuesRef.current.genres = [...genreParam];
     }
-    if (danceabilityFeelingParam?.length > 0) {
-      updateFilter('danceabilityFeeling', danceabilityFeelingParam);
-    } else {
-      updateFilter('danceabilityFeeling', []);
+
+    // Only update subgenres if it changed
+    if (!arraysEqual(prevValuesRef.current.subgenres, subgenreParam)) {
+      updateFilter('subgenres', subgenreParam.length > 0 ? subgenreParam : []);
+      prevValuesRef.current.subgenres = [...subgenreParam];
     }
-    if (libraryIdParam.length > 0) {
-      updateFilter('libraryId', libraryIdParam);
-    } else {
-      updateFilter('libraryId', []);
+
+    // Only update keys if it changed
+    if (!arraysEqual(prevValuesRef.current.keys, keyParam)) {
+      updateFilter('keys', keyParam.length > 0 ? keyParam : []);
+      prevValuesRef.current.keys = [...keyParam];
+    }
+
+    // Only update tempo if it changed
+    if (!arraysEqual(prevValuesRef.current.tempo, tempoParam)) {
+      updateFilter(
+        'tempo',
+        tempoParam.length > 0
+          ? { min: tempoParam[0], max: tempoParam[1] }
+          : { min: 0, max: 200 },
+      );
+      prevValuesRef.current.tempo = [...tempoParam];
+    }
+
+    // Only update valenceMood if it changed
+    const valenceValue = Array.isArray(valenceMoodParam)
+      ? valenceMoodParam
+      : valenceMoodParam
+        ? [valenceMoodParam]
+        : [];
+    if (
+      !arraysEqual(prevValuesRef.current.valenceMood as string[], valenceValue)
+    ) {
+      updateFilter('valenceMood', valenceValue);
+      prevValuesRef.current.valenceMood = [...valenceValue];
+    }
+
+    // Only update arousalMood if it changed
+    const arousalValue = Array.isArray(arousalMoodParam)
+      ? arousalMoodParam
+      : arousalMoodParam
+        ? [arousalMoodParam]
+        : [];
+    if (
+      !arraysEqual(prevValuesRef.current.arousalMood as string[], arousalValue)
+    ) {
+      updateFilter('arousalMood', arousalValue);
+      prevValuesRef.current.arousalMood = [...arousalValue];
+    }
+
+    // Only update danceabilityFeeling if it changed
+    const danceabilityValue = Array.isArray(danceabilityFeelingParam)
+      ? danceabilityFeelingParam
+      : danceabilityFeelingParam
+        ? [danceabilityFeelingParam]
+        : [];
+    if (
+      !arraysEqual(
+        prevValuesRef.current.danceabilityFeeling as string[],
+        danceabilityValue,
+      )
+    ) {
+      updateFilter('danceabilityFeeling', danceabilityValue);
+      prevValuesRef.current.danceabilityFeeling = [...danceabilityValue];
+    }
+
+    // Only update libraryId if it changed
+    if (!arraysEqual(prevValuesRef.current.libraryId, libraryIdParam)) {
+      updateFilter(
+        'libraryId',
+        libraryIdParam.length > 0 ? libraryIdParam : [],
+      );
+      prevValuesRef.current.libraryId = [...libraryIdParam];
     }
   }, [
     genreParam,
@@ -142,11 +197,39 @@ export const useFilterQueryParams = () => {
     artistParam,
     libraryIdParam,
     atmosphereParam,
+    updateFilter,
   ]);
 
+  // Debounce saveCurrentFilter to avoid saving on every filter change
+  // Only save when filters actually change, not on every render
+  const filtersRef = useRef(filters);
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   useEffect(() => {
-    saveCurrentFilter();
-  }, [filters]);
+    // Check if filters actually changed by comparing stringified versions
+    const filtersChanged =
+      JSON.stringify(filtersRef.current) !== JSON.stringify(filters);
+
+    if (filtersChanged) {
+      filtersRef.current = filters;
+
+      // Clear existing timeout
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+
+      // Debounce the save operation
+      saveTimeoutRef.current = setTimeout(() => {
+        saveCurrentFilter();
+      }, 500); // Wait 500ms after last filter change before saving
+    }
+
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
+  }, [filters, saveCurrentFilter]);
 
   return {
     genreParam,
@@ -158,5 +241,6 @@ export const useFilterQueryParams = () => {
     danceabilityFeelingParam,
     artistParam,
     atmosphereParam,
+    isLoading,
   };
 };

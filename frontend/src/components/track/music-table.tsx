@@ -27,6 +27,7 @@ import { useDataTable } from '@/hooks/use-data-table';
 import { StaticFilterOptionsData } from '@/hooks/useFilterOptions';
 import { useNavigate } from '@tanstack/react-router';
 import { format } from 'date-fns';
+import { DataTablePagination } from '../data-table/data-table-pagination';
 
 interface MusicTableProps {
   data: SimpleMusicTrack[];
@@ -95,7 +96,6 @@ const ActionCells = ({
   navigate,
   onAddToQueue,
   actions,
-  currentTrack,
   setCurrentTrack,
   onOpenAddToPlaylistDialog,
 }: any) => {
@@ -106,11 +106,9 @@ const ActionCells = ({
   const playMusic = () => {
     setIsTrackPlaying((prev) => !prev);
     setCurrentTrack(track);
-    /*    if (currentTrack?.id !== track.id) {
-    }
-    */
     actions.togglePlayPause(track.id);
   };
+
   return (
     <div className="flex items-center gap-2">
       <Button variant="ghost" size="sm" onClick={playMusic}>
@@ -163,7 +161,7 @@ export function MusicTable({
 }: MusicTableProps) {
   const navigate = useNavigate();
   const actions = useAudioPlayerActions();
-  const { currentTrack, setCurrentTrack } = useCurrentTrack();
+  const { setCurrentTrack } = useCurrentTrack();
   const [isAddToPlaylistDialogOpen, setIsAddToPlaylistDialogOpen] =
     React.useState(false);
   const [selectedTrackId, setSelectedTrackId] = React.useState<string | null>(
@@ -249,6 +247,11 @@ export function MusicTable({
         },
         enableColumnFilter: true,
         width: 200,
+        meta: {
+          label: 'Title',
+          placeholder: 'Search title...',
+          variant: 'text',
+        },
       },
       {
         id: 'duration',
@@ -298,8 +301,13 @@ export function MusicTable({
 
           return (
             <div className="flex  gap-1">
-              {atmosphereKeywords?.map((atmosphereKeyword) => (
-                <Badge variant="secondary" className="capitalize" size="xs">
+              {atmosphereKeywords?.map((atmosphereKeyword, index) => (
+                <Badge
+                  key={`atmosphere-${index}-${atmosphereKeyword}`}
+                  variant="secondary"
+                  className="capitalize"
+                  size="xs"
+                >
                   {atmosphereKeyword}
                 </Badge>
               ))}
@@ -327,8 +335,13 @@ export function MusicTable({
 
           return (
             <div className="flex  gap-1">
-              {genres.map((genre) => (
-                <Badge variant="secondary" className="capitalize" size="xs">
+              {genres.map((genre, index) => (
+                <Badge
+                  key={`genre-${index}-${genre}`}
+                  variant="secondary"
+                  className="capitalize"
+                  size="xs"
+                >
                   {genre}
                 </Badge>
               ))}
@@ -353,8 +366,13 @@ export function MusicTable({
 
           return (
             <div className="flex  gap-1">
-              {subgenres.map((subgenre) => (
-                <Badge variant="outline" className="capitalize" size="xs">
+              {subgenres.map((subgenre, index) => (
+                <Badge
+                  key={`subgenre-${index}-${subgenre}`}
+                  variant="outline"
+                  className="capitalize"
+                  size="xs"
+                >
                   {subgenre}
                 </Badge>
               ))}
@@ -577,7 +595,6 @@ export function MusicTable({
             navigate={navigate}
             onAddToQueue={onAddToQueue}
             actions={actions}
-            currentTrack={currentTrack}
             setCurrentTrack={setCurrentTrack}
             onOpenAddToPlaylistDialog={handleOpenAddToPlaylistDialog}
           />
@@ -617,6 +634,7 @@ export function MusicTable({
         <DataTableToolbar table={table}>
           <DataTableSortList table={table} />
         </DataTableToolbar>
+        <DataTablePagination table={table} />
       </DataTable>
       {selectedTrackId && (
         <SelectPlaylistDialog
@@ -628,3 +646,4 @@ export function MusicTable({
     </div>
   );
 }
+MusicTable.whyDidYouRender = true;
