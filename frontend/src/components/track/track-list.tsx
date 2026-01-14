@@ -4,6 +4,7 @@ import { getSortingStateParser } from '@/lib/parsers';
 import { AnalysisStatus, useTracksList } from '@/services/api-hooks';
 import { useQueryState } from 'nuqs';
 import React from 'react';
+import { DataTableSkeleton } from '../data-table/data-table-skeleton';
 import { useFilterQueryParams } from './filter-qparams-hook';
 import { MusicTable } from './music-table';
 
@@ -124,15 +125,24 @@ export const TrackList: React.FC<TrackListProps> = () => {
   if (staticFilterOptions.isLoading || isLoading) {
     return (
       <div className="p-6 flex flex-col" key="loading-track-list">
-        <MusicTable
-          data={[]}
-          pageCount={0}
-          onAddToQueue={(tracks: SimpleMusicTrack[]) =>
-            console.log('Added to queue:', tracks)
-          }
-          isLoading
-          staticFilterOptions={staticFilterOptions}
-          initialPageSize={limit}
+        <DataTableSkeleton
+          columnCount={10}
+          rowCount={10}
+          filterCount={13}
+          cellWidths={[
+            '100px',
+            '100px',
+            '100px',
+            '100px',
+            '100px',
+            '100px',
+            '100px',
+            '100px',
+            '100px',
+            '100px',
+          ]}
+          withViewOptions={true}
+          withPagination={true}
         />
       </div>
     );

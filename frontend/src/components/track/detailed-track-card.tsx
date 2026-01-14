@@ -46,18 +46,17 @@ export function DetailedTrackCard({ track, refetch }: DetailedTrackCardProps) {
     if (currentTrack?.id !== track.id) {
       setCurrentTrack(track);
     }
-
     actions.togglePlayPause(track.id);
   };
 
   return (
-    <Card className="w-full  border-none shadow-none">
-      <CardContent className="p-6">
+    <Card className="w-full  border-none ">
+      <CardContent className="p-4">
         {/* Header Section */}
         <div className="flex items-start gap-6">
           {/* Album Art */}
           <div className="relative flex-shrink-0">
-            <div className="w-40 h-40 rounded-full overflow-hidden bg-muted flex items-center justify-center shadow-sm hover:scale-105 transition-all duration-300">
+            <div className="w-40 h-40 rounded-full overflow-hidden bg-muted flex items-center justify-center shadow-md hover:scale-105 transition-all duration-300">
               <img
                 src={`http://localhost:3000/api/images/serve?imagePath=${track.imagePath}`}
                 alt="Album Art"
@@ -66,7 +65,7 @@ export function DetailedTrackCard({ track, refetch }: DetailedTrackCardProps) {
             </div>
             <Button
               size="sm"
-              className="absolute bottom-1 right-1 w-8 h-8 rounded-full p-0 bg-foreground hover:bg-muted-foreground text-secondary"
+              className="absolute bottom-1 right-1 w-8 h-8 rounded-full p-0 bg-secondary hover:bg-muted-foreground text-secondary-foreground"
               onClick={handlePlay}
             >
               {isThisTrackPlaying ? (
@@ -81,24 +80,14 @@ export function DetailedTrackCard({ track, refetch }: DetailedTrackCardProps) {
           <div className="flex flex-col gap-1 flex-1 min-w-0">
             <div>
               <h1 className="text-xl font-bold text-foreground truncate capitalize">
-                {track.artist}
+                {track.artist} - {track.title}
               </h1>
             </div>
-            <div>
-              <h1 className="text-xl font-bold text-muted-foreground truncate capitalize">
-                {track.title}
-              </h1>
-            </div>
-            {track?.vocalsDescriptions && (
-              <div className="text-sm text-muted-foreground  ">
-                {track?.vocalsDescriptions}
-              </div>
-            )}
             {track?.atmosphereKeywords && (
               <div className="flex flex-wrap gap-2">
-                Tags:{' '}
+                <span className="text-sm text-foreground min-w-18">Tags:</span>
                 {track?.atmosphereKeywords.map((tag) => (
-                  <Badge key={tag} variant="outline" size="xs">
+                  <Badge key={tag} variant="foreground" size="xs">
                     {tag}
                   </Badge>
                 ))}
@@ -107,11 +96,11 @@ export function DetailedTrackCard({ track, refetch }: DetailedTrackCardProps) {
             {/* Genre Tags */}
             {track.genres && track.genres.length > 0 && (
               <div className="flex gap-2 flex-wrap">
-                Genre:
+                <span className="text-sm text-foreground min-w-18">Genre:</span>
                 {track.genres.map((genre, index) => (
                   <Badge
                     key={index}
-                    variant="outline"
+                    variant="foreground"
                     className="capitalize"
                     size="xs"
                   >
@@ -122,11 +111,13 @@ export function DetailedTrackCard({ track, refetch }: DetailedTrackCardProps) {
             )}
             {track.subgenres && track.subgenres.length > 0 && (
               <div className="flex gap-2 flex-wrap">
-                Subgenre:
+                <span className="text-sm text-foreground min-w-18">
+                  Subgenre:
+                </span>
                 {track.subgenres.map((subgenre, index) => (
                   <Badge
                     key={index}
-                    variant="outline"
+                    variant="foreground"
                     className="capitalize"
                     size="xs"
                   >
@@ -137,9 +128,11 @@ export function DetailedTrackCard({ track, refetch }: DetailedTrackCardProps) {
             )}
             {/* Metadata Grid */}
             <div className="flex flex-row gap-2">
-              Metadata:
+              <span className="text-sm text-foreground min-w-18">
+                Metadata:
+              </span>
               <Badge
-                variant="outline"
+                variant="foreground"
                 className="flex items-center gap-2  "
                 size="xs"
               >
@@ -147,7 +140,7 @@ export function DetailedTrackCard({ track, refetch }: DetailedTrackCardProps) {
                 <span>{formatDuration(track.duration)}</span>
               </Badge>
               <Badge
-                variant="outline"
+                variant="foreground"
                 className="flex items-center gap-2  "
                 size="xs"
               >
@@ -155,7 +148,7 @@ export function DetailedTrackCard({ track, refetch }: DetailedTrackCardProps) {
                 <span>{track.listeningCount} plays</span>
               </Badge>
               <Badge
-                variant="outline"
+                variant="foreground"
                 className="flex items-center gap-2  "
                 size="xs"
               >
@@ -163,7 +156,7 @@ export function DetailedTrackCard({ track, refetch }: DetailedTrackCardProps) {
                 <span>{formatBPM(track.tempo || 0)} BPM</span>
               </Badge>
               <Badge
-                variant="outline"
+                variant="foreground"
                 className="flex items-center gap-2  "
                 size="xs"
               >
@@ -171,7 +164,7 @@ export function DetailedTrackCard({ track, refetch }: DetailedTrackCardProps) {
                 <span>Energy: {track.arousalMood}</span>
               </Badge>
               <Badge
-                variant="outline"
+                variant="foreground"
                 className="flex items-center gap-2  "
                 size="xs"
               >
@@ -179,7 +172,7 @@ export function DetailedTrackCard({ track, refetch }: DetailedTrackCardProps) {
                 <span>Dance: {track.danceabilityFeeling}</span>
               </Badge>{' '}
               <Badge
-                variant="outline"
+                variant="foreground"
                 className="flex items-center gap-2  "
                 size="xs"
               >
@@ -206,11 +199,11 @@ export function DetailedTrackCard({ track, refetch }: DetailedTrackCardProps) {
           {/* Action Buttons */}
           <div className="flex items-center justify-between">
             <div className="flex gap-2">
-              <Button variant="default" size="sm" onClick={refetch}>
+              <Button variant="outline" size="sm" onClick={refetch}>
                 <Shuffle className="w-4 h-4" />
                 Random Track
               </Button>
-              <Button variant="default" size="sm">
+              <Button variant="outline" size="sm">
                 <ListPlus className="w-4 h-4" />
                 Add to playlist
               </Button>

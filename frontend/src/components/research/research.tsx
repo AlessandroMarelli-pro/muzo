@@ -3,7 +3,6 @@ import { cn } from '@/lib/utils';
 import { useTrackRecommendations } from '@/services/api-hooks';
 import { Check, PlusCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { Loading } from '../loading';
 import { TrackRecommandationsComponent } from '../playlist/track-recommendations';
 import { DetailedTrackCard } from '../track/detailed-track-card';
 import { Button } from '../ui/button';
@@ -20,15 +19,12 @@ const DashedButton = ({
   return (
     <Button
       onClick={onClick}
-      className={cn(
-        'border-dashed',
-        selected && 'bg-green-500 text-white !border-green-500',
-      )}
-      variant={selected ? 'outline-success' : 'outline'}
+      className={cn('border-dashed')}
+      variant={selected ? 'default' : 'outline'}
       size="sm"
     >
       {selected ? (
-        <Check className="w-4 h-4 text-green-500" />
+        <Check className="w-4 h-4 " />
       ) : (
         <PlusCircle className="w-4 h-4" />
       )}
@@ -85,14 +81,12 @@ export function Research({
           </DashedButton>
         ))}
       </div>
-      {isLoadingTrackRecommendations ? (
-        <Loading />
-      ) : (
-        <TrackRecommandationsComponent
-          recommendations={trackRecommendations || []}
-          setQueue={() => {}}
-        />
-      )}
+      <TrackRecommandationsComponent
+        recommendations={trackRecommendations || []}
+        setQueue={() => {}}
+        isLoading={isLoadingTrackRecommendations}
+        onAddTrack={() => {}}
+      />
     </div>
   );
 }

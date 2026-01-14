@@ -14,7 +14,10 @@ import {
 } from '@/services/playlist-hooks';
 import { Music, Sparkles } from 'lucide-react';
 import { useEffect } from 'react';
-import { TrackRecommendationsCard } from './track-recommendations-card';
+import {
+  TrackRecommendationsCard,
+  TrackRecommendationsCardSkeleton,
+} from './track-recommendations-card';
 
 interface TrackRecommendationsProps {
   playlistId: string;
@@ -25,22 +28,30 @@ export const TrackRecommandationsComponent = ({
   recommendations,
   onAddTrack,
   setQueue,
+  isLoading,
 }: {
   recommendations: TrackRecommendation[];
   onAddTrack?: (trackId: string) => void;
-  setQueue?: () => void;
+  setQueue: () => void;
+  isLoading: boolean;
 }) => {
   return (
     <Card className="py-0">
       <CardContent className="p-0">
         <div className="divide-y">
-          {recommendations.map((recommendation) => (
-            <TrackRecommendationsCard
-              recommendation={recommendation}
-              onAddTrack={onAddTrack}
-              setQueue={setQueue}
-            />
-          ))}
+          {!isLoading
+            ? recommendations.map((recommendation) => (
+                <TrackRecommendationsCard
+                  recommendation={recommendation}
+                  onAddTrack={onAddTrack}
+                  setQueue={setQueue}
+                />
+              ))
+            : Array.from({ length: 5 }).map((_, i) => (
+                <TrackRecommendationsCardSkeleton
+                  key={`recommendations-skeleton-${i}`}
+                />
+              ))}
         </div>
       </CardContent>
     </Card>
@@ -164,6 +175,7 @@ export function TrackRecommendations({
       recommendations={recommendations}
       onAddTrack={handleAddTrack}
       setQueue={handleSetQueue}
+      isLoading={loading}
     />
   );
 }
