@@ -13,10 +13,10 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { createRootRoute, Outlet } from '@tanstack/react-router';
 import {
   BookHeadphones,
-  Boxes,
   Brain,
   Heart,
   Home,
+  Library,
   ListMusic,
   Settings,
   Sparkles,
@@ -66,11 +66,11 @@ const navigationData = {
       url: '/music',
       icon: ListMusic,
     },
-    {
+    /*    {
       title: 'Categories',
       url: '/categories',
       icon: Boxes,
-    },
+    }, */
     {
       title: 'Research',
       url: '/research',
@@ -95,6 +95,11 @@ const navigationData = {
       title: 'Settings',
       url: '/settings',
       icon: Settings,
+    },
+    {
+      title: 'Libraries',
+      url: '/libraries',
+      icon: Library,
     },
   ],
 };

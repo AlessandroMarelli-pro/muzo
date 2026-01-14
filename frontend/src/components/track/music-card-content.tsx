@@ -80,15 +80,15 @@ export function MusicCardContent({
             </p>
           </div>
           {/* Genre and Subgenre */}
-          <div className="flex flex-row  gap-1">
+          <div className="flex flex-row  gap-2">
             {formattedGenres !== 'Unknown Genre' &&
               formattedGenres.map((genre) => (
-                <Badge variant="secondary" className="text-xs capitalize">
+                <Badge variant="foreground" className="text-xs capitalize">
                   {genre}
                 </Badge>
               ))}
           </div>
-          <div className="flex flex-row  gap-1 truncate">
+          <div className="flex flex-row  gap-2 truncate ">
             {formattedSubgenres !== 'Unknown Subgenre' &&
               formattedSubgenres.map((subgenre) => (
                 <Badge variant="default" className="text-xs capitalize">
