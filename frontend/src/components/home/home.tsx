@@ -71,7 +71,7 @@ export function ChartRadar({
 
 const StatsCard = ({ title, value }: { title: string; value: string }) => {
   return (
-    <Card className="flex flex-col gap-2 w-full shadow-xs">
+    <Card className="flex flex-col gap-2 w-full shadow-xs border-none">
       <CardHeader>
         <CardDescription>{title}</CardDescription>
         <CardTitle className="text-2xl @[250px]/card:text-3xl font-semibold tracking-tight">
@@ -131,9 +131,9 @@ export function Home() {
         {topGenres?.map((genre, index) => (
           <Badge
             key={`${genre.genre}-${index}`}
-            variant="secondary"
-            className="text-sm h-6 shadow-xs capitalize "
-            size="sm"
+            variant="foreground"
+            className=" h-6 shadow-xs capitalize "
+            size="xs"
           >
             <strong>{genre.genre}:</strong> {genre.trackCount}
           </Badge>

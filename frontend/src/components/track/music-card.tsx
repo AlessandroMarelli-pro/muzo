@@ -65,7 +65,7 @@ function MusicCard({
         className={cn(
           'relative h-full w-full',
           '   cursor-pointer',
-          'bg-background  z-2',
+          '  z-2',
           className,
           'py-0',
           'border-none',
