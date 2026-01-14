@@ -1,20 +1,17 @@
 'use client';
 
-import { Command, LucideIcon, Moon, Sun } from 'lucide-react';
-import { useTheme } from 'next-themes';
+import { Command, LucideIcon } from 'lucide-react';
 import * as React from 'react';
 
 import { NavMain } from '@/components/nav-main';
 import {
   Sidebar,
   SidebarContent,
-  SidebarFooter,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
 } from '@/components/ui/sidebar';
-import { Switch } from '@/components/ui/switch';
 
 export function AppSidebar({
   data,
@@ -24,10 +21,6 @@ export function AppSidebar({
     navMain: { title: string; url: string; icon: LucideIcon }[];
   };
 }) {
-  const { setTheme, resolvedTheme } = useTheme();
-
-  const isDark = resolvedTheme === 'dark';
-
   return (
     <Sidebar collapsible="offcanvas" variant="inset" {...props}>
       <SidebarHeader>
@@ -50,24 +43,6 @@ export function AppSidebar({
       <SidebarContent>
         <NavMain items={data.navMain} />
       </SidebarContent>
-      <SidebarFooter>
-        <div className="flex items-center justify-between gap-2 px-2 py-1.5">
-          <Switch
-            checked={isDark}
-            onCheckedChange={(checked: boolean) =>
-              setTheme(checked ? 'dark' : 'light')
-            }
-            aria-label="Toggle night mode"
-            className="data-[state=checked]:bg-sidebar-primary data-[state=unchecked]:bg-sidebar-primary-foreground"
-          >
-            {isDark ? (
-              <Moon className="size-3 text-sidebar-foreground transition-all duration-300" />
-            ) : (
-              <Sun className="size-3 text-sidebar-foreground transition-all duration-300" />
-            )}
-          </Switch>
-        </div>
-      </SidebarFooter>
     </Sidebar>
   );
 }

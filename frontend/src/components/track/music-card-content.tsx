@@ -64,7 +64,7 @@ export function MusicCardContent({
             />
           </div>
         </div>
-        <div className=" space-y-2 p-2 z-1 bg-background/90 rounded-md flex flex-col justify-between  h-3/8">
+        <div className=" space-y-2 p-2 z-1 bg-card rounded-md flex flex-col justify-between  h-3/8">
           <div className="px-1">
             <h3
               className="font-semibold text-sm leading-tight line-clamp-1 capitalize"
@@ -83,7 +83,7 @@ export function MusicCardContent({
           <div className="flex flex-row  gap-1">
             {formattedGenres !== 'Unknown Genre' &&
               formattedGenres.map((genre) => (
-                <Badge variant="secondary" className="text-xs">
+                <Badge variant="secondary" className="text-xs capitalize">
                   {genre}
                 </Badge>
               ))}
@@ -91,7 +91,7 @@ export function MusicCardContent({
           <div className="flex flex-row  gap-1 truncate">
             {formattedSubgenres !== 'Unknown Subgenre' &&
               formattedSubgenres.map((subgenre) => (
-                <Badge variant="outline" className="text-xs">
+                <Badge variant="default" className="text-xs capitalize">
                   {subgenre}
                 </Badge>
               ))}

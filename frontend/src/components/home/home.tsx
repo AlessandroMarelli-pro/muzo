@@ -100,33 +100,29 @@ export function Home() {
       <h2 className="text-lg font-semibold text-foreground">
         Library Statistics
       </h2>
-      <div className="flex flex-col gap-4 md:gap-6">
-        <div className="flex flex-row gap-4 *:data-[slot=card]:shadow  px-4 *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card lg:px-6">
-          <StatsCard
-            title="Total Tracks"
-            value={totalTracks?.toString() || '0'}
-          />
-          <StatsCard
-            title="Total Plays"
-            value={listeningStats?.totalPlays.toString() || '0'}
-          />
-          <StatsCard
-            title="Total Play Time"
-            value={formatDuration(
-              listeningStats?.totalPlayTime || 0,
-            ).toString()}
-          />
-          <StatsCard
-            title="Favorite Count"
-            value={listeningStats?.favoriteCount.toString() || '0'}
-          />
-          <StatsCard
-            title="Total Artists"
-            value={totalArtists?.toString() || '0'}
-          />
-        </div>
+      <div className="flex flex-row gap-6 *:data-[slot=card]:shadow   *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card ">
+        <StatsCard
+          title="Total Tracks"
+          value={totalTracks?.toString() || '0'}
+        />
+        <StatsCard
+          title="Total Plays"
+          value={listeningStats?.totalPlays.toString() || '0'}
+        />
+        <StatsCard
+          title="Total Play Time"
+          value={formatDuration(listeningStats?.totalPlayTime || 0).toString()}
+        />
+        <StatsCard
+          title="Favorite Count"
+          value={listeningStats?.favoriteCount.toString() || '0'}
+        />
+        <StatsCard
+          title="Total Artists"
+          value={totalArtists?.toString() || '0'}
+        />
       </div>
-      <div className="flex flex-row gap-4 items-center flex-wrap">
+      <div className="flex flex-row gap-6 items-center flex-wrap">
         <h2 className="text-lg font-semibold">Top Genres</h2>
         {topGenres?.map((genre, index) => (
           <Badge
@@ -139,9 +135,11 @@ export function Home() {
           </Badge>
         ))}
       </div>
-      <div className="flex flex-col gap-4">
-        <h2 className="text-lg font-semibold">Recently Played</h2>
-        <div className="flex flex-nowrap gap-4 max-w-screen overflow-x-scroll scroll-mb-0 py-3">
+      <div className="flex flex-col gap-6">
+        <h2 className="text-lg font-semibold text-foreground">
+          Recently Played
+        </h2>
+        <div className="flex-row  *:data-[slot=card]:shadow-   *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card  flex flex-nowrap gap-6 max-w-screen overflow-x-scroll scroll-mb-0 pb-3">
           {recentlyPlayed ? (
             recentlyPlayed?.map((track, index) => (
               <MusicCard

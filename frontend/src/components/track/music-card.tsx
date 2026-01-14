@@ -50,7 +50,7 @@ function MusicCard({
   };
 
   return (
-    <div
+    <Card
       style={{
         width: `${width}px`,
         height: `${height}px`,
@@ -60,65 +60,62 @@ function MusicCard({
         maxHeight: `${height}px`,
       }}
       key={key}
+      className={cn(
+        'relative h-full w-full',
+        '   cursor-pointer',
+        '  z-2',
+        className,
+        'py-0',
+        'border-none',
+      )}
+      onMouseEnter={() => {
+        setIsHovered(true);
+      }}
+      onMouseLeave={() => {
+        setIsHovered(false);
+      }}
+      ref={cardRef}
     >
-      <Card
-        className={cn(
-          'relative h-full w-full',
-          '   cursor-pointer',
-          '  z-2',
-          className,
-          'py-0',
-          'border-none',
-        )}
-        onMouseEnter={() => {
-          setIsHovered(true);
-        }}
-        onMouseLeave={() => {
-          setIsHovered(false);
-        }}
-        ref={cardRef}
-      >
-        <MusicCardContent
-          track={track}
-          showPlayButton={isHovered || isThisTrackPlaying}
-          playButton={
-            <>
+      <MusicCardContent
+        track={track}
+        showPlayButton={isHovered || isThisTrackPlaying}
+        playButton={
+          <>
+            <Button
+              size="sm"
+              disabled={false}
+              variant="default"
+              className={cn(
+                'duration-200',
+                'h-12 w-12 rounded-full shadow-lg z-1000',
+              )}
+              onClick={playMusic}
+            >
+              {isThisTrackPlaying ? (
+                <Pause className="h-5 w-5" />
+              ) : (
+                <Play className="h-5 w-5" />
+              )}
+            </Button>
+            {onAdd && (
               <Button
                 size="sm"
-                disabled={false}
-                variant="default"
                 className={cn(
                   'duration-200',
-                  'h-12 w-12 rounded-full shadow-lg z-1000',
+                  'h-12 w-12 rounded-full bg-white hover:bg-white text-black shadow-lg z-1000',
                 )}
-                onClick={playMusic}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onAdd(track.id);
+                }}
               >
-                {isThisTrackPlaying ? (
-                  <Pause className="h-5 w-5" />
-                ) : (
-                  <Play className="h-5 w-5" />
-                )}
+                <Plus className="h-5 w-5" />
               </Button>
-              {onAdd && (
-                <Button
-                  size="sm"
-                  className={cn(
-                    'duration-200',
-                    'h-12 w-12 rounded-full bg-white hover:bg-white text-black shadow-lg z-1000',
-                  )}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onAdd(track.id);
-                  }}
-                >
-                  <Plus className="h-5 w-5" />
-                </Button>
-              )}
-            </>
-          }
-        />
-      </Card>
-    </div>
+            )}
+          </>
+        }
+      />
+    </Card>
   );
 }
 
