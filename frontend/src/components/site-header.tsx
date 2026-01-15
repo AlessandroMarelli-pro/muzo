@@ -1,11 +1,11 @@
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { SidebarTrigger } from '@/components/ui/sidebar';
-import { useLocation } from '@tanstack/react-router';
 import { useQueue } from '@/services/queue-hooks';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { useLocation } from '@tanstack/react-router';
 
-import { Moon, Sun, ListMusic } from 'lucide-react';
+import { ListMusic, Moon, Sun } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useEffect } from 'react';
 

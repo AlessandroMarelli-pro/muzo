@@ -5,7 +5,6 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet';
-import { useQueue } from '@/contexts/audio-player-context';
 import { useTracks } from '@/services/api-hooks';
 import { useAddTrackToPlaylist } from '@/services/playlist-hooks';
 import { FilterButton } from '../filters';
@@ -47,10 +46,6 @@ export function AddTrackDialog({
     onOpenChange(newOpen);
   };
 
-  const handleSetQueue = () => {
-    setQueue(tracks);
-  };
-
   return (
     <Sheet open={open} onOpenChange={handleOpenChange}>
       <SheetContent className="sm:max-w-[500px] ">
@@ -70,7 +65,6 @@ export function AddTrackDialog({
               key={track.id}
               track={track}
               onAdd={addTrackToPlaylist}
-              setQueue={handleSetQueue}
               width="200"
               height="200"
             />

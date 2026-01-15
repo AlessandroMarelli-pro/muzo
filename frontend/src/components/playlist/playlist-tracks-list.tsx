@@ -1,6 +1,6 @@
 import { Playlist as GraphQLPlaylist } from '@/__generated__/types';
 import { Card, CardContent } from '@/components/ui/card';
-import { useQueue } from '@/contexts/audio-player-context';
+
 import { useRemoveTrackFromPlaylist } from '@/services/playlist-hooks';
 import { Clock } from 'lucide-react';
 import { useState } from 'react';
@@ -16,12 +16,7 @@ export function PlaylistTracksList({
   onUpdate,
 }: PlaylistTracksListProps) {
   const [removingTrackId, setRemovingTrackId] = useState<string | null>(null);
-  const { setQueue } = useQueue();
   const removeTrackMutation = useRemoveTrackFromPlaylist('default');
-
-  const handleSetQueue = () => {
-    setQueue(playlist.tracks.map((track) => track.track));
-  };
 
   const handleRemoveTrack = async (trackId: string) => {
     if (!confirm('Remove this track from the playlist?')) {
@@ -40,11 +35,6 @@ export function PlaylistTracksList({
     } finally {
       setRemovingTrackId(null);
     }
-  };
-
-  const handlePlayTrack = (trackId: string) => {
-    // TODO: Implement play track functionality
-    console.log('Play track:', trackId);
   };
 
   if (playlist.tracks.length === 0) {
@@ -75,7 +65,6 @@ export function PlaylistTracksList({
               index={index}
               handleRemoveTrack={handleRemoveTrack}
               removingTrackId={removingTrackId}
-              setQueue={handleSetQueue}
             />
           ))}
         </div>

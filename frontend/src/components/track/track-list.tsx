@@ -155,9 +155,6 @@ export const TrackList: React.FC<TrackListProps> = () => {
       <MusicTable
         data={tracks}
         pageCount={totalPages}
-        onAddToQueue={(tracks: SimpleMusicTrack[]) =>
-          console.log('Added to queue:', tracks)
-        }
         isLoading={isLoading}
         staticFilterOptions={staticFilterOptions}
         initialPageSize={limit}

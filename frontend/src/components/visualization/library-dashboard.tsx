@@ -7,7 +7,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { useQueue } from '@/contexts/audio-player-context';
 import { useLibrary, useTracks } from '@/services/api-hooks';
 import {
   BarChart3,
@@ -46,10 +45,7 @@ export const LibraryDashboard: React.FC<LibraryDashboardProps> = ({
 
   const [activeView, setActiveView] = useState<DashboardView>('overview');
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const { setQueue } = useQueue();
-  const handleSetQueue = () => {
-    setQueue(tracks);
-  };
+
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
@@ -203,9 +199,7 @@ export const LibraryDashboard: React.FC<LibraryDashboardProps> = ({
                 <p className="text-2xl font-bold">
                   {
                     new Set(
-                      tracks
-                        .flatMap((t) => t.genres || [])
-                        .filter(Boolean),
+                      tracks.flatMap((t) => t.genres || []).filter(Boolean),
                     ).size
                   }
                 </p>
@@ -286,11 +280,7 @@ export const LibraryDashboard: React.FC<LibraryDashboardProps> = ({
             className={'flex flex-wrap  justify-center gap-3  overflow-y-auto'}
           >
             {tracks?.map((track) => (
-              <MusicCard
-                key={track.id}
-                track={track}
-                setQueue={handleSetQueue}
-              />
+              <MusicCard key={track.id} track={track} />
             ))}
           </div>
         </CardContent>

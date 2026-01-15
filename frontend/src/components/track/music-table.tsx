@@ -1,6 +1,6 @@
 'use client';
 
-import { SimpleMusicTrack } from '@/__generated__/types';
+import { QueueItem, SimpleMusicTrack } from '@/__generated__/types';
 import { SelectPlaylistDialog } from '@/components/playlist/select-playlist-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -11,7 +11,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
-import { ColumnDef } from '@tanstack/react-table';
+import { ColumnDef, Row } from '@tanstack/react-table';
 import { Brain, Heart, MoreHorizontal, Pause, Play } from 'lucide-react';
 import * as React from 'react';
 
@@ -24,15 +24,17 @@ import {
   useCurrentTrack,
 } from '@/contexts/audio-player-context';
 import { useDataTable } from '@/hooks/use-data-table';
+import { AudioPlayerActions } from '@/hooks/useAudioPlayer';
 import { StaticFilterOptionsData } from '@/hooks/useFilterOptions';
-import { useNavigate } from '@tanstack/react-router';
+import { useAddTrackToQueue } from '@/services/queue-hooks';
+import { UseMutationResult } from '@tanstack/react-query';
+import { useNavigate, UseNavigateResult } from '@tanstack/react-router';
 import { format } from 'date-fns';
 import { DataTablePagination } from '../data-table/data-table-pagination';
 
 interface MusicTableProps {
   data: SimpleMusicTrack[];
   pageCount: number;
-  onAddToQueue?: (tracks: SimpleMusicTrack[]) => void;
   isLoading?: boolean;
   staticFilterOptions: StaticFilterOptionsData;
   initialPageSize?: number;
@@ -98,7 +100,14 @@ const ActionCells = ({
   actions,
   setCurrentTrack,
   onOpenAddToPlaylistDialog,
-}: any) => {
+}: {
+  row: Row<SimpleMusicTrack>;
+  navigate: UseNavigateResult<string>;
+  actions: AudioPlayerActions;
+  setCurrentTrack: (track: SimpleMusicTrack) => void;
+  onOpenAddToPlaylistDialog: (trackId: string) => void;
+  onAddToQueue: UseMutationResult<QueueItem, Error, string>;
+}) => {
   const [isTrackPlaying, setIsTrackPlaying] = React.useState(false);
 
   const track = row.original;
@@ -135,9 +144,7 @@ const ActionCells = ({
         <DropdownMenuContent align="end">
           <DropdownMenuItem
             onClick={() => {
-              if (onAddToQueue) {
-                onAddToQueue([track]);
-              }
+              onAddToQueue.mutate(track.id);
             }}
           >
             Add to Queue
@@ -154,7 +161,6 @@ const ActionCells = ({
 export function MusicTable({
   data,
   pageCount,
-  onAddToQueue,
   isLoading,
   staticFilterOptions,
   initialPageSize = 10,
@@ -162,6 +168,7 @@ export function MusicTable({
   const navigate = useNavigate();
   const actions = useAudioPlayerActions();
   const { setCurrentTrack } = useCurrentTrack();
+  const addToQueueMutation = useAddTrackToQueue();
   const [isAddToPlaylistDialogOpen, setIsAddToPlaylistDialogOpen] =
     React.useState(false);
   const [selectedTrackId, setSelectedTrackId] = React.useState<string | null>(
@@ -593,15 +600,15 @@ export function MusicTable({
           <ActionCells
             row={row}
             navigate={navigate}
-            onAddToQueue={onAddToQueue}
             actions={actions}
             setCurrentTrack={setCurrentTrack}
             onOpenAddToPlaylistDialog={handleOpenAddToPlaylistDialog}
+            onAddToQueue={addToQueueMutation}
           />
         ),
       },
     ],
-    [onAddToQueue, handleOpenAddToPlaylistDialog],
+    [handleOpenAddToPlaylistDialog],
   );
 
   const { table } = useDataTable({

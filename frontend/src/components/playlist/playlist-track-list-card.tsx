@@ -7,26 +7,33 @@ import {
   useIsPlaying,
 } from '@/contexts/audio-player-context';
 import { formatDuration } from '@/lib/utils';
+import { useAddTrackToQueue } from '@/services/queue-hooks';
 import { useNavigate } from '@tanstack/react-router';
-import { Brain, GripVertical, Pause, Play, Trash2 } from 'lucide-react';
+import {
+  Brain,
+  GripVertical,
+  ListMusic,
+  Pause,
+  Play,
+  Trash2,
+} from 'lucide-react';
 
 export const PlaylistTrackListCard = ({
   playlistTrack,
   index,
   handleRemoveTrack,
   removingTrackId,
-  setQueue,
 }: {
   playlistTrack: PlaylistTrack;
   index: number;
   handleRemoveTrack: (trackId: string) => void;
   removingTrackId: string | null;
-  setQueue: () => void;
 }) => {
   const { currentTrack, setCurrentTrack } = useCurrentTrack();
   const actions = useAudioPlayerActions();
   const isPlaying = useIsPlaying();
   const navigate = useNavigate();
+  const addToQueueMutation = useAddTrackToQueue();
   // Only check if this specific track is the current track and playing
   const isCurrentTrack = currentTrack?.id === playlistTrack.track.id;
   const isThisTrackPlaying = isCurrentTrack && isPlaying;
@@ -37,7 +44,7 @@ export const PlaylistTrackListCard = ({
     if (currentTrack?.id !== playlistTrack.track.id) {
       setCurrentTrack(playlistTrack.track);
     }
-    setQueue();
+
     actions.togglePlayPause(playlistTrack.track.id);
   };
   return (
@@ -75,7 +82,8 @@ export const PlaylistTrackListCard = ({
       </div>
       <div className="hidden md:block">
         <Badge variant="outline" className="text-xs">
-          {playlistTrack.track.subgenres && playlistTrack.track.subgenres.length > 0
+          {playlistTrack.track.subgenres &&
+          playlistTrack.track.subgenres.length > 0
             ? playlistTrack.track.subgenres.join(', ')
             : 'Unknown'}
         </Badge>
@@ -98,8 +106,20 @@ export const PlaylistTrackListCard = ({
           )}
         </Button>
         <Button
-          variant="ghost-destructive"
+          variant="ghost"
           size="sm"
+          onClick={(e) => {
+            e.stopPropagation();
+            addToQueueMutation.mutate(playlistTrack.track.id);
+          }}
+          title="Add to queue"
+        >
+          <ListMusic className="h-4 w-4" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-destructive hover:text-destructive"
           onClick={() => handleRemoveTrack(playlistTrack.track.id)}
         >
           <Trash2 className="h-4 w-4 " />

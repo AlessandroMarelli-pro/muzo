@@ -16,7 +16,6 @@ interface MusicCardProps {
   track: SimpleMusicTrack;
   className?: string;
   onAdd?: (trackId: string) => void;
-  setQueue: () => void;
   key: string;
   height?: string;
   width?: string;
@@ -67,7 +66,6 @@ function MusicCard({
   track,
   className,
   onAdd,
-  setQueue,
   key,
   height = '300',
   width = '300',
@@ -86,7 +84,6 @@ function MusicCard({
     if (currentTrack?.id !== track.id) {
       setCurrentTrack(track);
     }
-    setQueue();
     actions.togglePlayPause(track.id);
     e.stopPropagation();
   };

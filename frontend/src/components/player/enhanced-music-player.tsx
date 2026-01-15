@@ -5,10 +5,10 @@ import {
   useAudioPlayerContext,
   useCurrentTrack,
   useIsPlaying,
-  useQueue,
 } from '@/contexts/audio-player-context';
 import { cn } from '@/lib/utils';
 import { useWaveformData } from '@/services/music-player-hooks';
+import { useQueue } from '@/services/queue-hooks';
 import {
   Heart,
   Pause,
@@ -48,16 +48,20 @@ export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
 
   // Audio player hooks
   const { currentTrack, setCurrentTrack } = useCurrentTrack();
-  const { queue } = useQueue();
+  const { data: queueItems = [] } = useQueue();
+  // Map queue items to tracks for backward compatibility
+  const queue = queueItems
+    .map((item) => item.track)
+    .filter((track): track is NonNullable<typeof track> => track !== null);
   const [queueIndex, setQueueIndex] = useState(
-    queue?.findIndex((track) => track.id === currentTrack?.id) || 0,
+    queue.findIndex((track) => track.id === currentTrack?.id) || 0,
   );
 
   useEffect(() => {
     setQueueIndex(
-      queue?.findIndex((track) => track.id === currentTrack?.id) || 0,
+      queue.findIndex((track) => track.id === currentTrack?.id) || 0,
     );
-  }, [currentTrack]);
+  }, [currentTrack, queue]);
   const actions = useAudioPlayerActions();
   const isPlaying = useIsPlaying();
   const formattedImage = currentTrack?.imagePath || 'Unknown Image';

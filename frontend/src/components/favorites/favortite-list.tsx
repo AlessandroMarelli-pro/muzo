@@ -2,7 +2,6 @@ import { Badge } from '@/components/ui/badge';
 import {
   useAudioPlayerActions,
   useAudioPlayerContext,
-  useQueue,
 } from '@/contexts/audio-player-context';
 import { AnalysisStatus } from '@/services/api-hooks';
 import { usePlaylistByName } from '@/services/playlist-hooks';
@@ -45,15 +44,9 @@ export const FavoriteList: React.FC<TrackListProps> = ({
   const { state } = useAudioPlayerContext();
 
   useEffect(() => {
-    refetch().then(() => {
-      handleSetQueue();
-    });
+    refetch();
   }, [state.isFavorite]);
 
-  const { setQueue } = useQueue();
-  const handleSetQueue = () => {
-    setQueue(tracks);
-  };
   const addTrackToFavorite = (trackId?: string) => {
     if (trackId) {
       actions.toggleFavorite(trackId);
@@ -109,7 +102,7 @@ export const FavoriteList: React.FC<TrackListProps> = ({
         }
       >
         {tracks.map((track) => (
-          <MusicCard key={track.id} track={track} setQueue={handleSetQueue} />
+          <MusicCard key={track.id} track={track} />
         ))}
       </div>
       {/* Tabs */}

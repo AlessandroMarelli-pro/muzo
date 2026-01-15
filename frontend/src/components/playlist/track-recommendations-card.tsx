@@ -21,11 +21,9 @@ export const TrackRecommendationsCardSkeleton = () => {
 export const TrackRecommendationsCard = ({
   recommendation,
   onAddTrack,
-  setQueue,
 }: {
   recommendation: TrackRecommendation;
   onAddTrack?: (trackId: string) => void;
-  setQueue: () => void;
 }) => {
   const track = recommendation.track;
   const { currentTrack, setCurrentTrack } = useCurrentTrack();
@@ -43,7 +41,6 @@ export const TrackRecommendationsCard = ({
     if (currentTrack?.id !== track.id) {
       setCurrentTrack(track);
     }
-    setQueue();
     actions.togglePlayPause(track.id);
   };
   const handleAddTrack = (e: React.SyntheticEvent<any>) => {

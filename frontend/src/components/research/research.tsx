@@ -83,7 +83,6 @@ export function Research({
       </div>
       <TrackRecommandationsComponent
         recommendations={trackRecommendations || []}
-        setQueue={() => {}}
         isLoading={isLoadingTrackRecommendations}
         onAddTrack={() => {}}
       />

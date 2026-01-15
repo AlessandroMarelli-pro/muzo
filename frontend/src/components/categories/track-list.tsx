@@ -1,6 +1,5 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { useQueue } from '@/contexts/audio-player-context';
 import { useTracksByCategories } from '@/services/api-hooks';
 import { Music } from 'lucide-react';
 import React, { useState } from 'react';
@@ -27,8 +26,6 @@ export const CategoriesTrackList: React.FC<TrackListProps> = ({
     genre,
   );
 
-  const totalCategories = categories?.length;
-  const { setQueue } = useQueue();
   if (isLoading) {
     return <Loading />;
   }
@@ -48,10 +45,6 @@ export const CategoriesTrackList: React.FC<TrackListProps> = ({
       />
     );
   }
-
-  const handleSetQueue = () => {
-    setQueue(categories.flatMap((category) => category.tracks));
-  };
 
   return (
     <div className="p-4 space-y-4 flex flex-col z-0">
@@ -95,11 +88,7 @@ export const CategoriesTrackList: React.FC<TrackListProps> = ({
                   }
                 >
                   {category.tracks.map((track) => (
-                    <MusicCard
-                      key={track.id}
-                      track={track}
-                      setQueue={handleSetQueue}
-                    />
+                    <MusicCard key={track.id} track={track} />
                   ))}
                 </div>
               </div>

@@ -14,11 +14,6 @@ const AudioPlayerStateContext = createContext<
   ReturnType<typeof useAudioPlayer>['state'] | null
 >(null);
 
-const QueueContext = createContext<{
-  queue: SimpleMusicTrack[] | null;
-  setQueue: (queue: SimpleMusicTrack[] | null) => void;
-} | null>(null);
-
 const AudioPlayerActionsContext = createContext<
   ReturnType<typeof useAudioPlayer>['actions'] | null
 >(null);
@@ -31,7 +26,6 @@ export function AudioPlayerProvider({ children }: AudioPlayerProviderProps) {
   const [currentTrack, setCurrentTrack] = useState<SimpleMusicTrack | null>(
     null,
   );
-  const [queue, setQueue] = useState<SimpleMusicTrack[] | null>(null);
   const { state, actions } = useAudioPlayer({
     trackId: currentTrack?.id || undefined,
   });
@@ -44,26 +38,16 @@ export function AudioPlayerProvider({ children }: AudioPlayerProviderProps) {
     [currentTrack],
   );
 
-  const currentQueueValue = useMemo(
-    () => ({
-      queue,
-      setQueue,
-    }),
-    [queue],
-  );
-
   return (
-    <QueueContext.Provider value={currentQueueValue}>
-      <CurrentTrackContext.Provider value={currentTrackValue}>
-        <IsPlayingContext.Provider value={state.isPlaying}>
-          <AudioPlayerStateContext.Provider value={state}>
-            <AudioPlayerActionsContext.Provider value={actions}>
-              {children}
-            </AudioPlayerActionsContext.Provider>
-          </AudioPlayerStateContext.Provider>
-        </IsPlayingContext.Provider>
-      </CurrentTrackContext.Provider>
-    </QueueContext.Provider>
+    <CurrentTrackContext.Provider value={currentTrackValue}>
+      <IsPlayingContext.Provider value={state.isPlaying}>
+        <AudioPlayerStateContext.Provider value={state}>
+          <AudioPlayerActionsContext.Provider value={actions}>
+            {children}
+          </AudioPlayerActionsContext.Provider>
+        </AudioPlayerStateContext.Provider>
+      </IsPlayingContext.Provider>
+    </CurrentTrackContext.Provider>
   );
 }
 
@@ -81,13 +65,6 @@ export function useIsPlaying() {
   return useContext(IsPlayingContext);
 }
 
-export function useQueue() {
-  const context = useContext(QueueContext);
-  if (!context) {
-    throw new Error('useQueue must be used within an AudioPlayerProvider');
-  }
-  return context;
-}
 export function useAudioPlayerActions() {
   const context = useContext(AudioPlayerActionsContext);
   if (!context) {

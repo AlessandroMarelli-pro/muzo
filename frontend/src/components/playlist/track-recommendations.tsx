@@ -7,7 +7,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { useQueue } from '@/contexts/audio-player-context';
 import {
   useAddTrackToPlaylist,
   usePlaylistRecommendations,
@@ -27,12 +26,10 @@ interface TrackRecommendationsProps {
 export const TrackRecommandationsComponent = ({
   recommendations,
   onAddTrack,
-  setQueue,
   isLoading,
 }: {
   recommendations: TrackRecommendation[];
   onAddTrack?: (trackId: string) => void;
-  setQueue: () => void;
   isLoading: boolean;
 }) => {
   return (
@@ -44,7 +41,6 @@ export const TrackRecommandationsComponent = ({
                 <TrackRecommendationsCard
                   recommendation={recommendation}
                   onAddTrack={onAddTrack}
-                  setQueue={setQueue}
                 />
               ))
             : Array.from({ length: 5 }).map((_, i) => (
@@ -69,13 +65,7 @@ export function TrackRecommendations({
     error,
   } = usePlaylistRecommendations(playlistId, 20);
 
-  const { setQueue } = useQueue();
-
   const addTrackMutation = useAddTrackToPlaylist('default');
-
-  const handleSetQueue = () => {
-    setQueue(recommendations.map((recommendation) => recommendation.track));
-  };
 
   useEffect(() => {
     refetch();
@@ -174,7 +164,6 @@ export function TrackRecommendations({
     <TrackRecommandationsComponent
       recommendations={recommendations}
       onAddTrack={handleAddTrack}
-      setQueue={handleSetQueue}
       isLoading={loading}
     />
   );
