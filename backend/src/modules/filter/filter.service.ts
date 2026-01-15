@@ -311,6 +311,7 @@ export class FilterService {
 
     if (
       criteria.artist ||
+      criteria.title ||
       criteria.keys ||
       criteria.tempo?.min !== 0 ||
       criteria.tempo?.max !== 200 ||
@@ -332,6 +333,13 @@ export class FilterService {
         where.OR = [
           { originalArtist: { contains: criteria.artist } },
           { userArtist: { contains: criteria.artist } },
+        ];
+      }
+
+      if (criteria.title && criteria.title.length > 0) {
+        where.OR = [
+          { originalTitle: { contains: criteria.title } },
+          { userTitle: { contains: criteria.title } },
         ];
       }
 

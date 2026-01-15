@@ -22,6 +22,7 @@ export interface FilterCriteriaInput {
   liveness?: RangeInput;
   acousticness?: RangeInput;
   artist?: string;
+  title?: string;
   libraryId?: string[];
 }
 
@@ -72,6 +73,7 @@ export const useCurrentFilter = () => {
               min
             }
             artist
+            title
             libraryId
             atmospheres
           }
@@ -122,6 +124,7 @@ export const useSetCurrentFilter = () => {
                 min
               }
               artist
+              title
               libraryId
               atmospheres
             }
@@ -281,6 +284,7 @@ export const useSavedFilters = () => {
                 min
               }
               artist
+              title
               libraryId
               atmospheres
             }
@@ -344,6 +348,7 @@ export const useCreateSavedFilter = () => {
                   min
                 }
                 artist
+                title
                 libraryId
               }
               createdAt

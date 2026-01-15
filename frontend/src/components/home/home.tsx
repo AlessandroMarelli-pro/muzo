@@ -1,7 +1,7 @@
 import { formatDuration } from '@/lib/utils';
 import { useRecentlyPlayed } from '@/services/api-hooks';
-import { useLibraryMetrics } from '@/services/metrics-hooks';
-import MusicCard from '../track/music-card';
+import { TopGenre, useLibraryMetrics } from '@/services/metrics-hooks';
+import MusicCard, { MusicCardSkeleton } from '../track/music-card';
 import { Badge } from '../ui/badge';
 import { Card, CardDescription, CardHeader, CardTitle } from '../ui/card';
 
@@ -9,6 +9,7 @@ import { Card, CardDescription, CardHeader, CardTitle } from '../ui/card';
 
 import { PolarAngleAxis, PolarGrid, Radar, RadarChart } from 'recharts';
 
+import { SimpleMusicTrack } from '@/__generated__/types';
 import { CardContent } from '@/components/ui/card';
 import {
   ChartConfig,
@@ -16,7 +17,7 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from '@/components/ui/chart';
-import { Loading } from '../loading';
+import { Skeleton } from '../ui/skeleton';
 
 export const description = 'A radar chart';
 
@@ -68,8 +69,31 @@ export function ChartRadar({
     </Card>
   );
 }
+const StatsCardSkeleton = () => {
+  return (
+    <Card className="flex flex-col gap-2 w-full  rounded-xl border-none bg-card text-card-foreground shadow-2xl @container/card">
+      <CardHeader>
+        <CardDescription>
+          <Skeleton className="w-10 h-6" />
+        </CardDescription>
+        <CardTitle className="text-2xl @[250px]/card:text-3xl font-normal tracking-tight">
+          <Skeleton className="w-full h-7" />
+        </CardTitle>
+      </CardHeader>
+    </Card>
+  );
+};
 
-const StatsCard = ({ title, value }: { title: string; value: string }) => {
+const StatsCard = ({
+  title,
+  value,
+  isLoading,
+}: {
+  title: string;
+  value: string;
+  isLoading: boolean;
+}) => {
+  if (isLoading) return <StatsCardSkeleton />;
   return (
     <Card className="flex flex-col gap-2 w-full  rounded-xl border-none bg-card text-card-foreground shadow-2xl @container/card">
       <CardHeader>
@@ -82,12 +106,84 @@ const StatsCard = ({ title, value }: { title: string; value: string }) => {
   );
 };
 
+const TopGenresSkeleton = () => {
+  return (
+    <div className="flex flex-row gap-6 items-center flex-wrap">
+      {Array.from({ length: 10 }).map((_, index) => (
+        <Badge
+          key={index}
+          variant="foreground"
+          className=" h-6 shadow-xs capitalize "
+        >
+          <Skeleton key={index} className="w-15 h-6" />
+        </Badge>
+      ))}
+    </div>
+  );
+};
+const TopGenres = ({
+  genres,
+  isLoading,
+}: {
+  genres: TopGenre[];
+  isLoading: boolean;
+}) => {
+  if (isLoading) return <TopGenresSkeleton />;
+  return (
+    <div className="flex flex-row gap-6 items-center flex-wrap">
+      {genres?.map((genre, index) => (
+        <Badge
+          key={`${genre.genre}-${index}`}
+          variant="foreground"
+          className=" h-6 shadow-xs capitalize "
+          size="xs"
+        >
+          <strong>{genre.genre}:</strong> {genre.trackCount}
+        </Badge>
+      ))}
+    </div>
+  );
+};
+
+const RecentlyPlayedSkeleton = () => {
+  return (
+    <div className="flex-row  *:data-[slot=card]:shadow-   *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card  flex flex-nowrap gap-6 max-w-screen overflow-x-scroll scroll-mb-0 pb-3">
+      {Array.from({ length: 4 }).map((_, index) => (
+        <MusicCardSkeleton key={index} />
+      ))}
+    </div>
+  );
+};
+const RecentlyPlayed = ({
+  recentlyPlayed,
+  isLoading,
+}: {
+  recentlyPlayed: SimpleMusicTrack[];
+  isLoading: boolean;
+}) => {
+  if (isLoading) return <RecentlyPlayedSkeleton />;
+  return (
+    <div className="flex-row  *:data-[slot=card]:shadow-   *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card  flex flex-nowrap gap-6 max-w-screen overflow-x-scroll scroll-mb-0 pb-3">
+      {recentlyPlayed ? (
+        recentlyPlayed?.map((track, index) => (
+          <MusicCard
+            key={`${track.id}-${index}`}
+            track={track}
+            setQueue={() => {}}
+          />
+        ))
+      ) : (
+        <div>No recently played tracks</div>
+      )}
+    </div>
+  );
+};
+
 export function Home() {
   const { data: recentlyPlayed } = useRecentlyPlayed();
 
   const { data: metrics, isLoading, error } = useLibraryMetrics();
 
-  if (isLoading) return <Loading />;
   if (error) return <div>Error loading metrics</div>;
 
   const listeningStats = metrics?.listeningStats;
@@ -102,52 +198,39 @@ export function Home() {
         <StatsCard
           title="Total Tracks"
           value={totalTracks?.toString() || '0'}
+          isLoading={isLoading}
         />
         <StatsCard
           title="Total Plays"
           value={listeningStats?.totalPlays.toString() || '0'}
+          isLoading={isLoading}
         />
         <StatsCard
           title="Total Play Time"
           value={formatDuration(listeningStats?.totalPlayTime || 0).toString()}
+          isLoading={isLoading}
         />
         <StatsCard
           title="Favorite Count"
           value={listeningStats?.favoriteCount.toString() || '0'}
+          isLoading={isLoading}
         />
         <StatsCard
           title="Total Artists"
           value={totalArtists?.toString() || '0'}
+          isLoading={isLoading}
         />
       </div>
       <div className="flex flex-row gap-6 items-center flex-wrap">
         <h2 className="text-lg  text-foreground">Top Genres</h2>
-        {topGenres?.map((genre, index) => (
-          <Badge
-            key={`${genre.genre}-${index}`}
-            variant="foreground"
-            className=" h-6 shadow-xs capitalize "
-            size="xs"
-          >
-            <strong>{genre.genre}:</strong> {genre.trackCount}
-          </Badge>
-        ))}
+        <TopGenres genres={topGenres || []} isLoading={isLoading} />
       </div>
       <div className="flex flex-col gap-6">
         <h2 className="text-lg  text-foreground">Recently Played</h2>
-        <div className="flex-row  *:data-[slot=card]:shadow-   *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card  flex flex-nowrap gap-6 max-w-screen overflow-x-scroll scroll-mb-0 pb-3">
-          {recentlyPlayed ? (
-            recentlyPlayed?.map((track, index) => (
-              <MusicCard
-                key={`${track.id}-${index}`}
-                track={track}
-                setQueue={() => {}}
-              />
-            ))
-          ) : (
-            <div>No recently played tracks</div>
-          )}
-        </div>
+        <RecentlyPlayed
+          recentlyPlayed={recentlyPlayed || []}
+          isLoading={isLoading}
+        />
       </div>
       {/*     <div className="flex flex-col gap-4 w-full">
         <h2 className="text-lg font-semibold">Distributions</h2>

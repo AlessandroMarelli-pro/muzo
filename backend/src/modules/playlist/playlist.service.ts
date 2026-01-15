@@ -526,7 +526,7 @@ export class PlaylistService {
               },
             },
           },
-          orderBy: { position: 'asc' },
+          orderBy: { position: 'desc' },
         },
       },
     });

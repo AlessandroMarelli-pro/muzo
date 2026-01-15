@@ -156,6 +156,7 @@ input FilterCriteriaInput {
   speechiness: RangeInput
   subgenres: [String!]
   tempo: RangeInput
+  title: String
   valenceMood: [String!]
 }
 
@@ -173,6 +174,7 @@ type FilterCriteriaType {
   speechiness: Range
   subgenres: [String!]
   tempo: Range
+  title: String
   valenceMood: [String!]
 }
 

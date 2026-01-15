@@ -16,6 +16,7 @@ export interface FilterState {
   liveness: Range;
   acousticness: Range;
   artist: string;
+  title: string;
   valenceMood: string[];
   arousalMood: string[];
   danceabilityFeeling: string[];
@@ -62,6 +63,7 @@ const defaultFilterState: FilterState = {
   liveness: { min: 0, max: 1 },
   acousticness: { min: 0, max: 1 },
   artist: '',
+  title: '',
   libraryId: [],
   atmospheres: [],
 };
@@ -125,6 +127,7 @@ export const useFiltering = () => {
           liveness: filters.liveness,
           acousticness: filters.acousticness,
           artist: filters.artist,
+          title: filters.title,
           libraryId: filters.libraryId,
           atmospheres: filters.atmospheres,
         };
@@ -175,6 +178,7 @@ export const useFiltering = () => {
           liveness: loadedFilters.liveness || { min: 0, max: 1 },
           acousticness: loadedFilters.acousticness || { min: 0, max: 1 },
           artist: loadedFilters.artist || '',
+          title: loadedFilters.title || '',
           libraryId: loadedFilters.libraryId || [],
           atmospheres: loadedFilters.atmospheres || [],
         });
@@ -243,7 +247,8 @@ export const useFiltering = () => {
       filters.liveness.max !== 1 ||
       filters.acousticness.min !== 0 ||
       filters.acousticness.max !== 1 ||
-      filters.artist !== ''
+      filters.artist !== '' ||
+      filters.title !== ''
     );
   }, [filters]);
 

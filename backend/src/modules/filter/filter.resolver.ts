@@ -35,6 +35,9 @@ export class FilterCriteriaInput {
   @Field(() => String, { nullable: true })
   artist?: string;
 
+  @Field(() => String, { nullable: true })
+  title?: string;
+
   @Field(() => [String], { nullable: true })
   genres?: string[];
 
@@ -140,6 +143,9 @@ export class FilterCriteriaType {
 
   @Field(() => String, { nullable: true })
   artist?: string;
+
+  @Field(() => String, { nullable: true })
+  title?: string;
 
   @Field(() => [String], { nullable: true })
   libraryId?: string[];

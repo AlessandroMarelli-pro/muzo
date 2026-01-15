@@ -1,5 +1,5 @@
 import { SimpleMusicTrack } from '@/__generated__/types';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import {
   useAudioPlayerActions,
   useCurrentTrack,
@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils';
 import { Pause, Play, Plus } from 'lucide-react';
 import { memo, useRef, useState } from 'react';
 import { Button } from '../ui/button';
+import { Skeleton } from '../ui/skeleton';
 import { MusicCardContent } from './music-card-content';
 
 interface MusicCardProps {
@@ -19,6 +20,47 @@ interface MusicCardProps {
   key: string;
   height?: string;
   width?: string;
+}
+export function MusicCardSkeleton({
+  width = '300',
+  height = '300',
+}: {
+  width?: string;
+  height?: string;
+}) {
+  return (
+    <Card
+      style={{
+        width: `${width}px`,
+        height: `${height}px`,
+        minWidth: `${width}px`,
+        minHeight: `${height}px`,
+        maxWidth: `${width}px`,
+        maxHeight: `${height}px`,
+      }}
+      className={cn(
+        'relative h-full w-full',
+        '   cursor-pointer',
+        '  z-2',
+        'py-0',
+        'border-none',
+      )}
+    >
+      <CardContent className="p-0 h-full">
+        <div className="flex flex-col h-full space-around">
+          <div className="z-0 absolute  w-full h-full opacity-50 ">
+            <Skeleton className="w-full h-full" />
+          </div>
+          <div className=" flex-1 h-5/8 backdrop-blur-md rounded-md">
+            <Skeleton className="w-full h-full" />
+          </div>
+          <div className=" space-y-2 p-2 z-1 bg-card rounded-md flex flex-col justify-between  h-3/8">
+            <Skeleton className="w-full h-full" />
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
 }
 
 function MusicCard({

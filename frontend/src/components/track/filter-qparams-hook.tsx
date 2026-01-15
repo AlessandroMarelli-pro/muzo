@@ -13,6 +13,7 @@ export const useFilterQueryParams = () => {
 
   // URL query parameter management for filters (read-only)
   const [artistParam] = useQueryState('artist', parseAsString);
+  const [titleParam] = useQueryState('title', parseAsString);
   const [genreParam] = useQueryState(
     'genres',
     parseAsArrayOf(parseAsString, ',').withDefault([]),
@@ -60,6 +61,7 @@ export const useFilterQueryParams = () => {
   // Use refs to track previous values and only update when they actually change
   const prevValuesRef = useRef<{
     artist: string | null;
+    title: string | null;
     genres: string[];
     subgenres: string[];
     atmospheres: string[];
@@ -71,6 +73,7 @@ export const useFilterQueryParams = () => {
     libraryId: string[];
   }>({
     artist: null,
+    title: null,
     genres: [],
     subgenres: [],
     atmospheres: [],
@@ -96,6 +99,13 @@ export const useFilterQueryParams = () => {
     if (prevValuesRef.current.artist !== artistValue) {
       updateFilter('artist', artistValue);
       prevValuesRef.current.artist = artistValue;
+    }
+
+    // Only update title if it changed
+    const titleValue = titleParam || '';
+    if (prevValuesRef.current.title !== titleValue) {
+      updateFilter('title', titleValue);
+      prevValuesRef.current.title = titleValue;
     }
 
     // Only update atmospheres if it changed
@@ -187,6 +197,7 @@ export const useFilterQueryParams = () => {
       prevValuesRef.current.libraryId = [...libraryIdParam];
     }
   }, [
+    titleParam,
     genreParam,
     subgenreParam,
     keyParam,
@@ -232,6 +243,7 @@ export const useFilterQueryParams = () => {
   }, [filters, saveCurrentFilter]);
 
   return {
+    titleParam,
     genreParam,
     subgenreParam,
     keyParam,
