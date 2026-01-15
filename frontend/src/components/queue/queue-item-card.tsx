@@ -12,6 +12,7 @@ import { Brain, GripVertical, Pause, Play, Trash2 } from 'lucide-react';
 interface QueueItemCardProps {
   queueItem: QueueItem;
   index: number;
+  queueItemsCount: number;
   onRemove: (trackId: string) => void;
   removingTrackId: string | null;
   dragHandleProps?: any;
@@ -19,6 +20,7 @@ interface QueueItemCardProps {
 
 export const QueueItemCard = ({
   queueItem,
+  queueItemsCount,
   index,
   onRemove,
   removingTrackId,
@@ -50,13 +52,23 @@ export const QueueItemCard = ({
   return (
     <div
       className={cn(
-        'flex items-center gap-4 p-4 hover:bg-muted/50 transition-colors group',
-        isCurrentTrack && 'bg-muted/80 border-l-2 border-l-primary',
+        'flex items-center gap-2 p-2 hover:bg-muted/50 transition-colors group',
+        isCurrentTrack && 'bg-muted/80  ',
+        isCurrentTrack &&
+          index === 0 &&
+          'border-l-2 border-l-primary rounded-t-xl',
+        isCurrentTrack &&
+          index === queueItemsCount - 1 &&
+          'border-l-2 border-l-primary rounded-b-xl',
+        isCurrentTrack &&
+          index !== 0 &&
+          index !== queueItemsCount - 1 &&
+          'border-l-2 border-l-primary',
         isRemoving && 'opacity-50',
       )}
     >
       {/* Position and Drag Handle */}
-      <div className="flex items-center gap-2 text-muted-foreground text-sm w-8">
+      <div className="flex items-center gap-1 text-muted-foreground text-sm w-6">
         {dragHandleProps && (
           <GripVertical
             {...dragHandleProps}
@@ -70,14 +82,14 @@ export const QueueItemCard = ({
       <img
         src={`http://localhost:3000/api/images/serve?imagePath=${formattedImage}`}
         alt="Album Art"
-        className="w-10 h-10 object-cover rounded-md"
+        className="w-8 h-8 object-cover rounded-md"
       />
 
       {/* Track Info */}
       <div className="flex-1 min-w-0">
         <div
           className={cn(
-            'font-medium truncate capitalize',
+            'font-medium truncate capitalize text-sm',
             isCurrentTrack && 'text-primary font-semibold',
           )}
         >
@@ -85,7 +97,7 @@ export const QueueItemCard = ({
         </div>
         <div
           className={cn(
-            'text-sm truncate capitalize',
+            'text-xs truncate capitalize ',
             isCurrentTrack ? 'text-primary/80' : 'text-muted-foreground',
           )}
         >
@@ -93,13 +105,8 @@ export const QueueItemCard = ({
         </div>
       </div>
 
-      {/* BPM */}
-      <div className="hidden md:block text-xs text-muted-foreground">
-        {queueItem.track.tempo || 'Unknown'} BPM
-      </div>
-
       {/* Duration */}
-      <div className="text-sm text-muted-foreground">
+      <div className="text-xs text-muted-foreground">
         {formatDuration(queueItem.track.duration || 0)}
       </div>
 

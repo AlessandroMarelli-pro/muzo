@@ -152,6 +152,7 @@ export function QueueList() {
                   index={index}
                   onRemove={handleRemoveTrack}
                   removingTrackId={removingTrackId}
+                  queueItemsCount={localQueue.length}
                 />
               ))}
             </div>
@@ -167,11 +168,13 @@ function SortableQueueItem({
   index,
   onRemove,
   removingTrackId,
+  queueItemsCount,
 }: {
   queueItem: QueueItem;
   index: number;
   onRemove: (trackId: string) => void;
   removingTrackId: string | null;
+  queueItemsCount: number;
 }) {
   const {
     attributes,
@@ -195,6 +198,7 @@ function SortableQueueItem({
       <QueueItemCard
         queueItem={queueItem}
         index={index}
+        queueItemsCount={queueItemsCount}
         onRemove={onRemove}
         removingTrackId={removingTrackId}
         dragHandleProps={{ ...attributes, ...listeners }}

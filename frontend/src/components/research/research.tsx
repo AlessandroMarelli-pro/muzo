@@ -62,7 +62,7 @@ export function Research({
     }
   };
   return (
-    <div className="p-4 space-y-4 flex flex-col z-0">
+    <div className="p-6 space-y-6 min-w-fit">
       <DetailedTrackCard track={track} refetch={refetch} />
       <div className="flex flex-wrap gap-2">
         {[

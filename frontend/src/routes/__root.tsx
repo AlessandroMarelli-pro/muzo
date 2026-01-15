@@ -1,7 +1,5 @@
 import { AppSidebar } from '@/components/layout/app-sidebar';
 import { EnhancedMusicPlayer } from '@/components/player/enhanced-music-player';
-import { QueueSidebar } from '@/components/queue/queue-sidebar';
-import { QueueSidebarInset } from '@/components/queue/queue-sidebar-inset';
 import { SiteHeader } from '@/components/site-header';
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
 import {
@@ -106,15 +104,9 @@ const navigationData = {
   ],
 };
 const RootComponent = React.memo(function RootComponent() {
-  const [queueOpen, setQueueOpen] = React.useState(false);
-
   // Memoize callback to prevent re-renders
   const handleToggleShuffle = React.useCallback(() => {
     console.log('Toggle shuffle');
-  }, []);
-
-  const handleQueueToggle = React.useCallback(() => {
-    setQueueOpen((prev) => !prev);
   }, []);
 
   return (
@@ -125,17 +117,12 @@ const RootComponent = React.memo(function RootComponent() {
             <SidebarProvider defaultOpen={true}>
               <AppSidebar data={navigationData} />
               <SidebarInset>
-                <QueueSidebarInset queueOpen={queueOpen}>
-                  <MusicPlayerInset>
-                    <SiteHeader onQueueToggle={handleQueueToggle} />
+                <MusicPlayerInset>
+                  <SiteHeader />
 
-                    <Outlet />
-                  </MusicPlayerInset>
-                </QueueSidebarInset>
+                  <Outlet />
+                </MusicPlayerInset>
               </SidebarInset>
-
-              {/* Queue Sidebar - right side */}
-              <QueueSidebar open={queueOpen} onOpenChange={setQueueOpen} />
 
               {/* Enhanced Music Player - fixed at bottom, outside SidebarInset */}
               <EnhancedMusicPlayer

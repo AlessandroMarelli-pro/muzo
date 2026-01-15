@@ -1,3 +1,4 @@
+import { QueueDrawer } from '@/components/queue/queue-sidebar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -7,15 +8,14 @@ import { useLocation } from '@tanstack/react-router';
 
 import { ListMusic, Moon, Sun } from 'lucide-react';
 import { useTheme } from 'next-themes';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 import { Switch } from '@/components/ui/switch';
 
-interface SiteHeaderProps {
-  onQueueToggle?: () => void;
-}
+interface SiteHeaderProps {}
 
-export function SiteHeader({ onQueueToggle }: SiteHeaderProps) {
+export function SiteHeader({}: SiteHeaderProps) {
+  const [queueOpen, setQueueOpen] = useState(false);
   const location = useLocation();
   const { setTheme, resolvedTheme } = useTheme();
   const { data: queueItems = [] } = useQueue();
@@ -75,30 +75,12 @@ export function SiteHeader({ onQueueToggle }: SiteHeaderProps) {
             {getPageTitle(location.pathname)}
           </span>
           <div className="flex items-center justify-between gap-2 px-2 py-1.5">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 relative"
-              onClick={onQueueToggle}
-              aria-label="Toggle queue"
-            >
-              <ListMusic className="h-4 w-4" />
-              {queueItems.length > 0 && (
-                <Badge
-                  variant="secondary"
-                  className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
-                >
-                  {queueItems.length}
-                </Badge>
-              )}
-            </Button>
             <Switch
               checked={isDark}
               onCheckedChange={(checked: boolean) =>
                 setTheme(checked ? 'dark' : 'light')
               }
               aria-label="Toggle night mode"
-              className="data-[state=checked]:bg-sidebar-primary data-[state=unchecked]:bg-sidebar-primary-foreground"
             >
               {isDark ? (
                 <Moon className="size-3 text-sidebar-foreground transition-all duration-300" />
@@ -108,7 +90,29 @@ export function SiteHeader({ onQueueToggle }: SiteHeaderProps) {
             </Switch>
           </div>
         </div>
+        <Separator
+          orientation="vertical"
+          className="mx-2 data-[orientation=vertical]:h-4"
+        />{' '}
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 relative"
+          onClick={() => setQueueOpen(!queueOpen)}
+          aria-label="Toggle queue"
+        >
+          <ListMusic className="h-4 w-4" />
+          {queueItems.length > 0 && (
+            <Badge
+              variant="secondary"
+              className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
+            >
+              {queueItems.length}
+            </Badge>
+          )}
+        </Button>
       </div>
+      <QueueDrawer open={queueOpen} onOpenChange={setQueueOpen} />
     </header>
   );
 }
