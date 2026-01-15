@@ -26,7 +26,6 @@ export function AddTrackDialog({
 }: AddTrackDialog) {
   const { data: tracks = [], isLoading } = useTracks({});
   const addTrackToPlaylistMutation = useAddTrackToPlaylist();
-  const { setQueue } = useQueue();
   if (isLoading) {
     return <Loading />;
   }

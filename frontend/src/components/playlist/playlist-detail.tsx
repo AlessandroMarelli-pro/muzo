@@ -47,7 +47,6 @@ import {
   useAudioPlayerActions,
   useCurrentTrack,
   useIsPlaying,
-  useQueue,
 } from '@/contexts/audio-player-context';
 import { formatDuration } from '@/lib/utils';
 import { AddTrackDialog } from './add-track-dialog';
@@ -96,7 +95,6 @@ export function PlaylistDetail({ id, onBack }: PlaylistDetailProps) {
     syncToSpotify,
     isSyncingToSpotify,
   } = usePlaylist(id, 'default');
-  const { setQueue } = useQueue();
   const deletePlaylistMutation = useDeletePlaylist('default');
   const { getAuthUrl, authenticate, isGettingAuthUrl, isAuthenticating } =
     useYouTubeAuth('default');
@@ -158,7 +156,6 @@ export function PlaylistDetail({ id, onBack }: PlaylistDetailProps) {
     // TODO: Implement play playlist functionality
     if (!playlist?.tracks[0].track) return;
     setCurrentTrack(playlist?.tracks[0].track);
-    setQueue(playlist?.tracks.map((track) => track.track));
     actions.togglePlayPause(playlist?.tracks[0].track.id);
   };
 

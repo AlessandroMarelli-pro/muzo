@@ -149,7 +149,9 @@ export function useAudioPlayer(options: UseAudioPlayerOptions = {}) {
   // Actions
   const play = useCallback(
     async (trackId: string, startTime = 0) => {
+      console.log('play', trackId, startTime);
       setLocalState((prev) => ({ ...prev, isLoading: true, error: null }));
+      console.log('local state', localState);
       try {
         await playMutation.mutateAsync({ trackId, startTime });
       } catch (error) {
@@ -157,7 +159,7 @@ export function useAudioPlayer(options: UseAudioPlayerOptions = {}) {
         onErrorRef.current?.(error as Error);
       }
     },
-    [playMutation],
+    [playMutation, trackId],
   );
 
   const pause = useCallback(
@@ -241,6 +243,13 @@ export function useAudioPlayer(options: UseAudioPlayerOptions = {}) {
   const togglePlayPause = useCallback(
     async (trackId: string) => {
       setLocalState((prev) => {
+        console.log(
+          'togglePlayPause',
+          prev.isPlaying,
+          prev.trackId,
+          trackId,
+          prev.currentTime,
+        );
         if (prev.isPlaying && prev.trackId === trackId) {
           pause(trackId);
         } else {

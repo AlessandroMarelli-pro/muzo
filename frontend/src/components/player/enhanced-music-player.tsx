@@ -67,7 +67,7 @@ export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
   const formattedImage = currentTrack?.imagePath || 'Unknown Image';
   // Get full playback state from context
   const { state: playbackState } = useAudioPlayerContext();
-
+  console.log('playbackState', playbackState);
   // Update audio element when state changes
   useEffect(() => {
     if (audioRef.current) {
@@ -114,7 +114,11 @@ export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
   };
 
   const handlePlay = () => {
-    if (!currentTrack) return;
+    console.log('handlePlay', currentTrack);
+    if (!currentTrack) {
+      console.log('No current track');
+      return;
+    }
     setQueueIndex(queueIndex);
 
     actions.togglePlayPause(currentTrack.id);
