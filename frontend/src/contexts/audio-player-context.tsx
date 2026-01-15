@@ -28,6 +28,8 @@ export function AudioPlayerProvider({ children }: AudioPlayerProviderProps) {
   );
   const { state, actions } = useAudioPlayer({
     trackId: currentTrack?.id || undefined,
+    currentTrack,
+    setCurrentTrack,
   });
 
   const currentTrackValue = useMemo(

@@ -45,8 +45,15 @@ export const QueueItemCard = ({
     e.stopPropagation();
     if (currentTrack?.id !== queueItem.track?.id) {
       setCurrentTrack(queueItem.track as any);
+      actions.play(queueItem.track!.id);
+    } else {
+      // Same track - toggle play/pause
+      if (isThisTrackPlaying) {
+        actions.pause(queueItem.track!.id);
+      } else {
+        actions.play(queueItem.track!.id);
+      }
     }
-    actions.togglePlayPause(queueItem.track!.id);
   };
 
   return (

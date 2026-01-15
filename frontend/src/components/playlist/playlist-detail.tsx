@@ -153,10 +153,9 @@ export function PlaylistDetail({ id, onBack }: PlaylistDetailProps) {
   };
 
   const handlePlay = () => {
-    // TODO: Implement play playlist functionality
     if (!playlist?.tracks[0].track) return;
     setCurrentTrack(playlist?.tracks[0].track);
-    actions.togglePlayPause(playlist?.tracks[0].track.id);
+    actions.play(playlist?.tracks[0].track.id);
   };
 
   const handleSyncToYouTube = async () => {
@@ -624,7 +623,7 @@ export function PlaylistDetail({ id, onBack }: PlaylistDetailProps) {
             onClick={handleDelete}
             disabled={isDeleting}
             size="sm"
-            variant="ghost-destructive"
+            variant="ghost"
           >
             <Trash2 className="h-4 w-4 " />
             Delete Playlist

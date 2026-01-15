@@ -43,9 +43,15 @@ export const PlaylistTrackListCard = ({
     e.stopPropagation();
     if (currentTrack?.id !== playlistTrack.track.id) {
       setCurrentTrack(playlistTrack.track);
+      actions.play(playlistTrack.track.id);
+    } else {
+      // Same track - toggle play/pause
+      if (isThisTrackPlaying) {
+        actions.pause(playlistTrack.track.id);
+      } else {
+        actions.play(playlistTrack.track.id);
+      }
     }
-
-    actions.togglePlayPause(playlistTrack.track.id);
   };
   return (
     <div

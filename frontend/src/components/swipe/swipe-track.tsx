@@ -274,8 +274,15 @@ export function SwipeTrack({
     e.stopPropagation();
     if (currentTrack?.id !== track.id) {
       setCurrentTrack(track);
+      actions.play(track.id);
+    } else {
+      // Same track - toggle play/pause
+      if (isThisTrackPlaying) {
+        actions.pause(track.id);
+      } else {
+        actions.play(track.id);
+      }
     }
-    actions.togglePlayPause(track.id);
   };
 
   return (

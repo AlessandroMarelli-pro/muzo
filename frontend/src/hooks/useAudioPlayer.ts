@@ -1,14 +1,11 @@
+import { SimpleMusicTrack } from '@/__generated__/types';
 import {
   usePauseTrack,
   usePlaybackState,
   usePlayTrack,
-  useResumeTrack,
-  useSeekTrack,
-  useSetPlaybackRate,
-  useSetVolume,
-  useStopTrack,
   useToggleFavorite,
 } from '@/services/music-player-hooks';
+import { useQueue } from '@/services/queue-hooks';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 export interface AudioPlayerState {
@@ -18,263 +15,184 @@ export interface AudioPlayerState {
   duration: number;
   volume: number;
   playbackRate: number;
-  isLoading: boolean;
-  error: Error | null;
   isFavorite: boolean;
 }
 
 export interface AudioPlayerActions {
-  play: (trackId: string, startTime?: number) => Promise<void>;
+  play: (trackId: string) => Promise<void>;
   pause: (trackId: string) => Promise<void>;
-  resume: (trackId: string) => Promise<void>;
-  seek: (trackId: string, timeInSeconds: number) => Promise<void>;
-  stop: (trackId: string) => Promise<void>;
-  setVolume: (trackId: string, volume: number) => Promise<void>;
-  setPlaybackRate: (trackId: string, rate: number) => Promise<void>;
-  togglePlayPause: (trackId: string) => Promise<void>;
+  next: () => Promise<void>;
+  previous: () => Promise<void>;
   toggleFavorite: (trackId: string) => Promise<void>;
 }
 
 export interface UseAudioPlayerOptions {
   trackId?: string;
-  autoPlay?: boolean;
-  onStateChange?: (state: AudioPlayerState) => void;
-  onError?: (error: Error) => void;
+  currentTrack?: SimpleMusicTrack | null;
+  setCurrentTrack?: (track: SimpleMusicTrack | null) => void;
 }
 
 export function useAudioPlayer(options: UseAudioPlayerOptions = {}) {
-  const { trackId, onStateChange, onError } = options;
-  const onStateChangeRef = useRef(onStateChange);
-  const onErrorRef = useRef(onError);
+  const { trackId, currentTrack, setCurrentTrack } = options;
 
-  // Update refs when callbacks change
-  useEffect(() => {
-    onStateChangeRef.current = onStateChange;
-  }, [onStateChange]);
+  // Get queue for next/previous functionality
+  const { data: queueItems = [] } = useQueue();
 
-  useEffect(() => {
-    onErrorRef.current = onError;
-  }, [onError]);
+  // Get server playback state
+  const { data: playbackState } = usePlaybackState(trackId || '', {
+    enabled: !!trackId,
+  });
 
+  // Local state - synced from server state
   const [localState, setLocalState] = useState<AudioPlayerState>({
     trackId: null,
     isPlaying: false,
     currentTime: 0,
     duration: 0,
-    volume: 0.5,
+    volume: 1,
     playbackRate: 1.0,
-    isLoading: false,
-    error: null,
     isFavorite: false,
   });
 
-  // Use existing hooks - only for initial state when WebSocket is not connected
-  const { data: playbackState, isLoading: isQueryLoading } = usePlaybackState(
-    trackId || '',
-    {
-      enabled: !!trackId,
-    },
-  );
-
-  // Use existing mutation hooks
+  // Mutations
   const playMutation = usePlayTrack();
   const pauseMutation = usePauseTrack();
-  const resumeMutation = useResumeTrack();
-  const seekMutation = useSeekTrack();
-  const stopMutation = useStopTrack();
-  const setVolumeMutation = useSetVolume();
-  const setPlaybackRateMutation = useSetPlaybackRate();
   const toggleFavoriteMutation = useToggleFavorite();
 
-  // Update local state when server state changes
+  // Track the last trackId we manually updated to prevent sync effect from overwriting
+  const lastManualUpdateRef = useRef<{
+    trackId: string;
+    timestamp: number;
+  } | null>(null);
+
+  // Sync local state from server state, but don't overwrite recent manual updates
   useEffect(() => {
     if (playbackState) {
-      const newState: AudioPlayerState = {
+      const now = Date.now();
+      const lastUpdate = lastManualUpdateRef.current;
+
+      // If we manually updated this trackId recently (within 500ms), skip the sync
+      // This prevents the query from overwriting our immediate state update when switching tracks
+      if (
+        lastUpdate &&
+        lastUpdate.trackId === playbackState.trackId &&
+        now - lastUpdate.timestamp < 500
+      ) {
+        return;
+      }
+
+      setLocalState({
         trackId: playbackState.trackId,
         isPlaying: playbackState.isPlaying,
         currentTime: playbackState.currentTime,
         duration: playbackState.duration,
         volume: playbackState.volume,
         playbackRate: playbackState.playbackRate,
-        isLoading: false,
-        error: null,
         isFavorite: playbackState.isFavorite,
-      };
-
-      setLocalState(newState);
-      onStateChangeRef.current?.(newState);
+      });
     }
   }, [playbackState]);
 
-  // Reset state when trackId changes
-  useEffect(() => {
-    if (trackId && localState.trackId !== trackId) {
-      setLocalState((prev) => ({
-        ...prev,
-        trackId,
-        currentTime: 0,
-        isPlaying: false,
-        isLoading: false,
-        error: null,
-      }));
-    }
-  }, [trackId, localState.trackId]);
-
-  // Update loading state
-  useEffect(() => {
-    const isLoading =
-      playMutation.isPending ||
-      pauseMutation.isPending ||
-      resumeMutation.isPending ||
-      seekMutation.isPending ||
-      stopMutation.isPending ||
-      setVolumeMutation.isPending ||
-      setPlaybackRateMutation.isPending ||
-      toggleFavoriteMutation.isPending ||
-      isQueryLoading;
-
-    setLocalState((prev) => ({ ...prev, isLoading }));
-  }, [
-    playMutation.isPending,
-    pauseMutation.isPending,
-    resumeMutation.isPending,
-    seekMutation.isPending,
-    stopMutation.isPending,
-    setVolumeMutation.isPending,
-    setPlaybackRateMutation.isPending,
-    toggleFavoriteMutation.isPending,
-    isQueryLoading,
-  ]);
-
-  // Actions
+  // Play action - always calls playTrack mutation
   const play = useCallback(
-    async (trackId: string, startTime = 0) => {
-      console.log('play', trackId, startTime);
-      setLocalState((prev) => ({ ...prev, isLoading: true, error: null }));
-      console.log('local state', localState);
+    async (trackId: string) => {
       try {
-        await playMutation.mutateAsync({ trackId, startTime });
+        // Call the mutation
+        const result = await playMutation.mutateAsync({
+          trackId,
+          startTime: 0,
+        });
+
+        // Update local state immediately with the mutation result
+        // This ensures the UI updates even if the query hasn't refetched yet
+        if (result) {
+          // Mark this as a manual update to prevent sync effect from overwriting
+          lastManualUpdateRef.current = {
+            trackId: result.trackId,
+            timestamp: Date.now(),
+          };
+
+          setLocalState({
+            trackId: result.trackId,
+            isPlaying: result.isPlaying,
+            currentTime: result.currentTime,
+            duration: result.duration,
+            volume: result.volume,
+            playbackRate: result.playbackRate,
+            isFavorite: result.isFavorite,
+          });
+        }
       } catch (error) {
-        setLocalState((prev) => ({ ...prev, error: error as Error }));
-        onErrorRef.current?.(error as Error);
+        console.error('Failed to play track:', error);
       }
     },
-    [playMutation, trackId],
+    [playMutation],
   );
 
+  // Pause action
   const pause = useCallback(
     async (trackId: string) => {
-      setLocalState((prev) => ({ ...prev, isLoading: true, error: null }));
       try {
         await pauseMutation.mutateAsync(trackId);
       } catch (error) {
-        setLocalState((prev) => ({ ...prev, error: error as Error }));
-        onErrorRef.current?.(error as Error);
+        console.error('Failed to pause track:', error);
       }
     },
     [pauseMutation],
   );
 
-  const resume = useCallback(
-    async (trackId: string) => {
-      setLocalState((prev) => ({ ...prev, isLoading: true, error: null }));
-      try {
-        await resumeMutation.mutateAsync(trackId);
-      } catch (error) {
-        setLocalState((prev) => ({ ...prev, error: error as Error }));
-        onErrorRef.current?.(error as Error);
-      }
-    },
-    [resumeMutation],
-  );
+  // Next track - get next track from queue and play it
+  const next = useCallback(async () => {
+    if (!currentTrack || !setCurrentTrack || queueItems.length === 0) return;
 
-  const seek = useCallback(
-    async (trackId: string, timeInSeconds: number) => {
-      setLocalState((prev) => ({ ...prev, isLoading: true, error: null }));
-      try {
-        await seekMutation.mutateAsync({ trackId, timeInSeconds });
-      } catch (error) {
-        setLocalState((prev) => ({ ...prev, error: error as Error }));
-        onErrorRef.current?.(error as Error);
-      }
-    },
-    [seekMutation],
-  );
+    const currentIndex = queueItems.findIndex(
+      (item) => item.track?.id === currentTrack.id,
+    );
 
-  const stop = useCallback(
-    async (trackId: string) => {
-      setLocalState((prev) => ({ ...prev, isLoading: true, error: null }));
-      try {
-        await stopMutation.mutateAsync(trackId);
-      } catch (error) {
-        setLocalState((prev) => ({ ...prev, error: error as Error }));
-        onErrorRef.current?.(error as Error);
-      }
-    },
-    [stopMutation],
-  );
+    if (currentIndex === -1 || currentIndex === queueItems.length - 1) {
+      // Already at the end or track not in queue
+      return;
+    }
 
-  const setVolume = useCallback(
-    async (trackId: string, volume: number) => {
-      setLocalState((prev) => ({ ...prev, isLoading: true, error: null }));
-      try {
-        await setVolumeMutation.mutateAsync({ trackId, volume });
-      } catch (error) {
-        setLocalState((prev) => ({ ...prev, error: error as Error }));
-        onErrorRef.current?.(error as Error);
-      }
-    },
-    [setVolumeMutation],
-  );
+    const nextItem = queueItems[currentIndex + 1];
+    if (nextItem?.track) {
+      setCurrentTrack(nextItem.track as any);
+      await play(nextItem.track.id);
+    }
+  }, [currentTrack, queueItems, setCurrentTrack, play]);
 
-  const setPlaybackRate = useCallback(
-    async (trackId: string, rate: number) => {
-      setLocalState((prev) => ({ ...prev, isLoading: true, error: null }));
-      try {
-        await setPlaybackRateMutation.mutateAsync({ trackId, rate });
-      } catch (error) {
-        setLocalState((prev) => ({ ...prev, error: error as Error }));
-        onErrorRef.current?.(error as Error);
-      }
-    },
-    [setPlaybackRateMutation],
-  );
+  // Previous track - get previous track from queue and play it
+  const previous = useCallback(async () => {
+    if (!currentTrack || !setCurrentTrack || queueItems.length === 0) return;
 
-  const togglePlayPause = useCallback(
-    async (trackId: string) => {
-      setLocalState((prev) => {
-        console.log(
-          'togglePlayPause',
-          prev.isPlaying,
-          prev.trackId,
-          trackId,
-          prev.currentTime,
-        );
-        if (prev.isPlaying && prev.trackId === trackId) {
-          pause(trackId);
-        } else {
-          play(trackId, prev.currentTime);
-        }
-        return prev; // Don't update state here, let the server response handle it
-      });
-    },
-    [play, pause],
-  );
+    const currentIndex = queueItems.findIndex(
+      (item) => item.track?.id === currentTrack.id,
+    );
 
+    if (currentIndex <= 0) {
+      // Already at the beginning or track not in queue
+      return;
+    }
+
+    const previousItem = queueItems[currentIndex - 1];
+    if (previousItem?.track) {
+      setCurrentTrack(previousItem.track as any);
+      await play(previousItem.track.id);
+    }
+  }, [currentTrack, queueItems, setCurrentTrack, play]);
+
+  // Toggle favorite
   const toggleFavorite = useCallback(
     async (trackId: string) => {
-      setLocalState((prev) => ({ ...prev, isLoading: true, error: null }));
       try {
         const result = await toggleFavoriteMutation.mutateAsync(trackId);
-        console.log('result', result);
+        // Update local state with new favorite status
         setLocalState((prev) => ({
           ...prev,
           isFavorite: result.isFavorite,
-          isLoading: false,
         }));
       } catch (error) {
-        setLocalState((prev) => ({ ...prev, error: error as Error }));
-        onErrorRef.current?.(error as Error);
+        console.error('Failed to toggle favorite:', error);
       }
     },
     [toggleFavoriteMutation],
@@ -284,56 +202,18 @@ export function useAudioPlayer(options: UseAudioPlayerOptions = {}) {
     () => ({
       play,
       pause,
-      resume,
-      seek,
-      stop,
-      setVolume,
-      setPlaybackRate,
-      togglePlayPause,
+      next,
+      previous,
       toggleFavorite,
     }),
-    [
-      play,
-      pause,
-      resume,
-      seek,
-      stop,
-      setVolume,
-      setPlaybackRate,
-      togglePlayPause,
-      toggleFavorite,
-    ],
-  );
-
-  const mutations = useMemo(
-    () => ({
-      play: playMutation,
-      pause: pauseMutation,
-      resume: resumeMutation,
-      seek: seekMutation,
-      stop: stopMutation,
-      setVolume: setVolumeMutation,
-      setPlaybackRate: setPlaybackRateMutation,
-      toggleFavorite: toggleFavoriteMutation,
-    }),
-    [
-      playMutation,
-      pauseMutation,
-      resumeMutation,
-      seekMutation,
-      stopMutation,
-      setVolumeMutation,
-      setPlaybackRateMutation,
-      toggleFavoriteMutation,
-    ],
+    [play, pause, next, previous, toggleFavorite],
   );
 
   return useMemo(
     () => ({
       state: localState,
       actions,
-      mutations,
     }),
-    [localState, actions, mutations],
+    [localState, actions],
   );
 }

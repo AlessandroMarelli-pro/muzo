@@ -22,6 +22,7 @@ import { DataTableToolbar } from '@/components/data-table/data-table-toolbar';
 import {
   useAudioPlayerActions,
   useCurrentTrack,
+  useIsPlaying,
 } from '@/contexts/audio-player-context';
 import { useDataTable } from '@/hooks/use-data-table';
 import { AudioPlayerActions } from '@/hooks/useAudioPlayer';
@@ -108,20 +109,31 @@ const ActionCells = ({
   onOpenAddToPlaylistDialog: (trackId: string) => void;
   onAddToQueue: UseMutationResult<QueueItem, Error, string>;
 }) => {
-  const [isTrackPlaying, setIsTrackPlaying] = React.useState(false);
+  const { currentTrack } = useCurrentTrack();
+  const isPlaying = useIsPlaying();
 
   const track = row.original;
+  const isCurrentTrack = currentTrack?.id === track.id;
+  const isThisTrackPlaying = isCurrentTrack && isPlaying;
 
   const playMusic = () => {
-    setIsTrackPlaying((prev) => !prev);
-    setCurrentTrack(track);
-    actions.togglePlayPause(track.id);
+    if (currentTrack?.id !== track.id) {
+      setCurrentTrack(track);
+      actions.play(track.id);
+    } else {
+      // Same track - toggle play/pause
+      if (isPlaying) {
+        actions.pause(track.id);
+      } else {
+        actions.play(track.id);
+      }
+    }
   };
 
   return (
     <div className="flex items-center gap-2">
       <Button variant="ghost" size="sm" onClick={playMusic}>
-        {isTrackPlaying ? (
+        {isThisTrackPlaying ? (
           <Pause className="h-4 w-4" />
         ) : (
           <Play className="h-4 w-4" />

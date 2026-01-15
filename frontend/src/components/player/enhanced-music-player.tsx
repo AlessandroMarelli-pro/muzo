@@ -1,5 +1,4 @@
 import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
 import {
   useAudioPlayerActions,
   useAudioPlayerContext,
@@ -16,8 +15,6 @@ import {
   Shuffle,
   SkipBack,
   SkipForward,
-  Volume2,
-  VolumeX,
 } from 'lucide-react';
 import React, { useEffect, useRef, useState } from 'react';
 import { WaveformVisualizer } from './waveform-visualizer';
@@ -68,14 +65,26 @@ export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
   // Get full playback state from context
   const { state: playbackState } = useAudioPlayerContext();
   console.log('playbackState', playbackState);
+  // Update audio element when track changes - reload the audio source
+  useEffect(() => {
+    if (audioRef.current && currentTrack) {
+      // When track changes, reload the audio element to load the new source
+      audioRef.current.load();
+    }
+  }, [currentTrack?.id]);
+
   // Update audio element when state changes
   useEffect(() => {
-    if (audioRef.current) {
+    if (audioRef.current && currentTrack) {
       audioRef.current.volume = playbackState.volume;
       audioRef.current.playbackRate = playbackState.playbackRate;
       audioRef.current.muted = false;
-      if (isPlaying) {
-        audioRef.current.play();
+      if (isPlaying && playbackState.trackId === currentTrack.id) {
+        // Only play if the playback state matches the current track
+        // Use a promise to handle potential play() errors
+        audioRef.current.play().catch((error) => {
+          console.error('Error playing audio:', error);
+        });
       } else {
         audioRef.current.pause();
       }
@@ -85,6 +94,8 @@ export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
     playbackState.volume,
     playbackState.playbackRate,
     playbackState.isFavorite,
+    playbackState.trackId,
+    currentTrack?.id,
   ]);
 
   // Queries for visualizations
@@ -97,8 +108,8 @@ export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
     if (!audio) return;
 
     const handleEnded = () => {
-      // Track ended, could trigger next track logic here
-      handleNextTrack();
+      // Track ended, trigger next track
+      actions.next();
     };
 
     audio.addEventListener('ended', handleEnded);
@@ -106,7 +117,7 @@ export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
     return () => {
       audio.removeEventListener('ended', handleEnded);
     };
-  }, [isPlaying]);
+  }, [actions]);
 
   const handleToggleFavorite = () => {
     if (!currentTrack) return;
@@ -114,51 +125,25 @@ export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
   };
 
   const handlePlay = () => {
-    console.log('handlePlay', currentTrack);
-    if (!currentTrack) {
-      console.log('No current track');
-      return;
-    }
-    setQueueIndex(queueIndex);
+    if (!currentTrack) return;
 
-    actions.togglePlayPause(currentTrack.id);
+    if (isPlaying) {
+      actions.pause(currentTrack.id);
+    } else {
+      actions.play(currentTrack.id);
+    }
   };
 
   const handlePreviousTrack = () => {
-    if (!queue) return;
-    const nextIndex = queueIndex - 1;
-    setQueueIndex(nextIndex);
-    setCurrentTrack(queue[nextIndex]);
-    actions.togglePlayPause(queue[nextIndex].id);
+    actions.previous();
   };
 
   const handleNextTrack = () => {
-    if (!queue) return;
-    const nextIndex = queueIndex + 1;
-    setQueueIndex(nextIndex);
-    setCurrentTrack(queue[nextIndex]);
-    actions.togglePlayPause(queue[nextIndex].id);
+    actions.next();
   };
 
-  const handleVolumeChange = (newVolume: number) => {
-    if (currentTrack) {
-      actions.setVolume(currentTrack.id, newVolume / 100);
-    }
-  };
-
-  const handlePlaybackRateChange = (newRate: number) => {
-    if (currentTrack) {
-      actions.setPlaybackRate(currentTrack.id, newRate);
-    }
-  };
-
-  const toggleMute = () => {
-    if (playbackState.volume === 0) {
-      handleVolumeChange(50); // Default volume
-    } else {
-      handleVolumeChange(0);
-    }
-  };
+  // Note: Volume and playback rate controls removed for simplification
+  // They can be re-added later if needed by calling mutations directly
 
   if (!currentTrack) {
     return null;
@@ -271,27 +256,7 @@ export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
                 isPlaying={isPlaying}
               />
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={toggleMute}
-              className="h-8 w-8 p-0"
-            >
-              {playbackState.volume === 0 ? (
-                <VolumeX className="h-4 w-4" />
-              ) : (
-                <Volume2 className="h-4 w-4" />
-              )}
-            </Button>
-            <Progress
-              value={playbackState.volume * 100}
-              className="w-16 sm:w-20 h-1 hidden sm:block"
-              onClick={(e) => {
-                const rect = e.currentTarget.getBoundingClientRect();
-                const percent = (e.clientX - rect.left) / rect.width;
-                handleVolumeChange(percent * 100);
-              }}
-            />
+            {/* Volume controls removed for simplification */}
           </div>
         </div>
       </div>
@@ -300,20 +265,9 @@ export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
         <div className="px-4 py-2 border-t border-border">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
-              <span className="text-xs text-muted-foreground">Speed:</span>
-              <input
-                type="range"
-                min="0.25"
-                max="4.0"
-                step="0.25"
-                value={playbackState.playbackRate}
-                onChange={(e) =>
-                  handlePlaybackRateChange(parseFloat(e.target.value))
-                }
-                className="w-20"
-              />
-              <span className="text-xs text-muted-foreground w-8">
-                {playbackState.playbackRate}x
+              {/* Playback rate controls removed for simplification */}
+              <span className="text-xs text-muted-foreground">
+                Rate: {playbackState.playbackRate}x
               </span>
             </div>
           </div>

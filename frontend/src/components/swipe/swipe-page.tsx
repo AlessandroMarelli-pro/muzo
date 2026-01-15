@@ -48,7 +48,11 @@ export function SwipePage() {
   useEffect(() => {
     if (track && shouldAutoPlay && !isLoadingTrack) {
       setCurrentTrack(track);
-      actions.togglePlayPause(track.id);
+      if (isPlaying && currentTrack?.id === track.id) {
+        actions.pause(track.id);
+      } else {
+        actions.play(track.id);
+      }
       setShouldAutoPlay(false);
     }
   }, [track, shouldAutoPlay, isLoadingTrack, setCurrentTrack, actions]);
@@ -179,7 +183,11 @@ export function SwipePage() {
         if (currentTrack?.id !== track.id) {
           setCurrentTrack(track);
         }
-        actions.togglePlayPause(track.id);
+        if (isPlaying && currentTrack?.id === track.id) {
+          actions.pause(track.id);
+        } else {
+          actions.play(track.id);
+        }
         return;
       }
 
