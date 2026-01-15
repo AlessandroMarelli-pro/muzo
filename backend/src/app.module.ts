@@ -13,6 +13,7 @@ import { MetricsModule } from './modules/metrics/metrics.module';
 import { MusicLibraryModule } from './modules/music-library/music-library.module';
 import { MusicPlayerModule } from './modules/music-player/music-player.module';
 import { MusicTrackModule } from './modules/music-track/music-track.module';
+import { PlaybackQueueModule } from './modules/playback-queue/playback-queue.module';
 import { PlaylistModule } from './modules/playlist/playlist.module';
 import { QueueModule } from './modules/queue/queue.module';
 import { RecommendationModule } from './modules/recommendation/recommendation.module';
@@ -54,6 +55,7 @@ import { SharedModule } from './shared/shared.module';
     MusicLibraryModule,
     MusicTrackModule,
     MusicPlayerModule,
+    PlaybackQueueModule,
     PlaylistModule,
     RecommendationModule,
     ThirdPartySyncModule,

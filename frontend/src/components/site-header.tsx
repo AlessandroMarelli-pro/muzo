@@ -1,16 +1,24 @@
 import { Separator } from '@/components/ui/separator';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { useLocation } from '@tanstack/react-router';
+import { useQueue } from '@/services/queue-hooks';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 
-import { Moon, Sun } from 'lucide-react';
+import { Moon, Sun, ListMusic } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useEffect } from 'react';
 
 import { Switch } from '@/components/ui/switch';
 
-export function SiteHeader() {
+interface SiteHeaderProps {
+  onQueueToggle?: () => void;
+}
+
+export function SiteHeader({ onQueueToggle }: SiteHeaderProps) {
   const location = useLocation();
   const { setTheme, resolvedTheme } = useTheme();
+  const { data: queueItems = [] } = useQueue();
 
   const isDark = resolvedTheme === 'dark';
 
@@ -67,6 +75,23 @@ export function SiteHeader() {
             {getPageTitle(location.pathname)}
           </span>
           <div className="flex items-center justify-between gap-2 px-2 py-1.5">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 relative"
+              onClick={onQueueToggle}
+              aria-label="Toggle queue"
+            >
+              <ListMusic className="h-4 w-4" />
+              {queueItems.length > 0 && (
+                <Badge
+                  variant="secondary"
+                  className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
+                >
+                  {queueItems.length}
+                </Badge>
+              )}
+            </Button>
             <Switch
               checked={isDark}
               onCheckedChange={(checked: boolean) =>

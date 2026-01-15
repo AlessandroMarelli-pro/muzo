@@ -118,6 +118,7 @@ model MusicTrack {
   imageSearches         ImageSearch[]
   trackGenres           TrackGenre[]
   trackSubgenres        TrackSubgenre[]
+  queue                 Queue?
   
   // Indexes for query performance
   @@index([libraryId])
@@ -601,4 +602,21 @@ enum ImageSearchStatus {
   PENDING
   COMPLETED
   FAILED
+}
+
+model Queue {
+  id        String   @id @default(uuid())
+  trackId   String
+  position  Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Relations
+  track     MusicTrack @relation(fields: [trackId], references: [id], onDelete: Cascade)
+  
+  // Indexes
+  @@index([trackId])
+  @@index([position])
+  @@unique([trackId])
+  @@map("queue")
 }

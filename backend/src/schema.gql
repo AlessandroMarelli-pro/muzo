@@ -374,6 +374,7 @@ type MusicTrackListPaginated {
 
 type Mutation {
   addTrackToPlaylist(input: AddTrackToPlaylistInput!, playlistId: ID!, userId: String!): PlaylistTrack!
+  addTrackToQueue(trackId: ID!): QueueItem!
   authenticateSpotify(code: String!, codeVerifier: String!, userId: String!): SpotifyAuthResult!
   authenticateTidal(code: String!, codeVerifier: String!, userId: String!): TidalAuthResult!
   authenticateYouTube(code: String!, userId: String!): YouTubeAuthResult!
@@ -393,6 +394,7 @@ type Mutation {
   playTrack(startTime: Float! = 0, trackId: String!): PlaybackState!
   recordPlayback(duration: Float!, trackId: ID!): MusicTrack!
   removeTrackFromPlaylist(playlistId: ID!, trackId: ID!, userId: String!): Boolean!
+  removeTrackFromQueue(trackId: ID!): Boolean!
   reorderPlaylistTracks(input: ReorderTracksInput!, playlistId: ID!, userId: String!): Playlist!
   resumeTrack(trackId: String!): PlaybackState!
   scheduleLibraryScan(libraryId: ID!): LibraryScanResult!
@@ -410,6 +412,7 @@ type Mutation {
   updateLibrary(id: ID!, input: UpdateLibraryInput!): MusicLibrary!
   updatePlaylist(id: ID!, input: UpdatePlaylistInput!, userId: String!): Playlist!
   updatePreferences(input: UpdatePreferencesInput!): UserPreferencesGraphQL!
+  updateQueuePositions(input: UpdateQueuePositionsInput!): [QueueItem!]!
   updateSavedFilter(id: ID!, input: UpdateSavedFilterInput!): SavedFilter!
 }
 
@@ -536,6 +539,7 @@ type Query {
   playlistTracks(playlistId: ID!, userId: String!): [PlaylistTrack!]!
   playlists(userId: String!): [PlaylistItem!]!
   preferences: UserPreferencesGraphQL!
+  queue: [QueueItem!]!
   queueStats: String!
   randomTrack(filterLiked: Boolean, id: String): SimpleMusicTrack!
   recentlyPlayed(limit: Float! = 20): [SimpleMusicTrack!]!
@@ -544,6 +548,15 @@ type Query {
   tracks(options: TrackQueryOptions): [SimpleMusicTrack!]!
   tracksByCategories(options: TrackQueryOptionsByCategories): [MusicTrackByCategoriesGraphQL!]!
   tracksList(options: TrackQueryOptions): MusicTrackListPaginated!
+}
+
+type QueueItem {
+  createdAt: DateTime!
+  id: ID!
+  position: Int!
+  track: SimpleMusicTrack
+  trackId: ID!
+  updatedAt: DateTime!
 }
 
 type Range {
@@ -746,6 +759,15 @@ input UpdatePreferencesInput {
   editorPreferences: EditorPreferencesInput
   organizationPreferences: OrganizationPreferencesInput
   uiPreferences: UIPreferencesInput
+}
+
+input UpdateQueuePositionInput {
+  position: Int!
+  trackId: ID!
+}
+
+input UpdateQueuePositionsInput {
+  positions: [UpdateQueuePositionInput!]!
 }
 
 input UpdateSavedFilterInput {

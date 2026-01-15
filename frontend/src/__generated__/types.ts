@@ -410,6 +410,7 @@ export type MusicTrackListPaginated = {
 export type Mutation = {
   __typename?: 'Mutation';
   addTrackToPlaylist: PlaylistTrack;
+  addTrackToQueue: QueueItem;
   authenticateSpotify: SpotifyAuthResult;
   authenticateTidal: TidalAuthResult;
   authenticateYouTube: YouTubeAuthResult;
@@ -429,6 +430,7 @@ export type Mutation = {
   playTrack: PlaybackState;
   recordPlayback: MusicTrack;
   removeTrackFromPlaylist: Scalars['Boolean']['output'];
+  removeTrackFromQueue: Scalars['Boolean']['output'];
   reorderPlaylistTracks: Playlist;
   resumeTrack: PlaybackState;
   scheduleLibraryScan: LibraryScanResult;
@@ -446,6 +448,7 @@ export type Mutation = {
   updateLibrary: MusicLibrary;
   updatePlaylist: Playlist;
   updatePreferences: UserPreferencesGraphQl;
+  updateQueuePositions: Array<QueueItem>;
   updateSavedFilter: SavedFilter;
 };
 
@@ -454,6 +457,11 @@ export type MutationAddTrackToPlaylistArgs = {
   input: AddTrackToPlaylistInput;
   playlistId: Scalars['ID']['input'];
   userId: Scalars['String']['input'];
+};
+
+
+export type MutationAddTrackToQueueArgs = {
+  trackId: Scalars['ID']['input'];
 };
 
 
@@ -558,6 +566,11 @@ export type MutationRemoveTrackFromPlaylistArgs = {
 };
 
 
+export type MutationRemoveTrackFromQueueArgs = {
+  trackId: Scalars['ID']['input'];
+};
+
+
 export type MutationReorderPlaylistTracksArgs = {
   input: ReorderTracksInput;
   playlistId: Scalars['ID']['input'];
@@ -652,6 +665,11 @@ export type MutationUpdatePlaylistArgs = {
 
 export type MutationUpdatePreferencesArgs = {
   input: UpdatePreferencesInput;
+};
+
+
+export type MutationUpdateQueuePositionsArgs = {
+  input: UpdateQueuePositionsInput;
 };
 
 
@@ -791,6 +809,7 @@ export type Query = {
   playlistTracks: Array<PlaylistTrack>;
   playlists: Array<PlaylistItem>;
   preferences: UserPreferencesGraphQl;
+  queue: Array<QueueItem>;
   queueStats: Scalars['String']['output'];
   randomTrack: SimpleMusicTrack;
   recentlyPlayed: Array<SimpleMusicTrack>;
@@ -953,6 +972,16 @@ export type QueryTracksByCategoriesArgs = {
 
 export type QueryTracksListArgs = {
   options?: InputMaybe<TrackQueryOptions>;
+};
+
+export type QueueItem = {
+  __typename?: 'QueueItem';
+  createdAt: Scalars['DateTime']['output'];
+  id: Scalars['ID']['output'];
+  position: Scalars['Int']['output'];
+  track?: Maybe<SimpleMusicTrack>;
+  trackId: Scalars['ID']['output'];
+  updatedAt: Scalars['DateTime']['output'];
 };
 
 export type Range = {
@@ -1177,6 +1206,15 @@ export type UpdatePreferencesInput = {
   editorPreferences?: InputMaybe<EditorPreferencesInput>;
   organizationPreferences?: InputMaybe<OrganizationPreferencesInput>;
   uiPreferences?: InputMaybe<UiPreferencesInput>;
+};
+
+export type UpdateQueuePositionInput = {
+  position: Scalars['Int']['input'];
+  trackId: Scalars['ID']['input'];
+};
+
+export type UpdateQueuePositionsInput = {
+  positions: Array<UpdateQueuePositionInput>;
 };
 
 export type UpdateSavedFilterInput = {
@@ -1626,3 +1664,29 @@ export type GetPlaylistRecommendationsQueryVariables = Exact<{
 
 
 export type GetPlaylistRecommendationsQuery = { __typename?: 'Query', playlistRecommendations: Array<{ __typename?: 'TrackRecommendation', similarity: number, reasons: Array<string>, track: { __typename?: 'SimpleMusicTrack', id: string, artist?: string | null, format?: string | null, title?: string | null, duration: number, genres?: Array<string> | null, subgenres?: Array<string> | null, date?: any | null, listeningCount?: number | null, lastPlayedAt?: any | null, isFavorite?: boolean | null, isLiked?: boolean | null, isBanger?: boolean | null, createdAt?: any | null, updatedAt?: any | null, tempo?: number | null, key?: string | null, valenceMood?: string | null, arousalMood?: string | null, danceabilityFeeling?: string | null, imagePath?: string | null, lastScannedAt?: any | null, fileCreatedAt?: any | null, description?: string | null, tags?: Array<string> | null, vocalsDescriptions?: string | null, atmosphereKeywords?: Array<string> | null, contextBackgrounds?: string | null, contextImpacts?: string | null, libraryId?: string | null } }> };
+
+export type GetQueueQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type GetQueueQuery = { __typename?: 'Query', queue: Array<{ __typename?: 'QueueItem', id: string, trackId: string, position: number, createdAt: any, updatedAt: any, track?: { __typename?: 'SimpleMusicTrack', id: string, artist?: string | null, format?: string | null, title?: string | null, duration: number, genres?: Array<string> | null, subgenres?: Array<string> | null, date?: any | null, listeningCount?: number | null, lastPlayedAt?: any | null, isFavorite?: boolean | null, isLiked?: boolean | null, isBanger?: boolean | null, createdAt?: any | null, updatedAt?: any | null, tempo?: number | null, key?: string | null, valenceMood?: string | null, arousalMood?: string | null, danceabilityFeeling?: string | null, imagePath?: string | null, lastScannedAt?: any | null, fileCreatedAt?: any | null, description?: string | null, tags?: Array<string> | null, vocalsDescriptions?: string | null, atmosphereKeywords?: Array<string> | null, contextBackgrounds?: string | null, contextImpacts?: string | null, libraryId?: string | null } | null }> };
+
+export type AddTrackToQueueMutationVariables = Exact<{
+  trackId: Scalars['ID']['input'];
+}>;
+
+
+export type AddTrackToQueueMutation = { __typename?: 'Mutation', addTrackToQueue: { __typename?: 'QueueItem', id: string, trackId: string, position: number, createdAt: any, updatedAt: any, track?: { __typename?: 'SimpleMusicTrack', id: string, artist?: string | null, format?: string | null, title?: string | null, duration: number, genres?: Array<string> | null, subgenres?: Array<string> | null, date?: any | null, listeningCount?: number | null, lastPlayedAt?: any | null, isFavorite?: boolean | null, isLiked?: boolean | null, isBanger?: boolean | null, createdAt?: any | null, updatedAt?: any | null, tempo?: number | null, key?: string | null, valenceMood?: string | null, arousalMood?: string | null, danceabilityFeeling?: string | null, imagePath?: string | null, lastScannedAt?: any | null, fileCreatedAt?: any | null, description?: string | null, tags?: Array<string> | null, vocalsDescriptions?: string | null, atmosphereKeywords?: Array<string> | null, contextBackgrounds?: string | null, contextImpacts?: string | null, libraryId?: string | null } | null } };
+
+export type RemoveTrackFromQueueMutationVariables = Exact<{
+  trackId: Scalars['ID']['input'];
+}>;
+
+
+export type RemoveTrackFromQueueMutation = { __typename?: 'Mutation', removeTrackFromQueue: boolean };
+
+export type UpdateQueuePositionsMutationVariables = Exact<{
+  input: UpdateQueuePositionsInput;
+}>;
+
+
+export type UpdateQueuePositionsMutation = { __typename?: 'Mutation', updateQueuePositions: Array<{ __typename?: 'QueueItem', id: string, trackId: string, position: number, createdAt: any, updatedAt: any, track?: { __typename?: 'SimpleMusicTrack', id: string, artist?: string | null, format?: string | null, title?: string | null, duration: number, genres?: Array<string> | null, subgenres?: Array<string> | null, date?: any | null, listeningCount?: number | null, lastPlayedAt?: any | null, isFavorite?: boolean | null, isLiked?: boolean | null, isBanger?: boolean | null, createdAt?: any | null, updatedAt?: any | null, tempo?: number | null, key?: string | null, valenceMood?: string | null, arousalMood?: string | null, danceabilityFeeling?: string | null, imagePath?: string | null, lastScannedAt?: any | null, fileCreatedAt?: any | null, description?: string | null, tags?: Array<string> | null, vocalsDescriptions?: string | null, atmosphereKeywords?: Array<string> | null, contextBackgrounds?: string | null, contextImpacts?: string | null, libraryId?: string | null } | null }> };
