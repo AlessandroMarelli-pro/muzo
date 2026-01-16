@@ -424,8 +424,7 @@ const columns = (
           <DataTableColumnHeader column={column} title="Key" />
         ),
         cell: ({ row }) => {
-          const key = row.getValue('key') as string;
-
+          const key = row.original.key as string;
           return (
             <Badge
               variant="outline"
@@ -433,12 +432,13 @@ const columns = (
               size="xs"
               style={{
                 backgroundColor: CamelotKeyOptions.find(
-                  (option) => option.label === key,
+                  (option) => option.label.toLowerCase() === key.toLowerCase(),
                 )?.color,
               }}
             >
-              {CamelotKeyOptions.find((option) => option.label === key)
-                ?.label || 'N/A'}
+              {CamelotKeyOptions.find(
+                (option) => option.label.toLowerCase() === key.toLowerCase(),
+              )?.label || 'N/A'}
             </Badge>
           );
         },
@@ -675,7 +675,14 @@ export function MusicTable({
       },
     },
 
-    filterValues: initialFilters ?? {},
+    filterValues: initialFilters
+      ? Object.fromEntries(
+          Object.entries(initialFilters).map(([key, value]) => [
+            key,
+            Array.isArray(value) ? value.join(',') : value,
+          ]),
+        )
+      : {},
     setFilterValues: handleFilterChange,
 
     getRowId: (row) => row.id,

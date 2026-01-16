@@ -18,6 +18,7 @@ interface TrackListProps {
   handleFilterChange: (
     values: Record<string, string | string[] | null>,
   ) => void;
+  isFilterLoading: boolean;
 }
 
 export const TrackList = React.memo<TrackListProps>(
@@ -28,6 +29,7 @@ export const TrackList = React.memo<TrackListProps>(
     staticFilterOptions,
     filters,
     handleFilterChange,
+    isFilterLoading,
   }) => {
     console.log('render', 'TrackList');
 
@@ -120,7 +122,7 @@ export const TrackList = React.memo<TrackListProps>(
         <MusicTable
           data={tracks}
           pageCount={totalPages}
-          isLoading={isLoading}
+          isLoading={isLoading || isFilterLoading}
           staticFilterOptions={staticFilterOptions}
           initialPageSize={perPage}
           initialFilters={filters}

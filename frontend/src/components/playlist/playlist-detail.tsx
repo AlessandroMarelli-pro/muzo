@@ -176,7 +176,10 @@ export function PlaylistDetail({ id, onBack }: PlaylistDetailProps) {
       // Remove all current queue items (ignore errors for individual removals)
       const removePromises = currentQueue.map((item) =>
         removeTrackFromQueue.mutateAsync(item.trackId).catch((err) => {
-          console.warn(`Failed to remove track ${item.trackId} from queue:`, err);
+          console.warn(
+            `Failed to remove track ${item.trackId} from queue:`,
+            err,
+          );
         }),
       );
       await Promise.all(removePromises);
@@ -189,7 +192,9 @@ export function PlaylistDetail({ id, onBack }: PlaylistDetailProps) {
             // Ignore "already in queue" errors
             if (
               err?.message?.includes('already in the queue') ||
-              err?.response?.errors?.[0]?.message?.includes('already in the queue')
+              err?.response?.errors?.[0]?.message?.includes(
+                'already in the queue',
+              )
             ) {
               return;
             }
@@ -573,9 +578,6 @@ export function PlaylistDetail({ id, onBack }: PlaylistDetailProps) {
   }
 
   const genreCounts = getGenreCounts();
-  const topGenres = Object.entries(genreCounts)
-    .sort(([, a], [, b]) => b - a)
-    .slice(0, 5);
 
   return (
     <div className="p-4 lg:p-6 space-y-8 flex flex-col z-0">

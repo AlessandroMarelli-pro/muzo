@@ -1,5 +1,5 @@
 import { useFilterMutations } from '@/services/filter-hooks';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 export interface Range {
   min: number;
@@ -39,6 +39,7 @@ export interface FilterActions {
     key: K,
     value: FilterState[K],
   ) => void;
+  updateFilters: (values: Record<string, any>) => void;
   resetFilters: () => void;
 
   // Server Persistence
@@ -48,6 +49,11 @@ export interface FilterActions {
 
   // Utility
   hasActiveFilters: boolean;
+}
+
+export interface UseFilteringOptions {
+  autoSave?: boolean;
+  onSaveError?: (error: Error) => void;
 }
 
 const defaultFilterState: FilterState = {
@@ -68,7 +74,9 @@ const defaultFilterState: FilterState = {
   atmospheres: [],
 };
 
-export const useFiltering = () => {
+export const useFiltering = (options: UseFilteringOptions = {}) => {
+  const { autoSave = false, onSaveError } = options;
+
   // UI State - immediate updates for filter controls
   const [filters, setFilters] = useState<FilterState>(defaultFilterState);
 
@@ -81,6 +89,13 @@ export const useFiltering = () => {
     isLoading: false,
     error: null,
   });
+
+  // Refs to prevent infinite loops
+  const isInitialMount = useRef(true);
+  const isLoadingFromServer = useRef(false);
+  const saveCurrentFilterRef = useRef<
+    ((name?: string) => Promise<void>) | null
+  >(null);
 
   // Server mutations
   const {
@@ -103,6 +118,37 @@ export const useFiltering = () => {
   const resetFilters = useCallback(() => {
     setFilters(defaultFilterState);
   }, []);
+
+  const updateFilters = useCallback(
+    (values: Record<string, any>) => {
+      for (const [key, value] of Object.entries(values)) {
+        const isString = typeof value === 'string';
+        const isStringArray =
+          Array.isArray(value) && value.every((v) => typeof v === 'string');
+        const isMinMaxRange =
+          Array.isArray(value) &&
+          value.length === 2 &&
+          value.every((v) => typeof v === 'number');
+
+        if (value === null) {
+          updateFilter(key as keyof FilterState, value);
+        } else if (isString) {
+          updateFilter(key as keyof FilterState, value as string);
+        } else if (isStringArray) {
+          updateFilter(key as keyof FilterState, value as string[]);
+        } else if (isMinMaxRange) {
+          updateFilter(
+            key as keyof FilterState,
+            {
+              min: value[0],
+              max: value[1],
+            } as Range,
+          );
+        }
+      }
+    },
+    [updateFilter],
+  );
 
   // Server Actions
   const saveCurrentFilter = useCallback(
@@ -144,18 +190,29 @@ export const useFiltering = () => {
           isLoading: false,
         }));
       } catch (error) {
+        const errorObj = error as Error;
         setSavedFilterState((prev) => ({
           ...prev,
-          error: error as Error,
+          error: errorObj,
           isLoading: false,
         }));
+
+        if (onSaveError) {
+          onSaveError(errorObj);
+        } else {
+          console.error('Failed to save filter:', errorObj);
+        }
       }
     },
-    [filters, setCurrentFilterMutation],
+    [filters, setCurrentFilterMutation, onSaveError],
   );
+
+  // Store the latest saveCurrentFilter in ref for auto-save effect
+  saveCurrentFilterRef.current = saveCurrentFilter;
 
   const loadSavedFilter = useCallback(async () => {
     setSavedFilterState((prev) => ({ ...prev, isLoading: true, error: null }));
+    isLoadingFromServer.current = true;
 
     try {
       const result = await getCurrentFilterQuery.refetch();
@@ -198,6 +255,9 @@ export const useFiltering = () => {
         error: error as Error,
         isLoading: false,
       }));
+    } finally {
+      // Flag will be reset in the auto-save effect after it checks it
+      // This ensures the effect has a chance to see the flag before it's reset
     }
   }, [getCurrentFilterQuery]);
 
@@ -252,6 +312,29 @@ export const useFiltering = () => {
     );
   }, [filters]);
 
+  // Auto-save filters when they change (if enabled)
+  useEffect(() => {
+    // Skip auto-save on initial mount (filters are loaded from server)
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+
+    // Skip auto-save when loading filters from server
+    if (isLoadingFromServer.current) {
+      // Reset the flag after this effect has run
+      requestAnimationFrame(() => {
+        isLoadingFromServer.current = false;
+      });
+      return;
+    }
+
+    if (autoSave && saveCurrentFilterRef.current) {
+      void saveCurrentFilterRef.current();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filters, autoSave]);
+
   // Sync server state when query data changes
   useEffect(() => {
     if (getCurrentFilterQuery.data && !getCurrentFilterQuery.isLoading) {
@@ -271,6 +354,7 @@ export const useFiltering = () => {
   const actions: FilterActions = useMemo(
     () => ({
       updateFilter,
+      updateFilters,
       resetFilters,
       saveCurrentFilter,
       loadSavedFilter,
@@ -279,6 +363,7 @@ export const useFiltering = () => {
     }),
     [
       updateFilter,
+      updateFilters,
       resetFilters,
       saveCurrentFilter,
       loadSavedFilter,
