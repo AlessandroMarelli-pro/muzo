@@ -139,12 +139,14 @@ export function PlaylistTracksList({
           >
             <div className="divide-y">
               {!isLoading && localTracks.length > 0
-                ? localTracks.map((playlistTrack) => (
+                ? localTracks.map((playlistTrack, index) => (
                     <SortablePlaylistTrack
                       key={playlistTrack.id}
                       playlistTrack={playlistTrack}
                       onRemove={handleRemoveTrack}
                       removingTrackId={removingTrackId}
+                      index={index}
+                      playlistLength={localTracks.length}
                     />
                   ))
                 : Array.from({ length: 5 }).map((_, i) => (
@@ -165,10 +167,14 @@ function SortablePlaylistTrack({
   playlistTrack,
   onRemove,
   removingTrackId,
+  index,
+  playlistLength,
 }: {
   playlistTrack: PlaylistTrack;
   onRemove: (trackId: string) => void;
   removingTrackId: string | null;
+  index: number;
+  playlistLength: number;
 }) {
   const {
     attributes,
@@ -194,6 +200,8 @@ function SortablePlaylistTrack({
         handleRemoveTrack={onRemove}
         removingTrackId={removingTrackId}
         dragHandleProps={{ ...attributes, ...listeners }}
+        index={index}
+        playlistLength={playlistLength}
       />
     </div>
   );

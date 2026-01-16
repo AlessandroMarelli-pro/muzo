@@ -26,12 +26,16 @@ export function AppSidebar({
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton size="lg" asChild>
+            <SidebarMenuButton
+              size="lg"
+              asChild
+              className="h-12 group-data-[collapsible=icon]:!size-12 gap-2"
+            >
               <a href="#">
                 <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
                   <DogIcon className="size-4" />
                 </div>
-                <div className="grid flex-1 text-left text-sm leading-tight">
+                <div className=" flex-1 text-left text-sm leading-tight grid group-data-[collapsible=icon]:hidden ">
                   <span className="truncate font-semibold">Acme Inc</span>
                   <span className="truncate text-xs">Enterprise</span>
                 </div>

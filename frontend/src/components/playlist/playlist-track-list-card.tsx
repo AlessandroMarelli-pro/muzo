@@ -6,7 +6,7 @@ import {
   useCurrentTrack,
   useIsPlaying,
 } from '@/contexts/audio-player-context';
-import { formatDuration } from '@/lib/utils';
+import { cn, formatDuration } from '@/lib/utils';
 import { useAddTrackToQueue } from '@/services/queue-hooks';
 import { useNavigate } from '@tanstack/react-router';
 import {
@@ -41,11 +41,15 @@ export const PlaylistTrackListCard = ({
   handleRemoveTrack,
   removingTrackId,
   dragHandleProps,
+  index,
+  playlistLength,
 }: {
   playlistTrack: PlaylistTrack;
   handleRemoveTrack: (trackId: string) => void;
   removingTrackId: string | null;
   dragHandleProps?: any;
+  index: number;
+  playlistLength: number;
 }) => {
   const { currentTrack, setCurrentTrack } = useCurrentTrack();
   const actions = useAudioPlayerActions();
@@ -74,7 +78,20 @@ export const PlaylistTrackListCard = ({
   return (
     <div
       key={playlistTrack.id}
-      className="flex items-center gap-4 p-4 hover:bg-muted/50 transition-colors group"
+      className={cn(
+        'flex items-center gap-4 p-4 hover:bg-muted/50 transition-colors group',
+        isThisTrackPlaying && 'bg-muted/80  ',
+        isThisTrackPlaying &&
+          index === 0 &&
+          'border-l-2 border-l-primary rounded-t-xl',
+        isCurrentTrack &&
+          index === playlistLength - 1 &&
+          'border-l-2 border-l-primary rounded-b-xl',
+        isCurrentTrack &&
+          index !== 0 &&
+          index !== playlistLength - 1 &&
+          'border-l-2 border-l-primary',
+      )}
     >
       {/* Position */}
       <div className="flex items-center gap-2 text-muted-foreground text-sm w-8">
