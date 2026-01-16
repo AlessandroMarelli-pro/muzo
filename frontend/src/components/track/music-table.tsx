@@ -26,6 +26,7 @@ import {
 } from '@/contexts/audio-player-context';
 import { useDataTable } from '@/hooks/use-data-table';
 import { AudioPlayerActions } from '@/hooks/useAudioPlayer';
+import { FilterState } from '@/hooks/useFiltering';
 import { StaticFilterOptionsData } from '@/hooks/useFilterOptions';
 import { useAddTrackToQueue } from '@/services/queue-hooks';
 import { UseMutationResult } from '@tanstack/react-query';
@@ -40,6 +41,10 @@ interface MusicTableProps {
   staticFilterOptions: StaticFilterOptionsData;
   initialPageSize?: number;
   playingTrackId?: string;
+  initialFilters: FilterState;
+  handleFilterChange: (
+    values: Record<string, string | string[] | null>,
+  ) => void;
 }
 const danceabilityFeelingOptions = [
   { label: 'Highly Danceable', value: 'highly-danceable' },
@@ -170,34 +175,15 @@ const ActionCells = ({
     </div>
   );
 };
-export function MusicTable({
-  data,
-  pageCount,
-  isLoading,
-  staticFilterOptions,
-  initialPageSize = 10,
-}: MusicTableProps) {
-  const navigate = useNavigate();
-  const actions = useAudioPlayerActions();
-  const { setCurrentTrack } = useCurrentTrack();
-  const addToQueueMutation = useAddTrackToQueue();
-  const [isAddToPlaylistDialogOpen, setIsAddToPlaylistDialogOpen] =
-    React.useState(false);
-  const [selectedTrackId, setSelectedTrackId] = React.useState<string | null>(
-    null,
-  );
-
-  const handleOpenAddToPlaylistDialog = React.useCallback((trackId: string) => {
-    setSelectedTrackId(trackId);
-    setIsAddToPlaylistDialogOpen(true);
-  }, []);
-
-  const handleCloseAddToPlaylistDialog = React.useCallback(() => {
-    setIsAddToPlaylistDialogOpen(false);
-    setSelectedTrackId(null);
-  }, []);
-
-  const columns = React.useMemo<ColumnDef<SimpleMusicTrack>[]>(
+const columns = (
+  staticFilterOptions: StaticFilterOptionsData,
+  navigate: UseNavigateResult<string>,
+  actions: AudioPlayerActions,
+  setCurrentTrack: (track: SimpleMusicTrack) => void,
+  handleOpenAddToPlaylistDialog: (trackId: string) => void,
+  addToQueueMutation: UseMutationResult<QueueItem, Error, string>,
+) =>
+  React.useMemo<ColumnDef<SimpleMusicTrack>[]>(
     () => [
       {
         id: 'libraryId',
@@ -252,6 +238,9 @@ export function MusicTable({
       {
         id: 'title',
         accessorKey: 'title',
+        setFilterValue: (value: string) => {
+          console.log('setFilterValue', value);
+        },
         header: ({ column }) => (
           <DataTableColumnHeader column={column} title="Title" />
         ),
@@ -429,7 +418,7 @@ export function MusicTable({
         enableColumnFilter: true,
       },
       {
-        id: 'key',
+        id: 'keys',
         accessorKey: 'key',
         header: ({ column }) => (
           <DataTableColumnHeader column={column} title="Key" />
@@ -620,12 +609,55 @@ export function MusicTable({
         ),
       },
     ],
-    [handleOpenAddToPlaylistDialog],
+    [
+      staticFilterOptions,
+      navigate,
+      actions,
+      setCurrentTrack,
+      handleOpenAddToPlaylistDialog,
+      addToQueueMutation,
+    ],
   );
+
+export function MusicTable({
+  data,
+  pageCount,
+  isLoading,
+  staticFilterOptions,
+  initialPageSize = 10,
+  initialFilters,
+  handleFilterChange,
+}: MusicTableProps) {
+  const navigate = useNavigate();
+  const actions = useAudioPlayerActions();
+  const { setCurrentTrack } = useCurrentTrack();
+  const addToQueueMutation = useAddTrackToQueue();
+  const [isAddToPlaylistDialogOpen, setIsAddToPlaylistDialogOpen] =
+    React.useState(false);
+  const [selectedTrackId, setSelectedTrackId] = React.useState<string | null>(
+    null,
+  );
+
+  const handleOpenAddToPlaylistDialog = React.useCallback((trackId: string) => {
+    setSelectedTrackId(trackId);
+    setIsAddToPlaylistDialogOpen(true);
+  }, []);
+
+  const handleCloseAddToPlaylistDialog = React.useCallback(() => {
+    setIsAddToPlaylistDialogOpen(false);
+    setSelectedTrackId(null);
+  }, []);
 
   const { table } = useDataTable({
     data,
-    columns,
+    columns: columns(
+      staticFilterOptions,
+      navigate,
+      actions,
+      setCurrentTrack,
+      handleOpenAddToPlaylistDialog,
+      addToQueueMutation,
+    ),
     pageCount: pageCount,
     initialState: {
       sorting: [{ id: 'title', desc: false }],
@@ -642,6 +674,9 @@ export function MusicTable({
         valenceMood: false,
       },
     },
+
+    filterValues: initialFilters ?? {},
+    setFilterValues: handleFilterChange,
 
     getRowId: (row) => row.id,
     enableAdvancedFilter: false,

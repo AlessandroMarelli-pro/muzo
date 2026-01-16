@@ -94,7 +94,7 @@ export const useFiltering = () => {
     <K extends keyof FilterState>(key: K, value: FilterState[K]) => {
       setFilters((prev) => ({
         ...prev,
-        [key]: value,
+        [key]: value ?? defaultFilterState[key],
       }));
     },
     [],

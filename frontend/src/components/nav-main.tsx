@@ -37,7 +37,7 @@ export function NavMain({
 
   return (
     <SidebarGroup>
-      <SidebarMenu>
+      <SidebarMenu className="flex flex-col gap-2">
         {items.map((item) => {
           const Icon = item.icon;
           const isActive = location.pathname === item.url;
