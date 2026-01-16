@@ -323,6 +323,7 @@ model Playlist {
   
   // Relations
   tracks      PlaylistTrack[]
+  sorting     PlaylistSorting?
   
   @@map("playlists")
 }
@@ -602,6 +603,30 @@ enum ImageSearchStatus {
   PENDING
   COMPLETED
   FAILED
+}
+
+enum PlaylistSortingKey {
+  addedAt
+  position
+}
+
+enum PlaylistSortingDirection {
+  asc
+  desc
+}
+
+model PlaylistSorting {
+  id              String                  @id @default(uuid())
+  playlistId      String                  @unique
+  sortingKey      PlaylistSortingKey      @default(position)
+  sortingDirection PlaylistSortingDirection @default(asc)
+  createdAt       DateTime                @default(now())
+  updatedAt       DateTime                @updatedAt
+  
+  // Relations
+  playlist        Playlist                @relation(fields: [playlistId], references: [id], onDelete: Cascade)
+  
+  @@map("playlist_sorting")
 }
 
 model Queue {

@@ -97,6 +97,14 @@ const GET_PLAYLIST = gql`
       createdAt
       updatedAt
       images
+      sorting {
+        id
+        playlistId
+        sortingKey
+        sortingDirection
+        createdAt
+        updatedAt
+      }
       tracks {
         id
         position
@@ -133,6 +141,14 @@ const GET_PLAYLIST_BY_NAME = gql`
       createdAt
       updatedAt
       images
+      sorting {
+        id
+        playlistId
+        sortingKey
+        sortingDirection
+        createdAt
+        updatedAt
+      }
       tracks {
         id
         position
@@ -350,6 +366,49 @@ const GET_PLAYLIST_RECOMMENDATIONS = gql`
   }
 `;
 
+const UPDATE_PLAYLIST_POSITIONS = gql`
+  ${simpleMusicTrackFragment}
+  mutation UpdatePlaylistPositions(
+    $playlistId: ID!
+    $input: UpdatePlaylistPositionsInput!
+    $userId: String!
+  ) {
+    updatePlaylistPositions(
+      playlistId: $playlistId
+      input: $input
+      userId: $userId
+    ) {
+      id
+      position
+      addedAt
+      track {
+        ...SimpleMusicTrackFragment
+      }
+    }
+  }
+`;
+
+const UPDATE_PLAYLIST_SORTING = gql`
+  mutation UpdatePlaylistSorting(
+    $playlistId: ID!
+    $input: UpdatePlaylistSortingInput!
+    $userId: String!
+  ) {
+    updatePlaylistSorting(
+      playlistId: $playlistId
+      input: $input
+      userId: $userId
+    ) {
+      id
+      playlistId
+      sortingKey
+      sortingDirection
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
 // API functions
 const fetchPlaylists = async (
   userId: string = 'default',
@@ -560,6 +619,65 @@ const fetchPlaylistRecommendations = async (
     excludeTrackIds,
   });
   return data.playlistRecommendations;
+};
+
+interface UpdatePlaylistPositionInput {
+  trackId: string;
+  position: number;
+}
+
+interface UpdatePlaylistPositionsInput {
+  positions: UpdatePlaylistPositionInput[];
+}
+
+const updatePlaylistPositions = async (
+  playlistId: string,
+  positions: UpdatePlaylistPositionInput[],
+  userId: string = 'default',
+): Promise<PlaylistTrack[]> => {
+  const input: UpdatePlaylistPositionsInput = { positions };
+  const data = await graffleClient.request<{
+    updatePlaylistPositions: PlaylistTrack[];
+  }>(UPDATE_PLAYLIST_POSITIONS, {
+    playlistId,
+    input,
+    userId,
+  });
+  return data.updatePlaylistPositions;
+};
+
+interface UpdatePlaylistSortingInput {
+  sortingKey: 'position' | 'addedAt';
+  sortingDirection: 'asc' | 'desc';
+}
+
+const updatePlaylistSorting = async (
+  playlistId: string,
+  input: UpdatePlaylistSortingInput,
+  userId: string = 'default',
+): Promise<{
+  id: string;
+  playlistId: string;
+  sortingKey: string;
+  sortingDirection: string;
+  createdAt: string;
+  updatedAt: string;
+}> => {
+  const data = await graffleClient.request<{
+    updatePlaylistSorting: {
+      id: string;
+      playlistId: string;
+      sortingKey: string;
+      sortingDirection: string;
+      createdAt: string;
+      updatedAt: string;
+    };
+  }>(UPDATE_PLAYLIST_SORTING, {
+    playlistId,
+    input,
+    userId,
+  });
+  return data.updatePlaylistSorting;
 };
 
 // Hooks
@@ -861,4 +979,54 @@ export function usePlaylistRecommendations(
     error,
     refetch,
   };
+}
+
+export function useUpdatePlaylistPositions(userId: string = 'default') {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      playlistId,
+      positions,
+    }: {
+      playlistId: string;
+      positions: UpdatePlaylistPositionInput[];
+    }) => updatePlaylistPositions(playlistId, positions, userId),
+    onSuccess: (_, { playlistId }) => {
+      queryClient.invalidateQueries({ queryKey: ['playlists'] });
+      queryClient.invalidateQueries({ queryKey: ['playlist', playlistId] });
+    },
+    onError: (error: any) => {
+      const errorMessage =
+        error?.response?.errors?.[0]?.message ||
+        error?.message ||
+        'Failed to update playlist positions';
+      console.error(errorMessage);
+    },
+  });
+}
+
+export function useUpdatePlaylistSorting(userId: string = 'default') {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      playlistId,
+      input,
+    }: {
+      playlistId: string;
+      input: UpdatePlaylistSortingInput;
+    }) => updatePlaylistSorting(playlistId, input, userId),
+    onSuccess: (_, { playlistId }) => {
+      queryClient.invalidateQueries({ queryKey: ['playlists'] });
+      queryClient.invalidateQueries({ queryKey: ['playlist', playlistId] });
+    },
+    onError: (error: any) => {
+      const errorMessage =
+        error?.response?.errors?.[0]?.message ||
+        error?.message ||
+        'Failed to update playlist sorting';
+      console.error(errorMessage);
+    },
+  });
 }

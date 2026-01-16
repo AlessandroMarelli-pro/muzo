@@ -10,6 +10,7 @@ import {
   CreatePlaylistDto,
   ReorderTracksDto,
   UpdatePlaylistDto,
+  UpdatePlaylistSortingDto,
 } from './dto/playlist.dto';
 
 @Injectable()
@@ -501,10 +502,17 @@ export class PlaylistService {
   }
 
   async findPlaylistById(id: string) {
+    const sorting = await this.prisma.playlistSorting.findFirst({
+      where: {
+        playlistId: id,
+      },
+    });
+    console.log(sorting);
     const playlist = await this.prisma.playlist.findFirst({
       where: {
         id,
       },
+
       include: {
         tracks: {
           include: {
@@ -526,7 +534,10 @@ export class PlaylistService {
               },
             },
           },
-          orderBy: { position: 'desc' },
+          orderBy: {
+            [sorting?.sortingKey || 'position']:
+              sorting?.sortingDirection || 'asc',
+          },
         },
       },
     });
@@ -534,7 +545,7 @@ export class PlaylistService {
       throw new NotFoundException(`Playlist with ID ${id} not found`);
     }
 
-    return playlist;
+    return { ...playlist, sorting };
   }
 
   async findPlaylistByName(name: string) {
@@ -563,15 +574,36 @@ export class PlaylistService {
               },
             },
           },
-          orderBy: { position: 'desc' },
         },
-      },
+        sorting: true,
+      } as any,
     });
     if (!playlist) {
       return null;
     }
 
-    return playlist;
+    // Apply sorting if exists, otherwise default to position asc
+    const sorting = (playlist as any).sorting;
+    const sortKey = sorting?.sortingKey || 'position';
+    const sortDirection = sorting?.sortingDirection || 'asc';
+
+    // Sort tracks based on sorting configuration
+    const sortedTracks = [...playlist.tracks].sort((a, b) => {
+      let comparison = 0;
+
+      if (sortKey === 'position') {
+        comparison = a.position - b.position;
+      } else if (sortKey === 'addedAt') {
+        comparison = a.addedAt.getTime() - b.addedAt.getTime();
+      }
+
+      return sortDirection === 'asc' ? comparison : -comparison;
+    });
+
+    return {
+      ...playlist,
+      tracks: sortedTracks,
+    };
   }
 
   async updatePlaylist(id: string, updatePlaylistDto: UpdatePlaylistDto) {
@@ -740,6 +772,88 @@ export class PlaylistService {
     return this.findPlaylistById(playlistId);
   }
 
+  /**
+   * Update playlist track positions
+   * @param playlistId - The ID of the playlist
+   * @param positions - Array of trackId and position pairs
+   */
+  async updatePlaylistPositions(
+    playlistId: string,
+    positions: Array<{ trackId: string; position: number }>,
+  ) {
+    // Verify playlist access
+    const playlist = await this.findPlaylistById(playlistId);
+
+    // Validate all tracks exist in playlist
+    const trackIds = positions.map((p) => p.trackId);
+    const existingItems = await this.prisma.playlistTrack.findMany({
+      where: {
+        playlistId,
+        trackId: { in: trackIds },
+      },
+    });
+
+    if (existingItems.length !== trackIds.length) {
+      const existingTrackIds = existingItems.map((item) => item.trackId);
+      const missingTrackIds = trackIds.filter(
+        (id) => !existingTrackIds.includes(id),
+      );
+      throw new NotFoundException(
+        `Tracks not found in playlist: ${missingTrackIds.join(', ')}`,
+      );
+    }
+
+    // Update positions
+    const updatePromises = positions.map(({ trackId, position }) =>
+      this.prisma.playlistTrack.update({
+        where: {
+          playlistId_trackId: {
+            playlistId,
+            trackId,
+          },
+        },
+        data: { position },
+      }),
+    );
+
+    await Promise.all(updatePromises);
+
+    // Return updated playlist tracks ordered by position
+    const updatedPlaylist = await this.prisma.playlist.findFirst({
+      where: { id: playlistId },
+      include: {
+        tracks: {
+          include: {
+            track: {
+              include: {
+                audioFingerprint: true,
+                aiAnalysisResult: true,
+                imageSearches: true,
+                trackGenres: {
+                  include: {
+                    genre: true,
+                  },
+                },
+                trackSubgenres: {
+                  include: {
+                    subgenre: true,
+                  },
+                },
+              },
+            },
+          },
+          orderBy: { position: 'asc' },
+        },
+      },
+    });
+
+    if (!updatedPlaylist) {
+      throw new NotFoundException(`Playlist with ID ${playlistId} not found`);
+    }
+
+    return updatedPlaylist.tracks;
+  }
+
   private async reorderTracksAfterRemoval(
     playlistId: string,
     removedPosition: number,
@@ -772,17 +886,17 @@ export class PlaylistService {
   async getPlaylistStats(playlistId: string) {
     const playlist = await this.findPlaylistById(playlistId);
 
-    const totalDuration = playlist.tracks.reduce((sum, playlistTrack) => {
-      return sum + (playlistTrack.track.duration || 0);
+    const totalDuration = playlist.tracks.reduce((sum, playlistTrack: any) => {
+      return sum + (playlistTrack.track?.duration || 0);
     }, 0);
 
     const genreCounts = playlist.tracks.reduce(
-      (counts, playlistTrack) => {
+      (counts, playlistTrack: any) => {
         if (
-          playlistTrack.track.trackGenres &&
+          playlistTrack.track?.trackGenres &&
           playlistTrack.track.trackGenres.length > 0
         ) {
-          playlistTrack.track.trackGenres.forEach((tg) => {
+          playlistTrack.track.trackGenres.forEach((tg: any) => {
             const genreName = tg.genre.name;
             counts[genreName] = (counts[genreName] || 0) + 1;
           });
@@ -815,17 +929,17 @@ export class PlaylistService {
 
     // Add each track
     for (const playlistTrack of playlist.tracks) {
-      const track = playlistTrack.track;
-      const duration = Math.floor(track.duration || 0);
+      const track = (playlistTrack as any).track;
+      const duration = Math.floor(track?.duration || 0);
       const artist =
-        track.originalArtist ||
-        track.aiArtist ||
-        track.userArtist ||
+        track?.originalArtist ||
+        track?.aiArtist ||
+        track?.userArtist ||
         'Unknown Artist';
       const title =
-        track.originalTitle ||
-        track.aiTitle ||
-        track.userTitle ||
+        track?.originalTitle ||
+        track?.aiTitle ||
+        track?.userTitle ||
         'Unknown Title';
       const displayName = `${artist} - ${title}`;
 
@@ -833,9 +947,56 @@ export class PlaylistService {
       m3uContent += `#EXTINF:${duration},${displayName}\n`;
 
       // Add file path (absolute path)
-      m3uContent += `${track.filePath}\n`;
+      m3uContent += `${track?.filePath || ''}\n`;
     }
 
     return m3uContent;
+  }
+
+  /**
+   * Update or create playlist sorting configuration
+   * @param playlistId - The ID of the playlist
+   * @param sortingDto - The sorting configuration
+   */
+  async updatePlaylistSorting(
+    playlistId: string,
+    sortingDto: UpdatePlaylistSortingDto,
+  ) {
+    // Verify playlist access
+    const playlist = await this.findPlaylistById(playlistId);
+
+    // Validate sorting key
+    const validSortingKeys = ['addedAt', 'position'];
+    if (!validSortingKeys.includes(sortingDto.sortingKey)) {
+      throw new BadRequestException(
+        `Invalid sortingKey. Must be one of: ${validSortingKeys.join(', ')}`,
+      );
+    }
+
+    // Validate sorting direction
+    const validSortingDirections = ['asc', 'desc'];
+    if (!validSortingDirections.includes(sortingDto.sortingDirection)) {
+      throw new BadRequestException(
+        `Invalid sortingDirection. Must be one of: ${validSortingDirections.join(', ')}`,
+      );
+    }
+
+    // Upsert the sorting configuration
+    const sorting = await (this.prisma as any).playlistSorting.upsert({
+      where: {
+        playlistId,
+      },
+      update: {
+        sortingKey: sortingDto.sortingKey,
+        sortingDirection: sortingDto.sortingDirection,
+      },
+      create: {
+        playlistId,
+        sortingKey: sortingDto.sortingKey,
+        sortingDirection: sortingDto.sortingDirection,
+      },
+    });
+
+    return sorting;
   }
 }

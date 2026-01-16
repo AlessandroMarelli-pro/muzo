@@ -129,3 +129,11 @@ export class PlaylistRecommendationDto {
   @IsString({ each: true })
   excludeTrackIds?: string[];
 }
+
+export class UpdatePlaylistSortingDto {
+  @IsString()
+  sortingKey: string;
+
+  @IsString()
+  sortingDirection: string;
+}

@@ -50,10 +50,10 @@ export function MusicCardSkeleton({
           <div className="z-0 absolute  w-full h-full opacity-50 ">
             <Skeleton className="w-full h-full" />
           </div>
-          <div className=" flex-1 h-5/8 backdrop-blur-md rounded-md">
-            <Skeleton className="w-full h-full" />
+          <div className=" flex-1 h-5/8 backdrop-blur-md rounded-t-md flex items-center justify-center">
+            <Skeleton className="w-2/3 h-2/3  " />
           </div>
-          <div className=" space-y-2 p-2 z-1 bg-card rounded-md flex flex-col justify-between  h-3/8">
+          <div className=" space-y-2 p-2 z-1 bg-card rounded-b-md flex flex-col justify-between  h-3/8">
             <Skeleton className="w-full h-full" />
           </div>
         </div>

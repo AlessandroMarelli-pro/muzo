@@ -10,6 +10,7 @@ import {
   PlaybackSession,
   PlaybackType,
   Playlist,
+  PlaylistSorting,
   PlaylistTrack,
   RepeatMode,
   ScanStatus,
@@ -338,4 +339,5 @@ export interface PlaylistTrackWithRelations extends PlaylistTrack {
 
 export interface PlaylistWithRelations extends Playlist {
   tracks: PlaylistTrackWithRelations[];
+  sorting: PlaylistSorting;
 }

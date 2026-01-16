@@ -21,10 +21,14 @@ import {
   usePlaylist,
   useSpotifyAuth,
   useTidalAuth,
+  useUpdatePlaylistSorting,
   useYouTubeAuth,
 } from '@/services/playlist-hooks';
 import {
+  ArrowDown,
   ArrowLeft,
+  ArrowUp,
+  ArrowUpDown,
   AudioWaveform,
   ChevronDown,
   Clock,
@@ -120,6 +124,7 @@ export function PlaylistDetail({ id, onBack }: PlaylistDetailProps) {
     isGettingAuthUrl: isGettingSpotifyAuthUrl,
     isAuthenticating: isAuthenticatingSpotify,
   } = useSpotifyAuth('default');
+  const updatePlaylistSortingMutation = useUpdatePlaylistSorting('default');
 
   const handleDelete = async () => {
     if (
@@ -517,6 +522,28 @@ export function PlaylistDetail({ id, onBack }: PlaylistDetailProps) {
     }
   };
 
+  const handleUpdateSorting = async (
+    sortingKey: 'position' | 'addedAt',
+    sortingDirection: 'asc' | 'desc',
+  ) => {
+    if (!playlist) return;
+    try {
+      await updatePlaylistSortingMutation.mutateAsync({
+        playlistId: playlist.id,
+        input: { sortingKey, sortingDirection },
+      });
+    } catch (error) {
+      console.error('Failed to update playlist sorting:', error);
+    }
+  };
+
+  const currentSortingKey =
+    (playlist as any)?.sorting?.sortingKey === 'addedAt'
+      ? 'addedAt'
+      : 'position';
+  const currentSortingDirection =
+    (playlist as any)?.sorting?.sortingDirection === 'desc' ? 'desc' : 'asc';
+
   if (loading) {
     return (
       <div className="space-y-6">
@@ -675,14 +702,75 @@ export function PlaylistDetail({ id, onBack }: PlaylistDetailProps) {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                size="sm"
+                variant="ghost"
+                disabled={updatePlaylistSortingMutation.isPending || !playlist}
+              >
+                <ArrowUpDown className="h-4 w-4 mr-2" />
+                Sort
+                <ChevronDown className="h-4 w-4 ml-2" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <div className="px-2 py-1.5 text-sm font-semibold">Sort by</div>
+              <DropdownMenuItem
+                onClick={() => handleUpdateSorting('position', 'asc')}
+                disabled={updatePlaylistSortingMutation.isPending}
+              >
+                <ArrowUp className="h-4 w-4 mr-2" />
+                Manual (Ascending)
+                {currentSortingKey === 'position' &&
+                  currentSortingDirection === 'asc' && (
+                    <span className="ml-auto text-xs">✓</span>
+                  )}
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => handleUpdateSorting('position', 'desc')}
+                disabled={updatePlaylistSortingMutation.isPending}
+              >
+                <ArrowDown className="h-4 w-4 mr-2" />
+                Manual (Descending)
+                {currentSortingKey === 'position' &&
+                  currentSortingDirection === 'desc' && (
+                    <span className="ml-auto text-xs">✓</span>
+                  )}
+              </DropdownMenuItem>
+              <div className="h-px bg-border my-1" />
+              <DropdownMenuItem
+                onClick={() => handleUpdateSorting('addedAt', 'asc')}
+                disabled={updatePlaylistSortingMutation.isPending}
+              >
+                <ArrowUp className="h-4 w-4 mr-2" />
+                Added Date (Ascending)
+                {currentSortingKey === 'addedAt' &&
+                  currentSortingDirection === 'asc' && (
+                    <span className="ml-auto text-xs">✓</span>
+                  )}
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => handleUpdateSorting('addedAt', 'desc')}
+                disabled={updatePlaylistSortingMutation.isPending}
+              >
+                <ArrowDown className="h-4 w-4 mr-2" />
+                Added Date (Descending)
+                {currentSortingKey === 'addedAt' &&
+                  currentSortingDirection === 'desc' && (
+                    <span className="ml-auto text-xs">✓</span>
+                  )}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
       {/* Playlist Info */}
       <div className="flex-2 ">
         <PlaylistChart
-          data={(playlist.tracks || []).map((track, index) => ({
-            position: index,
+          data={(playlist.tracks || []).map((track) => ({
+            position: track.position,
             tempo: Math.round((track.track?.tempo || 0) * 100) / 100,
             key: track.track?.key || '',
             name: `${track.track?.artist} - ${track.track?.title}`,

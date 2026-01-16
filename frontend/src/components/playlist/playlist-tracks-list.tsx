@@ -1,9 +1,33 @@
-import { Playlist as GraphQLPlaylist } from '@/__generated__/types';
+import {
+  Playlist as GraphQLPlaylist,
+  PlaylistTrack,
+} from '@/__generated__/types';
 import { Card, CardContent } from '@/components/ui/card';
 
-import { useRemoveTrackFromPlaylist } from '@/services/playlist-hooks';
+import {
+  useRemoveTrackFromPlaylist,
+  useUpdatePlaylistPositions,
+} from '@/services/playlist-hooks';
+import {
+  DndContext,
+  KeyboardSensor,
+  MouseSensor,
+  TouchSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core';
+import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
+import {
+  SortableContext,
+  arrayMove,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { Clock } from 'lucide-react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { PlaylistTrackListCard } from './playlist-track-list-card';
 
 interface PlaylistTracksListProps {
@@ -16,7 +40,22 @@ export function PlaylistTracksList({
   onUpdate,
 }: PlaylistTracksListProps) {
   const [removingTrackId, setRemovingTrackId] = useState<string | null>(null);
+  const [localTracks, setLocalTracks] = useState<PlaylistTrack[]>(
+    playlist.tracks,
+  );
   const removeTrackMutation = useRemoveTrackFromPlaylist('default');
+  const updatePositionsMutation = useUpdatePlaylistPositions('default');
+
+  const sensors = useSensors(
+    useSensor(MouseSensor, {}),
+    useSensor(TouchSensor, {}),
+    useSensor(KeyboardSensor, {}),
+  );
+
+  const trackIds = useMemo(
+    () => localTracks.map((track) => track.id),
+    [localTracks],
+  );
 
   const handleRemoveTrack = async (trackId: string) => {
     if (!confirm('Remove this track from the playlist?')) {
@@ -37,7 +76,38 @@ export function PlaylistTracksList({
     }
   };
 
-  if (playlist.tracks.length === 0) {
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!active || !over || active.id !== over.id) {
+      const oldIndex = trackIds.indexOf(active.id as string);
+      const newIndex = trackIds.indexOf(over?.id as string);
+
+      if (oldIndex !== -1 && newIndex !== -1) {
+        // Optimistically update local state
+        const newTracks = arrayMove(localTracks, oldIndex, newIndex);
+        setLocalTracks(newTracks);
+
+        // Update positions in backend
+        try {
+          const positions = newTracks.map((track, index) => ({
+            trackId: track.track.id,
+            position: index + 1,
+          }));
+          await updatePositionsMutation.mutateAsync({
+            playlistId: playlist.id,
+            positions,
+          });
+          onUpdate();
+        } catch (error) {
+          console.error('Failed to update playlist positions:', error);
+          // Revert on error
+          setLocalTracks(playlist.tracks);
+        }
+      }
+    }
+  };
+
+  if (localTracks.length === 0) {
     return (
       <Card>
         <CardContent className="text-center py-12">
@@ -58,17 +128,67 @@ export function PlaylistTracksList({
   return (
     <Card className="py-0">
       <CardContent className="p-0">
-        <div className="divide-y">
-          {playlist.tracks.map((playlistTrack, index) => (
-            <PlaylistTrackListCard
-              playlistTrack={playlistTrack}
-              index={index}
-              handleRemoveTrack={handleRemoveTrack}
-              removingTrackId={removingTrackId}
-            />
-          ))}
-        </div>
+        <DndContext
+          collisionDetection={closestCenter}
+          modifiers={[restrictToVerticalAxis]}
+          onDragEnd={handleDragEnd}
+          sensors={sensors}
+        >
+          <SortableContext
+            items={trackIds}
+            strategy={verticalListSortingStrategy}
+          >
+            <div className="divide-y">
+              {localTracks.map((playlistTrack) => (
+                <SortablePlaylistTrack
+                  key={playlistTrack.id}
+                  playlistTrack={playlistTrack}
+                  onRemove={handleRemoveTrack}
+                  removingTrackId={removingTrackId}
+                />
+              ))}
+            </div>
+          </SortableContext>
+        </DndContext>
       </CardContent>
     </Card>
+  );
+}
+
+function SortablePlaylistTrack({
+  playlistTrack,
+  onRemove,
+  removingTrackId,
+}: {
+  playlistTrack: PlaylistTrack;
+  onRemove: (trackId: string) => void;
+  removingTrackId: string | null;
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({
+    id: playlistTrack.id,
+  });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style}>
+      <PlaylistTrackListCard
+        playlistTrack={playlistTrack}
+        handleRemoveTrack={onRemove}
+        removingTrackId={removingTrackId}
+        dragHandleProps={{ ...attributes, ...listeners }}
+      />
+    </div>
   );
 }

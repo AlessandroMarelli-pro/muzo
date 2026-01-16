@@ -411,6 +411,8 @@ type Mutation {
   toggleFavorite(trackId: String!): MusicTrack!
   updateLibrary(id: ID!, input: UpdateLibraryInput!): MusicLibrary!
   updatePlaylist(id: ID!, input: UpdatePlaylistInput!, userId: String!): Playlist!
+  updatePlaylistPositions(input: UpdatePlaylistPositionsInput!, playlistId: ID!, userId: String!): [PlaylistTrack!]!
+  updatePlaylistSorting(input: UpdatePlaylistSortingInput!, playlistId: ID!, userId: String!): PlaylistSorting!
   updatePreferences(input: UpdatePreferencesInput!): UserPreferencesGraphQL!
   updateQueuePositions(input: UpdateQueuePositionsInput!): [QueueItem!]!
   updateSavedFilter(id: ID!, input: UpdateSavedFilterInput!): SavedFilter!
@@ -459,6 +461,7 @@ type Playlist {
   images: [String!]!
   name: String!
   numberOfTracks: Int!
+  sorting: PlaylistSorting
   subgenresCount: Int!
   topGenres: [String!]!
   topSubgenres: [String!]!
@@ -489,6 +492,15 @@ type PlaylistItem {
   topGenres: [String!]!
   topSubgenres: [String!]!
   totalDuration: Float!
+  updatedAt: DateTime!
+}
+
+type PlaylistSorting {
+  createdAt: DateTime!
+  id: ID!
+  playlistId: ID!
+  sortingDirection: String!
+  sortingKey: String!
   updatedAt: DateTime!
 }
 
@@ -752,6 +764,20 @@ input UpdatePlaylistInput {
   description: String
   isPublic: Boolean
   name: String
+}
+
+input UpdatePlaylistPositionInput {
+  position: Int!
+  trackId: ID!
+}
+
+input UpdatePlaylistPositionsInput {
+  positions: [UpdatePlaylistPositionInput!]!
+}
+
+input UpdatePlaylistSortingInput {
+  sortingDirection: String!
+  sortingKey: String!
 }
 
 input UpdatePreferencesInput {

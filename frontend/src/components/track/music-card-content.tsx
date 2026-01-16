@@ -6,7 +6,6 @@ import { AnimatePresence, motion } from 'motion/react';
 interface MusicCardContentProps {
   track: SimpleMusicTrack;
   showPlayButton?: boolean;
-  onPlayClick?: (e: React.MouseEvent) => void;
   playButton?: React.ReactNode;
   className?: string;
 }
@@ -14,7 +13,6 @@ interface MusicCardContentProps {
 export function MusicCardContent({
   track,
   showPlayButton,
-  onPlayClick,
   playButton,
   className,
 }: MusicCardContentProps) {
@@ -27,7 +25,6 @@ export function MusicCardContent({
       ? track.subgenres
       : 'Unknown Subgenre';
   const formattedImage = track.imagePath || 'Unknown Image';
-  const bpm = track.tempo || 'Unknown BPM';
 
   return (
     <CardContent className={`p-0 ${className || ''} h-full`}>
@@ -55,7 +52,7 @@ export function MusicCardContent({
             className=" object-fit rounded-md"
           />
         </div>
-        <div className=" flex-1 h-5/8 backdrop-blur-md rounded-md">
+        <div className=" flex-1 h-5/8 backdrop-blur-md rounded-t-md">
           <div className="flex items-center justify-center h-full w-full ">
             <img
               src={`http://localhost:3000/api/images/serve?imagePath=${formattedImage}`}
@@ -64,7 +61,7 @@ export function MusicCardContent({
             />
           </div>
         </div>
-        <div className=" space-y-2 p-2 z-1 bg-card rounded-md flex flex-col justify-between  h-3/8">
+        <div className=" space-y-2 p-2 z-1 bg-card rounded-b-md flex flex-col justify-between  h-3/8">
           <div className="px-1">
             <h3
               className="font-semibold text-sm leading-tight line-clamp-1 capitalize"

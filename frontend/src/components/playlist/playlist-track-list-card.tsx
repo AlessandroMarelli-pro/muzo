@@ -20,14 +20,14 @@ import {
 
 export const PlaylistTrackListCard = ({
   playlistTrack,
-  index,
   handleRemoveTrack,
   removingTrackId,
+  dragHandleProps,
 }: {
   playlistTrack: PlaylistTrack;
-  index: number;
   handleRemoveTrack: (trackId: string) => void;
   removingTrackId: string | null;
+  dragHandleProps?: any;
 }) => {
   const { currentTrack, setCurrentTrack } = useCurrentTrack();
   const actions = useAudioPlayerActions();
@@ -60,8 +60,16 @@ export const PlaylistTrackListCard = ({
     >
       {/* Position */}
       <div className="flex items-center gap-2 text-muted-foreground text-sm w-8">
-        <GripVertical className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity" />
-        <span>{index + 1}</span>
+        {dragHandleProps && (
+          <GripVertical
+            {...dragHandleProps}
+            className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing"
+          />
+        )}
+        {!dragHandleProps && (
+          <GripVertical className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity" />
+        )}
+        <span>{playlistTrack.position}</span>
       </div>
       <img
         src={`http://localhost:3000/api/images/serve?imagePath=${formattedImage}`}

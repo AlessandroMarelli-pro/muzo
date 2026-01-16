@@ -10,11 +10,14 @@ import {
   CreatePlaylistInput,
   Playlist,
   PlaylistItem,
+  PlaylistSorting,
   PlaylistStats,
   PlaylistTrack,
   ReorderTracksInput,
   TrackRecommendation,
   UpdatePlaylistInput,
+  UpdatePlaylistPositionsInput,
+  UpdatePlaylistSortingInput,
 } from './playlist.model';
 import { PlaylistService } from './playlist.service';
 
@@ -148,5 +151,45 @@ export class PlaylistResolver {
     @Args('userId') userId?: string,
   ) {
     return this.playlistService.exportPlaylistToM3U(playlistId);
+  }
+
+  @Mutation(() => [PlaylistTrack])
+  async updatePlaylistPositions(
+    @Args('playlistId', { type: () => ID }) playlistId: string,
+    @Args('input') input: UpdatePlaylistPositionsInput,
+    @Args('userId') userId?: string,
+  ) {
+    const playlistTracks = await this.playlistService.updatePlaylistPositions(
+      playlistId,
+      input.positions,
+    );
+    return playlistTracks.map((playlistTrack) => ({
+      id: playlistTrack.id,
+      position: playlistTrack.position,
+      addedAt: playlistTrack.addedAt.toISOString(),
+      track: mapToSimpleMusicTrack(
+        playlistTrack.track as MusicTrackWithRelations,
+      ),
+    }));
+  }
+
+  @Mutation(() => PlaylistSorting)
+  async updatePlaylistSorting(
+    @Args('playlistId', { type: () => ID }) playlistId: string,
+    @Args('input') input: UpdatePlaylistSortingInput,
+    @Args('userId') userId?: string,
+  ) {
+    const sorting = await this.playlistService.updatePlaylistSorting(
+      playlistId,
+      input,
+    );
+    return {
+      id: sorting.id,
+      playlistId: sorting.playlistId,
+      sortingKey: sorting.sortingKey,
+      sortingDirection: sorting.sortingDirection,
+      createdAt: sorting.createdAt,
+      updatedAt: sorting.updatedAt,
+    };
   }
 }
