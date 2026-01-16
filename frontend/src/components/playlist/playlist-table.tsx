@@ -363,6 +363,8 @@ export function PlaylistTable({
     },
     getRowId: (row) => row.id,
     enableAdvancedFilter: false,
+    filterValues: {},
+    setFilterValues: () => {},
   });
 
   return (

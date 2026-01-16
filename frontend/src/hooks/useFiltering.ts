@@ -290,7 +290,7 @@ export const useFiltering = (options: UseFilteringOptions = {}) => {
 
   // Computed values
   const hasActiveFilters = useMemo(() => {
-    return (
+    const areFiltersActive =
       filters.genres.length > 0 ||
       filters.subgenres.length > 0 ||
       filters.keys.length > 0 ||
@@ -308,8 +308,11 @@ export const useFiltering = (options: UseFilteringOptions = {}) => {
       filters.acousticness.min !== 0 ||
       filters.acousticness.max !== 1 ||
       filters.artist !== '' ||
-      filters.title !== ''
-    );
+      filters.title !== '' ||
+      filters.libraryId.length > 0 ||
+      filters.atmospheres.length > 0;
+
+    return areFiltersActive;
   }, [filters]);
 
   // Auto-save filters when they change (if enabled)
