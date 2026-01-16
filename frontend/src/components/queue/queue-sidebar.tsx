@@ -20,7 +20,11 @@ export function QueueDrawer({ open, onOpenChange }: QueueDrawerProps) {
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-full sm:max-w-lg p-0 z-[9998]">
+      <SheetContent
+        side="right"
+        className="w-full sm:max-w-lg p-0 z-[9998]"
+        onInteractOutside={(e) => e.preventDefault()}
+      >
         <SheetHeader className="border-b px-6 py-4">
           <SheetTitle>
             Queue

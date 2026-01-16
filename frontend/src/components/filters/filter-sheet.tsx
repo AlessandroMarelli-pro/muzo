@@ -137,6 +137,7 @@ export function FilterSheet({ open, onOpenChange }: FilterSheetProps) {
       <SheetContent
         side="left"
         className="sm:max-w-[500px] z-1000 overflow-y-auto"
+        onInteractOutside={(e) => e.preventDefault()}
       >
         <SheetHeader>
           <SheetTitle className="flex items-center gap-2">

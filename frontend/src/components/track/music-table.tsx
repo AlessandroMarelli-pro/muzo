@@ -673,14 +673,10 @@ export function MusicTable({
       },
     },
 
-    filterValues: initialFilters
-      ? Object.fromEntries(
-          Object.entries(initialFilters).map(([key, value]) => [
-            key,
-            Array.isArray(value) ? value.join(',') : value,
-          ]),
-        )
-      : {},
+    filterValues: initialFilters as unknown as Record<
+      string,
+      string | string[] | null
+    >,
     setFilterValues: handleFilterChange,
 
     getRowId: (row) => row.id,
