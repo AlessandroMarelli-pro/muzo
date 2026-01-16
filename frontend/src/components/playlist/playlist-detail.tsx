@@ -1,5 +1,4 @@
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -28,6 +27,7 @@ import { useState } from 'react';
 import { Badge } from '../ui/badge';
 // Note: This app uses custom view state instead of routing
 // The id should be passed as a prop from the parent component
+import { Playlist } from '@/__generated__/types';
 import {
   useAudioPlayerActions,
   useCurrentTrack,
@@ -38,6 +38,7 @@ import {
   useQueue,
   useRemoveTrackFromQueue,
 } from '@/services/queue-hooks';
+import { Skeleton } from '../ui/skeleton';
 import { AddTrackDialog } from './add-track-dialog';
 import { PlaylistDetailActions } from './playlist-detail-actions';
 import { PlaylistDetailChart } from './playlist-detail-chart';
@@ -49,7 +50,60 @@ interface PlaylistDetailProps {
   id: string;
   onBack: () => void;
 }
-
+const PlaylistMetadata = ({
+  playlist,
+  isLoading,
+}: {
+  playlist: Playlist | undefined;
+  isLoading: boolean;
+}) => {
+  if (isLoading) {
+    return Array.from({ length: 4 }).map((_, index) => (
+      <Skeleton key={index} className="w-24 h-4" />
+    ));
+  }
+  return (
+    <div className="flex flex-row gap-1 items-center">
+      <Badge variant="outline" className="text-xs ">
+        <Disc3 className="h-4 w-4 " /> Tracks: {playlist?.numberOfTracks}
+      </Badge>
+      <Badge variant="outline" className="text-xs ">
+        <Clock className="h-4 w-4" />
+        Duration: {formatDuration(playlist?.totalDuration || 0)}
+      </Badge>{' '}
+      <Badge variant="outline" className="text-xs ">
+        <HeartPlus className="h-4 w-4 " /> BPM: {playlist?.bpmRange.min} -{' '}
+        {playlist?.bpmRange.max}
+      </Badge>
+      <Badge variant="outline" className="text-xs ">
+        <AudioWaveform className="h-4 w-4 " /> Energy:{' '}
+        {playlist?.energyRange.min} - {playlist?.energyRange.max}
+      </Badge>
+    </div>
+  );
+};
+const PlaylistTitle = ({
+  playlist,
+  isLoading,
+}: {
+  playlist: Playlist | undefined;
+  isLoading: boolean;
+}) => {
+  return (
+    <div className="flex-1">
+      <h1 className="text-base font-bold flex flex-row gap-1 items-center">
+        {isLoading ? <Skeleton className="w-24 h-4" /> : playlist?.name}:
+        <span className="text-muted-foreground">
+          {isLoading ? (
+            <Skeleton className="w-24 h-4" />
+          ) : (
+            playlist?.description
+          )}
+        </span>
+      </h1>
+    </div>
+  );
+};
 export function PlaylistDetail({ id, onBack }: PlaylistDetailProps) {
   const { setCurrentTrack } = useCurrentTrack();
   const actions = useAudioPlayerActions();
@@ -160,33 +214,7 @@ export function PlaylistDetail({ id, onBack }: PlaylistDetailProps) {
   const currentSortingDirection =
     (playlist as any)?.sorting?.sortingDirection === 'desc' ? 'desc' : 'asc';
 
-  if (loading) {
-    return (
-      <div className="space-y-6">
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="sm" disabled>
-            <ArrowLeft className="h-4 w-4" />
-            Back
-          </Button>
-          <div className="h-8 bg-gray-200 rounded w-64 animate-pulse"></div>
-        </div>
-        <Card>
-          <CardHeader>
-            <div className="h-6 bg-gray-200 rounded w-48 animate-pulse"></div>
-            <div className="h-4 bg-gray-200 rounded w-96 animate-pulse"></div>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="h-4 bg-gray-200 rounded w-32 animate-pulse"></div>
-              <div className="h-4 bg-gray-200 rounded w-24 animate-pulse"></div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  if (error || !playlist) {
+  if (error) {
     return (
       <div className="text-center py-8">
         <p className="text-red-500 mb-4">{error || 'Playlist not found'}</p>
@@ -206,34 +234,16 @@ export function PlaylistDetail({ id, onBack }: PlaylistDetailProps) {
           <ArrowLeft className="h-4 w-4 " />
           Back
         </Button>
-        <div className="flex-1">
-          <h1 className="text-base font-bold flex flex-row gap-1 items-center">
-            {playlist.name}:
-            <span className="text-muted-foreground">
-              {playlist.description}
-            </span>
-          </h1>
-        </div>
-        <div className="flex flex-row gap-1 items-center">
-          <Badge variant="outline" className="text-xs ">
-            <Disc3 className="h-4 w-4 " /> Tracks: {playlist.numberOfTracks}
-          </Badge>
-          <Badge variant="outline" className="text-xs ">
-            <Clock className="h-4 w-4" />
-            Duration: {formatDuration(playlist.totalDuration)}
-          </Badge>{' '}
-          <Badge variant="outline" className="text-xs ">
-            <HeartPlus className="h-4 w-4 " /> BPM: {playlist.bpmRange.min} -{' '}
-            {playlist.bpmRange.max}
-          </Badge>
-          <Badge variant="outline" className="text-xs ">
-            <AudioWaveform className="h-4 w-4 " /> Energy:{' '}
-            {playlist.energyRange.min} - {playlist.energyRange.max}
-          </Badge>
-        </div>
+        <PlaylistTitle playlist={playlist} isLoading={loading} />
+        <PlaylistMetadata
+          playlist={playlist || undefined}
+          isLoading={loading}
+        />
+
         <div className="flex items-center gap-2">
           <PlaylistDetailActions
-            playlist={playlist}
+            playlist={playlist || undefined}
+            isLoading={loading}
             isDeleting={isDeleting}
             isSettingAsQueue={isSettingAsQueue}
             onDelete={handleDelete}
@@ -241,7 +251,8 @@ export function PlaylistDetail({ id, onBack }: PlaylistDetailProps) {
             onAddTrack={() => setIsAddTrackDialogOpen(true)}
           />
           <PlaylistDetailThirdParties
-            playlist={playlist}
+            playlist={playlist || undefined}
+            isLoading={loading}
             onSyncToYouTube={syncToYouTube}
             onSyncToTidal={syncToTidal}
             onSyncToSpotify={syncToSpotify}
@@ -251,7 +262,11 @@ export function PlaylistDetail({ id, onBack }: PlaylistDetailProps) {
               <Button
                 size="sm"
                 variant="ghost"
-                disabled={updatePlaylistSortingMutation.isPending || !playlist}
+                disabled={
+                  loading ||
+                  updatePlaylistSortingMutation.isPending ||
+                  !playlist
+                }
               >
                 <ArrowUpDown className="h-4 w-4 mr-2" />
                 Sort
@@ -311,7 +326,10 @@ export function PlaylistDetail({ id, onBack }: PlaylistDetailProps) {
       </div>
 
       {/* Playlist Info */}
-      <PlaylistDetailChart tracks={playlist.tracks || []} />
+      <PlaylistDetailChart
+        tracks={playlist?.tracks || []}
+        isLoading={loading}
+      />
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
@@ -323,12 +341,16 @@ export function PlaylistDetail({ id, onBack }: PlaylistDetailProps) {
         </TabsList>
 
         <TabsContent value="tracks" className="space-y-4">
-          <PlaylistTracksList playlist={playlist} onUpdate={refetch} />
+          <PlaylistTracksList
+            playlist={playlist}
+            onUpdate={refetch}
+            isLoading={loading}
+          />
         </TabsContent>
 
         <TabsContent value="recommendations" className="space-y-4">
           <TrackRecommendations
-            playlistId={playlist.id}
+            playlistId={playlist?.id || ''}
             onTrackAdded={() => refetch()}
           />
         </TabsContent>

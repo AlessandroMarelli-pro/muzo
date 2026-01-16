@@ -1,3 +1,4 @@
+import { Playlist } from '@/__generated__/types';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -10,7 +11,8 @@ import { TidalSync } from './third-party-apps/tidal-sync';
 import { YouTubeSync } from './third-party-apps/youtube-sync';
 
 interface PlaylistDetailThirdPartiesProps {
-  playlist: { id: string } | null;
+  playlist: Playlist | undefined;
+  isLoading: boolean;
   onSyncToYouTube: () => Promise<{
     success: boolean;
     syncedCount: number;
@@ -36,23 +38,25 @@ interface PlaylistDetailThirdPartiesProps {
 
 export function PlaylistDetailThirdParties({
   playlist,
+  isLoading,
   onSyncToYouTube,
   onSyncToTidal,
   onSyncToSpotify,
 }: PlaylistDetailThirdPartiesProps) {
+  const isDisabled = isLoading || !playlist;
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button size="sm" variant="ghost" disabled={!playlist}>
+        <Button size="sm" variant="ghost" disabled={isDisabled}>
           <Music2 className="h-4 w-4 mr-2" />
           Sync
           <ChevronDown className="h-4 w-4 ml-2" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <YouTubeSync onSync={onSyncToYouTube} disabled={!playlist} />
-        <TidalSync onSync={onSyncToTidal} disabled={!playlist} />
-        <SpotifySync onSync={onSyncToSpotify} disabled={!playlist} />
+        <YouTubeSync onSync={onSyncToYouTube} disabled={isDisabled} />
+        <TidalSync onSync={onSyncToTidal} disabled={isDisabled} />
+        <SpotifySync onSync={onSyncToSpotify} disabled={isDisabled} />
       </DropdownMenuContent>
     </DropdownMenu>
   );

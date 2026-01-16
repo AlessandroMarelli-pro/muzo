@@ -17,6 +17,24 @@ import {
   Play,
   Trash2,
 } from 'lucide-react';
+import { Skeleton } from '../ui/skeleton';
+export const PlaylistTrackListCardSkeleton = ({
+  position,
+}: {
+  position: number;
+}) => {
+  return (
+    <div className="flex items-center gap-4 p-4 hover:bg-muted/50 transition-colors group h-20">
+      <div className="flex items-center gap-2 text-muted-foreground text-sm w-8 ">
+        <GripVertical className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity" />
+        <span>{position}</span>
+      </div>
+      <Skeleton className="min-w-10 min-h-10 w-10 h-10 rounded-md" />
+      <Skeleton className="w-full h-6" />
+      <Skeleton className="w-full h-6" />
+    </div>
+  );
+};
 
 export const PlaylistTrackListCard = ({
   playlistTrack,

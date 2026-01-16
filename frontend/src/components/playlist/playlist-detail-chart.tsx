@@ -11,9 +11,13 @@ interface PlaylistDetailChartProps {
       duration?: number | null;
     } | null;
   }>;
+  isLoading: boolean;
 }
 
-export function PlaylistDetailChart({ tracks }: PlaylistDetailChartProps) {
+export function PlaylistDetailChart({
+  tracks,
+  isLoading,
+}: PlaylistDetailChartProps) {
   return (
     <div className="flex-2">
       <PlaylistChart
@@ -22,8 +26,9 @@ export function PlaylistDetailChart({ tracks }: PlaylistDetailChartProps) {
           tempo: Math.round((track.track?.tempo || 0) * 100) / 100,
           key: track.track?.key || '',
           name: `${track.track?.artist} - ${track.track?.title}`,
-          duration: track.track?.duration,
+          duration: track.track?.duration || 0,
         }))}
+        isLoading={isLoading}
       />
     </div>
   );

@@ -1,9 +1,7 @@
-import {
-  Playlist as GraphQLPlaylist,
-  PlaylistTrack,
-} from '@/__generated__/types';
+import { PlaylistTrack } from '@/__generated__/types';
 import { Card, CardContent } from '@/components/ui/card';
 
+import { Playlist } from '@/__generated__/types';
 import {
   useRemoveTrackFromPlaylist,
   useUpdatePlaylistPositions,
@@ -26,22 +24,26 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Clock } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
-import { PlaylistTrackListCard } from './playlist-track-list-card';
+import {
+  PlaylistTrackListCard,
+  PlaylistTrackListCardSkeleton,
+} from './playlist-track-list-card';
 
 interface PlaylistTracksListProps {
-  playlist: GraphQLPlaylist;
+  playlist: Playlist | undefined;
   onUpdate: () => void;
+  isLoading: boolean;
 }
 
 export function PlaylistTracksList({
   playlist,
   onUpdate,
+  isLoading,
 }: PlaylistTracksListProps) {
   const [removingTrackId, setRemovingTrackId] = useState<string | null>(null);
   const [localTracks, setLocalTracks] = useState<PlaylistTrack[]>(
-    playlist.tracks,
+    playlist?.tracks || [],
   );
   const removeTrackMutation = useRemoveTrackFromPlaylist('default');
   const updatePositionsMutation = useUpdatePlaylistPositions('default');
@@ -49,13 +51,13 @@ export function PlaylistTracksList({
   // Sync localTracks with playlist.tracks when playlist changes (e.g., after sorting)
   // Use a stringified version of track IDs and positions to detect order changes
   const tracksSignature = useMemo(
-    () => playlist.tracks.map((t) => `${t.id}:${t.position}`).join(','),
-    [playlist.tracks],
+    () => playlist?.tracks?.map((t) => `${t.id}:${t.position}`).join(','),
+    [playlist?.tracks],
   );
 
   useEffect(() => {
-    setLocalTracks(playlist.tracks);
-  }, [tracksSignature, playlist.tracks]);
+    setLocalTracks(playlist?.tracks || []);
+  }, [tracksSignature, playlist?.tracks]);
 
   const sensors = useSensors(
     useSensor(MouseSensor, {}),
@@ -76,7 +78,7 @@ export function PlaylistTracksList({
     setRemovingTrackId(trackId);
     try {
       await removeTrackMutation.mutateAsync({
-        playlistId: playlist.id,
+        playlistId: playlist?.id || '',
         trackId,
       });
       onUpdate();
@@ -89,7 +91,7 @@ export function PlaylistTracksList({
 
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
-    const sortingOrder = playlist.sorting?.sortingDirection === 'asc' ? 1 : -1;
+    const sortingOrder = playlist?.sorting?.sortingDirection === 'asc' ? 1 : -1;
     if (!active || !over || active.id !== over.id) {
       const oldIndex = trackIds.indexOf(active.id as string);
       const newIndex = trackIds.indexOf(over?.id as string);
@@ -104,39 +106,23 @@ export function PlaylistTracksList({
           const positions = newTracks.map((track, index) => ({
             trackId: track.track.id,
             position:
-              sortingOrder > 0 ? index + 1 : playlist.tracks.length - index,
+              sortingOrder > 0
+                ? index + 1
+                : playlist?.tracks?.length || 0 - index,
           }));
           await updatePositionsMutation.mutateAsync({
-            playlistId: playlist.id,
+            playlistId: playlist?.id || '',
             positions,
           });
           onUpdate();
         } catch (error) {
           console.error('Failed to update playlist positions:', error);
           // Revert on error
-          setLocalTracks(playlist.tracks);
+          setLocalTracks(playlist?.tracks || []);
         }
       }
     }
   };
-
-  if (localTracks.length === 0) {
-    return (
-      <Card>
-        <CardContent className="text-center py-12">
-          <div className="space-y-4">
-            <div className="text-muted-foreground">
-              <Clock className="h-12 w-12 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold">
-                No tracks in this playlist
-              </h3>
-              <p>Add some tracks to get started</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
 
   return (
     <Card className="py-0">
@@ -152,14 +138,21 @@ export function PlaylistTracksList({
             strategy={verticalListSortingStrategy}
           >
             <div className="divide-y">
-              {localTracks.map((playlistTrack) => (
-                <SortablePlaylistTrack
-                  key={playlistTrack.id}
-                  playlistTrack={playlistTrack}
-                  onRemove={handleRemoveTrack}
-                  removingTrackId={removingTrackId}
-                />
-              ))}
+              {!isLoading && localTracks.length > 0
+                ? localTracks.map((playlistTrack) => (
+                    <SortablePlaylistTrack
+                      key={playlistTrack.id}
+                      playlistTrack={playlistTrack}
+                      onRemove={handleRemoveTrack}
+                      removingTrackId={removingTrackId}
+                    />
+                  ))
+                : Array.from({ length: 5 }).map((_, i) => (
+                    <PlaylistTrackListCardSkeleton
+                      key={`playlist-tracks-list-skeleton-${i}`}
+                      position={i + 1}
+                    />
+                  ))}
             </div>
           </SortableContext>
         </DndContext>
