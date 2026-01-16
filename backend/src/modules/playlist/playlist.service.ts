@@ -507,7 +507,7 @@ export class PlaylistService {
         playlistId: id,
       },
     });
-    console.log(sorting);
+
     const playlist = await this.prisma.playlist.findFirst({
       where: {
         id,
@@ -607,10 +607,12 @@ export class PlaylistService {
   }
 
   async updatePlaylist(id: string, updatePlaylistDto: UpdatePlaylistDto) {
-    // Verify ownership or public access
-    const existingPlaylist = await this.findPlaylistById(id);
-
-    return this.prisma.playlist.update({
+    const sorting = await this.prisma.playlistSorting.findFirst({
+      where: {
+        playlistId: id,
+      },
+    });
+    const playlist = await this.prisma.playlist.update({
       where: { id },
       data: updatePlaylistDto,
       include: {
@@ -634,10 +636,14 @@ export class PlaylistService {
               },
             },
           },
-          orderBy: { position: 'asc' },
+          orderBy: {
+            [sorting?.sortingKey || 'position']:
+              sorting?.sortingDirection || 'asc',
+          },
         },
       },
     });
+    return { ...playlist, sorting };
   }
 
   async deletePlaylist(id: string) {

@@ -27,7 +27,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Clock } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { PlaylistTrackListCard } from './playlist-track-list-card';
 
 interface PlaylistTracksListProps {
@@ -45,6 +45,17 @@ export function PlaylistTracksList({
   );
   const removeTrackMutation = useRemoveTrackFromPlaylist('default');
   const updatePositionsMutation = useUpdatePlaylistPositions('default');
+
+  // Sync localTracks with playlist.tracks when playlist changes (e.g., after sorting)
+  // Use a stringified version of track IDs and positions to detect order changes
+  const tracksSignature = useMemo(
+    () => playlist.tracks.map((t) => `${t.id}:${t.position}`).join(','),
+    [playlist.tracks],
+  );
+
+  useEffect(() => {
+    setLocalTracks(playlist.tracks);
+  }, [tracksSignature, playlist.tracks]);
 
   const sensors = useSensors(
     useSensor(MouseSensor, {}),
@@ -78,6 +89,7 @@ export function PlaylistTracksList({
 
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
+    const sortingOrder = playlist.sorting?.sortingDirection === 'asc' ? 1 : -1;
     if (!active || !over || active.id !== over.id) {
       const oldIndex = trackIds.indexOf(active.id as string);
       const newIndex = trackIds.indexOf(over?.id as string);
@@ -91,7 +103,8 @@ export function PlaylistTracksList({
         try {
           const positions = newTracks.map((track, index) => ({
             trackId: track.track.id,
-            position: index + 1,
+            position:
+              sortingOrder > 0 ? index + 1 : playlist.tracks.length - index,
           }));
           await updatePositionsMutation.mutateAsync({
             playlistId: playlist.id,
