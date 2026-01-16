@@ -112,10 +112,10 @@ const TopGenresSkeleton = () => {
       {Array.from({ length: 10 }).map((_, index) => (
         <Badge
           key={index}
-          variant="foreground"
+          variant="secondary"
           className=" h-6 shadow-xs capitalize "
         >
-          <Skeleton key={index} className="w-15 h-6" />
+          <Skeleton key={index} className="w-15 h-6 bg-secondary" />
         </Badge>
       ))}
     </div>
@@ -134,7 +134,7 @@ const TopGenres = ({
       {genres?.map((genre, index) => (
         <Badge
           key={`${genre.genre}-${index}`}
-          variant="foreground"
+          variant="secondary"
           className=" h-6 shadow-xs capitalize "
           size="xs"
         >

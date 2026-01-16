@@ -30,6 +30,7 @@ import {
   Clock,
   Disc3,
   HeartPlus,
+  ListMusic,
   Music,
   Music2,
   Pause,
@@ -49,6 +50,11 @@ import {
   useIsPlaying,
 } from '@/contexts/audio-player-context';
 import { formatDuration } from '@/lib/utils';
+import {
+  useAddTrackToQueue,
+  useQueue,
+  useRemoveTrackFromQueue,
+} from '@/services/queue-hooks';
 import { AddTrackDialog } from './add-track-dialog';
 import { PlaylistChart } from './playlist-chart';
 import { PlaylistTracksList } from './playlist-tracks-list';
@@ -63,8 +69,12 @@ export function PlaylistDetail({ id, onBack }: PlaylistDetailProps) {
   const { setCurrentTrack } = useCurrentTrack();
   const actions = useAudioPlayerActions();
   const isPlaying = useIsPlaying();
+  const { data: currentQueue = [] } = useQueue();
+  const addTrackToQueue = useAddTrackToQueue();
+  const removeTrackFromQueue = useRemoveTrackFromQueue();
   const [activeTab, setActiveTab] = useState('tracks');
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isSettingAsQueue, setIsSettingAsQueue] = useState(false);
   const [isAddTrackDialogOpen, setIsAddTrackDialogOpen] = useState(false);
   const [isAuthDialogOpen, setIsAuthDialogOpen] = useState(false);
   const [authUrl, setAuthUrl] = useState<string | null>(null);
@@ -156,6 +166,48 @@ export function PlaylistDetail({ id, onBack }: PlaylistDetailProps) {
     if (!playlist?.tracks[0].track) return;
     setCurrentTrack(playlist?.tracks[0].track);
     actions.play(playlist?.tracks[0].track.id);
+  };
+
+  const handleSetAsQueue = async () => {
+    if (!playlist) return;
+
+    setIsSettingAsQueue(true);
+    try {
+      // Remove all current queue items (ignore errors for individual removals)
+      const removePromises = currentQueue.map((item) =>
+        removeTrackFromQueue.mutateAsync(item.trackId).catch((err) => {
+          console.warn(`Failed to remove track ${item.trackId} from queue:`, err);
+        }),
+      );
+      await Promise.all(removePromises);
+
+      // Add all playlist tracks to queue (ignore errors for duplicates)
+      const addPromises = playlist.tracks
+        .filter((pt) => pt.track?.id)
+        .map((pt) =>
+          addTrackToQueue.mutateAsync(pt.track!.id).catch((err) => {
+            // Ignore "already in queue" errors
+            if (
+              err?.message?.includes('already in the queue') ||
+              err?.response?.errors?.[0]?.message?.includes('already in the queue')
+            ) {
+              return;
+            }
+            console.warn(`Failed to add track ${pt.track!.id} to queue:`, err);
+          }),
+        );
+      await Promise.all(addPromises);
+
+      // Optionally start playing the first track
+      if (playlist.tracks[0]?.track) {
+        setCurrentTrack(playlist.tracks[0].track);
+        actions.play(playlist.tracks[0].track.id);
+      }
+    } catch (error) {
+      console.error('Failed to set playlist as queue:', error);
+    } finally {
+      setIsSettingAsQueue(false);
+    }
   };
 
   const handleSyncToYouTube = async () => {
@@ -559,25 +611,51 @@ export function PlaylistDetail({ id, onBack }: PlaylistDetailProps) {
           </Badge>
         </div>
         <div className="flex items-center gap-2">
-          <Button
-            onClick={() => setIsAddTrackDialogOpen(true)}
-            size="sm"
-            variant="ghost"
-          >
-            <Plus className="h-4 w-4 " />
-            Add Track
-          </Button>
-          <Button onClick={handlePlay} size="sm" variant="ghost">
-            {isPlaying ? (
-              <>
-                <Pause className="h-4 w-4 " /> Pause
-              </>
-            ) : (
-              <>
-                <Play className="h-4 w-4 " /> Play
-              </>
-            )}
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button size="sm" variant="ghost" disabled={!playlist}>
+                <ChevronDown className="h-4 w-4 mr-2" />
+                Actions
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem
+                onClick={() => setIsAddTrackDialogOpen(true)}
+                disabled={!playlist}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add Track
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={handleSetAsQueue}
+                disabled={isSettingAsQueue || !playlist}
+              >
+                <ListMusic className="h-4 w-4 mr-2" />
+                {isSettingAsQueue ? 'Setting as Queue...' : 'Set as Queue'}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handlePlay} disabled={!playlist}>
+                {isPlaying ? (
+                  <>
+                    <Pause className="h-4 w-4 mr-2" />
+                    Pause
+                  </>
+                ) : (
+                  <>
+                    <Play className="h-4 w-4 mr-2" />
+                    Play
+                  </>
+                )}
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={handleDelete}
+                disabled={isDeleting || !playlist}
+                className="text-destructive focus:text-destructive"
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Delete Playlist
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
@@ -619,15 +697,6 @@ export function PlaylistDetail({ id, onBack }: PlaylistDetailProps) {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-          <Button
-            onClick={handleDelete}
-            disabled={isDeleting}
-            size="sm"
-            variant="ghost"
-          >
-            <Trash2 className="h-4 w-4 " />
-            Delete Playlist
-          </Button>
         </div>
       </div>
 

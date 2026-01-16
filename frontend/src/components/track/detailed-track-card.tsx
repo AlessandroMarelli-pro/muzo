@@ -159,7 +159,7 @@ export function DetailedTrackCard({ track, refetch }: DetailedTrackCardProps) {
           {/* Track Info */}
           <div className="flex flex-col gap-1 flex-1 min-w-0">
             <div>
-              <h1 className="text-lg  text-foreground truncate capitalize">
+              <h1 className="text-lg  text-foreground truncate capitalize max-w-md ">
                 {track.artist} - {track.title}
               </h1>
             </div>

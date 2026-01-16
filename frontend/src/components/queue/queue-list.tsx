@@ -52,10 +52,6 @@ export function QueueList() {
   );
 
   const handleRemoveTrack = async (trackId: string) => {
-    if (!confirm('Remove this track from the queue?')) {
-      return;
-    }
-
     setRemovingTrackId(trackId);
     try {
       await removeTrackMutation.mutateAsync(trackId);
