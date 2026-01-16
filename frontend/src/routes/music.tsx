@@ -13,12 +13,7 @@ function MusicPage() {
   const staticFilterOptions = useFilterOptionsData();
   // Use URL state management for pagination and sorting
 
-  const {
-    filters,
-    loadSavedFilter,
-    updateFilters,
-    isLoading: isFilterLoading,
-  } = useFilters();
+  const { filters, loadSavedFilter, updateFilters } = useFilters();
 
   useEffect(() => {
     void loadSavedFilter();
@@ -44,7 +39,6 @@ function MusicPage() {
       staticFilterOptions={memoizedStaticFilterOptions}
       filters={memoizedFilters}
       handleFilterChange={updateFilters}
-      isFilterLoading={isFilterLoading}
     />
   );
 }

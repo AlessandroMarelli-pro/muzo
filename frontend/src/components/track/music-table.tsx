@@ -37,7 +37,6 @@ import { DataTablePagination } from '../data-table/data-table-pagination';
 interface MusicTableProps {
   data: SimpleMusicTrack[];
   pageCount: number;
-  isLoading?: boolean;
   staticFilterOptions: StaticFilterOptionsData;
   initialPageSize?: number;
   playingTrackId?: string;
@@ -622,7 +621,6 @@ const columns = (
 export function MusicTable({
   data,
   pageCount,
-  isLoading,
   staticFilterOptions,
   initialPageSize = 10,
   initialFilters,
@@ -691,7 +689,7 @@ export function MusicTable({
 
   return (
     <div className="w-full space-y-4 ">
-      <DataTable table={table} isLoading={isLoading}>
+      <DataTable table={table}>
         <DataTableToolbar table={table}>
           <DataTableSortList table={table} />
         </DataTableToolbar>
