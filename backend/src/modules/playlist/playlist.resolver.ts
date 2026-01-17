@@ -29,8 +29,11 @@ export class PlaylistResolver {
   ) {}
 
   @Query(() => [PlaylistItem])
-  async playlists(@Args('userId') userId?: string) {
-    const playlists = await this.playlistService.getPlaylistWithStats();
+  async playlists(
+    @Args('userId') userId?: string,
+    @Args('search', { type: () => String, nullable: true }) search?: string,
+  ) {
+    const playlists = await this.playlistService.getPlaylistWithStats(search);
     return playlists;
   }
 

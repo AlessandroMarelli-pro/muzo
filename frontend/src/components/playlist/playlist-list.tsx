@@ -1,34 +1,32 @@
 import { Button } from '@/components/ui/button';
-import { usePlaylists } from '@/services/playlist-hooks';
 import { Plus, Search } from 'lucide-react';
-import { useState } from 'react';
-import { Loading } from '../loading';
+import { useEffect, useState } from 'react';
 import { Input } from '../ui/input';
 import { CreatePlaylistDialog } from './create-playlist-dialog';
 import { PlaylistCard } from './playlist-card';
 
 interface PlaylistListProps {
   onViewPlaylistDetails: (playlistId: string) => void;
+  playlists: PlaylistItem[];
+  refetch: () => void;
 }
 
-export function PlaylistList({ onViewPlaylistDetails }: PlaylistListProps) {
+export function PlaylistList({
+  onViewPlaylistDetails,
+  playlists,
+
+  refetch,
+}: PlaylistListProps) {
+  const [filteredPlaylists, setFilteredPlaylists] = useState(playlists);
   const [searchQuery, setSearchQuery] = useState('');
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const { playlists, loading, error, refetch } = usePlaylists('default');
-
-  if (loading) {
-    return <Loading />;
-  }
-
-  if (error) {
-    return (
-      <div className="text-center py-8">
-        <p className="text-red-500 mb-4">Error loading playlists: {error}</p>
-        <Button onClick={() => refetch()}>Retry</Button>
-      </div>
+  useEffect(() => {
+    setFilteredPlaylists(
+      playlists.filter((playlist) =>
+        playlist.name.toLowerCase().includes(searchQuery.toLowerCase()),
+      ),
     );
-  }
-
+  }, [searchQuery, playlists]);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const handleCreatePlaylist = () => {
     setIsCreateDialogOpen(true);
   };
@@ -49,7 +47,7 @@ export function PlaylistList({ onViewPlaylistDetails }: PlaylistListProps) {
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
           <Input
             type="text"
-            placeholder="Search playlists..."
+            placeholder="Filter playlists..."
             value={searchQuery}
             onChange={handleSearchChange}
             className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -62,7 +60,7 @@ export function PlaylistList({ onViewPlaylistDetails }: PlaylistListProps) {
         </Button>
       </div>
       <div className="flex flex-row flex-wrap gap-6 justify-start">
-        {playlists.map((playlist) => (
+        {filteredPlaylists.map((playlist) => (
           <PlaylistCard
             key={playlist.id}
             playlist={playlist}

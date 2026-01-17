@@ -47,8 +47,8 @@ export const simpleMusicTrackFragment = gql`
 
 // GraphQL Queries and Mutations
 const GET_PLAYLISTS = gql`
-  query GetPlaylists($userId: String!) {
-    playlists(userId: $userId) {
+  query GetPlaylists($userId: String!, $search: String) {
+    playlists(userId: $userId, search: $search) {
       id
       name
       description
@@ -412,10 +412,11 @@ const UPDATE_PLAYLIST_SORTING = gql`
 // API functions
 const fetchPlaylists = async (
   userId: string = 'default',
+  search?: string,
 ): Promise<PlaylistItem[]> => {
   const data = await graffleClient.request<{ playlists: PlaylistItem[] }>(
     GET_PLAYLISTS,
-    { userId },
+    { userId, search: search?.trim() || undefined },
   );
   return data.playlists;
 };
@@ -681,7 +682,7 @@ const updatePlaylistSorting = async (
 };
 
 // Hooks
-export function usePlaylists(userId: string = 'default') {
+export function usePlaylists(userId: string = 'default', search?: string) {
   const queryClient = useQueryClient();
 
   const {
@@ -689,9 +690,10 @@ export function usePlaylists(userId: string = 'default') {
     isLoading: loading,
     error,
     refetch,
+    isRefetching,
   } = useQuery<PlaylistItem[]>({
-    queryKey: ['playlists', userId],
-    queryFn: () => fetchPlaylists(userId),
+    queryKey: ['playlists', userId, search],
+    queryFn: () => fetchPlaylists(userId, search),
   });
 
   const createPlaylistMutation = useMutation({
@@ -741,6 +743,7 @@ export function usePlaylists(userId: string = 'default') {
     loading,
     error: error?.message,
     refetch,
+    isRefetching,
     createPlaylist: createPlaylistMutation.mutateAsync,
     deletePlaylist: deletePlaylistMutation.mutateAsync,
     addTrackToPlaylist: (playlistId: string, input: AddTrackToPlaylistInput) =>

@@ -549,7 +549,7 @@ type Query {
   playlistRecommendations(excludeTrackIds: [String!], limit: Int, playlistId: ID!): [TrackRecommendation!]!
   playlistStats(playlistId: ID!, userId: String!): PlaylistStats!
   playlistTracks(playlistId: ID!, userId: String!): [PlaylistTrack!]!
-  playlists(userId: String!): [PlaylistItem!]!
+  playlists(search: String, userId: String!): [PlaylistItem!]!
   preferences: UserPreferencesGraphQL!
   queue: [QueueItem!]!
   queueStats: String!

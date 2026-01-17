@@ -3,6 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../shared/services/prisma.service';
 import { FilterService } from '../filter/filter.service';
 import {
@@ -116,16 +117,19 @@ export class PlaylistService {
     });
   }
 
-  async getPlaylistWithStats() {
-    const playlistsWithCalculations = await this.getPlaylistStatsQuery();
+  async getPlaylistWithStats(searchName?: string) {
+    const playlistsWithCalculations = await this.getPlaylistStatsQuery({
+      searchName,
+    });
     return playlistsWithCalculations.map((playlist: any) =>
       this.mapPlaylistStatsToItem(playlist),
     );
   }
 
   async getPlaylistWithStatsById(playlistId: string) {
-    const playlistWithCalculations =
-      await this.getPlaylistStatsQuery(playlistId);
+    const playlistWithCalculations = await this.getPlaylistStatsQuery({
+      playlistId,
+    });
 
     if (playlistWithCalculations.length === 0) {
       throw new NotFoundException(`Playlist with ID ${playlistId} not found`);
@@ -134,7 +138,11 @@ export class PlaylistService {
     return this.mapPlaylistStatsToItem(playlistWithCalculations[0]);
   }
 
-  private async getPlaylistStatsQuery(playlistId?: string) {
+  private async getPlaylistStatsQuery(options?: {
+    playlistId?: string;
+    searchName?: string;
+  }) {
+    const { playlistId, searchName } = options || {};
     if (playlistId) {
       return (await this.prisma.$queryRaw`
         WITH track_stats AS (
@@ -458,6 +466,7 @@ export class PlaylistService {
           
         FROM playlists p
         LEFT JOIN final_stats fs ON p.id = fs.playlistId
+        WHERE ${searchName?.trim() ? Prisma.sql`p.name LIKE ${'%' + searchName.trim() + '%'}` : Prisma.sql`1=1`}
         ORDER BY p.createdAt DESC
       `) as any[];
     }
