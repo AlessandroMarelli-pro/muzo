@@ -1,20 +1,22 @@
+import { PlaylistItem } from '@/__generated__/types';
 import { Button } from '@/components/ui/button';
 import { Plus, Search } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Input } from '../ui/input';
 import { CreatePlaylistDialog } from './create-playlist-dialog';
-import { PlaylistCard } from './playlist-card';
+import { PlaylistCard, PlaylistCardSkeleton } from './playlist-card';
 
 interface PlaylistListProps {
   onViewPlaylistDetails: (playlistId: string) => void;
   playlists: PlaylistItem[];
   refetch: () => void;
+  loading: boolean;
 }
 
 export function PlaylistList({
   onViewPlaylistDetails,
   playlists,
-
+  loading,
   refetch,
 }: PlaylistListProps) {
   const [filteredPlaylists, setFilteredPlaylists] = useState(playlists);
@@ -33,6 +35,7 @@ export function PlaylistList({
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
   };
+
   return (
     <div className="p-6  flex flex-col z-0 gap-4">
       {/*   <PlaylistTable
@@ -59,15 +62,23 @@ export function PlaylistList({
           Create Playlist
         </Button>
       </div>
-      <div className="flex flex-row flex-wrap gap-6 justify-start">
-        {filteredPlaylists.map((playlist) => (
-          <PlaylistCard
-            key={playlist.id}
-            playlist={playlist}
-            onUpdate={refetch}
-            onViewDetails={onViewPlaylistDetails}
-          />
-        ))}
+      <div className="flex flex-row flex-wrap gap-5 justify-start">
+        {loading ? (
+          <>
+            {Array.from({ length: 10 }).map((_, index) => (
+              <PlaylistCardSkeleton key={index} />
+            ))}
+          </>
+        ) : (
+          filteredPlaylists.map((playlist) => (
+            <PlaylistCard
+              key={playlist.id}
+              playlist={playlist}
+              onUpdate={refetch}
+              onViewDetails={onViewPlaylistDetails}
+            />
+          ))
+        )}
       </div>
       <CreatePlaylistDialog
         open={isCreateDialogOpen}

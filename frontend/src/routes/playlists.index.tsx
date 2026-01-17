@@ -8,13 +8,14 @@ function PlaylistsPage() {
   const handleViewPlaylistDetails = (playlistId: string) => {
     navigate({ to: `/playlists/${playlistId}` });
   };
-  const { playlists = [], refetch } = usePlaylists('default');
+  const { playlists = [], refetch, loading } = usePlaylists('default');
 
   return (
     <PlaylistList
       onViewPlaylistDetails={handleViewPlaylistDetails}
       playlists={playlists}
       refetch={refetch}
+      loading={loading}
     />
   );
 }

@@ -15,6 +15,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '../ui/dropdown-menu';
+import { Skeleton } from '../ui/skeleton';
 // Note: This app uses custom view state instead of routing
 // Navigation should be handled by parent component
 
@@ -23,6 +24,29 @@ interface PlaylistCardProps {
   onUpdate: () => void;
   onViewDetails: (playlistId: string) => void;
 }
+
+export const PlaylistCardSkeleton = () => {
+  return (
+    <Card className="flex flex-col p-0 gap-0 ">
+      <div className=" flex justify-center items-center flex-wrap p-0 max-w-60 max-h-60 min-w-60 min-h-60 rounded-t-md">
+        <Skeleton className={cn('w-full h-full rounded-none rounded-t-md')} />
+      </div>
+      <CardContent className="p-2 h-full w-full  border-none gap-0">
+        <div className="flex flex-col h-full space-around gap-2">
+          <h3 className="text-xs font-semibold capitalize">
+            <Skeleton className="w-1/2 h-4" />
+          </h3>
+          <p className="text-xs text-muted-foreground truncate capitalize">
+            <Skeleton className="w-1/2 h-4" />
+          </p>
+          <p className="text-xs text-muted-foreground truncate capitalize">
+            <Skeleton className="w-10 h-4" />
+          </p>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
 
 export function PlaylistCard({
   playlist,
