@@ -229,12 +229,19 @@ export class PlaylistService {
           GROUP BY aud.playlistId
         ),
         image_aggregated AS (
-          -- Aggregate image data separately
+          -- Aggregate image data separately (limit to first 5 images)
           SELECT 
-            img.playlistId,
-            GROUP_CONCAT(DISTINCT img.imagePath) as all_images
-          FROM image_stats img
-          GROUP BY img.playlistId
+            img_filtered.playlistId,
+            GROUP_CONCAT(DISTINCT img_filtered.imagePath) as all_images
+          FROM (
+            SELECT 
+              img.playlistId,
+              img.imagePath,
+              ROW_NUMBER() OVER (PARTITION BY img.playlistId ORDER BY img.trackId) as rn
+            FROM image_stats img
+          ) img_filtered
+          WHERE img_filtered.rn <= 5
+          GROUP BY img_filtered.playlistId
         ),
         final_stats AS (
           -- Combine all aggregated data
@@ -382,12 +389,19 @@ export class PlaylistService {
           GROUP BY aud.playlistId
         ),
         image_aggregated AS (
-          -- Aggregate image data separately
+          -- Aggregate image data separately (limit to first 5 images)
           SELECT 
-            img.playlistId,
-            GROUP_CONCAT(DISTINCT img.imagePath) as all_images
-          FROM image_stats img
-          GROUP BY img.playlistId
+            img_filtered.playlistId,
+            GROUP_CONCAT(DISTINCT img_filtered.imagePath) as all_images
+          FROM (
+            SELECT 
+              img.playlistId,
+              img.imagePath,
+              ROW_NUMBER() OVER (PARTITION BY img.playlistId ORDER BY img.trackId) as rn
+            FROM image_stats img
+          ) img_filtered
+          WHERE img_filtered.rn <= 5
+          GROUP BY img_filtered.playlistId
         ),
         final_stats AS (
           -- Combine all aggregated data

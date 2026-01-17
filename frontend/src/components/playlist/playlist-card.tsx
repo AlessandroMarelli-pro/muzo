@@ -1,21 +1,20 @@
 import { PlaylistItem } from '@/__generated__/types';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import {
   useDeletePlaylist,
   useExportPlaylistToM3U,
 } from '@/services/playlist-hooks';
-import {
-  AudioWaveform,
-  Clock,
-  Disc3,
-  Download,
-  Edit,
-  HeartPlus,
-  Play,
-  Trash2,
-} from 'lucide-react';
+import { Eye, MoreHorizontal } from 'lucide-react';
+import { AnimatePresence, motion } from 'motion/react';
 import { useState } from 'react';
+import { Button } from '../ui/button';
+import { Card, CardContent } from '../ui/card';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '../ui/dropdown-menu';
 // Note: This app uses custom view state instead of routing
 // Navigation should be handled by parent component
 
@@ -34,7 +33,7 @@ export function PlaylistCard({
   const [isExporting, setIsExporting] = useState(false);
   const deletePlaylistMutation = useDeletePlaylist('default');
   const exportPlaylistMutation = useExportPlaylistToM3U('default');
-
+  const [isHovered, setIsHovered] = useState(false);
   const formatDuration = (seconds: number) => {
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
@@ -67,8 +66,6 @@ export function PlaylistCard({
   };
 
   const handleEdit = () => {
-    // TODO: Implement playlist editing
-    console.log('Editing playlist:', playlist.id);
     onViewDetails(playlist.id);
   };
 
@@ -94,83 +91,96 @@ export function PlaylistCard({
       setIsExporting(false);
     }
   };
+  const images = playlist.images.slice(0, 4);
 
   return (
-    <div
+    <Card
       key={playlist.id}
-      className="flex items-center justify-between gap-4 p-0 bg-background/80  rounded-lg hover:bg-background/40 transition-colors hover:cursor-pointer"
+      className="flex flex-col   rounded-none p-0 border-none bg-background gap-2 shadow-none"
     >
-      <div className="flex items-center gap-4">
-        <img
-          src={`http://localhost:3000/api/images/serve?imagePath=${playlist.images[0]}`}
-          alt="Album Art"
-          className="w-25 h-25 object-cover rounded-xl "
-        />
-        {/* Track Info */}
-        <div className="justify-between flex flex-col gap-2 ">
-          <div className="font-medium truncate capitalize flex flex-row gap-1 items-center text-sm pl-1">
-            {playlist.name}:
-            <span className=" text-muted-foreground">
-              {playlist.description}
-            </span>
+      <div
+        onMouseEnter={() => {
+          setIsHovered(true);
+        }}
+        onMouseLeave={() => {
+          setIsHovered(false);
+        }}
+        className=" flex justify-center items-center flex-wrap gap-0 p-0 max-w-60 max-h-60 min-w-60 min-h-60 shadow-md rounded-t-md hover:scale-105 transition-all duration-300"
+      >
+        {isHovered && (
+          <AnimatePresence initial={false}>
+            <motion.div
+              className="absolute  items-center justify-center z-2 h-full w-full rounded-t-md flex"
+              initial={{ opacity: 0, scale: 0.5 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.5 }}
+              transition={{ duration: 0.3, ease: 'easeInOut' }}
+            >
+              <div className="absolute top-0 left-0 h-full w-full bg-background opacity-50 rounded-t-md" />
+              <Button
+                size="icon"
+                variant="outline"
+                className="z-1000 absolute bottom-2 left-2 "
+                onClick={handleEdit}
+              >
+                <Eye className="h-5 w-5" />
+              </Button>
+              <DropdownMenu modal={false}>
+                <DropdownMenuTrigger className="z-1000 absolute bottom-2 right-2">
+                  <Button variant="ghost" size="icon">
+                    <MoreHorizontal className="h-5 w-5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align="start"
+                  className="z-1000 "
+                  side="bottom"
+                >
+                  <DropdownMenuItem onClick={handlePlay}>
+                    Add to Queue
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleExport}>
+                    Add to Playlist
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className="text-destructive focus:text-destructive"
+                    onClick={handleDelete}
+                  >
+                    Delete Playlist
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </motion.div>
+          </AnimatePresence>
+        )}
+        {images.map((image, index) => (
+          <div
+            className="w-1/2 h-1/2 min-w-1/2 min-h-1/2 max-w-1/2 max-h-1/2 "
+            key={playlist.id + index}
+          >
+            <img
+              src={`http://localhost:3000/api/images/serve?imagePath=${image}`}
+              alt="Album Art"
+              className={cn(
+                'w-full h-full object-cover  ',
+                index === 0 && 'rounded-tl-md',
+                index === 1 && 'rounded-tr-md',
+              )}
+            />
           </div>
-          <div className="flex flex-row gap-1 items-center">
-            <Badge variant="outline" className="text-xs ">
-              <Disc3 className="h-4 w-4 " /> Tracks: {playlist.numberOfTracks}
-            </Badge>
-            <Badge variant="outline" className="text-xs ">
-              <Clock className="h-4 w-4" />
-              Duration: {formatDuration(playlist.totalDuration)}
-            </Badge>{' '}
-            <Badge variant="outline" className="text-xs ">
-              <HeartPlus className="h-4 w-4 " /> BPM: {playlist.bpmRange.min} -{' '}
-              {playlist.bpmRange.max}
-            </Badge>
-            <Badge variant="outline" className="text-xs ">
-              <AudioWaveform className="h-4 w-4 " /> Energy:{' '}
-              {playlist.energyRange.min} - {playlist.energyRange.max}
-            </Badge>
-          </div>
-          <div className="flex flex-row gap-1">
-            {playlist.topGenres.length > 0 && (
-              <div className="flex flex-row gap-1">
-                {playlist.topGenres.map((genre) => (
-                  <Badge variant="secondary" className="text-xs ">
-                    {genre}
-                  </Badge>
-                ))}
-              </div>
-            )}
-          </div>
+        ))}
+      </div>
+      <CardContent className="p-0 h-full w-full bg-background border-none ">
+        <div className="flex flex-col h-full space-around">
+          <h3 className="text-xs font-semibold capitalize">{playlist.name}</h3>
+          <p className="text-xs text-muted-foreground truncate capitalize">
+            {playlist.description}
+          </p>
+          <p className="text-xs text-muted-foreground truncate capitalize">
+            {playlist.numberOfTracks} tracks
+          </p>
         </div>
-      </div>
-
-      {/* Track Details */}
-
-      {/* Actions */}
-      <div className="flex items-center gap-2 pr-2">
-        <Button onClick={handlePlay} size="sm" variant="ghost">
-          <Play className="h-4 w-4" />
-          Play
-        </Button>
-        <Button onClick={handleEdit} size="sm" variant="ghost">
-          <Edit className="h-4 w-4" />
-          Edit
-        </Button>
-        <Button
-          onClick={handleExport}
-          size="sm"
-          variant="ghost"
-          disabled={isExporting}
-        >
-          <Download className="h-4 w-4" />
-          {isExporting ? 'Exporting...' : 'Export'}
-        </Button>
-        <Button onClick={handleDelete} size="sm" variant="ghost-destructive">
-          <Trash2 />
-          Delete
-        </Button>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }
