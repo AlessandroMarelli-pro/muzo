@@ -16,6 +16,7 @@ interface DataTableSkeletonProps extends React.ComponentProps<'div'> {
   cellWidths?: string[];
   withViewOptions?: boolean;
   withPagination?: boolean;
+  withTopPagination?: boolean;
   shrinkZero?: boolean;
 }
 
@@ -26,6 +27,7 @@ export function DataTableSkeleton({
   cellWidths = ['auto'],
   withViewOptions = true,
   withPagination = true,
+  withTopPagination = true,
   shrinkZero = false,
   className,
   ...props
@@ -41,7 +43,7 @@ export function DataTableSkeleton({
       {...props}
     >
       <div className="flex w-full items-center justify-between gap-2 overflow-auto p-1">
-        <div className="flex flex-1 items-center gap-2">
+        <div className="flex flex-1 items-center gap-2 flex-wrap">
           {filterCount > 0
             ? Array.from({ length: filterCount }).map((_, i) => (
                 <Skeleton key={i} className="h-7 w-[4.5rem] border-dashed" />
@@ -52,6 +54,26 @@ export function DataTableSkeleton({
           <Skeleton className="ml-auto hidden h-7 w-[4.5rem] lg:flex" />
         ) : null}
       </div>
+      {withTopPagination ? (
+        <div className="flex w-full items-center justify-between gap-4 overflow-auto p-1 sm:gap-8">
+          <Skeleton className="h-7 w-40 shrink-0" />
+          <div className="flex items-center gap-4 sm:gap-6 lg:gap-8">
+            <div className="flex items-center gap-2">
+              <Skeleton className="h-7 w-24" />
+              <Skeleton className="h-7 w-[4.5rem]" />
+            </div>
+            <div className="flex items-center justify-center font-medium text-sm">
+              <Skeleton className="h-7 w-20" />
+            </div>
+            <div className="flex items-center gap-2">
+              <Skeleton className="hidden size-7 lg:block" />
+              <Skeleton className="size-7" />
+              <Skeleton className="size-7" />
+              <Skeleton className="hidden size-7 lg:block" />
+            </div>
+          </div>
+        </div>
+      ) : null}
       <div className="rounded-md border">
         <Table>
           <TableHeader>

@@ -82,7 +82,7 @@ export const SelectPlaylistDialog: React.FC<SelectPlaylistDialogProps> = ({
                 <Button
                   key={playlist.id}
                   variant="outline"
-                  className="w-full justify-start h-auto py-3 px-4"
+                  className="w-full justify-start h-auto py-3 px-4 border-none"
                   onClick={() => handleSelectPlaylist(playlist.id)}
                   disabled={
                     addTrackMutation.isPending &&

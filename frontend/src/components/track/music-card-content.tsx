@@ -37,7 +37,7 @@ export function MusicCardContent({
             exit={{ opacity: 0, scale: 0.8 }}
             transition={{ duration: 0.3, ease: 'easeInOut' }}
           >
-            <div className="absolute top-0 left-0 h-full w-full bg-primary/50 opacity-50 rounded-md" />
+            <div className="absolute top-0 left-0 h-full w-full bg-background opacity-50 rounded-md" />
             {playButton}
           </motion.div>
         )}

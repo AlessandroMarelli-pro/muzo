@@ -144,7 +144,7 @@ export function PlaylistCard({
               <Button
                 size="icon"
                 variant="outline"
-                className="z-1000 absolute bottom-2 left-2 "
+                className="z-1000 absolute bottom-2 left-2 border-none"
                 onClick={handleEdit}
               >
                 <Eye className="h-5 w-5" />

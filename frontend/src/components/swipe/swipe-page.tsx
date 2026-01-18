@@ -230,8 +230,7 @@ export function SwipePage() {
       className="flex flex-col  justify-center w-full mt-10"
       tabIndex={0}
     >
-      <div className="flex flex-col mb-8 text-center">
-        <h1 className="text-3xl font-bold mb-2">Filter Your Music</h1>
+      <div className="flex flex-col mb-4 text-center">
         <p className="text-muted-foreground">
           Swipe right to like, left to dislike, or up for BANGER!
         </p>
@@ -260,7 +259,7 @@ export function SwipePage() {
           triggerSwipeDirection={triggerSwipeDirection}
         />
       </div>
-      <div className="flex flex-row justify-center mb-8 text-center">
+      <div className="flex flex-row justify-center mb-4 text-center">
         <SwipeControls
           onLike={handleLike}
           onDislike={handleDislike}

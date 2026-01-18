@@ -130,10 +130,10 @@ function MusicCard({
             <Button
               size="sm"
               disabled={false}
-              variant="default"
+              variant="outline"
               className={cn(
                 'duration-200',
-                'h-12 w-12 rounded-full shadow-lg z-1000',
+                'h-12 w-12 rounded-full shadow-lg z-1000 border-none',
               )}
               onClick={playMusic}
             >

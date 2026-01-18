@@ -93,7 +93,7 @@ export const TrackList = React.memo<TrackListProps>(
           <DataTableSkeleton
             columnCount={10}
             rowCount={10}
-            filterCount={13}
+            filterCount={18}
             cellWidths={[
               '100px',
               '100px',
@@ -108,6 +108,7 @@ export const TrackList = React.memo<TrackListProps>(
             ]}
             withViewOptions={true}
             withPagination={true}
+            withTopPagination={true}
           />
         </div>
       );
