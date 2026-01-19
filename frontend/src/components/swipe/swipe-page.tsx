@@ -14,6 +14,7 @@ import {
 import { InfoIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { Skeleton } from '../ui/skeleton';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip';
 import { SwipeView } from './swipe-track';
 
@@ -47,14 +48,14 @@ const UsageTooltip = () => {
 
 const AnimatedNumber = ({ animationKey, value }: { animationKey: string, value: number }) => {
   return (
-    <AnimatePresence>
+    <AnimatePresence initial={false}>
       <motion.span
         key={animationKey}
         initial={{ y: -15, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        exit={{ y: 30, opacity: 0 }}
+        exit={{ y: 20, opacity: 0, scale: 0.8 }}
         transition={{
-          y: { type: "spring", stiffness: 100, damping: 30, duration: 0.5 },
+          y: { type: "spring", stiffness: 100, damping: 30, duration: 0.5, ease: 'easeIn' },
           opacity: { type: "spring", stiffness: 100, damping: 30, duration: 0.5 },
         }}
         className='font-bold capitalize  absolute top-0 text-muted-foreground'>
@@ -70,7 +71,6 @@ export function SwipePage() {
     refetch,
   } = useRandomTrackWithStats();
   const track = trackData?.track || undefined;
-  const [counter, setCounter] = useState(0)
   const [shouldAutoPlay, setShouldAutoPlay] = useState(false);
   const [triggerSwipeDirection, setTriggerSwipeDirection] = useState<
     'left' | 'right' | 'up' | null
@@ -89,8 +89,8 @@ export function SwipePage() {
 
   const handleSwipeComplete = useCallback(() => {
     // Reset to get a new random track
-    refetch();
-  }, [refetch]);
+    console.log('swipe complete');
+  }, []);
 
   // Auto-play next track if music was playing
   useEffect(() => {
@@ -105,9 +105,6 @@ export function SwipePage() {
     }
   }, [track, shouldAutoPlay, isLoadingTrack, setCurrentTrack, actions]);
 
-  useEffect(() => {
-    setCounter(trackData?.likedCount || 0)
-  }, [trackData])
 
   const handleLike = useCallback(async () => {
     if (!track) return;
@@ -286,28 +283,30 @@ export function SwipePage() {
       tabIndex={0}
     >
       <div className="flex flex-row justify-between  text-center p-6">
+        {!likedTracksCount ? <Skeleton className='w-10 h-4' /> :
+          <div className="text-xl text-foreground flex flex-row gap-10">
+            <span className='font-bold capitalize relative pr-4'>
+              <span className='pr-2'>Liked</span>
+              <AnimatedNumber animationKey={'like-counter' + likedTracksCount} value={likedTracksCount} />
+            </span>
+            <span className='font-bold capitalize relative pr-4'>
+              <span className='pr-2'>Bangers</span>
+              <AnimatedNumber animationKey={'bangers-counter' + bangersCount} value={bangersCount} />
 
-        <div className="text-xl text-foreground flex flex-row gap-10">
-          <span className='font-bold capitalize relative pr-4'>
-            <span className='pr-2'>Liked</span>
-            <AnimatedNumber animationKey={'like-counter' + likedTracksCount} value={likedTracksCount} />
-          </span>
-          <span className='font-bold capitalize relative pr-4'>
-            <span className='pr-2'>Bangers</span>
-            <AnimatedNumber animationKey={'bangers-counter' + bangersCount} value={bangersCount} />
+            </span>
+            <span className='font-bold capitalize relative pr-4'>
+              <span className='pr-2'>Disliked</span>
+              <AnimatedNumber animationKey={'disliked-counter' + dislikedTracksCount} value={dislikedTracksCount} />
 
-          </span>
-          <span className='font-bold capitalize relative pr-4'>
-            <span className='pr-2'>Disliked</span>
-            <AnimatedNumber animationKey={'disliked-counter' + dislikedTracksCount} value={dislikedTracksCount} />
+            </span>
+            <span className='font-bold capitalize relative pr-4'>
+              <span className='pr-2'>Remaining</span>
+              <AnimatedNumber animationKey={'remaining-counter' + remainingTracksCount} value={remainingTracksCount} />
 
-          </span>
-          <span className='font-bold capitalize relative pr-4'>
-            <span className='pr-2'>Remaining</span>
-            <AnimatedNumber animationKey={'remaining-counter' + remainingTracksCount} value={remainingTracksCount} />
+            </span>
+          </div>}
 
-          </span>
-        </div>
+
         <UsageTooltip />
 
       </div>

@@ -658,7 +658,7 @@ export const useLikeTrack = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.tracks() });
-      queryClient.invalidateQueries({ queryKey: ['tracks', 'random-with-stats'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.randomTrackWithStats() });
     },
   });
 };
