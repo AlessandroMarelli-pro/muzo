@@ -302,8 +302,7 @@ export function SwipeTrack({
   };
 
 
-  // TODO : add counter, track count, banger count, like count, dislike count, etc.
-  // TODO : add filter button, put explanation in tooltip, display next track on the top and auto scroll on action 
+  // TODO : add filter button, display next track on the top and auto scroll on action 
   // TODO : put like/dislike/banger animation on the image 
   return (
     <motion.div

@@ -12,6 +12,7 @@ import {
   useRandomTrackWithStats,
 } from '@/services/api-hooks';
 import { InfoIcon } from 'lucide-react';
+import { AnimatePresence, motion } from 'motion/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip';
 import { SwipeView } from './swipe-track';
@@ -44,6 +45,24 @@ const UsageTooltip = () => {
   );
 };
 
+const AnimatedNumber = ({ animationKey, value }: { animationKey: string, value: number }) => {
+  return (
+    <AnimatePresence>
+      <motion.span
+        key={animationKey}
+        initial={{ y: -15, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        exit={{ y: 30, opacity: 0 }}
+        transition={{
+          y: { type: "spring", stiffness: 100, damping: 30, duration: 0.5 },
+          opacity: { type: "spring", stiffness: 100, damping: 30, duration: 0.5 },
+        }}
+        className='font-bold capitalize  absolute top-0 text-muted-foreground'>
+        {value}
+      </motion.span>
+    </AnimatePresence>)
+}
+
 export function SwipePage() {
   const {
     data: trackData,
@@ -51,6 +70,7 @@ export function SwipePage() {
     refetch,
   } = useRandomTrackWithStats();
   const track = trackData?.track || undefined;
+  const [counter, setCounter] = useState(0)
   const [shouldAutoPlay, setShouldAutoPlay] = useState(false);
   const [triggerSwipeDirection, setTriggerSwipeDirection] = useState<
     'left' | 'right' | 'up' | null
@@ -84,6 +104,10 @@ export function SwipePage() {
       setShouldAutoPlay(false);
     }
   }, [track, shouldAutoPlay, isLoadingTrack, setCurrentTrack, actions]);
+
+  useEffect(() => {
+    setCounter(trackData?.likedCount || 0)
+  }, [trackData])
 
   const handleLike = useCallback(async () => {
     if (!track) return;
@@ -251,7 +275,10 @@ export function SwipePage() {
     handleDislike,
     handleBanger,
   ]);
-
+  const likedTracksCount = trackData?.likedCount ?? 0;
+  const bangersCount = trackData?.bangerCount ?? 0;
+  const dislikedTracksCount = trackData?.dislikedCount ?? 0;
+  const remainingTracksCount = trackData?.remainingCount ?? 0;
   return (
     <div
       ref={containerRef}
@@ -260,18 +287,25 @@ export function SwipePage() {
     >
       <div className="flex flex-row justify-between  text-center p-6">
 
-        <div className="text-xl text-foreground flex flex-row gap-4">
-          <span className='font-bold capitalize'>
-            Liked: {trackData?.likedCount ?? 0}{' '}
+        <div className="text-xl text-foreground flex flex-row gap-10">
+          <span className='font-bold capitalize relative pr-4'>
+            <span className='pr-2'>Liked</span>
+            <AnimatedNumber animationKey={'like-counter' + likedTracksCount} value={likedTracksCount} />
           </span>
-          <span className='font-bold capitalize'>
-            Bangers: {trackData?.bangerCount ?? 0}{' '}
+          <span className='font-bold capitalize relative pr-4'>
+            <span className='pr-2'>Bangers</span>
+            <AnimatedNumber animationKey={'bangers-counter' + bangersCount} value={bangersCount} />
+
           </span>
-          <span className='font-bold capitalize'>
-            Disliked: {trackData?.dislikedCount ?? 0}{' '}
+          <span className='font-bold capitalize relative pr-4'>
+            <span className='pr-2'>Disliked</span>
+            <AnimatedNumber animationKey={'disliked-counter' + dislikedTracksCount} value={dislikedTracksCount} />
+
           </span>
-          <span className='font-bold capitalize'>
-            Remaining: {trackData?.remainingCount ?? 0}{' '}
+          <span className='font-bold capitalize relative pr-4'>
+            <span className='pr-2'>Remaining</span>
+            <AnimatedNumber animationKey={'remaining-counter' + remainingTracksCount} value={remainingTracksCount} />
+
           </span>
         </div>
         <UsageTooltip />

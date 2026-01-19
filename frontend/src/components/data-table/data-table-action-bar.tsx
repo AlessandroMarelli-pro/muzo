@@ -175,5 +175,6 @@ function DataTableActionBarSelection<TData>({
 export {
   DataTableActionBar,
   DataTableActionBarAction,
-  DataTableActionBarSelection,
+  DataTableActionBarSelection
 };
+
