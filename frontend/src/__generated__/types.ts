@@ -839,6 +839,7 @@ export type Query = {
   queue: Array<QueueItem>;
   queueStats: Scalars['String']['output'];
   randomTrack: SimpleMusicTrack;
+  randomTrackWithStats: RandomTrackWithStats;
   recentlyPlayed: Array<SimpleMusicTrack>;
   searchTracks: Array<SimpleMusicTrack>;
   trackRecommendations: Array<TrackRecommendation>;
@@ -960,6 +961,7 @@ export type QueryPlaylistTracksArgs = {
 
 
 export type QueryPlaylistsArgs = {
+  search?: InputMaybe<Scalars['String']['input']>;
   userId: Scalars['String']['input'];
 };
 
@@ -1009,6 +1011,15 @@ export type QueueItem = {
   track?: Maybe<SimpleMusicTrack>;
   trackId: Scalars['ID']['output'];
   updatedAt: Scalars['DateTime']['output'];
+};
+
+export type RandomTrackWithStats = {
+  __typename?: 'RandomTrackWithStats';
+  bangerCount: Scalars['Float']['output'];
+  dislikedCount: Scalars['Float']['output'];
+  likedCount: Scalars['Float']['output'];
+  remainingCount: Scalars['Float']['output'];
+  track?: Maybe<SimpleMusicTrack>;
 };
 
 export type Range = {
@@ -1328,6 +1339,11 @@ export type GetRandomTrackQueryVariables = Exact<{
 
 export type GetRandomTrackQuery = { __typename?: 'Query', randomTrack: { __typename?: 'SimpleMusicTrack', id: string, artist?: string | null, format?: string | null, title?: string | null, duration: number, genres?: Array<string> | null, subgenres?: Array<string> | null, date?: any | null, listeningCount?: number | null, lastPlayedAt?: any | null, isFavorite?: boolean | null, isLiked?: boolean | null, isBanger?: boolean | null, createdAt?: any | null, updatedAt?: any | null, tempo?: number | null, key?: string | null, valenceMood?: string | null, arousalMood?: string | null, danceabilityFeeling?: string | null, imagePath?: string | null, lastScannedAt?: any | null, fileCreatedAt?: any | null, description?: string | null, tags?: Array<string> | null, vocalsDescriptions?: string | null, atmosphereKeywords?: Array<string> | null, contextBackgrounds?: string | null, contextImpacts?: string | null, libraryId?: string | null } };
 
+export type GetRandomTrackWithStatsQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type GetRandomTrackWithStatsQuery = { __typename?: 'Query', randomTrackWithStats: { __typename?: 'RandomTrackWithStats', likedCount: number, bangerCount: number, dislikedCount: number, remainingCount: number, track?: { __typename?: 'SimpleMusicTrack', id: string, artist?: string | null, format?: string | null, title?: string | null, duration: number, genres?: Array<string> | null, subgenres?: Array<string> | null, date?: any | null, listeningCount?: number | null, lastPlayedAt?: any | null, isFavorite?: boolean | null, isLiked?: boolean | null, isBanger?: boolean | null, createdAt?: any | null, updatedAt?: any | null, tempo?: number | null, key?: string | null, valenceMood?: string | null, arousalMood?: string | null, danceabilityFeeling?: string | null, imagePath?: string | null, lastScannedAt?: any | null, fileCreatedAt?: any | null, description?: string | null, tags?: Array<string> | null, vocalsDescriptions?: string | null, atmosphereKeywords?: Array<string> | null, contextBackgrounds?: string | null, contextImpacts?: string | null, libraryId?: string | null } | null } };
+
 export type GetTrackRecommendationsQueryVariables = Exact<{
   id: Scalars['String']['input'];
   criteria?: InputMaybe<Scalars['String']['input']>;
@@ -1562,6 +1578,7 @@ export type SimpleMusicTrackFragmentFragment = { __typename?: 'SimpleMusicTrack'
 
 export type GetPlaylistsQueryVariables = Exact<{
   userId: Scalars['String']['input'];
+  search?: InputMaybe<Scalars['String']['input']>;
 }>;
 
 

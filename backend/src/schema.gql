@@ -554,6 +554,7 @@ type Query {
   queue: [QueueItem!]!
   queueStats: String!
   randomTrack(filterLiked: Boolean, id: String): SimpleMusicTrack!
+  randomTrackWithStats: RandomTrackWithStats!
   recentlyPlayed(limit: Float! = 20): [SimpleMusicTrack!]!
   searchTracks(libraryId: ID, query: String!): [SimpleMusicTrack!]!
   trackRecommendations(criteria: String, id: String!): [TrackRecommendation!]!
@@ -569,6 +570,14 @@ type QueueItem {
   track: SimpleMusicTrack
   trackId: ID!
   updatedAt: DateTime!
+}
+
+type RandomTrackWithStats {
+  bangerCount: Float!
+  dislikedCount: Float!
+  likedCount: Float!
+  remainingCount: Float!
+  track: SimpleMusicTrack
 }
 
 type Range {

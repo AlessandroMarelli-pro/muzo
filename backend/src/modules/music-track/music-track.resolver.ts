@@ -26,6 +26,7 @@ import {
   MusicTrack,
   MusicTrackByCategoriesGraphQL,
   MusicTrackListPaginated,
+  RandomTrackWithStats,
   SimpleMusicTrack,
   TrackQueryOptions,
   TrackQueryOptionsByCategories,
@@ -155,6 +156,20 @@ export class MusicTrackResolver {
       ? await this.musicTrackService.getRandomTrack(filterLiked)
       : await this.musicTrackService.findOne(id);
     return mapToSimpleMusicTrack(track as MusicTrackWithRelations);
+  }
+
+  @Query(() => RandomTrackWithStats)
+  async randomTrackWithStats(): Promise<RandomTrackWithStats> {
+    const result = await this.musicTrackService.getRandomTrackWithStats();
+    return {
+      track: result.track
+        ? mapToSimpleMusicTrack(result.track as MusicTrackWithRelations)
+        : null,
+      likedCount: result.likedCount,
+      bangerCount: result.bangerCount,
+      dislikedCount: result.dislikedCount,
+      remainingCount: result.remainingCount,
+    };
   }
 
   @Query(() => [TrackRecommendation])

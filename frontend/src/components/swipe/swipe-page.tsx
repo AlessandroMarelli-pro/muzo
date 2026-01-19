@@ -9,19 +9,48 @@ import {
   useBangerTrack,
   useDislikeTrack,
   useLikeTrack,
-  useRandomTrack,
+  useRandomTrackWithStats,
 } from '@/services/api-hooks';
+import { InfoIcon } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { SwipeControls } from './swipe-controls';
+import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip';
 import { SwipeView } from './swipe-track';
 
+const UsageTooltip = () => {
+  return (
+    <Tooltip>
+      <TooltipTrigger>
+        <InfoIcon className="w-8 h-8 text-foreground hover:text-foreground cursor-pointer" />
+      </TooltipTrigger>
+      <TooltipContent side="bottom" align="end" sideOffset={10} className='bg-secondary text-background p-4'>
+        <span className="text-base text-muted-foreground flex flex-col gap-2">
+          Swipe right to like, left to dislike, or up for BANGER!
+          <span>
+            <kbd className="px-2 py-1 bg-background rounded text-xs font-bold capitalize">Space</kbd>{' '}
+            play/pause
+          </span>
+          <span>
+            <kbd className="px-2 py-1 bg-background rounded text-xs font-bold capitalize">E</kbd> like
+          </span>
+          <span><kbd className="px-2 py-1 bg-background rounded text-xs font-bold capitalize">Z</kbd>{' '}
+            banger </span>
+          <span>
+            <kbd className="px-2 py-1 bg-background rounded text-xs font-bold capitalize">A</kbd>{' '}
+            dislike
+          </span>
+        </span>
+      </TooltipContent>
+    </Tooltip>
+  );
+};
+
 export function SwipePage() {
-  const [trackId, setTrackId] = useState<string | undefined>(undefined);
   const {
-    data: track,
+    data: trackData,
     isLoading: isLoadingTrack,
     refetch,
-  } = useRandomTrack(trackId, true);
+  } = useRandomTrackWithStats();
+  const track = trackData?.track || undefined;
   const [shouldAutoPlay, setShouldAutoPlay] = useState(false);
   const [triggerSwipeDirection, setTriggerSwipeDirection] = useState<
     'left' | 'right' | 'up' | null
@@ -40,7 +69,6 @@ export function SwipePage() {
 
   const handleSwipeComplete = useCallback(() => {
     // Reset to get a new random track
-    setTrackId(undefined);
     refetch();
   }, [refetch]);
 
@@ -227,28 +255,29 @@ export function SwipePage() {
   return (
     <div
       ref={containerRef}
-      className="flex flex-col  justify-center w-full mt-10"
+      className="flex flex-col  justify-center w-full mt-10 gap-4 h-full outline-none"
       tabIndex={0}
     >
-      <div className="flex flex-col mb-4 text-center">
-        <p className="text-muted-foreground">
-          Swipe right to like, left to dislike, or up for BANGER!
-        </p>
-        <div className="text-sm text-muted-foreground mt-2 space-y-1">
-          <p>
-            <kbd className="px-2 py-1 bg-secondary rounded text-xs">Space</kbd>{' '}
-            play/pause
-          </p>
-          <p>
-            <kbd className="px-2 py-1 bg-secondary rounded text-xs">E</kbd> like
-            • <kbd className="px-2 py-1 bg-secondary rounded text-xs">Z</kbd>{' '}
-            banger •{' '}
-            <kbd className="px-2 py-1 bg-secondary rounded text-xs">A</kbd>{' '}
-            dislike
-          </p>
+      <div className="flex flex-row justify-between  text-center p-6">
+
+        <div className="text-xl text-foreground flex flex-row gap-4">
+          <span className='font-bold capitalize'>
+            Liked: {trackData?.likedCount ?? 0}{' '}
+          </span>
+          <span className='font-bold capitalize'>
+            Bangers: {trackData?.bangerCount ?? 0}{' '}
+          </span>
+          <span className='font-bold capitalize'>
+            Disliked: {trackData?.dislikedCount ?? 0}{' '}
+          </span>
+          <span className='font-bold capitalize'>
+            Remaining: {trackData?.remainingCount ?? 0}{' '}
+          </span>
         </div>
+        <UsageTooltip />
+
       </div>
-      <div className="flex flex-row justify-center mb-8 text-center">
+      <div className="flex flex-row justify-center mb-8 text-center h-full w-full">
         <SwipeView
           track={track || null}
           isLoading={isLoading}
@@ -259,14 +288,7 @@ export function SwipePage() {
           triggerSwipeDirection={triggerSwipeDirection}
         />
       </div>
-      <div className="flex flex-row justify-center mb-4 text-center">
-        <SwipeControls
-          onLike={handleLike}
-          onDislike={handleDislike}
-          onBanger={handleBanger}
-          disabled={isLoading || !track}
-        />
-      </div>
+
     </div>
   );
 }

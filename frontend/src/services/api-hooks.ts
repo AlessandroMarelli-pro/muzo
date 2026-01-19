@@ -74,6 +74,7 @@ export const queryKeys = {
   staticFilters: ['static-filters'] as const,
   randomTrack: (id?: string, filterLiked?: boolean) =>
     ['tracks', 'random', { id, filterLiked }] as const,
+  randomTrackWithStats: () => ['tracks', 'random-with-stats'] as const,
   trackRecommendations: (id?: string, criteria?: string) =>
     ['tracks', 'recommendations', { id, criteria }] as const,
 };
@@ -202,6 +203,39 @@ export const useRandomTrack = (id?: string, filterLiked?: boolean) => {
         { id, filterLiked },
       );
       return response.randomTrack;
+    },
+  });
+};
+
+export const useRandomTrackWithStats = () => {
+  return useQuery({
+    queryKey: queryKeys.randomTrackWithStats(),
+    queryFn: async () => {
+      const response = await graffleClient.request<{
+        randomTrackWithStats: {
+          track: SimpleMusicTrack | null;
+          likedCount: number;
+          bangerCount: number;
+          dislikedCount: number;
+          remainingCount: number;
+        };
+      }>(
+        gql`
+          ${simpleMusicTrackFragment}
+          query GetRandomTrackWithStats {
+            randomTrackWithStats {
+              track {
+                ...SimpleMusicTrackFragment
+              }
+              likedCount
+              bangerCount
+              dislikedCount
+              remainingCount
+            }
+          }
+        `,
+      );
+      return response.randomTrackWithStats;
     },
   });
 };
@@ -624,6 +658,7 @@ export const useLikeTrack = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.tracks() });
+      queryClient.invalidateQueries({ queryKey: ['tracks', 'random-with-stats'] });
     },
   });
 };
@@ -650,6 +685,7 @@ export const useBangerTrack = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.tracks() });
+      queryClient.invalidateQueries({ queryKey: ['tracks', 'random-with-stats'] });
     },
   });
 };
@@ -673,6 +709,7 @@ export const useDislikeTrack = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.tracks() });
+      queryClient.invalidateQueries({ queryKey: ['tracks', 'random-with-stats'] });
     },
   });
 };

@@ -1100,4 +1100,70 @@ export class MusicTrackService {
       select: simpleMusicTrackFieldSelectors,
     });
   }
+
+  async getRandomTrackWithStats(
+  ): Promise<{
+    track: SimpleMusicTrackInterface | null;
+    likedCount: number;
+    bangerCount: number;
+    dislikedCount: number;
+    remainingCount: number;
+  }> {
+ 
+    let where: any = {};
+
+    // Apply filters the same way as findAllPaginated
+    const filter = this.filterService.getCurrentFilter();
+    if (filter) {
+      where = await this.filterService.buildPrismaWhereClause(filter);
+    }
+
+
+    // Get counts for liked, bangers, disliked (from hidden table), and remaining tracks
+    const [likedCount, bangerCount] =
+      await Promise.all([
+        this.prisma.musicTrack.count({
+          where: { ...where, isLiked: true, isBanger: false },
+        }),
+        this.prisma.musicTrack.count({
+          where: { ...where, isBanger: true },
+        })
+      ]);
+
+    const dislikedCount = await this.prisma.hiddenMusicTrack.count()
+    // Remaining tracks are those that are not liked, not bangers (and still in musicTrack table)
+    const remainingCount = await this.prisma.musicTrack.count({
+      where: {
+        ...where,
+        isLiked: false,
+        isBanger: false,
+      },
+    });
+
+    // Get a random track from remaining tracks (not liked, not banger)
+    const remainingTracksCount = remainingCount;
+    let track: SimpleMusicTrackInterface | null = null;
+
+    if (remainingTracksCount > 0) {
+      const skip = Math.floor(Math.random() * remainingTracksCount);
+      track = await this.prisma.musicTrack.findFirst({
+        where: {
+          ...where,
+          isLiked: false,
+          isBanger: false,
+        },
+        take: 1,
+        skip: skip,
+        select: simpleMusicTrackFieldSelectors,
+      });
+    } 
+
+    return {
+      track,
+      likedCount,
+      bangerCount,
+      dislikedCount,
+      remainingCount,
+    };
+  }
 }
