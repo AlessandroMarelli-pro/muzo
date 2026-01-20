@@ -117,6 +117,33 @@ class DiscogsEnrichmentService:
         "required": ["artist", "title", "genre", "style", "audioFeatures"],
     }
 
+    # Schema for enriching audioFeatures, context, and description
+    ENRICHMENT_SCHEMA = {
+        "type": "OBJECT",
+        "properties": {
+            "audioFeatures": {
+                "type": "OBJECT",
+                "nullable": True,
+                "properties": {
+                    "bpm": {"type": "INTEGER", "nullable": True},
+                    "key": {"type": "STRING", "nullable": True},
+                    "vocals": {"type": "STRING", "nullable": True},
+                    "atmosphere": {"type": "ARRAY", "items": {"type": "STRING"}},
+                },
+            },
+            "context": {
+                "type": "OBJECT",
+                "nullable": True,
+                "properties": {
+                    "background": {"type": "STRING", "nullable": True},
+                    "impact": {"type": "STRING", "nullable": True},
+                },
+            },
+            "description": {"type": "STRING", "nullable": True},
+        },
+        "required": ["audioFeatures", "context", "description"],
+    }
+
     def __init__(
         self,
         discogs_connector: DiscogsConnector,
@@ -206,16 +233,48 @@ class DiscogsEnrichmentService:
                     )
 
             # Stage 4: Get release details
-            release_data = self._get_release_details(best_match)
+            # OPTIMIZATION: If we already fetched release details for tracklist check, reuse them
+            release_data = None
+            if best_match.get("_cached_release_details"):
+                # Reuse the release details we already fetched
+                release_data = best_match["_cached_release_details"]
+                logger.info("Reusing cached release details from tracklist check")
+            else:
+                # Fetch release details
+                release_data = self._get_release_details(best_match)
             if not release_data:
                 logger.warning("Failed to get release details")
                 return None
 
             # Stage 5: Map to schema (use track_title if we found it in tracklist)
-            metadata = self._map_to_schema(release_data, artist, track_title, mix)
+            matched_track_info = None
+            if best_match.get("track_match"):
+                # Get the matched track from tracklist for context
+                tracklist = release_data.get("tracklist", [])
+                matched_track_title = best_match.get("matched_track_title")
+                if matched_track_title and tracklist:
+                    for track in tracklist:
+                        if track.get("title", "").lower() == matched_track_title.lower():
+                            matched_track_info = track
+                            break
+            
+            metadata = self._map_to_schema(
+                release_data, artist, track_title, mix, matched_track_info
+            )
             if not metadata:
                 logger.warning("Failed to map release data to schema")
                 return None
+
+            # Stage 6: Enrich audioFeatures, context, and description using general knowledge
+            enriched_fields = self._enrich_audio_features_and_context(
+                artist, track_title, mix, metadata
+            )
+            if enriched_fields:
+                # Merge the enriched fields into the metadata, only updating non-null values
+                self._merge_enriched_fields(metadata, enriched_fields)
+                logger.info("Successfully enriched audioFeatures, context, and description")
+            else:
+                logger.warning("Failed to enrich audioFeatures, context, and description")
 
             logger.info(f"Successfully enriched metadata for: {artist} - {title}")
             return metadata
@@ -438,6 +497,8 @@ class DiscogsEnrichmentService:
     ) -> Optional[Dict[str, Any]]:
         """
         Check if the requested track title exists in a release's tracklist.
+        
+        OPTIMIZATION: Caches tracklist data to avoid redundant API calls.
 
         Args:
             release_id: Discogs release ID
@@ -447,19 +508,55 @@ class DiscogsEnrichmentService:
             Track dict if found, None otherwise
         """
         try:
-            # Get full release details (includes tracklist)
-            release_details = self.discogs.get_release_details(release_id)
-            if not release_details:
-                return None
-
-            tracklist = release_details.get("tracklist", [])
+            # OPTIMIZATION: Check cache first (tracklists don't change)
+            cache_key = f"tracklist:{release_id}"
+            if hasattr(self.discogs, 'redis_cache') and self.discogs.redis_cache:
+                try:
+                    cached_tracklist = self.discogs.redis_cache.get("discogs", cache_key)
+                    if cached_tracklist:
+                        tracklist = cached_tracklist.get("tracklist", [])
+                        logger.debug(f"Cache hit for tracklist: release {release_id}")
+                    else:
+                        tracklist = None
+                except Exception as e:
+                    logger.debug(f"Cache check failed: {e}")
+                    tracklist = None
+            else:
+                tracklist = None
+            
+            # If not cached, get full release details (includes tracklist)
+            release_details = None
+            if tracklist is None:
+                release_details = self.discogs.get_release_details(release_id)
+                if not release_details:
+                    return None
+                
+                tracklist = release_details.get("tracklist", [])
+                
+                # OPTIMIZATION: Cache tracklist for future use (7 days TTL - tracklists don't change)
+                if hasattr(self.discogs, 'redis_cache') and self.discogs.redis_cache and tracklist:
+                    try:
+                        self.discogs.redis_cache.set(
+                            "discogs", 
+                            cache_key, 
+                            {"tracklist": tracklist},
+                            ttl=7 * 24 * 3600  # 7 days
+                        )
+                        logger.debug(f"Cached tracklist for release {release_id}")
+                    except Exception as e:
+                        logger.debug(f"Cache set failed: {e}")
+            
             if not tracklist:
+                # No tracklist available, but return release_details if we fetched it
+                if release_details:
+                    return {"track": None, "release_details": release_details}
                 return None
 
             # Normalize requested title for comparison
             requested_normalized = requested_title.lower().strip()
 
             # Check each track in the tracklist
+            matched_track = None
             for track in tracklist:
                 track_title = track.get("title", "")
                 if not track_title:
@@ -472,7 +569,8 @@ class DiscogsEnrichmentService:
                     logger.info(
                         f"Found exact track match in release {release_id}: '{track_title}'"
                     )
-                    return track
+                    matched_track = track
+                    break
 
                 # Partial match (requested title is contained in track title or vice versa)
                 if (
@@ -482,9 +580,14 @@ class DiscogsEnrichmentService:
                     logger.info(
                         f"Found partial track match in release {release_id}: '{track_title}'"
                     )
-                    return track
-
-            return None
+                    matched_track = track
+                    break
+            
+            # Return track if found, along with release_details if we fetched it
+            result = {"track": matched_track} if matched_track else {"track": None}
+            if release_details:
+                result["release_details"] = release_details
+            return result
         except Exception as e:
             logger.warning(f"Error checking tracklist for release {release_id}: {e}")
             return None
@@ -513,23 +616,52 @@ class DiscogsEnrichmentService:
         """
         # First, check if any results have matching track titles in their tracklists
         # This handles the case where we get an album but we're looking for a specific track
+        # OPTIMIZATION: Only check top 5 results - Discogs results are ordered by relevance,
+        # so if the top 5 don't contain the track, lower-ranked results are unlikely to match
+        # Each tracklist check requires a separate API call, so limiting saves time and API calls
         normalized_title = title.lower().strip()
-        for result in results:
+        max_tracklist_checks = min(5, len(results))  # Limit to top 5 most relevant results
+        
+        for result in results[:max_tracklist_checks]:
             result_title = result.get("title", "").lower().strip()
             
+            # Skip tracklist check if title already matches (exact match - this is already a strong match)
+            if result_title == normalized_title:
+                logger.debug(
+                    f"Release title '{result.get('title')}' matches track title exactly - strong match"
+                )
+                # Mark as strong match but continue checking others in case there's a better one
+                result["_exact_title_match"] = True
+                continue
+            
             # If release title doesn't match track title, check tracklist
-            if result_title != normalized_title:
-                release_id = result.get("id")
-                if release_id:
-                    track_match = self._check_tracklist_match(release_id, title)
+            release_id = result.get("id")
+            if release_id:
+                tracklist_result = self._check_tracklist_match(release_id, title)
+                if tracklist_result:
+                    # Extract track match and cached release details
+                    track_match = tracklist_result.get("track")
+                    cached_release_details = tracklist_result.get("release_details")
+                    
                     if track_match:
-                        # Found the track in this release's tracklist
-                        # Update the result to indicate this is the correct match
+                        # Found the track in this release's tracklist - this is a strong match
                         result["track_match"] = track_match
                         result["matched_track_title"] = track_match.get("title", title)
+                        result["_strong_match"] = True
                         logger.info(
-                            f"Release {release_id} contains track '{title}' in tracklist"
+                            f"Release {release_id} contains track '{title}' in tracklist - strong match"
                         )
+                        # Don't stop early - continue checking to find the best match
+                        # But we can prioritize these in selection
+                    
+                    # OPTIMIZATION: Cache release details to avoid fetching again
+                    if cached_release_details:
+                        result["_cached_release_details"] = cached_release_details
+
+        # OPTIMIZATION: Skip LLM selection if only one result
+        if len(results) == 1:
+            logger.info("Only one result found, skipping selection - using it directly")
+            return results[0]
 
         # Fast mode: simple string matching
         if self.config.mode == MetadataMode.FAST or not self.config.discogs_use_llm_selection:
@@ -582,10 +714,11 @@ class DiscogsEnrichmentService:
         """
         Simple string matching for result selection.
         
-        Considers:
-        1. Direct title match (release title matches track title)
-        2. Tracklist match (track found in release's tracklist)
+        Considers (in priority order):
+        1. Exact title match (release title matches track title exactly)
+        2. Tracklist match (track found in release's tracklist) - strong indicator
         3. Artist match
+        4. Partial title match
         """
         artist_lower = artist.lower()
         title_lower = title.lower()
@@ -596,27 +729,30 @@ class DiscogsEnrichmentService:
         for result in results:
             score = 0.0
 
-            # Check artist match
+            # Priority 1: Exact title match (highest priority)
+            result_title = result.get("title", "").lower()
+            if title_lower == result_title:
+                score += 2.0  # Exact match - highest score
+                logger.debug(
+                    f"Exact title match: '{result.get('title')}' = '{title}'"
+                )
+            # Priority 2: Tracklist match (strong indicator the track is on this release)
+            elif result.get("track_match"):
+                # Found track in tracklist - this is a strong match
+                score += 1.5
+                logger.info(
+                    f"Track '{title}' found in release '{result.get('title')}' tracklist - strong match"
+                )
+            # Priority 3: Partial title match
+            elif title_lower in result_title or result_title in title_lower:
+                score += 0.5  # Partial match
+
+            # Check artist match (adds to score)
             result_artists = result.get("artists", [])
             for result_artist in result_artists:
                 if artist_lower in result_artist.lower() or result_artist.lower() in artist_lower:
                     score += 0.5
                     break
-
-            # Check if this result has a tracklist match (from _select_best_match)
-            if result.get("track_match"):
-                # Found track in tracklist - this is a strong match
-                score += 1.0
-                logger.info(
-                    f"Track '{title}' found in release '{result.get('title')}' tracklist - strong match"
-                )
-            else:
-                # Check direct title match
-                result_title = result.get("title", "").lower()
-                if title_lower == result_title:
-                    score += 1.0  # Exact match
-                elif title_lower in result_title or result_title in title_lower:
-                    score += 0.5  # Partial match
 
             if score > best_score:
                 best_score = score
@@ -723,6 +859,7 @@ class DiscogsEnrichmentService:
         artist: str,
         title: str,
         mix: Optional[str],
+        matched_track_info: Optional[Dict[str, Any]] = None,
     ) -> Optional[Dict[str, Any]]:
         """
         Map Discogs release data to metadata schema using LLM.
@@ -732,6 +869,7 @@ class DiscogsEnrichmentService:
             artist: Original artist name
             title: Original title
             mix: Optional mix name
+            matched_track_info: Optional matched track from tracklist (if found)
 
         Returns:
             Mapped metadata dict or None if failed
@@ -741,7 +879,9 @@ class DiscogsEnrichmentService:
             return self._direct_map_to_schema(release_data, artist, title, mix)
 
         try:
-            prompt = self._build_schema_mapping_prompt(release_data, artist, title, mix)
+            prompt = self._build_schema_mapping_prompt(
+                release_data, artist, title, mix, matched_track_info
+            )
             response = self._make_gemini_call(
                 prompt, self.METADATA_SCHEMA, "schema mapping"
             )
@@ -763,8 +903,27 @@ class DiscogsEnrichmentService:
         artist: str,
         title: str,
         mix: Optional[str],
+        matched_track_info: Optional[Dict[str, Any]] = None,
     ) -> str:
         """Build prompt for LLM schema mapping."""
+        # Filter out unnecessary data to reduce token usage
+        filtered_data = {
+            "id": release_data.get("id"),
+            "title": release_data.get("title"),
+            "artists": release_data.get("artists", []),
+            "year": release_data.get("year"),
+            "country": release_data.get("country"),
+            "labels": release_data.get("labels", []),
+            "formats": release_data.get("formats", []),
+            "genres": release_data.get("genres", []),
+            "styles": release_data.get("styles", []),
+            "credits": release_data.get("credits", []),
+        }
+        
+        # Only include the matched track from tracklist, not the entire tracklist
+        if matched_track_info:
+            filtered_data["matched_track"] = matched_track_info
+
         prompt_parts = [
             "You are a music metadata expert. Map Discogs release data to the required metadata schema.",
             "",
@@ -779,24 +938,18 @@ class DiscogsEnrichmentService:
             [
                 "",
                 "Discogs Release Data:",
-                json.dumps(release_data, indent=2),
+                json.dumps(filtered_data, indent=2),
                 "",
                 "Map this data to the metadata schema. Requirements:",
                 "1. Use artist and title from original input (not Discogs)",
                 "2. Extract genres and styles from Discogs",
                 "3. Extract year, country, label from Discogs",
-                "4. For audioFeatures:",
-                "   - BPM: Use if available in tracklist or infer from genre/style if confident",
-                "   - Key: Use if available or infer if confident",
-                "   - Vocals: Infer from tracklist credits or genre knowledge",
-                "   - Atmosphere: Generate vibe keywords based on genre/style",
-                "5. For context:",
-                "   - Background: Use release notes or infer from year/label/genre",
-                "   - Impact: Infer from genre/style knowledge if relevant",
-                "6. Description: Write 2-3 sentences about the track's sound",
-                "7. Tags: Generate relevant tags from genres, styles, and metadata",
+                "4. Tags: Generate relevant tags from genres, styles, and metadata",
                 "",
-                "Only include fields you're confident about. Use null for uncertain values.",
+                "IMPORTANT:",
+                "- Do NOT include audioFeatures, context, or description fields",
+                "- These fields will be populated by a separate process",
+                "- Only include fields you're confident about. Use null for uncertain values.",
             ]
         )
 
@@ -873,3 +1026,156 @@ class DiscogsEnrichmentService:
         except Exception as e:
             logger.error(f"Gemini API call failed for {purpose}: {e}")
             return None
+
+    def _enrich_audio_features_and_context(
+        self,
+        artist: str,
+        title: str,
+        mix: Optional[str],
+        existing_metadata: Dict[str, Any],
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Enrich audioFeatures, context, and description using general knowledge/search.
+
+        This method uses the LLM with general knowledge about the track/artist to generate:
+        - audioFeatures (BPM, Key, Vocals, Atmosphere)
+        - context (Background, Impact)
+        - description (2-3 sentences about the track's sound)
+
+        Args:
+            artist: Artist name
+            title: Track title
+            mix: Optional mix/remix name
+            existing_metadata: Existing metadata from Discogs (genres, styles, year, etc.)
+
+        Returns:
+            Dict with audioFeatures, context, and description, or None if failed
+        """
+        if not self.gemini_client:
+            logger.warning("Gemini client not available, skipping enrichment")
+            return None
+
+        try:
+            prompt = self._build_enrichment_prompt(artist, title, mix, existing_metadata)
+            response = self._make_gemini_call(
+                prompt, self.ENRICHMENT_SCHEMA, "audio features and context enrichment"
+            )
+
+            if response:
+                logger.info("Successfully enriched audioFeatures, context, and description")
+                return response
+            else:
+                logger.warning("Enrichment returned no response")
+                return None
+
+        except Exception as e:
+            logger.warning(f"Enrichment failed: {e}")
+            return None
+
+    def _build_enrichment_prompt(
+        self,
+        artist: str,
+        title: str,
+        mix: Optional[str],
+        existing_metadata: Dict[str, Any],
+    ) -> str:
+        """
+        Build prompt for enriching audioFeatures, context, and description.
+
+        Uses general knowledge about the track/artist rather than specific Discogs data.
+        """
+        prompt_parts = [
+            "You are a music expert with deep knowledge of tracks, artists, and music history.",
+            "Generate detailed metadata for the following track using your general knowledge.",
+            "",
+            "Track Information:",
+            f"- Artist: {artist}",
+            f"- Title: {title}",
+        ]
+
+        if mix:
+            prompt_parts.append(f"- Mix: {mix}")
+
+        # Include relevant context from existing metadata
+        if existing_metadata.get("genre"):
+            prompt_parts.append(f"- Genres: {', '.join(existing_metadata.get('genre', []))}")
+        if existing_metadata.get("style"):
+            prompt_parts.append(f"- Styles: {', '.join(existing_metadata.get('style', []))}")
+        if existing_metadata.get("year"):
+            prompt_parts.append(f"- Year: {existing_metadata.get('year')}")
+        if existing_metadata.get("country"):
+            prompt_parts.append(f"- Country: {existing_metadata.get('country')}")
+        if existing_metadata.get("label"):
+            prompt_parts.append(f"- Label: {existing_metadata.get('label')}")
+
+        prompt_parts.extend(
+            [
+                "",
+                "Generate the following fields:",
+                "",
+                "1. audioFeatures:",
+                "   - bpm: Typical BPM for this track/genre (integer, or null if uncertain)",
+                "   - key: Musical key if known (e.g., 'C Minor', '8A', or null if uncertain)",
+                "   - vocals: Description of vocals (e.g., 'Turkish female vocals', 'Instrumental', 'Chopped samples', or null if uncertain)",
+                "   - atmosphere: Array of vibe keywords (e.g., ['Hypnotic', 'Sparkly', 'Industrial'])",
+                "",
+                "2. context:",
+                "   - background: Historical or production context (e.g., 'Produced during lockdown', 'Debut EP on Public Possession', or null if uncertain)",
+                "   - impact: Cultural impact or chart success (e.g., 'Established her residency at Panorama Bar', or null if uncertain)",
+                "",
+                "3. description:",
+                "   - A 2-3 sentence summary of the track's sound, style, and character",
+                "",
+                "IMPORTANT:",
+                "- Use your general knowledge about this track/artist",
+                "- If you're not confident about a field, use null (don't guess)",
+                "- For atmosphere, provide 3-5 relevant keywords",
+                "- For description, be specific about the sound, not generic",
+            ]
+        )
+
+        return "\n".join(prompt_parts)
+
+    def _merge_enriched_fields(
+        self, metadata: Dict[str, Any], enriched_fields: Dict[str, Any]
+    ) -> None:
+        """
+        Merge enriched fields into metadata, only updating non-null values.
+
+        Args:
+            metadata: Existing metadata dict to update
+            enriched_fields: New enriched fields to merge
+        """
+        # Merge audioFeatures
+        if enriched_fields.get("audioFeatures"):
+            if not metadata.get("audioFeatures"):
+                metadata["audioFeatures"] = {}
+            audio_features = metadata["audioFeatures"]
+            enriched_audio = enriched_fields["audioFeatures"]
+            
+            # Only update non-null values
+            if enriched_audio.get("bpm") is not None:
+                audio_features["bpm"] = enriched_audio["bpm"]
+            if enriched_audio.get("key") is not None:
+                audio_features["key"] = enriched_audio["key"]
+            if enriched_audio.get("vocals") is not None:
+                audio_features["vocals"] = enriched_audio["vocals"]
+            if enriched_audio.get("atmosphere"):
+                audio_features["atmosphere"] = enriched_audio["atmosphere"]
+
+        # Merge context
+        if enriched_fields.get("context"):
+            if not metadata.get("context"):
+                metadata["context"] = {}
+            context = metadata["context"]
+            enriched_context = enriched_fields["context"]
+            
+            # Only update non-null values
+            if enriched_context.get("background") is not None:
+                context["background"] = enriched_context["background"]
+            if enriched_context.get("impact") is not None:
+                context["impact"] = enriched_context["impact"]
+
+        # Merge description
+        if enriched_fields.get("description") is not None:
+            metadata["description"] = enriched_fields["description"]

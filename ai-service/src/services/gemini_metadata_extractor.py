@@ -34,7 +34,7 @@ class GeminiMetadataExtractor(BaseMetadataExtractor):
     # Model configuration - using Gemini 2.5 Flash for speed and knowledge
     # Can be upgraded to gemini-3-flash for better results (industry standard for metadata resolution)
     # Set GEMINI_MODEL environment variable to override (e.g., "gemini-3-flash")
-    MODEL = os.getenv("GEMINI_MODEL", "gemini-3-flash-preview")
+    MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
 
     # Response schema matching the expected output structure
     # Using Gemini's schema format (similar to JSON Schema but with specific types)
