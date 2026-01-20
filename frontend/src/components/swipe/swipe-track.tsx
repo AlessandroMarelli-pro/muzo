@@ -309,7 +309,6 @@ export function SwipeTrack({
 
     <Card
       className={cn(
-
         'relative h-full w-full gap-0',
         'cursor-pointer',
         'bg-background z-2',

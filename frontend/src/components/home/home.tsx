@@ -163,7 +163,7 @@ const RecentlyPlayed = ({
 }) => {
   if (isLoading) return <RecentlyPlayedSkeleton />;
   return (
-    <div className="pl-3 flex-row  *:data-[slot=card]:shadow-   *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card  flex flex-nowrap gap-6 max-w-screen overflow-x-scroll scroll-mb-0 pb-3">
+    <div className="pl-3 flex-row  *:data-[slot=card]:shadow-   *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card  flex flex-nowrap gap-6  overflow-x-scroll scroll-mb-0 pb-3">
       {recentlyPlayed ? (
         recentlyPlayed?.map((track, index) => (
           <MusicCard key={`${track.id}-${index}`} track={track} />

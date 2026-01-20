@@ -36,9 +36,11 @@ const DashedButton = ({
 export function Research({
   track,
   refetch,
+  isLoading,
 }: {
-  track: SimpleMusicTrack;
+  track?: SimpleMusicTrack;
   refetch: () => void;
+  isLoading: boolean;
 }) {
   const [selectedBoost, setSelectedBoost] = useState<string[]>([]);
   const {
@@ -63,7 +65,7 @@ export function Research({
   };
   return (
     <div className="p-6 space-y-6 min-w-fit">
-      <DetailedTrackCard track={track} refetch={refetch} />
+      <DetailedTrackCard track={track} refetch={refetch} isLoading={isLoading} />
       <div className="flex flex-wrap gap-2">
         {[
           { key: 'audioSimilarity', label: 'Audio Similarity' },
@@ -83,8 +85,8 @@ export function Research({
       </div>
       <TrackRecommandationsComponent
         recommendations={trackRecommendations || []}
-        isLoading={isLoadingTrackRecommendations}
-        onAddTrack={() => {}}
+        isLoading={isLoadingTrackRecommendations || isLoading}
+        onAddTrack={() => { }}
       />
     </div>
   );

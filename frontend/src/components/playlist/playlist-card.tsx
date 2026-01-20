@@ -36,12 +36,12 @@ export const PlaylistCardSkeleton = () => {
           <h3 className="text-xs font-semibold capitalize">
             <Skeleton className="w-1/2 h-4" />
           </h3>
-          <p className="text-xs text-muted-foreground truncate capitalize">
+          <div className="text-xs text-muted-foreground truncate capitalize">
             <Skeleton className="w-1/2 h-4" />
-          </p>
-          <p className="text-xs text-muted-foreground truncate capitalize">
+          </div>
+          <div className="text-xs text-muted-foreground truncate capitalize">
             <Skeleton className="w-10 h-4" />
-          </p>
+          </div>
         </div>
       </CardContent>
     </Card>
@@ -150,7 +150,7 @@ export function PlaylistCard({
                 <Eye className="h-5 w-5" />
               </Button>
               <DropdownMenu modal={false}>
-                <DropdownMenuTrigger className="z-1000 absolute bottom-2 right-2">
+                <DropdownMenuTrigger asChild className="z-1000 absolute bottom-2 right-2">
                   <Button variant="ghost" size="icon">
                     <MoreHorizontal className="h-5 w-5" />
                   </Button>
@@ -177,7 +177,7 @@ export function PlaylistCard({
             </motion.div>
           </AnimatePresence>
         )}
-        {images.map((image, index) => (
+        {images.length === 4 ? images.map((image, index) => (
           <div
             className="w-1/2 h-1/2 min-w-1/2 min-h-1/2 max-w-1/2 max-h-1/2 "
             key={playlist.id + index}
@@ -192,7 +192,19 @@ export function PlaylistCard({
               )}
             />
           </div>
-        ))}
+        )) : <div
+          className="w-full h-full object-cover rounded-md"
+          key={playlist.id}
+        >
+          <img
+            src={`http://localhost:3000/api/images/serve?imagePath=${images[0]}`}
+            alt="Album Art"
+            className={cn(
+              'w-full h-full object-cover  rounded-t-md',
+
+            )}
+          />
+        </div>}
       </div>
       <CardContent className="p-0 h-full w-full bg-background border-none ">
         <div className="flex flex-col h-full space-around">

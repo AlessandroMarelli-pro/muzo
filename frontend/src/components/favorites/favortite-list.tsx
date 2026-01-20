@@ -96,17 +96,14 @@ export const FavoriteList: React.FC<TrackListProps> = ({
       </div>
 
       {/* Track Grid/List */}
-      <div
-        className={
-          'flex flex-nowrap max-w-screen overflow-x-scroll scroll-mb-0 gap-2'
-        }
-      >
+      <div className="pl-3 flex-row  *:data-[slot=card]:shadow-   *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card  flex flex-nowrap gap-6  overflow-x-scroll scroll-mb-0 pb-3">
+
         {tracks.map((track) => (
           <MusicCard key={track.id} track={track} />
         ))}
       </div>
       {/* Tabs */}
-      <Tabs value={'recommendations'} onValueChange={() => {}}>
+      <Tabs value={'recommendations'} onValueChange={() => { }}>
         <TabsList>
           <TabsTrigger value="recommendations">
             <Sparkles className="h-4 w-4 " />

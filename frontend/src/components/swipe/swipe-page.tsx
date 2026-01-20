@@ -14,6 +14,7 @@ import {
 import { InfoIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { FilterButton } from '../filters';
 import { Skeleton } from '../ui/skeleton';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip';
 import { SwipeView } from './swipe-track';
@@ -306,8 +307,9 @@ export function SwipePage() {
             </span>
           </div>}
 
-
-        <UsageTooltip />
+        <div className="flex flex-row justify-end gap-4">
+          <FilterButton />
+          <UsageTooltip /></div>
 
       </div>
       <div className="flex flex-row justify-center mb-8 text-center h-full w-full">

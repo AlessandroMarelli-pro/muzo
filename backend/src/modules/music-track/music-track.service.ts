@@ -1123,10 +1123,10 @@ export class MusicTrackService {
     const [likedCount, bangerCount] =
       await Promise.all([
         this.prisma.musicTrack.count({
-          where: { ...where, isLiked: true, isBanger: false },
+          where: { isLiked: true, isBanger: false },
         }),
         this.prisma.musicTrack.count({
-          where: { ...where, isBanger: true },
+          where: {  isBanger: true },
         })
       ]);
 
@@ -1134,7 +1134,6 @@ export class MusicTrackService {
     // Remaining tracks are those that are not liked, not bangers (and still in musicTrack table)
     const remainingCount = await this.prisma.musicTrack.count({
       where: {
-        ...where,
         isLiked: false,
         isBanger: false,
       },

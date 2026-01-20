@@ -45,7 +45,7 @@ const MusicPlayerInset = React.memo(function MusicPlayerInset({
   return (
     <div
       className={cn(
-        'relative flex w-full flex-1 flex-col transition-[margin-bottom] duration-200 ease-linear',
+        ' flex w-full flex-col transition-[margin-bottom] duration-200 ease-linear   h-full ',
         hasPlayer ? 'mb-20 sm:mb-16' : 'mb-0',
         className,
       )}
@@ -116,12 +116,16 @@ const RootComponent = React.memo(function RootComponent() {
           <AudioPlayerProvider>
             <SidebarProvider defaultOpen={true}>
               <AppSidebar data={navigationData} />
+
               <SidebarInset>
+
                 <MusicPlayerInset>
                   <SiteHeader />
-
                   <Outlet />
+
+
                 </MusicPlayerInset>
+
               </SidebarInset>
 
               {/* Enhanced Music Player - fixed at bottom, outside SidebarInset */}
