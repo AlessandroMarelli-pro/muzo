@@ -21,6 +21,7 @@ export interface AudioScanJobData {
   skipClassification?: boolean;
   skipImageSearch?: boolean;
   skipAIMetadata?: boolean;
+  forced?: boolean;
 }
 
 export interface AIMetadataJobData {
@@ -544,6 +545,7 @@ export class QueueService {
       fileSize: number;
     }>,
     skipImageSearch: boolean = true,
+    forced: boolean = false,
   ): Promise<void> {
     try {
       const jobs = tracks.map((track, index) => ({
@@ -558,6 +560,7 @@ export class QueueService {
           skipClassification: true,
           totalFiles: tracks.length,
           skipImageSearch,
+          forced,
         } as AudioScanJobData,
         opts: {
           attempts: this.queueConfig.queues.audioScan.attempts,

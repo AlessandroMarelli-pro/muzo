@@ -7,7 +7,7 @@ from audio filenames, including artist, title, genre, style, credits, and more.
 
 import json
 import os
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 from loguru import logger
 
@@ -220,3 +220,171 @@ class GeminiMetadataExtractor(BaseMetadataExtractor):
         else:
             logger.warning("Empty response from Gemini")
             raise ValueError("Empty response from Gemini")
+
+    def _build_discogs_query_prompt(
+        self, artist: str, title: str, mix: Optional[str], id3_tags: Optional[Dict[str, Any]]
+    ) -> str:
+        """
+        Build prompt for Discogs query generation.
+
+        Args:
+            artist: Artist name
+            title: Title
+            mix: Optional mix name
+            id3_tags: Optional ID3 tags
+
+        Returns:
+            Prompt string for query generation
+        """
+        prompt_parts = [
+            "You are a Discogs search expert. Generate optimized search queries for finding a specific release.",
+            "",
+            "Input:",
+            f"- Artist: {artist}",
+            f"- Title: {title}",
+        ]
+
+        if mix:
+            prompt_parts.append(f"- Mix/Remix: {mix}")
+
+        if id3_tags:
+            year = id3_tags.get("year")
+            label = id3_tags.get("label") or id3_tags.get("publisher")
+            if year:
+                prompt_parts.append(f"- Year: {year}")
+            if label:
+                prompt_parts.append(f"- Label: {label}")
+
+        prompt_parts.extend(
+            [
+                "",
+                "Generate 2-3 optimized Discogs search queries that will help find this release.",
+                "Use Discogs query syntax:",
+                '- artist:"name" for exact artist match',
+                '- release_title:"title" for exact title match',
+                "- year:YYYY for year filter",
+                '- label:"name" for label filter',
+                "",
+                "Prioritize queries that:",
+                "1. Use exact matches with quotes",
+                "2. Include year if available",
+                "3. Include label if available",
+                "4. Try variations (with/without mix, different formats)",
+            ]
+        )
+
+        return "\n".join(prompt_parts)
+
+    def _build_discogs_selection_prompt(
+        self, results: List[Dict[str, Any]], input_data: Dict[str, Any]
+    ) -> str:
+        """
+        Build prompt for Discogs result selection.
+
+        Args:
+            results: List of Discogs release results
+            input_data: Original input data (artist, title, etc.)
+
+        Returns:
+            Prompt string for result selection
+        """
+        prompt_parts = [
+            "You are a music metadata expert. Select the best matching release from Discogs results.",
+            "",
+            "Original Input:",
+            f"- Artist: {input_data.get('artist', '')}",
+            f"- Title: {input_data.get('title', '')}",
+        ]
+
+        if input_data.get("mix"):
+            prompt_parts.append(f"- Mix: {input_data.get('mix')}")
+        if input_data.get("year"):
+            prompt_parts.append(f"- Year: {input_data.get('year')}")
+        if input_data.get("label"):
+            prompt_parts.append(f"- Label: {input_data.get('label')}")
+
+        prompt_parts.extend(
+            [
+                "",
+                "Discogs Results:",
+            ]
+        )
+
+        for i, result in enumerate(results):
+            prompt_parts.append(f"\n[{i}] {result.get('title', 'Unknown')}")
+            prompt_parts.append(f"    Artists: {', '.join(result.get('artists', []))}")
+            if result.get("year"):
+                prompt_parts.append(f"    Year: {result.get('year')}")
+            if result.get("label"):
+                prompt_parts.append(f"    Label: {result.get('label')}")
+            if result.get("genres"):
+                prompt_parts.append(f"    Genres: {', '.join(result.get('genres', []))}")
+
+        prompt_parts.extend(
+            [
+                "",
+                "Select the best matching release by index (0-based).",
+                "Consider:",
+                "1. Artist name match (exact > partial > none)",
+                "2. Title match (exact > partial > none)",
+                "3. Year match if available",
+                "4. Label match if available",
+                "5. Return null if no good match (confidence < 0.5)",
+                "",
+                "Return the index of the best match and a confidence score (0.0-1.0).",
+            ]
+        )
+
+        return "\n".join(prompt_parts)
+
+    def _build_discogs_schema_mapping_prompt(
+        self, release_data: Dict[str, Any], artist: str, title: str, mix: Optional[str]
+    ) -> str:
+        """
+        Build prompt for mapping Discogs release data to metadata schema.
+
+        Args:
+            release_data: Full Discogs release details
+            artist: Original artist name
+            title: Original title
+            mix: Optional mix name
+
+        Returns:
+            Prompt string for schema mapping
+        """
+        prompt_parts = [
+            "You are a music metadata expert. Map Discogs release data to the required metadata schema.",
+            "",
+            "Original Input:",
+            f"- Artist: {artist}",
+            f"- Title: {title}",
+        ]
+        if mix:
+            prompt_parts.append(f"- Mix: {mix}")
+
+        prompt_parts.extend(
+            [
+                "",
+                "Discogs Release Data:",
+                json.dumps(release_data, indent=2),
+                "",
+                "Map this data to the metadata schema. Requirements:",
+                "1. Use artist and title from original input (not Discogs)",
+                "2. Extract genres and styles from Discogs",
+                "3. Extract year, country, label from Discogs",
+                "4. For audioFeatures:",
+                "   - BPM: Use if available in tracklist or infer from genre/style if confident",
+                "   - Key: Use if available or infer if confident",
+                "   - Vocals: Infer from tracklist credits or genre knowledge",
+                "   - Atmosphere: Generate vibe keywords based on genre/style",
+                "5. For context:",
+                "   - Background: Use release notes or infer from year/label/genre",
+                "   - Impact: Infer from genre/style knowledge if relevant",
+                "6. Description: Write 2-3 sentences about the track's sound",
+                "7. Tags: Generate relevant tags from genres, styles, and metadata",
+                "",
+                "Only include fields you're confident about. Use null for uncertain values.",
+            ]
+        )
+
+        return "\n".join(prompt_parts)

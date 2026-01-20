@@ -65,6 +65,7 @@ export class AudioScanProcessor extends WorkerHost {
       skipClassification,
       skipImageSearch,
       skipAIMetadata,
+      forced
     } = job.data;
 
     this.logger.log(
@@ -89,7 +90,7 @@ export class AudioScanProcessor extends WorkerHost {
       });
       if (
         existingTrack &&
-        existingTrack.analysisStatus === AnalysisStatus.COMPLETED
+        existingTrack.analysisStatus === AnalysisStatus.COMPLETED && !forced
       ) {
         if (
           existingTrack.trackGenres.length !== 0 &&

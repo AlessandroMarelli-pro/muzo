@@ -349,14 +349,23 @@ class DiscogsConnector:
             logger.info(f"Reset rate limiter for key {i}")
 
     def _make_api_call_with_retry(
-        self, search_query: str, search_type: str = "release", max_retries: int = 1
+        self,
+        query: str,
+        search_type: str = "release",
+        artist: Optional[str] = None,
+        title: Optional[str] = None,
+        year: Optional[int] = None,
+        max_retries: int = 1,
     ) -> Any:
         """
         Make API call with multi-key load balancing and circuit breaker protection.
 
         Args:
-            search_query: Query to search for
-            search_type: Type of search (release, artist)
+            query: Main search query (typically the title)
+            search_type: Type of search (release, master, etc.)
+            artist: Optional artist name to filter by
+            title: Optional title to search for (if different from query)
+            year: Optional year to filter by
             max_retries: Maximum number of retries across different keys
 
         Returns:
@@ -416,18 +425,49 @@ class DiscogsConnector:
             )
 
             try:
+                # Build search parameters according to Discogs API client format
+                # Format: client.search(query, type='release', artist='...', year=...)
+                search_kwargs = {"type": search_type}
+                if artist:
+                    search_kwargs["artist"] = artist
+                if year:
+                    search_kwargs["year"] = year
+                
+                # Use title if provided, otherwise use query
+                search_query_text = title if title else query
+                
                 # Make the API call
                 logger.info(
-                    f"Discogs API call attempt {attempt + 1} with key {key_index}: {search_query} ({search_type})"
+                    f"Discogs API call attempt {attempt + 1} with key {key_index}: "
+                    f"query='{search_query_text}', {search_kwargs}"
                 )
-                results = client.search(search_query, type=search_type)
+                paginated_results = client.search(search_query_text, **search_kwargs)
                 self.key_rate_limiters[key_index].record_request()
                 self._update_circuit_breaker(key_index, True)
 
-                logger.info(
-                    f"Discogs API call successful with key {key_index}: {len(results) if results else 0} results"
-                )
-                return results
+                # Discogs returns a paginated result object - get the first page
+                if paginated_results:
+                    try:
+                        results = paginated_results.page(1)
+                        logger.info(
+                            f"Discogs API call successful with key {key_index}: {len(results) if results else 0} results"
+                        )
+                        return results
+                    except Exception as e:
+                        logger.warning(f"Error getting page 1 from paginated results: {e}")
+                        # Try to iterate directly if page() doesn't work
+                        try:
+                            results = list(paginated_results)
+                            logger.info(
+                                f"Discogs API call successful with key {key_index}: {len(results) if results else 0} results (direct iteration)"
+                            )
+                            return results
+                        except Exception as e2:
+                            logger.error(f"Could not extract results from paginated object: {e2}")
+                            return []
+                else:
+                    logger.info(f"Discogs API call returned no results with key {key_index}")
+                    return []
 
             except Exception as e:
                 last_exception = e
@@ -543,9 +583,12 @@ class DiscogsConnector:
             logger.info(f"Searching Discogs for: Artist='{artist}', Title='{title}'")
 
             # Search for releases matching artist and title
+            # Use title as main query, artist as filter parameter
             search_query = f"{artist} {title}"
             try:
-                results = self._make_api_call_with_retry(search_query, "release")
+                results = self._make_api_call_with_retry(
+                    query=title, search_type="release", artist=artist
+                )
             except DiscogsError as e:
                 logger.error(
                     f"Discogs API failed for '{search_query}': {e.error_type.value} - {e}"
@@ -629,7 +672,9 @@ class DiscogsConnector:
 
             # Search for artist
             try:
-                results = self._make_api_call_with_retry(artist_name, "artist")
+                results = self._make_api_call_with_retry(
+                    query=artist_name, search_type="artist"
+                )
             except DiscogsError as e:
                 logger.error(
                     f"Discogs API failed for artist '{artist_name}': {e.error_type.value} - {e}"
@@ -917,3 +962,328 @@ class DiscogsConnector:
             "caching": cache_stats,
             "authentication_configured": len(self.api_keys) > 0,
         }
+
+    def normalize_query_text(self, text: str) -> str:
+        """
+        Normalize text for Discogs search queries.
+
+        Cleans and formats text to be suitable for Discogs API search:
+        - Removes special characters that might interfere with search
+        - Handles quotes properly
+        - Normalizes whitespace
+
+        Args:
+            text: Text to normalize
+
+        Returns:
+            Normalized text suitable for Discogs search
+        """
+        if not text:
+            return ""
+
+        # Remove leading/trailing whitespace
+        normalized = text.strip()
+
+        # Replace multiple spaces with single space
+        normalized = " ".join(normalized.split())
+
+        # Escape quotes for Discogs query syntax
+        # Discogs uses quotes for exact phrases, so we need to handle them carefully
+        normalized = normalized.replace('"', '\\"')
+
+        return normalized
+
+    @monitor_performance("discogs_search_release")
+    def search_release(
+        self, artist: str, title: str, year: Optional[int] = None
+    ) -> List[Dict[str, Any]]:
+        """
+        Search for releases matching artist and title on Discogs.
+
+        Args:
+            artist: Artist name
+            title: Release/track title
+            year: Optional year to narrow search
+
+        Returns:
+            List of release dictionaries with structured data
+        """
+        try:
+            # Normalize inputs (but don't escape quotes - Discogs client handles this)
+            artist_normalized = artist.strip() if artist else ""
+            title_normalized = title.strip() if title else ""
+
+            if not artist_normalized or not title_normalized:
+                logger.warning(
+                    f"Insufficient search parameters: artist='{artist_normalized}', title='{title_normalized}'"
+                )
+                return []
+
+            logger.info(
+                f"Searching Discogs for: artist='{artist_normalized}', title='{title_normalized}'"
+                + (f", year={year}" if year else "")
+            )
+
+            # Make API call using proper Discogs client format
+            # Format: client.search(title, type='release', artist='artist', year=year)
+            try:
+                results = self._make_api_call_with_retry(
+                    query=title_normalized,
+                    search_type="release",
+                    artist=artist_normalized,
+                    year=year,
+                )
+            except DiscogsError as e:
+                logger.error(
+                    f"Discogs API failed for artist='{artist_normalized}', title='{title_normalized}': "
+                    f"{e.error_type.value} - {e}"
+                )
+                return []
+
+            if not results:
+                logger.info(
+                    f"No results found for: artist='{artist_normalized}', title='{title_normalized}'"
+                )
+                return []
+            # Discogs search returns a list of Release objects after calling .page(1)
+            # Each Release object has attributes like .id, .title, .artists, .formats, etc.
+            # According to docs: https://python3-discogs-client.readthedocs.io/en/latest/fetching_data.html
+            # - formats is a list of dicts: [{'name': 'Vinyl', 'qty': '1', 'text': '...', 'descriptions': [...]}]
+            # - artists is a list of Artist objects with .name attribute
+            # - labels is a list of Label objects with .name attribute
+            structured_results = []
+            for release in results:
+                try:
+                    # Check if release is a dict or a Release object
+                    if isinstance(release, dict):
+                        # Handle dictionary format
+                        artists = []
+                        if "artists" in release:
+                            for artist in release["artists"]:
+                                if isinstance(artist, dict):
+                                    artists.append(artist.get("name", ""))
+                                else:
+                                    artists.append(getattr(artist, "name", str(artist)))
+                        
+                        labels = []
+                        if "label" in release:
+                            labels.append(release["label"])
+                        elif "labels" in release:
+                            for label in release["labels"]:
+                                if isinstance(label, dict):
+                                    labels.append(label.get("name", ""))
+                                else:
+                                    labels.append(getattr(label, "name", str(label)))
+                        
+                        formats = []
+                        if "format" in release:
+                            format_val = release["format"]
+                            if isinstance(format_val, str):
+                                formats.append(format_val)
+                            elif isinstance(format_val, list):
+                                formats.extend([str(f) for f in format_val])
+                            else:
+                                formats.append(str(format_val))
+                        elif "formats" in release:
+                            for fmt in release["formats"]:
+                                if isinstance(fmt, dict):
+                                    # Try different possible keys for format name
+                                    format_name = (
+                                        fmt.get("name") or 
+                                        fmt.get("format") or 
+                                        fmt.get("qty") or 
+                                        str(fmt)
+                                    )
+                                    formats.append(format_name)
+                                elif isinstance(fmt, str):
+                                    formats.append(fmt)
+                                else:
+                                    # Try to get format as attribute, fallback to string
+                                    format_name = getattr(fmt, "format", None) or getattr(fmt, "name", None) or str(fmt)
+                                    formats.append(format_name)
+                        
+                        release_dict = {
+                            "id": release.get("id"),
+                            "title": release.get("title", ""),
+                            "artists": artists,
+                            "year": release.get("year"),
+                            "country": release.get("country"),
+                            "label": labels[0] if labels else None,
+                            "format": ", ".join(formats) if formats else None,
+                            "genres": release.get("genre", []) or release.get("genres", []),
+                            "styles": release.get("style", []) or release.get("styles", []),
+                            "thumb": release.get("thumb") or release.get("cover_image"),
+                        }
+                    else:
+                        # Handle Release object format (Discogs client returns Release objects)
+                        # According to docs: formats is a list of dicts with 'name', 'qty', 'text', 'descriptions'
+                        artists = []
+                        if hasattr(release, "artists") and release.artists:
+                            for artist in release.artists:
+                                if hasattr(artist, "name"):
+                                    artists.append(artist.name)
+                                else:
+                                    artists.append(str(artist))
+                        
+                        labels = []
+                        if hasattr(release, "labels") and release.labels:
+                            for label in release.labels:
+                                if hasattr(label, "name"):
+                                    labels.append(label.name)
+                                else:
+                                    labels.append(str(label))
+                        
+                        formats = []
+                        if hasattr(release, "formats") and release.formats:
+                            # Formats is a list of dicts: [{'name': 'Vinyl', 'qty': '1', 'text': '...', 'descriptions': [...]}]
+                            for fmt in release.formats:
+                                if isinstance(fmt, dict):
+                                    # Extract format name from dict
+                                    format_name = fmt.get("name", "")
+                                    if format_name:
+                                        formats.append(format_name)
+                                else:
+                                    # Fallback if format is not a dict
+                                    format_name = getattr(fmt, "name", None) or str(fmt)
+                                    formats.append(format_name)
+                        
+                        release_dict = {
+                            "id": getattr(release, "id", None),
+                            "title": getattr(release, "title", ""),
+                            "artists": artists,
+                            "year": getattr(release, "year", None),
+                            "country": getattr(release, "country", None),
+                            "label": labels[0] if labels else None,
+                            "format": ", ".join(formats) if formats else None,
+                            "genres": (
+                                [str(g) for g in release.genres]
+                                if hasattr(release, "genres") and release.genres
+                                else []
+                            ),
+                            "styles": (
+                                [str(s) for s in release.styles]
+                                if hasattr(release, "styles") and release.styles
+                                else []
+                            ),
+                            "thumb": getattr(release, "thumb", None),
+                        }
+                    structured_results.append(release_dict)
+                except Exception as e:
+                    logger.warning(f"Error processing release result: {e}", exc_info=True)
+                    continue
+
+            logger.info(
+                f"Found {len(structured_results)} structured release results for: "
+                f"artist='{artist_normalized}', title='{title_normalized}'"
+            )
+            return structured_results
+
+        except Exception as e:
+            logger.error(f"Failed to search Discogs releases: {e}")
+            return []
+
+    @monitor_performance("discogs_get_release_details")
+    def get_release_details(self, release_id: int) -> Optional[Dict[str, Any]]:
+        """
+        Get full release details from Discogs by release ID.
+
+        Args:
+            release_id: Discogs release ID
+
+        Returns:
+            Dictionary with full release details or None if failed
+        """
+        try:
+            logger.info(f"Fetching Discogs release details for ID: {release_id}")
+
+            # Get available client
+            client, key_index = self._get_available_client()
+            if client is None:
+                logger.error("No available Discogs client for release details")
+                return None
+
+            # Make API call to get release
+            try:
+                release = client.release(release_id)
+                self.key_rate_limiters[key_index].record_request()
+                self._update_circuit_breaker(key_index, True)
+            except Exception as e:
+                self._update_circuit_breaker(key_index, False)
+                logger.error(f"Failed to fetch release {release_id}: {e}")
+                return None
+
+            # Extract comprehensive release data
+            release_data = {
+                "id": release.id,
+                "title": release.title,
+                "artists": [
+                    {
+                        "name": artist.name,
+                        "id": artist.id if hasattr(artist, "id") else None,
+                    }
+                    for artist in (release.artists or [])
+                ],
+                "year": release.year if hasattr(release, "year") else None,
+                "country": release.country if hasattr(release, "country") else None,
+                "labels": [
+                    {
+                        "name": label.name,
+                        "catno": label.data.get("catno") if hasattr(label, "data") else None,
+                    }
+                    for label in (release.labels or [])
+                ],
+                "formats": [
+                    {
+                        "name": fmt.get("name", ""),
+                        "qty": fmt.get("qty", ""),
+                        "descriptions": fmt.get("descriptions", []),
+                    }
+                    for fmt in (release.formats or [])
+                ],
+                "genres": (
+                    [str(g) for g in release.genres]
+                    if hasattr(release, "genres") and release.genres
+                    else []
+                ),
+                "styles": (
+                    [str(s) for s in release.styles]
+                    if hasattr(release, "styles") and release.styles
+                    else []
+                ),
+                "tracklist": [
+                    {
+                        "position": track.position if hasattr(track, "position") else "",
+                        "title": track.title if hasattr(track, "title") else "",
+                        "duration": track.duration if hasattr(track, "duration") else "",
+                    }
+                    for track in (release.tracklist or [])
+                ],
+                "credits": (
+                    [
+                        {
+                            "name": credit.name if hasattr(credit, "name") else "",
+                            "role": credit.role if hasattr(credit, "role") else "",
+                        }
+                        for credit in release.extraartists
+                    ]
+                    if hasattr(release, "extraartists") and release.extraartists
+                    else []
+                ),
+                "images": [
+                    {
+                        "uri": img.get("uri", "") if isinstance(img, dict) else "",
+                        "uri150": img.get("uri150", "") if isinstance(img, dict) else "",
+                        "type": img.get("type", "") if isinstance(img, dict) else "",
+                    }
+                    for img in (release.images or [])
+                ],
+                "thumb": release.thumb if hasattr(release, "thumb") else None,
+                "uri": release.uri if hasattr(release, "uri") else None,
+            }
+
+            logger.info(f"Successfully fetched release details for ID: {release_id}")
+            return release_data
+
+        except Exception as e:
+            logger.error(f"Failed to get release details for {release_id}: {e}")
+            return None

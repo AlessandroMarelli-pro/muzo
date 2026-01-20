@@ -6,17 +6,141 @@ with common functionality shared between different providers (OpenAI, Gemini, et
 """
 
 import os
+import random
 import re
 import time
 from abc import ABC, abstractmethod
-from collections import deque
+from collections import defaultdict, deque
 from threading import Lock
 from typing import Any, Dict, List, Optional
 
 from loguru import logger
 
+from src.config.metadata_config import MetadataConfig
+from src.services.artist_title_extractor import ArtistTitleExtractor
+from src.services.discogs_enrichment_service import DiscogsEnrichmentService
+from src.services.metadata_cache import MetadataCache
 from src.services.simple_metadata_extractor import SimpleMetadataExtractor
+from src.services.third_parties.discogs import DiscogsConnector
 from src.utils.performance_optimizer import monitor_performance
+
+
+class MetadataExtractionMetrics:
+    """Track metrics for metadata extraction operations."""
+
+    def __init__(self):
+        """Initialize metrics tracking."""
+        self.stage_counts: Dict[str, int] = defaultdict(int)
+        self.stage_times: Dict[str, List[float]] = defaultdict(list)
+        self.cache_hits = 0
+        self.cache_misses = 0
+        self.discogs_success = 0
+        self.discogs_failures = 0
+        self.llm_calls = 0
+        self.discogs_calls = 0
+        self.fallback_triggers: Dict[str, int] = defaultdict(int)
+        self.lock = Lock()
+
+    def record_stage(self, stage: str, duration: float, success: bool = True):
+        """Record a stage execution."""
+        with self.lock:
+            self.stage_counts[stage] += 1
+            self.stage_times[stage].append(duration)
+            # Keep only last 100 measurements
+            if len(self.stage_times[stage]) > 100:
+                self.stage_times[stage] = self.stage_times[stage][-100:]
+
+    def record_cache_hit(self):
+        """Record a cache hit."""
+        with self.lock:
+            self.cache_hits += 1
+
+    def record_cache_miss(self):
+        """Record a cache miss."""
+        with self.lock:
+            self.cache_misses += 1
+
+    def record_discogs_call(self, success: bool):
+        """Record a Discogs API call."""
+        with self.lock:
+            self.discogs_calls += 1
+            if success:
+                self.discogs_success += 1
+            else:
+                self.discogs_failures += 1
+
+    def record_llm_call(self):
+        """Record an LLM API call."""
+        with self.lock:
+            self.llm_calls += 1
+
+    def record_fallback(self, from_stage: str, to_stage: str):
+        """Record a fallback between stages."""
+        with self.lock:
+            self.fallback_triggers[f"{from_stage}->{to_stage}"] += 1
+
+    def get_summary(self) -> Dict[str, Any]:
+        """Get metrics summary."""
+        with self.lock:
+            cache_total = self.cache_hits + self.cache_misses
+            cache_hit_rate = (
+                (self.cache_hits / cache_total * 100) if cache_total > 0 else 0
+            )
+
+            stage_stats = {}
+            for stage, times in self.stage_times.items():
+                if times:
+                    stage_stats[stage] = {
+                        "count": len(times),
+                        "avg_time": sum(times) / len(times),
+                        "min_time": min(times),
+                        "max_time": max(times),
+                    }
+
+            return {
+                "stage_counts": dict(self.stage_counts),
+                "stage_statistics": stage_stats,
+                "cache": {
+                    "hits": self.cache_hits,
+                    "misses": self.cache_misses,
+                    "hit_rate_percent": round(cache_hit_rate, 2),
+                },
+                "discogs": {
+                    "total_calls": self.discogs_calls,
+                    "success": self.discogs_success,
+                    "failures": self.discogs_failures,
+                    "success_rate_percent": round(
+                        (self.discogs_success / self.discogs_calls * 100)
+                        if self.discogs_calls > 0
+                        else 0,
+                        2,
+                    ),
+                },
+                "llm_calls": self.llm_calls,
+                "fallback_triggers": dict(self.fallback_triggers),
+            }
+
+    def reset(self):
+        """Reset all metrics."""
+        with self.lock:
+            self.stage_counts.clear()
+            self.stage_times.clear()
+            self.cache_hits = 0
+            self.cache_misses = 0
+            self.discogs_success = 0
+            self.discogs_failures = 0
+            self.llm_calls = 0
+            self.discogs_calls = 0
+            self.fallback_triggers.clear()
+
+
+# Global metrics instance
+_metrics = MetadataExtractionMetrics()
+
+
+def get_metadata_metrics() -> MetadataExtractionMetrics:
+    """Get the global metadata extraction metrics instance."""
+    return _metrics
 
 
 def create_metadata_extractor(provider: str = "OPENAI", api_key: Optional[str] = None):
@@ -216,8 +340,51 @@ class BaseMetadataExtractor(ABC):
         # Initialize ID3 tag extractor for more accurate metadata
         self.id3_extractor = SimpleMetadataExtractor()
 
-        # Provider-specific client initialization
+        # Initialize configuration
+        self.config = MetadataConfig()
+
+        # Provider-specific client initialization (needed for DiscogsEnrichmentService)
         self.client = self._initialize_client()
+
+        # Initialize ArtistTitleExtractor (pass self as LLM extractor)
+        self.artist_title_extractor = ArtistTitleExtractor(llm_extractor=self)
+
+        # Initialize Discogs and cache services if enabled
+        self.discogs_enrichment = None
+        self.metadata_cache = None
+
+        if self.config.use_discogs:
+            try:
+                discogs_connector = DiscogsConnector(enable_cache=True)
+                # Use client if available (for DiscogsEnrichmentService)
+                gemini_client = self.client if self.client else None
+
+                self.discogs_enrichment = DiscogsEnrichmentService(
+                    discogs_connector=discogs_connector,
+                    gemini_client=gemini_client,
+                    config=self.config,
+                )
+                logger.info("DiscogsEnrichmentService initialized")
+            except Exception as e:
+                logger.warning(f"Failed to initialize DiscogsEnrichmentService: {e}")
+                self.discogs_enrichment = None
+
+        # Initialize metadata cache
+        try:
+            self.metadata_cache = MetadataCache(
+                default_ttl_hours=self.config.redis_cache_ttl_hours
+            )
+            if self.metadata_cache.is_available():
+                logger.info("MetadataCache initialized")
+            else:
+                logger.warning("MetadataCache not available (Redis unavailable)")
+                self.metadata_cache = None
+        except Exception as e:
+            logger.warning(f"Failed to initialize MetadataCache: {e}")
+            self.metadata_cache = None
+
+        # Initialize metrics tracking
+        self.metrics = get_metadata_metrics()
 
     @abstractmethod
     def _initialize_client(self):
@@ -270,6 +437,16 @@ class BaseMetadataExtractor(ABC):
             Exception: If parsing fails
         """
         pass
+
+    def get_metrics_summary(self) -> Dict[str, Any]:
+        """
+        Get comprehensive metrics summary for metadata extraction.
+
+        Returns:
+            Dictionary with metrics including stage statistics, cache performance,
+            API call counts, and fallback triggers
+        """
+        return self.metrics.get_summary()
 
     def get_rate_limit_stats(self) -> Dict[str, Any]:
         """
@@ -386,7 +563,13 @@ class BaseMetadataExtractor(ABC):
         self, filename: str, file_path: Optional[str] = None
     ) -> Dict[str, Any]:
         """
-        Extract comprehensive metadata from a filename using AI.
+        Extract comprehensive metadata from a filename using multi-stage workflow:
+        1. Extract & normalize artist/title
+        2. Check cache
+        3. Try Discogs enrichment (if enabled)
+        4. Fallback to LLM-only (if enabled)
+        5. Simple extraction (last resort)
+        
         If file_path is provided, ID3 tags will be extracted and used for more accurate results.
 
         Args:
@@ -396,13 +579,6 @@ class BaseMetadataExtractor(ABC):
         Returns:
             Dictionary containing extracted metadata matching the expected schema
         """
-        if not self._is_available():
-            provider_name = self.__class__.__name__
-            logger.warning(
-                f"{provider_name} service not available (missing API key or SDK). Returning empty metadata."
-            )
-            return self._get_empty_metadata()
-
         try:
             provider_name = self.__class__.__name__
             logger.info(
@@ -430,29 +606,290 @@ class BaseMetadataExtractor(ABC):
                         f"Failed to extract ID3 tags from {file_path}: {e}. Continuing with filename only."
                     )
 
-            # Build filename message with ID3 tags if available
-            filename_content = self._build_filename_message(
-                filename_without_ext, id3_tags
-            )
-
-            # Handle rate limiting and retries
-            response = self._make_api_call_with_retry(filename_content)
-
-            # Parse response (provider-specific)
-            metadata = self._parse_response(response)
-
-            # Normalize and validate metadata
-            normalized_metadata = self._normalize_metadata(metadata)
-
+            # ===== STAGE 1: Extract & Normalize Artist/Title =====
+            stage1_start = time.time()
             logger.info(
-                f"Metadata extracted: {normalized_metadata.get('artist', 'N/A')} - {normalized_metadata.get('title', 'N/A')}"
+                "Stage 1: Extracting and normalizing artist/title",
+                extra={
+                    "stage": "stage1_extract_normalize",
+                    "filename": filename,
+                    "has_id3": id3_tags is not None,
+                },
             )
-            return normalized_metadata
+            artist_title_data = self.artist_title_extractor.extract_and_normalize(
+                filename, file_path, id3_tags
+            )
+            artist = artist_title_data.get("artist", "")
+            title = artist_title_data.get("title", "")
+            mix = artist_title_data.get("mix")
+            stage1_duration = time.time() - stage1_start
+            self.metrics.record_stage("stage1_extract_normalize", stage1_duration)
+            logger.info(
+                f"Stage 1 complete: {artist} - {title}"
+                + (f" ({mix})" if mix else "")
+                + f" [source: {artist_title_data.get('source', 'unknown')}]",
+                extra={
+                    "stage": "stage1_extract_normalize",
+                    "duration_seconds": round(stage1_duration, 3),
+                    "artist": artist,
+                    "title": title,
+                    "mix": mix,
+                    "source": artist_title_data.get("source", "unknown"),
+                },
+            )
+
+            # ===== Check Cache =====
+            if self.metadata_cache:
+                cached_metadata = self.metadata_cache.get(artist, title, mix)
+                if cached_metadata:
+                    self.metrics.record_cache_hit()
+                    logger.info(
+                        "Cache hit: Returning cached metadata",
+                        extra={
+                            "stage": "cache",
+                            "cache_result": "hit",
+                            "artist": artist,
+                            "title": title,
+                        },
+                    )
+                    return cached_metadata
+                self.metrics.record_cache_miss()
+                logger.info(
+                    "Cache miss: Proceeding with enrichment",
+                    extra={
+                        "stage": "cache",
+                        "cache_result": "miss",
+                        "artist": artist,
+                        "title": title,
+                    },
+                )
+
+            # ===== STAGE 2: Try Discogs Enrichment (if enabled) =====
+            metadata = None
+            # Check gradual rollout percentage
+            use_discogs_for_request = (
+                self.config.use_discogs
+                and self.discogs_enrichment
+                and random.randint(1, 100) <= self.config.discogs_rollout_percentage
+            )
+            if use_discogs_for_request:
+                stage2_start = time.time()
+                try:
+                    logger.info(
+                        "Stage 2: Attempting Discogs enrichment",
+                        extra={
+                            "stage": "stage2_discogs",
+                            "artist": artist,
+                            "title": title,
+                            "rollout_enabled": True,
+                        },
+                    )
+                    metadata = self.discogs_enrichment.enrich_metadata(
+                        artist, title, mix, id3_tags
+                    )
+                    stage2_duration = time.time() - stage2_start
+                    if metadata:
+                        self.metrics.record_stage("stage2_discogs", stage2_duration, success=True)
+                        self.metrics.record_discogs_call(success=True)
+                        logger.info(
+                            "Stage 2 complete: Discogs enrichment successful",
+                            extra={
+                                "stage": "stage2_discogs",
+                                "duration_seconds": round(stage2_duration, 3),
+                                "success": True,
+                            },
+                        )
+                        # Cache the result
+                        if self.metadata_cache:
+                            self.metadata_cache.set(artist, title, mix, metadata)
+                        return self._normalize_metadata(metadata)
+                    else:
+                        self.metrics.record_stage("stage2_discogs", stage2_duration, success=False)
+                        self.metrics.record_discogs_call(success=False)
+                        self.metrics.record_fallback("stage2_discogs", "stage3_llm")
+                        logger.info(
+                            "Stage 2: Discogs enrichment returned no results",
+                            extra={
+                                "stage": "stage2_discogs",
+                                "duration_seconds": round(stage2_duration, 3),
+                                "success": False,
+                            },
+                        )
+                except Exception as e:
+                    stage2_duration = time.time() - stage2_start
+                    self.metrics.record_stage("stage2_discogs", stage2_duration, success=False)
+                    self.metrics.record_discogs_call(success=False)
+                    self.metrics.record_fallback("stage2_discogs", "stage3_llm")
+                    logger.warning(
+                        f"Stage 2: Discogs enrichment failed: {e}, falling back to LLM",
+                        extra={
+                            "stage": "stage2_discogs",
+                            "duration_seconds": round(stage2_duration, 3),
+                            "error": str(e),
+                            "fallback": "stage3_llm",
+                        },
+                    )
+            elif self.config.use_discogs and self.discogs_enrichment:
+                # Discogs is enabled but this request was excluded by rollout percentage
+                logger.debug(
+                    "Stage 2: Discogs enrichment skipped due to gradual rollout",
+                    extra={
+                        "stage": "stage2_discogs",
+                        "rollout_percentage": self.config.discogs_rollout_percentage,
+                        "rollout_enabled": False,
+                    },
+                )
+
+            # ===== STAGE 3: Fallback to LLM-only (if enabled) =====
+            if self.config.use_llm_fallback and self._is_available():
+                stage3_start = time.time()
+                try:
+                    logger.info(
+                        "Stage 3: Attempting LLM-only extraction",
+                        extra={
+                            "stage": "stage3_llm",
+                            "artist": artist,
+                            "title": title,
+                            "provider": self.__class__.__name__,
+                        },
+                    )
+                    # Build filename message with ID3 tags if available
+                    filename_content = self._build_filename_message(
+                        filename_without_ext, id3_tags
+                    )
+
+                    # Handle rate limiting and retries
+                    response = self._make_api_call_with_retry(filename_content)
+                    self.metrics.record_llm_call()
+
+                    # Parse response (provider-specific)
+                    metadata = self._parse_response(response)
+
+                    # Normalize and validate metadata
+                    normalized_metadata = self._normalize_metadata(metadata)
+
+                    stage3_duration = time.time() - stage3_start
+                    self.metrics.record_stage("stage3_llm", stage3_duration, success=True)
+                    logger.info(
+                        "Stage 3 complete: LLM-only extraction successful",
+                        extra={
+                            "stage": "stage3_llm",
+                            "duration_seconds": round(stage3_duration, 3),
+                            "success": True,
+                        },
+                    )
+                    # Cache the result
+                    if self.metadata_cache:
+                        self.metadata_cache.set(artist, title, mix, normalized_metadata)
+                    return normalized_metadata
+
+                except Exception as e:
+                    stage3_duration = time.time() - stage3_start
+                    self.metrics.record_stage("stage3_llm", stage3_duration, success=False)
+                    self.metrics.record_fallback("stage3_llm", "stage4_simple")
+                    logger.warning(
+                        f"Stage 3: LLM-only extraction failed: {e}, falling back to simple extraction",
+                        extra={
+                            "stage": "stage3_llm",
+                            "duration_seconds": round(stage3_duration, 3),
+                            "error": str(e),
+                            "fallback": "stage4_simple",
+                        },
+                    )
+
+            # ===== STAGE 4: Simple Extraction (last resort) =====
+            stage4_start = time.time()
+            logger.info(
+                "Stage 4: Using simple extraction (last resort)",
+                extra={
+                    "stage": "stage4_simple",
+                    "artist": artist,
+                    "title": title,
+                },
+            )
+            metadata = self._simple_extraction(artist, title, mix, id3_tags)
+            stage4_duration = time.time() - stage4_start
+            self.metrics.record_stage("stage4_simple", stage4_duration, success=True)
+            logger.info(
+                "Stage 4 complete: Simple extraction",
+                extra={
+                    "stage": "stage4_simple",
+                    "duration_seconds": round(stage4_duration, 3),
+                },
+            )
+            # Cache the result (even simple extraction results)
+            if self.metadata_cache:
+                self.metadata_cache.set(artist, title, mix, metadata)
+            return metadata
 
         except Exception as e:
             provider_name = self.__class__.__name__
             logger.error(f"Failed to extract metadata using {provider_name}: {e}")
             return self._get_empty_metadata()
+
+    def _simple_extraction(
+        self,
+        artist: str,
+        title: str,
+        mix: Optional[str],
+        id3_tags: Optional[Dict[str, Any]],
+    ) -> Dict[str, Any]:
+        """
+        Simple extraction using only ID3 tags and filename (no LLM, no Discogs).
+
+        Args:
+            artist: Extracted artist name
+            title: Extracted title
+            mix: Optional mix name
+            id3_tags: Optional ID3 tags
+
+        Returns:
+            Basic metadata dictionary
+        """
+        metadata = {
+            "artist": artist or "",
+            "title": title or "",
+            "mix": mix,
+            "year": None,
+            "country": None,
+            "label": None,
+            "genre": [],
+            "style": [],
+            "audioFeatures": None,
+            "context": None,
+            "description": None,
+            "tags": [],
+        }
+
+        # Fill in from ID3 tags if available
+        if id3_tags:
+            if not metadata["year"] and id3_tags.get("year"):
+                try:
+                    year_str = str(id3_tags.get("year", "")).strip()
+                    # Extract 4-digit year from string
+                    year_match = re.search(r"\b(19|20)\d{2}\b", year_str)
+                    if year_match:
+                        metadata["year"] = int(year_match.group())
+                except (ValueError, AttributeError):
+                    pass
+
+            if not metadata["label"]:
+                metadata["label"] = (
+                    id3_tags.get("label") or id3_tags.get("publisher") or None
+                )
+
+            if id3_tags.get("genre"):
+                genre_str = str(id3_tags.get("genre", "")).strip()
+                if genre_str:
+                    # Split by common separators
+                    genres = [
+                        g.strip()
+                        for g in re.split(r"[,;/|]", genre_str)
+                        if g.strip()
+                    ]
+                    metadata["genre"] = genres[:3]  # Limit to 3 genres
+
+        return self._normalize_metadata(metadata)
 
     def _normalize_metadata(self, metadata: Dict[str, Any]) -> Dict[str, Any]:
         """

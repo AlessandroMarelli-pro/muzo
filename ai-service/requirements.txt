@@ -114,3 +114,5 @@ google-genai>=0.2.0
 
 # JSON Schema validation for strict response validation
 jsonschema>=4.20.0
+
+pytest-env>=1.2.0

@@ -88,7 +88,7 @@ Environment variables:
 
 ### Phase 1: Foundation & Infrastructure (4-6 hours)
 
-#### Task 1.1: Extend DiscogsConnector
+#### Task 1.1: Extend DiscogsConnector ✅ COMPLETE
 - File: `ai-service/src/services/third_parties/discogs.py`
 - Add `search_release(artist, title, year=None) -> List[Dict]`
   - Build Discogs query: `artist:"..." AND release_title:"..."`
@@ -102,7 +102,7 @@ Environment variables:
   - Clean for Discogs search (quotes, special chars)
 - Testing: Unit tests for new methods
 
-#### Task 1.2: Create MetadataCache Service
+#### Task 1.2: Create MetadataCache Service ✅ COMPLETE
 - File: `ai-service/src/services/metadata_cache.py` (new)
 - Redis-based caching for metadata results
 - Methods:
@@ -114,20 +114,24 @@ Environment variables:
 - Key format: `metadata:{normalized_artist}:{normalized_title}:{normalized_mix}`
 - TTL: configurable (default 24 hours)
 
-#### Task 1.3: Create ArtistTitleExtractor
+#### Task 1.3: Create ArtistTitleExtractor ✅ COMPLETE
 - File: `ai-service/src/services/artist_title_extractor.py` (new)
 - Extract and normalize artist/title
-- Priority: ID3 tags → filename parsing → LLM fallback
+- Priority: ID3 tags → LLM filename cleaning → filename parsing → fallback
 - Methods:
   - `extract_and_normalize(filename, id3_tags) -> Dict`
+  - `_extract_artist_title_with_llm(filename, id3_tags) -> Optional[Dict]`
+  - `_make_simplified_llm_call(prompt) -> Optional[Dict]`
+  - `_make_gemini_simplified_call(prompt) -> Optional[Dict]`
+  - `_build_artist_title_prompt(filename, id3_tags) -> str`
   - `_parse_filename(filename) -> Optional[Dict]`
   - `_normalize_artist_title(artist, title) -> Dict`
   - `_apply_cleanup(text) -> str`
   - `_smart_title_case(text) -> str`
 - Returns: `{artist, title, mix, confidence, source}`
-- Confidence: 0.0-1.0 (ID3=0.95, parsed=0.75, LLM=0.85, fallback=0.3)
+- Confidence: 0.0-1.0 (ID3=0.95, LLM=0.85, parsed=0.75, fallback=0.3)
 
-#### Task 1.4: Configuration System
+#### Task 1.4: Configuration System ✅ COMPLETE
 - File: `ai-service/src/config/metadata_config.py` (new)
 - Class: `MetadataConfig`
 - Load from env vars with defaults
@@ -141,14 +145,14 @@ Environment variables:
 
 ### Phase 2: Discogs Enrichment Service (6-8 hours)
 
-#### Task 2.1: Create DiscogsEnrichmentService
+#### Task 2.1: Create DiscogsEnrichmentService ✅ COMPLETE
 - File: `ai-service/src/services/discogs_enrichment_service.py` (new)
 - Orchestrates Discogs + LLM workflow
 - Dependencies: `DiscogsConnector`, `GeminiMetadataExtractor`, `MetadataConfig`
 - Main method: `enrich_metadata(artist, title, mix, id3_tags) -> Optional[Dict]`
 - Returns metadata dict or None (triggers fallback)
 
-#### Task 2.2: LLM Query Building
+#### Task 2.2: LLM Query Building ✅ COMPLETE
 - File: `ai-service/src/services/discogs_enrichment_service.py`
 - Method: `_build_queries(artist, title, mix, id3_tags) -> List[str]`
 - Gemini prompt:
@@ -161,7 +165,7 @@ Environment variables:
 - Use Gemini structured outputs (JSON schema)
 - Error handling: fallback to simple query if LLM fails
 
-#### Task 2.3: Discogs Search Integration
+#### Task 2.3: Discogs Search Integration ✅ COMPLETE
 - File: `ai-service/src/services/discogs_enrichment_service.py`
 - Method: `_search_discogs(queries) -> List[Dict]`
 - Try queries in priority order
@@ -170,7 +174,7 @@ Environment variables:
 - Limit to `DISCOGS_MAX_RESULTS`
 - Error handling: return empty list on failure
 
-#### Task 2.4: LLM Result Selection
+#### Task 2.4: LLM Result Selection ✅ COMPLETE
 - File: `ai-service/src/services/discogs_enrichment_service.py`
 - Method: `_select_best_match(results, artist, title, id3_tags) -> Optional[Dict]`
 - Gemini prompt:
@@ -183,14 +187,14 @@ Environment variables:
 - Filter by `DISCOGS_MIN_CONFIDENCE`
 - Return None if no match meets threshold
 
-#### Task 2.5: Release Details Retrieval
+#### Task 2.5: Release Details Retrieval ✅ COMPLETE
 - File: `ai-service/src/services/discogs_enrichment_service.py`
 - Method: `_get_release_details(release_match) -> Dict`
 - Use `DiscogsConnector.get_release_details(release_id)`
 - Extract: genres, styles, year, country, label, format, tracklist, credits
 - Error handling: return None on failure
 
-#### Task 2.6: Schema Mapping (LLM)
+#### Task 2.6: Schema Mapping (LLM) ✅ COMPLETE
 - File: `ai-service/src/services/discogs_enrichment_service.py`
 - Method: `_map_to_schema(release_data, artist, title, mix) -> Dict`
 - Gemini prompt:
@@ -208,7 +212,7 @@ Environment variables:
 
 ### Phase 3: Integration (4-6 hours)
 
-#### Task 3.1: Modify BaseMetadataExtractor
+#### Task 3.1: Modify BaseMetadataExtractor ✅ COMPLETE
 - File: `ai-service/src/services/base_metadata_extractor.py`
 - Update `extract_metadata_from_filename()`:
   - Stage 1: Extract & normalize artist/title
@@ -221,7 +225,7 @@ Environment variables:
 - Maintain backward compatibility
 - Add logging for each stage
 
-#### Task 3.2: Add Configuration Checks
+#### Task 3.2: Add Configuration Checks ✅ COMPLETE
 - File: `ai-service/src/services/base_metadata_extractor.py`
 - Check `METADATA_USE_DISCOGS` flag
 - Check `METADATA_USE_LLM_FALLBACK` flag
@@ -229,7 +233,7 @@ Environment variables:
 - Initialize `MetadataCache` if enabled
 - Graceful degradation if services unavailable
 
-#### Task 3.3: Update GeminiMetadataExtractor
+#### Task 3.3: Update GeminiMetadataExtractor ✅ COMPLETE
 - File: `ai-service/src/services/gemini_metadata_extractor.py`
 - Add methods for Discogs-specific prompts:
   - `_build_discogs_query_prompt(artist, title, mix, id3_tags) -> str`
@@ -248,7 +252,7 @@ Environment variables:
 
 ### Phase 4: Testing & Refinement (4-6 hours)
 
-#### Task 4.1: Unit Tests
+#### Task 4.1: Unit Tests ✅ COMPLETE
 - Test files:
   - `test_artist_title_extractor.py`
   - `test_discogs_enrichment_service.py`
@@ -257,7 +261,7 @@ Environment variables:
 - Coverage: >80% for new code
 - Mock external dependencies (Discogs API, Gemini API, Redis)
 
-#### Task 4.2: Integration Tests
+#### Task 4.2: Integration Tests ✅ COMPLETE
 - Test with sample files:
   - `/Users/alessandro/Music/tidal/Tracks/T-Fire - Say A Prayer.flac`
   - `/Users/alessandro/Music/Youtube/Music/T-Fire - Say A Prayer [Nigeria] Soul (1979).opus`
@@ -269,7 +273,7 @@ Environment variables:
   - Cache hit path
   - All services unavailable → simple extraction
 
-#### Task 4.3: Performance Testing
+#### Task 4.3: Performance Testing ✅ COMPLETE
 - Measure:
   - Cache hit rate
   - Average response time (Discogs vs LLM vs Simple)
@@ -280,7 +284,7 @@ Environment variables:
   - Cache TTL tuning
   - Confidence threshold tuning
 
-#### Task 4.4: Configuration Testing
+#### Task 4.4: Configuration Testing ✅ COMPLETE
 - Test all modes:
   - Fast mode (minimal LLM)
   - Balanced mode (default)
@@ -290,6 +294,7 @@ Environment variables:
   - LLM fallback enabled/disabled
   - Cache enabled/disabled
 - Verify backward compatibility
+- Test file: `test_metadata_config.py`
 
 #### Task 4.5: Documentation
 - Update README with:
@@ -303,13 +308,14 @@ Environment variables:
 
 ### Phase 5: Deployment & Monitoring (2-3 hours)
 
-#### Task 5.1: Environment Setup
-- Add environment variables to `.env.example`
+#### Task 5.1: Environment Setup ✅ COMPLETE
+- Add environment variables to `env.template`
 - Update deployment configs
 - Verify Redis connection
 - Verify Discogs API token
+- File: `ai-service/env.template`
 
-#### Task 5.2: Logging & Observability
+#### Task 5.2: Logging & Observability ✅ COMPLETE
 - Add structured logging:
   - Stage transitions
   - Cache hits/misses
@@ -320,12 +326,15 @@ Environment variables:
   - Response times per stage
   - Success rates per stage
   - API call counts
+- Metrics tracking class: `MetadataExtractionMetrics`
+- Method: `get_metrics_summary()` for comprehensive metrics
 
-#### Task 5.3: Gradual Rollout
-- Feature flag for gradual enablement
+#### Task 5.3: Gradual Rollout ✅ COMPLETE
+- Feature flag for gradual enablement (`METADATA_DISCOGS_ROLLOUT_PERCENTAGE`)
 - Monitor error rates
 - Monitor performance impact
 - Monitor cost (Discogs API + LLM calls)
+- Rollout percentage configuration (0-100%)
 
 ## Task Summary
 

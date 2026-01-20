@@ -6,6 +6,7 @@ using soundfile for fast loading and avoiding redundant operations.
 """
 
 import gc
+import json
 import os
 import time
 from typing import Any, Dict, Optional
@@ -378,6 +379,7 @@ class SimpleAnalysisService:
                 ai_metadata = self.extract_metadata_with_ai(
                     original_filename, file_path
                 )
+                print(json.dumps(ai_metadata, indent=4))
                 if ai_metadata:
                     logger.info("AI metadata extracted successfully")
             elif skip_ai_metadata:
