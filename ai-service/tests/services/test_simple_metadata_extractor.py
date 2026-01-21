@@ -33,3 +33,20 @@ class TestAudioMoodAnalyzer:
                 test_audio_file, original_filename
             )
             print(metadata)
+
+    def test_m4a_file_metadata_extraction(self, test_audio_metadata_files):
+        """
+        Test M4A file metadata extraction.
+        """
+        test_audio_file = (
+            "/Users/alessandro/Music/Youtube/Music/Sea Power & Change - Mango.m4a"
+        )
+        original_filename = os.path.basename(
+            "/Users/alessandro/Music/Youtube/Music/Sea Power & Change - Mango.m4a"
+        )
+        metadata = SimpleMetadataExtractor().extract_id3_tags(
+            test_audio_file, original_filename
+        )
+        print(metadata)
+        image = SimpleMetadataExtractor().extract_embedded_image(test_audio_file)
+        assert image is not None

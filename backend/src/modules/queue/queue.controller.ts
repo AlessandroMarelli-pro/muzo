@@ -336,7 +336,7 @@ export class QueueController {
         (track) => track.fileSize <= 100000000, // 100MB
       );
 
-      if (filteredTracks.length >= 0) {
+      if (filteredTracks.length === 0) {
         this.logger.log('No tracks found with null originalArtist');
         return {
           message: 'No tracks found with null originalArtist',

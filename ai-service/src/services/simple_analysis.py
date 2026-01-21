@@ -584,7 +584,7 @@ class SimpleAnalysisService:
                     logger.info(
                         f"Processing file {idx + 1}/{total_files}: {original_filename}"
                     )
-
+                    original_filepath = file_path
                     # Handle M4A conversion if needed
                     if file_path.endswith(".m4a"):
                         converted_wav_path = self.convert_m4a_to_wav(file_path)
@@ -637,7 +637,9 @@ class SimpleAnalysisService:
                     )
 
                     # Extract ID3 tags
-                    id3_tags = self.extract_id3_tags(file_path, original_filename)
+                    id3_tags = self.extract_id3_tags(
+                        original_filepath, original_filename
+                    )
 
                     # Combine all results
                     file_result = {

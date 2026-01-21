@@ -12,6 +12,7 @@ from typing import Any, Dict, Optional
 
 from loguru import logger
 from mutagen import File
+from mutagen.mp4 import MP4
 
 from src.utils.performance_optimizer import monitor_performance
 
@@ -33,6 +34,9 @@ class SimpleMetadataExtractor:
         "copyright": "",
         "bitrate": "",
         "image": "",
+        "description": "",
+        "long_description": "",
+        "url": "",
     }
 
     """
@@ -132,10 +136,22 @@ class SimpleMetadataExtractor:
             if value is None:
                 return "None"
 
+            # Handle tuples (e.g., MP4 trkn and disk are tuples)
+            if isinstance(value, tuple):
+                # For MP4 track/disc tuples: (number, total)
+                if len(value) > 0:
+                    # Return just the first element (the actual number)
+                    return str(value[0])
+                return ""
+
             # Handle lists
             if isinstance(value, list):
                 if not value:
                     return "[Empty list]"
+                # If list contains tuples (MP4 format), extract first element of first tuple
+                if len(value) > 0 and isinstance(value[0], tuple):
+                    if len(value[0]) > 0:
+                        return str(value[0][0])
                 # Process each item in the list
                 safe_items = []
                 for item in value:
@@ -255,6 +271,7 @@ class SimpleMetadataExtractor:
             image_data = None
             file_extension = os.path.splitext(file_path)[1].lower()
             is_flac = file_extension == ".flac"
+            is_mp4 = file_extension in [".m4a", ".mp4", ".m4p", ".m4b"]
 
             if is_flac:
                 # For FLAC files, use the pictures property
@@ -274,8 +291,26 @@ class SimpleMetadataExtractor:
                                 image_data = first_picture.data
                 except Exception as e:
                     logger.warning(f"Failed to extract FLAC pictures: {e}")
+            elif is_mp4:
+                # For MP4/M4A files, extract cover art from covr tag
+                # covr is a list of MP4Cover objects
+                try:
+                    covr_value = self.safe_get_tag_value(audio_file, "covr")
+                    if covr_value:
+                        # covr is a list of MP4Cover objects
+                        if isinstance(covr_value, list) and len(covr_value) > 0:
+                            # Get first cover art (usually the main cover)
+                            cover_obj = covr_value[0]
+                            # MP4Cover objects have a data attribute
+                            if hasattr(cover_obj, "data"):
+                                image_data = cover_obj.data
+                            elif isinstance(cover_obj, bytes):
+                                image_data = cover_obj
+                except Exception as e:
+                    logger.warning(f"Failed to extract MP4 covr tag: {e}")
+
             else:
-                # For non-FLAC files, check binary image fields
+                # For non-FLAC, non-MP4 files, check binary image fields
                 # First, try to find APIC tags (they may have keys like 'APIC:"Album cover"')
                 try:
                     if hasattr(audio_file, "keys"):
@@ -308,7 +343,7 @@ class SimpleMetadataExtractor:
                 if not image_data:
                     binary_fields = [
                         "PIC",
-                        "covr",
+                        "covr",  # Also check covr for other formats
                         "METADATA_BLOCK_PICTURE",
                         "metadata_block_picture",
                         "TRAKTOR4",
@@ -395,7 +430,11 @@ class SimpleMetadataExtractor:
             # Try to extract ID3 tags using mutagen
             try:
                 audio_file = File(file_path)
+
+                is_mp4_file = isinstance(audio_file, MP4)
+
                 # Common tag mappings for different formats
+                # MP4 keys: \xa9nam (title), \xa9ART (artist), \xa9alb (album), etc.
                 tag_mappings = {
                     "title": ["TIT2", "TITLE", "\xa9nam", "title"],
                     "artist": ["TPE1", "ARTIST", "\xa9ART", "artist"],
@@ -404,32 +443,195 @@ class SimpleMetadataExtractor:
                     "date": ["TDRC", "DATE", "\xa9day", "date"],
                     "year": ["TDRC", "TYER", "YEAR", "year", "DATE"],
                     "genre": ["TCON", "GENRE", "\xa9gen", "genre", "style", "category"],
-                    "bpm": ["TBPM", "BPM", "bpm"],
+                    "bpm": ["TBPM", "BPM", "bpm", "tmpo"],  # tmpo is MP4 tempo/BPM
                     "track_number": [
                         "TRCK",
                         "TRACKNUMBER",
-                        "trkn",
+                        "trkn",  # MP4: tuple of (track, total)
                         "track",
                         "tracknumber",
                     ],
-                    "disc_number": ["TPOS", "DISCNUMBER", "disk", "disc", "discnumber"],
+                    "disc_number": [
+                        "TPOS",
+                        "DISCNUMBER",
+                        "disk",  # MP4: tuple of (disc, total)
+                        "disc",
+                        "discnumber",
+                    ],
                     "comment": ["COMM", "COMMENT", "\xa9cmt", "comment"],
                     "composer": ["TCOM", "COMPOSER", "\xa9wrt", "composer"],
-                    "copyright": ["TCOP", "COPYRIGHT", "copyright"],
-                    "description": ["COMM", "DESCRIPTION", "description"],
+                    "copyright": [
+                        "TCOP",
+                        "COPYRIGHT",
+                        "copyright",
+                        "cprt",
+                    ],  # cprt is MP4 copyright
+                    "description": [
+                        "COMM",
+                        "DESCRIPTION",
+                        "description",
+                        "desc",  # MP4 description (usually used in podcasts)
+                    ],
                     "synopsis": ["COMM", "SYNOPSIS", "synopsis"],
-                    "url": ["UFID", "URL", "url"],
+                    "url": ["UFID", "URL", "url", "purl"],  # purl is MP4 podcast URL
                 }
                 id3_tags = {}
                 if audio_file is not None:
+                    # Handle MP4-specific formats
+                    if is_mp4_file:
+                        # MP4 trkn is a tuple: (track_number, total_tracks)
+                        # Multiple values per key are supported, so it can be a list of tuples
+                        trkn_value = self.safe_get_tag_value(audio_file, "trkn")
+                        if trkn_value is not None:
+                            try:
+                                if isinstance(trkn_value, list) and len(trkn_value) > 0:
+                                    # Get first tuple from list
+                                    track_tuple = trkn_value[0]
+                                    if (
+                                        isinstance(track_tuple, tuple)
+                                        and len(track_tuple) > 0
+                                    ):
+                                        id3_tags["track_number"] = str(track_tuple[0])
+                                elif (
+                                    isinstance(trkn_value, tuple)
+                                    and len(trkn_value) > 0
+                                ):
+                                    # Direct tuple
+                                    id3_tags["track_number"] = str(trkn_value[0])
+                            except Exception as e:
+                                logger.debug(f"Failed to parse trkn tuple: {e}")
+
+                        # MP4 disk is a tuple: (disc_number, total_discs)
+                        disk_value = self.safe_get_tag_value(audio_file, "disk")
+                        if disk_value is not None:
+                            try:
+                                if isinstance(disk_value, list) and len(disk_value) > 0:
+                                    # Get first tuple from list
+                                    disc_tuple = disk_value[0]
+                                    if (
+                                        isinstance(disc_tuple, tuple)
+                                        and len(disc_tuple) > 0
+                                    ):
+                                        id3_tags["disc_number"] = str(disc_tuple[0])
+                                elif (
+                                    isinstance(disk_value, tuple)
+                                    and len(disk_value) > 0
+                                ):
+                                    # Direct tuple
+                                    id3_tags["disc_number"] = str(disk_value[0])
+                            except Exception as e:
+                                logger.debug(f"Failed to parse disk tuple: {e}")
+
+                        # MP4 tmpo (BPM) is an integer value
+                        tmpo_value = self.safe_get_tag_value(audio_file, "tmpo")
+                        if tmpo_value is not None:
+                            try:
+                                # tmpo can be a list of integers or a single integer
+                                if isinstance(tmpo_value, list) and len(tmpo_value) > 0:
+                                    id3_tags["bpm"] = str(tmpo_value[0])
+                                elif isinstance(tmpo_value, int):
+                                    id3_tags["bpm"] = str(tmpo_value)
+                            except Exception as e:
+                                logger.debug(f"Failed to parse tmpo: {e}")
+                    else:
+                        # For non-MP4 files, handle track/disc numbers generically
+                        trkn_value = self.safe_get_tag_value(audio_file, "trkn")
+                        if trkn_value is not None:
+                            try:
+                                if (
+                                    isinstance(trkn_value, (list, tuple))
+                                    and len(trkn_value) > 0
+                                ):
+                                    track_tuple = (
+                                        trkn_value[0]
+                                        if isinstance(trkn_value, list)
+                                        else trkn_value
+                                    )
+                                    if (
+                                        isinstance(track_tuple, (list, tuple))
+                                        and len(track_tuple) > 0
+                                    ):
+                                        id3_tags["track_number"] = str(track_tuple[0])
+                            except Exception as e:
+                                logger.debug(f"Failed to parse trkn tuple: {e}")
+
+                        disk_value = self.safe_get_tag_value(audio_file, "disk")
+                        if disk_value is not None:
+                            try:
+                                if (
+                                    isinstance(disk_value, (list, tuple))
+                                    and len(disk_value) > 0
+                                ):
+                                    disc_tuple = (
+                                        disk_value[0]
+                                        if isinstance(disk_value, list)
+                                        else disk_value
+                                    )
+                                    if (
+                                        isinstance(disc_tuple, (list, tuple))
+                                        and len(disc_tuple) > 0
+                                    ):
+                                        id3_tags["disc_number"] = str(disc_tuple[0])
+                            except Exception as e:
+                                logger.debug(f"Failed to parse disk tuple: {e}")
+
+                    # Extract regular tags
                     for common_name, possible_keys in tag_mappings.items():
+                        # Skip track_number and disc_number if already set from tuple parsing
+                        if (
+                            common_name in ["track_number", "disc_number"]
+                            and common_name in id3_tags
+                        ):
+                            continue
+
+                        # Skip bpm if already set from MP4 tmpo handling
+                        if common_name == "bpm" and "bpm" in id3_tags:
+                            continue
+
                         for key in possible_keys:
+                            # Skip trkn, disk, and tmpo as they're handled above
+                            if key in ["trkn", "disk", "tmpo"]:
+                                continue
+
                             value = self.safe_get_tag_value(audio_file, key)
                             if value is not None:
+                                # For MP4 files, text values are lists (multiple values per key)
+                                # Take the first value from the list
+                                if (
+                                    is_mp4_file
+                                    and isinstance(value, list)
+                                    and len(value) > 0
+                                ):
+                                    # Get first value from list
+                                    value = value[0]
+
                                 safe_value = self.safe_string_conversion(value)
                                 if safe_value and safe_value != "[Binary data]":
                                     id3_tags[common_name] = safe_value
                                     break  # Found a valid value for this common_name
+
+                    # Extract MP4-specific fields that aren't in common mappings
+                    if is_mp4_file:
+                        # Long description (ldes) - MP4 text value (can be list)
+                        ldes_value = self.safe_get_tag_value(audio_file, "ldes")
+                        if ldes_value is not None:
+                            # Handle list format (MP4 supports multiple values)
+                            if isinstance(ldes_value, list) and len(ldes_value) > 0:
+                                ldes_value = ldes_value[0]
+                            safe_ldes = self.safe_string_conversion(ldes_value)
+                            if safe_ldes and safe_ldes != "[Binary data]":
+                                id3_tags["long_description"] = safe_ldes
+
+                        # Podcast URL (purl) - already in mappings but ensure it's extracted
+                        if "url" not in id3_tags:
+                            purl_value = self.safe_get_tag_value(audio_file, "purl")
+                            if purl_value is not None:
+                                # Handle list format (MP4 supports multiple values)
+                                if isinstance(purl_value, list) and len(purl_value) > 0:
+                                    purl_value = purl_value[0]
+                                safe_purl = self.safe_string_conversion(purl_value)
+                                if safe_purl and safe_purl != "[Binary data]":
+                                    id3_tags["url"] = safe_purl
 
                     # Extract bitrate from audio file info
                     if hasattr(audio_file, "info"):
@@ -461,7 +663,9 @@ class SimpleMetadataExtractor:
             is_youtube_download = False
             if audio_file is not None:
                 # Check for YouTube indicators: purl tag or description containing youtube.com
-                purl = self.safe_get_tag_value(audio_file, "purl")
+                purl = self.safe_get_tag_value(
+                    audio_file, "purl"
+                ) or self.safe_get_tag_value(audio_file, "\xa9cmt")
                 if purl:
                     purl_str = self.safe_string_conversion(purl)
                     if (
@@ -469,10 +673,11 @@ class SimpleMetadataExtractor:
                         or "youtu.be" in purl_str.lower()
                     ):
                         is_youtube_download = True
-
                 # Also check description for YouTube indicators
                 if not is_youtube_download:
-                    description = self.safe_get_tag_value(audio_file, "description")
+                    description = self.safe_get_tag_value(
+                        audio_file, "description"
+                    ) or self.safe_get_tag_value(audio_file, "desc")
                     if description:
                         desc_str = self.safe_string_conversion(description)
                         if (

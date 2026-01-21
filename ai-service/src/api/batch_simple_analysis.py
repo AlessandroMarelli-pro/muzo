@@ -14,12 +14,11 @@ from flask import request
 from flask_restful import Resource
 from loguru import logger
 
+# Import shared executor from simple_analysis module
+import src.api.simple_analysis as simple_analysis_module
 from src.scrappers.scrapper_dispatcher import get_album_art
 from src.services.simple_analysis import SimpleAnalysisService
 from src.utils.performance_optimizer import monitor_performance
-
-# Import shared executor from simple_analysis module
-import src.api.simple_analysis as simple_analysis_module
 
 
 class BatchSimpleAnalysisResource(Resource):
@@ -89,9 +88,7 @@ class BatchSimpleAnalysisResource(Resource):
                         "message": f"File {audio_file.filename} exceeds 100MB limit",
                     }, 413
 
-            logger.info(
-                f"Processing batch audio analysis for {len(audio_files)} files"
-            )
+            logger.info(f"Processing batch audio analysis for {len(audio_files)} files")
 
             # Get parameters with optimized defaults
             sample_duration = float(request.form.get("sample_duration", "10.0"))
@@ -131,17 +128,22 @@ class BatchSimpleAnalysisResource(Resource):
                 for idx, file_result in enumerate(result.get("results", [])):
                     if file_result.get("status") == "success":
                         try:
-                            id3_tags = file_result.get("id3_tags", {})
-                            artist = id3_tags.get("artist")
-                            title = id3_tags.get("title")
+                            artist = file_result.get("id3_tags", {}).get(
+                                "artist"
+                            ) or file_result.get("ai_metadata", {}).get("artist")
+                            title = file_result.get("id3_tags", {}).get(
+                                "title"
+                            ) or file_result.get("ai_metadata", {}).get("title")
                             if artist and title:
                                 # Submit album art fetching to thread pool
-                                album_art_future = simple_analysis_module._executor.submit(
-                                    self._get_album_art_with_timeout,
-                                    artist,
-                                    title,
-                                    file_items[idx][0],  # file_path
-                                    timeout=5.0,
+                                album_art_future = (
+                                    simple_analysis_module._executor.submit(
+                                        self._get_album_art_with_timeout,
+                                        artist,
+                                        title,
+                                        file_items[idx][0],  # file_path
+                                        timeout=5.0,
+                                    )
                                 )
 
                                 # Try to get result (non-blocking, with timeout)
@@ -236,9 +238,7 @@ class BatchSimpleAnalysisResource(Resource):
                 album_art = get_album_art(artist + " - " + title, file_path)
             return album_art
         except Exception as e:
-            logger.warning(
-                f"Album art fetching failed for '{artist} - {title}': {e}"
-            )
+            logger.warning(f"Album art fetching failed for '{artist} - {title}': {e}")
             return None
 
     def _validate_file_size(self, audio_file) -> bool:
@@ -260,9 +260,7 @@ class BatchSimpleAnalysisResource(Resource):
         audio_file.seek(0)  # Reset to beginning
 
         if file_size > max_size:
-            logger.warning(
-                f"File too large: {file_size} bytes (max: {max_size})"
-            )
+            logger.warning(f"File too large: {file_size} bytes (max: {max_size})")
             return False
 
         return True
