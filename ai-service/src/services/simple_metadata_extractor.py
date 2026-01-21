@@ -418,6 +418,7 @@ class SimpleMetadataExtractor:
                     "copyright": ["TCOP", "COPYRIGHT", "copyright"],
                     "description": ["COMM", "DESCRIPTION", "description"],
                     "synopsis": ["COMM", "SYNOPSIS", "synopsis"],
+                    "url": ["UFID", "URL", "url"],
                 }
                 id3_tags = {}
                 if audio_file is not None:

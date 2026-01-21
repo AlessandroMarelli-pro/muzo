@@ -11,7 +11,7 @@ import time
 from abc import ABC, abstractmethod
 from collections import deque
 from threading import Lock
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from loguru import logger
 
@@ -139,19 +139,53 @@ class BaseMetadataExtractor(ABC):
     # Common instructions for all providers
     INSTRUCTIONS = [
         "You are a music metadata expert and resolution agent.",
-        "Your task is NOT limited to parsing the filename.",
-        "You MUST resolve and enrich metadata well-known public music databases (e.g. Youtube, Discogs, Amazon, MusicBrainz, Spotify, Bandcamp, Apple Music, LastFM, Beatport, Tunebat, etc.).",
+        "Your task is to extract and enrich metadata for music tracks with comprehensive detail.",
+        "You MUST resolve and enrich metadata from well-known public music databases (e.g. Discogs, Amazon, MusicBrainz, Spotify, Bandcamp, Apple Music, LastFM, Beatport, etc.).",
         "and using your general music knowledge",
         "REQUIRED OUTPUT SCHEMA - You MUST return ONLY the fields provided in the schema.",
+        "",
+        "=== FEW-SHOT EXAMPLE ===",
+        "",
+        "### EXAMPLE INPUT:",
+        'Track: "The Funkees - Akula Owu Onyeara"',
+        "URL: https://www.discogs.com/release/12345678-The-Funkees-Akula-Owu-Onyeara",
+        "",
+        "### EXAMPLE OUTPUT (JSON):",
+        "{",
+        '  "artist": "The Funkees",',
+        '  "title": "Akula Owu Onyeara",',
+        '  "mix": null,',
+        '  "year": 1973,',
+        '  "country": "Nigeria",',
+        '  "label": "EMI Nigeria",',
+        '  "genre": ["Funk", "Afrobeat", "Soul"],',
+        '  "style": ["Nigerian Funk", "Afro-Funk", "Highlife Fusion"],',
+        '  "audioFeatures": {',
+        '    "vocals": "Ibo male vocals with call-and-response patterns",',
+        '    "atmosphere": ["Groovy", "Energetic", "Rhythmic", "Soulful", "Danceable"]',
+        "  },",
+        '  "context": {',
+        '    "background": "Formed in the late 1960s in Aba, Nigeria, The Funkees became a leading force in the post-Biafran war music scene. This track was recorded during their peak period at EMI Nigeria studios in Lagos, featuring the band\'s signature blend of American funk influences with traditional Igbo highlife rhythms. The song showcases the group\'s tight horn arrangements and infectious grooves that defined the Nigerian funk movement of the early 1970s.",',
+        '    "impact": "Akula Owu Onyeara has become a sought-after collector\'s item, with original pressings fetching high prices. The track has been sampled by contemporary producers and featured in compilations celebrating African funk. It represents a pivotal moment in Nigerian music history, bridging traditional highlife with modern funk sensibilities."',
+        "  },",
+        '  "tags": ["1970s", "Nigerian Funk", "Afrobeat", "Collector\'s Item", "EMI Nigeria"]',
+        "}",
+        "",
+        "=== END EXAMPLE ===",
+        "",
         "RULES:",
-        "- If ID3 tags are provided, use them as the PRIMARY source for artist, title, year, and genre.",
-        "- CRITICAL: If SOURCE LINKS are provided in the prompt (extracted from ID3 description), you MUST:",
-        "  1. Visit each link and extract metadata from the linked pages",
-        "  2. Use information from these links as the HIGHEST PRIORITY source",
-        "  3. Override any conflicting information from other sources with data from these links",
-        "  4. These links point directly to authoritative music databases (Discogs, Spotify, Bandcamp, etc.)",
-        "- The description field may contain direct links to music databases - these are the most reliable sources and should be prioritized above all other sources.",
-        "- Use the filename as a secondary identifier (artist, title, mix) if ID3 tags are not available.",
+        "- CRITICAL: If source URLs have been automatically fetched (via URL context tool), you MUST:",
+        "  1. Use information from the fetched URL content as the HIGHEST PRIORITY source",
+        "  2. Override any conflicting information from other sources with data from the fetched URLs",
+        "  3. These URLs point directly to authoritative music databases (Discogs, Spotify, Bandcamp, etc.)",
+        "  4. Extract EVERY detail from the fetched pages: recording dates, studio information, personnel, release history, cultural context",
+        "- If Google Search (grounding) is enabled, use it to find missing information:",
+        "  1. Search for auction prices on Discogs, mentions in music blogs (Vinyl Factory, Resident Advisor, etc.), archival radio playlists, reissue history",
+        "  2. Find cultural impact details, DJ sets, samples, compilation appearances that may not be in the provided URLs",
+        "  3. Use search results to enrich the 'context.impact' field with specific examples (e.g., 'Featured in Gilles Peterson's 2023 compilation', 'Sampled by producer X in 2020')",
+        "  4. Prioritize URL context content over search results when both are available",
+        "- If ID3 tags are provided (album, genre), use them as supplementary information but prioritize URL context if available.",
+        "- Extract artist, title, and mix from the track identifier provided in the prompt.",
         "- Populate all other fields using reliable, commonly accepted music metadata.",
         "- If multiple sources disagree, choose the most widely accepted value.",
         "- If no reliable public metadata exists, use null (or [] for arrays).",
@@ -159,31 +193,32 @@ class BaseMetadataExtractor(ABC):
         "- Prefer canonical release metadata (original year, primary format).",
         "- Return ONLY valid JSON matching the exact schema.",
         "- No explanations, no comments, no markdown, no extra fields.",
+        "- CRITICAL: Before generating the JSON, analyze the fetched URL content in silence to extract every detail. Then, populate the schema using the most comprehensive information discovered to ensure maximum richness in the context and audioFeatures fields.",
         "",
         "TECHNICAL AUDIO FEATURES (audioFeatures):",
-        "- BPM: Research the exact BPM from databases like Beatport, Tunebat, or Spotify. If not found, you may estimate based on genre conventions (e.g., House: 120-130 BPM, Techno: 130-140 BPM).",
-        "- Key: Research the musical key from databases. Use standard notation (e.g., 'C Minor', '8A' for Camelot wheel). If not found, return null.",
-        "- Vocals: Describe the vocals if present (e.g., 'Turkish female vocals', 'Instrumental', 'Chopped samples', 'English male vocals'). If no vocals, use 'Instrumental'.",
-        "- Atmosphere: Provide vibe keywords that describe the track's mood and texture (e.g., 'Hypnotic', 'Sparkly', 'Industrial', 'Ethereal', 'Dark').",
+        "- Vocals: Provide detailed description (e.g., 'Ibo male vocals with call-and-response patterns', 'Turkish female vocals with traditional instrumentation', 'Instrumental with sampled vocal chops'). If no vocals, use 'Instrumental'.",
+        "- Atmosphere: Provide 3-5 specific vibe keywords that describe the track's mood and texture (e.g., 'Hypnotic', 'Sparkly', 'Industrial', 'Ethereal', 'Dark', 'Groovy', 'Energetic').",
         "",
         "CULTURAL CONTEXT (context):",
-        "- Background: Research and provide historical or production context (e.g., 'Produced during lockdown', 'Debut EP on Public Possession', 'Remix of classic 1980s track').",
-        "- Impact: Describe cultural impact, chart success, or notable achievements (e.g., 'Established her residency at Panorama Bar', 'Reached #1 on Beatport Techno chart').",
+        "- Background: MUST be a comprehensive narrative of at least 150 characters. Include: recording studio, featured musicians, historical context of the era, production details, and cultural significance. Example: 'Formed in the late 1960s in Aba, Nigeria, The Funkees became a leading force...'",
+        "- Impact: MUST detail the cultural significance, rarity, reissue history, and specific mentions in modern music culture (e.g., charts, samples, or iconic DJ sets). Include collector value, compilation appearances, and contemporary influence.",
         "- For tracks with non-English vocals, identify the language and cultural background when relevant.",
         "",
         "CONFIDENCE POLICY:",
-        "- High confidence: widely documented releases → fill all known fields including audioFeatures and context.",
-        "- Medium confidence: known artist/track but limited documentation → fill genre/style/audioFeatures, leave context null if unsure.",
+        "- High confidence: widely documented releases → fill all known fields including audioFeatures and context with rich detail (150+ characters for context fields).",
+        "- Medium confidence: known artist/track but limited documentation → fill genre/style/audioFeatures, provide context if available but mark as less certain.",
         "- Low confidence: obscure or ambiguous tracks → only fill artist/title/mix, others null.",
         "",
-        "DESCRIPTION REQUIREMENT:",
-        "- If genre, style, or tags are populated, you MUST provide a description.",
-        "- The description should be a 2-3 sentence summary of the track's sound and meaning.",
-        "- Description should be written in a natural, informative style.",
-        "- If genre, style, and tags are all empty/null, description can be null.",
-    ]
+        "QUALITY STANDARDS:",
+        "- Context.background and context.impact must be comprehensive narratives, not single sentences.",
+        "- Extract maximum detail from URL sources - don't summarize, be specific.",
+        "- Match the depth and richness shown in the example above.",
+        "",    ]
 
-    TEMPERATURE = 0.1  # Strict temperature: 0-0.2 range for deterministic output
+    TEMPERATURE = 0  # Strict temperature: 0 for maximum determinism (stops hallucination)
+    TOP_P = 0.1  # Nucleus sampling: 0.1 forces model to stick to most statistically likely facts from fetched URLs
+    TOP_K = 1  # Top-k sampling: 1 = only most likely token (use with temp=0 for determinism)
+    SEED = None  # Fixed seed for reproducibility (set to integer for deterministic outputs)
 
     def __init__(
         self,
@@ -192,6 +227,10 @@ class BaseMetadataExtractor(ABC):
         max_requests_per_day: Optional[int] = None,
         max_retries: int = 3,
         initial_backoff: float = 1.0,
+        temperature: Optional[float] = None,
+        top_p: Optional[float] = None,
+        top_k: Optional[int] = None,
+        seed: Optional[int] = None,
     ):
         """
         Initialize the base metadata extractor.
@@ -202,10 +241,20 @@ class BaseMetadataExtractor(ABC):
             max_requests_per_day: Maximum requests per day (optional)
             max_retries: Maximum number of retries
             initial_backoff: Initial backoff time in seconds
+            temperature: Override temperature (0.0 for maximum determinism)
+            top_p: Override top_p (1.0 = all tokens, lower = more focused)
+            top_k: Override top_k (1 = only most likely token)
+            seed: Fixed seed for reproducibility (integer, None = random)
         """
         self.api_key = api_key
         self.MAX_RETRIES = max_retries
         self.INITIAL_BACKOFF = initial_backoff
+        
+        # Determinism parameters (can be overridden via constructor or env vars)
+        self.temperature = temperature if temperature is not None else self.TEMPERATURE
+        self.top_p = top_p if top_p is not None else self.TOP_P
+        self.top_k = top_k if top_k is not None else self.TOP_K
+        self.seed = seed if seed is not None else self.SEED
 
         # Initialize rate limiter
         self.rate_limiter = RateLimiter(
@@ -240,12 +289,13 @@ class BaseMetadataExtractor(ABC):
         pass
 
     @abstractmethod
-    def _make_api_call(self, user_content: str):
+    def _make_api_call(self, user_content: str, urls: Optional[List[str]] = None):
         """
         Make a single API call to the provider.
 
         Args:
             user_content: User message content
+            urls: Optional list of URLs to fetch using URL context tool
 
         Returns:
             API response object
@@ -268,6 +318,22 @@ class BaseMetadataExtractor(ABC):
 
         Raises:
             Exception: If parsing fails
+        """
+        pass
+
+    @abstractmethod
+    def _clean_filename_with_llm(self, filename: str) -> str:
+        """
+        Clean and normalize filename using LLM to extract core artist-title format.
+        
+        This removes extra metadata like country tags, years in parentheses, 
+        genre tags, etc., and normalizes the format to "Artist - Title".
+
+        Args:
+            filename: Raw filename to clean
+
+        Returns:
+            Cleaned filename in normalized format (e.g., "Artist - Title")
         """
         pass
 
@@ -304,12 +370,13 @@ class BaseMetadataExtractor(ABC):
             else 0,
         }
 
-    def _make_api_call_with_retry(self, user_content: str):
+    def _make_api_call_with_retry(self, user_content: str, urls: Optional[List[str]] = None):
         """
         Make API call with retry logic and rate limiting.
 
         Args:
             user_content: User message content
+            urls: Optional list of URLs to fetch using URL context tool
 
         Returns:
             API response object
@@ -331,7 +398,7 @@ class BaseMetadataExtractor(ABC):
                 self.rate_limiter.record_request()
 
                 # Make API call (provider-specific)
-                response = self._make_api_call(user_content)
+                response = self._make_api_call(user_content, urls)
 
                 # Success - return response
                 return response
@@ -413,6 +480,20 @@ class BaseMetadataExtractor(ABC):
             basename = os.path.basename(filename)
             filename_without_ext = os.path.splitext(basename)[0]
 
+            # Clean and normalize filename using LLM to extract core artist-title
+            # This ensures similar filenames produce consistent results
+            try:
+                cleaned_filename = self._clean_filename_with_llm(filename_without_ext)
+                logger.info(
+                    f"Filename cleaned: '{filename_without_ext}' -> '{cleaned_filename}'"
+                )
+                filename_without_ext = cleaned_filename
+            except Exception as e:
+                logger.warning(
+                    f"Failed to clean filename with LLM: {e}. Using original filename."
+                )
+                # Continue with original filename if cleaning fails
+
             # Extract ID3 tags if file_path is provided
             id3_tags = None
             if file_path:
@@ -431,12 +512,17 @@ class BaseMetadataExtractor(ABC):
                     )
 
             # Build filename message with ID3 tags if available
-            filename_content = self._build_filename_message(
+            filename_content, extracted_urls = self._build_filename_message(
                 filename_without_ext, id3_tags
             )
+            # Log URLs if found
+            if extracted_urls:
+                logger.info(
+                    f"Found {len(extracted_urls)} URL(s) in ID3 description. Using URL context tool to fetch content: {extracted_urls}"
+                )
 
             # Handle rate limiting and retries
-            response = self._make_api_call_with_retry(filename_content)
+            response = self._make_api_call_with_retry(filename_content, extracted_urls)
 
             # Parse response (provider-specific)
             metadata = self._parse_response(response)
@@ -476,7 +562,6 @@ class BaseMetadataExtractor(ABC):
             "style": metadata.get("style") or [],
             "audioFeatures": metadata.get("audioFeatures"),
             "context": metadata.get("context"),
-            "description": metadata.get("description"),
             "tags": metadata.get("tags") or [],
         }
 
@@ -511,8 +596,6 @@ class BaseMetadataExtractor(ABC):
         else:
             # Ensure audioFeatures is present (required field)
             normalized["audioFeatures"] = {
-                "bpm": None,
-                "key": None,
                 "vocals": None,
                 "atmosphere": [],
             }
@@ -521,42 +604,7 @@ class BaseMetadataExtractor(ABC):
         if normalized["context"] and not isinstance(normalized["context"], dict):
             normalized["context"] = None
 
-        # Ensure description is populated if genre, style, or tags are present
-        has_ai_metadata = (
-            normalized["genre"] or normalized["style"] or normalized["tags"]
-        )
-
-        if has_ai_metadata and not normalized["description"]:
-            # Generate a description based on available metadata
-            description_parts = []
-
-            if normalized["genre"]:
-                genre_str = ", ".join(
-                    normalized["genre"][:3]
-                )  # Limit to first 3 genres
-                description_parts.append(f"{genre_str} track")
-
-            if normalized["style"]:
-                style_str = ", ".join(
-                    normalized["style"][:2]
-                )  # Limit to first 2 styles
-                if description_parts:
-                    description_parts.append(f"with {style_str} influences")
-                else:
-                    description_parts.append(f"{style_str} style")
-
-            if normalized["tags"]:
-                # Use tags to add context
-                tag_str = ", ".join(normalized["tags"][:2])  # Limit to first 2 tags
-                if description_parts:
-                    description_parts.append(f"characterized by {tag_str}")
-
-            if description_parts:
-                normalized["description"] = ". ".join(description_parts) + "."
-                logger.info(
-                    f"Generated description from metadata: {normalized['description'][:100]}"
-                )
-
+     
         return normalized
 
     def _extract_urls_from_text(self, text: str) -> List[str]:
@@ -577,7 +625,7 @@ class BaseMetadataExtractor(ABC):
         urls.extend(urls_with_protocol)
 
         # Pattern to match URLs without protocol (common music database domains, excluding YouTube)
-        url_pattern_without_protocol = r'(?:discogs|spotify|bandcamp|musicbrainz)\.(?:com|org)/[^\s<>"{}|\\^`\[\]]+'
+        url_pattern_without_protocol = r'(?:discogs|bandcamp|tidal)\.(?:com|org)/[^\s<>"{}|\\^`\[\]]+'
         urls_without_protocol = re.findall(
             url_pattern_without_protocol,
             text,
@@ -601,7 +649,7 @@ class BaseMetadataExtractor(ABC):
 
     def _build_filename_message(
         self, filename: str, id3_tags: Optional[Dict[str, Any]] = None
-    ) -> str:
+    ) -> Tuple[str, List[str]]:
         """
         Build the dynamic filename message (only part that changes per request).
 
@@ -610,73 +658,89 @@ class BaseMetadataExtractor(ABC):
             id3_tags: Optional ID3 tags dictionary for more accurate metadata
 
         Returns:
-            Formatted prompt string with filename and ID3 tags if available
+            Tuple of (formatted prompt string, list of extracted URLs)
         """
         # Use "artist - title" format if both are available in id3_tags
         display_filename = filename
-        if id3_tags:
-            artist = id3_tags.get("artist", "").strip()
-            title = id3_tags.get("title", "").strip()
-            if artist and title:
-                display_filename = f"{artist} - {title}"
 
-        base_message = f'''Extract and enrich music metadata from this filename: "{display_filename}"'''
+        base_message = f'''Extract and enrich music metadata from this track: "{display_filename}"'''
 
-        # Extract and highlight links from description FIRST, before other ID3 tags
+        # Extract URLs from multiple ID3 tag fields: description, url, and purl
         extracted_urls = []
         if id3_tags:
+            # Extract URLs from description field
             description = id3_tags.get("description", "")
             if description:
-                extracted_urls = self._extract_urls_from_text(description)
+                urls_from_description = self._extract_urls_from_text(description)
+                extracted_urls.extend(urls_from_description)
+            
+            # Extract URLs from url field (if present)
+            # The url field might be a direct URL string or contain URLs in text
+            url_field = id3_tags.get("url", "")
+            if url_field:
+                url_str = str(url_field).strip()
+                # Check if it's already a valid URL (starts with http:// or https://)
+                if url_str.startswith(("http://", "https://")):
+                    # It's already a valid URL, add it directly
+                    extracted_urls.append(url_str)
+                else:
+                    # Extract URLs from the text (might contain multiple URLs or be embedded in text)
+                    urls_from_url = self._extract_urls_from_text(url_str)
+                    extracted_urls.extend(urls_from_url)
+            
+            # Extract URLs from purl field (ID3v2.4+ URL frame)
+            # purl is typically a direct URL, but we'll handle both cases
+            purl_field = id3_tags.get("purl", "")
+            if purl_field:
+                purl_str = str(purl_field).strip()
+                # Check if it's already a valid URL
+                if purl_str.startswith(("http://", "https://")):
+                    extracted_urls.append(purl_str)
+                else:
+                    urls_from_purl = self._extract_urls_from_text(purl_str)
+                    extracted_urls.extend(urls_from_purl)
+            
+            # Remove duplicates while preserving order
+            seen = set()
+            extracted_urls = [
+                url for url in extracted_urls 
+                if url not in seen and not seen.add(url)
+            ]
 
-        # If URLs found, present them prominently at the top
+        # If URLs are found, they MUST be explicitly mentioned in the prompt
+        # for Gemini's URL context tool to detect and fetch them
         if extracted_urls:
-            base_message += "\n\n" + "=" * 80
-            base_message += (
-                "\n🚨 CRITICAL: AUTHORITATIVE SOURCE LINKS FOUND IN ID3 DESCRIPTION"
-            )
-            base_message += "\n" + "=" * 80
-            base_message += "\n\nYou MUST visit and extract metadata from these URLs. These are the PRIMARY and HIGHEST PRIORITY sources."
-            base_message += "\nIgnore all other sources if these links provide conflicting information."
-            base_message += "\n\nSOURCE LINKS TO USE:\n"
+            base_message += "\n\nCRITICAL: Extract metadata from these authoritative source URLs (they will be automatically fetched):"
             for i, url in enumerate(extracted_urls, 1):
-                base_message += f"{i}. {url}\n"
-            base_message += "\n" + "=" * 80 + "\n"
+                base_message += f"\n{i}. {url}"
+            base_message += "\n\nThese URLs contain the PRIMARY and HIGHEST PRIORITY metadata. Use information from these fetched pages to override any conflicting data from other sources."
 
         # Add ID3 tag information if available
+        artist = display_filename.split(" - ")[0]
+        title = display_filename.split(" - ")[1]
         if id3_tags:
             id3_info_parts = []
-            if id3_tags.get("title"):
-                id3_info_parts.append(f"Title: {id3_tags.get('title')}")
-            if id3_tags.get("artist"):
-                id3_info_parts.append(f"Artist: {id3_tags.get('artist')}")
+            if artist:
+                id3_info_parts.append(f"Artist: {artist}")
+            if title:
+                id3_info_parts.append(f"Title: {title}")
             if id3_tags.get("album"):
                 id3_info_parts.append(f"Album: {id3_tags.get('album')}")
-            if id3_tags.get("year") or id3_tags.get("date"):
-                year = id3_tags.get("year") or id3_tags.get("date", "")
-                if year:
-                    id3_info_parts.append(f"Year: {year}")
             if id3_tags.get("genre"):
                 id3_info_parts.append(f"Genre: {id3_tags.get('genre')}")
-            if id3_tags.get("bpm"):
-                id3_info_parts.append(f"BPM: {id3_tags.get('bpm')}")
-            if id3_tags.get("description"):
-                id3_info_parts.append(f"Description: {id3_tags.get('description')}")
-
+         
             if id3_info_parts:
                 # More concise ID3 tag format
                 id3_section = "\n\nID3 tags: " + " | ".join(id3_info_parts)
                 base_message += id3_section
 
-            if extracted_urls:
-                base_message += "\n\n⚠️ REMINDER: Use the SOURCE LINKS listed above as your PRIMARY data source. Extract all metadata from those URLs first."
-            else:
+            if not extracted_urls:
                 base_message += "\n\nUse ID3 tags as PRIMARY source for artist, title, year, genre. Enrich with music databases."
 
-        base_message += "\n\nReturn ONLY a JSON object with these exact fields: artist, title, mix, year, country, label, genre, style, audioFeatures (with bpm, key, vocals, atmosphere), context (with background, impact), description, tags."
+        base_message += "\n\nReturn ONLY a JSON object with these exact fields: artist, title, mix, year, country, label, genre, style, audioFeatures (with vocals, atmosphere), context (with background, impact), tags."
         base_message += "\nDo NOT include any other fields like album, release_year, track_number, format, duration, albumArt, credits, availability, etc."
 
-        return base_message
+        return base_message, extracted_urls
 
     def _clean_json_response(self, content: str) -> str:
         """
@@ -725,12 +789,9 @@ class BaseMetadataExtractor(ABC):
             "genre": [],
             "style": [],
             "audioFeatures": {
-                "bpm": None,
-                "key": None,
                 "vocals": None,
                 "atmosphere": [],
             },
             "context": None,
-            "description": None,
             "tags": [],
         }

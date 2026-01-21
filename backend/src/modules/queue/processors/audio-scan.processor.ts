@@ -65,6 +65,7 @@ export class AudioScanProcessor extends WorkerHost {
       skipClassification,
       skipImageSearch,
       skipAIMetadata,
+      forced
     } = job.data;
 
     this.logger.log(
@@ -93,7 +94,7 @@ export class AudioScanProcessor extends WorkerHost {
       ) {
         if (
           existingTrack.trackGenres.length !== 0 &&
-          existingTrack.trackSubgenres.length !== 0
+          existingTrack.trackSubgenres.length !== 0 && !forced
         ) {
           this.logger.log(`Track already analyzed: ${fileName}`);
           return;

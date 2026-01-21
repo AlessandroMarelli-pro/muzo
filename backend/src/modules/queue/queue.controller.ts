@@ -322,22 +322,10 @@ export class QueueController {
           where: {
             OR: [
               {
-                trackGenres: {
-                  none: {},
-                },
+                id: '039d50a9-ca8b-4382-9dcf-4a860a919f47',
               },
               {
-                trackSubgenres: {
-                  none: {},
-                },
-              },
-              {
-                imageSearches: {
-                  none: {},
-                },
-              },
-              {
-                id: 'edf9418a-c2da-4d8a-b600-b92f4a073922',
+                id: 'c57a6c3e-14b7-45d7-8a0f-a5bdfef06390',
               },
             ],
           },
@@ -355,7 +343,7 @@ export class QueueController {
           tracksScheduled: 0,
         };
       }
-      await this.queueService.scheduleScanForMissingData(filteredTracks, false);
+      await this.queueService.scheduleScanForMissingData(filteredTracks, false, true);
       /* await this.queueService.scheduleBatchAudioScans(
         filteredTracks.map((track) => ({
           trackId: track.id,
