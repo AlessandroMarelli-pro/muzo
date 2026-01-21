@@ -350,6 +350,8 @@ export class QueueController {
           tracksScheduled: 0,
         };
       }
+      //await this.queueService.scheduleScanForMissingData(filteredTracks, false, true);
+
       await this.queueService.scheduleBatchScanForMissingData(filteredTracks, false, true);
       /* await this.queueService.scheduleBatchAudioScans(
         filteredTracks.map((track) => ({

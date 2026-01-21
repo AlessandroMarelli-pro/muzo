@@ -678,7 +678,7 @@ export class AiIntegrationService {
           timeout: this.aiServiceConfig.timeout * audioFilePaths.length, // Increase timeout for batch
         },
       );
-
+      console.log(JSON.stringify(response.data, null, 2));
       this.logger.log(
         `Batch audio analysis completed: ${response.data.successful}/${response.data.total_files} successful`,
       );
