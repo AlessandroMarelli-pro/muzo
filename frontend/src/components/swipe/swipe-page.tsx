@@ -143,6 +143,7 @@ export function SwipePage() {
 
   const handleDislike = useCallback(async () => {
     if (!track) return;
+    const wasPlaying = isPlaying && currentTrack?.id === track.id;
 
     // Trigger swipe animation immediately
     setIsAnimating(true);
@@ -159,6 +160,9 @@ export function SwipePage() {
     // Wait for both animation and mutation to complete
     Promise.all([mutationPromise, animationPromise])
       .then(() => {
+        if (wasPlaying) {
+          setShouldAutoPlay(true);
+        }
         // Reset animation and trigger refetch when both are complete
         setTriggerSwipeDirection(null);
         setIsAnimating(false);

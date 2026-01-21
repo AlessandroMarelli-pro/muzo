@@ -34,9 +34,18 @@ class GeminiMetadataExtractor(BaseMetadataExtractor):
     # Model configuration - using Gemini 2.5 Flash for speed and knowledge
     # Can be upgraded to gemini-3-flash for better results (industry standard for metadata resolution)
     # Set GEMINI_MODEL environment variable to override (e.g., "gemini-3-flash")
+    # Note: For context caching, use versioned model names (e.g., "gemini-2.5-flash-001")
     MODEL = os.getenv("GEMINI_MODEL", "gemini-3-flash-preview")
+    
+    # Context caching configuration
+    # Minimum token requirements for context caching:
+    # - Flash models: 2,048 tokens
+    # - Pro models: 32,768 tokens
+    CACHE_MIN_TOKENS_FLASH = 2048
+    CACHE_MIN_TOKENS_PRO = 32768
 
     # Response schema matching the expected output structure
+
     # Using Gemini's schema format (similar to JSON Schema but with specific types)
     # Updated with audioFeatures and context for detailed insights
     RESPONSE_SCHEMA = {
@@ -87,6 +96,20 @@ class GeminiMetadataExtractor(BaseMetadataExtractor):
         },
         "required": ["artist", "title", "genre", "style", "audioFeatures"],
     }
+    
+    # Batch response schema - array of metadata objects
+    # This allows processing multiple tracks in a single API call with shared system instruction
+    BATCH_RESPONSE_SCHEMA = {
+        "type": "OBJECT",
+        "properties": {
+            "results": {
+                "type": "ARRAY",
+                "items": RESPONSE_SCHEMA,
+                "description": "Array of metadata objects, one for each track in the same order as input",
+            }
+        },
+        "required": ["results"],
+    }
 
     def __init__(self, api_key: Optional[str] = None):
         """
@@ -119,7 +142,7 @@ class GeminiMetadataExtractor(BaseMetadataExtractor):
         # Google Search (grounding) configuration
         # Enable by default to find missing cultural context and impact details
         # Set GEMINI_ENABLE_GOOGLE_SEARCH=false to disable
-        enable_google_search = os.getenv("GEMINI_ENABLE_GOOGLE_SEARCH", "true").lower() == "true"
+        enable_google_search = os.getenv("GEMINI_ENABLE_GOOGLE_SEARCH", "false").lower() == "true"
 
         # Determinism parameters from environment (for maximum consistency)
         temperature = (
@@ -158,6 +181,180 @@ class GeminiMetadataExtractor(BaseMetadataExtractor):
         
         # Store Google Search setting after initialization
         self.enable_google_search = enable_google_search
+        
+        # Context caching configuration
+        self.enable_context_cache = os.getenv("GEMINI_ENABLE_CONTEXT_CACHE", "true").lower() == "true"
+        self.cache_ttl_seconds = int(os.getenv("GEMINI_CACHE_TTL_SECONDS", "3600"))  # Default: 1 hour
+        self._cached_content_name: Optional[str] = None
+        
+        # Initialize context cache if enabled
+        if self.enable_context_cache:
+            self._ensure_context_cache()
+
+    def _get_model_for_caching(self) -> str:
+        """
+        Get the model name for context caching.
+        
+        According to the official Gemini API docs, preview models (like gemini-3-flash-preview) 
+        can be used directly without version suffixes. Stable models may need version suffixes.
+        
+        Returns:
+            Model name suitable for context caching
+        """
+        model = self.MODEL.lower()
+        
+        # Preview models (containing "preview") should be used as-is - they don't use version suffixes
+        if "preview" in model:
+            logger.debug(f"Using preview model '{self.MODEL}' as-is for context caching")
+            return self.MODEL
+        
+        # If already versioned (contains -001, -002, etc.), use as-is
+        if "-001" in model or "-002" in model or "-003" in model:
+            return self.MODEL
+        
+        # For stable models without version, try to use versioned equivalents
+        model_mapping = {
+            "gemini-2.5-flash": "gemini-2.5-flash-001",
+            "gemini-2.5-pro": "gemini-2.5-pro-001",
+            "gemini-2.0-flash": "gemini-2.0-flash-001",
+        }
+        
+        # Try to find a mapping for stable models
+        for key, versioned in model_mapping.items():
+            if key in model:
+                logger.info(f"Mapping stable model '{self.MODEL}' to versioned model '{versioned}' for context caching")
+                return versioned
+        
+        # If no mapping found, use as-is (might work for some models)
+        logger.info(f"Using model '{self.MODEL}' as-is for context caching")
+        return self.MODEL
+    
+    def _estimate_token_count(self, text: str) -> int:
+        """
+        Estimate token count for a text string.
+        
+        Uses a simple approximation: ~4 characters per token for English text.
+        This is a rough estimate; actual tokenization may vary.
+        
+        Args:
+            text: Text to estimate tokens for
+            
+        Returns:
+            Estimated token count
+        """
+        # Rough approximation: 4 characters per token
+        # This is conservative; actual tokenization may be more efficient
+        return len(text) // 4
+    
+    def _pad_system_instruction_if_needed(self, system_instruction: str) -> str:
+        """
+        Pad system instruction to meet minimum token requirements for context caching.
+        
+        Args:
+            system_instruction: Original system instruction
+            
+        Returns:
+            Padded system instruction if needed, otherwise original
+        """
+        model = self._get_model_for_caching().lower()
+        
+        # Determine minimum token requirement based on model type
+        if "pro" in model:
+            min_tokens = self.CACHE_MIN_TOKENS_PRO
+        else:
+            min_tokens = self.CACHE_MIN_TOKENS_FLASH
+        
+        current_tokens = self._estimate_token_count(system_instruction)
+        
+        if current_tokens >= min_tokens:
+            logger.debug(f"System instruction has {current_tokens} tokens (>= {min_tokens} required)")
+            return system_instruction
+        
+        # Need to pad - add additional few-shot examples or instructions
+        padding_needed = min_tokens - current_tokens
+        logger.info(
+            f"System instruction has {current_tokens} tokens, but {min_tokens} required for caching. "
+            f"Padding with {padding_needed} additional tokens."
+        )
+        
+        # Add padding with additional context about metadata extraction
+        padding_text = """
+
+ADDITIONAL CONTEXT FOR METADATA EXTRACTION:
+- Always prioritize accuracy over speed when extracting metadata
+- Cross-reference multiple sources when available (URLs, ID3 tags, filenames)
+- For rare or obscure tracks, use Google Search to find additional cultural context
+- Ensure all date fields (year) are accurate and verified
+- Genre and style tags should be specific and culturally appropriate
+- Background and impact narratives should be comprehensive and well-researched
+- Audio features should capture the unique characteristics of each track
+- When URLs are provided, extract maximum detail from those authoritative sources
+"""
+        
+        # Add padding until we meet the requirement
+        padded = system_instruction
+        while self._estimate_token_count(padded) < min_tokens:
+            padded += padding_text
+        
+        final_tokens = self._estimate_token_count(padded)
+        logger.info(f"Padded system instruction to {final_tokens} tokens (target: {min_tokens})")
+        
+        return padded
+    
+    def _ensure_context_cache(self) -> None:
+        """
+        Ensure context cache exists for system instructions.
+        
+        Creates a cached content with the system instruction if it doesn't exist
+        or has expired. This enables 90% discount on cached tokens.
+        """
+        if not self.enable_context_cache:
+            logger.debug("Context caching is disabled")
+            return
+        
+        if not self._is_available():
+            logger.warning("Gemini client not available, cannot create context cache")
+            return
+        
+        try:
+            # Build system instruction
+            system_instruction = "\n".join(self.INSTRUCTIONS)
+            
+            # Pad if needed to meet minimum token requirements
+            system_instruction = self._pad_system_instruction_if_needed(system_instruction)
+            
+            # Get versioned model name for caching
+            model_for_caching = self._get_model_for_caching()
+            
+            # Create cached content
+            logger.info(f"Creating context cache for model '{model_for_caching}' (TTL: {self.cache_ttl_seconds}s)")
+            
+            # Create cached content according to official API documentation
+            # Reference: https://ai.google.dev/gemini-api/docs/caching
+            # model is passed to caches.create(), not to CreateCachedContentConfig
+            cache_config = types.CreateCachedContentConfig(
+                system_instruction=system_instruction,
+                ttl=f"{self.cache_ttl_seconds}s",
+            )
+            
+            cached_content = self.client.caches.create(
+                model=model_for_caching,
+                config=cache_config
+            )
+            self._cached_content_name = cached_content.name
+            
+            logger.info(
+                f"Context cache created successfully: {self._cached_content_name} "
+                f"(90% discount on cached tokens)"
+            )
+            
+        except Exception as e:
+            logger.warning(
+                f"Failed to create context cache: {e}. "
+                f"Falling back to standard API calls without caching."
+            )
+            self.enable_context_cache = False
+            self._cached_content_name = None
 
     def _initialize_client(self):
         """Initialize the Gemini API client."""
@@ -247,6 +444,79 @@ Return ONLY the cleaned filename, nothing else. No explanations, no markdown, ju
             logger.warning(f"Failed to clean filename with LLM: {e}. Using original filename.")
             return filename
 
+    def _clean_filenames_batch(self, filenames: List[str]) -> List[str]:
+        """
+        Clean and normalize multiple filenames in a single API call for efficiency.
+        
+        This batches filename cleaning to reduce API calls and improve throughput.
+
+        Args:
+            filenames: List of raw filenames to clean
+
+        Returns:
+            List of cleaned filenames in normalized format
+        """
+        if not self._is_available() or not filenames:
+            return filenames
+
+        try:
+            # Build batch cleaning prompt
+            filenames_list = "\n".join([f"{i+1}. {fn}" for i, fn in enumerate(filenames)])
+            batch_prompt = f"""Clean and normalize these music filenames to extract only the core artist and title information.
+
+Remove from each:
+- Country tags in brackets like [nigeria], [uk], [us]
+- Years in parentheses like (1979), (1985)
+- Genre/style tags like "soul", "funk", "electronic" when they appear as separate tags
+- Extra metadata, labels, or identifiers
+
+Keep:
+- Artist name (normalize case to Title Case)
+- Title name (normalize case to Title Case)
+- Mix names in parentheses if they're part of the title (e.g., "Remix", "Extended Mix")
+
+Format each output as: "Artist - Title" or "Artist - Title (Mix Name)"
+
+Examples:
+- "t-fire - say a prayer [nigeria] soul (1979)" -> "T-Fire - Say A Prayer"
+- "T-Fire - Say A Prayer" -> "T-Fire - Say A Prayer"
+- "artist - title (remix) [2020]" -> "Artist - Title (Remix)"
+
+Filenames to clean:
+{filenames_list}
+
+Return ONLY a JSON array of cleaned filenames in the same order, nothing else. Format: ["Artist - Title", "Artist2 - Title2", ...]"""
+            
+            response = self.client.models.generate_content(
+                model=self.MODEL,
+                contents=batch_prompt,
+                config=types.GenerateContentConfig(
+                    temperature=0.0,  # Deterministic output
+                    response_mime_type="application/json",
+                ),
+            )
+            
+            # Parse batch response
+            if hasattr(response, "text") and response.text:
+                import json
+                try:
+                    cleaned_list = json.loads(response.text.strip())
+                    if isinstance(cleaned_list, list) and len(cleaned_list) == len(filenames):
+                        return cleaned_list
+                    else:
+                        logger.warning("Batch cleaning returned unexpected format, falling back to individual cleaning")
+                        return [self._clean_filename_with_llm(fn) for fn in filenames]
+                except json.JSONDecodeError:
+                    logger.warning("Failed to parse batch cleaning response, falling back to individual cleaning")
+                    return [self._clean_filename_with_llm(fn) for fn in filenames]
+            else:
+                logger.warning("Empty response from batch filename cleaning, falling back to individual cleaning")
+                return [self._clean_filename_with_llm(fn) for fn in filenames]
+                
+        except Exception as e:
+            logger.warning(f"Failed to clean filenames in batch: {e}. Falling back to individual cleaning.")
+            return [self._clean_filename_with_llm(fn) for fn in filenames]
+
     def _make_api_call(self, user_content: str, urls: Optional[List[str]] = None):
         """
         Make a single API call to Gemini.
@@ -261,33 +531,21 @@ Return ONLY the cleaned filename, nothing else. No explanations, no markdown, ju
         Raises:
             Exception: If API call fails
         """
-        # Build system instruction
-        system_instruction = "\n".join(self.INSTRUCTIONS)
-        
-        # Prepare tools - enable URL context and optionally Google Search
+        # URLs are now included in the user_content prompt instead of using url_context tool
+        # This allows us to use cached content (90% discount) since no tools are needed
         tools = []
         if urls and len(urls) > 0:
-            # Limit to 20 URLs (Gemini's maximum per request)
-            urls_to_use = urls[:20]
+            urls_to_use = urls[:20]  # Limit to 20 URLs for display
             if len(urls) > 20:
-                logger.warning(
-                    f"Found {len(urls)} URLs, but Gemini URL context tool supports max 20. Using first 20 URLs."
+                logger.info(
+                    f"Found {len(urls)} URLs, using first 20 in prompt. "
+                    f"URLs are included in user_content for LLM to retrieve data from."
                 )
-            
-            # Enable URL context tool (primary source - deep dive into specific pages)
-            tools.append({"url_context": {}})
-            logger.info(f"Enabling URL context tool for {len(urls_to_use)} URL(s): {urls_to_use}")
-            
-            # Enable Google Search (grounding) to find missing information
-            # This acts as a "scout" to find cultural impact, reissue history, samples, etc.
-            if self.enable_google_search:
-                try:
-                    tools.append({"google_search": {}})
-                    logger.info("Enabling Google Search (grounding) to find additional cultural context and impact details")
-                except Exception as e:
-                    logger.warning(f"Failed to enable Google Search tool: {e}. Continuing with URL context only.")
-        elif self.enable_google_search:
-            # Enable Google Search even without URLs to find information
+            else:
+                logger.debug(f"URLs included in prompt for LLM retrieval: {len(urls_to_use)} URL(s)")
+        
+        # Google Search is disabled by default - can be enabled if needed
+        if self.enable_google_search:
             try:
                 tools.append({"google_search": {}})
                 logger.info("Enabling Google Search (grounding) to find track information")
@@ -295,12 +553,45 @@ Return ONLY the cleaned filename, nothing else. No explanations, no markdown, ju
                 logger.warning(f"Failed to enable Google Search tool: {e}")
         # Make API call with structured outputs using Gemini's native SDK
         # Configure for maximum determinism
+        # Use context caching if available (90% discount on cached tokens)
         config = types.GenerateContentConfig(
-            system_instruction=system_instruction,
             response_mime_type="application/json",
             response_schema=self.RESPONSE_SCHEMA,
             temperature=self.temperature,
         )
+        
+        # Use cached content if available, but only if no tools are needed
+        # Note: Cached content cannot be used with tools/tool_config according to API
+        # When tools are needed, we must use system_instruction instead
+        use_cached_content = (
+            self.enable_context_cache 
+            and self._cached_content_name 
+            and not tools  # Cannot use cached content with tools
+        )
+        
+        if use_cached_content:
+            try:
+                config.cached_content = self._cached_content_name
+                logger.debug(f"Using context cache: {self._cached_content_name}")
+            except Exception as e:
+                # Cache may have expired, try to recreate
+                logger.warning(f"Failed to use context cache: {e}. Attempting to recreate...")
+                self._ensure_context_cache()
+                if self._cached_content_name and not tools:
+                    config.cached_content = self._cached_content_name
+                else:
+                    # Fallback to system instruction if cache recreation failed or tools needed
+                    system_instruction = "\n".join(self.INSTRUCTIONS)
+                    config.system_instruction = system_instruction
+                    logger.debug("Using system instruction (context cache unavailable or tools needed)")
+        else:
+            # Use system instruction (either caching disabled, no cache, or tools needed)
+            system_instruction = "\n".join(self.INSTRUCTIONS)
+            config.system_instruction = system_instruction
+            if tools:
+                logger.debug("Using system instruction (tools required - cannot use cached content)")
+            else:
+                logger.debug("Using system instruction (context cache not available)")
         
         # Add optional determinism parameters if supported by Gemini SDK
         # Note: These may not be available in all Gemini API versions
@@ -324,18 +615,43 @@ Return ONLY the cleaned filename, nothing else. No explanations, no markdown, ju
             # Parameters not supported in this SDK version - log and continue
             logger.debug(f"Some determinism parameters not available: {e}")
         
-        # Add tools if URL context is enabled
+        # Add tools if URL context is enabled (only when not using cached content)
         if tools:
             config.tools = tools
-        print(user_content)
-        print('----')
-        print(system_instruction)
+        
         response = self.client.models.generate_content(
             model=self.MODEL,
             contents=user_content,
             config=config,
         )
       
+        # Log context cache usage metadata
+        if hasattr(response, "usage_metadata") and response.usage_metadata:
+            usage = response.usage_metadata
+            # Check for cached token usage (indicates context cache was used)
+            cached_token_count = getattr(usage, "cached_content_token_count", 0)
+            prompt_token_count = getattr(usage, "prompt_token_count", 0)
+            total_token_count = getattr(usage, "total_token_count", 0)
+            
+            if cached_token_count > 0:
+                cache_percentage = (cached_token_count / prompt_token_count * 100) if prompt_token_count > 0 else 0
+                logger.info(
+                    f"✅ Context cache used: {cached_token_count:,} cached tokens "
+                    f"({cache_percentage:.1f}% of prompt tokens) - 90% discount applied"
+                )
+                logger.debug(
+                    f"Token breakdown - Cached: {cached_token_count:,}, "
+                    f"Non-cached prompt: {prompt_token_count - cached_token_count:,}, "
+                    f"Output: {total_token_count - prompt_token_count:,}, "
+                    f"Total: {total_token_count:,}"
+                )
+            else:
+                logger.debug(
+                    f"Context cache not used - Prompt tokens: {prompt_token_count:,}, "
+                    f"Output tokens: {total_token_count - prompt_token_count:,}, "
+                    f"Total: {total_token_count:,}"
+                )
+        
         # Log tool usage metadata if available (for debugging)
         if hasattr(response, "candidates") and response.candidates:
             candidate = response.candidates[0]
@@ -377,6 +693,216 @@ Return ONLY the cleaned filename, nothing else. No explanations, no markdown, ju
                     logger.debug("Google Search metadata not found (may not have performed searches)")
         
         return response
+
+    def _make_batch_api_call(
+        self, user_content: str, urls: Optional[List[str]] = None, num_items: int = 1
+    ):
+        """
+        Make a single API call to Gemini for multiple items (batch processing).
+        
+        This sends all items in one request with a shared system instruction,
+        reducing token usage and API calls significantly.
+
+        Args:
+            user_content: Combined user message content for all items
+            urls: Optional list of URLs to fetch using URL context tool
+            num_items: Number of items being processed (for schema validation)
+
+        Returns:
+            Gemini API response
+
+        Raises:
+            Exception: If API call fails
+        """
+        # URLs are now included in the user_content prompt instead of using url_context tool
+        # This allows us to use cached content (90% discount) since no tools are needed
+        tools = []
+        if urls and len(urls) > 0:
+            urls_to_use = list(set(urls))[:20]  # Remove duplicates, limit to 20 for display
+            if len(set(urls)) > 20:
+                logger.info(
+                    f"Found {len(set(urls))} unique URLs, using first 20 in prompt. "
+                    f"URLs are included in user_content for LLM to retrieve data from."
+                )
+            else:
+                logger.debug(f"URLs included in prompt for batch LLM retrieval: {len(urls_to_use)} unique URL(s)")
+        
+        # Google Search is disabled by default - can be enabled if needed
+        if self.enable_google_search:
+            try:
+                tools.append({"google_search": {}})
+                logger.info("Enabling Google Search (grounding) for batch request")
+            except Exception as e:
+                logger.warning(f"Failed to enable Google Search tool: {e}")
+        
+        # Use batch schema for array response
+        # Use context caching if available (90% discount on cached tokens)
+        config = types.GenerateContentConfig(
+            response_mime_type="application/json",
+            response_schema=self.BATCH_RESPONSE_SCHEMA,
+            temperature=self.temperature,
+        )
+        
+        # Use cached content if available, but only if no tools are needed
+        # Note: Cached content cannot be used with tools/tool_config according to API
+        use_cached_content = (
+            self.enable_context_cache 
+            and self._cached_content_name 
+            and not tools  # Cannot use cached content with tools
+        )
+        
+        if use_cached_content:
+            try:
+                config.cached_content = self._cached_content_name
+                logger.debug(f"Using context cache for batch: {self._cached_content_name}")
+            except Exception as e:
+                # Cache may have expired, try to recreate
+                logger.warning(f"Failed to use context cache for batch: {e}. Attempting to recreate...")
+                self._ensure_context_cache()
+                if self._cached_content_name and not tools:
+                    config.cached_content = self._cached_content_name
+                else:
+                    # Fallback to system instruction if cache recreation failed or tools needed
+                    system_instruction = "\n".join(self.INSTRUCTIONS)
+                    config.system_instruction = system_instruction
+                    logger.debug("Using system instruction for batch (context cache unavailable or tools needed)")
+        else:
+            # Use system instruction (either caching disabled, no cache, or tools needed)
+            system_instruction = "\n".join(self.INSTRUCTIONS)
+            config.system_instruction = system_instruction
+            if tools:
+                logger.debug("Using system instruction for batch (tools required - cannot use cached content)")
+            else:
+                logger.debug("Using system instruction for batch (context cache not available)")
+        
+        # Add optional determinism parameters
+        try:
+            if hasattr(config, "top_p") and self.top_p is not None:
+                config.top_p = self.top_p
+            if hasattr(config, "top_k") and self.top_k is not None:
+                config.top_k = self.top_k
+            if hasattr(config, "seed") and self.seed is not None:
+                config.seed = self.seed
+        except (AttributeError, TypeError) as e:
+            logger.debug(f"Some determinism parameters not available: {e}")
+        
+        # Add tools if enabled
+        if tools:
+            config.tools = tools
+        
+        logger.info(f"Making batch API call for {num_items} items with shared system instruction")
+        response = self.client.models.generate_content(
+            model=self.MODEL,
+            contents=user_content,
+            config=config,
+        )
+        
+        # Log context cache usage metadata
+        if hasattr(response, "usage_metadata") and response.usage_metadata:
+            usage = response.usage_metadata
+            # Check for cached token usage (indicates context cache was used)
+            cached_token_count = getattr(usage, "cached_content_token_count", 0)
+            prompt_token_count = getattr(usage, "prompt_token_count", 0)
+            total_token_count = getattr(usage, "total_token_count", 0)
+            
+            if cached_token_count > 0:
+                cache_percentage = (cached_token_count / prompt_token_count * 100) if prompt_token_count > 0 else 0
+                logger.info(
+                    f"✅ Context cache used for batch: {cached_token_count:,} cached tokens "
+                    f"({cache_percentage:.1f}% of prompt tokens) - 90% discount applied"
+                )
+                logger.debug(
+                    f"Batch token breakdown - Cached: {cached_token_count:,}, "
+                    f"Non-cached prompt: {prompt_token_count - cached_token_count:,}, "
+                    f"Output: {total_token_count - prompt_token_count:,}, "
+                    f"Total: {total_token_count:,}"
+                )
+            else:
+                logger.debug(
+                    f"Context cache not used for batch - Prompt tokens: {prompt_token_count:,}, "
+                    f"Output tokens: {total_token_count - prompt_token_count:,}, "
+                    f"Total: {total_token_count:,}"
+                )
+        
+        # Log tool usage metadata
+        if hasattr(response, "candidates") and response.candidates:
+            candidate = response.candidates[0]
+            
+            # Log URL context metadata
+            if urls and hasattr(candidate, "url_context_metadata"):
+                url_metadata = candidate.url_context_metadata
+                if url_metadata and hasattr(url_metadata, "url_metadata"):
+                    logger.info(f"URL context: {len(url_metadata.url_metadata)} URLs fetched")
+            
+            # Log Google Search metadata
+            if self.enable_google_search and hasattr(candidate, "grounding_metadata"):
+                grounding_metadata = candidate.grounding_metadata
+                if grounding_metadata and hasattr(grounding_metadata, "grounding_chunks"):
+                    chunks = grounding_metadata.grounding_chunks
+                    logger.info(f"Google Search: {len(chunks) if chunks else 0} result chunks found")
+        
+        return response
+    
+    def _parse_batch_response(self, response, expected_count: int) -> List[Dict[str, Any]]:
+        """
+        Parse batch API response and extract array of metadata.
+        
+        Args:
+            response: Gemini API response object
+            expected_count: Expected number of items in the batch
+            
+        Returns:
+            List of metadata dictionaries
+        """
+        # Parse response - Gemini returns parsed object directly when using response_schema
+        if hasattr(response, "parsed") and response.parsed:
+            batch_data = response.parsed
+            if isinstance(batch_data, dict) and "results" in batch_data:
+                results = batch_data["results"]
+                if isinstance(results, list):
+                    if len(results) == expected_count:
+                        logger.info(f"Successfully parsed batch response: {len(results)} items")
+                        return results
+                    else:
+                        logger.warning(
+                            f"Batch response has {len(results)} items, expected {expected_count}. "
+                            "Padding or truncating as needed."
+                        )
+                        # Pad with empty metadata if needed
+                        while len(results) < expected_count:
+                            results.append(self._get_empty_metadata())
+                        return results[:expected_count]
+                else:
+                    logger.error("Batch response 'results' is not a list")
+                    return [self._get_empty_metadata()] * expected_count
+            else:
+                logger.error("Batch response missing 'results' field")
+                return [self._get_empty_metadata()] * expected_count
+        elif hasattr(response, "text") and response.text:
+            # Fallback: parse JSON from text
+            try:
+                cleaned_content = self._clean_json_response(response.text)
+                batch_data = json.loads(cleaned_content)
+                if isinstance(batch_data, dict) and "results" in batch_data:
+                    results = batch_data["results"]
+                    if isinstance(results, list):
+                        # Pad or truncate to expected count
+                        while len(results) < expected_count:
+                            results.append(self._get_empty_metadata())
+                        return results[:expected_count]
+                # If response is a list directly (old format), wrap it
+                if isinstance(batch_data, list):
+                    while len(batch_data) < expected_count:
+                        batch_data.append(self._get_empty_metadata())
+                    return batch_data[:expected_count]
+                logger.error("Unexpected batch response format")
+                return [self._get_empty_metadata()] * expected_count
+            except json.JSONDecodeError as e:
+                logger.error(f"Failed to parse batch JSON response: {e}")
+                return [self._get_empty_metadata()] * expected_count
+        else:
+            logger.warning("Empty batch response from Gemini")
+            return [self._get_empty_metadata()] * expected_count
 
     def _parse_response(self, response) -> Dict[str, Any]:
         """
