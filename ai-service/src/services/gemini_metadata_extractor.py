@@ -44,6 +44,48 @@ class GeminiMetadataExtractor(BaseMetadataExtractor):
     _class_cached_tools: List[str] = []
     _class_cache_lock = threading.Lock()
 
+    # Separate cache for filename cleaning
+    _class_filename_cleaning_cache_name: Optional[str] = None
+    _class_filename_cleaning_cache_lock = threading.Lock()
+
+    # Filename cleaning system instructions
+    FILENAME_CLEANING_INSTRUCTIONS = [
+        "Clean and normalize music filenames to extract only the core artist and title information.",
+        "",
+        "Remove from each:",
+        "- Country tags in brackets like [nigeria], [uk], [us]",
+        "- Years in parentheses like (1979), (1985)",
+        '- Genre/style tags like "soul", "funk", "electronic" when they appear as separate tags',
+        "- Extra metadata, labels, or identifiers",
+        "",
+        "Keep:",
+        "- Artist name (normalize case to Title Case)",
+        "- Title name (normalize case to Title Case)",
+        '- Mix names in parentheses if they\'re part of the title (e.g., "Remix", "Extended Mix")',
+        "",
+        "IMPORTANT RULES:",
+        '1. Always convert separators to " - " (dash with spaces). Handle these separators:',
+        '   - " - " (already correct)',
+        '   - ":" (colon) -> convert to " - "',
+        '   - " – " (en dash) -> convert to " - "',
+        '   - " — " (em dash) -> convert to " - "',
+        '   - Any other separator -> convert to " - "',
+        "",
+        '2. If a filename only contains a title (no artist), use "Unknown Artist - Filename Title" format',
+        "",
+        '3. Format each output as: "Artist - Title" or "Artist - Title (Mix Name)"',
+        "   - NEVER return just a title without an artist",
+        '   - If artist cannot be determined, use "Unknown Artist"',
+        "",
+        "Examples:",
+        '- "t-fire - say a prayer [nigeria] soul (1979)" -> "T-Fire - Say A Prayer"',
+        '- "T-Fire - Say A Prayer" -> "T-Fire - Say A Prayer"',
+        '- "artist - title (remix) [2020]" -> "Artist - Title (Remix)"',
+        '- \'Jessie Allen Cooper: "Soft Wave"\' -> "Jessie Allen Cooper - Soft Wave"',
+        '- "Artist: Title" -> "Artist - Title"',
+        '- "Song Title.mp3" (no ID3 tags) -> "Unknown Artist - Song Title"',
+    ]
+
     # Context caching configuration
     # Minimum token requirements for context caching:
     # - Flash models: 2,048 tokens
@@ -195,6 +237,8 @@ class GeminiMetadataExtractor(BaseMetadataExtractor):
         )  # Default: 1 hour
         # Cache name prefix for deterministic naming (optional, can be set via env var)
         self._cache_name_prefix = os.getenv("GEMINI_CACHE_NAME_PREFIX", None)
+        # Filename cleaning cache
+        self._filename_cleaning_cache_name: Optional[str] = None
 
         # Use class-level cache if available, otherwise instance-level
         # This allows cache to persist across service instantiations
@@ -209,9 +253,31 @@ class GeminiMetadataExtractor(BaseMetadataExtractor):
             # Track which tools are included in the cache
             self._cached_tools: List[str] = []
 
+        # Use class-level filename cleaning cache if available
+        if GeminiMetadataExtractor._class_filename_cleaning_cache_name:
+            self._filename_cleaning_cache_name = (
+                GeminiMetadataExtractor._class_filename_cleaning_cache_name
+            )
+            logger.debug(
+                f"Reusing existing class-level filename cleaning cache: {self._filename_cleaning_cache_name}"
+            )
+
         # Initialize context cache if enabled (will use class-level cache if available)
         if self.enable_context_cache:
-            self._ensure_context_cache()
+            try:
+                self._ensure_context_cache()
+            except Exception as e:
+                logger.warning(
+                    f"Failed to ensure context cache during initialization: {e}. "
+                    "Continuing without cache."
+                )
+            try:
+                self._ensure_filename_cleaning_cache()
+            except Exception as e:
+                logger.warning(
+                    f"Failed to ensure filename cleaning cache during initialization: {e}. "
+                    "Continuing without cache."
+                )
 
     def _get_model_for_caching(self) -> str:
         """
@@ -317,16 +383,39 @@ ADDITIONAL CONTEXT FOR METADATA EXTRACTION:
 - Background and impact narratives should be comprehensive and well-researched
 - Audio features should capture the unique characteristics of each track
 - When URLs are provided, extract maximum detail from those authoritative sources
+- Validate all extracted information against multiple sources when possible
+- Maintain consistency in formatting and naming conventions
+- Use canonical forms for artist names and track titles
 """
 
         # Add padding until we meet the requirement
+        # Use a more aggressive padding approach to ensure we exceed the minimum
         padded = system_instruction
-        while self._estimate_token_count(padded) < min_tokens:
+        iterations = 0
+        max_iterations = 100  # Safety limit
+
+        while (
+            self._estimate_token_count(padded) < min_tokens
+            and iterations < max_iterations
+        ):
             padded += padding_text
+            iterations += 1
+            # Check every few iterations to avoid infinite loops
+            if iterations % 5 == 0:
+                current_count = self._estimate_token_count(padded)
+                if current_count >= min_tokens:
+                    break
 
         final_tokens = self._estimate_token_count(padded)
+
+        # Double-check we meet the requirement
+        if final_tokens < min_tokens:
+            # Add one more full padding block to ensure we exceed the minimum
+            padded += padding_text
+            final_tokens = self._estimate_token_count(padded)
+
         logger.info(
-            f"Padded system instruction to {final_tokens} tokens (target: {min_tokens})"
+            f"Padded system instruction to {final_tokens} tokens (target: {min_tokens}, iterations: {iterations})"
         )
 
         return padded
@@ -478,6 +567,164 @@ ADDITIONAL CONTEXT FOR METADATA EXTRACTION:
             self._cached_content_name = None
             self._cached_tools = []
 
+    def _ensure_filename_cleaning_cache(self) -> None:
+        """
+        Ensure context cache exists for filename cleaning system instructions.
+
+        Creates a cached content with the filename cleaning system instruction.
+        This enables 90% discount on cached tokens for filename cleaning operations.
+        """
+        if not self.enable_context_cache:
+            logger.debug(
+                "Context caching is disabled, skipping filename cleaning cache"
+            )
+            return
+
+        if not self._is_available():
+            logger.warning(
+                "Gemini client not available, cannot create filename cleaning cache"
+            )
+            return
+
+        # Check if we already have a valid cache (class-level or instance-level)
+        cache_to_check = (
+            self._filename_cleaning_cache_name
+            or GeminiMetadataExtractor._class_filename_cleaning_cache_name
+        )
+
+        if cache_to_check:
+            # Cache exists, use it
+            if not self._filename_cleaning_cache_name:
+                # Use class-level cache
+                self._filename_cleaning_cache_name = (
+                    GeminiMetadataExtractor._class_filename_cleaning_cache_name
+                )
+            logger.debug(
+                f"Using existing filename cleaning cache: {self._filename_cleaning_cache_name}"
+            )
+            return
+
+        try:
+            # Build system instruction for filename cleaning
+            system_instruction = "\n".join(self.FILENAME_CLEANING_INSTRUCTIONS)
+
+            # Pad if needed to meet minimum token requirements
+            # Check current token count first
+            current_tokens = self._estimate_token_count(system_instruction)
+            model_for_caching = self._get_model_for_caching()
+            model_lower = model_for_caching.lower()
+
+            # Determine minimum token requirement based on model type
+            if "pro" in model_lower:
+                min_tokens = self.CACHE_MIN_TOKENS_PRO
+            else:
+                min_tokens = self.CACHE_MIN_TOKENS_FLASH
+
+            logger.debug(
+                f"Filename cleaning system instruction has {current_tokens} tokens, "
+                f"minimum required: {min_tokens}"
+            )
+
+            # Pad if needed
+            system_instruction = self._pad_system_instruction_if_needed(
+                system_instruction
+            )
+
+            # Verify padding worked - add extra padding if needed
+            # Token estimation can be inaccurate, so we add a safety margin
+            final_tokens = self._estimate_token_count(system_instruction)
+            safety_margin = 100  # Add extra tokens as safety margin
+            target_tokens = min_tokens + safety_margin
+
+            if final_tokens < target_tokens:
+                logger.warning(
+                    f"Padding may not be sufficient: {final_tokens} tokens < {target_tokens} required (min: {min_tokens}). "
+                    "Adding additional padding with safety margin."
+                )
+                # Add more padding to ensure we meet the requirement with safety margin
+                padding_text = "\n\nADDITIONAL CONTEXT FOR FILENAME CLEANING:\n"
+                padding_text += (
+                    "- Always ensure output follows 'Artist - Title' format\n"
+                )
+                padding_text += (
+                    "- Normalize case to Title Case for both artist and title\n"
+                )
+                padding_text += "- Remove all metadata tags, years, and country codes\n"
+                padding_text += (
+                    "- Preserve mix names in parentheses when part of the title\n"
+                )
+                padding_text += (
+                    "- Convert all separator types to ' - ' (dash with spaces)\n"
+                )
+                padding_text += (
+                    "- If no artist is found, use 'Unknown Artist' as the artist name\n"
+                )
+                padding_text += "- Handle special characters and unicode properly\n"
+                padding_text += (
+                    "- Maintain consistent formatting across all cleaned filenames\n"
+                )
+                padding_text += "- Strip leading and trailing whitespace from both artist and title\n"
+
+                iterations = 0
+                while (
+                    self._estimate_token_count(system_instruction) < target_tokens
+                    and iterations < 50
+                ):
+                    system_instruction += padding_text
+                    iterations += 1
+
+                final_tokens = self._estimate_token_count(system_instruction)
+                logger.info(
+                    f"Added additional padding to filename cleaning instructions: "
+                    f"{final_tokens} tokens (target: {target_tokens}, min: {min_tokens}, iterations: {iterations})"
+                )
+
+            # Create cached content
+            logger.info(
+                f"Creating filename cleaning cache for model '{model_for_caching}' "
+                f"(TTL: {self.cache_ttl_seconds}s, tokens: {final_tokens})"
+            )
+
+            cache_config = types.CreateCachedContentConfig(
+                system_instruction=system_instruction,
+                ttl=f"{self.cache_ttl_seconds}s",
+            )
+
+            # Use lock to prevent multiple instances from creating cache simultaneously
+            with GeminiMetadataExtractor._class_filename_cleaning_cache_lock:
+                # Double-check if another thread/instance created the cache while we were waiting
+                if GeminiMetadataExtractor._class_filename_cleaning_cache_name:
+                    self._filename_cleaning_cache_name = (
+                        GeminiMetadataExtractor._class_filename_cleaning_cache_name
+                    )
+                    logger.debug(
+                        f"Another instance created filename cleaning cache, reusing: {self._filename_cleaning_cache_name}"
+                    )
+                    return
+
+                # Create new cache
+                cached_content = self.client.caches.create(
+                    model=model_for_caching, config=cache_config
+                )
+                self._filename_cleaning_cache_name = cached_content.name
+
+                # Store in class-level variable for reuse across instances
+                GeminiMetadataExtractor._class_filename_cleaning_cache_name = (
+                    self._filename_cleaning_cache_name
+                )
+
+            logger.info(
+                f"Filename cleaning cache created successfully: {self._filename_cleaning_cache_name} "
+                f"(90% discount on cached tokens)"
+            )
+
+        except Exception as e:
+            logger.warning(
+                f"Failed to create filename cleaning cache: {e}. "
+                f"Falling back to standard API calls without caching."
+            )
+            self._filename_cleaning_cache_name = None
+
     def _initialize_client(self):
         """Initialize the Gemini API client."""
         if not GEMINI_AVAILABLE:
@@ -568,14 +815,18 @@ Return ONLY the cleaned filename, nothing else. No explanations, no markdown, ju
             )
             return filename
 
-    def _clean_filenames_batch(self, filenames: List[str]) -> List[str]:
+    def _clean_filenames_batch(
+        self, filenames: List[str], file_paths: Optional[List[Optional[str]]] = None
+    ) -> List[str]:
         """
         Clean and normalize multiple filenames in a single API call for efficiency.
 
         This batches filename cleaning to reduce API calls and improve throughput.
+        Uses ID3 tags when available to enrich filenames that only contain titles.
 
         Args:
             filenames: List of raw filenames to clean
+            file_paths: Optional list of file paths (same order as filenames) for ID3 tag extraction
 
         Returns:
             List of cleaned filenames in normalized format
@@ -584,75 +835,247 @@ Return ONLY the cleaned filename, nothing else. No explanations, no markdown, ju
             return filenames
 
         try:
-            # Build batch cleaning prompt
+            # Extract ID3 tags for files that have paths
+            id3_info_list = []
+            pre_cleaned_filenames = []
+            filenames_to_clean_with_llm = []
+            indices_to_clean = []
+
+            if file_paths and len(file_paths) == len(filenames):
+                for idx, (filename, file_path) in enumerate(zip(filenames, file_paths)):
+                    id3_tags = None
+                    if file_path:
+                        try:
+                            id3_result = self.id3_extractor.extract_id3_tags(
+                                file_path, ""
+                            )
+                            id3_tags = id3_result.get("id3_tags", {})
+                        except Exception as e:
+                            logger.debug(
+                                f"Failed to extract ID3 tags from {file_path}: {e}"
+                            )
+
+                    id3_info_list.append(id3_tags)
+
+                    # Use ID3 tags to form artist - title if available
+                    id3_artist = id3_tags.get("artist") if id3_tags else None
+                    id3_title = id3_tags.get("title") if id3_tags else None
+
+                    if id3_artist and id3_title:
+                        # Both artist and title from ID3 - use directly
+                        cleaned = f"{id3_artist} - {id3_title}"
+                        pre_cleaned_filenames.append(cleaned)
+                        logger.debug(
+                            f"Using ID3 tags for '{filename}': '{id3_artist} - {id3_title}'"
+                        )
+                    elif id3_artist:
+                        # Only artist from ID3 - combine with filename title
+                        cleaned = f"{id3_artist} - {filename}"
+                        pre_cleaned_filenames.append(cleaned)
+                        logger.debug(
+                            f"Using ID3 artist for '{filename}': '{id3_artist} - {filename}'"
+                        )
+                    elif id3_title:
+                        # Only title from ID3 - use filename as artist
+                        cleaned = f"{filename} - {id3_title}"
+                        pre_cleaned_filenames.append(cleaned)
+                        logger.debug(
+                            f"Using ID3 title for '{filename}': '{filename} - {id3_title}'"
+                        )
+                    else:
+                        # No ID3 tags - need LLM cleaning
+                        pre_cleaned_filenames.append(None)
+                        filenames_to_clean_with_llm.append(filename)
+                        indices_to_clean.append(idx)
+            else:
+                # No file paths provided - all need LLM cleaning
+                id3_info_list = [None] * len(filenames)
+                pre_cleaned_filenames = [None] * len(filenames)
+                filenames_to_clean_with_llm = filenames
+                indices_to_clean = list(range(len(filenames)))
+
+            # If all filenames were cleaned with ID3 tags, return early
+            if not filenames_to_clean_with_llm:
+                logger.info(
+                    f"All {len(filenames)} filenames cleaned using ID3 tags, skipping LLM"
+                )
+                return pre_cleaned_filenames
+
+            # Build user content with filenames to clean
             filenames_list = "\n".join(
-                [f"{i + 1}. {fn}" for i, fn in enumerate(filenames)]
+                [f"{i + 1}. {fn}" for i, fn in enumerate(filenames_to_clean_with_llm)]
             )
-            batch_prompt = f"""Clean and normalize these music filenames to extract only the core artist and title information.
-
-Remove from each:
-- Country tags in brackets like [nigeria], [uk], [us]
-- Years in parentheses like (1979), (1985)
-- Genre/style tags like "soul", "funk", "electronic" when they appear as separate tags
-- Extra metadata, labels, or identifiers
-
-Keep:
-- Artist name (normalize case to Title Case)
-- Title name (normalize case to Title Case)
-- Mix names in parentheses if they're part of the title (e.g., "Remix", "Extended Mix")
-
-Format each output as: "Artist - Title" or "Artist - Title (Mix Name)"
-
-Examples:
-- "t-fire - say a prayer [nigeria] soul (1979)" -> "T-Fire - Say A Prayer"
-- "T-Fire - Say A Prayer" -> "T-Fire - Say A Prayer"
-- "artist - title (remix) [2020]" -> "Artist - Title (Remix)"
-
-Filenames to clean:
+            user_content = f"""Filenames to clean:
 {filenames_list}
 
 Return ONLY a JSON array of cleaned filenames in the same order, nothing else. Format: ["Artist - Title", "Artist2 - Title2", ...]"""
 
-            response = self.client.models.generate_content(
-                model=self.MODEL,
-                contents=batch_prompt,
-                config=types.GenerateContentConfig(
-                    temperature=0.0,  # Deterministic output
-                    response_mime_type="application/json",
-                ),
+            # Configure API call with cached content if available
+            config = types.GenerateContentConfig(
+                temperature=0.0,  # Deterministic output
+                response_mime_type="application/json",
             )
 
+            # Use cached content if available
+            cache_to_use = (
+                self._filename_cleaning_cache_name
+                or GeminiMetadataExtractor._class_filename_cleaning_cache_name
+            )
+
+            if cache_to_use:
+                try:
+                    config.cached_content = cache_to_use
+                    if not self._filename_cleaning_cache_name:
+                        self._filename_cleaning_cache_name = cache_to_use
+                    logger.debug(
+                        f"Using filename cleaning cache: {self._filename_cleaning_cache_name}"
+                    )
+                except Exception as e:
+                    error_msg = str(e).lower()
+                    if (
+                        "not found" in error_msg
+                        or "expired" in error_msg
+                        or "invalid" in error_msg
+                    ):
+                        logger.info(
+                            f"Filename cleaning cache expired or invalid: {e}. Recreating cache..."
+                        )
+                        # Clear cache names and recreate
+                        self._filename_cleaning_cache_name = None
+                        with (
+                            GeminiMetadataExtractor._class_filename_cleaning_cache_lock
+                        ):
+                            GeminiMetadataExtractor._class_filename_cleaning_cache_name = None
+                        self._ensure_filename_cleaning_cache()
+                        if self._filename_cleaning_cache_name:
+                            config.cached_content = self._filename_cleaning_cache_name
+                    else:
+                        logger.warning(
+                            f"Failed to use filename cleaning cache: {e}. Using system instruction instead."
+                        )
+                        config.system_instruction = "\n".join(
+                            self.FILENAME_CLEANING_INSTRUCTIONS
+                        )
+            else:
+                # Use system instruction (cache not available)
+                config.system_instruction = "\n".join(
+                    self.FILENAME_CLEANING_INSTRUCTIONS
+                )
+                logger.debug(
+                    "Using system instruction for filename cleaning (cache not available)"
+                )
+
+            response = self.client.models.generate_content(
+                model="gemini-2.5-flash-lite",
+                contents=user_content,
+                config=config,
+            )
             # Parse batch response
             if hasattr(response, "text") and response.text:
                 import json
+                import re
 
                 try:
-                    cleaned_list = json.loads(response.text.strip())
-                    if isinstance(cleaned_list, list) and len(cleaned_list) == len(
-                        filenames
-                    ):
-                        return cleaned_list
+                    # Clean the response text - remove markdown code blocks if present
+                    response_text = response.text.strip()
+
+                    # Remove markdown code blocks (```json ... ``` or ``` ... ```)
+                    response_text = re.sub(r"```(?:json)?\s*\n?", "", response_text)
+                    response_text = re.sub(r"```\s*$", "", response_text)
+                    response_text = response_text.strip()
+
+                    # Try to extract JSON array if wrapped in other text
+                    # Look for array pattern: [...]
+                    array_match = re.search(r"\[.*\]", response_text, re.DOTALL)
+                    if array_match:
+                        response_text = array_match.group(0)
+
+                    cleaned_list = json.loads(response_text)
+
+                    if isinstance(cleaned_list, list):
+                        # Validate and clean each item
+                        cleaned_list = [
+                            str(item).strip() if item else "" for item in cleaned_list
+                        ]
+
+                        if len(cleaned_list) == len(filenames_to_clean_with_llm):
+                            logger.debug(
+                                f"Successfully batch cleaned {len(cleaned_list)} filenames with LLM"
+                            )
+                            # Merge LLM-cleaned filenames with ID3-cleaned ones
+                            final_cleaned = pre_cleaned_filenames.copy()
+                            for llm_idx, original_idx in enumerate(indices_to_clean):
+                                final_cleaned[original_idx] = cleaned_list[llm_idx]
+                            return final_cleaned
+                        else:
+                            logger.warning(
+                                f"Batch cleaning returned {len(cleaned_list)} items, expected {len(filenames_to_clean_with_llm)}. "
+                                "Falling back to individual cleaning."
+                            )
+                            # Fallback: clean individually and merge
+                            llm_cleaned = [
+                                self._clean_filename_with_llm(fn)
+                                for fn in filenames_to_clean_with_llm
+                            ]
+                            final_cleaned = pre_cleaned_filenames.copy()
+                            for llm_idx, original_idx in enumerate(indices_to_clean):
+                                final_cleaned[original_idx] = llm_cleaned[llm_idx]
+                            return final_cleaned
                     else:
                         logger.warning(
-                            "Batch cleaning returned unexpected format, falling back to individual cleaning"
+                            f"Batch cleaning returned non-list type: {type(cleaned_list)}. "
+                            "Falling back to individual cleaning."
                         )
-                        return [self._clean_filename_with_llm(fn) for fn in filenames]
-                except json.JSONDecodeError:
+                        # Fallback: clean individually and merge
+                        llm_cleaned = [
+                            self._clean_filename_with_llm(fn)
+                            for fn in filenames_to_clean_with_llm
+                        ]
+                        final_cleaned = pre_cleaned_filenames.copy()
+                        for llm_idx, original_idx in enumerate(indices_to_clean):
+                            final_cleaned[original_idx] = llm_cleaned[llm_idx]
+                        return final_cleaned
+                except json.JSONDecodeError as e:
                     logger.warning(
-                        "Failed to parse batch cleaning response, falling back to individual cleaning"
+                        f"Failed to parse batch cleaning response as JSON: {e}. "
+                        f"Response text: {response.text[:200] if hasattr(response, 'text') else 'N/A'}. "
+                        "Falling back to individual cleaning."
                     )
-                    return [self._clean_filename_with_llm(fn) for fn in filenames]
+                    # Fallback: clean individually and merge
+                    llm_cleaned = [
+                        self._clean_filename_with_llm(fn)
+                        for fn in filenames_to_clean_with_llm
+                    ]
+                    final_cleaned = pre_cleaned_filenames.copy()
+                    for llm_idx, original_idx in enumerate(indices_to_clean):
+                        final_cleaned[original_idx] = llm_cleaned[llm_idx]
+                    return final_cleaned
             else:
                 logger.warning(
                     "Empty response from batch filename cleaning, falling back to individual cleaning"
                 )
-                return [self._clean_filename_with_llm(fn) for fn in filenames]
+                # Fallback: clean individually and merge
+                llm_cleaned = [
+                    self._clean_filename_with_llm(fn)
+                    for fn in filenames_to_clean_with_llm
+                ]
+                final_cleaned = pre_cleaned_filenames.copy()
+                for llm_idx, original_idx in enumerate(indices_to_clean):
+                    final_cleaned[original_idx] = llm_cleaned[llm_idx]
+                return final_cleaned
 
         except Exception as e:
             logger.warning(
                 f"Failed to clean filenames in batch: {e}. Falling back to individual cleaning."
             )
-            return [self._clean_filename_with_llm(fn) for fn in filenames]
+            # Fallback: clean individually and merge
+            llm_cleaned = [
+                self._clean_filename_with_llm(fn) for fn in filenames_to_clean_with_llm
+            ]
+            final_cleaned = pre_cleaned_filenames.copy()
+            for llm_idx, original_idx in enumerate(indices_to_clean):
+                final_cleaned[original_idx] = llm_cleaned[llm_idx]
+            return final_cleaned
 
     def _make_api_call(self, user_content: str, urls: Optional[List[str]] = None):
         """

@@ -350,7 +350,7 @@ class SimpleAnalysisService:
                 converted_wav_path = self.convert_m4a_to_wav(file_path)
                 file_path = converted_wav_path
 
-    # Extract metadata using OpenAI if available and not skipped
+            # Extract metadata using OpenAI if available and not skipped
             ai_metadata = {}
             if original_filename and not skip_ai_metadata:
                 ai_metadata = self.extract_metadata_with_ai(
@@ -383,7 +383,6 @@ class SimpleAnalysisService:
                 file_path
             )  # Use full file for duration
 
-        
             ai_bpm = ai_metadata.get("audioFeatures", {}).get("bpm", None)
             ai_key = ai_metadata.get("audioFeatures", {}).get("key", None)
             basic_features = self.extract_basic_features(
@@ -522,7 +521,11 @@ class SimpleAnalysisService:
         try:
             # Step 1: Extract AI metadata for all files in a single batch call
             ai_metadata_list: List[Dict[str, Any]] = []
-            if not skip_ai_metadata and self.ai_extractor and self.ai_extractor._is_available():
+            if (
+                not skip_ai_metadata
+                and self.ai_extractor
+                and self.ai_extractor._is_available()
+            ):
                 try:
                     # Prepare items for batch metadata extraction: (filename, file_path)
                     batch_items = [
@@ -538,6 +541,19 @@ class SimpleAnalysisService:
                         batch_filename_cleaning=True,
                         max_batch_size=10,  # Process in chunks of 10
                     )
+
+                    # Validate that we got the expected number of results
+                    if len(ai_metadata_list) != total_files:
+                        logger.warning(
+                            f"Batch AI metadata extraction returned {len(ai_metadata_list)} items, "
+                            f"expected {total_files}. Padding with empty metadata."
+                        )
+                        # Pad with empty metadata if needed
+                        while len(ai_metadata_list) < total_files:
+                            ai_metadata_list.append({})
+                        # Truncate if too many (shouldn't happen, but be safe)
+                        ai_metadata_list = ai_metadata_list[:total_files]
+
                     logger.info(
                         f"Successfully extracted AI metadata for {len(ai_metadata_list)} files"
                     )
@@ -546,10 +562,17 @@ class SimpleAnalysisService:
                         f"Batch AI metadata extraction failed: {e}. "
                         "Continuing with individual file analysis."
                     )
+                    import traceback
+
+                    logger.debug(
+                        f"Batch extraction error traceback: {traceback.format_exc()}"
+                    )
                     # If batch fails, create empty metadata for each file
                     ai_metadata_list = [{}] * total_files
             else:
-                logger.debug("Skipping AI metadata extraction (disabled or unavailable)")
+                logger.debug(
+                    "Skipping AI metadata extraction (disabled or unavailable)"
+                )
                 ai_metadata_list = [{}] * total_files
 
             # Step 2: Process each file for audio analysis
@@ -569,7 +592,9 @@ class SimpleAnalysisService:
                         file_path = converted_wav_path
 
                     # Get AI metadata for this file (matched by order)
-                    ai_metadata = ai_metadata_list[idx] if idx < len(ai_metadata_list) else {}
+                    ai_metadata = (
+                        ai_metadata_list[idx] if idx < len(ai_metadata_list) else {}
+                    )
 
                     # Load audio samples for efficient analysis
                     (
@@ -678,14 +703,16 @@ class SimpleAnalysisService:
             # Track analysis count and perform periodic garbage collection
             self.analysis_count += total_files
             if self.analysis_count % self.gc_interval == 0:
-                logger.debug(
-                    f"🧹 Performing GC after {self.analysis_count} analyses"
-                )
+                logger.debug(f"🧹 Performing GC after {self.analysis_count} analyses")
                 gc.collect()
 
             # Determine overall status
             overall_status = (
-                "success" if failed == 0 else "partial_success" if successful > 0 else "error"
+                "success"
+                if failed == 0
+                else "partial_success"
+                if successful > 0
+                else "error"
             )
 
             total_processing_time = round(time.time() - start_time, 3)

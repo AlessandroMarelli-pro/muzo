@@ -213,9 +213,12 @@ class BaseMetadataExtractor(ABC):
         "- Context.background and context.impact must be comprehensive narratives, not single sentences.",
         "- Extract maximum detail from URL sources - don't summarize, be specific.",
         "- Match the depth and richness shown in the example above.",
-        "",    ]
+        "",
+    ]
 
-    TEMPERATURE = 0  # Strict temperature: 0 for maximum determinism (stops hallucination)
+    TEMPERATURE = (
+        0  # Strict temperature: 0 for maximum determinism (stops hallucination)
+    )
     TOP_P = 0.1  # Nucleus sampling: 0.1 forces model to stick to most statistically likely facts from fetched URLs
     TOP_K = 1  # Top-k sampling: 1 = only most likely token (use with temp=0 for determinism)
     SEED = None  # Fixed seed for reproducibility (set to integer for deterministic outputs)
@@ -249,7 +252,7 @@ class BaseMetadataExtractor(ABC):
         self.api_key = api_key
         self.MAX_RETRIES = max_retries
         self.INITIAL_BACKOFF = initial_backoff
-        
+
         # Determinism parameters (can be overridden via constructor or env vars)
         self.temperature = temperature if temperature is not None else self.TEMPERATURE
         self.top_p = top_p if top_p is not None else self.TOP_P
@@ -325,8 +328,8 @@ class BaseMetadataExtractor(ABC):
     def _clean_filename_with_llm(self, filename: str) -> str:
         """
         Clean and normalize filename using LLM to extract core artist-title format.
-        
-        This removes extra metadata like country tags, years in parentheses, 
+
+        This removes extra metadata like country tags, years in parentheses,
         genre tags, etc., and normalizes the format to "Artist - Title".
 
         Args:
@@ -370,7 +373,9 @@ class BaseMetadataExtractor(ABC):
             else 0,
         }
 
-    def _make_api_call_with_retry(self, user_content: str, urls: Optional[List[str]] = None):
+    def _make_api_call_with_retry(
+        self, user_content: str, urls: Optional[List[str]] = None
+    ):
         """
         Make API call with retry logic and rate limiting.
 
@@ -483,13 +488,20 @@ class BaseMetadataExtractor(ABC):
             # Clean and normalize filename using LLM to extract core artist-title
             # This ensures similar filenames produce consistent results
             # Check if we have a pre-cleaned filename from batch processing
-            if hasattr(self, "_batch_cleaned_filenames") and filename_without_ext in self._batch_cleaned_filenames:
+            if (
+                hasattr(self, "_batch_cleaned_filenames")
+                and filename_without_ext in self._batch_cleaned_filenames
+            ):
                 cleaned_filename = self._batch_cleaned_filenames[filename_without_ext]
-                logger.debug(f"Using batch-cleaned filename: '{filename_without_ext}' -> '{cleaned_filename}'")
+                logger.debug(
+                    f"Using batch-cleaned filename: '{filename_without_ext}' -> '{cleaned_filename}'"
+                )
                 filename_without_ext = cleaned_filename
             else:
                 try:
-                    cleaned_filename = self._clean_filename_with_llm(filename_without_ext)
+                    cleaned_filename = self._clean_filename_with_llm(
+                        filename_without_ext
+                    )
                     logger.info(
                         f"Filename cleaned: '{filename_without_ext}' -> '{cleaned_filename}'"
                     )
@@ -554,52 +566,87 @@ class BaseMetadataExtractor(ABC):
     ) -> List[Dict[str, Any]]:
         """
         Extract metadata from multiple filenames in batch using single API calls.
-        
+
         This method sends all items in one request with a shared system instruction,
         significantly reducing token usage and API calls.
-        
+
         Args:
             items: List of tuples (filename, file_path) to process
             batch_filename_cleaning: Whether to batch filename cleaning (default: True)
             max_batch_size: Maximum items per single API call (default: 10, to avoid token limits)
-            
+
         Returns:
             List of metadata dictionaries in the same order as input items
-            
+
         Raises:
             AttributeError: If the extractor doesn't support batch API calls
             Exception: If batch processing fails
         """
         if not items:
             return []
-        
+
         if not hasattr(self, "_make_batch_api_call"):
             raise AttributeError(
                 f"{self.__class__.__name__} does not support batch API calls. "
                 "Batch processing requires _make_batch_api_call method."
             )
-        
+
         logger.info(f"Starting batch metadata extraction for {len(items)} items")
         start_time = time.time()
-        
+
         # Process in chunks to avoid token limits
         all_results = []
         for i in range(0, len(items), max_batch_size):
-            chunk = items[i:i + max_batch_size]
+            chunk = items[i : i + max_batch_size]
             chunk_num = i // max_batch_size + 1
             total_chunks = (len(items) - 1) // max_batch_size + 1
-            logger.info(f"Processing batch chunk {chunk_num}/{total_chunks} ({len(chunk)} items)")
-            
-            chunk_results = self._extract_metadata_single_api_call(chunk, batch_filename_cleaning)
-            all_results.extend(chunk_results)
-        
+            logger.info(
+                f"Processing batch chunk {chunk_num}/{total_chunks} ({len(chunk)} items)"
+            )
+
+            try:
+                print(chunk, batch_filename_cleaning)
+                chunk_results = self._extract_metadata_single_api_call(
+                    chunk, batch_filename_cleaning
+                )
+                print(chunk_results)
+                # Validate chunk results length matches chunk size
+                if len(chunk_results) != len(chunk):
+                    logger.warning(
+                        f"Chunk {chunk_num} returned {len(chunk_results)} results, expected {len(chunk)}. "
+                        "Padding with empty metadata."
+                    )
+                    # Pad with empty metadata if needed
+                    while len(chunk_results) < len(chunk):
+                        chunk_results.append(self._get_empty_metadata())
+                    # Truncate if too many (shouldn't happen, but be safe)
+                    chunk_results = chunk_results[: len(chunk)]
+
+                all_results.extend(chunk_results)
+            except Exception as e:
+                import traceback
+
+                traceback.print_exc()
+
+                logger.error(
+                    f"Failed to process batch chunk {chunk_num}/{total_chunks}: {e}. "
+                    f"Adding empty metadata for {len(chunk)} items in this chunk."
+                )
+                import traceback
+
+                logger.debug(
+                    f"Chunk processing error traceback: {traceback.format_exc()}"
+                )
+                # Add empty metadata for all items in this failed chunk
+                all_results.extend([self._get_empty_metadata()] * len(chunk))
+
         elapsed = time.time() - start_time
         logger.info(
             f"Batch extraction completed in {elapsed:.2f}s "
-            f"({len(items)/elapsed:.2f} items/sec) using single API calls"
+            f"({len(items) / elapsed:.2f} items/sec) using single API calls"
         )
         return all_results
-    
+
     def _extract_metadata_single_api_call(
         self,
         items: List[Tuple[str, Optional[str]]],
@@ -607,14 +654,14 @@ class BaseMetadataExtractor(ABC):
     ) -> List[Dict[str, Any]]:
         """
         Extract metadata for multiple items in a single API call.
-        
+
         This is the most efficient approach - one system instruction, one API call,
         one response with array of results.
-        
+
         Args:
             items: List of tuples (filename, file_path) to process
             batch_filename_cleaning: Whether to batch clean filenames first
-            
+
         Returns:
             List of metadata dictionaries
         """
@@ -623,29 +670,44 @@ class BaseMetadataExtractor(ABC):
         if batch_filename_cleaning and hasattr(self, "_clean_filenames_batch"):
             try:
                 filenames_to_clean = []
-                for filename, _ in items:
+                file_paths_to_clean = []
+                for filename, file_path in items:
                     basename = os.path.basename(filename)
                     filename_without_ext = os.path.splitext(basename)[0]
                     filenames_to_clean.append(filename_without_ext)
-                
-                cleaned_list = self._clean_filenames_batch(filenames_to_clean)
-                cleaned_filenames = dict(zip(filenames_to_clean, cleaned_list))
-                logger.info(f"Batch cleaned {len(cleaned_filenames)} filenames")
+                    file_paths_to_clean.append(file_path)
+
+                # Pass file paths to enable ID3 tag extraction during cleaning
+                cleaned_list = self._clean_filenames_batch(
+                    filenames_to_clean, file_paths_to_clean
+                )
+
+                # Validate that cleaned_list has the same length as filenames_to_clean
+                if isinstance(cleaned_list, list) and len(cleaned_list) == len(
+                    filenames_to_clean
+                ):
+                    cleaned_filenames = dict(zip(filenames_to_clean, cleaned_list))
+                    logger.info(f"Batch cleaned {len(cleaned_filenames)} filenames")
+                else:
+                    logger.warning(
+                        f"Batch filename cleaning returned {len(cleaned_list) if isinstance(cleaned_list, list) else 'non-list'} items, "
+                        f"expected {len(filenames_to_clean)}. Skipping cleaned filenames."
+                    )
             except Exception as e:
                 logger.warning(f"Batch filename cleaning failed: {e}")
-        
+
         # Build batch message with all items
         batch_messages = []
         all_urls = []
-        
+
         for filename, file_path in items:
             basename = os.path.basename(filename)
             filename_without_ext = os.path.splitext(basename)[0]
-            
+
             # Use cleaned filename if available
             if filename_without_ext in cleaned_filenames:
                 filename_without_ext = cleaned_filenames[filename_without_ext]
-            
+
             # Extract ID3 tags if file_path is provided
             id3_tags = None
             if file_path:
@@ -656,39 +718,39 @@ class BaseMetadataExtractor(ABC):
                     id3_tags = id3_result.get("id3_tags", {})
                 except Exception as e:
                     logger.debug(f"Failed to extract ID3 tags from {file_path}: {e}")
-            
+
             # Build message for this item
             message, urls = self._build_filename_message(filename_without_ext, id3_tags)
             batch_messages.append(f"### Track {len(batch_messages) + 1}:\n{message}")
             all_urls.extend(urls)
-        
+
         # Combine all messages
         batch_content = "\n\n---\n\n".join(batch_messages)
         batch_content += "\n\nReturn a JSON object with a 'results' array containing metadata for each track in the same order. Format: {\"results\": [{...}, {...}, ...]}"
-        
+        print(batch_content)
         # Make single API call with all items
         response = self._make_batch_api_call(batch_content, all_urls, len(items))
-        
+        print(response)
         # Parse batch response
         batch_metadata = self._parse_batch_response(response, len(items))
-        
+
         # Normalize each result
         normalized_results = []
         for metadata in batch_metadata:
             normalized = self._normalize_metadata(metadata)
             normalized_results.append(normalized)
-        
+
         return normalized_results
-    
+
     def _extract_metadata_sequential(
         self, items: List[Tuple[str, Optional[str]]]
     ) -> List[Dict[str, Any]]:
         """
         Extract metadata sequentially (fallback method).
-        
+
         Args:
             items: List of tuples (filename, file_path)
-            
+
         Returns:
             List of metadata dictionaries
         """
@@ -702,7 +764,7 @@ class BaseMetadataExtractor(ABC):
             except Exception as e:
                 logger.error(f"Failed to extract metadata for item {i}: {e}")
                 results.append(self._get_empty_metadata())
-        
+
         return results
 
     def _normalize_metadata(self, metadata: Dict[str, Any]) -> Dict[str, Any]:
@@ -769,7 +831,6 @@ class BaseMetadataExtractor(ABC):
         if normalized["context"] and not isinstance(normalized["context"], dict):
             normalized["context"] = None
 
-     
         return normalized
 
     def _extract_urls_from_text(self, text: str) -> List[str]:
@@ -838,7 +899,7 @@ class BaseMetadataExtractor(ABC):
             if description:
                 urls_from_description = self._extract_urls_from_text(description)
                 extracted_urls.extend(urls_from_description)
-            
+
             # Extract URLs from url field (if present)
             # The url field might be a direct URL string or contain URLs in text
             url_field = id3_tags.get("url", "")
@@ -852,7 +913,7 @@ class BaseMetadataExtractor(ABC):
                     # Extract URLs from the text (might contain multiple URLs or be embedded in text)
                     urls_from_url = self._extract_urls_from_text(url_str)
                     extracted_urls.extend(urls_from_url)
-            
+
             # Extract URLs from purl field (ID3v2.4+ URL frame)
             # purl is typically a direct URL, but we'll handle both cases
             purl_field = id3_tags.get("purl", "")
@@ -864,12 +925,11 @@ class BaseMetadataExtractor(ABC):
                 else:
                     urls_from_purl = self._extract_urls_from_text(purl_str)
                     extracted_urls.extend(urls_from_purl)
-            
+
             # Remove duplicates while preserving order
             seen = set()
             extracted_urls = [
-                url for url in extracted_urls 
-                if url not in seen and not seen.add(url)
+                url for url in extracted_urls if url not in seen and not seen.add(url)
             ]
 
         # If URLs are found, include them in the prompt for the LLM to retrieve data from
@@ -881,8 +941,20 @@ class BaseMetadataExtractor(ABC):
             base_message += "\n\nThese URLs contain the PRIMARY and HIGHEST PRIORITY metadata. Access these URLs, retrieve their content, and use information from these pages to override any conflicting data from other sources."
 
         # Add ID3 tag information if available
-        artist = display_filename.split(" - ")[0]
-        title = display_filename.split(" - ")[1]
+        # Split filename into artist and title
+        # Handle cases where filename might not have " - " separator
+        parts = display_filename.split(" - ", 1)  # Split only on first occurrence
+        if len(parts) == 2:
+            artist = parts[0]
+            title = parts[1]
+        else:
+            # If no " - " separator, treat entire filename as title
+            artist = ""
+            title = display_filename
+            logger.debug(
+                f"Filename '{display_filename}' doesn't contain ' - ' separator, treating as title only"
+            )
+
         if id3_tags:
             id3_info_parts = []
             if artist:
@@ -893,7 +965,7 @@ class BaseMetadataExtractor(ABC):
                 id3_info_parts.append(f"Album: {id3_tags.get('album')}")
             if id3_tags.get("genre"):
                 id3_info_parts.append(f"Genre: {id3_tags.get('genre')}")
-         
+
             if id3_info_parts:
                 # More concise ID3 tag format
                 id3_section = "\n\nID3 tags: " + " | ".join(id3_info_parts)

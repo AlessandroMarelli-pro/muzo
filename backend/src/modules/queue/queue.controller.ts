@@ -320,30 +320,23 @@ export class QueueController {
       const tracksWithNullArtist = await this.prismaService.musicTrack.findMany(
         {
           where: {
-            OR: [
+            filePath: { contains: 'm4a' },           /* OR: [
               {
                 id: '039d50a9-ca8b-4382-9dcf-4a860a919f47',
               },
               {
                 id: 'c57a6c3e-14b7-45d7-8a0f-a5bdfef06390',
               },
-            ],
+            ], */
           },
-          select: {
-            id: true,
-            filePath: true,
-            libraryId: true,
-            fileName: true,
-            fileSize: true,
-          },
+
         },
       );
       const filteredTracks = tracksWithNullArtist.filter(
         (track) => track.fileSize <= 100000000, // 100MB
       );
-      console.log(tracksWithNullArtist.map((track) => track.fileName));
 
-      if (filteredTracks.length === 0) {
+      if (filteredTracks.length >= 0) {
         this.logger.log('No tracks found with null originalArtist');
         return {
           message: 'No tracks found with null originalArtist',
@@ -353,7 +346,7 @@ export class QueueController {
       //await this.queueService.scheduleScanForMissingData(filteredTracks, false, true);
 
       await this.queueService.scheduleBatchScanForMissingData(filteredTracks, false, true);
-      /* await this.queueService.scheduleBatchAudioScans(
+      /* await this.queueService.scheduleBulkAudioScans(
         filteredTracks.map((track) => ({
           trackId: track.id,
           filePath: track.filePath,

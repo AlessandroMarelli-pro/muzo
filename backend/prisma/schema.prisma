@@ -28,7 +28,7 @@ model MusicLibrary {
   autoScan              Boolean  @default(true)
   scanInterval          Int?     // in hours
   includeSubdirectories Boolean  @default(true)
-  supportedFormats      String   @default("MP3,FLAC,WAV,AAC,OGG,OPUS") // comma-separated
+  supportedFormats      String   @default("MP3,FLAC,WAV,AAC,OGG,OPUS,M4A") // comma-separated
   maxFileSize           Int?     // in MB
   
   // Timestamps
@@ -299,7 +299,7 @@ model UserPreferences {
   autoScan              Boolean  @default(true)
   scanInterval          Int      @default(24) // in hours
   includeSubdirectories Boolean  @default(true)
-  supportedFormats      String   @default("MP3,FLAC,WAV,AAC,OGG,OPUS")
+  supportedFormats      String   @default("MP3,FLAC,WAV,AAC,OGG,OPUS,M4A")
   
   // Privacy Preferences
   shareListeningData    Boolean  @default(false)

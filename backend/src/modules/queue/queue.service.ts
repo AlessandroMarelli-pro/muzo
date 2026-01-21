@@ -22,6 +22,8 @@ export interface AudioScanJobData {
   skipImageSearch?: boolean;
   skipAIMetadata?: boolean;
   forced?: boolean;
+  totalBatches?: number;
+  batchIndex?: number;
 }
 
 export interface AIMetadataJobData {
@@ -153,7 +155,7 @@ export class QueueService {
   /**
    * Schedule multiple audio file scans in batch
    */
-  async scheduleBatchAudioScans(
+  async scheduleBulkAudioScans(
     audioFiles: Array<{
       filePath: string;
       libraryId: string;
@@ -189,6 +191,65 @@ export class QueueService {
 
       this.logger.log(
         `Scheduled batch audio scan for ${audioFiles.length} files`,
+      );
+    } catch (error) {
+      this.logger.error(`Failed to schedule batch audio scans:`, error);
+      throw error;
+    }
+  }
+  /**
+   * Schedule multiple audio file scans in batches of 10 files using audio-scan-batch
+   */
+  async scheduleBulkBatchAudioScans(
+    audioFiles: Array<{
+      filePath: string;
+      libraryId: string;
+      fileName: string;
+      fileSize: number;
+      lastModified: Date;
+    }>,
+  ): Promise<void> {
+    try {
+      const BATCH_SIZE = 10;
+      const batchJobs = [];
+
+      // Create batches of 10 files
+      for (let i = 0; i < audioFiles.length; i += BATCH_SIZE) {
+        const batch = audioFiles.slice(i, i + BATCH_SIZE);
+        const batchData: AudioScanJobData[] = batch.map((file, batchIndex) => ({
+          filePath: file.filePath,
+          libraryId: file.libraryId,
+          fileName: file.fileName,
+          fileSize: file.fileSize,
+          lastModified: file.lastModified,
+          index: i + batchIndex,
+          totalFiles: audioFiles.length,
+          totalBatches: Math.ceil(audioFiles.length / BATCH_SIZE),
+          batchIndex: Math.floor(i / BATCH_SIZE),
+        }));
+
+        batchJobs.push({
+          name: 'audio-scan-batch',
+          data: batchData,
+          opts: {
+            attempts: this.queueConfig.queues.audioScan.attempts,
+            backoff: {
+              type: this.queueConfig.queues.audioScan.backoff.type as any,
+              delay: this.queueConfig.queues.audioScan.backoff.delay,
+            },
+            removeOnComplete: 50,
+            removeOnFail: 1,
+          },
+        });
+        this.logger.log(
+          `Scheduled batch audio scan job for ${batchData.length} files  (${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(audioFiles.length / BATCH_SIZE)})`,
+        );
+      }
+
+      await this.audioScanQueue.addBulk(batchJobs);
+
+      this.logger.log(
+        `Scheduled ${batchJobs.length} batch audio scan jobs for ${audioFiles.length} files (${BATCH_SIZE} files per batch)`,
       );
     } catch (error) {
       this.logger.error(`Failed to schedule batch audio scans:`, error);
@@ -601,31 +662,49 @@ export class QueueService {
     forced: boolean = false,
   ): Promise<void> {
     try {
-      const data: AudioScanJobData[] = tracks.map((track, index) => ({
-        filePath: track.filePath,
-        libraryId: track.libraryId,
-        fileName: track.fileName,
-        fileSize: track.fileSize,
-        lastModified: new Date(), // Use current date as fallback
-        index,
-        skipClassification: true,
-        totalFiles: tracks.length,
-        skipImageSearch,
-        forced,
-      }));
+      const BATCH_SIZE = 10;
+      const batchJobs = [];
 
-      await this.audioScanQueue.add('audio-scan-batch', data, {
-        attempts: this.queueConfig.queues.audioScan.attempts,
-        backoff: {
-          type: this.queueConfig.queues.audioScan.backoff.type as any,
-          delay: this.queueConfig.queues.audioScan.backoff.delay,
-        },
-        removeOnComplete: 50,
-        removeOnFail: 1,
-      });
+      // Create batches of 10 files
+      for (let i = 0; i < tracks.length; i += BATCH_SIZE) {
+        const batch = tracks.slice(i, i + BATCH_SIZE);
+        const batchData: AudioScanJobData[] = batch.map((track, batchIndex) => ({
+          filePath: track.filePath,
+          libraryId: track.libraryId,
+          fileName: track.fileName,
+          fileSize: track.fileSize,
+          lastModified: new Date(), // Use current date as fallback
+          index: i + batchIndex,
+          skipClassification: true,
+          totalFiles: tracks.length,
+          skipImageSearch,
+          forced,
+          totalBatches: Math.ceil(tracks.length / BATCH_SIZE),
+          batchIndex: Math.floor(i / BATCH_SIZE),
+        }));
+
+        batchJobs.push({
+          name: 'audio-scan-batch',
+          data: batchData,
+          opts: {
+            attempts: this.queueConfig.queues.audioScan.attempts,
+            backoff: {
+              type: this.queueConfig.queues.audioScan.backoff.type as any,
+              delay: this.queueConfig.queues.audioScan.backoff.delay,
+            },
+            removeOnComplete: 50,
+            removeOnFail: 1,
+          },
+        });
+        this.logger.log(
+          `Scheduled batch audio scan job for ${batchData.length} tracks  (${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(tracks.length / BATCH_SIZE)})`,
+        );
+      }
+
+      await this.audioScanQueue.addBulk(batchJobs);
 
       this.logger.log(
-        `Scheduled audio scans for ${tracks.length} tracks with null originalArtist`,
+        `Scheduled ${batchJobs.length} batch audio scan jobs for ${tracks.length} tracks (${BATCH_SIZE} tracks per batch)`,
       );
     } catch (error) {
       this.logger.error(

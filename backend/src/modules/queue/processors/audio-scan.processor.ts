@@ -245,11 +245,14 @@ export class AudioScanProcessor extends WorkerHost {
       skipImageSearch,
       skipAIMetadata,
       forced,
+      totalBatches,
+      batchIndex,
     } = firstJob;
 
     this.logger.log(
-      `Starting batch audio scan for ${jobs.length} files in library ${libraryId}`,
+      `Starting batch audio scan for ${jobs.length} files in library ${libraryId} (${batchIndex + 1}/${totalBatches})`,
     );
+
 
     try {
       // Validate all files exist
@@ -274,7 +277,6 @@ export class AudioScanProcessor extends WorkerHost {
             trackSubgenres: true,
           },
         });
-
         if (
           existingTrack &&
           existingTrack.analysisStatus === AnalysisStatus.COMPLETED
@@ -300,6 +302,7 @@ export class AudioScanProcessor extends WorkerHost {
 
       this.logger.log(
         `Processing ${validJobs.length} files in batch (${jobs.length - validJobs.length} skipped)`,
+        filePaths
       );
 
       // Create or update all tracks first
@@ -354,7 +357,9 @@ export class AudioScanProcessor extends WorkerHost {
           // Validate required fields
           if (
             !analysisResult?.id3_tags?.artist &&
-            !analysisResult?.id3_tags?.title
+            !analysisResult?.id3_tags?.title &&
+            !analysisResult?.ai_metadata?.artist &&
+            !analysisResult?.ai_metadata?.title
           ) {
             this.logger.log(
               `Skipping audio scan for ${jobData.fileName} because it has no artist or title. Music track deleted.`,

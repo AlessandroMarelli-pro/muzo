@@ -16,7 +16,7 @@ import { PrismaService } from '../../shared/services/prisma.service';
 
 @Injectable()
 export class MusicLibraryService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   async create(createDto: CreateMusicLibraryDto): Promise<MusicLibrary> {
     // Validate root path exists and is accessible
@@ -48,7 +48,7 @@ export class MusicLibraryService {
         scanInterval: createDto.scanInterval,
         includeSubdirectories: createDto.includeSubdirectories ?? true,
         supportedFormats:
-          createDto.supportedFormats ?? 'MP3,FLAC,WAV,AAC,OGG,OPUS',
+          createDto.supportedFormats ?? 'MP3,FLAC,WAV,AAC,OGG,OPUS,M4A',
         maxFileSize: createDto.maxFileSize,
       },
     });

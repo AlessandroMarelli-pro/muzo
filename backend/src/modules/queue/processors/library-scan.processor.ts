@@ -76,7 +76,7 @@ export class LibraryScanProcessor extends WorkerHost {
       );
 
       // Schedule audio scan jobs for all found files
-      await this.queueService.scheduleBatchAudioScans(audioFiles);
+      await this.queueService.scheduleBulkBatchAudioScans(audioFiles);
 
       this.logger.log(
         `Successfully scheduled ${audioFiles.length} audio scan jobs for library: ${libraryName}`,

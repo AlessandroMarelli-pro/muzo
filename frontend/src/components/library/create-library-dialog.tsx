@@ -30,7 +30,7 @@ export const CreateLibraryDialog: React.FC<CreateLibraryDialogProps> = ({
     autoScan: true,
     scanInterval: 24,
     includeSubdirectories: true,
-    supportedFormats: ['MP3', 'FLAC', 'WAV', 'AAC', 'OGG', 'OPUS'],
+    supportedFormats: ['MP3', 'FLAC', 'WAV', 'AAC', 'OGG', 'OPUS', 'M4A'],
     maxFileSize: 100 * 1024 * 1024, // 100MB
   });
 
