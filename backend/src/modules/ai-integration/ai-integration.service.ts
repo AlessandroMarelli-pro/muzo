@@ -603,6 +603,102 @@ export class AiIntegrationService {
   }
 
   /**
+   * Analyze multiple audio files in batch for comprehensive features and fingerprint
+   *
+   * @param audioFilePaths - Array of paths to audio files to analyze
+   * @param skipImageSearch - Whether to skip image search (default: false)
+   * @returns Promise<BatchAudioAnalysisResponse> - Batch analysis results
+   */
+  async analyzeAudioBatch(
+    audioFilePaths: string[],
+    skipImageSearch: boolean = false,
+  ): Promise<{
+    status: string;
+    total_files: number;
+    successful: number;
+    failed: number;
+    results: SimpleAudioAnalysisResponse[];
+    processing_time: number;
+    processing_mode: string;
+  }> {
+    try {
+      // Validate all files exist and are accessible
+      for (const audioFilePath of audioFilePaths) {
+        if (!fs.existsSync(audioFilePath)) {
+          throw new HttpException(
+            `Audio file not found: ${audioFilePath}`,
+            HttpStatus.NOT_FOUND,
+          );
+        }
+
+        // Validate file extension
+        const fileExtension = path.extname(audioFilePath).toLowerCase();
+        const supportedExtensions = [
+          '.wav',
+          '.mp3',
+          '.flac',
+          '.m4a',
+          '.aac',
+          '.ogg',
+          '.opus',
+        ];
+        if (!supportedExtensions.includes(fileExtension)) {
+          throw new HttpException(
+            `Unsupported audio format: ${fileExtension}`,
+            HttpStatus.BAD_REQUEST,
+          );
+        }
+      }
+
+      this.logger.log(
+        `Analyzing ${audioFilePaths.length} audio files in batch`,
+      );
+
+      // Get assigned simple server
+      const simpleInstance = this.getAssignedServer('simple');
+
+      // Create form data with multiple files
+      const formData = new FormData();
+      for (const audioFilePath of audioFilePaths) {
+        formData.append('audio_files', fs.createReadStream(audioFilePath));
+      }
+
+      if (skipImageSearch) {
+        formData.append('has_image', 'true');
+      }
+
+      // Make request to batch endpoint
+      const response = await this.httpClient.post(
+        `${simpleInstance.url}/api/v1/audio/analyze/batch`,
+        formData,
+        {
+          headers: {
+            ...formData.getHeaders(),
+          },
+          timeout: this.aiServiceConfig.timeout * audioFilePaths.length, // Increase timeout for batch
+        },
+      );
+
+      this.logger.log(
+        `Batch audio analysis completed: ${response.data.successful}/${response.data.total_files} successful`,
+      );
+
+      return response.data;
+    } catch (error) {
+      this.logger.error(`Batch audio analysis failed:`, error.message);
+
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
+      throw new HttpException(
+        `Batch audio analysis failed: ${error.message}`,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  /**
    * Analyze audio file for comprehensive features, fingerprint, and genre
    *
    * @param audioFilePath - Path to the audio file to analyze
@@ -685,14 +781,14 @@ export class AiIntegrationService {
       const classificationResponse =
         !skipClassification && !hasClassificationFromAIMetadata
           ? await this.httpClient.post(
-              `${hierarchicalInstance.url}/api/v1/audio/analyze/classification`,
-              formData,
-              {
-                headers: {
-                  ...formData.getHeaders(),
-                },
+            `${hierarchicalInstance.url}/api/v1/audio/analyze/classification`,
+            formData,
+            {
+              headers: {
+                ...formData.getHeaders(),
               },
-            )
+            },
+          )
           : { data: null };
 
       this.logger.log(`Audio analysis completed for: ${audioFilePath}`);
@@ -1057,8 +1153,7 @@ export class AiIntegrationService {
         : filenameOrPath;
 
       this.logger.log(
-        `Extracting metadata with AI for filename: ${filename}${
-          filePath ? ` (with file path: ${filePath})` : ''
+        `Extracting metadata with AI for filename: ${filename}${filePath ? ` (with file path: ${filePath})` : ''
         }`,
       );
 

@@ -36,7 +36,7 @@ export class MusicTrackService {
     private readonly filterService: FilterService,
     private readonly recommendationService: RecommendationService,
     private readonly elasticsearchService: ElasticsearchService,
-  ) {}
+  ) { }
 
   async create(createDto: CreateMusicTrackDto): Promise<MusicTrack> {
     // Validate library exists
@@ -183,7 +183,7 @@ export class MusicTrackService {
     let where: any = {};
 
     const filter = this.filterService.getCurrentFilter();
-    console.log(filter);
+
     if (filter) {
       where = await this.filterService.buildPrismaWhereClause(filter);
     }
@@ -1109,7 +1109,7 @@ export class MusicTrackService {
     dislikedCount: number;
     remainingCount: number;
   }> {
- 
+
     let where: any = {};
 
     // Apply filters the same way as findAllPaginated
@@ -1126,7 +1126,7 @@ export class MusicTrackService {
           where: { isLiked: true, isBanger: false },
         }),
         this.prisma.musicTrack.count({
-          where: {  isBanger: true },
+          where: { isBanger: true },
         })
       ]);
 
@@ -1155,7 +1155,7 @@ export class MusicTrackService {
         skip: skip,
         select: simpleMusicTrackFieldSelectors,
       });
-    } 
+    }
 
     return {
       track,

@@ -17,7 +17,7 @@ export class QueueController {
   constructor(
     private readonly queueService: QueueService,
     private readonly prismaService: PrismaService,
-  ) {}
+  ) { }
 
   /**
    * Start scanning all libraries
@@ -329,6 +329,13 @@ export class QueueController {
               },
             ],
           },
+          select: {
+            id: true,
+            filePath: true,
+            libraryId: true,
+            fileName: true,
+            fileSize: true,
+          },
         },
       );
       const filteredTracks = tracksWithNullArtist.filter(
@@ -343,7 +350,7 @@ export class QueueController {
           tracksScheduled: 0,
         };
       }
-      await this.queueService.scheduleScanForMissingData(filteredTracks, false, true);
+      await this.queueService.scheduleBatchScanForMissingData(filteredTracks, false, true);
       /* await this.queueService.scheduleBatchAudioScans(
         filteredTracks.map((track) => ({
           trackId: track.id,

@@ -8,7 +8,7 @@ using soundfile for fast loading and avoiding redundant operations.
 import gc
 import os
 import time
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from loguru import logger
 
@@ -350,6 +350,17 @@ class SimpleAnalysisService:
                 converted_wav_path = self.convert_m4a_to_wav(file_path)
                 file_path = converted_wav_path
 
+    # Extract metadata using OpenAI if available and not skipped
+            ai_metadata = {}
+            if original_filename and not skip_ai_metadata:
+                ai_metadata = self.extract_metadata_with_ai(
+                    original_filename, file_path
+                )
+                if ai_metadata:
+                    logger.info("AI metadata extracted successfully")
+            elif skip_ai_metadata:
+                logger.debug("Skipping AI metadata extraction (skip_ai_metadata=True)")
+
             # Load audio samples for efficient analysis (harmonic, percussive, and BPM)
             (
                 y_harmonic,
@@ -372,17 +383,7 @@ class SimpleAnalysisService:
                 file_path
             )  # Use full file for duration
 
-            # Extract metadata using OpenAI if available and not skipped
-            ai_metadata = {}
-            if original_filename and not skip_ai_metadata:
-                ai_metadata = self.extract_metadata_with_ai(
-                    original_filename, file_path
-                )
-                if ai_metadata:
-                    logger.info("AI metadata extracted successfully")
-            elif skip_ai_metadata:
-                logger.debug("Skipping AI metadata extraction (skip_ai_metadata=True)")
-
+        
             ai_bpm = ai_metadata.get("audioFeatures", {}).get("bpm", None)
             ai_key = ai_metadata.get("audioFeatures", {}).get("key", None)
             basic_features = self.extract_basic_features(
@@ -477,3 +478,256 @@ class SimpleAnalysisService:
                     logger.error(
                         f"Failed to clean up converted WAV file {converted_wav_path}: {e}"
                     )
+
+    @monitor_performance("simple_analysis_batch")
+    def analyze_audio_batch(
+        self,
+        file_items: List[Tuple[str, str]],
+        sample_duration: float = 10.0,
+        skip_intro: float = 30.0,
+        skip_ai_metadata: bool = False,
+    ) -> Dict[str, Any]:
+        """
+        Analyze multiple audio files in batch with efficient AI metadata extraction.
+
+        This method processes multiple files efficiently by:
+        1. Extracting AI metadata for all files in a single batch API call (70%+ token savings)
+        2. Processing audio analysis (BPM, features, fingerprint) for each file individually
+        3. Matching AI metadata results to files by order
+
+        Args:
+            file_items: List of tuples (file_path, original_filename) to process
+            sample_duration: Duration of audio sample to analyze in seconds (default: 10.0)
+            skip_intro: Seconds to skip from beginning (default: 30.0)
+            skip_ai_metadata: Whether to skip AI metadata extraction (default: False)
+
+        Returns:
+            Dictionary containing:
+                - status: Overall status ("success" or "partial_success")
+                - total_files: Total number of files processed
+                - successful: Number of successfully processed files
+                - failed: Number of failed files
+                - results: List of analysis results (one per file, maintaining input order)
+                - processing_time: Total processing time in seconds
+        """
+        start_time = time.time()
+        total_files = len(file_items)
+        successful = 0
+        failed = 0
+        results: List[Dict[str, Any]] = []
+        converted_wav_paths: List[str] = []
+
+        logger.info(f"Starting batch audio analysis for {total_files} files")
+
+        try:
+            # Step 1: Extract AI metadata for all files in a single batch call
+            ai_metadata_list: List[Dict[str, Any]] = []
+            if not skip_ai_metadata and self.ai_extractor and self.ai_extractor._is_available():
+                try:
+                    # Prepare items for batch metadata extraction: (filename, file_path)
+                    batch_items = [
+                        (original_filename, file_path)
+                        for file_path, original_filename in file_items
+                    ]
+
+                    logger.info(
+                        f"Extracting AI metadata for {len(batch_items)} files in batch"
+                    )
+                    ai_metadata_list = self.ai_extractor.extract_metadata_batch(
+                        items=batch_items,
+                        batch_filename_cleaning=True,
+                        max_batch_size=10,  # Process in chunks of 10
+                    )
+                    logger.info(
+                        f"Successfully extracted AI metadata for {len(ai_metadata_list)} files"
+                    )
+                except Exception as e:
+                    logger.warning(
+                        f"Batch AI metadata extraction failed: {e}. "
+                        "Continuing with individual file analysis."
+                    )
+                    # If batch fails, create empty metadata for each file
+                    ai_metadata_list = [{}] * total_files
+            else:
+                logger.debug("Skipping AI metadata extraction (disabled or unavailable)")
+                ai_metadata_list = [{}] * total_files
+
+            # Step 2: Process each file for audio analysis
+            for idx, (file_path, original_filename) in enumerate(file_items):
+                file_start_time = time.time()
+                converted_wav_path = None
+
+                try:
+                    logger.info(
+                        f"Processing file {idx + 1}/{total_files}: {original_filename}"
+                    )
+
+                    # Handle M4A conversion if needed
+                    if file_path.endswith(".m4a"):
+                        converted_wav_path = self.convert_m4a_to_wav(file_path)
+                        converted_wav_paths.append(converted_wav_path)
+                        file_path = converted_wav_path
+
+                    # Get AI metadata for this file (matched by order)
+                    ai_metadata = ai_metadata_list[idx] if idx < len(ai_metadata_list) else {}
+
+                    # Load audio samples for efficient analysis
+                    (
+                        y_harmonic,
+                        y_percussive,
+                        y_bpm,
+                        sr,
+                        harmonic_metadata,
+                        percussive_metadata,
+                        bpm_metadata,
+                    ) = self.smart_audio_sample_loading(
+                        file_path,
+                        sample_duration,
+                        skip_intro,
+                    )
+
+                    # Extract all information
+                    file_metadata = self.extract_file_metadata(file_path)
+                    technical_info = self.extract_audio_technical(file_path)
+
+                    # Extract AI BPM and key if available
+                    ai_bpm = ai_metadata.get("audioFeatures", {}).get("bpm", None)
+                    ai_key = ai_metadata.get("audioFeatures", {}).get("key", None)
+
+                    # Extract features
+                    basic_features = self.extract_basic_features(
+                        y_harmonic,
+                        y_percussive,
+                        y_bpm,
+                        bpm_metadata,
+                        sr,
+                        file_path,
+                        ai_bpm,
+                        ai_key,
+                    )
+
+                    # Generate fingerprint
+                    fingerprint = self.generate_simple_fingerprint(
+                        file_path, y_harmonic, sr
+                    )
+
+                    # Extract ID3 tags
+                    id3_tags = self.extract_id3_tags(file_path, original_filename)
+
+                    # Combine all results
+                    file_result = {
+                        "status": "success",
+                        "message": "Audio analysis completed successfully",
+                        "processing_time": round(time.time() - file_start_time, 3),
+                        "processing_mode": "simple",
+                        "filename": original_filename,
+                        **file_metadata,
+                        **technical_info,
+                        **basic_features,
+                        **fingerprint,
+                        **id3_tags,
+                    }
+
+                    # Add AI metadata if available
+                    if ai_metadata:
+                        file_result["ai_metadata"] = ai_metadata
+
+                    results.append(file_result)
+                    successful += 1
+
+                    # Explicitly release audio arrays from memory
+                    del y_harmonic
+                    del y_percussive
+                    del y_bpm
+
+                    logger.info(
+                        f"✅ File {idx + 1}/{total_files} completed in {file_result['processing_time']:.3f}s"
+                    )
+
+                except Exception as e:
+                    logger.error(
+                        f"❌ Failed to analyze file {idx + 1}/{total_files} "
+                        f"({original_filename}): {e}"
+                    )
+                    failed += 1
+
+                    # Add error result maintaining order
+                    results.append(
+                        {
+                            "status": "error",
+                            "message": f"Analysis failed: {str(e)}",
+                            "processing_mode": "simple",
+                            "filename": original_filename,
+                            "processing_time": round(time.time() - file_start_time, 3),
+                        }
+                    )
+
+                finally:
+                    # Clean up converted WAV file if created
+                    if converted_wav_path and os.path.exists(converted_wav_path):
+                        try:
+                            os.unlink(converted_wav_path)
+                            if converted_wav_path in converted_wav_paths:
+                                converted_wav_paths.remove(converted_wav_path)
+                        except Exception as cleanup_error:
+                            logger.warning(
+                                f"Failed to clean up converted WAV file "
+                                f"{converted_wav_path}: {cleanup_error}"
+                            )
+
+            # Track analysis count and perform periodic garbage collection
+            self.analysis_count += total_files
+            if self.analysis_count % self.gc_interval == 0:
+                logger.debug(
+                    f"🧹 Performing GC after {self.analysis_count} analyses"
+                )
+                gc.collect()
+
+            # Determine overall status
+            overall_status = (
+                "success" if failed == 0 else "partial_success" if successful > 0 else "error"
+            )
+
+            total_processing_time = round(time.time() - start_time, 3)
+
+            logger.info(
+                f"Batch analysis completed: {successful}/{total_files} successful "
+                f"in {total_processing_time:.3f}s"
+            )
+
+            return {
+                "status": overall_status,
+                "total_files": total_files,
+                "successful": successful,
+                "failed": failed,
+                "results": results,
+                "processing_time": total_processing_time,
+                "processing_mode": "simple_batch",
+            }
+
+        except Exception as e:
+            logger.error(f"Batch audio analysis failed: {e}")
+            gc.collect()
+
+            return {
+                "status": "error",
+                "total_files": total_files,
+                "successful": successful,
+                "failed": failed,
+                "results": results,
+                "message": f"Batch analysis failed: {str(e)}",
+                "processing_time": round(time.time() - start_time, 3),
+                "processing_mode": "simple_batch",
+            }
+
+        finally:
+            # Clean up any remaining converted WAV files
+            for converted_path in converted_wav_paths:
+                if os.path.exists(converted_path):
+                    try:
+                        os.unlink(converted_path)
+                    except Exception as cleanup_error:
+                        logger.warning(
+                            f"Failed to clean up converted WAV file "
+                            f"{converted_path}: {cleanup_error}"
+                        )

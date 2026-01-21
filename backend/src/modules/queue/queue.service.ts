@@ -59,7 +59,7 @@ export class QueueService {
     private readonly libraryScanQueue: Queue<LibraryScanJobData>,
     @InjectQueue('audio-scan')
     private readonly audioScanQueue: Queue<
-      AudioScanJobData | EndScanLibraryJobData | AIMetadataJobData
+      AudioScanJobData | EndScanLibraryJobData | AIMetadataJobData | AudioScanJobData[]
     >,
     @InjectQueue('bpm-update')
     private readonly bpmUpdateQueue: Queue<BPMUpdateJobData>,
@@ -574,6 +574,55 @@ export class QueueService {
       }));
 
       await this.audioScanQueue.addBulk(jobs);
+
+      this.logger.log(
+        `Scheduled audio scans for ${tracks.length} tracks with null originalArtist`,
+      );
+    } catch (error) {
+      this.logger.error(
+        `Failed to schedule audio scans for null artist tracks:`,
+        error,
+      );
+      throw error;
+    }
+  }
+  /**
+   * Schedule audio scans for tracks with null originalArtist
+   */
+  async scheduleBatchScanForMissingData(
+    tracks: Array<{
+      id: string;
+      filePath: string;
+      libraryId: string;
+      fileName: string;
+      fileSize: number;
+    }>,
+    skipImageSearch: boolean = true,
+    forced: boolean = false,
+  ): Promise<void> {
+    try {
+      const data: AudioScanJobData[] = tracks.map((track, index) => ({
+        filePath: track.filePath,
+        libraryId: track.libraryId,
+        fileName: track.fileName,
+        fileSize: track.fileSize,
+        lastModified: new Date(), // Use current date as fallback
+        index,
+        skipClassification: true,
+        totalFiles: tracks.length,
+        skipImageSearch,
+        forced,
+      }));
+
+      await this.audioScanQueue.add('audio-scan-batch', data, {
+        attempts: this.queueConfig.queues.audioScan.attempts,
+        backoff: {
+          type: this.queueConfig.queues.audioScan.backoff.type as any,
+          delay: this.queueConfig.queues.audioScan.backoff.delay,
+        },
+        removeOnComplete: 50,
+        removeOnFail: 1,
+      });
 
       this.logger.log(
         `Scheduled audio scans for ${tracks.length} tracks with null originalArtist`,
