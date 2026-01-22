@@ -16,9 +16,16 @@ import { PrismaService } from '../../../shared/services/prisma.service';
 import { ProgressTrackingService } from '../progress-tracking.service';
 import {
   AIMetadataJobData,
+  AudioScanBatchJobData,
   AudioScanJobData,
   EndScanLibraryJobData,
 } from '../queue.service';
+import { ScanProgressPubSubService } from '../scan-progress-pubsub.service';
+import {
+  ScanErrorEvent,
+  TrackCompleteEvent
+} from '../scan-progress.types';
+import { ScanSessionService } from '../scan-session.service';
 
 @Processor('audio-scan')
 export class AudioScanProcessor extends WorkerHost {
@@ -34,6 +41,8 @@ export class AudioScanProcessor extends WorkerHost {
     >,
     private readonly imageService: ImageService,
     private readonly elasticsearchSyncService: ElasticsearchSyncService,
+    private readonly pubSubService: ScanProgressPubSubService,
+    private readonly scanSessionService: ScanSessionService,
   ) {
     super();
   }
@@ -46,188 +55,7 @@ export class AudioScanProcessor extends WorkerHost {
     } else if (job.name === 'extract-ai-metadata') {
       await this.processAIMetadataExtraction(job as Job<AIMetadataJobData>);
     } else if (job.name === 'audio-scan-batch') {
-      await this.processAudioScanBatch(job as unknown as Job<AudioScanJobData[]>);
-    } else {
-      await this.processAudioScan(job as Job<AudioScanJobData>);
-    }
-  }
-
-  /**
-   * Process audio scan job
-   */
-  private async processAudioScan(job: Job<AudioScanJobData>): Promise<void> {
-    const {
-      filePath,
-      libraryId,
-      fileName,
-      fileSize,
-      lastModified,
-      index,
-      totalFiles,
-      skipClassification,
-      skipImageSearch,
-      skipAIMetadata,
-      forced
-    } = job.data;
-
-    this.logger.log(
-      `Starting audio scan for: ${fileName} (${index !== undefined ? `${index + 1}/${totalFiles}` : 'single'})`,
-    );
-
-    try {
-      // Validate file exists
-      if (!fs.existsSync(filePath)) {
-        throw new Error(`Audio file not found: ${filePath}`);
-      }
-
-      // Check if track already exists
-      const existingTrack = await this.prismaService.musicTrack.findUnique({
-        where: { filePath },
-        include: {
-          audioFingerprint: true,
-          aiAnalysisResult: true,
-          trackGenres: true,
-          trackSubgenres: true,
-        },
-      });
-      if (
-        existingTrack &&
-        existingTrack.analysisStatus === AnalysisStatus.COMPLETED
-      ) {
-        if (
-          existingTrack.trackGenres.length !== 0 &&
-          existingTrack.trackSubgenres.length !== 0 && !forced
-        ) {
-          this.logger.log(`Track already analyzed: ${fileName}`);
-          return;
-        }
-      }
-
-      // Create or update MusicTrack record
-      const track = await this.createOrUpdateTrack({
-        filePath,
-        libraryId,
-        fileName,
-        fileSize,
-        lastModified,
-      });
-      // Update analysis status to IN_PROGRESS
-      await this.prismaService.musicTrack.update({
-        where: { id: track.id },
-        data: {
-          analysisStatus: AnalysisStatus.PROCESSING,
-          analysisStartedAt: new Date(),
-        },
-      });
-
-      // Analyze audio file using AI service
-      const analysisResult: SimpleAudioAnalysisResponse =
-        await this.aiIntegrationService.analyzeAudio(
-          filePath,
-          skipClassification,
-          skipImageSearch,
-        );
-      if (
-        !analysisResult?.id3_tags?.artist &&
-        !analysisResult?.id3_tags?.title
-      ) {
-        this.logger.log(
-          `Skipping audio scan for ${fileName} because it has no artist or title. Music track deleted.`,
-        );
-        await this.prismaService.musicTrack.delete({
-          where: { id: track.id },
-        });
-        return;
-      }
-
-      // Process track analysis using extracted method
-      await this.processTrackAnalysis(track.id, analysisResult);
-      this.logger.log(`Successfully analyzed audio file: ${fileName}`);
-
-      // Update progress tracking
-      const library = await this.prismaService.musicLibrary.findUnique({
-        where: { id: libraryId },
-        select: { name: true },
-      });
-      if (library) {
-        await this.progressTrackingService.updateLibraryProgress(
-          libraryId,
-          library.name,
-        );
-      }
-
-      // Check if this is the last item in a batch and schedule end-scan job
-      if (
-        index !== undefined &&
-        totalFiles !== undefined &&
-        index === totalFiles - 1
-      ) {
-        this.logger.log(
-          `Processing last item in batch for library ${libraryId}, scheduling end-scan job`,
-        );
-
-        // Get library information for the end-scan job
-        const library = await this.prismaService.musicLibrary.findUnique({
-          where: { id: libraryId },
-          select: { name: true },
-        });
-
-        if (library) {
-          const endScanJobData: EndScanLibraryJobData = {
-            libraryId,
-            libraryName: library.name,
-            totalTracks: totalFiles,
-            scanType: 'full', // You might want to determine this based on context
-          };
-
-          await this.audioScanQueue.add('end-scan-library', endScanJobData, {
-            attempts: 3,
-            backoff: {
-              type: 'exponential',
-              delay: 2000,
-            },
-            removeOnComplete: 10,
-            removeOnFail: 1,
-          });
-
-          this.logger.log(
-            `Scheduled end-scan-library job for: ${library.name} (${totalFiles} tracks)`,
-          );
-        } else {
-          this.logger.warn(
-            `Library ${libraryId} not found when scheduling end-scan job`,
-          );
-        }
-      }
-
-      // Update job progress
-      await job.updateProgress(100);
-    } catch (error) {
-      this.logger.error(`Audio scan failed for ${fileName}:`, error.message);
-
-      // Update track with error status
-      try {
-        const track = await this.prismaService.musicTrack.findUnique({
-          where: { filePath },
-        });
-
-        if (track) {
-          await this.prismaService.musicTrack.update({
-            where: { id: track.id },
-            data: {
-              analysisStatus: AnalysisStatus.FAILED,
-              analysisError: error.message,
-            },
-          });
-        }
-      } catch (updateError) {
-        this.logger.error(
-          'Failed to update track error status:',
-          updateError.message,
-        );
-      }
-
-      throw error;
+      await this.processAudioScanBatch(job as unknown as Job<AudioScanBatchJobData>);
     }
   }
 
@@ -235,23 +63,15 @@ export class AudioScanProcessor extends WorkerHost {
    * Process batch audio scan job
    */
   private async processAudioScanBatch(
-    job: Job<AudioScanJobData[]>,
+    job: Job<AudioScanBatchJobData>,
   ): Promise<void> {
     const jobs = job.data;
-    const firstJob = jobs[0];
-    const {
-      libraryId,
-      skipClassification,
-      skipImageSearch,
-      skipAIMetadata,
-      forced,
-      totalBatches,
-      batchIndex,
-    } = firstJob;
-
+    const { audioFiles, skipImageSearch, forced, sessionId, totalFiles, totalBatches, batchIndex, libraryId, } = jobs;
+    const overallProgress = Math.round(((batchIndex) / totalBatches!) * 10000) / 100;
     this.logger.log(
-      `Starting batch audio scan for ${jobs.length} files in library ${libraryId} (${batchIndex + 1}/${totalBatches})`,
+      `Starting batch audio scan for ${audioFiles.length} files in library ${libraryId} (${batchIndex}/${totalBatches}) - Overall progress: ${overallProgress}%`,
     );
+
 
 
     try {
@@ -259,7 +79,9 @@ export class AudioScanProcessor extends WorkerHost {
       const validJobs: AudioScanJobData[] = [];
       const filePaths: string[] = [];
 
-      for (const jobData of jobs) {
+      for (const jobData of audioFiles) {
+        const index = jobData.index!;
+
         if (!fs.existsSync(jobData.filePath)) {
           this.logger.warn(
             `Skipping missing file: ${jobData.filePath} (${jobData.fileName})`,
@@ -287,6 +109,25 @@ export class AudioScanProcessor extends WorkerHost {
             !forced
           ) {
             this.logger.log(`Track already analyzed: ${jobData.fileName}`);
+            if (sessionId) {
+
+              const trackCompleteEvent: TrackCompleteEvent = {
+                type: 'track.complete',
+                sessionId,
+                timestamp: new Date().toISOString(),
+                libraryId,
+                batchIndex,
+                data: {
+                  trackIndex: jobData.index!,
+                  fileName: jobData.fileName,
+                  success: false,
+                },
+              };
+              await this.pubSubService.publishEvent(
+                sessionId,
+                trackCompleteEvent,
+              );
+            }
             continue;
           }
         }
@@ -297,11 +138,12 @@ export class AudioScanProcessor extends WorkerHost {
 
       if (validJobs.length === 0) {
         this.logger.log('No files to process in batch');
+        await this.batchComplete({ libraryId, job });
         return;
       }
 
       this.logger.log(
-        `Processing ${validJobs.length} files in batch (${jobs.length - validJobs.length} skipped)`,
+        `Processing ${validJobs.length} files in batch (${audioFiles.length - validJobs.length} skipped)`,
         filePaths
       );
 
@@ -335,6 +177,8 @@ export class AudioScanProcessor extends WorkerHost {
       const batchAnalysisResult = await this.aiIntegrationService.analyzeAudioBatch(
         filePaths,
         skipImageSearch,
+        sessionId,
+        batchIndex,
       );
 
       // Process each result
@@ -343,6 +187,7 @@ export class AudioScanProcessor extends WorkerHost {
 
       for (let i = 0; i < validJobs.length; i++) {
         const jobData = validJobs[i];
+        const index = jobData.index!;
         const track = tracks[i];
         const analysisResult = batchAnalysisResult.results[i];
 
@@ -368,8 +213,30 @@ export class AudioScanProcessor extends WorkerHost {
               where: { id: track.id },
             });
             failed++;
+
+            // Publish track failure event
+            if (sessionId) {
+              const trackCompleteEvent: TrackCompleteEvent = {
+                type: 'track.complete',
+                sessionId,
+                timestamp: new Date().toISOString(),
+                libraryId,
+                batchIndex,
+                data: {
+                  trackIndex: i,
+                  fileName: jobData.fileName,
+                  success: false,
+                },
+              };
+              await this.pubSubService.publishEvent(
+                sessionId,
+                trackCompleteEvent,
+              );
+            }
             continue;
           }
+
+
 
           // Process this track using extracted helper methods
           await this.processTrackAnalysis(track.id, analysisResult);
@@ -378,12 +245,52 @@ export class AudioScanProcessor extends WorkerHost {
           this.logger.log(
             `Successfully analyzed audio file: ${jobData.fileName}`,
           );
+
+          // Publish track complete event
+          if (sessionId) {
+            const trackCompleteEvent: TrackCompleteEvent = {
+              type: 'track.complete',
+              sessionId,
+              timestamp: new Date().toISOString(),
+              libraryId,
+              batchIndex,
+              data: {
+                trackIndex: i,
+                fileName: jobData.fileName,
+                success: true,
+              },
+            };
+            await this.pubSubService.publishEvent(
+              sessionId,
+              trackCompleteEvent,
+            );
+          }
         } catch (error) {
           failed++;
           this.logger.error(
             `Failed to process track ${jobData.fileName}:`,
             error.message,
           );
+
+          // Publish error event
+          if (sessionId) {
+            const errorEvent: ScanErrorEvent = {
+              type: 'error',
+              sessionId,
+              timestamp: new Date().toISOString(),
+              severity: 'error',
+              source: 'backend',
+              libraryId,
+              batchIndex,
+              trackIndex: i,
+              error: {
+                code: 'TRACK_PROCESSING_ERROR',
+                message: error.message,
+                details: { fileName: jobData.fileName },
+              },
+            };
+            await this.pubSubService.publishError(sessionId, errorEvent);
+          }
 
           // Update track with error status
           try {
@@ -403,28 +310,30 @@ export class AudioScanProcessor extends WorkerHost {
         }
       }
 
-      this.logger.log(
-        `Batch audio scan completed: ${successful}/${validJobs.length} successful, ${failed} failed`,
-      );
+      await this.batchComplete({ libraryId, job });
 
-      // Update progress tracking
-      const library = await this.prismaService.musicLibrary.findUnique({
-        where: { id: libraryId },
-        select: { name: true },
-      });
-      if (library) {
-        await this.progressTrackingService.updateLibraryProgress(
-          libraryId,
-          library.name,
-        );
-      }
-
-      // Update job progress
-      await job.updateProgress(100);
     } catch (error) {
       this.logger.error(`Batch audio scan failed:`, error.message);
       throw error;
     }
+  }
+  private async batchComplete({ libraryId, job }: { libraryId, job: Job<AudioScanBatchJobData> }): Promise<void> {
+
+
+    // Update progress tracking
+    const library = await this.prismaService.musicLibrary.findUnique({
+      where: { id: libraryId },
+      select: { name: true },
+    });
+    if (library) {
+      await this.progressTrackingService.updateLibraryProgress(
+        libraryId,
+        library.name,
+      );
+    }
+    // Update job progress
+    await job.updateProgress(100);
+
   }
 
   /**

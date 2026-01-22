@@ -26,6 +26,7 @@ export class QueueController {
   async scanAllLibraries(): Promise<{
     message: string;
     librariesScheduled: number;
+    sessionIds: string[];
   }> {
     try {
       const libraries = await this.prismaService.musicLibrary.findMany({
@@ -33,12 +34,14 @@ export class QueueController {
       });
 
       let scheduledCount = 0;
+      const sessionIds: string[] = [];
       for (const library of libraries) {
-        await this.queueService.scheduleLibraryScan(
+        const sessionId = await this.queueService.scheduleLibraryScan(
           library.id,
           library.rootPath,
           library.name,
         );
+        sessionIds.push(sessionId);
         scheduledCount++;
       }
 
@@ -47,6 +50,7 @@ export class QueueController {
       return {
         message: `Scheduled ${scheduledCount} libraries for scanning`,
         librariesScheduled: scheduledCount,
+        sessionIds,
       };
     } catch (error) {
       this.logger.error('Failed to schedule library scans:', error);
@@ -60,26 +64,28 @@ export class QueueController {
   @Post('scan-library/:libraryId')
   async scanLibrary(
     @Param('libraryId') libraryId: string,
-  ): Promise<{ message: string }> {
+  ): Promise<{ message: string; sessionId: string }> {
     try {
       const library = await this.prismaService.musicLibrary.findUnique({
         where: { id: libraryId },
       });
+      this.logger.log(`Scanning library: ${libraryId}`, library);
 
       if (!library) {
         throw new Error(`Library not found: ${libraryId}`);
       }
 
-      await this.queueService.scheduleLibraryScan(
+      const sessionId = await this.queueService.scheduleLibraryScan(
         library.id,
         library.rootPath,
         library.name,
       );
 
-      this.logger.log(`Scheduled library scan for: ${library.name}`);
+      this.logger.log(`Scheduled library scan for: ${library.name} with session: ${sessionId}`);
 
       return {
         message: `Scheduled library scan for: ${library.name}`,
+        sessionId,
       };
     } catch (error) {
       this.logger.error(
@@ -320,14 +326,14 @@ export class QueueController {
       const tracksWithNullArtist = await this.prismaService.musicTrack.findMany(
         {
           where: {
-            filePath: { contains: 'm4a' },           /* OR: [
+            OR: [
               {
                 id: '039d50a9-ca8b-4382-9dcf-4a860a919f47',
               },
               {
                 id: 'c57a6c3e-14b7-45d7-8a0f-a5bdfef06390',
               },
-            ], */
+            ],
           },
 
         },

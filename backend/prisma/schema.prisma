@@ -645,3 +645,26 @@ model Queue {
   @@unique([trackId])
   @@map("queue")
 }
+
+model ScanSession {
+  id                String        @id @default(uuid())
+  sessionId         String        @unique // The UUID used for Redis channels
+  status            ScanStatus    @default(SCANNING)
+  totalBatches      Int           @default(0)
+  completedBatches  Int           @default(0)
+  totalTracks       Int           @default(0)
+  completedTracks   Int           @default(0)
+  failedTracks      Int           @default(0)
+  startedAt         DateTime      @default(now())
+  completedAt       DateTime?
+  errorMessage      String?
+  
+  // Timestamps
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  
+  @@index([sessionId])
+  @@index([status])
+  @@index([startedAt])
+  @@map("scan_sessions")
+}

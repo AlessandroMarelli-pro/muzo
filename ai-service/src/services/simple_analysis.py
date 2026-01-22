@@ -8,9 +8,12 @@ using soundfile for fast loading and avoiding redundant operations.
 import gc
 import os
 import time
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, TYPE_CHECKING
 
 from loguru import logger
+
+if TYPE_CHECKING:
+    from src.utils.scan_progress_publisher import ScanProgressPublisher
 
 from src.services.base_metadata_extractor import create_metadata_extractor
 from src.services.simple_audio_loader import SimpleAudioLoader
@@ -485,6 +488,9 @@ class SimpleAnalysisService:
         sample_duration: float = 10.0,
         skip_intro: float = 30.0,
         skip_ai_metadata: bool = False,
+        session_id: Optional[str] = None,
+        batch_index: Optional[int] = None,
+        progress_publisher: Optional[Any] = None,
     ) -> Dict[str, Any]:
         """
         Analyze multiple audio files in batch with efficient AI metadata extraction.
@@ -527,6 +533,19 @@ class SimpleAnalysisService:
                 and self.ai_extractor._is_available()
             ):
                 try:
+                    # Publish llm.metadata events for all tracks
+                    if progress_publisher and session_id:
+                        for track_idx, (_, original_filename) in enumerate(file_items):
+                            progress_publisher.publish_event(
+                                session_id,
+                                "llm.metadata",
+                                {
+                                    "trackIndex": track_idx,
+                                    "fileName": original_filename,
+                                },
+                                batchIndex=batch_index,
+                            )
+
                     # Prepare items for batch metadata extraction: (filename, file_path)
                     batch_items = [
                         (original_filename, file_path)
@@ -580,6 +599,19 @@ class SimpleAnalysisService:
                 file_start_time = time.time()
                 converted_wav_path = None
 
+                # Publish track.processing event
+                if progress_publisher and session_id:
+                    progress_publisher.publish_event(
+                        session_id,
+                        "track.processing",
+                        {
+                            "trackIndex": idx,
+                            "totalTracks": total_files,
+                            "fileName": original_filename,
+                        },
+                        batchIndex=batch_index,
+                    )
+
                 try:
                     logger.info(
                         f"Processing file {idx + 1}/{total_files}: {original_filename}"
@@ -619,6 +651,17 @@ class SimpleAnalysisService:
                     ai_bpm = ai_metadata.get("audioFeatures", {}).get("bpm", None)
                     ai_key = ai_metadata.get("audioFeatures", {}).get("key", None)
 
+                    # Publish audio.analysis progress (25%)
+                    if progress_publisher and session_id:
+                        progress_publisher.publish_track_progress(
+                            session_id,
+                            batch_index or 0,
+                            idx,
+                            total_files,
+                            original_filename,
+                            25,
+                        )
+
                     # Extract features
                     basic_features = self.extract_basic_features(
                         y_harmonic,
@@ -631,10 +674,32 @@ class SimpleAnalysisService:
                         ai_key,
                     )
 
+                    # Publish audio.analysis progress (50%)
+                    if progress_publisher and session_id:
+                        progress_publisher.publish_track_progress(
+                            session_id,
+                            batch_index or 0,
+                            idx,
+                            total_files,
+                            original_filename,
+                            50,
+                        )
+
                     # Generate fingerprint
                     fingerprint = self.generate_simple_fingerprint(
                         file_path, y_harmonic, sr
                     )
+
+                    # Publish audio.analysis progress (75%)
+                    if progress_publisher and session_id:
+                        progress_publisher.publish_track_progress(
+                            session_id,
+                            batch_index or 0,
+                            idx,
+                            total_files,
+                            original_filename,
+                            75,
+                        )
 
                     # Extract ID3 tags
                     id3_tags = self.extract_id3_tags(
@@ -661,6 +726,17 @@ class SimpleAnalysisService:
 
                     results.append(file_result)
                     successful += 1
+
+                    # Publish audio.analysis progress (100% - complete)
+                    if progress_publisher and session_id:
+                        progress_publisher.publish_track_progress(
+                            session_id,
+                            batch_index or 0,
+                            idx,
+                            total_files,
+                            original_filename,
+                            100,
+                        )
 
                     # Explicitly release audio arrays from memory
                     del y_harmonic

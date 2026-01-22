@@ -7,6 +7,7 @@ import {
   useCurrentTrack,
 } from '@/contexts/audio-player-context';
 import { FilterProvider } from '@/contexts/filter-context';
+import { ScanSessionProvider } from '@/contexts/scan-session.context';
 import { cn } from '@/lib/utils';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
@@ -112,9 +113,10 @@ const RootComponent = React.memo(function RootComponent() {
   return (
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
       <QueryClientProvider client={queryClient}>
-        <FilterProvider>
-          <AudioPlayerProvider>
-            <SidebarProvider defaultOpen={true}>
+        <ScanSessionProvider>
+          <FilterProvider>
+            <AudioPlayerProvider>
+              <SidebarProvider defaultOpen={true}>
               <AppSidebar data={navigationData} />
 
               <SidebarInset>
@@ -136,6 +138,7 @@ const RootComponent = React.memo(function RootComponent() {
             </SidebarProvider>
           </AudioPlayerProvider>
         </FilterProvider>
+        </ScanSessionProvider>
         <ReactQueryDevtools initialIsOpen={false} position="bottom" />
         {/* <TanStackRouterDevtools position="top-right" initialIsOpen={false} /> */}
       </QueryClientProvider>

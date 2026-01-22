@@ -1,5 +1,6 @@
 import { CreateLibraryDialog } from '@/components/library/create-library-dialog';
 import { LibraryList } from '@/components/library/library-list';
+import { useScanSessionContext } from '@/contexts/scan-session.context';
 import { useScanLibrary } from '@/services/rest-client';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
@@ -8,6 +9,7 @@ function LibrariesPage() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const scanLibraryMutation = useScanLibrary();
   const navigate = useNavigate();
+  const { addSession } = useScanSessionContext();
 
   const handleRefresh = async () => {
     // Simulate API call
@@ -20,9 +22,14 @@ function LibrariesPage() {
   };
 
   const handleScanLibrary = (libraryId: string) => {
+    console.log('Scanning library:', libraryId);
     scanLibraryMutation.mutate(libraryId, {
-      onSuccess: () => {
-        console.log('Library scan started successfully');
+      onSuccess: (data) => {
+        console.log('Library scan started successfully', data);
+        // Store sessionId for progress tracking
+        if (data.sessionId) {
+          addSession(data.sessionId, libraryId);
+        }
       },
       onError: (error) => {
         console.error('Failed to start library scan:', error);

@@ -3,29 +3,44 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Queue } from 'bullmq';
 import { QueueConfig } from '../../config';
+import { ScanProgressPubSubService } from './scan-progress-pubsub.service';
+import { BatchCreatedEvent } from './scan-progress.types';
+import { ScanSessionService } from './scan-session.service';
 
 export interface LibraryScanJobData {
   libraryId: string;
   rootPath: string;
   libraryName: string;
+  sessionId?: string; // Optional for backward compatibility
 }
-
-export interface AudioScanJobData {
+interface AudioScanJobDataBase {
   filePath: string;
   libraryId: string;
   fileName: string;
   fileSize: number;
   lastModified: Date;
   index?: number;
+}
+export interface AudioScanJobData extends AudioScanJobDataBase {
+  skipClassification?: boolean;
+  skipImageSearch?: boolean;
+  skipAIMetadata?: boolean;
+  totalFiles?: number;
+  forced?: boolean;
+}
+
+export interface AudioScanBatchJobData {
+  audioFiles: AudioScanJobDataBase[];
+  forced?: boolean;
+  totalBatches?: number;
+  batchIndex?: number;
+  sessionId?: string; // Session ID for progress tracking
   totalFiles?: number;
   skipClassification?: boolean;
   skipImageSearch?: boolean;
   skipAIMetadata?: boolean;
-  forced?: boolean;
-  totalBatches?: number;
-  batchIndex?: number;
+  libraryId: string;
 }
-
 export interface AIMetadataJobData {
   trackId: string;
   filePath: string;
@@ -61,28 +76,35 @@ export class QueueService {
     private readonly libraryScanQueue: Queue<LibraryScanJobData>,
     @InjectQueue('audio-scan')
     private readonly audioScanQueue: Queue<
-      AudioScanJobData | EndScanLibraryJobData | AIMetadataJobData | AudioScanJobData[]
+      AudioScanJobData | EndScanLibraryJobData | AIMetadataJobData | AudioScanBatchJobData
     >,
     @InjectQueue('bpm-update')
     private readonly bpmUpdateQueue: Queue<BPMUpdateJobData>,
     private readonly configService: ConfigService,
+    private readonly scanSessionService: ScanSessionService,
+    private readonly pubSubService: ScanProgressPubSubService,
   ) {
     this.queueConfig = this.configService.get<QueueConfig>('queue');
   }
 
   /**
    * Schedule a library scan job
+   * Returns the sessionId for progress tracking
    */
   async scheduleLibraryScan(
     libraryId: string,
     rootPath: string,
     libraryName: string,
-  ): Promise<void> {
+  ): Promise<string> {
     try {
+      // Create scan session
+      const { sessionId } = await this.scanSessionService.createSession(libraryId);
+
       const jobData: LibraryScanJobData = {
         libraryId,
         rootPath,
         libraryName,
+        sessionId,
       };
 
       await this.libraryScanQueue.add('scan-library', jobData, {
@@ -96,8 +118,10 @@ export class QueueService {
       });
 
       this.logger.log(
-        `Scheduled library scan for: ${libraryName} (${rootPath})`,
+        `Scheduled library scan for: ${libraryName} (${rootPath}) with session: ${sessionId}`,
       );
+
+      return sessionId;
     } catch (error) {
       this.logger.error(
         `Failed to schedule library scan for ${libraryName}:`,
@@ -199,6 +223,8 @@ export class QueueService {
   }
   /**
    * Schedule multiple audio file scans in batches of 10 files using audio-scan-batch
+   * @param audioFiles - Array of audio files to scan
+   * @param sessionId - Optional session ID (if not provided, will be created)
    */
   async scheduleBulkBatchAudioScans(
     audioFiles: Array<{
@@ -208,25 +234,57 @@ export class QueueService {
       fileSize: number;
       lastModified: Date;
     }>,
-  ): Promise<void> {
+    skipImageSearch: boolean = false,
+    forced: boolean = false,
+    libraryId: string,
+  ): Promise<string> {
     try {
-      const BATCH_SIZE = 10;
+      const sessionId = libraryId;
+      const BATCH_SIZE = 1;
+      const totalBatches = Math.ceil(audioFiles.length / BATCH_SIZE);
+
+      // Update session with total batches and tracks
+      await this.scanSessionService.updateSessionProgress(sessionId, {
+        totalBatches,
+        totalTracks: audioFiles.length,
+      });
+
+      // Publish batch.created event
+      const batchCreatedEvent: BatchCreatedEvent = {
+        type: 'batch.created',
+        sessionId,
+        timestamp: new Date().toISOString(),
+        data: {
+          totalBatches,
+          totalTracks: audioFiles.length,
+        },
+        overallProgress: 0,
+      };
+      await this.pubSubService.publishEvent(sessionId, batchCreatedEvent);
+
       const batchJobs = [];
 
       // Create batches of 10 files
       for (let i = 0; i < audioFiles.length; i += BATCH_SIZE) {
         const batch = audioFiles.slice(i, i + BATCH_SIZE);
-        const batchData: AudioScanJobData[] = batch.map((file, batchIndex) => ({
-          filePath: file.filePath,
-          libraryId: file.libraryId,
-          fileName: file.fileName,
-          fileSize: file.fileSize,
-          lastModified: file.lastModified,
-          index: i + batchIndex,
+        const batchIndex = Math.floor(i / BATCH_SIZE) + 1;
+        const batchData: AudioScanBatchJobData = {
+          audioFiles: batch.map((file, batchIndex) => ({
+            filePath: file.filePath,
+            libraryId: file.libraryId,
+            fileName: file.fileName,
+            fileSize: file.fileSize,
+            lastModified: file.lastModified,
+            index: i + batchIndex,
+          })),
+          skipImageSearch,
+          forced,
+          sessionId,
           totalFiles: audioFiles.length,
-          totalBatches: Math.ceil(audioFiles.length / BATCH_SIZE),
-          batchIndex: Math.floor(i / BATCH_SIZE),
-        }));
+          totalBatches,
+          batchIndex,
+          libraryId
+        };
 
         batchJobs.push({
           name: 'audio-scan-batch',
@@ -242,15 +300,17 @@ export class QueueService {
           },
         });
         this.logger.log(
-          `Scheduled batch audio scan job for ${batchData.length} files  (${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(audioFiles.length / BATCH_SIZE)})`,
+          `Scheduled batch audio scan job for ${batch.length} files  (${batchIndex}/${totalBatches})`,
         );
       }
 
       await this.audioScanQueue.addBulk(batchJobs);
 
       this.logger.log(
-        `Scheduled ${batchJobs.length} batch audio scan jobs for ${audioFiles.length} files (${BATCH_SIZE} files per batch)`,
+        `Scheduled ${batchJobs.length} batch audio scan jobs for ${audioFiles.length} files (${BATCH_SIZE} files per batch) with session: ${sessionId}`,
       );
+
+      return sessionId;
     } catch (error) {
       this.logger.error(`Failed to schedule batch audio scans:`, error);
       throw error;
@@ -662,7 +722,7 @@ export class QueueService {
     forced: boolean = false,
   ): Promise<void> {
     try {
-      const BATCH_SIZE = 10;
+      const BATCH_SIZE = 1;
       const batchJobs = [];
 
       // Create batches of 10 files
@@ -680,7 +740,7 @@ export class QueueService {
           skipImageSearch,
           forced,
           totalBatches: Math.ceil(tracks.length / BATCH_SIZE),
-          batchIndex: Math.floor(i / BATCH_SIZE),
+          batchIndex: i,
         }));
 
         batchJobs.push({

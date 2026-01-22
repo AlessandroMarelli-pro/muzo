@@ -9,8 +9,9 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
+import { useScanSessionContext } from '@/contexts/scan-session.context';
 import { LibraryScanStatus } from '@/services/api-hooks';
-import { useLibraryScanProgress } from '@/services/websocket-service';
+import { useScanProgress } from '@/services/sse-service';
 import { AlertCircle, BarChart3, FolderOpen, Music, Play } from 'lucide-react';
 import React from 'react';
 
@@ -57,15 +58,18 @@ export const LibraryCard: React.FC<LibraryCardProps> = ({
   onScan,
   onView,
   onPlay,
-  isScanning = false,
+  isScanning: isScanningProp = false,
 }) => {
-  const { progress: scanProgress } = useLibraryScanProgress(library?.id);
-  // Use real-time scan progress if available, otherwise calculate from tracks
-  const analysisProgress = scanProgress
-    ? scanProgress.progressPercentage
+  const { getSessionForLibrary } = useScanSessionContext();
+  const session = getSessionForLibrary(library.id);
+  const { progress: scanProgress } = useScanProgress(session?.sessionId);
+
+  // Calculate progress from scan progress event or library stats
+  const analysisProgress = scanProgress?.data?.overallProgress
+    ? scanProgress.data.overallProgress
     : library.totalTracks > 0
-    ? (library.analyzedTracks / library.totalTracks) * 100
-    : 0;
+      ? (library.analyzedTracks / library.totalTracks) * 100
+      : 0;
 
   // Use real-time scan progress if available, otherwise calculate from tracks
 
@@ -74,6 +78,7 @@ export const LibraryCard: React.FC<LibraryCardProps> = ({
     return new Date(dateString).toLocaleDateString();
   };
 
+  const isScanning = session?.status === 'SCANNING' || isScanningProp;
   return (
     <Card className="hover:shadow-lg transition-shadow">
       <CardHeader>

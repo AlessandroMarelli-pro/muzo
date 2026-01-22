@@ -11,10 +11,11 @@ import { useTheme } from 'next-themes';
 import { useEffect, useState } from 'react';
 
 import { Switch } from '@/components/ui/switch';
+import { ScanProgress } from './scan-progress';
 
-interface SiteHeaderProps {}
+interface SiteHeaderProps { }
 
-export function SiteHeader({}: SiteHeaderProps) {
+export function SiteHeader({ }: SiteHeaderProps) {
   const [queueOpen, setQueueOpen] = useState(false);
   const location = useLocation();
   const { setTheme, resolvedTheme } = useTheme();
@@ -74,7 +75,9 @@ export function SiteHeader({}: SiteHeaderProps) {
           <span className="font-normal text-foreground">
             {getPageTitle(location.pathname)}
           </span>
+
           <div className="flex items-center justify-between gap-2 px-2 py-1.5">
+            <ScanProgress />
             <Switch
               checked={isDark}
               onCheckedChange={(checked: boolean) =>

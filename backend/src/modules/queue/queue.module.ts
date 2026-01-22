@@ -8,11 +8,13 @@ import { AiIntegrationModule } from '../ai-integration/ai-integration.module';
 import { ImageModule } from '../image/image.module';
 import { RecommendationModule } from '../recommendation/recommendation.module';
 import { AudioScanProcessor } from './processors/audio-scan.processor';
-import { BPMUpdateProcessor } from './processors/bpm-update.processor';
 import { LibraryScanProcessor } from './processors/library-scan.processor';
 import { ProgressTrackingService } from './progress-tracking.service';
 import { QueueController } from './queue.controller';
 import { QueueService } from './queue.service';
+import { ScanProgressPubSubService } from './scan-progress-pubsub.service';
+import { ScanProgressController } from './scan-progress.controller';
+import { ScanSessionService } from './scan-session.service';
 
 @Module({
   imports: [
@@ -46,15 +48,16 @@ import { QueueService } from './queue.service';
       },
     ),
   ],
-  controllers: [QueueController],
+  controllers: [QueueController, ScanProgressController],
   providers: [
     QueueService,
     LibraryScanProcessor,
     AudioScanProcessor,
-    BPMUpdateProcessor,
     ProgressTrackingService,
     FileScanningService,
+    ScanSessionService,
+    ScanProgressPubSubService,
   ],
   exports: [QueueService, ProgressTrackingService, BullModule],
 })
-export class QueueModule {}
+export class QueueModule { }

@@ -607,11 +607,15 @@ export class AiIntegrationService {
    *
    * @param audioFilePaths - Array of paths to audio files to analyze
    * @param skipImageSearch - Whether to skip image search (default: false)
+   * @param sessionId - Optional session ID for progress tracking
+   * @param batchIndex - Optional batch index for progress tracking
    * @returns Promise<BatchAudioAnalysisResponse> - Batch analysis results
    */
   async analyzeAudioBatch(
     audioFilePaths: string[],
     skipImageSearch: boolean = false,
+    sessionId?: string,
+    batchIndex?: number,
   ): Promise<{
     status: string;
     total_files: number;
@@ -665,6 +669,14 @@ export class AiIntegrationService {
 
       if (skipImageSearch) {
         formData.append('has_image', 'true');
+      }
+
+      // Add session ID and batch index for progress tracking
+      if (sessionId) {
+        formData.append('session_id', sessionId);
+      }
+      if (batchIndex !== undefined) {
+        formData.append('batch_index', batchIndex.toString());
       }
 
       // Make request to batch endpoint

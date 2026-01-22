@@ -29,7 +29,7 @@ export const LibraryList: React.FC<LibraryListProps> = ({
     return <Loading />;
   }
 
-  if (libraries && libraries.length === 0) {
+  if (libraries && libraries.length === 0 || !libraries) {
     return (
       <NoData
         Icon={Plus}

@@ -19,6 +19,7 @@ import src.api.simple_analysis as simple_analysis_module
 from src.scrappers.scrapper_dispatcher import get_album_art
 from src.services.simple_analysis import SimpleAnalysisService
 from src.utils.performance_optimizer import monitor_performance
+from src.utils.scan_progress_publisher import ScanProgressPublisher
 
 
 class BatchSimpleAnalysisResource(Resource):
@@ -27,6 +28,7 @@ class BatchSimpleAnalysisResource(Resource):
     def __init__(self):
         """Initialize the batch simple analysis resource."""
         self.simple_analysis = SimpleAnalysisService()
+        self.progress_publisher = ScanProgressPublisher()
 
     @monitor_performance("batch_simple_analysis_api")
     def post(self):
@@ -97,6 +99,20 @@ class BatchSimpleAnalysisResource(Resource):
                 request.form.get("skip_ai_metadata", "false").lower() == "true"
             )
             has_image = request.form.get("has_image", "false").lower() == "true"
+            session_id = request.form.get("session_id") or request.headers.get(
+                "X-Session-Id"
+            )
+            batch_index = request.form.get("batch_index")
+            batch_index_int = int(batch_index) if batch_index else None
+
+            # Publish batch.processing event if session_id is provided
+            if session_id:
+                self.progress_publisher.publish_event(
+                    session_id,
+                    "batch.processing",
+                    {"tracksInBatch": len(audio_files)},
+                    batchIndex=batch_index_int,
+                )
 
             # Save all uploaded files temporarily
             file_items: List[Tuple[str, str]] = []
@@ -115,12 +131,15 @@ class BatchSimpleAnalysisResource(Resource):
                 # Store (file_path, original_filename) tuple
                 file_items.append((temp_file_path, audio_file.filename))
 
-            # Perform batch analysis
+            # Perform batch analysis with progress tracking
             result = self.simple_analysis.analyze_audio_batch(
                 file_items=file_items,
                 sample_duration=sample_duration,
                 skip_intro=skip_intro,
                 skip_ai_metadata=skip_ai_metadata,
+                session_id=session_id,
+                batch_index=batch_index_int,
+                progress_publisher=self.progress_publisher if session_id else None,
             )
 
             # Start album art fetching in parallel for successful results (non-blocking)

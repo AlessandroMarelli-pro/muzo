@@ -7,8 +7,9 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import { useScanSessionContext } from '@/contexts/scan-session.context';
 import { AnalysisStatus } from '@/services/api-hooks';
-import { useLibraryScanProgress } from '@/services/websocket-service';
+import { useScanProgress } from '@/services/sse-service';
 import {
   AlertCircle,
   BarChart3,
@@ -80,9 +81,8 @@ const StatCard: React.FC<StatCardProps> = ({
           </div>
           {trend && (
             <div
-              className={`flex items-center space-x-1 text-sm ${
-                trend.isPositive ? 'text-green-600' : 'text-red-600'
-              }`}
+              className={`flex items-center space-x-1 text-sm ${trend.isPositive ? 'text-green-600' : 'text-red-600'
+                }`}
             >
               <TrendingUp
                 className={`h-4 w-4 ${trend.isPositive ? '' : 'rotate-180'}`}
@@ -165,11 +165,13 @@ const getYearDistribution = (tracks: MusicTrack[]) => {
 
 export const LibraryStats: React.FC<LibraryStatsProps> = ({
   library,
-  tracks,
+  tracks = [],
   isLoading = false,
 }) => {
   // Subscribe to real-time scan progress updates
-  const { progress: scanProgress } = useLibraryScanProgress(library?.id);
+  const { getSessionForLibrary } = useScanSessionContext();
+  const session = getSessionForLibrary(library.id);
+  const { progress: scanProgress } = useScanProgress(session?.sessionId);
 
   if (isLoading) {
     return (
@@ -201,17 +203,23 @@ export const LibraryStats: React.FC<LibraryStatsProps> = ({
   const yearDistribution = getYearDistribution(tracks);
 
   // Use real-time scan progress if available, otherwise calculate from tracks
-  const analysisProgress = scanProgress
-    ? scanProgress.progressPercentage
+  const analysisProgress = scanProgress?.data?.overallProgress
+    ? scanProgress.data.overallProgress
     : totalTracks > 0
-    ? ((analysisStatusCounts.COMPLETED || 0) / totalTracks) * 100
-    : 0;
+      ? ((analysisStatusCounts.COMPLETED || 0) / totalTracks) * 100
+      : 0;
+
+  // Extract progress details from scan event
+  const processedFiles = scanProgress?.data?.completedTracks || 0;
+  const totalFiles = scanProgress?.data?.totalTracks || totalTracks;
+  const remainingFiles = totalFiles - processedFiles;
+  const scanStatus = scanProgress?.data?.status || library.scanStatus;
 
   const avgConfidence =
     tracks
       .filter((track) => track.aiConfidence)
       .reduce((sum, track) => sum + (track.aiConfidence || 0), 0) /
-      tracks.filter((track) => track.aiConfidence).length || 0;
+    tracks.filter((track) => track.aiConfidence).length || 0;
 
   return (
     <div className="space-y-6">
@@ -219,7 +227,7 @@ export const LibraryStats: React.FC<LibraryStatsProps> = ({
         <div>
           <div className="flex items-center gap-2">
             <h2 className="text-2xl font-bold">Library Statistics</h2>
-            {scanProgress?.status === 'SCANNING' && (
+            {scanStatus === 'SCANNING' && (
               <div className="flex items-center gap-1 text-blue-600">
                 <Loader className="h-4 w-4 animate-spin" />
                 <span className="text-sm font-medium">Scanning...</span>
@@ -230,19 +238,12 @@ export const LibraryStats: React.FC<LibraryStatsProps> = ({
             Overview of {library?.name} - {totalTracks} tracks
             {scanProgress && (
               <span className="ml-2 text-blue-600">
-                ({scanProgress.processedFiles}/{scanProgress.totalFiles}{' '}
-                processed)
+                ({processedFiles}/{totalFiles} processed)
               </span>
             )}
           </p>
         </div>
         <div className="flex items-center gap-2">
-          {scanProgress?.estimatedCompletion && (
-            <Badge variant="secondary" className="text-sm">
-              ETA:{' '}
-              {new Date(scanProgress.estimatedCompletion).toLocaleTimeString()}
-            </Badge>
-          )}
           <Badge variant="outline" className="text-sm">
             Last updated: {new Date().toLocaleDateString()}
           </Badge>
@@ -291,20 +292,16 @@ export const LibraryStats: React.FC<LibraryStatsProps> = ({
           value={`${Math.round(analysisProgress)}%`}
           description={
             scanProgress
-              ? `${scanProgress.processedFiles}/${scanProgress.totalFiles} processed`
+              ? `${processedFiles}/${totalFiles} processed`
               : `${analysisStatusCounts.COMPLETED || 0} completed`
           }
           icon={<CheckCircle className="h-5 w-5" />}
-          color={scanProgress?.status === 'SCANNING' ? 'warning' : 'success'}
+          color={scanStatus === 'SCANNING' ? 'warning' : 'success'}
         />
 
         <StatCard
           title="Pending Analysis"
-          value={
-            scanProgress
-              ? scanProgress.remainingFiles
-              : analysisStatusCounts.PENDING || 0
-          }
+          value={scanProgress ? remainingFiles : analysisStatusCounts.PENDING || 0}
           description={scanProgress ? 'Remaining files' : 'Awaiting processing'}
           icon={<Clock className="h-5 w-5" />}
           color="warning"
@@ -373,9 +370,8 @@ export const LibraryStats: React.FC<LibraryStatsProps> = ({
                         <div
                           className="bg-blue-600 h-2 rounded-full"
                           style={{
-                            width: `${
-                              (count / genreDistribution[0].count) * 100
-                            }%`,
+                            width: `${(count / genreDistribution[0].count) * 100
+                              }%`,
                           }}
                         />
                       </div>
@@ -413,9 +409,8 @@ export const LibraryStats: React.FC<LibraryStatsProps> = ({
                         <div
                           className="bg-green-600 h-2 rounded-full"
                           style={{
-                            width: `${
-                              (count / formatDistribution[0].count) * 100
-                            }%`,
+                            width: `${(count / formatDistribution[0].count) * 100
+                              }%`,
                           }}
                         />
                       </div>
@@ -453,9 +448,8 @@ export const LibraryStats: React.FC<LibraryStatsProps> = ({
                       <div
                         className="bg-purple-600 h-2 rounded-full"
                         style={{
-                          width: `${
-                            (count / yearDistribution[0].count) * 100
-                          }%`,
+                          width: `${(count / yearDistribution[0].count) * 100
+                            }%`,
                         }}
                       />
                     </div>

@@ -19,7 +19,6 @@ import { QueueModule } from './modules/queue/queue.module';
 import { RecommendationModule } from './modules/recommendation/recommendation.module';
 import { ThirdPartySyncModule } from './modules/third-party-sync/third-party-sync.module';
 import { UserPreferencesModule } from './modules/user-preferences/user-preferences.module';
-import { WebSocketModule } from './modules/websocket/websocket.module';
 import { SharedModule } from './shared/shared.module';
 
 @Module({
@@ -61,7 +60,6 @@ import { SharedModule } from './shared/shared.module';
     ThirdPartySyncModule,
     UserPreferencesModule,
     AiIntegrationModule,
-    WebSocketModule,
     FilterModule,
     MetricsModule,
     AdminMethodsModule,

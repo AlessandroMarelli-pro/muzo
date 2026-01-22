@@ -1,23 +1,14 @@
 import { InjectQueue } from '@nestjs/bullmq';
 import { Injectable, Logger } from '@nestjs/common';
-import { Queue } from 'bullmq';
-import { Subject } from 'rxjs';
+import { JobState, Queue } from 'bullmq';
+import { ScanProgressPubSubService } from './scan-progress-pubsub.service';
+import { BatchCompleteEvent } from './scan-progress.types';
+import { ScanSessionService } from './scan-session.service';
 
-export interface LibraryScanProgress {
-  libraryId: string;
-  libraryName: string;
-  totalFiles: number;
-  processedFiles: number;
-  remainingFiles: number;
-  progressPercentage: number;
-  status: 'SCANNING' | 'COMPLETED' | 'FAILED' | 'IDLE';
-  estimatedCompletion?: Date;
-}
 
 @Injectable()
 export class ProgressTrackingService {
   private readonly logger = new Logger(ProgressTrackingService.name);
-  private readonly progressSubject = new Subject<LibraryScanProgress>();
 
   // Track initial file counts for each library scan
   private readonly libraryScanTotals = new Map<string, number>();
@@ -25,14 +16,12 @@ export class ProgressTrackingService {
   constructor(
     @InjectQueue('audio-scan')
     private readonly audioScanQueue: Queue,
-  ) {}
+    private readonly pubSubService: ScanProgressPubSubService,
+    private readonly scanSessionService: ScanSessionService,
 
-  /**
-   * Get the progress stream for subscriptions
-   */
-  getProgressStream() {
-    return this.progressSubject.asObservable();
-  }
+
+  ) { }
+
 
   /**
    * Set the total files for a library scan
@@ -60,40 +49,51 @@ export class ProgressTrackingService {
       }
 
       // Get current queue statistics for this library
-      const waitingJobs = await this.getWaitingJobsForLibrary(libraryId);
-      const activeJobs = await this.getActiveJobsForLibrary(libraryId);
+      const waitingJobs = await this.getJobsWithStatusForLibrary(libraryId, 'waiting');
+      const activeJobs = await this.getJobsWithStatusForLibrary(libraryId, 'active');
+      const completedJobs = await this.getJobsWithStatusForLibrary(libraryId, 'completed');
 
+      console.log('waitingJobs', waitingJobs);
+      console.log('activeJobs', activeJobs);
       const remainingFiles = waitingJobs + activeJobs;
       const processedFiles = totalFiles - remainingFiles + 1;
       const progressPercentage =
         totalFiles > 0 ? (processedFiles / totalFiles) * 100 : 0;
 
+
       // Determine status based on remaining files
-      let status: LibraryScanProgress['status'] = 'SCANNING';
+      let status = 'SCANNING';
       if (remainingFiles === 0) {
         status = 'COMPLETED';
       }
 
-      const progress: LibraryScanProgress = {
+      const overallProgress = Math.round(((processedFiles / totalFiles) * 10000)) / 100;
+      const batchCompleteEvent: BatchCompleteEvent = {
+        type: 'batch.complete',
+        sessionId: libraryId,
+        timestamp: new Date().toISOString(),
         libraryId,
-        libraryName,
-        totalFiles,
-        processedFiles,
-        remainingFiles,
-        progressPercentage: Math.round(progressPercentage * 100) / 100,
-        status,
-        estimatedCompletion: this.calculateEstimatedCompletion(
-          remainingFiles,
-          activeJobs,
-        ),
+        batchIndex: 1,
+        data: {
+          successful: processedFiles,
+          failed: 0,
+          totalTracks: totalFiles,
+        },
+        overallProgress
       };
+      await this.pubSubService.publishEvent(libraryId, batchCompleteEvent);
+      // Update session progress
+      await this.scanSessionService.updateSessionProgress(libraryId, {
+        completedBatches: completedJobs,
+      });
+      if (status === 'COMPLETED') {
+        await this.scanSessionService.completeSession(libraryId, true);
+      }
 
       this.logger.debug(
         `Progress update for ${libraryName}: ${processedFiles}/${totalFiles} (${progressPercentage.toFixed(1)}%)`,
       );
 
-      // Emit progress update
-      this.progressSubject.next(progress);
 
       // Clean up completed scans
       if (status === 'COMPLETED') {
@@ -113,9 +113,9 @@ export class ProgressTrackingService {
   /**
    * Get waiting jobs count for a specific library
    */
-  private async getWaitingJobsForLibrary(libraryId: string): Promise<number> {
+  private async getJobsWithStatusForLibrary(libraryId: string, status: JobState): Promise<number> {
     try {
-      const waitingJobs = await this.audioScanQueue.getJobs(['waiting'], 0, -1);
+      const waitingJobs = await this.audioScanQueue.getJobs([status], 0, -1);
       return waitingJobs.filter(
         (job) =>
           job.data &&
@@ -132,27 +132,6 @@ export class ProgressTrackingService {
     }
   }
 
-  /**
-   * Get active jobs count for a specific library
-   */
-  private async getActiveJobsForLibrary(libraryId: string): Promise<number> {
-    try {
-      const activeJobs = await this.audioScanQueue.getJobs(['active'], 0, -1);
-      return activeJobs.filter(
-        (job) =>
-          job.data &&
-          typeof job.data === 'object' &&
-          'libraryId' in job.data &&
-          job.data.libraryId === libraryId,
-      ).length;
-    } catch (error) {
-      this.logger.error(
-        `Failed to get active jobs for library ${libraryId}:`,
-        error.message,
-      );
-      return 0;
-    }
-  }
 
   /**
    * Calculate estimated completion time
@@ -177,19 +156,8 @@ export class ProgressTrackingService {
    * Mark a library scan as failed
    */
   markLibraryScanFailed(libraryId: string, libraryName: string): void {
-    const totalFiles = this.libraryScanTotals.get(libraryId) || 0;
 
-    const progress: LibraryScanProgress = {
-      libraryId,
-      libraryName,
-      totalFiles,
-      processedFiles: 0,
-      remainingFiles: totalFiles,
-      progressPercentage: 0,
-      status: 'FAILED',
-    };
 
-    this.progressSubject.next(progress);
     this.libraryScanTotals.delete(libraryId);
     this.logger.log(`Marked scan as failed for library ${libraryId}`);
   }

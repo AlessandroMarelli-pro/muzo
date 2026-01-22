@@ -8,11 +8,9 @@ import {
   ObjectType,
   Query,
   ResolveField,
-  Resolver,
-  Subscription,
+  Resolver
 } from '@nestjs/graphql';
 import { ScanStatus } from '@prisma/client';
-import { map } from 'rxjs/operators';
 import {
   CreateMusicLibraryDto,
   MusicLibraryQueryOptions,
@@ -20,8 +18,7 @@ import {
 } from '../../models/music-library.model';
 import { FileScanningService } from '../../shared/services/file-scanning.service';
 import {
-  LibraryScanProgress,
-  ProgressTrackingService,
+  ProgressTrackingService
 } from '../queue/progress-tracking.service';
 import { QueueService } from '../queue/queue.service';
 import { MusicLibraryService } from './music-library.service';
@@ -194,33 +191,6 @@ export class LibraryScanResult {
   estimatedCompletion?: Date;
 }
 
-@ObjectType()
-export class LibraryScanProgressUpdate {
-  @Field(() => ID)
-  libraryId: string;
-
-  @Field()
-  libraryName: string;
-
-  @Field()
-  totalFiles: number;
-
-  @Field()
-  processedFiles: number;
-
-  @Field()
-  remainingFiles: number;
-
-  @Field()
-  progressPercentage: number;
-
-  @Field()
-  status: string;
-
-  @Field({ nullable: true })
-  estimatedCompletion?: Date;
-}
-
 @Resolver(() => MusicLibrary)
 export class MusicLibraryResolver {
   constructor(
@@ -228,7 +198,7 @@ export class MusicLibraryResolver {
     private readonly fileScanningService: FileScanningService,
     private readonly queueService: QueueService,
     private readonly progressTrackingService: ProgressTrackingService,
-  ) {}
+  ) { }
 
   @Query(() => [MusicLibrary])
   async libraries(
@@ -429,31 +399,5 @@ export class MusicLibraryResolver {
     };
   }
 
-  @Subscription(() => LibraryScanProgressUpdate, {
-    filter: (payload, variables) => {
-      // Filter by libraryId if provided
-      if (variables.libraryId) {
-        return payload.libraryScanProgress.libraryId === variables.libraryId;
-      }
-      return true;
-    },
-  })
-  libraryScanProgress(
-    @Args('libraryId', { type: () => ID, nullable: true }) libraryId?: string,
-  ) {
-    return this.progressTrackingService.getProgressStream().pipe(
-      map((progress: LibraryScanProgress) => ({
-        libraryScanProgress: {
-          libraryId: progress.libraryId,
-          libraryName: progress.libraryName,
-          totalFiles: progress.totalFiles,
-          processedFiles: progress.processedFiles,
-          remainingFiles: progress.remainingFiles,
-          progressPercentage: progress.progressPercentage,
-          status: progress.status,
-          estimatedCompletion: progress.estimatedCompletion,
-        },
-      })),
-    );
-  }
+
 }

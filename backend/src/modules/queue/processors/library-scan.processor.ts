@@ -43,7 +43,7 @@ export class LibraryScanProcessor extends WorkerHost {
   }
 
   async process(job: Job<LibraryScanJobData>): Promise<void> {
-    const { libraryId, rootPath, libraryName } = job.data;
+    const { libraryId, rootPath, libraryName, sessionId } = job.data;
 
     this.logger.log(`Starting library scan for: ${libraryName} (${rootPath})`);
 
@@ -75,11 +75,16 @@ export class LibraryScanProcessor extends WorkerHost {
         audioFiles.length,
       );
 
-      // Schedule audio scan jobs for all found files
-      await this.queueService.scheduleBulkBatchAudioScans(audioFiles);
+      // Schedule audio scan jobs for all found files (pass sessionId if available)
+      await this.queueService.scheduleBulkBatchAudioScans(
+        audioFiles,
+        false,
+        false,
+        libraryId,
+      );
 
       this.logger.log(
-        `Successfully scheduled ${audioFiles.length} audio scan jobs for library: ${libraryName}`,
+        `Successfully scheduled ${audioFiles.length} audio scan jobs for library: ${libraryName}${sessionId ? ` with session: ${sessionId}` : ''}`,
       );
 
       // Update job progress

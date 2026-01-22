@@ -52,15 +52,23 @@ export const restClient = new RestClient();
 // Queue operations
 export const useScanLibrary = () => {
   const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: async (libraryId: string) => {
-      const response = await restClient.post<{ message: string }>(
+      console.log('useScanLibrary mutationFn', libraryId);
+      const response = await restClient.post<{ message: string; sessionId: string }>(
         `/queue/scan-library/${libraryId}`,
       );
-      return response;
+      return { ...response, libraryId };
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      // Store sessionId for progress tracking
+      if (data.sessionId) {
+        queryClient.setQueryData(['scan-session', data.sessionId], {
+          sessionId: data.sessionId,
+          libraryId: data.libraryId,
+          startedAt: new Date().toISOString(),
+        });
+      }
       // Invalidate library queries to refresh scan status
       queryClient.invalidateQueries({ queryKey: ['libraries'] });
     },
@@ -146,5 +154,29 @@ export const useResumeQueue = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['queue'] });
     },
+  });
+};
+
+// Scan progress operations
+export const useActiveScanSessions = () => {
+  return useQuery({
+    queryKey: ['scan-sessions', 'active'],
+    queryFn: async () => {
+      const response = await restClient.get<
+        Array<{
+          sessionId: string;
+          status: string;
+          totalBatches: number;
+          completedBatches: number;
+          totalTracks: number;
+          completedTracks: number;
+          failedTracks: number;
+          startedAt: string;
+          updatedAt: string;
+        }>
+      >('/scan-progress/active');
+      return response;
+    },
+    refetchInterval: 10000, // Refetch every 10 seconds to catch new sessions
   });
 };

@@ -258,17 +258,6 @@ input LibraryQueryOptions {
   orderDirection: String
 }
 
-type LibraryScanProgressUpdate {
-  estimatedCompletion: DateTime
-  libraryId: ID!
-  libraryName: String!
-  processedFiles: Float!
-  progressPercentage: Float!
-  remainingFiles: Float!
-  status: String!
-  totalFiles: Float!
-}
-
 type LibraryScanResult {
   errors: Float!
   estimatedCompletion: DateTime
@@ -673,10 +662,6 @@ type StaticFilterOptions {
 type SubgenreDistribution {
   count: Int!
   subgenre: String!
-}
-
-type Subscription {
-  libraryScanProgress(libraryId: ID): LibraryScanProgressUpdate!
 }
 
 type SyncResult {

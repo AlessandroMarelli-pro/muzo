@@ -94,14 +94,8 @@ function DetailedTrackCardSkeleton() {
       <CardFooter className="flex flex-row justify-between items-center">
         <div className="flex gap-2 flex-wrap">
           {Array.from({ length: 4 }).map((_, index) => (
-            <Badge
-              key={index}
-              variant="secondary"
-              className="capitalize"
-              size="xs"
-            >
-              <Skeleton className="w-20 h-5 rounded-full" />
-            </Badge>
+            <Skeleton className="w-20 h-5 rounded-full" />
+
           ))}
         </div>
         <div className="flex flex-wrap gap-2">
