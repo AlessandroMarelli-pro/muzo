@@ -322,8 +322,15 @@ export class AudioScanProcessor extends WorkerHost {
     }
   }
   private async batchComplete({ libraryId, job }: { libraryId, job: Job<AudioScanBatchJobData> }): Promise<void> {
-    const { totalFiles, totalBatches, batchIndex } = job.data;
+    const { totalFiles, totalBatches, audioFiles } = job.data;
     const progressPercentage = Math.round(((1) / totalBatches!) * 10000) / 100;
+    // Update session progress
+    const session = await this.scanSessionService.updateSessionProgress(libraryId, {
+      completedBatches: 1,
+      progressPercentage,
+      completedTracks: audioFiles.length,
+    });
+    const isComplete = session.completedBatches === session.totalBatches;
     const batchCompleteEvent: BatchCompleteEvent = {
       type: 'batch.complete',
       sessionId: libraryId,
@@ -335,9 +342,14 @@ export class AudioScanProcessor extends WorkerHost {
         failed: 0,
         totalTracks: totalFiles,
       },
-      progressPercentage
+      overallProgress: isComplete ? 100 : session.overallProgress
     };
+
+    this.logger.debug(
+      `Progress update for ${libraryId}: ${session.completedBatches}/${session.totalBatches} (${session.overallProgress.toFixed(1)}%)`,
+    );
     await this.pubSubService.publishEvent(libraryId, batchCompleteEvent);
+
 
     // Update progress tracking
     const library = await this.prismaService.musicLibrary.findUnique({
@@ -345,13 +357,12 @@ export class AudioScanProcessor extends WorkerHost {
       select: { name: true },
     });
     if (library) {
-      setTimeout(async () => {
-        await this.progressTrackingService.updateLibraryProgress(
-          libraryId,
-          library.name,
-          job
-        );
-      }, 3000);
+      await this.progressTrackingService.updateLibraryProgress(
+        libraryId,
+        library.name,
+        job,
+        isComplete
+      );
     }
     // Update job progress
     await job.updateProgress(100);

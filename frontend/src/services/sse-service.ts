@@ -32,7 +32,6 @@ export interface ScanProgressEvent {
         totalTracks?: number;
         completedTracks?: number;
         failedTracks?: number;
-        progressPercentage?: number;
         startedAt?: string;
         updatedAt?: string;
         tracksInBatch?: number;
@@ -43,7 +42,7 @@ export interface ScanProgressEvent {
         failed?: number;
         duration?: number;
     };
-    progressPercentage?: number;
+    overallProgress?: number;
 }
 
 export interface ScanErrorEvent {
@@ -60,7 +59,7 @@ export interface ScanErrorEvent {
         message: string;
         details?: any;
     };
-    progressPercentage?: number;
+    overallProgress?: number;
 }
 
 export type ScanEvent = ScanProgressEvent | ScanErrorEvent;

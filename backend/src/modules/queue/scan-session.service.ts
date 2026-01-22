@@ -1,5 +1,5 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { ScanStatus } from '@prisma/client';
+import { ScanSession, ScanStatus } from '@prisma/client';
 import { PrismaService } from '../../shared/services/prisma.service';
 
 export interface CreateScanSessionInput {
@@ -92,7 +92,7 @@ export class ScanSessionService {
   async updateSessionProgress(
     sessionId: string,
     updates: UpdateScanSessionInput,
-  ): Promise<void> {
+  ): Promise<ScanSession> {
     try {
       this.logger.log(`Updating session progress for session ${sessionId}:`, updates);
 
@@ -117,12 +117,18 @@ export class ScanSessionService {
         if (incrementValue !== 0) {
           updateData.overallProgress = {
             increment: incrementValue,
+
           };
         }
       }
+      if (updates.completedBatches !== undefined && updates.completedBatches !== null) {
+        updateData.completedBatches = {
+          increment: updates.completedBatches,
+        };
+      }
 
       // Use a transaction to ensure atomicity and check session status
-      await this.prisma.$transaction(async (tx) => {
+      return await this.prisma.$transaction(async (tx) => {
         // First, verify the session exists and is in SCANNING status
         const activeSession = await tx.scanSession.findUnique({
           where: { sessionId },
@@ -137,7 +143,7 @@ export class ScanSessionService {
         }
 
         // Perform atomic update with increment
-        await tx.scanSession.update({
+        return await tx.scanSession.update({
           where: { sessionId },
           data: updateData,
         });
@@ -165,6 +171,7 @@ export class ScanSessionService {
         data: {
           status: success ? ScanStatus.IDLE : ScanStatus.ERROR,
           completedAt: new Date(),
+          overallProgress: 100,
         },
       });
 

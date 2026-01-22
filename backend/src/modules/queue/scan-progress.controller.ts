@@ -100,6 +100,7 @@ export class ScanProgressController {
                     sessionId,
                     timestamp: new Date().toISOString(),
                     data: currentState,
+                    overallProgress: session.overallProgress,
                 }
                 : {
                     type: 'state',
@@ -112,10 +113,11 @@ export class ScanProgressController {
                         totalTracks: session.totalTracks,
                         completedTracks: session.completedTracks,
                         failedTracks: session.failedTracks,
-                        overallProgress: session.overallProgress,
                         startedAt: session.startedAt.toISOString(),
                         updatedAt: session.updatedAt.toISOString(),
                     },
+                    overallProgress: session.overallProgress,
+
                 };
 
             // Create event stream

@@ -172,9 +172,7 @@ export class ScanProgressPubSubService implements OnModuleDestroy {
     event: ScanProgressEvent,
   ): Promise<void> {
     try {
-      if ((event as any)?.progressPercentage) {
-        console.log('PROGRESS PERCENTAGE', (event as any).progressPercentage);
-      }
+
       const channel = `${this.channelPrefix}:${sessionId}:events`;
       // Use setImmediate to avoid blocking the event loop
       this.logger.debug(`Publishing ${event.type} event to channel ${channel}`);

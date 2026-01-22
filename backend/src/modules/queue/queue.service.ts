@@ -160,6 +160,8 @@ export class QueueService {
       await this.scanSessionService.updateSessionProgress(sessionId, {
         totalBatches,
         totalTracks: audioFiles.length,
+        progressPercentage: 0,
+        completedBatches: 0,
       });
 
       // Publish batch.created event
@@ -171,7 +173,7 @@ export class QueueService {
           totalBatches,
           totalTracks: audioFiles.length,
         },
-        progressPercentage: 0,
+        overallProgress: 0,
       };
       await this.pubSubService.publishEvent(sessionId, batchCreatedEvent);
 

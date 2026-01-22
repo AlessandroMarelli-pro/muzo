@@ -36,51 +36,19 @@ export class ProgressTrackingService {
 
   /**
    * Update progress for a library scan
+   * TODO : alternative -> add new queue for processing end job
+   * Only one service will consume this queue and it will be responsible for updating the library progress
    */
   async updateLibraryProgress(
     libraryId: string,
     libraryName: string,
-    job: Job<AudioScanBatchJobData>
+    job: Job<AudioScanBatchJobData>,
+    isComplete: boolean
   ): Promise<void> {
     try {
-      const { totalFiles, startDateTS, totalBatches } = job.data;
-      const progressPercentage = Math.round(((1) / totalBatches!) * 10000) / 100;
+      const { totalFiles, startDateTS } = job.data;
 
-      // Get current queue statistics for this library
-      const waitingJobs = await this.getJobsWithStatusForLibrary(libraryId, 'waiting');
-      const activeJobs = await this.getJobsWithStatusForLibrary(libraryId, 'active');
-      const completedJobs = await this.getJobsWithStatusForLibrary(libraryId, 'completed');
-
-
-      const pendingJobs = waitingJobs + activeJobs;
-      const totalJobs = pendingJobs + completedJobs;
-      const totalProgressPercentage =
-        totalJobs > 0 ? (completedJobs / totalJobs) * 100 : 0;
-
-      console.log('waitingJobs', waitingJobs);
-      console.log('activeJobs', activeJobs);
-      console.log('completedJobs', completedJobs);
-      console.log('progressPercentage', totalProgressPercentage);
-
-      // Determine status based on remaining files
-      let status = 'SCANNING';
-      if (totalProgressPercentage === 100) {
-        status = 'COMPLETED';
-      }
-
-
-      // Update session progress
-      await this.scanSessionService.updateSessionProgress(libraryId, {
-        completedBatches: completedJobs,
-        progressPercentage
-      });
-
-      this.logger.debug(
-        `Progress update for ${libraryName}: ${completedJobs}/${totalJobs} (${totalProgressPercentage.toFixed(1)}%)`,
-      );
-
-
-      if (status === 'COMPLETED') {
+      if (isComplete) {
         await this.scanSessionService.completeSession(libraryId, true);
         await this.pubSubService.publishEvent(libraryId, {
           type: 'scan.complete',
@@ -90,11 +58,11 @@ export class ProgressTrackingService {
           data: {
             totalBatches: 1,
             totalTracks: totalFiles,
-            successful: completedJobs,
+            successful: totalFiles,
             failed: 0,
             duration: Date.now() - startDateTS,
           },
-          progressPercentage: 100,
+          overallProgress: 100,
         });
 
         this.libraryScanTotals.delete(libraryId);

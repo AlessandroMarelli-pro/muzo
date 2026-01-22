@@ -14,26 +14,20 @@ export const ScanProgress = React.memo(() => {
     const { activeSessions, completedSessions, } = useScanSessionContext();
 
     const { progress: scanProgress, error } = useScanProgress(Array.from(activeSessions.values())[0]?.sessionId);
-
+    console.log('activeSessions', activeSessions);
     const [progress, setProgress] = useState(activeSessions.values().next().value?.overallProgress || -1);
     // Track processed events to prevent duplicate toasts
     const processedEvents = useRef<Set<string>>(new Set());
     useEffect(() => {
         console.log('scanProgress', scanProgress);
-        const progressPercentage = scanProgress?.progressPercentage;
-        if (!progressPercentage) {
+        const overallProgress = scanProgress?.overallProgress;
+        if (!overallProgress && overallProgress !== 0) {
             return;
         }
-        if (progressPercentage === 0 || progressPercentage === 100) {
-            setProgress(progressPercentage || 0);
-        } else if (progressPercentage > 0 && progressPercentage < 100) {
-            setProgress((prev) => {
-                prev = prev === -1 ? 0 : prev;
-                return Math.round((prev + progressPercentage) * 100) / 100
-            });
-        }
+        setProgress(overallProgress || 0);
 
-    }, [scanProgress?.progressPercentage]);
+
+    }, [scanProgress?.overallProgress]);
 
     // Handle scan.complete event
     useEffect(() => {
