@@ -1,8 +1,10 @@
 import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { ScanStatus } from '@prisma/client';
 import { Job } from 'bullmq';
 import * as fs from 'fs';
+import { QueueConfig } from 'src/config/queue.config';
 import { FileScanningService } from 'src/shared/services/file-scanning.service';
 import { PrismaService } from '../../../shared/services/prisma.service';
 import { ProgressTrackingService } from '../progress-tracking.service';
@@ -16,7 +18,9 @@ export interface AudioFile {
   lastModified: Date;
 }
 
-@Processor('library-scan')
+@Processor('library-scan', {
+  concurrency: parseInt(process.env.LIBRARY_SCAN_CONCURRENCY || '1', 10),
+})
 export class LibraryScanProcessor extends WorkerHost {
   private readonly logger = new Logger(LibraryScanProcessor.name);
   private readonly supportedAudioExtensions = [
@@ -38,16 +42,25 @@ export class LibraryScanProcessor extends WorkerHost {
     private readonly prismaService: PrismaService,
     private readonly progressTrackingService: ProgressTrackingService,
     private readonly fileScanningService: FileScanningService,
+    private readonly configService: ConfigService,
   ) {
     super();
+    const queueConfig = this.configService.get<QueueConfig>('queue');
+    this.logger.log(
+      `LibraryScanProcessor initialized and ready to process jobs from 'library-scan' queue with concurrency: ${queueConfig.queues.libraryScan.concurrency}`,
+    );
   }
 
   async process(job: Job<LibraryScanJobData>): Promise<void> {
     const { libraryId, rootPath, libraryName, sessionId } = job.data;
 
-    this.logger.log(`Starting library scan for: ${libraryName} (${rootPath})`);
+    this.logger.log(
+      `[JOB ${job.id}] Starting library scan for: ${libraryName} (${rootPath})`,
+    );
 
     try {
+      // Ensure job is in active state
+      await job.updateProgress(0);
       // Validate that the root path exists
       if (!fs.existsSync(rootPath)) {
         throw new Error(`Library root path does not exist: ${rootPath}`);
@@ -84,15 +97,18 @@ export class LibraryScanProcessor extends WorkerHost {
       );
 
       this.logger.log(
-        `Successfully scheduled ${audioFiles.length} audio scan jobs for library: ${libraryName}${sessionId ? ` with session: ${sessionId}` : ''}`,
+        `[JOB ${job.id}] Successfully scheduled ${audioFiles.length} audio scan jobs for library: ${libraryName}${sessionId ? ` with session: ${sessionId}` : ''}`,
       );
-
-      // Update job progress
+      // Update job progress to completion
       await job.updateProgress(100);
+      this.logger.log(
+        `[JOB ${job.id}] Library scan completed successfully for: ${libraryName}`,
+      );
     } catch (error) {
       this.logger.error(
-        `Library scan failed for ${libraryName}:`,
+        `[JOB ${job.id}] Library scan failed for ${libraryName}:`,
         error.message,
+        error.stack,
       );
 
       // Mark scan as failed in progress tracking
@@ -101,6 +117,7 @@ export class LibraryScanProcessor extends WorkerHost {
         libraryName,
       );
 
+      // Re-throw to ensure job is marked as failed
       throw error;
     }
   }
@@ -110,8 +127,9 @@ export class LibraryScanProcessor extends WorkerHost {
    */
   async onFailed(job: Job<LibraryScanJobData>, error: Error): Promise<void> {
     this.logger.error(
-      `Library scan job failed for ${job.data.libraryName}:`,
+      `[JOB ${job.id}] Library scan job failed for ${job.data.libraryName}:`,
       error.message,
+      error.stack,
     );
 
     // Update library scan status to IDLE on failure
@@ -132,7 +150,9 @@ export class LibraryScanProcessor extends WorkerHost {
    * Handle job completion
    */
   async onCompleted(job: Job<LibraryScanJobData>): Promise<void> {
-    this.logger.log(`Library scan completed for: ${job.data.libraryName}`);
+    this.logger.log(
+      `[JOB ${job.id}] Library scan job completed successfully for: ${job.data.libraryName}`,
+    );
 
     // Update library scan status to IDLE and update last scan timestamp
     try {
@@ -150,4 +170,7 @@ export class LibraryScanProcessor extends WorkerHost {
       );
     }
   }
+
+
+
 }

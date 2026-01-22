@@ -80,7 +80,7 @@ export class AudioScanProcessor extends WorkerHost {
       const filePaths: string[] = [];
 
       for (const jobData of audioFiles) {
-        const index = jobData.index!;
+        const trackIndex = jobData.trackIndex;
 
         if (!fs.existsSync(jobData.filePath)) {
           this.logger.warn(
@@ -118,7 +118,8 @@ export class AudioScanProcessor extends WorkerHost {
                 libraryId,
                 batchIndex,
                 data: {
-                  trackIndex: jobData.index!,
+                  trackIndex,
+                  totalTracks: totalFiles,
                   fileName: jobData.fileName,
                   success: false,
                 },
@@ -187,7 +188,7 @@ export class AudioScanProcessor extends WorkerHost {
 
       for (let i = 0; i < validJobs.length; i++) {
         const jobData = validJobs[i];
-        const index = jobData.index!;
+        const trackIndex = jobData.trackIndex;
         const track = tracks[i];
         const analysisResult = batchAnalysisResult.results[i];
 
@@ -223,7 +224,8 @@ export class AudioScanProcessor extends WorkerHost {
                 libraryId,
                 batchIndex,
                 data: {
-                  trackIndex: i,
+                  totalTracks: totalFiles,
+                  trackIndex,
                   fileName: jobData.fileName,
                   success: false,
                 },
@@ -255,7 +257,8 @@ export class AudioScanProcessor extends WorkerHost {
               libraryId,
               batchIndex,
               data: {
-                trackIndex: i,
+                totalTracks: totalFiles,
+                trackIndex,
                 fileName: jobData.fileName,
                 success: true,
               },
@@ -282,7 +285,7 @@ export class AudioScanProcessor extends WorkerHost {
               source: 'backend',
               libraryId,
               batchIndex,
-              trackIndex: i,
+              trackIndex,
               error: {
                 code: 'TRACK_PROCESSING_ERROR',
                 message: error.message,

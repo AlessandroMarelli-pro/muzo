@@ -116,6 +116,7 @@ export interface TrackCompleteEvent extends BaseScanProgressEvent {
     trackIndex: number;
     fileName: string;
     success: boolean;
+    totalTracks: number
   };
 }
 

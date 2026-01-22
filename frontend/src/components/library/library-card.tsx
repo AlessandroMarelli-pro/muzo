@@ -70,7 +70,7 @@ export const LibraryCard: React.FC<LibraryCardProps> = ({
     : library.totalTracks > 0
       ? (library.analyzedTracks / library.totalTracks) * 100
       : 0;
-
+  const analysisCompleted = scanProgress?.type === 'scan.complete';
   // Use real-time scan progress if available, otherwise calculate from tracks
 
   const formatDate = (dateString?: string) => {
@@ -78,7 +78,7 @@ export const LibraryCard: React.FC<LibraryCardProps> = ({
     return new Date(dateString).toLocaleDateString();
   };
 
-  const isScanning = session?.status === 'SCANNING' || isScanningProp;
+  const isScanning = !analysisCompleted && (session?.status === 'SCANNING' || isScanningProp);
   return (
     <Card className="hover:shadow-lg transition-shadow">
       <CardHeader>

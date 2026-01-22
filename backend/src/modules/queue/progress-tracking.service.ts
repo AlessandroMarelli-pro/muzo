@@ -1,6 +1,7 @@
 import { InjectQueue } from '@nestjs/bullmq';
 import { Injectable, Logger } from '@nestjs/common';
 import { JobState, Queue } from 'bullmq';
+import { QueueService } from './queue.service';
 import { ScanProgressPubSubService } from './scan-progress-pubsub.service';
 import { BatchCompleteEvent } from './scan-progress.types';
 import { ScanSessionService } from './scan-session.service';
@@ -16,6 +17,7 @@ export class ProgressTrackingService {
   constructor(
     @InjectQueue('audio-scan')
     private readonly audioScanQueue: Queue,
+    private readonly queueService: QueueService,
     private readonly pubSubService: ScanProgressPubSubService,
     private readonly scanSessionService: ScanSessionService,
 
@@ -53,17 +55,22 @@ export class ProgressTrackingService {
       const activeJobs = await this.getJobsWithStatusForLibrary(libraryId, 'active');
       const completedJobs = await this.getJobsWithStatusForLibrary(libraryId, 'completed');
 
-      console.log('waitingJobs', waitingJobs);
-      console.log('activeJobs', activeJobs);
+
       const remainingFiles = waitingJobs + activeJobs;
       const processedFiles = totalFiles - remainingFiles + 1;
       const progressPercentage =
         totalFiles > 0 ? (processedFiles / totalFiles) * 100 : 0;
 
-
+      console.log('waitingJobs', waitingJobs);
+      console.log('activeJobs', activeJobs);
+      console.log('completedJobs', completedJobs);
+      console.log('progressPercentage', progressPercentage);
+      console.log('totalFiles', totalFiles);
+      console.log('processedFiles', processedFiles);
+      console.log('remainingFiles', remainingFiles);
       // Determine status based on remaining files
       let status = 'SCANNING';
-      if (remainingFiles === 0) {
+      if (progressPercentage === 100) {
         status = 'COMPLETED';
       }
 
@@ -86,21 +93,34 @@ export class ProgressTrackingService {
       await this.scanSessionService.updateSessionProgress(libraryId, {
         completedBatches: completedJobs,
       });
-      if (status === 'COMPLETED') {
-        await this.scanSessionService.completeSession(libraryId, true);
-      }
-
+      console.log('status', status,);
       this.logger.debug(
         `Progress update for ${libraryName}: ${processedFiles}/${totalFiles} (${progressPercentage.toFixed(1)}%)`,
       );
 
 
-      // Clean up completed scans
       if (status === 'COMPLETED') {
+        await this.scanSessionService.completeSession(libraryId, true);
+        await this.pubSubService.publishEvent(libraryId, {
+          type: 'scan.complete',
+          sessionId: libraryId,
+          timestamp: new Date().toISOString(),
+          libraryId,
+          data: {
+            totalBatches: 1,
+            totalTracks: totalFiles,
+            successful: processedFiles,
+            failed: 0,
+            duration: Date.now(),
+          },
+          overallProgress: 100,
+        });
+
         this.libraryScanTotals.delete(libraryId);
         this.logger.log(
           `Completed scan for library ${libraryId}, cleaned up tracking`,
         );
+        await this.queueService.scheduleEndScanLibrary(libraryId, libraryName, totalFiles, 'incremental');
       }
     } catch (error) {
       this.logger.error(

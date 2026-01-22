@@ -349,17 +349,13 @@ export class QueueController {
           tracksScheduled: 0,
         };
       }
-      //await this.queueService.scheduleScanForMissingData(filteredTracks, false, true);
-
-      await this.queueService.scheduleBatchScanForMissingData(filteredTracks, false, true);
-      /* await this.queueService.scheduleBulkAudioScans(
-        filteredTracks.map((track) => ({
-          trackId: track.id,
-          filePath: track.filePath,
-          fileName: track.fileName,
-          libraryId: track.libraryId,
-        })),
-      ); */
+      const groupByLibrary = filteredTracks.reduce((acc, track) => {
+        acc[track.libraryId] = [...(acc[track.libraryId] || []), track];
+        return acc;
+      }, {});
+      for (const libraryId in groupByLibrary) {
+        await this.queueService.scheduleBulkBatchAudioScans(groupByLibrary[libraryId], false, true, libraryId);
+      }
       this.logger.log(
         `Scheduled audio scans for ${tracksWithNullArtist.length} tracks with null originalArtist`,
       );

@@ -181,7 +181,7 @@ export class ScanProgressPubSubService implements OnModuleDestroy {
 
       const eventJson = JSON.stringify(event);
       await this.redisPublisher.publish(channel, eventJson);
-      await new Promise(resolve => setTimeout(resolve, 5000));
+      await new Promise(resolve => setTimeout(resolve, 1000));
 
     } catch (error) {
       this.logger.error(

@@ -41,8 +41,8 @@ export default registerAs(
     queues: {
       libraryScan: {
         name: 'library-scan',
-        concurrency: parseInt(process.env.LIBRARY_SCAN_CONCURRENCY || '3', 10),
-        attempts: parseInt(process.env.LIBRARY_SCAN_ATTEMPTS || '2', 10),
+        concurrency: parseInt(process.env.LIBRARY_SCAN_CONCURRENCY || '1', 10),
+        attempts: parseInt(process.env.LIBRARY_SCAN_ATTEMPTS || '1', 10),
         backoff: {
           type: 'exponential',
           delay: parseInt(process.env.LIBRARY_SCAN_BACKOFF_DELAY || '2000', 10),
@@ -51,7 +51,7 @@ export default registerAs(
       audioScan: {
         name: 'audio-scan',
         concurrency: parseInt(process.env.AUDIO_SCAN_CONCURRENCY || '5', 10),
-        attempts: parseInt(process.env.AUDIO_SCAN_ATTEMPTS || '2', 10),
+        attempts: parseInt(process.env.AUDIO_SCAN_ATTEMPTS || '1', 10),
         backoff: {
           type: 'exponential',
           delay: parseInt(process.env.AUDIO_SCAN_BACKOFF_DELAY || '1000', 10),
