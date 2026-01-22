@@ -9,6 +9,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../../shared/services/prisma.service';
 import { QueueService } from './queue.service';
+import { ScanSessionService } from './scan-session.service';
 
 @Controller('queue')
 export class QueueController {
@@ -17,6 +18,7 @@ export class QueueController {
   constructor(
     private readonly queueService: QueueService,
     private readonly prismaService: PrismaService,
+    private readonly scanSessionService: ScanSessionService
   ) { }
 
   /**
@@ -326,14 +328,7 @@ export class QueueController {
       const tracksWithNullArtist = await this.prismaService.musicTrack.findMany(
         {
           where: {
-            OR: [
-              {
-                id: '039d50a9-ca8b-4382-9dcf-4a860a919f47',
-              },
-              {
-                id: 'c57a6c3e-14b7-45d7-8a0f-a5bdfef06390',
-              },
-            ],
+            libraryId: 'f1119048-c2c7-41e2-a273-f4a8b3a4b99e'
           },
 
         },
@@ -354,6 +349,10 @@ export class QueueController {
         return acc;
       }, {});
       for (const libraryId in groupByLibrary) {
+
+        // Create scan session
+        await this.scanSessionService.createSession(libraryId);
+
         await this.queueService.scheduleBulkBatchAudioScans(groupByLibrary[libraryId], false, true, libraryId);
       }
       this.logger.log(

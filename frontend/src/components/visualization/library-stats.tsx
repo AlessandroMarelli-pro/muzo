@@ -203,8 +203,8 @@ export const LibraryStats: React.FC<LibraryStatsProps> = ({
   const yearDistribution = getYearDistribution(tracks);
 
   // Use real-time scan progress if available, otherwise calculate from tracks
-  const analysisProgress = scanProgress?.data?.overallProgress
-    ? scanProgress.data.overallProgress
+  const analysisProgress = scanProgress?.progressPercentage
+    ? scanProgress.progressPercentage
     : totalTracks > 0
       ? ((analysisStatusCounts.COMPLETED || 0) / totalTracks) * 100
       : 0;

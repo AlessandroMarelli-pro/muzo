@@ -39,7 +39,8 @@ export class ScanProgressController {
                 failedTracks: session.failedTracks,
                 startedAt: session.startedAt,
                 updatedAt: session.updatedAt,
-                overallProgress: this.calculateProgress(session),
+                completedAt: session.completedAt,
+                overallProgress: session.overallProgress,
             }));
         } catch (error) {
             this.logger.error('Failed to get active sessions:', error);
@@ -47,6 +48,32 @@ export class ScanProgressController {
         }
     }
 
+    /**
+     * Get all completed scan sessions
+     * GET /scan-progress/completed
+     */
+    @Get('completed')
+    async getCompletedSessions() {
+        try {
+            const sessions = await this.scanSessionService.getCompletedSessions();
+            return sessions.map((session) => ({
+                sessionId: session.sessionId,
+                status: session.status,
+                totalBatches: session.totalBatches,
+                completedBatches: session.completedBatches,
+                totalTracks: session.totalTracks,
+                completedTracks: session.completedTracks,
+                failedTracks: session.failedTracks,
+                startedAt: session.startedAt,
+                updatedAt: session.updatedAt,
+                completedAt: session.completedAt,
+                overallProgress: session.overallProgress
+            }));
+        } catch (error) {
+            this.logger.error('Failed to get completed sessions:', error);
+            throw error;
+        }
+    }
     /**
      * SSE endpoint for scan progress updates
      * GET /api/scan-progress/:sessionId
@@ -85,7 +112,7 @@ export class ScanProgressController {
                         totalTracks: session.totalTracks,
                         completedTracks: session.completedTracks,
                         failedTracks: session.failedTracks,
-                        overallProgress: this.calculateProgress(session),
+                        overallProgress: session.overallProgress,
                         startedAt: session.startedAt.toISOString(),
                         updatedAt: session.updatedAt.toISOString(),
                     },
@@ -193,19 +220,5 @@ export class ScanProgressController {
                 subscriber.complete();
             });
         }
-    }
-
-    /**
-     * Calculate overall progress percentage
-     */
-    private calculateProgress(session: any): number {
-        if (session.totalTracks === 0) {
-            return 0;
-        }
-        return Math.round(
-            ((session.completedTracks + session.failedTracks) /
-                session.totalTracks) *
-            100,
-        );
     }
 }

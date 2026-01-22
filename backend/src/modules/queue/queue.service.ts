@@ -40,6 +40,7 @@ export interface AudioScanBatchJobData {
   skipImageSearch?: boolean;
   skipAIMetadata?: boolean;
   libraryId: string;
+  startDateTS: number;
 }
 export interface AIMetadataJobData {
   trackId: string;
@@ -114,7 +115,7 @@ export class QueueService {
           type: this.queueConfig.queues.libraryScan.backoff.type as any,
           delay: this.queueConfig.queues.libraryScan.backoff.delay,
         },
-        removeOnComplete: true,
+        removeOnComplete: false,
         removeOnFail: false,
       });
 
@@ -152,7 +153,7 @@ export class QueueService {
   ): Promise<string> {
     try {
       const sessionId = libraryId;
-      const BATCH_SIZE = 5;
+      const BATCH_SIZE = 10;
       const totalBatches = Math.ceil(audioFiles.length / BATCH_SIZE);
 
       // Update session with total batches and tracks
@@ -170,7 +171,7 @@ export class QueueService {
           totalBatches,
           totalTracks: audioFiles.length,
         },
-        overallProgress: 0,
+        progressPercentage: 0,
       };
       await this.pubSubService.publishEvent(sessionId, batchCreatedEvent);
 
@@ -181,6 +182,7 @@ export class QueueService {
         const batch = audioFiles.slice(i, i + BATCH_SIZE);
         const batchIndex = Math.floor(i / BATCH_SIZE) + 1;
         const batchData: AudioScanBatchJobData = {
+          startDateTS: Date.now(),
           audioFiles: batch.map((file, j) => ({
             filePath: file.filePath,
             libraryId: file.libraryId,
@@ -207,7 +209,7 @@ export class QueueService {
               type: this.queueConfig.queues.audioScan.backoff.type as any,
               delay: this.queueConfig.queues.audioScan.backoff.delay,
             },
-            removeOnComplete: true,
+            removeOnComplete: false,
             removeOnFail: false,
           },
         });
@@ -252,7 +254,7 @@ export class QueueService {
           type: this.queueConfig.queues.audioScan.backoff.type as any,
           delay: this.queueConfig.queues.audioScan.backoff.delay,
         },
-        removeOnComplete: true,
+        removeOnComplete: false,
         removeOnFail: false,
       });
 
@@ -291,7 +293,7 @@ export class QueueService {
           type: this.queueConfig.queues.audioScan.backoff.type as any,
           delay: this.queueConfig.queues.audioScan.backoff.delay,
         },
-        removeOnComplete: true,
+        removeOnComplete: false,
         removeOnFail: false,
       });
 
@@ -334,7 +336,7 @@ export class QueueService {
             type: this.queueConfig.queues.audioScan.backoff.type as any,
             delay: this.queueConfig.queues.audioScan.backoff.delay,
           },
-          removeOnComplete: true,
+          removeOnComplete: false,
           removeOnFail: false,
         },
       }));
@@ -505,7 +507,7 @@ export class QueueService {
           type: this.queueConfig.queues.audioScan.backoff.type as any,
           delay: this.queueConfig.queues.audioScan.backoff.delay,
         },
-        removeOnComplete: true,
+        removeOnComplete: false,
         removeOnFail: false,
       });
 
@@ -547,7 +549,7 @@ export class QueueService {
             type: this.queueConfig.queues.audioScan.backoff.type as any,
             delay: this.queueConfig.queues.audioScan.backoff.delay,
           },
-          removeOnComplete: true,
+          removeOnComplete: false,
           removeOnFail: false,
         },
       }));
@@ -601,7 +603,7 @@ export class QueueService {
             type: this.queueConfig.queues.audioScan.backoff.type as any,
             delay: this.queueConfig.queues.audioScan.backoff.delay,
           },
-          removeOnComplete: true,
+          removeOnComplete: false,
           removeOnFail: false,
         },
       }));

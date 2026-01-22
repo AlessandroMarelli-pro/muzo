@@ -173,10 +173,36 @@ export const useActiveScanSessions = () => {
           failedTracks: number;
           startedAt: string;
           updatedAt: string;
+          completedAt: string;
+          overallProgress: number;
         }>
       >('/scan-progress/active');
       return response;
     },
     refetchInterval: 10000, // Refetch every 10 seconds to catch new sessions
+  });
+};
+
+export const useCompletedScanSessions = () => {
+  return useQuery({
+    queryKey: ['scan-sessions', 'completed'],
+    queryFn: async () => {
+      const response = await restClient.get<
+        Array<{
+          sessionId: string;
+          status: string;
+          totalBatches: number;
+          completedBatches: number;
+          totalTracks: number;
+          completedTracks: number;
+          failedTracks: number;
+          startedAt: string;
+          updatedAt: string;
+          completedAt: string;
+          overallProgress: number;
+        }>
+      >('/scan-progress/completed');
+      return response;
+    },
   });
 };

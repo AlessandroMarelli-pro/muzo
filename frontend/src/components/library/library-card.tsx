@@ -65,8 +65,8 @@ export const LibraryCard: React.FC<LibraryCardProps> = ({
   const { progress: scanProgress } = useScanProgress(session?.sessionId);
 
   // Calculate progress from scan progress event or library stats
-  const analysisProgress = scanProgress?.data?.overallProgress
-    ? scanProgress.data.overallProgress
+  const analysisProgress = scanProgress?.progressPercentage
+    ? scanProgress.progressPercentage
     : library.totalTracks > 0
       ? (library.analyzedTracks / library.totalTracks) * 100
       : 0;

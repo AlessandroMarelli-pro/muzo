@@ -4,7 +4,7 @@
  * Automatically fetches active sessions from the database on mount
  */
 
-import { useActiveScanSessions } from '@/services/rest-client';
+import { useActiveScanSessions, useCompletedScanSessions } from '@/services/rest-client';
 import sseService from '@/services/sse-service';
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
@@ -16,7 +16,8 @@ interface ScanSession {
   totalTracks: number;
   completedTracks: number;
   failedTracks: number;
-
+  completedAt?: string;
+  overallProgress: number;
 }
 
 interface ScanSessionContextType {
@@ -25,6 +26,8 @@ interface ScanSessionContextType {
   removeSession: (sessionId: string) => void;
   getSessionForLibrary: (libraryId: string) => ScanSession | undefined;
   isLoading: boolean;
+  completedSessions: Map<string, ScanSession>;
+  isCompletedSessionsLoading: boolean;
 }
 
 const ScanSessionContext = createContext<ScanSessionContextType | undefined>(
@@ -37,8 +40,11 @@ export const ScanSessionProvider: React.FC<{ children: React.ReactNode }> = ({
   const [activeSessions, setActiveSessions] = useState<
     Map<string, ScanSession>
   >(new Map());
+  const [completedSessions, setCompletedSessions] = useState<
+    Map<string, ScanSession>
+  >(new Map());
   const { data: activeSessionsFromDB, isLoading } = useActiveScanSessions();
-
+  const { data: completedSessionsFromDB, isLoading: isCompletedSessionsLoading } = useCompletedScanSessions();
   // Load active sessions from database on mount and when they change
   useEffect(() => {
     if (activeSessionsFromDB && activeSessionsFromDB.length > 0) {
@@ -54,6 +60,8 @@ export const ScanSessionProvider: React.FC<{ children: React.ReactNode }> = ({
             totalTracks: session.totalTracks,
             completedTracks: session.completedTracks,
             failedTracks: session.failedTracks,
+            completedAt: session.completedAt,
+            overallProgress: session.overallProgress,
           };
           newMap.set(session.sessionId, scanSession);
 
@@ -67,6 +75,18 @@ export const ScanSessionProvider: React.FC<{ children: React.ReactNode }> = ({
       });
     }
   }, [activeSessionsFromDB]);
+  useEffect(() => {
+    if (completedSessionsFromDB && completedSessionsFromDB.length > 0) {
+      setCompletedSessions((prev) => {
+        const newMap = new Map(prev);
+        completedSessionsFromDB.forEach((session) => {
+          newMap.set(session.sessionId, session);
+        });
+        return newMap;
+      });
+    }
+  }, [completedSessionsFromDB]);
+
 
   const addSession = (sessionId: string, libraryId?: string) => {
     setActiveSessions((prev) => {
@@ -78,6 +98,8 @@ export const ScanSessionProvider: React.FC<{ children: React.ReactNode }> = ({
         totalTracks: 0,
         completedTracks: 0,
         failedTracks: 0,
+        completedAt: undefined,
+        overallProgress: 0,
       };
       // Store by sessionId
       newMap.set(sessionId, session);
@@ -170,6 +192,8 @@ export const ScanSessionProvider: React.FC<{ children: React.ReactNode }> = ({
         removeSession,
         getSessionForLibrary,
         isLoading,
+        completedSessions,
+        isCompletedSessionsLoading
       }}
     >
       {children}

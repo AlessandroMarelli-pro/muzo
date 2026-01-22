@@ -1,9 +1,8 @@
 import { InjectQueue } from '@nestjs/bullmq';
 import { Injectable, Logger } from '@nestjs/common';
-import { JobState, Queue } from 'bullmq';
-import { QueueService } from './queue.service';
+import { Job, JobState, Queue } from 'bullmq';
+import { AudioScanBatchJobData, QueueService } from './queue.service';
 import { ScanProgressPubSubService } from './scan-progress-pubsub.service';
-import { BatchCompleteEvent } from './scan-progress.types';
 import { ScanSessionService } from './scan-session.service';
 
 
@@ -41,14 +40,11 @@ export class ProgressTrackingService {
   async updateLibraryProgress(
     libraryId: string,
     libraryName: string,
+    job: Job<AudioScanBatchJobData>
   ): Promise<void> {
     try {
-      const totalFiles = this.libraryScanTotals.get(libraryId) || 0;
-
-      if (totalFiles === 0) {
-        this.logger.warn(`No total files set for library ${libraryId}`);
-        return;
-      }
+      const { totalFiles, startDateTS, totalBatches } = job.data;
+      const progressPercentage = Math.round(((1) / totalBatches!) * 10000) / 100;
 
       // Get current queue statistics for this library
       const waitingJobs = await this.getJobsWithStatusForLibrary(libraryId, 'waiting');
@@ -56,46 +52,31 @@ export class ProgressTrackingService {
       const completedJobs = await this.getJobsWithStatusForLibrary(libraryId, 'completed');
 
 
-      const remainingFiles = waitingJobs + activeJobs;
-      const processedFiles = totalFiles - remainingFiles + 1;
-      const progressPercentage =
-        totalFiles > 0 ? (processedFiles / totalFiles) * 100 : 0;
+      const pendingJobs = waitingJobs + activeJobs;
+      const totalJobs = pendingJobs + completedJobs;
+      const totalProgressPercentage =
+        totalJobs > 0 ? (completedJobs / totalJobs) * 100 : 0;
 
       console.log('waitingJobs', waitingJobs);
       console.log('activeJobs', activeJobs);
       console.log('completedJobs', completedJobs);
-      console.log('progressPercentage', progressPercentage);
-      console.log('totalFiles', totalFiles);
-      console.log('processedFiles', processedFiles);
-      console.log('remainingFiles', remainingFiles);
+      console.log('progressPercentage', totalProgressPercentage);
+
       // Determine status based on remaining files
       let status = 'SCANNING';
-      if (progressPercentage === 100) {
+      if (totalProgressPercentage === 100) {
         status = 'COMPLETED';
       }
 
-      const overallProgress = Math.round(((processedFiles / totalFiles) * 10000)) / 100;
-      const batchCompleteEvent: BatchCompleteEvent = {
-        type: 'batch.complete',
-        sessionId: libraryId,
-        timestamp: new Date().toISOString(),
-        libraryId,
-        batchIndex: 1,
-        data: {
-          successful: processedFiles,
-          failed: 0,
-          totalTracks: totalFiles,
-        },
-        overallProgress
-      };
-      await this.pubSubService.publishEvent(libraryId, batchCompleteEvent);
+
       // Update session progress
       await this.scanSessionService.updateSessionProgress(libraryId, {
         completedBatches: completedJobs,
+        progressPercentage
       });
-      console.log('status', status,);
+
       this.logger.debug(
-        `Progress update for ${libraryName}: ${processedFiles}/${totalFiles} (${progressPercentage.toFixed(1)}%)`,
+        `Progress update for ${libraryName}: ${completedJobs}/${totalJobs} (${totalProgressPercentage.toFixed(1)}%)`,
       );
 
 
@@ -109,11 +90,11 @@ export class ProgressTrackingService {
           data: {
             totalBatches: 1,
             totalTracks: totalFiles,
-            successful: processedFiles,
+            successful: completedJobs,
             failed: 0,
-            duration: Date.now(),
+            duration: Date.now() - startDateTS,
           },
-          overallProgress: 100,
+          progressPercentage: 100,
         });
 
         this.libraryScanTotals.delete(libraryId);

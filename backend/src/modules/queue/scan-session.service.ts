@@ -14,6 +14,7 @@ export interface UpdateScanSessionInput {
   failedTracks?: number;
   status?: ScanStatus;
   errorMessage?: string;
+  progressPercentage?: number;
 }
 
 @Injectable()
@@ -29,9 +30,14 @@ export class ScanSessionService {
     sessionId: string,
   ): Promise<{ id: string; sessionId: string }> {
     try {
-      if (await this.prisma.scanSession.findUnique({ where: { sessionId, status: ScanStatus.SCANNING } })) {
-        throw new Error(`Scan session already exists: ${sessionId}`);
+      const existingSession = await this.prisma.scanSession.findUnique({ where: { sessionId } });
+      if (existingSession?.status === ScanStatus.SCANNING) {
+        return { id: existingSession.id, sessionId: existingSession.sessionId };
       }
+      if (existingSession?.status === ScanStatus.IDLE) {
+        await this.prisma.scanSession.delete({ where: { sessionId } });
+      }
+
       const session = await this.prisma.scanSession.create({
         data: {
           sessionId,
@@ -41,6 +47,7 @@ export class ScanSessionService {
           totalTracks: 0,
           completedTracks: 0,
           failedTracks: 0,
+          overallProgress: 0,
         },
       });
 
@@ -80,6 +87,7 @@ export class ScanSessionService {
 
   /**
    * Update session progress
+   * Uses atomic increment for overallProgress to prevent race conditions
    */
   async updateSessionProgress(
     sessionId: string,
@@ -87,12 +95,52 @@ export class ScanSessionService {
   ): Promise<void> {
     try {
       this.logger.log(`Updating session progress for session ${sessionId}:`, updates);
-      await this.prisma.scanSession.update({
-        where: { sessionId },
-        data: {
-          ...updates,
-          updatedAt: new Date(),
-        },
+
+      // Extract progressPercentage before modifying updates object
+      const progressPercentage = updates.progressPercentage;
+      delete updates.progressPercentage;
+
+      // Prepare update data with atomic increment for overallProgress
+      const updateData: any = {
+        ...updates,
+        updatedAt: new Date(),
+      };
+
+      // Use atomic increment if progressPercentage is provided
+      // progressPercentage is a decimal (e.g., 0.5 for 0.5%)
+      // overallProgress is stored as Int representing percentage (0-100)
+      // We increment by rounding the decimal percentage to the nearest integer
+      if (progressPercentage !== undefined && progressPercentage !== null) {
+        // Round the decimal percentage to integer for atomic increment
+        // e.g., 0.5% -> 1, 0.3% -> 0, 0.7% -> 1
+        const incrementValue = Math.round(progressPercentage);
+        if (incrementValue !== 0) {
+          updateData.overallProgress = {
+            increment: incrementValue,
+          };
+        }
+      }
+
+      // Use a transaction to ensure atomicity and check session status
+      await this.prisma.$transaction(async (tx) => {
+        // First, verify the session exists and is in SCANNING status
+        const activeSession = await tx.scanSession.findUnique({
+          where: { sessionId },
+          select: { status: true },
+        });
+
+        if (!activeSession || activeSession.status !== ScanStatus.SCANNING) {
+          this.logger.debug(
+            `Session ${sessionId} is not in SCANNING status, skipping update`,
+          );
+          return;
+        }
+
+        // Perform atomic update with increment
+        await tx.scanSession.update({
+          where: { sessionId },
+          data: updateData,
+        });
       });
     } catch (error) {
       this.logger.error(
@@ -112,8 +160,12 @@ export class ScanSessionService {
   ): Promise<void> {
     try {
       this.logger.log(`Completing session ${sessionId}: ${success}`);
-      await this.prisma.scanSession.delete({
+      await this.prisma.scanSession.update({
         where: { sessionId },
+        data: {
+          status: success ? ScanStatus.IDLE : ScanStatus.ERROR,
+          completedAt: new Date(),
+        },
       });
 
       this.logger.log(
@@ -167,6 +219,23 @@ export class ScanSessionService {
       return sessions;
     } catch (error) {
       this.logger.error('Failed to get active scan sessions:', error);
+      throw error;
+    }
+  }
+
+  async getCompletedSessions() {
+    try {
+      const sessions = await this.prisma.scanSession.findMany({
+        where: {
+          status: ScanStatus.IDLE,
+        },
+        orderBy: {
+          startedAt: 'desc',
+        },
+      });
+      return sessions;
+    } catch (error) {
+      this.logger.error('Failed to get completed scan sessions:', error);
       throw error;
     }
   }

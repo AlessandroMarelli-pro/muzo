@@ -655,6 +655,7 @@ model ScanSession {
   totalTracks       Int           @default(0)
   completedTracks   Int           @default(0)
   failedTracks      Int           @default(0)
+  overallProgress   Int           @default(0)
   startedAt         DateTime      @default(now())
   completedAt       DateTime?
   errorMessage      String?

@@ -22,6 +22,7 @@ import {
 } from '../queue.service';
 import { ScanProgressPubSubService } from '../scan-progress-pubsub.service';
 import {
+  BatchCompleteEvent,
   ScanErrorEvent,
   TrackCompleteEvent
 } from '../scan-progress.types';
@@ -67,9 +68,9 @@ export class AudioScanProcessor extends WorkerHost {
   ): Promise<void> {
     const jobs = job.data;
     const { audioFiles, skipImageSearch, forced, sessionId, totalFiles, totalBatches, batchIndex, libraryId, } = jobs;
-    const overallProgress = Math.round(((batchIndex) / totalBatches!) * 10000) / 100;
+    const progression = Math.round(((batchIndex) / totalBatches!) * 10000) / 100;
     this.logger.log(
-      `Starting batch audio scan for ${audioFiles.length} files in library ${libraryId} (${batchIndex}/${totalBatches}) - Overall progress: ${overallProgress}%`,
+      `Starting batch audio scan for ${audioFiles.length} files in library ${libraryId} (${batchIndex}/${totalBatches}) - Overall progress: ${progression}%`,
     );
 
 
@@ -321,7 +322,22 @@ export class AudioScanProcessor extends WorkerHost {
     }
   }
   private async batchComplete({ libraryId, job }: { libraryId, job: Job<AudioScanBatchJobData> }): Promise<void> {
-
+    const { totalFiles, totalBatches, batchIndex } = job.data;
+    const progressPercentage = Math.round(((1) / totalBatches!) * 10000) / 100;
+    const batchCompleteEvent: BatchCompleteEvent = {
+      type: 'batch.complete',
+      sessionId: libraryId,
+      timestamp: new Date().toISOString(),
+      libraryId,
+      batchIndex: 1,
+      data: {
+        successful: totalFiles,
+        failed: 0,
+        totalTracks: totalFiles,
+      },
+      progressPercentage
+    };
+    await this.pubSubService.publishEvent(libraryId, batchCompleteEvent);
 
     // Update progress tracking
     const library = await this.prismaService.musicLibrary.findUnique({
@@ -329,10 +345,13 @@ export class AudioScanProcessor extends WorkerHost {
       select: { name: true },
     });
     if (library) {
-      await this.progressTrackingService.updateLibraryProgress(
-        libraryId,
-        library.name,
-      );
+      setTimeout(async () => {
+        await this.progressTrackingService.updateLibraryProgress(
+          libraryId,
+          library.name,
+          job
+        );
+      }, 3000);
     }
     // Update job progress
     await job.updateProgress(100);

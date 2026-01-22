@@ -37,7 +37,7 @@ export interface ScanStateEvent extends BaseScanProgressEvent {
     totalTracks: number;
     completedTracks: number;
     failedTracks: number;
-    overallProgress: number; // percentage
+    progressPercentage: number; // percentage
     startedAt: string;
     updatedAt: string;
   };
@@ -49,7 +49,7 @@ export interface BatchCreatedEvent extends BaseScanProgressEvent {
     totalBatches: number;
     totalTracks: number;
   };
-  overallProgress: number;
+  progressPercentage: number;
 }
 
 export interface BatchProcessingEvent extends BaseScanProgressEvent {
@@ -59,7 +59,7 @@ export interface BatchProcessingEvent extends BaseScanProgressEvent {
   data: {
     tracksInBatch: number;
   };
-  overallProgress: number;
+  progressPercentage: number;
 }
 
 export interface TrackProcessingEvent extends BaseScanProgressEvent {
@@ -128,7 +128,7 @@ export interface BatchCompleteEvent extends BaseScanProgressEvent {
     failed: number;
     totalTracks: number;
   };
-  overallProgress: number;
+  progressPercentage: number;
 }
 
 export interface ScanCompleteEvent extends BaseScanProgressEvent {
@@ -140,7 +140,7 @@ export interface ScanCompleteEvent extends BaseScanProgressEvent {
     failed: number;
     duration: number; // milliseconds
   };
-  overallProgress: number;
+  progressPercentage: number;
 }
 
 export interface ScanErrorEvent {
