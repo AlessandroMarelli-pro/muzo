@@ -14,6 +14,7 @@ import { useFilterOptionsData } from '@/hooks/useFilterOptions';
 import { RefreshCw } from 'lucide-react';
 import { useEffect } from 'react';
 import { Loading } from '../loading';
+import { Input } from '../ui/input';
 
 interface FilterSheetProps {
   open: boolean;
@@ -132,6 +133,14 @@ export function FilterSheet({ open, onOpenChange }: FilterSheetProps) {
     updateFilter('atmospheres', selected);
   };
 
+  const handleArtistChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    updateFilter('artist', value);
+  };
+  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    updateFilter('title', value);
+  };
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
@@ -152,6 +161,24 @@ export function FilterSheet({ open, onOpenChange }: FilterSheetProps) {
         </SheetHeader>
 
         <div className="space-y-6 pb-6 w-full px-4 mx-auto">
+
+          <div className=" mx-auto flex flex-row gap-2">
+
+            <Input
+              type="text"
+              placeholder="Search artist..."
+              className="w-full"
+              value={filters.artist}
+              onChange={handleArtistChange}
+            />
+            <Input
+              type="text"
+              placeholder="Search title..."
+              className="w-full"
+              value={filters.title}
+              onChange={handleTitleChange}
+            />
+          </div>
           {/* Genres Filter */}
           <div className="space-y-2">
             <Label htmlFor="genres-filter">Genres</Label>

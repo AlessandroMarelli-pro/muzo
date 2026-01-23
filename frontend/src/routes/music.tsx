@@ -73,7 +73,7 @@ const productSearchSchema = z.object({
         desc: z.boolean(),
       }),
     )
-    .default([{ id: 'fileCreatedAt', desc: false }]),
+    .default([{ id: 'fileCreatedAt', desc: true }]),
 });
 export const Route = createFileRoute('/music')({
   component: MusicPage,

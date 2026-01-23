@@ -15,8 +15,7 @@ import {
   MusicTrack,
   MusicTrackByCategories,
   MusicTrackQueryOptions,
-  MusicTrackStats,
-  UpdateMusicTrackDto,
+  UpdateMusicTrackDto
 } from '../../models/music-track.model';
 import { ElasticsearchService } from '../../shared/services/elasticsearch.service';
 import { PrismaService } from '../../shared/services/prisma.service';
@@ -690,58 +689,6 @@ export class MusicTrackService {
     await this.updateLibraryTrackCounts(existingTrack.libraryId, 'decrement');
   }
 
-  async getStats(libraryId?: string): Promise<MusicTrackStats> {
-    const where = libraryId ? { libraryId } : {};
-    const tracks = await this.prisma.musicTrack.findMany({
-      where,
-      select: {
-        duration: true,
-        fileSize: true,
-        format: true,
-        analysisStatus: true,
-      },
-    });
-
-    const totalTracks = tracks.length;
-    const totalDuration = tracks.reduce(
-      (sum, track) => sum + track.duration,
-      0,
-    );
-    const averageDuration = totalTracks > 0 ? totalDuration / totalTracks : 0;
-    const totalFileSize = tracks.reduce(
-      (sum, track) => sum + track.fileSize,
-      0,
-    );
-    const averageFileSize = totalTracks > 0 ? totalFileSize / totalTracks : 0;
-
-    // Format distribution
-    const formatDistribution = tracks.reduce(
-      (acc, track) => {
-        acc[track.format] = (acc[track.format] || 0) + 1;
-        return acc;
-      },
-      {} as Record<string, number>,
-    );
-
-    // Analysis status distribution
-    const analysisStatusDistribution = tracks.reduce(
-      (acc, track) => {
-        acc[track.analysisStatus] = (acc[track.analysisStatus] || 0) + 1;
-        return acc;
-      },
-      {} as Record<AnalysisStatus, number>,
-    );
-
-    return {
-      totalTracks,
-      totalDuration,
-      averageDuration,
-      totalFileSize,
-      averageFileSize,
-      formatDistribution,
-      analysisStatusDistribution,
-    };
-  }
 
   async incrementListeningCount(id: string): Promise<MusicTrack> {
     const track = await this.prisma.musicTrack.findUnique({

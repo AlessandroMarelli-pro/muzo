@@ -4,7 +4,7 @@ import {
   useCurrentTrack,
   useIsPlaying,
 } from '@/contexts/audio-player-context';
-import { formatDuration } from '@/lib/utils';
+import { cn, formatDuration } from '@/lib/utils';
 import { useNavigate } from '@tanstack/react-router';
 import { Brain, Pause, Play, Plus } from 'lucide-react';
 import { Badge } from '../ui/badge';
@@ -21,9 +21,13 @@ export const TrackRecommendationsCardSkeleton = () => {
 export const TrackRecommendationsCard = ({
   recommendation,
   onAddTrack,
+  index,
+  recommendationsLength,
 }: {
   recommendation: TrackRecommendation;
   onAddTrack?: (trackId: string) => void;
+  index: number;
+  recommendationsLength: number;
 }) => {
   const track = recommendation.track;
   const { currentTrack, setCurrentTrack } = useCurrentTrack();
@@ -63,8 +67,20 @@ export const TrackRecommendationsCard = ({
   return (
     <div
       key={recommendation.track.id}
-      className="flex items-center gap-4 p-4   hover:bg-muted/50 transition-colors"
-    >
+      className={cn(
+        'flex items-center gap-4 p-4 hover:bg-muted/50 transition-colors group',
+        isThisTrackPlaying && 'bg-muted/80  ',
+        isThisTrackPlaying &&
+        index === 0 &&
+        'border-l-2 border-l-primary rounded-t-xl',
+        isCurrentTrack &&
+        index === recommendationsLength - 1 &&
+        'border-l-2 border-l-primary rounded-b-xl',
+        isCurrentTrack &&
+        index !== 0 &&
+        index !== recommendationsLength - 1 &&
+        'border-l-2 border-l-primary',
+      )}    >
       <img
         src={`http://localhost:3000/api/images/serve?imagePath=${formattedImage}`}
         alt="Album Art"

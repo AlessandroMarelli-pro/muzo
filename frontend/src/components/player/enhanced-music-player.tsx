@@ -8,7 +8,9 @@ import {
 import { cn } from '@/lib/utils';
 import { useWaveformData } from '@/services/music-player-hooks';
 import { useQueue } from '@/services/queue-hooks';
+import { useNavigate } from '@tanstack/react-router';
 import {
+  Brain,
   Heart,
   Pause,
   Play,
@@ -42,6 +44,7 @@ export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
 }: EnhancedMusicPlayerProps) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [showAdvancedControls] = useState(false);
+  const navigate = useNavigate();
 
   // Audio player hooks
   const { currentTrack, setCurrentTrack } = useCurrentTrack();
@@ -121,6 +124,11 @@ export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
   const handleToggleFavorite = () => {
     if (!currentTrack) return;
     actions.toggleFavorite(currentTrack.id);
+  };
+
+  const handleToggleResearch = () => {
+    if (!currentTrack) return;
+    navigate({ to: `/research/${currentTrack.id}` });
   };
 
   const handlePlay = () => {
@@ -244,6 +252,14 @@ export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
                       : '',
                   )}
                 />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleToggleResearch}
+                className="h-8 w-8 p-0"
+              >
+                <Brain className="h-4 w-4" />
               </Button>
             </div>
             {/* Visualizations */}

@@ -3,7 +3,7 @@ import { AdminMethodsService } from './admin-methods.service';
 
 @Controller('admin-methods')
 export class AdminMethodsController {
-  constructor(private readonly adminMethodsService: AdminMethodsService) {}
+  constructor(private readonly adminMethodsService: AdminMethodsService) { }
 
   /**
    * Updates the fileCreatedAt field for all tracks by reading the actual file modification time
@@ -16,5 +16,11 @@ export class AdminMethodsController {
   @HttpCode(HttpStatus.OK)
   async updateTrackFileCreatedAt() {
     return this.adminMethodsService.updateTrackFileCreatedAt();
+  }
+
+  @Get('sync-elasticsearch')
+  @HttpCode(HttpStatus.OK)
+  async syncElasticsearch() {
+    return this.adminMethodsService.syncElasticsearch();
   }
 }

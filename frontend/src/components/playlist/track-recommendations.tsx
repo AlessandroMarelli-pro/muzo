@@ -37,17 +37,19 @@ export const TrackRecommandationsComponent = ({
       <CardContent className="p-0">
         <div className="divide-y">
           {!isLoading
-            ? recommendations.map((recommendation) => (
-                <TrackRecommendationsCard
-                  recommendation={recommendation}
-                  onAddTrack={onAddTrack}
-                />
-              ))
+            ? recommendations.map((recommendation, index) => (
+              <TrackRecommendationsCard
+                recommendation={recommendation}
+                onAddTrack={onAddTrack}
+                index={index}
+                recommendationsLength={recommendations.length}
+              />
+            ))
             : Array.from({ length: 5 }).map((_, i) => (
-                <TrackRecommendationsCardSkeleton
-                  key={`recommendations-skeleton-${i}`}
-                />
-              ))}
+              <TrackRecommendationsCardSkeleton
+                key={`recommendations-skeleton-${i}`}
+              />
+            ))}
         </div>
       </CardContent>
     </Card>
