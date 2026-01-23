@@ -56,7 +56,6 @@ export function Research({
   }, [selectedBoost]);
 
   const handleSelectedBoost = (key: string) => {
-    console.log('selectedBoost', selectedBoost);
     if (selectedBoost?.some((k) => k === key)) {
       setSelectedBoost((prev) => prev?.filter((k) => k !== key));
     } else {

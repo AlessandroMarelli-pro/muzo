@@ -619,7 +619,7 @@ export const useDeleteLibrary = () => {
   return useMutation({
     mutationFn: async (id: string) => {
       const response = await graffleClient.request<{ deleteLibrary: boolean }>(
-        gql(
+        parse(
           `
           mutation DeleteLibrary($id: ID!) {
             deleteLibrary(id: $id)
@@ -632,6 +632,9 @@ export const useDeleteLibrary = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.libraries });
+    },
+    onError: (error) => {
+      console.error('Failed to delete library:', error);
     },
   });
 };

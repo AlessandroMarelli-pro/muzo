@@ -29,7 +29,6 @@ export const TrackList = React.memo<TrackListProps>(
     filters,
     handleFilterChange,
   }) => {
-    console.log('render', 'TrackList');
 
     const offset = (page - 1) * perPage;
 
@@ -71,7 +70,6 @@ export const TrackList = React.memo<TrackListProps>(
         orderBy: 'fileCreatedAt',
         orderDirection: 'asc' as 'asc' | 'desc',
       };
-      console.log('Using default sorting:', defaultResult);
       return defaultResult;
     }, [sort, mapSortField]);
 

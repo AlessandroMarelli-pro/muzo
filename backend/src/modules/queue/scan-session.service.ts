@@ -111,9 +111,8 @@ export class ScanSessionService {
       // overallProgress is stored as Int representing percentage (0-100)
       // We increment by rounding the decimal percentage to the nearest integer
       if (progressPercentage !== undefined && progressPercentage !== null) {
-        // Round the decimal percentage to integer for atomic increment
-        // e.g., 0.5% -> 1, 0.3% -> 0, 0.7% -> 1
-        const incrementValue = Math.round(progressPercentage);
+        // Convert the decimal percentage to integer for atomic increment
+        const incrementValue = progressPercentage;
         if (incrementValue !== 0) {
           updateData.overallProgress = {
             increment: incrementValue,

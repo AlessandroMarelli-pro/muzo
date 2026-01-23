@@ -426,9 +426,7 @@ export class TidalService implements OnModuleInit {
       if (response.status === 401) {
         throw new UnauthorizedException('TIDAL authentication failed');
       }
-      console.log(response);
       const errorText = await response.text();
-      console.log(errorText);
       this.logger.error(
         `TIDAL API error: ${response.status} - ${errorText} (endpoint: ${endpoint})`,
       );
@@ -535,7 +533,6 @@ export class TidalService implements OnModuleInit {
 
       return tracks;
     } catch (error) {
-      console.log(error);
       this.logger.error(`Failed to search TIDAL tracks: ${error.message}`);
       throw error;
     }

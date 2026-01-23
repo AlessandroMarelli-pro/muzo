@@ -8,12 +8,11 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
 import { useScanSessionContext } from '@/contexts/scan-session.context';
 import { LibraryScanStatus } from '@/services/api-hooks';
 import { useScanProgress } from '@/services/sse-service';
-import { AlertCircle, BarChart3, FolderOpen, Music, Play } from 'lucide-react';
-import React from 'react';
+import { BarChart3, Loader, Play, Trash } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
 
 interface LibraryCardProps {
   library: MusicLibrary;
@@ -21,6 +20,7 @@ interface LibraryCardProps {
   onView: (libraryId: string) => void;
   onPlay: (libraryId: string) => void;
   isScanning?: boolean;
+  onDelete: (e: React.MouseEvent<HTMLButtonElement>, libraryId: string) => void;
 }
 
 const getScanStatusColor = (status: LibraryScanStatus) => {
@@ -38,20 +38,7 @@ const getScanStatusColor = (status: LibraryScanStatus) => {
   }
 };
 
-const getScanStatusIcon = (status: LibraryScanStatus) => {
-  switch (status) {
-    case 'IDLE':
-      return <Music className="h-4 w-4" />;
-    case 'SCANNING':
-      return <FolderOpen className="h-4 w-4" />;
-    case 'ANALYZING':
-      return <BarChart3 className="h-4 w-4" />;
-    case 'ERROR':
-      return <AlertCircle className="h-4 w-4" />;
-    default:
-      return <Music className="h-4 w-4" />;
-  }
-};
+
 
 export const LibraryCard: React.FC<LibraryCardProps> = ({
   library,
@@ -59,17 +46,23 @@ export const LibraryCard: React.FC<LibraryCardProps> = ({
   onView,
   onPlay,
   isScanning: isScanningProp = false,
+  onDelete,
 }) => {
   const { getSessionForLibrary } = useScanSessionContext();
   const session = getSessionForLibrary(library.id);
   const { progress: scanProgress } = useScanProgress(session?.sessionId);
+  const [scanStatus, setScanStatus] = useState(library.scanStatus);
+  const [analysisProgress, setAnalysisProgress] = useState(-1);
 
   // Calculate progress from scan progress event or library stats
-  const analysisProgress = scanProgress?.overallProgress
-    ? scanProgress.overallProgress
-    : library.totalTracks > 0
-      ? (library.analyzedTracks / library.totalTracks) * 100
-      : 0;
+  useEffect(() => {
+    if (scanProgress?.overallProgress) {
+      setAnalysisProgress(scanProgress.overallProgress / 100);
+    }
+    if (scanProgress?.data?.status) {
+      setScanStatus(scanProgress.data.status as LibraryScanStatus);
+    }
+  }, [scanProgress?.overallProgress, library.totalTracks, library.analyzedTracks]);
   const analysisCompleted = scanProgress?.type === 'scan.complete';
   // Use real-time scan progress if available, otherwise calculate from tracks
 
@@ -79,66 +72,45 @@ export const LibraryCard: React.FC<LibraryCardProps> = ({
   };
 
   const isScanning = !analysisCompleted && (session?.status === 'SCANNING' || isScanningProp);
+  const totalTracks = library.totalTracks;
+  const handleDelete = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation();
+    e.preventDefault();
+    onDelete(e, library.id);
+  }
   return (
-    <Card className="hover:shadow-lg transition-shadow">
+
+    <Card className="hover:shadow-lg  cursor-pointer hover:scale-103 transition-all min-w-sm" onClick={() => onView(library.id)}>
       <CardHeader>
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            {getScanStatusIcon(library.scanStatus as LibraryScanStatus)}
-            <CardTitle className="text-lg">{library.name}</CardTitle>
+          <div className="flex items-center space-x-2 flex-row">
+            <CardTitle className="text-lg flex items-center gap-2">{library.name} <Badge variant="outline" className="text-sm">{totalTracks}</Badge></CardTitle>
           </div>
-          <Badge
-            className={getScanStatusColor(
-              library.scanStatus as LibraryScanStatus,
-            )}
-          >
-            {library.scanStatus}
-          </Badge>
+          {scanStatus === 'SCANNING' ? <>
+            <Badge
+              className={`text-xs ${getScanStatusColor(scanStatus as LibraryScanStatus)} `}
+            >
+              {scanStatus}
+              <span>{Math.round(analysisProgress)}%</span>
+              <Loader className="h-4 w-4 animate-spin" />
+            </Badge>
+          </> :
+            <Button
+              variant="ghost"
+              size="iconSm"
+              onClick={handleDelete}
+            >
+              <Trash className="h-6 w-6" />
+            </Button>
+          }
         </div>
-        <CardDescription className="text-sm text-muted-foreground">
-          {library.rootPath}
+        <CardDescription className="text-sm text-muted-foreground max-w-full truncate">
+          Folder: {library.rootPath}
         </CardDescription>
       </CardHeader>
 
       <CardContent className="space-y-4">
-        {/* Statistics */}
-        <div className="grid grid-cols-2 gap-4">
-          <div className="text-center">
-            <div className="text-2xl font-bold text-primary">
-              {library.totalTracks}
-            </div>
-            <div className="text-sm text-muted-foreground">Total Tracks</div>
-          </div>
-          <div className="text-center">
-            <div className="text-2xl font-bold text-green-600">
-              {library.analyzedTracks}
-            </div>
-            <div className="text-sm text-muted-foreground">Analyzed</div>
-          </div>
-        </div>
 
-        {/* Analysis Progress */}
-        <div className="space-y-2">
-          <div className="flex justify-between text-sm">
-            <span>Analysis Progress</span>
-            <span>{Math.round(analysisProgress)}%</span>
-          </div>
-          <Progress value={analysisProgress} className="h-2" />
-        </div>
-
-        {/* Pending/Failed Tracks */}
-        {(library.pendingTracks > 0 || library.failedTracks > 0) && (
-          <div className="flex space-x-2">
-            {library.pendingTracks > 0 && (
-              <Badge variant="secondary" className="text-yellow-600">
-                {library.pendingTracks} Pending
-              </Badge>
-            )}
-            {library.failedTracks > 0 && (
-              <Badge variant="destructive">{library.failedTracks} Failed</Badge>
-            )}
-          </div>
-        )}
 
         {/* Last Scan Info */}
         <div className="text-sm text-muted-foreground">
@@ -150,51 +122,31 @@ export const LibraryCard: React.FC<LibraryCardProps> = ({
           )}
         </div>
 
-        {/* Settings Summary */}
-        <div className="text-sm">
-          <div className="flex items-center space-x-2">
-            <span className="text-muted-foreground">Auto-scan:</span>
-            <Badge
-              variant={library.settings.autoScan ? 'default' : 'secondary'}
-            >
-              {library.settings.autoScan ? 'Enabled' : 'Disabled'}
-            </Badge>
-          </div>
-          <div className="text-muted-foreground">
-            Formats: {library.settings.supportedFormats.join(', ')}
-          </div>
-        </div>
 
         {/* Action Buttons */}
-        <div className="flex space-x-2 pt-2">
+        <div className="flex space-x-2 pt-2 w-full">
+
           <Button
             variant="outline"
-            size="sm"
-            onClick={() => onView(library.id)}
-            className="flex-1"
-          >
-            <FolderOpen className="h-4 w-4 mr-2" />
-            View Library
-          </Button>
-          <Button
-            variant="outline"
+            className="w-full"
             size="sm"
             onClick={() => onScan(library.id)}
             disabled={
-              library.scanStatus === 'SCANNING' ||
-              library.scanStatus === 'ANALYZING' ||
+              scanStatus === 'SCANNING' ||
+              scanStatus === 'ANALYZING' ||
               isScanning
             }
           >
-            <BarChart3 className="h-4 w-4 mr-2" />
+            <BarChart3 className="h-4 w-4 " />
             {isScanning ? 'Scanning...' : 'Scan'}
           </Button>
           <Button
             variant="outline"
             size="sm"
+            className="w-full"
             onClick={() => onPlay(library.id)}
           >
-            <Play className="h-4 w-4" />
+            <Play className="h-4 w-4" /> Play
           </Button>
         </div>
       </CardContent>

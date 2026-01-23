@@ -54,7 +54,6 @@ export const useScanLibrary = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (libraryId: string) => {
-      console.log('useScanLibrary mutationFn', libraryId);
       const response = await restClient.post<{ message: string; sessionId: string }>(
         `/queue/scan-library/${libraryId}`,
       );

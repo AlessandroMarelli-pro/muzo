@@ -1,9 +1,9 @@
 import { Button } from '@/components/ui/button';
 import { useLibraries } from '@/services/api-hooks';
-import { Plus, RefreshCw } from 'lucide-react';
-import React from 'react';
+import { Plus, Search } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
 import { Loading } from '../loading';
-import { NoData } from '../no-data';
+import { Input } from '../ui/input';
 import { LibraryCard } from './library-card';
 
 interface LibraryListProps {
@@ -11,7 +11,7 @@ interface LibraryListProps {
   onScanLibrary: (libraryId: string) => void;
   onViewLibrary: (libraryId: string) => void;
   onPlayLibrary: (libraryId: string) => void;
-  onRefresh: () => void;
+  onDeleteLibrary: (e: React.MouseEvent<HTMLButtonElement>, libraryId: string) => void;
   isScanning?: boolean;
 }
 
@@ -20,52 +20,53 @@ export const LibraryList: React.FC<LibraryListProps> = ({
   onScanLibrary,
   onViewLibrary,
   onPlayLibrary,
-  onRefresh,
+  onDeleteLibrary,
   isScanning = false,
 }) => {
-  const { data: libraries, isLoading } = useLibraries();
+  const { data: libraries = [], isLoading } = useLibraries();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filteredLibraries, setFilteredLibraries] = useState(libraries);
+
+  useEffect(() => {
+    setFilteredLibraries(libraries.filter((library) =>
+      library.name.toLowerCase().includes(searchQuery.toLowerCase()),
+    ));
+  }, [searchQuery, libraries]);
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
+  };
 
   if (isLoading) {
     return <Loading />;
   }
 
-  if (libraries && libraries.length === 0 || !libraries) {
-    return (
-      <NoData
-        Icon={Plus}
-        title="No Music Libraries Found"
-        subtitle="Create your first music library to start organizing your music collection."
-        buttonAction={onCreateLibrary}
-        buttonLabel="Create Library"
-        ButtonIcon={Plus}
-      />
-    );
-  }
+
 
   return (
-    <div className="p-4 lg:p-6 space-y-8 flex flex-col">
+    <div className="p-6  flex flex-col z-0 gap-4">
       <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold">Music Libraries</h2>
-          <p className="text-muted-foreground">
-            {libraries.length}{' '}
-            {libraries.length === 1 ? 'library' : 'libraries'} found
-          </p>
-        </div>
-        <div className="flex space-x-2">
-          <Button variant="outline" onClick={onRefresh}>
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Refresh
-          </Button>
-          <Button onClick={onCreateLibrary}>
-            <Plus className="h-4 w-4 mr-2" />
-            Create Library
+        <div className="flex flex-row justify-between items-center w-full">
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Input
+              type="text"
+              placeholder="Filter libraries..."
+              value={searchQuery}
+              onChange={handleSearchChange}
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <Button onClick={onCreateLibrary} size="sm" variant="link">
+            <Plus className="h-4 w-4" />
+            Add new library
           </Button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {libraries?.map((library) => (
+      <div className="flex flex-row flex-wrap gap-5 justify-start">
+        {filteredLibraries?.map((library) => (
           <LibraryCard
             key={library.id}
             library={library}
@@ -73,6 +74,7 @@ export const LibraryList: React.FC<LibraryListProps> = ({
             onView={() => onViewLibrary(library.id)}
             onPlay={() => onPlayLibrary(library.id)}
             isScanning={isScanning}
+            onDelete={(e) => onDeleteLibrary(e, library.id)}
           />
         ))}
       </div>

@@ -237,9 +237,7 @@ const columns = (
       {
         id: 'title',
         accessorKey: 'title',
-        setFilterValue: (value: string) => {
-          console.log('setFilterValue', value);
-        },
+
         header: ({ column }) => (
           <DataTableColumnHeader column={column} title="Title" />
         ),

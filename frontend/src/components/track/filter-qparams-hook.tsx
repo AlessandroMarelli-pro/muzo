@@ -92,7 +92,6 @@ export const useFilterQueryParams = () => {
   };
 
   useEffect(() => {
-    console.log('artistParam', artistParam, genreParam);
 
     // Only update artist if it changed
     const artistValue = artistParam || '';

@@ -51,14 +51,7 @@ export interface AIMetadataJobData {
   totalFiles?: number;
 }
 
-export interface BPMUpdateJobData {
-  trackId: string;
-  filePath: string;
-  fileName: string;
-  libraryId: string;
-  index?: number;
-  totalFiles?: number;
-}
+
 
 export interface EndScanLibraryJobData {
   libraryId: string;
@@ -79,8 +72,6 @@ export class QueueService {
     private readonly audioScanQueue: Queue<
       AudioScanJobData | EndScanLibraryJobData | AIMetadataJobData | AudioScanBatchJobData
     >,
-    @InjectQueue('bpm-update')
-    private readonly bpmUpdateQueue: Queue<BPMUpdateJobData>,
     private readonly configService: ConfigService,
     private readonly scanSessionService: ScanSessionService,
     private readonly pubSubService: ScanProgressPubSubService,
@@ -272,108 +263,10 @@ export class QueueService {
     }
   }
 
-  /**
-   * Schedule a BPM update job for a single track
-   */
-  async scheduleBPMUpdate(
-    trackId: string,
-    filePath: string,
-    fileName: string,
-    libraryId: string,
-  ): Promise<void> {
-    try {
-      const jobData: BPMUpdateJobData = {
-        trackId,
-        filePath,
-        fileName,
-        libraryId,
-      };
 
-      await this.bpmUpdateQueue.add('update-bpm', jobData, {
-        attempts: this.queueConfig.queues.audioScan.attempts, // Use same config as audio scan
-        backoff: {
-          type: this.queueConfig.queues.audioScan.backoff.type as any,
-          delay: this.queueConfig.queues.audioScan.backoff.delay,
-        },
-        removeOnComplete: false,
-        removeOnFail: false,
-      });
 
-      this.logger.log(`Scheduled BPM update for: ${fileName}`);
-    } catch (error) {
-      this.logger.error(
-        `Failed to schedule BPM update for ${fileName}:`,
-        error,
-      );
-      throw error;
-    }
-  }
 
-  /**
-   * Schedule BPM updates for multiple tracks in batch
-   */
-  async scheduleBatchBPMUpdates(
-    tracks: Array<{
-      trackId: string;
-      filePath: string;
-      fileName: string;
-      libraryId: string;
-    }>,
-  ): Promise<void> {
-    try {
-      const jobs = tracks.map((track, index) => ({
-        name: 'update-bpm',
-        data: {
-          trackId: track.trackId,
-          filePath: track.filePath,
-          fileName: track.fileName,
-          libraryId: track.libraryId,
 
-          index,
-          totalFiles: tracks.length,
-        } as BPMUpdateJobData,
-        opts: {
-          attempts: this.queueConfig.queues.audioScan.attempts,
-          backoff: {
-            type: this.queueConfig.queues.audioScan.backoff.type as any,
-            delay: this.queueConfig.queues.audioScan.backoff.delay,
-          },
-          removeOnComplete: false,
-          removeOnFail: false,
-        },
-      }));
-
-      await this.bpmUpdateQueue.addBulk(jobs);
-
-      this.logger.log(
-        `Scheduled batch BPM updates for ${tracks.length} tracks`,
-      );
-    } catch (error) {
-      this.logger.error(`Failed to schedule batch BPM updates:`, error);
-      throw error;
-    }
-  }
-
-  /**
-   * Schedule BPM updates for all tracks in a library
-   */
-  async scheduleLibraryBPMUpdate(libraryId: string): Promise<void> {
-    try {
-      // This method will be implemented to fetch tracks from database
-      // and schedule BPM updates for all tracks in the library
-      this.logger.log(`Scheduling BPM updates for library: ${libraryId}`);
-
-      // TODO: Implement database query to get all tracks in library
-      // For now, this is a placeholder
-      throw new Error('Library BPM update not yet implemented');
-    } catch (error) {
-      this.logger.error(
-        `Failed to schedule library BPM update for ${libraryId}:`,
-        error,
-      );
-      throw error;
-    }
-  }
 
   /**
    * Get queue statistics
@@ -391,19 +284,13 @@ export class QueueService {
       completed: number;
       failed: number;
     };
-    bpmUpdate: {
-      waiting: number;
-      active: number;
-      completed: number;
-      failed: number;
-    };
+
   }> {
     try {
-      const [libraryScanStats, audioScanStats, bpmUpdateStats] =
+      const [libraryScanStats, audioScanStats,] =
         await Promise.all([
           this.libraryScanQueue.getJobCounts(),
           this.audioScanQueue.getJobCounts(),
-          this.bpmUpdateQueue.getJobCounts(),
         ]);
 
       return {
@@ -419,12 +306,7 @@ export class QueueService {
           completed: audioScanStats.completed,
           failed: audioScanStats.failed,
         },
-        bpmUpdate: {
-          waiting: bpmUpdateStats.waiting,
-          active: bpmUpdateStats.active,
-          completed: bpmUpdateStats.completed,
-          failed: bpmUpdateStats.failed,
-        },
+
       };
     } catch (error) {
       this.logger.error('Failed to get queue stats:', error);
@@ -440,7 +322,6 @@ export class QueueService {
       await Promise.all([
         this.libraryScanQueue.obliterate({ force: true }),
         this.audioScanQueue.obliterate({ force: true }),
-        this.bpmUpdateQueue.obliterate({ force: true }),
       ]);
 
       this.logger.log('Cleared all queues');
@@ -458,7 +339,6 @@ export class QueueService {
       await Promise.all([
         this.libraryScanQueue.pause(),
         this.audioScanQueue.pause(),
-        this.bpmUpdateQueue.pause(),
       ]);
 
       this.logger.log('Paused all queues');
@@ -476,7 +356,6 @@ export class QueueService {
       await Promise.all([
         this.libraryScanQueue.resume(),
         this.audioScanQueue.resume(),
-        this.bpmUpdateQueue.resume(),
       ]);
 
       this.logger.log('Resumed all queues');

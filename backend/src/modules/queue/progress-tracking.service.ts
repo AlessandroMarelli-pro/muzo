@@ -1,7 +1,7 @@
 import { InjectQueue } from '@nestjs/bullmq';
 import { Injectable, Logger } from '@nestjs/common';
-import { Job, JobState, Queue } from 'bullmq';
-import { AudioScanBatchJobData, QueueService } from './queue.service';
+import { JobState, Queue } from 'bullmq';
+import { QueueService } from './queue.service';
 import { ScanProgressPubSubService } from './scan-progress-pubsub.service';
 import { ScanSessionService } from './scan-session.service';
 
@@ -42,11 +42,11 @@ export class ProgressTrackingService {
   async updateLibraryProgress(
     libraryId: string,
     libraryName: string,
-    job: Job<AudioScanBatchJobData>,
+    totalFiles: number,
+    startDateTS: number,
     isComplete: boolean
   ): Promise<void> {
     try {
-      const { totalFiles, startDateTS } = job.data;
 
       if (isComplete) {
         await this.scanSessionService.completeSession(libraryId, true);
@@ -62,7 +62,7 @@ export class ProgressTrackingService {
             failed: 0,
             duration: Date.now() - startDateTS,
           },
-          overallProgress: 100,
+          overallProgress: 10000,
         });
 
         this.libraryScanTotals.delete(libraryId);

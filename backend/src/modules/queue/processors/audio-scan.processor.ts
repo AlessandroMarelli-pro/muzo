@@ -322,14 +322,17 @@ export class AudioScanProcessor extends WorkerHost {
     }
   }
   private async batchComplete({ libraryId, job }: { libraryId, job: Job<AudioScanBatchJobData> }): Promise<void> {
-    const { totalFiles, totalBatches, audioFiles } = job.data;
-    const progressPercentage = Math.round(((1) / totalBatches!) * 10000) / 100;
+    const { totalFiles, totalBatches, audioFiles, startDateTS } = job.data;
+    const progressPercentage = Math.round(((1) / totalBatches!) * 10000);
     // Update session progress
     const session = await this.scanSessionService.updateSessionProgress(libraryId, {
       completedBatches: 1,
       progressPercentage,
       completedTracks: audioFiles.length,
     });
+    if (!session) {
+      return;
+    }
     const isComplete = session.completedBatches === session.totalBatches;
     const batchCompleteEvent: BatchCompleteEvent = {
       type: 'batch.complete',
@@ -342,7 +345,7 @@ export class AudioScanProcessor extends WorkerHost {
         failed: 0,
         totalTracks: totalFiles,
       },
-      overallProgress: isComplete ? 100 : session.overallProgress
+      overallProgress: isComplete ? 10000 : session.overallProgress
     };
 
     this.logger.debug(
@@ -360,7 +363,8 @@ export class AudioScanProcessor extends WorkerHost {
       await this.progressTrackingService.updateLibraryProgress(
         libraryId,
         library.name,
-        job,
+        totalFiles,
+        startDateTS,
         isComplete
       );
     }

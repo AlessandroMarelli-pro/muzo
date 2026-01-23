@@ -179,7 +179,6 @@ export const useFiltering = (options: UseFilteringOptions = {}) => {
         };
 
         const result = await setCurrentFilterMutation.mutateAsync(criteria);
-        console.log('Filter saved:', result);
 
         setSavedFilterState((prev) => ({
           ...prev,
@@ -266,7 +265,6 @@ export const useFiltering = (options: UseFilteringOptions = {}) => {
 
     try {
       const result = await clearCurrentFilterMutation.mutateAsync();
-      console.log('Filter cleared:', result);
 
       // Also reset UI state
       setFilters(defaultFilterState);

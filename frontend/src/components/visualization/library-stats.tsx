@@ -204,7 +204,7 @@ export const LibraryStats: React.FC<LibraryStatsProps> = ({
 
   // Use real-time scan progress if available, otherwise calculate from tracks
   const analysisProgress = scanProgress?.overallProgress
-    ? scanProgress.overallProgress
+    ? scanProgress.overallProgress / 100
     : totalTracks > 0
       ? ((analysisStatusCounts.COMPLETED || 0) / totalTracks) * 100
       : 0;

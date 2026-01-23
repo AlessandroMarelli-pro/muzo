@@ -64,7 +64,6 @@ export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
   const formattedImage = currentTrack?.imagePath || 'Unknown Image';
   // Get full playback state from context
   const { state: playbackState } = useAudioPlayerContext();
-  console.log('playbackState', playbackState);
   // Update audio element when track changes - reload the audio source
   useEffect(() => {
     if (audioRef.current && currentTrack) {
@@ -235,7 +234,7 @@ export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
                 size="sm"
                 onClick={handleToggleFavorite}
                 className="h-8 w-8 p-0"
-                //disabled={playbackState.isLoading}
+              //disabled={playbackState.isLoading}
               >
                 <Heart
                   className={cn(

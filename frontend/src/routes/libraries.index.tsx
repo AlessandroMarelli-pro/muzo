@@ -1,6 +1,7 @@
 import { CreateLibraryDialog } from '@/components/library/create-library-dialog';
 import { LibraryList } from '@/components/library/library-list';
 import { useScanSessionContext } from '@/contexts/scan-session.context';
+import { useDeleteLibrary } from '@/services/api-hooks';
 import { useScanLibrary } from '@/services/rest-client';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
@@ -11,21 +12,15 @@ function LibrariesPage() {
   const navigate = useNavigate();
   const { addSession } = useScanSessionContext();
 
-  const handleRefresh = async () => {
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-  };
+  const deleteLibraryMutation = useDeleteLibrary();
 
   const handleCreateLibrarySuccess = () => {
-    console.log('Library created successfully');
     setIsCreateDialogOpen(false);
   };
 
   const handleScanLibrary = (libraryId: string) => {
-    console.log('Scanning library:', libraryId);
     scanLibraryMutation.mutate(libraryId, {
       onSuccess: (data) => {
-        console.log('Library scan started successfully', data);
         // Store sessionId for progress tracking
         if (data.sessionId) {
           addSession(data.sessionId, libraryId);
@@ -38,7 +33,6 @@ function LibrariesPage() {
   };
 
   const handleViewLibrary = (libraryId: string) => {
-    console.log('Viewing library:', libraryId);
     navigate({ to: `/libraries/${libraryId}` });
   };
 
@@ -47,6 +41,16 @@ function LibrariesPage() {
     // Implement library playback
   };
 
+  const handleDeleteLibrary = (e: React.MouseEvent<HTMLButtonElement>, libraryId: string) => {
+    const hasConfirmed = confirm('Are you sure you want to delete this library?');
+    if (!hasConfirmed) {
+      return;
+    }
+    deleteLibraryMutation.mutate(libraryId);
+    e.stopPropagation();
+    e.preventDefault();
+
+  }
   return (
     <>
       <LibraryList
@@ -54,7 +58,7 @@ function LibrariesPage() {
         onScanLibrary={handleScanLibrary}
         onViewLibrary={handleViewLibrary}
         onPlayLibrary={handlePlayLibrary}
-        onRefresh={handleRefresh}
+        onDeleteLibrary={handleDeleteLibrary}
         isScanning={scanLibraryMutation.isPending}
       />
 

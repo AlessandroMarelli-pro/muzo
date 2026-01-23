@@ -76,7 +76,7 @@ export function SiteHeader({ }: SiteHeaderProps) {
             {getPageTitle(location.pathname)}
           </span>
 
-          <div className="flex items-center justify-between gap-8 px-2 py-1.5">
+          <div className="flex items-center justify-end gap-2 px-2 py-1.5 w-full">
             <ScanProgress />
             <Switch
               checked={isDark}
