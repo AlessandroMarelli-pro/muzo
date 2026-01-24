@@ -1,9 +1,7 @@
 import type { CreateLibraryInput } from '@/__generated__/types';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import {
   Sheet,
   SheetContent,
@@ -177,50 +175,13 @@ export const CreateLibraryDialog: React.FC<CreateLibraryDialogProps> = ({
                 Settings
               </h3>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="autoScan"
-                    checked={formData.autoScan || false}
-                    onCheckedChange={(checked) =>
-                      handleInputChange('autoScan', checked === true)
-                    }
-                    disabled={createLibraryMutation.isPending}
-                  />
-                  <Label
-                    htmlFor="autoScan"
-                    className="text-sm font-medium cursor-pointer"
-                  >
-                    Auto-scan
-                  </Label>
-                </div>
 
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="includeSubdirectories"
-                    checked={formData.includeSubdirectories || false}
-                    onCheckedChange={(checked) =>
-                      handleInputChange(
-                        'includeSubdirectories',
-                        checked === true,
-                      )
-                    }
-                    disabled={createLibraryMutation.isPending}
-                  />
-                  <Label
-                    htmlFor="includeSubdirectories"
-                    className="text-sm font-medium cursor-pointer"
-                  >
-                    Include Subdirectories
-                  </Label>
-                </div>
-              </div>
 
               {formData.autoScan && (
-                <div className="grid gap-2">
-                  <Label htmlFor="scanInterval">
+                <Field orientation="horizontal">
+                  <FieldLabel htmlFor="scanInterval">
                     Scan Interval (hours)
-                  </Label>
+                  </FieldLabel>
                   <Input
                     id="scanInterval"
                     type="number"
@@ -233,17 +194,18 @@ export const CreateLibraryDialog: React.FC<CreateLibraryDialogProps> = ({
                       )
                     }
                     disabled={createLibraryMutation.isPending}
+                    className="w-xs"
                   />
                   {errors.scanInterval && (
                     <p className="text-sm text-red-600">
                       {errors.scanInterval}
                     </p>
                   )}
-                </div>
+                </Field>
               )}
 
-              <div className="grid gap-2">
-                <Label>Supported Formats</Label>
+              <Field orientation="horizontal">
+                <FieldLabel>Supported Formats</FieldLabel>
                 <div className="flex flex-wrap gap-2">
                   {formData?.supportedFormats?.map((format) => (
                     <Badge key={format} variant="secondary">
@@ -251,15 +213,13 @@ export const CreateLibraryDialog: React.FC<CreateLibraryDialogProps> = ({
                     </Badge>
                   ))}
                 </div>
-                <p className="text-sm text-muted-foreground">
-                  MP3, FLAC, WAV, AAC, OGG formats are supported
-                </p>
-              </div>
 
-              <div className="grid gap-2">
-                <Label htmlFor="maxFileSize">
+              </Field>
+
+              <Field orientation="horizontal">
+                <FieldLabel htmlFor="maxFileSize">
                   Max File Size (MB)
-                </Label>
+                </FieldLabel>
                 <Input
                   id="maxFileSize"
                   type="number"
@@ -276,11 +236,12 @@ export const CreateLibraryDialog: React.FC<CreateLibraryDialogProps> = ({
                     )
                   }
                   disabled={createLibraryMutation.isPending}
+                  className="w-xs"
                 />
                 {errors.maxFileSize && (
                   <p className="text-sm text-red-600">{errors.maxFileSize}</p>
                 )}
-              </div>
+              </Field>
             </div>
 
             {/* Error Display */}

@@ -7,8 +7,10 @@ import {
   TrackRecommendation,
   UpdatePlaylistInput,
 } from '@/__generated__/types';
+import { capitalizeEveryWord } from '@/lib/utils';
 import { gql, graffleClient } from '@/services/graffle-client';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 
 export const simpleMusicTrackFragment = gql`
   fragment SimpleMusicTrackFragment on SimpleMusicTrack {
@@ -718,9 +720,14 @@ export function usePlaylists(userId: string = 'default', search?: string) {
       playlistId: string;
       input: AddTrackToPlaylistInput;
     }) => addTrackToPlaylist(playlistId, input, userId),
-    onSuccess: (_, { playlistId }) => {
+    onSuccess: (data, { playlistId }) => {
       queryClient.invalidateQueries({ queryKey: ['playlists'] });
       queryClient.invalidateQueries({ queryKey: ['playlist', playlistId] });
+      queryClient.invalidateQueries({ queryKey: ['playlistRecommendations', playlistId] });
+      const trackName = ` ${data.track.title} by ${data.track.artist}`;
+      toast.success(`Track added to playlist`, {
+        description: capitalizeEveryWord(trackName),
+      });
     },
   });
 
@@ -939,9 +946,14 @@ export function useAddTrackToPlaylist(userId: string = 'default') {
       playlistId: string;
       input: AddTrackToPlaylistInput;
     }) => addTrackToPlaylist(playlistId, input, userId),
-    onSuccess: (_, { playlistId }) => {
+    onSuccess: (data, { playlistId }) => {
       queryClient.invalidateQueries({ queryKey: ['playlists'] });
       queryClient.invalidateQueries({ queryKey: ['playlist', playlistId] });
+      queryClient.invalidateQueries({ queryKey: ['playlistRecommendations', playlistId] });
+      const trackName = ` ${data.track.title} by ${data.track.artist}`;
+      toast.success(`Track added to playlist`, {
+        description: capitalizeEveryWord(trackName),
+      });
     },
   });
 }

@@ -33,13 +33,12 @@ import {
   useAudioPlayerActions,
   useCurrentTrack,
 } from '@/contexts/audio-player-context';
-import { capitalizeEveryWord, formatDuration } from '@/lib/utils';
+import { formatDuration } from '@/lib/utils';
 import {
   useAddTrackToQueue,
   useQueue,
   useRemoveTrackFromQueue,
 } from '@/services/queue-hooks';
-import { toast } from 'sonner';
 import { Skeleton } from '../ui/skeleton';
 import { AddTrackDialog } from './add-track-dialog';
 import { PlaylistDetailActions } from './playlist-detail-actions';
@@ -134,15 +133,6 @@ export function PlaylistDetail({ id, onBack }: PlaylistDetailProps) {
       playlistId: playlist?.id || '',
       input: {
         trackId,
-      },
-    }, {
-      onSuccess: (data) => {
-        console.log('data', data);
-        const trackName = ` ${data.track.title} by ${data.track.artist}`;
-        refetch();
-        toast.success(`Track added to playlist`, {
-          description: capitalizeEveryWord(trackName),
-        });
       },
     });
   };

@@ -59,18 +59,18 @@ export const QueueItemCard = ({
   return (
     <div
       className={cn(
-        'flex items-center gap-2 p-2 hover:bg-muted/50 transition-colors group',
+        'flex items-center gap-4 p-2 hover:bg-muted/50 transition-colors group',
         isCurrentTrack && 'bg-muted/80  ',
         isCurrentTrack &&
-          index === 0 &&
-          'border-l-2 border-l-primary rounded-t-xl',
+        index === 0 &&
+        'border-l-2 border-l-primary rounded-t-xl',
         isCurrentTrack &&
-          index === queueItemsCount - 1 &&
-          'border-l-2 border-l-primary rounded-b-xl',
+        index === queueItemsCount - 1 &&
+        'border-l-2 border-l-primary rounded-b-xl',
         isCurrentTrack &&
-          index !== 0 &&
-          index !== queueItemsCount - 1 &&
-          'border-l-2 border-l-primary',
+        index !== 0 &&
+        index !== queueItemsCount - 1 &&
+        'border-l-2 border-l-primary',
         isRemoving && 'opacity-50',
       )}
     >
@@ -79,7 +79,7 @@ export const QueueItemCard = ({
         {dragHandleProps && (
           <GripVertical
             {...dragHandleProps}
-            className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing"
+            className="h-4 w-4 min-h-4 min-w-4 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing"
           />
         )}
         <span>{index + 1}</span>

@@ -82,15 +82,15 @@ export const PlaylistTrackListCard = ({
         'flex items-center gap-4 p-4 hover:bg-muted/50 transition-colors group',
         isThisTrackPlaying && 'bg-muted/80  ',
         isThisTrackPlaying &&
-          index === 0 &&
-          'border-l-2 border-l-primary rounded-t-xl',
+        index === 0 &&
+        'border-l-2 border-l-primary rounded-t-xl',
         isCurrentTrack &&
-          index === playlistLength - 1 &&
-          'border-l-2 border-l-primary rounded-b-xl',
+        index === playlistLength - 1 &&
+        'border-l-2 border-l-primary rounded-b-xl',
         isCurrentTrack &&
-          index !== 0 &&
-          index !== playlistLength - 1 &&
-          'border-l-2 border-l-primary',
+        index !== 0 &&
+        index !== playlistLength - 1 &&
+        'border-l-2 border-l-primary',
       )}
     >
       {/* Position */}
@@ -98,7 +98,7 @@ export const PlaylistTrackListCard = ({
         {dragHandleProps && (
           <GripVertical
             {...dragHandleProps}
-            className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing"
+            className="h-4 w-4 min-h-4 min-w-4 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing"
           />
         )}
         {!dragHandleProps && (
@@ -132,7 +132,7 @@ export const PlaylistTrackListCard = ({
       <div className="hidden md:block">
         <Badge variant="outline" className="text-xs">
           {playlistTrack.track.subgenres &&
-          playlistTrack.track.subgenres.length > 0
+            playlistTrack.track.subgenres.length > 0
             ? playlistTrack.track.subgenres.join(', ')
             : 'Unknown'}
         </Badge>
