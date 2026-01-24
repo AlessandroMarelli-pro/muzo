@@ -26,7 +26,7 @@ export class PlaylistResolver {
   constructor(
     private readonly playlistService: PlaylistService,
     private readonly recommendationService: RecommendationService,
-  ) {}
+  ) { }
 
   @Query(() => [PlaylistItem])
   async playlists(
@@ -126,7 +126,8 @@ export class PlaylistResolver {
     @Args('input') input: AddTrackToPlaylistInput,
     @Args('userId') userId?: string,
   ) {
-    return this.playlistService.addTrackToPlaylist(playlistId, input);
+    const dbPlaylistTrack = await this.playlistService.addTrackToPlaylist(playlistId, input);
+    return { ...dbPlaylistTrack, track: mapToSimpleMusicTrack(dbPlaylistTrack.track as MusicTrackWithRelations) };
   }
 
   @Mutation(() => Boolean)

@@ -7,6 +7,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
+  useAddTrackToPlaylist,
   useDeletePlaylist,
   usePlaylist,
   useUpdatePlaylistSorting,
@@ -32,12 +33,13 @@ import {
   useAudioPlayerActions,
   useCurrentTrack,
 } from '@/contexts/audio-player-context';
-import { formatDuration } from '@/lib/utils';
+import { capitalizeEveryWord, formatDuration } from '@/lib/utils';
 import {
   useAddTrackToQueue,
   useQueue,
   useRemoveTrackFromQueue,
 } from '@/services/queue-hooks';
+import { toast } from 'sonner';
 import { Skeleton } from '../ui/skeleton';
 import { AddTrackDialog } from './add-track-dialog';
 import { PlaylistDetailActions } from './playlist-detail-actions';
@@ -125,7 +127,25 @@ export function PlaylistDetail({ id, onBack }: PlaylistDetailProps) {
   } = usePlaylist(id, 'default');
   const deletePlaylistMutation = useDeletePlaylist('default');
   const updatePlaylistSortingMutation = useUpdatePlaylistSorting('default');
+  const addTrackToPlaylistMutation = useAddTrackToPlaylist();
 
+  const addTrackToPlaylist = async (trackId: string) => {
+    addTrackToPlaylistMutation.mutate({
+      playlistId: playlist?.id || '',
+      input: {
+        trackId,
+      },
+    }, {
+      onSuccess: (data) => {
+        console.log('data', data);
+        const trackName = ` ${data.track.title} by ${data.track.artist}`;
+        refetch();
+        toast.success(`Track added to playlist`, {
+          description: capitalizeEveryWord(trackName),
+        });
+      },
+    });
+  };
   const handleDelete = async () => {
     if (
       !playlist ||
@@ -345,6 +365,7 @@ export function PlaylistDetail({ id, onBack }: PlaylistDetailProps) {
             playlist={playlist}
             onUpdate={refetch}
             isLoading={loading}
+            addTrackToPlaylist={addTrackToPlaylist}
           />
         </TabsContent>
 
@@ -359,7 +380,7 @@ export function PlaylistDetail({ id, onBack }: PlaylistDetailProps) {
       <AddTrackDialog
         open={isAddTrackDialogOpen}
         onOpenChange={setIsAddTrackDialogOpen}
-        onSuccess={refetch}
+        addTrackToPlaylist={addTrackToPlaylist}
         playlistId={id}
       />
     </div>

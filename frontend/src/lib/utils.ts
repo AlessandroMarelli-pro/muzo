@@ -31,3 +31,7 @@ export const formatTime = (seconds: number) => {
   const secs = Math.floor(seconds % 60);
   return `${mins}:${secs.toString().padStart(2, '0')}`;
 };
+
+export const capitalizeEveryWord = (string: string) => {
+  return string.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+};

@@ -2,6 +2,7 @@ import { PlaylistTrack } from '@/__generated__/types';
 import { Card, CardContent } from '@/components/ui/card';
 
 import { Playlist } from '@/__generated__/types';
+import { capitalizeEveryWord } from '@/lib/utils';
 import {
   useRemoveTrackFromPlaylist,
   useUpdatePlaylistPositions,
@@ -25,6 +26,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useEffect, useMemo, useState } from 'react';
+import { toast } from 'sonner';
 import {
   PlaylistTrackListCard,
   PlaylistTrackListCardSkeleton,
@@ -34,12 +36,14 @@ interface PlaylistTracksListProps {
   playlist: Playlist | undefined;
   onUpdate: () => void;
   isLoading: boolean;
+  addTrackToPlaylist: (trackId: string) => void;
 }
 
 export function PlaylistTracksList({
   playlist,
   onUpdate,
   isLoading,
+  addTrackToPlaylist,
 }: PlaylistTracksListProps) {
   const [removingTrackId, setRemovingTrackId] = useState<string | null>(null);
   const [localTracks, setLocalTracks] = useState<PlaylistTrack[]>(
@@ -70,16 +74,25 @@ export function PlaylistTracksList({
     [localTracks],
   );
 
-  const handleRemoveTrack = async (trackId: string) => {
-    if (!confirm('Remove this track from the playlist?')) {
-      return;
-    }
+  const handleRemoveTrack = async (trackId: string,) => {
 
+    const track = localTracks.find((track) => track.track.id === trackId);
+    console.log('track', track, localTracks);
+    const trackName = `${track?.track?.title} by ${track?.track?.artist}`;
     setRemovingTrackId(trackId);
     try {
       await removeTrackMutation.mutateAsync({
         playlistId: playlist?.id || '',
         trackId,
+      });
+      toast.success(`Track removed from playlist`, {
+        description: capitalizeEveryWord(trackName),
+        action: {
+          label: 'Undo',
+          onClick: () => {
+            addTrackToPlaylist(trackId);
+          },
+        },
       });
       onUpdate();
     } catch (error) {
@@ -140,21 +153,21 @@ export function PlaylistTracksList({
             <div className="divide-y">
               {!isLoading && localTracks.length > 0
                 ? localTracks.map((playlistTrack, index) => (
-                    <SortablePlaylistTrack
-                      key={playlistTrack.id}
-                      playlistTrack={playlistTrack}
-                      onRemove={handleRemoveTrack}
-                      removingTrackId={removingTrackId}
-                      index={index}
-                      playlistLength={localTracks.length}
-                    />
-                  ))
+                  <SortablePlaylistTrack
+                    key={playlistTrack.id}
+                    playlistTrack={playlistTrack}
+                    onRemove={handleRemoveTrack}
+                    removingTrackId={removingTrackId}
+                    index={index}
+                    playlistLength={localTracks.length}
+                  />
+                ))
                 : Array.from({ length: 5 }).map((_, i) => (
-                    <PlaylistTrackListCardSkeleton
-                      key={`playlist-tracks-list-skeleton-${i}`}
-                      position={i + 1}
-                    />
-                  ))}
+                  <PlaylistTrackListCardSkeleton
+                    key={`playlist-tracks-list-skeleton-${i}`}
+                    position={i + 1}
+                  />
+                ))}
             </div>
           </SortableContext>
         </DndContext>

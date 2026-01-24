@@ -72,7 +72,7 @@ export function SiteHeader({ }: SiteHeaderProps) {
           className="mx-2 data-[orientation=vertical]:h-4"
         />
         <div className="flex items-center justify-between gap-2 w-full px-2 py-1.5">
-          <span className="font-normal text-foreground">
+          <span className="font-normal text-foreground min-w-md">
             {getPageTitle(location.pathname)}
           </span>
 

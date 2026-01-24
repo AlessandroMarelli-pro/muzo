@@ -5,7 +5,6 @@ import {
   SheetTitle
 } from '@/components/ui/sheet';
 import { useTracks } from '@/services/api-hooks';
-import { useAddTrackToPlaylist } from '@/services/playlist-hooks';
 import { ListFilter } from 'lucide-react';
 import { useState } from 'react';
 import { FilterComponent } from '../filters/filter-component';
@@ -15,31 +14,19 @@ import { Button } from '../ui/button';
 interface AddTrackDialog {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSuccess: () => void;
+  addTrackToPlaylist: (trackId: string) => void;
   playlistId: string;
 }
 
 export function AddTrackDialog({
   open,
   onOpenChange,
-  onSuccess,
-  playlistId,
+  addTrackToPlaylist,
 }: AddTrackDialog) {
   const { data: tracks = [], isLoading } = useTracks({ orderBy: 'lastScannedAt', orderDirection: 'asc' });
   const [shouldDisplayFilter, setShouldDisplayFilter] = useState(false);
   const [divMaxWidth, setDivMaxWidth] = useState<number>(800);
-  const addTrackToPlaylistMutation = useAddTrackToPlaylist();
 
-  const addTrackToPlaylist = async (trackId: string) => {
-    addTrackToPlaylistMutation.mutate({
-      playlistId,
-      input: {
-        trackId,
-      },
-    });
-
-    onSuccess();
-  };
 
   const handleOpenChange = (newOpen: boolean) => {
     onOpenChange(newOpen);
