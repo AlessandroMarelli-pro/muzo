@@ -603,6 +603,8 @@ export const useToggleFavorite = () => {
       return response.toggleFavorite;
     },
     onSuccess: (data, trackId) => {
+      queryClient.invalidateQueries({ queryKey: ['playlistRecommendations'] });
+
       // Update the playback state cache with the new favorite status
       queryClient.setQueryData(
         musicPlayerQueryKeys.playbackState(trackId),

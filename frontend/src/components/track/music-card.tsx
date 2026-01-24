@@ -61,6 +61,40 @@ export function MusicCardSkeleton({
     </Card>
   );
 }
+const HorizontalMusicCardListSkeleton = ({ numberOfCards = 4 }: { numberOfCards?: number }) => {
+  return (
+    <div className="flex-row  *:data-[slot=card]:shadow-   *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card  flex flex-nowrap gap-6 max-w-screen overflow-x-scroll scroll-mb-0 pb-3">
+      {Array.from({ length: numberOfCards }).map((_, index) => (
+        <MusicCardSkeleton key={index} />
+      ))}
+    </div>
+  );
+};
+export const HorizontalMusicCardList = ({
+  tracks,
+  isLoading,
+  emptyMessage = 'No tracks found',
+  numberOfCards = 4,
+}: {
+  tracks: SimpleMusicTrack[];
+  isLoading: boolean;
+  emptyMessage?: string;
+  numberOfCards?: number;
+}) => {
+  if (isLoading) return <HorizontalMusicCardListSkeleton numberOfCards={numberOfCards} />;
+  return (
+    <div className="pl-3 flex-row  *:data-[slot=card]:shadow-   *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card  flex flex-nowrap gap-6  overflow-x-scroll scroll-mb-0 pb-3">
+      {tracks ? (
+        tracks?.map((track, index) => (
+          <MusicCard key={`${track.id}-${index}`} track={track} />
+        ))
+      ) : (
+        <div>{emptyMessage}</div>
+      )}
+    </div>
+  );
+};
+
 
 function MusicCard({
   track,

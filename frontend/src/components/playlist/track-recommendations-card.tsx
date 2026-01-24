@@ -11,13 +11,47 @@ import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
 import { Skeleton } from '../ui/skeleton';
 
-export const TrackRecommendationsCardSkeleton = () => {
+export const TrackRecommendationsCardSkeleton = ({
+  index,
+}: {
+  index: number;
+}) => {
   return (
-    <div className="flex items-center gap-4 p-4  rounded-lg hover:bg-muted/50 transition-colors">
-      <Skeleton className="w-15 h-15" />
+    <div
+      key={`skeleton-recommendations-card-${index}`}
+      className={cn(
+        'flex items-center gap-4 p-4 hover:bg-muted/50 transition-colors group',
+      )}    >
+      <Skeleton className="min-w-15 min-h-15 w-15 h-15 rounded-md" />
+
+      {/* Track Info */}
+      <div className="flex-1 min-w-0">
+        <div className="flex text-foreground truncate capitalize gap-2">
+          <Skeleton className="w-20 h-6" />
+          <Skeleton className="w-20 h-6" />
+
+        </div>
+
+        {/* Similarity Reasons */}
+        <div className="flex flex-wrap gap-2 mt-2">
+          {Array.from({ length: 3 }).map((_, index) => (
+            <Skeleton key={index + '-skeleton-similarity-reason'} className="w-30 h-6" />
+
+          ))}
+        </div>
+      </div>
+
+      {/* Track Details */}
+      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <Skeleton className="w-10 h-6" />
+        <Skeleton className="w-10 h-6" />
+        <Skeleton className="w-10 h-6" />
+        <Skeleton className="w-10 h-6" />
+      </div>
     </div>
   );
 };
+
 export const TrackRecommendationsCard = ({
   recommendation,
   onAddTrack,

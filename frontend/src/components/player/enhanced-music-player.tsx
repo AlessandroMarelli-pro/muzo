@@ -47,7 +47,7 @@ export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
   const navigate = useNavigate();
 
   // Audio player hooks
-  const { currentTrack, setCurrentTrack } = useCurrentTrack();
+  const { currentTrack, } = useCurrentTrack();
   const { data: queueItems = [] } = useQueue();
   // Map queue items to tracks for backward compatibility
   const queue = queueItems

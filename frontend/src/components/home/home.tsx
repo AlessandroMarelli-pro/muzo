@@ -1,7 +1,7 @@
 import { formatDuration } from '@/lib/utils';
 import { useRecentlyPlayed } from '@/services/api-hooks';
 import { TopGenre, useLibraryMetrics } from '@/services/metrics-hooks';
-import MusicCard, { MusicCardSkeleton } from '../track/music-card';
+import { HorizontalMusicCardList } from '../track/music-card';
 import { Badge } from '../ui/badge';
 import { Card, CardDescription, CardHeader, CardTitle } from '../ui/card';
 
@@ -9,7 +9,6 @@ import { Card, CardDescription, CardHeader, CardTitle } from '../ui/card';
 
 import { PolarAngleAxis, PolarGrid, Radar, RadarChart } from 'recharts';
 
-import { SimpleMusicTrack } from '@/__generated__/types';
 import { CardContent } from '@/components/ui/card';
 import {
   ChartConfig,
@@ -145,35 +144,6 @@ const TopGenres = ({
   );
 };
 
-const RecentlyPlayedSkeleton = () => {
-  return (
-    <div className="flex-row  *:data-[slot=card]:shadow-   *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card  flex flex-nowrap gap-6 max-w-screen overflow-x-scroll scroll-mb-0 pb-3">
-      {Array.from({ length: 4 }).map((_, index) => (
-        <MusicCardSkeleton key={index} />
-      ))}
-    </div>
-  );
-};
-const RecentlyPlayed = ({
-  recentlyPlayed,
-  isLoading,
-}: {
-  recentlyPlayed: SimpleMusicTrack[];
-  isLoading: boolean;
-}) => {
-  if (isLoading) return <RecentlyPlayedSkeleton />;
-  return (
-    <div className="pl-3 flex-row  *:data-[slot=card]:shadow-   *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card  flex flex-nowrap gap-6  overflow-x-scroll scroll-mb-0 pb-3">
-      {recentlyPlayed ? (
-        recentlyPlayed?.map((track, index) => (
-          <MusicCard key={`${track.id}-${index}`} track={track} />
-        ))
-      ) : (
-        <div>No recently played tracks</div>
-      )}
-    </div>
-  );
-};
 
 export function Home() {
   const { data: recentlyPlayed } = useRecentlyPlayed();
@@ -224,9 +194,10 @@ export function Home() {
       <div className="flex flex-col gap-6">
         <h2 className="text-lg  text-foreground">Recently Played</h2>
 
-        <RecentlyPlayed
-          recentlyPlayed={recentlyPlayed || []}
+        <HorizontalMusicCardList
+          tracks={recentlyPlayed || []}
           isLoading={isLoading}
+          emptyMessage="No recently played tracks"
         />
       </div>
       {/*     <div className="flex flex-col gap-4 w-full">

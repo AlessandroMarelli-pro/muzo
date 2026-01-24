@@ -7,10 +7,9 @@ import { AnalysisStatus } from '@/services/api-hooks';
 import { usePlaylistByName } from '@/services/playlist-hooks';
 import { Music, Search, Sparkles } from 'lucide-react';
 import React, { useEffect } from 'react';
-import { Loading } from '../loading';
 import { NoData } from '../no-data';
 import { TrackRecommendations } from '../playlist/track-recommendations';
-import MusicCard from '../track/music-card';
+import { HorizontalMusicCardList } from '../track/music-card';
 import { Input } from '../ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 
@@ -52,10 +51,8 @@ export const FavoriteList: React.FC<TrackListProps> = ({
       actions.toggleFavorite(trackId);
     }
   };
-  if (isLoading) {
-    return <Loading />;
-  }
-  if (tracks?.length === 0) {
+
+  if (tracks?.length === 0 && !isLoading) {
     return (
       <NoData
         Icon={Music}
@@ -95,13 +92,12 @@ export const FavoriteList: React.FC<TrackListProps> = ({
         </div>
       </div>
 
-      {/* Track Grid/List */}
-      <div className="pl-3 flex-row  *:data-[slot=card]:shadow-   *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card  flex flex-nowrap gap-6  overflow-x-scroll scroll-mb-0 pb-3">
-
-        {tracks.map((track) => (
-          <MusicCard key={track.id} track={track} />
-        ))}
-      </div>
+      <HorizontalMusicCardList
+        tracks={tracks || []}
+        isLoading={isLoading}
+        emptyMessage="No tracks found"
+        numberOfCards={8}
+      />
       {/* Tabs */}
       <Tabs value={'recommendations'} onValueChange={() => { }}>
         <TabsList>
