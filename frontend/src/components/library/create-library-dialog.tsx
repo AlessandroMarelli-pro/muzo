@@ -1,26 +1,31 @@
 import type { CreateLibraryInput } from '@/__generated__/types';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet';
 import { useCreateLibrary } from '@/services/api-hooks';
-import { FolderOpen, Settings, X } from 'lucide-react';
+import { FolderOpen, Settings } from 'lucide-react';
 import React, { useState } from 'react';
+import { Field, FieldLabel } from '../ui/field';
 
 interface CreateLibraryDialogProps {
-  isOpen: boolean;
-  onClose: () => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   onSuccess?: () => void;
 }
 
 export const CreateLibraryDialog: React.FC<CreateLibraryDialogProps> = ({
-  isOpen,
-  onClose,
+  open,
+  onOpenChange,
   onSuccess,
 }) => {
   const createLibraryMutation = useCreateLibrary();
@@ -84,11 +89,17 @@ export const CreateLibraryDialog: React.FC<CreateLibraryDialogProps> = ({
 
         await createLibraryMutation.mutateAsync(createLibraryInput);
         onSuccess?.();
-        onClose();
+        onOpenChange(false);
       } catch (error) {
         console.error('Failed to create library:', error);
         // Error handling is managed by the mutation
       }
+    }
+  };
+
+  const handleOpenChange = (newOpen: boolean) => {
+    if (!createLibraryMutation.isPending) {
+      onOpenChange(newOpen);
     }
   };
 
@@ -98,27 +109,18 @@ export const CreateLibraryDialog: React.FC<CreateLibraryDialogProps> = ({
     alert('File browser would open here. Please enter the path manually.');
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>Create New Music Library</CardTitle>
-              <CardDescription>
-                Set up a new music library to organize your audio files
-              </CardDescription>
-            </div>
-            <Button variant="ghost" size="icon" onClick={onClose}>
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-        </CardHeader>
+    <Sheet open={open} onOpenChange={handleOpenChange}>
+      <SheetContent className="sm:max-w-[600px] overflow-y-auto">
+        <form onSubmit={handleSubmit}>
+          <SheetHeader>
+            <SheetTitle>Create New Music Library</SheetTitle>
+            <SheetDescription>
+              Set up a new music library to organize your audio files
+            </SheetDescription>
+          </SheetHeader>
 
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="grid gap-4 py-4 ">
             {/* Basic Information */}
             <div className="space-y-4">
               <h3 className="text-lg font-semibold flex items-center">
@@ -126,46 +128,42 @@ export const CreateLibraryDialog: React.FC<CreateLibraryDialogProps> = ({
                 Basic Information
               </h3>
 
-              <div className="space-y-2">
-                <label htmlFor="name" className="text-sm font-medium">
-                  Library Name *
-                </label>
-                <input
-                  id="name"
-                  type="text"
-                  value={formData.name}
-                  onChange={(e) => handleInputChange('name', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="My Music Library"
-                />
+              <div className="grid gap-2">
+                <Field orientation="horizontal">
+                  <FieldLabel htmlFor="name">
+                    Library Name *
+                  </FieldLabel>
+                  <Input
+                    id="name"
+                    type="text"
+                    value={formData.name}
+                    onChange={(e) => handleInputChange('name', e.target.value)}
+                    placeholder="My Music Library"
+                    disabled={createLibraryMutation.isPending}
+                    className="w-xs"
+                  />
+                </Field>
                 {errors.name && (
                   <p className="text-sm text-red-600">{errors.name}</p>
                 )}
               </div>
 
-              <div className="space-y-2">
-                <label htmlFor="rootPath" className="text-sm font-medium">
-                  Root Path *
-                </label>
-                <div className="flex space-x-2">
-                  <input
+              <div className="grid gap-2">
+                <Field orientation="horizontal">
+                  <FieldLabel htmlFor="rootPath">
+                    Root Path *
+                  </FieldLabel>
+                  <Input
                     id="rootPath"
                     type="text"
                     value={formData.rootPath}
-                    onChange={(e) =>
-                      handleInputChange('rootPath', e.target.value)
-                    }
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    onChange={(e) => handleInputChange('rootPath', e.target.value)}
                     placeholder="/path/to/your/music"
+                    disabled={createLibraryMutation.isPending}
+                    className="w-xs"
                   />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={handleBrowsePath}
-                  >
-                    Browse
-                  </Button>
-                </div>
+                </Field>
+
                 {errors.rootPath && (
                   <p className="text-sm text-red-600">{errors.rootPath}</p>
                 )}
@@ -173,59 +171,57 @@ export const CreateLibraryDialog: React.FC<CreateLibraryDialogProps> = ({
             </div>
 
             {/* Settings */}
-            <div className="space-y-4">
+            <div className="space-y-4 pt-2 border-t">
               <h3 className="text-lg font-semibold flex items-center">
                 <Settings className="h-5 w-5 mr-2" />
                 Settings
               </h3>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Auto-scan</label>
-                  <div className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      checked={formData.autoScan || false}
-                      onChange={(e) =>
-                        handleInputChange('autoScan', e.target.checked)
-                      }
-                      className="rounded"
-                    />
-                    <span className="text-sm text-muted-foreground">
-                      Automatically scan for new files
-                    </span>
-                  </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="autoScan"
+                    checked={formData.autoScan || false}
+                    onCheckedChange={(checked) =>
+                      handleInputChange('autoScan', checked === true)
+                    }
+                    disabled={createLibraryMutation.isPending}
+                  />
+                  <Label
+                    htmlFor="autoScan"
+                    className="text-sm font-medium cursor-pointer"
+                  >
+                    Auto-scan
+                  </Label>
                 </div>
 
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="includeSubdirectories"
+                    checked={formData.includeSubdirectories || false}
+                    onCheckedChange={(checked) =>
+                      handleInputChange(
+                        'includeSubdirectories',
+                        checked === true,
+                      )
+                    }
+                    disabled={createLibraryMutation.isPending}
+                  />
+                  <Label
+                    htmlFor="includeSubdirectories"
+                    className="text-sm font-medium cursor-pointer"
+                  >
                     Include Subdirectories
-                  </label>
-                  <div className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      checked={formData.includeSubdirectories || false}
-                      onChange={(e) =>
-                        handleInputChange(
-                          'includeSubdirectories',
-                          e.target.checked,
-                        )
-                      }
-                      className="rounded"
-                    />
-                    <span className="text-sm text-muted-foreground">
-                      Scan subdirectories
-                    </span>
-                  </div>
+                  </Label>
                 </div>
               </div>
 
               {formData.autoScan && (
-                <div className="space-y-2">
-                  <label htmlFor="scanInterval" className="text-sm font-medium">
+                <div className="grid gap-2">
+                  <Label htmlFor="scanInterval">
                     Scan Interval (hours)
-                  </label>
-                  <input
+                  </Label>
+                  <Input
                     id="scanInterval"
                     type="number"
                     min="1"
@@ -233,10 +229,10 @@ export const CreateLibraryDialog: React.FC<CreateLibraryDialogProps> = ({
                     onChange={(e) =>
                       handleInputChange(
                         'scanInterval',
-                        parseInt(e.target.value),
+                        parseInt(e.target.value) || 0,
                       )
                     }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    disabled={createLibraryMutation.isPending}
                   />
                   {errors.scanInterval && (
                     <p className="text-sm text-red-600">
@@ -246,8 +242,8 @@ export const CreateLibraryDialog: React.FC<CreateLibraryDialogProps> = ({
                 </div>
               )}
 
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Supported Formats</label>
+              <div className="grid gap-2">
+                <Label>Supported Formats</Label>
                 <div className="flex flex-wrap gap-2">
                   {formData?.supportedFormats?.map((format) => (
                     <Badge key={format} variant="secondary">
@@ -260,11 +256,11 @@ export const CreateLibraryDialog: React.FC<CreateLibraryDialogProps> = ({
                 </p>
               </div>
 
-              <div className="space-y-2">
-                <label htmlFor="maxFileSize" className="text-sm font-medium">
+              <div className="grid gap-2">
+                <Label htmlFor="maxFileSize">
                   Max File Size (MB)
-                </label>
-                <input
+                </Label>
+                <Input
                   id="maxFileSize"
                   type="number"
                   min="1"
@@ -276,10 +272,10 @@ export const CreateLibraryDialog: React.FC<CreateLibraryDialogProps> = ({
                   onChange={(e) =>
                     handleInputChange(
                       'maxFileSize',
-                      parseInt(e.target.value) * 1024 * 1024,
+                      (parseInt(e.target.value) || 0) * 1024 * 1024,
                     )
                   }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  disabled={createLibraryMutation.isPending}
                 />
                 {errors.maxFileSize && (
                   <p className="text-sm text-red-600">{errors.maxFileSize}</p>
@@ -296,21 +292,28 @@ export const CreateLibraryDialog: React.FC<CreateLibraryDialogProps> = ({
                 </p>
               </div>
             )}
+          </div>
 
-            {/* Actions */}
-            <div className="flex justify-end space-x-2 pt-4 border-t">
-              <Button type="button" variant="outline" onClick={onClose}>
-                Cancel
-              </Button>
-              <Button type="submit" disabled={createLibraryMutation.isPending}>
-                {createLibraryMutation.isPending
-                  ? 'Creating...'
-                  : 'Create Library'}
-              </Button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
-    </div>
+          <SheetFooter className="flex flex-row justify-between gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => handleOpenChange(false)}
+              disabled={createLibraryMutation.isPending}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              disabled={createLibraryMutation.isPending || !formData.name.trim() || !formData.rootPath.trim()}
+            >
+              {createLibraryMutation.isPending
+                ? 'Creating...'
+                : 'Create Library'}
+            </Button>
+          </SheetFooter>
+        </form>
+      </SheetContent>
+    </Sheet>
   );
 };

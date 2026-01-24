@@ -151,8 +151,8 @@ export class PlaylistItem {
   @Field(() => String)
   name: string;
 
-  @Field(() => String)
-  description: string;
+  @Field(() => String, { nullable: true })
+  description?: string;
 
   @Field(() => Range)
   bpmRange: Range;

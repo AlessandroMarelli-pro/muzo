@@ -59,9 +59,9 @@ export default function MultiSelect({
       <Popover open={open} onOpenChange={setOpen} modal={false} >
         <PopoverTrigger
           className={cn(
-            'flex h-10 w-full  items-center justify-between rounded-md border border-input bg-background text-sm ',
+            'flex h-8 w-full  items-center justify-between rounded-md border border-input bg-background text-sm ',
             'focus:outline-none ',
-            'disabled:cursor-not-allowed disabled:opacity-50',
+            'disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer',
             'hover:bg-accent hover:text-accent-foreground',
           )}
           disabled={disabled}
@@ -83,19 +83,16 @@ export default function MultiSelect({
                 value.map((item) => {
                   const option = options?.find((opt) => opt.value === item);
                   return (
-                    <Badge key={item} variant="default" className="text-xs">
-                      {option?.label}
-                      <span
-                        role="button"
-                        tabIndex={0}
-                        className="ml-1 hover:bg-destructive  hover:text-destructive-foreground rounded-full p-0.5"
-                        onKeyDown={(e) =>
-                          e.key === 'Enter' && handleUnselect(item)
-                        }
-                        onClick={() => handleUnselect(item)}
-                      >
-                        <X className="h-3 w-3" />
-                      </span>
+                    <Badge key={item} variant="default" className="text-xs cursor-pointer " size="xs" onClick={(e) => {
+                      e.stopPropagation();
+                      handleUnselect(item);
+                    }}
+                    >
+                      <div className="flex flex-row items-center gap-1 align-middle">
+                        {option?.label}
+                        <X className="size-3" />
+
+                      </div>
                     </Badge>
                   );
                 })

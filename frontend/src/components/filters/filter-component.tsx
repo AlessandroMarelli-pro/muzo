@@ -13,7 +13,7 @@ import { Field, FieldGroup, FieldLabel } from '../ui/field';
 import { Input } from '../ui/input';
 
 
-const SliderComponent = ({
+export const SliderComponent = ({
     handleChange,
     label,
     minValue,
@@ -34,7 +34,7 @@ const SliderComponent = ({
     rangeMaxValue: number;
     step: number;
 }) => (
-    <div className="space-y-3">
+    <div className="space-y-3 w-full">
 
         <div className="flex items-center justify-between gap-2">
             <Label htmlFor="tempo-filter">{label}</Label>

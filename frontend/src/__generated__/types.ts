@@ -722,7 +722,7 @@ export type Playlist = {
   __typename?: 'Playlist';
   bpmRange: Range;
   createdAt: Scalars['DateTime']['output'];
-  description: Scalars['String']['output'];
+  description?: Maybe<Scalars['String']['output']>;
   energyRange: Range;
   genresCount: Scalars['Int']['output'];
   id: Scalars['ID']['output'];
@@ -750,7 +750,7 @@ export type PlaylistItem = {
   __typename?: 'PlaylistItem';
   bpmRange: Range;
   createdAt: Scalars['DateTime']['output'];
-  description: Scalars['String']['output'];
+  description?: Maybe<Scalars['String']['output']>;
   energyRange: Range;
   genresCount: Scalars['Int']['output'];
   id: Scalars['ID']['output'];
@@ -1568,7 +1568,7 @@ export type GetPlaylistsQueryVariables = Exact<{
 }>;
 
 
-export type GetPlaylistsQuery = { __typename?: 'Query', playlists: Array<{ __typename?: 'PlaylistItem', id: string, name: string, description: string, genresCount: number, subgenresCount: number, topGenres: Array<string>, topSubgenres: Array<string>, numberOfTracks: number, totalDuration: number, createdAt: any, updatedAt: any, images: Array<string>, bpmRange: { __typename?: 'Range', min: number, max: number }, energyRange: { __typename?: 'Range', min: number, max: number } }> };
+export type GetPlaylistsQuery = { __typename?: 'Query', playlists: Array<{ __typename?: 'PlaylistItem', id: string, name: string, description?: string | null, genresCount: number, subgenresCount: number, topGenres: Array<string>, topSubgenres: Array<string>, numberOfTracks: number, totalDuration: number, createdAt: any, updatedAt: any, images: Array<string>, bpmRange: { __typename?: 'Range', min: number, max: number }, energyRange: { __typename?: 'Range', min: number, max: number } }> };
 
 export type GetPlaylistQueryVariables = Exact<{
   id: Scalars['ID']['input'];
@@ -1576,21 +1576,21 @@ export type GetPlaylistQueryVariables = Exact<{
 }>;
 
 
-export type GetPlaylistQuery = { __typename?: 'Query', playlist: { __typename?: 'Playlist', id: string, name: string, description: string, genresCount: number, subgenresCount: number, topGenres: Array<string>, topSubgenres: Array<string>, numberOfTracks: number, totalDuration: number, createdAt: any, updatedAt: any, images: Array<string>, bpmRange: { __typename?: 'Range', min: number, max: number }, energyRange: { __typename?: 'Range', min: number, max: number }, sorting?: { __typename?: 'PlaylistSorting', id: string, playlistId: string, sortingKey: string, sortingDirection: string, createdAt: any, updatedAt: any } | null, tracks: Array<{ __typename?: 'PlaylistTrack', id: string, position: number, addedAt: string, track: { __typename?: 'SimpleMusicTrack', id: string, artist?: string | null, format?: string | null, title?: string | null, duration: number, genres?: Array<string> | null, subgenres?: Array<string> | null, date?: any | null, listeningCount?: number | null, lastPlayedAt?: any | null, isFavorite?: boolean | null, isLiked?: boolean | null, isBanger?: boolean | null, createdAt?: any | null, updatedAt?: any | null, tempo?: number | null, key?: string | null, valenceMood?: string | null, arousalMood?: string | null, danceabilityFeeling?: string | null, imagePath?: string | null, lastScannedAt?: any | null, fileCreatedAt?: any | null, description?: string | null, tags?: Array<string> | null, vocalsDescriptions?: string | null, atmosphereKeywords?: Array<string> | null, contextBackgrounds?: string | null, contextImpacts?: string | null, libraryId?: string | null } }> } };
+export type GetPlaylistQuery = { __typename?: 'Query', playlist: { __typename?: 'Playlist', id: string, name: string, description?: string | null, genresCount: number, subgenresCount: number, topGenres: Array<string>, topSubgenres: Array<string>, numberOfTracks: number, totalDuration: number, createdAt: any, updatedAt: any, images: Array<string>, bpmRange: { __typename?: 'Range', min: number, max: number }, energyRange: { __typename?: 'Range', min: number, max: number }, sorting?: { __typename?: 'PlaylistSorting', id: string, playlistId: string, sortingKey: string, sortingDirection: string, createdAt: any, updatedAt: any } | null, tracks: Array<{ __typename?: 'PlaylistTrack', id: string, position: number, addedAt: string, track: { __typename?: 'SimpleMusicTrack', id: string, artist?: string | null, format?: string | null, title?: string | null, duration: number, genres?: Array<string> | null, subgenres?: Array<string> | null, date?: any | null, listeningCount?: number | null, lastPlayedAt?: any | null, isFavorite?: boolean | null, isLiked?: boolean | null, isBanger?: boolean | null, createdAt?: any | null, updatedAt?: any | null, tempo?: number | null, key?: string | null, valenceMood?: string | null, arousalMood?: string | null, danceabilityFeeling?: string | null, imagePath?: string | null, lastScannedAt?: any | null, fileCreatedAt?: any | null, description?: string | null, tags?: Array<string> | null, vocalsDescriptions?: string | null, atmosphereKeywords?: Array<string> | null, contextBackgrounds?: string | null, contextImpacts?: string | null, libraryId?: string | null } }> } };
 
 export type GetPlaylistByNameQueryVariables = Exact<{
   name: Scalars['String']['input'];
 }>;
 
 
-export type GetPlaylistByNameQuery = { __typename?: 'Query', playlistByName: { __typename?: 'Playlist', id: string, name: string, description: string, genresCount: number, subgenresCount: number, topGenres: Array<string>, topSubgenres: Array<string>, numberOfTracks: number, totalDuration: number, createdAt: any, updatedAt: any, images: Array<string>, bpmRange: { __typename?: 'Range', min: number, max: number }, energyRange: { __typename?: 'Range', min: number, max: number }, sorting?: { __typename?: 'PlaylistSorting', id: string, playlistId: string, sortingKey: string, sortingDirection: string, createdAt: any, updatedAt: any } | null, tracks: Array<{ __typename?: 'PlaylistTrack', id: string, position: number, addedAt: string, track: { __typename?: 'SimpleMusicTrack', id: string, artist?: string | null, format?: string | null, title?: string | null, duration: number, genres?: Array<string> | null, subgenres?: Array<string> | null, date?: any | null, listeningCount?: number | null, lastPlayedAt?: any | null, isFavorite?: boolean | null, isLiked?: boolean | null, isBanger?: boolean | null, createdAt?: any | null, updatedAt?: any | null, tempo?: number | null, key?: string | null, valenceMood?: string | null, arousalMood?: string | null, danceabilityFeeling?: string | null, imagePath?: string | null, lastScannedAt?: any | null, fileCreatedAt?: any | null, description?: string | null, tags?: Array<string> | null, vocalsDescriptions?: string | null, atmosphereKeywords?: Array<string> | null, contextBackgrounds?: string | null, contextImpacts?: string | null, libraryId?: string | null } }> } };
+export type GetPlaylistByNameQuery = { __typename?: 'Query', playlistByName: { __typename?: 'Playlist', id: string, name: string, description?: string | null, genresCount: number, subgenresCount: number, topGenres: Array<string>, topSubgenres: Array<string>, numberOfTracks: number, totalDuration: number, createdAt: any, updatedAt: any, images: Array<string>, bpmRange: { __typename?: 'Range', min: number, max: number }, energyRange: { __typename?: 'Range', min: number, max: number }, sorting?: { __typename?: 'PlaylistSorting', id: string, playlistId: string, sortingKey: string, sortingDirection: string, createdAt: any, updatedAt: any } | null, tracks: Array<{ __typename?: 'PlaylistTrack', id: string, position: number, addedAt: string, track: { __typename?: 'SimpleMusicTrack', id: string, artist?: string | null, format?: string | null, title?: string | null, duration: number, genres?: Array<string> | null, subgenres?: Array<string> | null, date?: any | null, listeningCount?: number | null, lastPlayedAt?: any | null, isFavorite?: boolean | null, isLiked?: boolean | null, isBanger?: boolean | null, createdAt?: any | null, updatedAt?: any | null, tempo?: number | null, key?: string | null, valenceMood?: string | null, arousalMood?: string | null, danceabilityFeeling?: string | null, imagePath?: string | null, lastScannedAt?: any | null, fileCreatedAt?: any | null, description?: string | null, tags?: Array<string> | null, vocalsDescriptions?: string | null, atmosphereKeywords?: Array<string> | null, contextBackgrounds?: string | null, contextImpacts?: string | null, libraryId?: string | null } }> } };
 
 export type CreatePlaylistMutationVariables = Exact<{
   input: CreatePlaylistInput;
 }>;
 
 
-export type CreatePlaylistMutation = { __typename?: 'Mutation', createPlaylist: { __typename?: 'Playlist', id: string, name: string, description: string, createdAt: any, updatedAt: any } };
+export type CreatePlaylistMutation = { __typename?: 'Mutation', createPlaylist: { __typename?: 'Playlist', id: string, name: string, description?: string | null, createdAt: any, updatedAt: any } };
 
 export type UpdatePlaylistMutationVariables = Exact<{
   id: Scalars['ID']['input'];
@@ -1599,7 +1599,7 @@ export type UpdatePlaylistMutationVariables = Exact<{
 }>;
 
 
-export type UpdatePlaylistMutation = { __typename?: 'Mutation', updatePlaylist: { __typename?: 'Playlist', id: string, name: string, description: string, createdAt: any, updatedAt: any } };
+export type UpdatePlaylistMutation = { __typename?: 'Mutation', updatePlaylist: { __typename?: 'Playlist', id: string, name: string, description?: string | null, createdAt: any, updatedAt: any } };
 
 export type DeletePlaylistMutationVariables = Exact<{
   id: Scalars['ID']['input'];

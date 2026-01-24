@@ -1,6 +1,5 @@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import MultiSelect from '@/components/ui/multi-select';
 import {
   Sheet,
@@ -10,11 +9,16 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet';
-import { Slider } from '@/components/ui/slider';
 import { useFilterOptionsData } from '@/hooks/useFilterOptions';
 import { useCreatePlaylist } from '@/services/playlist-hooks';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@radix-ui/react-collapsible';
+import { ChevronDownIcon, Info } from 'lucide-react';
 import React, { useState } from 'react';
+import { SliderComponent } from '../filters/filter-component';
 import { Loading } from '../loading';
+import { Field, FieldLabel } from '../ui/field';
+import { Item, ItemContent, ItemDescription, ItemMedia } from '../ui/item';
+import { Textarea } from '../ui/textarea';
 
 interface CreatePlaylistDialogProps {
   open: boolean;
@@ -22,50 +26,7 @@ interface CreatePlaylistDialogProps {
   onSuccess: () => void;
 }
 
-const SliderComponent = ({
-  handleChange,
-  label,
-  minValue,
-  maxValue,
-  rangeMinValue,
-  rangeMaxValue,
-  step,
-  unit,
-  id,
-}: {
-  handleChange: (value: number[]) => void;
-  label: string;
-  minValue: number;
-  maxValue: number;
-  unit: string;
-  id: string;
-  rangeMinValue: number;
-  rangeMaxValue: number;
-  step: number;
-}) => (
-  <div className="space-y-3">
-    <div className="flex flex-col justify-between items-left">
-      <Label htmlFor={id}>{label}</Label>
-      <div className="flex flex-row text-sm text-muted-foreground justify-between">
-        <span className="text-sm text-muted-foreground justify-between">
-          {minValue} {unit}
-        </span>
-        <span className="text-sm text-muted-foreground justify-between">
-          {maxValue} {unit}
-        </span>
-      </div>
-    </div>
-    <Slider
-      id={id + '-slider'}
-      min={rangeMinValue}
-      max={rangeMaxValue}
-      step={step}
-      value={[minValue, maxValue]}
-      onValueChange={handleChange}
-      className="w-full"
-    />
-  </div>
-);
+
 
 export function CreatePlaylistDialog({
   open,
@@ -100,31 +61,31 @@ export function CreatePlaylistDialog({
       // Build filter input if any filters are selected
       const filters =
         selectedGenres.length > 0 ||
-        selectedSubgenres.length > 0 ||
-        selectedAtmospheres.length > 0 ||
-        selectedLibraries.length > 0 ||
-        bpmRange[0] !== 0 ||
-        bpmRange[1] !== 200
+          selectedSubgenres.length > 0 ||
+          selectedAtmospheres.length > 0 ||
+          selectedLibraries.length > 0 ||
+          bpmRange[0] !== 0 ||
+          bpmRange[1] !== 200
           ? {
-              genres: selectedGenres.length > 0 ? selectedGenres : undefined,
-              subgenres:
-                selectedSubgenres.length > 0 ? selectedSubgenres : undefined,
-              atmospheres:
-                selectedAtmospheres.length > 0
-                  ? selectedAtmospheres
-                  : undefined,
-              libraryId:
-                selectedLibraries.length > 0
-                  ? selectedLibraries
-                  : undefined,
-              tempo:
-                bpmRange[0] !== 0 || bpmRange[1] !== 200
-                  ? {
-                      min: bpmRange[0] !== 0 ? bpmRange[0] : undefined,
-                      max: bpmRange[1] !== 200 ? bpmRange[1] : undefined,
-                    }
-                  : undefined,
-            }
+            genres: selectedGenres.length > 0 ? selectedGenres : undefined,
+            subgenres:
+              selectedSubgenres.length > 0 ? selectedSubgenres : undefined,
+            atmospheres:
+              selectedAtmospheres.length > 0
+                ? selectedAtmospheres
+                : undefined,
+            libraryId:
+              selectedLibraries.length > 0
+                ? selectedLibraries
+                : undefined,
+            tempo:
+              bpmRange[0] !== 0 || bpmRange[1] !== 200
+                ? {
+                  min: bpmRange[0] !== 0 ? bpmRange[0] : undefined,
+                  max: bpmRange[1] !== 200 ? bpmRange[1] : undefined,
+                }
+                : undefined,
+          }
           : undefined;
 
       await createPlaylist({
@@ -185,9 +146,9 @@ export function CreatePlaylistDialog({
             </SheetDescription>
           </SheetHeader>
 
-          <div className="grid gap-4 py-4 px-4">
-            <div className="grid gap-2">
-              <Label htmlFor="name">Name *</Label>
+          <div className="grid gap-4 py-4 ">
+            <Field orientation="horizontal">
+              <FieldLabel htmlFor="name">Name *</FieldLabel>
               <Input
                 id="name"
                 value={name}
@@ -195,111 +156,131 @@ export function CreatePlaylistDialog({
                 placeholder="My Awesome Playlist"
                 required
                 disabled={isCreating}
+                className="w-xs"
               />
-            </div>
+            </Field>
 
-            <div className="grid gap-2">
-              <Label htmlFor="description">Description</Label>
-              <Input
+            <Field orientation="horizontal">
+              <FieldLabel htmlFor="description">Description</FieldLabel>
+              <Textarea
                 id="description"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="A collection of my favorite songs..."
                 disabled={isCreating}
+                className="w-xs"
               />
-            </div>
+            </Field>
 
             {/* Filters Section */}
-            <div className="space-y-4 pt-2 border-t">
-              <h3 className="text-sm font-semibold">
-                Filter Tracks (Optional)
-              </h3>
+            <Collapsible className="data-[state=open]:bg-muted rounded-md ">
+              <CollapsibleTrigger asChild>
+                <Button variant="ghost" className="group w-full">
+                  Auto-filter Tracks (Optional)
+                  <ChevronDownIcon className="ml-auto group-data-[state=open]:rotate-180" />
+                </Button>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="flex flex-col items-start gap-2 p-2.5  text-sm w-full">
+                <Item size="sm" variant="outline">
+                  <ItemMedia variant="icon">
+                    <Info />
+                  </ItemMedia>
+                  <ItemContent className="w-full">
+                    <ItemDescription className="w-full line-clamp-none text-wrap">
+                      Tracks will be automatically selected based on the filters you select.
+                    </ItemDescription>
+                  </ItemContent>
+                </Item>
+                {/* Genres Filter */}
+                <Field orientation="horizontal">
+                  <FieldLabel htmlFor="genres-filter">Genres</FieldLabel>
+                  <MultiSelect
+                    options={options.genres || []}
+                    value={selectedGenres}
+                    onChange={setSelectedGenres}
+                    placeholder="Select genres..."
+                    className="w-xs"
+                    isLoading={options.isLoading}
+                    disabled={isCreating}
+                  />
+                </Field>
 
-              {/* Genres Filter */}
-              <div className="space-y-2">
-                <Label htmlFor="genres-filter">Genres</Label>
-                <MultiSelect
-                  options={options.genres || []}
-                  value={selectedGenres}
-                  onChange={setSelectedGenres}
-                  placeholder="Select genres..."
-                  className="w-full"
-                  isLoading={options.isLoading}
-                  disabled={isCreating}
+                {/* Subgenres Filter */}
+                <Field orientation="horizontal">
+                  <FieldLabel htmlFor="subgenres-filter">Subgenres</FieldLabel>
+                  <MultiSelect
+                    options={options.subgenres || []}
+                    value={selectedSubgenres}
+                    onChange={setSelectedSubgenres}
+                    placeholder="Select subgenres..."
+                    className="w-xs"
+                    isLoading={options.isLoading}
+                    disabled={isCreating}
+                  />
+                </Field>
+
+                {/* Atmospheres Filter */}
+                <Field orientation="horizontal">
+                  <FieldLabel htmlFor="atmospheres-filter">Atmospheres</FieldLabel>
+                  <MultiSelect
+                    options={options.atmospheres || []}
+                    value={selectedAtmospheres}
+                    onChange={setSelectedAtmospheres}
+                    placeholder="Select atmospheres..."
+                    className="w-xs"
+                    isLoading={options.isLoading}
+                    disabled={isCreating}
+                  />
+                </Field>
+
+                {/* Libraries Filter */}
+                <Field orientation="horizontal">
+                  <FieldLabel htmlFor="libraries-filter">Libraries</FieldLabel>
+                  <MultiSelect
+                    options={options.libraries || []}
+                    value={selectedLibraries}
+                    onChange={setSelectedLibraries}
+                    placeholder="Select libraries..."
+                    className="w-xs"
+                    isLoading={options.isLoading}
+                    disabled={isCreating}
+                  />
+                </Field>
+
+                {/* BPM Filter */}
+                <SliderComponent
+                  id="bpm"
+                  label="BPM"
+                  unit="BPM"
+                  minValue={bpmRange[0]}
+                  maxValue={bpmRange[1]}
+                  rangeMinValue={0}
+                  rangeMaxValue={200}
+                  step={1}
+                  handleChange={handleBpmChange}
                 />
-              </div>
 
-              {/* Subgenres Filter */}
-              <div className="space-y-2">
-                <Label htmlFor="subgenres-filter">Subgenres</Label>
-                <MultiSelect
-                  options={options.subgenres || []}
-                  value={selectedSubgenres}
-                  onChange={setSelectedSubgenres}
-                  placeholder="Select subgenres..."
-                  className="w-full"
-                  isLoading={options.isLoading}
-                  disabled={isCreating}
-                />
-              </div>
+                {/* Max Tracks */}
+                <Field orientation="horizontal">
+                  <FieldLabel htmlFor="maxTracks">Max Tracks</FieldLabel>
+                  <Input
+                    id="maxTracks"
+                    type="number"
+                    min="1"
+                    value={maxTracks}
+                    onChange={(e) =>
+                      setMaxTracks(parseInt(e.target.value) || 100)
+                    }
+                    placeholder="100"
+                    disabled={isCreating}
+                    className="w-xs"
+                  />
+                </Field>
 
-              {/* Atmospheres Filter */}
-              <div className="space-y-2">
-                <Label htmlFor="atmospheres-filter">Atmospheres</Label>
-                <MultiSelect
-                  options={options.atmospheres || []}
-                  value={selectedAtmospheres}
-                  onChange={setSelectedAtmospheres}
-                  placeholder="Select atmospheres..."
-                  className="w-full"
-                  isLoading={options.isLoading}
-                  disabled={isCreating}
-                />
-              </div>
+              </CollapsibleContent>
+            </Collapsible>
 
-              {/* Libraries Filter */}
-              <div className="space-y-2">
-                <Label htmlFor="libraries-filter">Libraries</Label>
-                <MultiSelect
-                  options={options.libraries || []}
-                  value={selectedLibraries}
-                  onChange={setSelectedLibraries}
-                  placeholder="Select libraries..."
-                  className="w-full"
-                  isLoading={options.isLoading}
-                  disabled={isCreating}
-                />
-              </div>
 
-              {/* BPM Filter */}
-              <SliderComponent
-                id="bpm"
-                label="BPM"
-                unit="BPM"
-                minValue={bpmRange[0]}
-                maxValue={bpmRange[1]}
-                rangeMinValue={0}
-                rangeMaxValue={200}
-                step={1}
-                handleChange={handleBpmChange}
-              />
-
-              {/* Max Tracks */}
-              <div className="grid gap-2">
-                <Label htmlFor="maxTracks">Max Tracks</Label>
-                <Input
-                  id="maxTracks"
-                  type="number"
-                  min="1"
-                  value={maxTracks}
-                  onChange={(e) =>
-                    setMaxTracks(parseInt(e.target.value) || 100)
-                  }
-                  placeholder="100"
-                  disabled={isCreating}
-                />
-              </div>
-            </div>
           </div>
 
           <SheetFooter className="flex flex-row justify-between gap-2">

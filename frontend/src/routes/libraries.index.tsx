@@ -63,8 +63,8 @@ function LibrariesPage() {
       />
 
       <CreateLibraryDialog
-        isOpen={isCreateDialogOpen}
-        onClose={() => setIsCreateDialogOpen(false)}
+        open={isCreateDialogOpen}
+        onOpenChange={setIsCreateDialogOpen}
         onSuccess={handleCreateLibrarySuccess}
       />
     </>
