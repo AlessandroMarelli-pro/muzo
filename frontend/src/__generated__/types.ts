@@ -124,6 +124,7 @@ export type CreatePlaylistInput = {
   isPublic?: InputMaybe<Scalars['Boolean']['input']>;
   maxTracks?: InputMaybe<Scalars['Int']['input']>;
   name: Scalars['String']['input'];
+  subgenreSelectionMode?: InputMaybe<Scalars['String']['input']>;
   userId?: InputMaybe<Scalars['String']['input']>;
 };
 

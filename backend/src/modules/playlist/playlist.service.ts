@@ -22,7 +22,7 @@ export class PlaylistService {
   ) {}
 
   async createPlaylist(createPlaylistDto: CreatePlaylistDto) {
-    const { filters, maxTracks, ...playlistData } = createPlaylistDto;
+    const { filters, maxTracks, subgenreSelectionMode, ...playlistData } = createPlaylistDto;
 
     // Create the playlist first
     const playlist = await this.prisma.playlist.create({
@@ -57,7 +57,12 @@ export class PlaylistService {
 
       // Build Prisma where clause using FilterService
       const where =
-        await this.filterService.buildPrismaWhereClause(filterCriteria);
+        await this.filterService.buildPrismaWhereClause(
+          filterCriteria,
+          false,
+          false,
+          subgenreSelectionMode || 'exact',
+        );
 
       // Find matching tracks
       const matchingTracks = await this.prisma.musicTrack.findMany({

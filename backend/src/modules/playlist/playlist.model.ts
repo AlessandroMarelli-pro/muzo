@@ -81,6 +81,9 @@ export class CreatePlaylistInput {
 
   @Field(() => Int, { nullable: true })
   maxTracks?: number;
+
+  @Field({ nullable: true })
+  subgenreSelectionMode?: 'exact' | 'contain';
 }
 
 @InputType()

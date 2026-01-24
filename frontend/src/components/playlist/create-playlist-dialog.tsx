@@ -9,6 +9,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet';
+import { Switch } from '@/components/ui/switch';
 import { useFilterOptionsData } from '@/hooks/useFilterOptions';
 import { useCreatePlaylist } from '@/services/playlist-hooks';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@radix-ui/react-collapsible';
@@ -45,6 +46,7 @@ export function CreatePlaylistDialog({
   const [selectedLibraries, setSelectedLibraries] = useState<string[]>([]);
   const [bpmRange, setBpmRange] = useState<[number, number]>([0, 200]);
   const [maxTracks, setMaxTracks] = useState<number>(100);
+  const [subgenreSelectionMode, setSubgenreSelectionMode] = useState<'exact' | 'contain'>('exact');
 
   const { createPlaylist } = useCreatePlaylist();
   const options = useFilterOptionsData();
@@ -94,6 +96,7 @@ export function CreatePlaylistDialog({
         isPublic,
         filters,
         maxTracks: maxTracks > 0 ? maxTracks : undefined,
+        subgenreSelectionMode: selectedSubgenres.length > 0 ? subgenreSelectionMode : undefined,
       } as any);
 
       // Reset form
@@ -106,6 +109,7 @@ export function CreatePlaylistDialog({
       setSelectedLibraries([]);
       setBpmRange([0, 200]);
       setMaxTracks(100);
+      setSubgenreSelectionMode('exact');
 
       onSuccess();
     } catch (error) {
@@ -218,6 +222,31 @@ export function CreatePlaylistDialog({
                     disabled={isCreating}
                   />
                 </Field>
+
+                {/* Subgenre Selection Mode */}
+                {selectedSubgenres.length > 0 && (
+                  <Field orientation="horizontal" className="flex flex-row items-center justify-between gap-2">
+                    <div className="flex flex-col gap-1">
+                      <FieldLabel htmlFor="subgenre-mode">
+                        Match any subgenre
+                      </FieldLabel>
+                      <span className="text-xs text-muted-foreground">
+                        {subgenreSelectionMode === 'contain'
+                          ? 'Tracks with any selected subgenre will be included'
+                          : 'Tracks must have all selected subgenres (exact match)'}
+                      </span>
+                    </div>
+                    <Switch
+                      id="subgenre-mode"
+                      checked={subgenreSelectionMode === 'contain'}
+                      onCheckedChange={(checked) =>
+                        setSubgenreSelectionMode(checked ? 'contain' : 'exact')
+                      }
+                      disabled={isCreating}
+                      aria-label="Toggle subgenre selection mode"
+                    />
+                  </Field>
+                )}
 
                 {/* Atmospheres Filter */}
                 <Field orientation="horizontal">

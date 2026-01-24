@@ -105,6 +105,7 @@ input CreatePlaylistInput {
   isPublic: Boolean
   maxTracks: Int
   name: String!
+  subgenreSelectionMode: String
   userId: String
 }
 

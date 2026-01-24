@@ -252,6 +252,7 @@ export class FilterService {
     criteria: FilterCriteria,
     skipGenres: boolean = false,
     skipSubgenres: boolean = false,
+    subgenreSelectionMode: 'exact' | 'contain' = 'exact',
   ) {
     const where: any = {};
 
@@ -289,22 +290,31 @@ export class FilterService {
       const subgenreIds = subgenreRecords.map((s) => s.id);
 
       if (subgenreIds.length > 0) {
-        // Filter tracks that have ALL specified subgenres
-        // Use AND at the where level to ensure each subgenre is present
-        // Each condition checks that the track has at least one trackSubgenre with the specific subgenreId
-        const subgenreConditions = subgenreIds.map((subgenreId) => ({
-          trackSubgenres: {
+        if (subgenreSelectionMode === 'contain') {
+          // Filter tracks that have ANY of the specified subgenres (OR logic)
+          where.trackSubgenres = {
             some: {
-              subgenreId: subgenreId,
+              subgenreId: { in: subgenreIds },
             },
-          },
-        }));
-
-        // Merge with existing AND conditions if any
-        if (where.AND) {
-          where.AND = [...where.AND, ...subgenreConditions];
+          };
         } else {
-          where.AND = subgenreConditions;
+          // Filter tracks that have ALL specified subgenres (AND logic - exact mode)
+          // Use AND at the where level to ensure each subgenre is present
+          // Each condition checks that the track has at least one trackSubgenre with the specific subgenreId
+          const subgenreConditions = subgenreIds.map((subgenreId) => ({
+            trackSubgenres: {
+              some: {
+                subgenreId: subgenreId,
+              },
+            },
+          }));
+
+          // Merge with existing AND conditions if any
+          if (where.AND) {
+            where.AND = [...where.AND, ...subgenreConditions];
+          } else {
+            where.AND = subgenreConditions;
+          }
         }
       }
     }
