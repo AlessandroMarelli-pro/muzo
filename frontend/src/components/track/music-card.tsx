@@ -66,7 +66,6 @@ function MusicCard({
   track,
   className,
   onAdd,
-  key,
   height = '300',
   width = '300',
 }: MusicCardProps) {
@@ -78,7 +77,7 @@ function MusicCard({
   // Only check if this specific track is the current track and playing
   const isCurrentTrack = currentTrack?.id === track.id;
   const isThisTrackPlaying = isCurrentTrack && isPlaying;
-
+  const trackId = track.id;
   const playMusic = (e: React.SyntheticEvent<any>) => {
     e.stopPropagation();
     if (currentTrack?.id !== track.id) {
@@ -104,7 +103,7 @@ function MusicCard({
         maxWidth: `${width}px`,
         maxHeight: `${height}px`,
       }}
-      key={key}
+      key={`${trackId}-card`}
       className={cn(
         'relative h-full w-full',
         '   cursor-pointer',

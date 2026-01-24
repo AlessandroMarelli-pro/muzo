@@ -28,9 +28,9 @@ export function MusicCardContent({
       ? track.subgenres
       : 'Unknown Subgenre';
   const formattedImage = track.imagePath || 'Unknown Image';
-
+  const trackId = track.id;
   return (
-    <CardContent className={`p-0 ${className || ''} h-full`}>
+    <CardContent className={`p-0 ${className || ''} h-full`} key={`${trackId}-card-content`}>
 
       {/* Track Info */}
       <div className="flex flex-col h-full space-around">
@@ -90,7 +90,7 @@ export function MusicCardContent({
           <div className="flex flex-row  gap-2 max-w-full overflow-x-scroll min-h-5">
             {formattedGenres !== 'Unknown Genre' &&
               formattedGenres.map((genre) => (
-                <Badge variant="secondary" className="text-xs capitalize">
+                <Badge variant="secondary" className="text-xs capitalize" key={`${trackId}-genre-${genre}`}>
                   {genre}
                 </Badge>
               ))}
@@ -101,6 +101,7 @@ export function MusicCardContent({
                 <Badge
                   variant="outline"
                   className="text-xs capitalize border-none"
+                  key={`${trackId}-subgenre-${subgenre}`}
                 >
                   {subgenre}
                 </Badge>

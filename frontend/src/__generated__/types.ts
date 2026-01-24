@@ -285,18 +285,6 @@ export type LibraryQueryOptions = {
   orderDirection?: InputMaybe<Scalars['String']['input']>;
 };
 
-export type LibraryScanProgressUpdate = {
-  __typename?: 'LibraryScanProgressUpdate';
-  estimatedCompletion?: Maybe<Scalars['DateTime']['output']>;
-  libraryId: Scalars['ID']['output'];
-  libraryName: Scalars['String']['output'];
-  processedFiles: Scalars['Float']['output'];
-  progressPercentage: Scalars['Float']['output'];
-  remainingFiles: Scalars['Float']['output'];
-  status: Scalars['String']['output'];
-  totalFiles: Scalars['Float']['output'];
-};
-
 export type LibraryScanResult = {
   __typename?: 'LibraryScanResult';
   errors: Scalars['Float']['output'];
@@ -430,7 +418,7 @@ export type Mutation = {
   playTrack: PlaybackState;
   recordPlayback: MusicTrack;
   removeTrackFromPlaylist: Scalars['Boolean']['output'];
-  removeTrackFromQueue: Scalars['Boolean']['output'];
+  removeTrackFromQueue: RemoveTrackFromQueueResponse;
   reorderPlaylistTracks: Playlist;
   resumeTrack: PlaybackState;
   scheduleLibraryScan: LibraryScanResult;
@@ -1049,6 +1037,14 @@ export type RecentActivity = {
   tracksAnalyzed: Scalars['Int']['output'];
 };
 
+export type RemoveTrackFromQueueResponse = {
+  __typename?: 'RemoveTrackFromQueueResponse';
+  artist: Scalars['String']['output'];
+  success: Scalars['Boolean']['output'];
+  title: Scalars['String']['output'];
+  trackId: Scalars['ID']['output'];
+};
+
 export type ReorderTracksInput = {
   trackOrders: Array<TrackOrderInput>;
 };
@@ -1124,16 +1120,6 @@ export type SubgenreDistribution = {
   __typename?: 'SubgenreDistribution';
   count: Scalars['Int']['output'];
   subgenre: Scalars['String']['output'];
-};
-
-export type Subscription = {
-  __typename?: 'Subscription';
-  libraryScanProgress: LibraryScanProgressUpdate;
-};
-
-
-export type SubscriptionLibraryScanProgressArgs = {
-  libraryId?: InputMaybe<Scalars['ID']['input']>;
 };
 
 export type SyncResult = {
@@ -1758,7 +1744,7 @@ export type RemoveTrackFromQueueMutationVariables = Exact<{
 }>;
 
 
-export type RemoveTrackFromQueueMutation = { __typename?: 'Mutation', removeTrackFromQueue: boolean };
+export type RemoveTrackFromQueueMutation = { __typename?: 'Mutation', removeTrackFromQueue: { __typename?: 'RemoveTrackFromQueueResponse', success: boolean, trackId: string, artist: string, title: string } };
 
 export type UpdateQueuePositionsMutationVariables = Exact<{
   input: UpdateQueuePositionsInput;

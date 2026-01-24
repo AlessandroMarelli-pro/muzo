@@ -8,7 +8,7 @@ import { PrismaService } from '../../shared/services/prisma.service';
 
 @Injectable()
 export class PlaybackQueueService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   /**
    * Get all queue items ordered by position
@@ -93,8 +93,17 @@ export class PlaybackQueueService {
     if (!queueItem) {
       throw new NotFoundException('Track not found in queue');
     }
+    const track = await this.prisma.musicTrack.findUnique({
+      where: { id: trackId },
+      select: {
+        originalArtist: true,
+        originalTitle: true,
+      },
+    });
 
     const removedPosition = queueItem.position;
+    const artist = track?.originalArtist;
+    const title = track?.originalTitle;
 
     // Delete the queue item
     await this.prisma.queue.delete({
@@ -104,7 +113,7 @@ export class PlaybackQueueService {
     // Reorder remaining tracks to fill the gap
     await this.reorderPositionsAfterRemoval(removedPosition);
 
-    return { success: true };
+    return { success: true, trackId, artist, title };
   }
 
   /**

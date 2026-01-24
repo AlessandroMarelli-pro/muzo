@@ -36,8 +36,8 @@ export function AppSidebar({
                   <DogIcon className="size-4" />
                 </div>
                 <div className=" flex-1 text-left text-sm leading-tight grid group-data-[collapsible=icon]:hidden ">
-                  <span className="truncate font-semibold">Acme Inc</span>
-                  <span className="truncate text-xs">Enterprise</span>
+                  <span className="truncate font-semibold">Muzo</span>
+                  <span className="truncate text-xs">Music Organizer</span>
                 </div>
               </a>
             </SidebarMenuButton>

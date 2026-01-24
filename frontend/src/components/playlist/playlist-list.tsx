@@ -62,7 +62,7 @@ export function PlaylistList({
           Create Playlist
         </Button>
       </div>
-      <div className="flex flex-row flex-wrap gap-5 justify-start">
+      <div className="flex flex-row flex-wrap gap-5.5 justify-start ">
         {loading ? (
           <>
             {Array.from({ length: 10 }).map((_, index) => (

@@ -383,7 +383,7 @@ type Mutation {
   playTrack(startTime: Float! = 0, trackId: String!): PlaybackState!
   recordPlayback(duration: Float!, trackId: ID!): MusicTrack!
   removeTrackFromPlaylist(playlistId: ID!, trackId: ID!, userId: String!): Boolean!
-  removeTrackFromQueue(trackId: ID!): Boolean!
+  removeTrackFromQueue(trackId: ID!): RemoveTrackFromQueueResponse!
   reorderPlaylistTracks(input: ReorderTracksInput!, playlistId: ID!, userId: String!): Playlist!
   resumeTrack(trackId: String!): PlaybackState!
   scheduleLibraryScan(libraryId: ID!): LibraryScanResult!
@@ -591,6 +591,13 @@ type RecentActivity {
   date: String!
   tracksAdded: Int!
   tracksAnalyzed: Int!
+}
+
+type RemoveTrackFromQueueResponse {
+  artist: String!
+  success: Boolean!
+  title: String!
+  trackId: ID!
 }
 
 input ReorderTracksInput {

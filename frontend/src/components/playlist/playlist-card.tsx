@@ -129,12 +129,12 @@ export function PlaylistCard({
         onMouseLeave={() => {
           setIsHovered(false);
         }}
-        className="  flex justify-center items-center flex-wrap gap-0 p-0 max-w-60 max-h-60 min-w-60 min-h-60 shadow-md rounded-t-md hover:scale-105 transition-all duration-300"
+        className="  flex justify-center items-center flex-wrap gap-0 p-0 max-w-65 max-h-60 min-w-60 min-h-60 shadow-md rounded-t-md hover:scale-105 transition-all duration-300"
       >
         <AnimatePresence initial={false}>
           {isHovered && (
             <motion.div
-              className="absolute  items-center justify-center z-2 max-w-60 max-h-60 min-w-60 min-h-60 rounded-t-md flex"
+              className="absolute  items-center justify-center z-2 max-w-65 max-h-60 min-w-60 min-h-60 rounded-t-md flex"
               initial={{ opacity: 0, }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0, }}

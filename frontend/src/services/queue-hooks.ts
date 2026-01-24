@@ -1,4 +1,5 @@
-import { QueueItem, UpdateQueuePositionsInput } from '@/__generated__/types';
+import { QueueItem, RemoveTrackFromQueueResponse, UpdateQueuePositionsInput } from '@/__generated__/types';
+import { capitalizeEveryWord } from '@/lib/utils';
 import { gql, graffleClient } from '@/services/graffle-client';
 import { simpleMusicTrackFragment } from '@/services/playlist-hooks';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -39,7 +40,12 @@ const ADD_TRACK_TO_QUEUE = gql`
 
 const REMOVE_TRACK_FROM_QUEUE = gql`
   mutation RemoveTrackFromQueue($trackId: ID!) {
-    removeTrackFromQueue(trackId: $trackId)
+    removeTrackFromQueue(trackId: $trackId) {
+      success
+      trackId
+      artist
+      title
+    }
   }
 `;
 
@@ -81,9 +87,9 @@ const addTrackToQueue = async (trackId: string): Promise<QueueItem> => {
   return data.addTrackToQueue;
 };
 
-const removeTrackFromQueue = async (trackId: string): Promise<boolean> => {
+const removeTrackFromQueue = async (trackId: string): Promise<RemoveTrackFromQueueResponse> => {
   const data = await graffleClient.request<{
-    removeTrackFromQueue: boolean;
+    removeTrackFromQueue: RemoveTrackFromQueueResponse;
   }>(REMOVE_TRACK_FROM_QUEUE, { trackId });
   return data.removeTrackFromQueue;
 };
@@ -115,16 +121,21 @@ export function useQueue() {
   });
 }
 
+const addTrackToQueueSuccessToast = (data: QueueItem, queryClient: QueryClient) => {
+  const trackName = `${data.track?.title || 'track'} by ${data.track?.artist || 'artist'}`;
+  queryClient.invalidateQueries({ queryKey: queueQueryKeys.all });
+  toast.success(`Added track to queue`, {
+    description: capitalizeEveryWord(trackName || 'track'),
+    duration: 2000,
+  });
+};
 export function useAddTrackToQueue() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: addTrackToQueue,
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: queueQueryKeys.all });
-      toast.success(`Added "${data.track?.title || 'track'}" to queue`, {
-        duration: 2000,
-      });
+      addTrackToQueueSuccessToast(data, queryClient);
     },
     onError: (error: any) => {
       const errorMessage =
@@ -150,10 +161,19 @@ export function useRemoveTrackFromQueue() {
 
   return useMutation({
     mutationFn: removeTrackFromQueue,
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: queueQueryKeys.all });
-      toast.success('Removed track from queue', {
+      toast.success(`Removed track from queue`, {
         duration: 2000,
+        description: capitalizeEveryWord(`${data.title} by ${data.artist}`),
+        action: {
+          label: 'Undo',
+          onClick: () => {
+            addTrackToQueue(data.trackId).then((data) => {
+              addTrackToQueueSuccessToast(data, queryClient);
+            });
+          },
+        },
       });
     },
     onError: (error: any) => {

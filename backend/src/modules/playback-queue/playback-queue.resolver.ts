@@ -1,11 +1,22 @@
-import { Args, ID, Mutation, Query, Resolver } from '@nestjs/graphql';
+import { Args, Field, ID, Mutation, ObjectType, Query, Resolver } from '@nestjs/graphql';
 import { mapToSimpleMusicTrack } from '../music-track/music-track.resolver';
 import { QueueItem, UpdateQueuePositionsInput } from './playback-queue.model';
 import { PlaybackQueueService } from './playback-queue.service';
 
+@ObjectType()
+export class RemoveTrackFromQueueResponse {
+  @Field(() => Boolean)
+  success: boolean;
+  @Field(() => ID)
+  trackId: string;
+  @Field(() => String)
+  artist: string;
+  @Field(() => String)
+  title: string;
+}
 @Resolver('PlaybackQueue')
 export class PlaybackQueueResolver {
-  constructor(private readonly playbackQueueService: PlaybackQueueService) {}
+  constructor(private readonly playbackQueueService: PlaybackQueueService) { }
 
   @Query(() => [QueueItem])
   async queue() {
@@ -33,12 +44,11 @@ export class PlaybackQueueResolver {
     };
   }
 
-  @Mutation(() => Boolean)
+  @Mutation(() => RemoveTrackFromQueueResponse)
   async removeTrackFromQueue(
     @Args('trackId', { type: () => ID }) trackId: string,
   ) {
-    await this.playbackQueueService.removeTrackFromQueue(trackId);
-    return true;
+    return await this.playbackQueueService.removeTrackFromQueue(trackId);
   }
 
   @Mutation(() => [QueueItem])
