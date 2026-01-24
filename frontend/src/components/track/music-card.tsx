@@ -7,7 +7,7 @@ import {
 } from '@/contexts/audio-player-context';
 import { cn } from '@/lib/utils';
 import { Pause, Play, Plus } from 'lucide-react';
-import { memo, useRef, useState } from 'react';
+import { memo, useRef } from 'react';
 import { Button } from '../ui/button';
 import { Skeleton } from '../ui/skeleton';
 import { MusicCardContent } from './music-card-content';
@@ -71,7 +71,6 @@ function MusicCard({
   width = '300',
 }: MusicCardProps) {
   const cardRef = useRef<HTMLDivElement>(null);
-  const [isHovered, setIsHovered] = useState(false);
   const { currentTrack, setCurrentTrack } = useCurrentTrack();
   const actions = useAudioPlayerActions();
   const isPlaying = useIsPlaying();
@@ -114,27 +113,19 @@ function MusicCard({
         'py-0',
         'border-none',
       )}
-      onMouseEnter={() => {
-        setIsHovered(true);
-      }}
-      onMouseLeave={() => {
-        setIsHovered(false);
-      }}
+
       ref={cardRef}
     >
       <MusicCardContent
         track={track}
-        showPlayButton={isHovered || isThisTrackPlaying}
+        showPlayButton={isThisTrackPlaying}
         playButton={
           <>
             <Button
-              size="sm"
-              disabled={false}
+              size="icon"
               variant="outline"
-              className={cn(
-                'duration-200',
-                'h-12 w-12 rounded-full shadow-lg z-1000 border-none',
-              )}
+              className="z-1000 absolute bottom-2 left-2 border-none"
+
               onClick={playMusic}
             >
               {isThisTrackPlaying ? (
@@ -145,11 +136,11 @@ function MusicCard({
             </Button>
             {onAdd && (
               <Button
-                size="sm"
-                className={cn(
-                  'duration-200',
-                  'h-12 w-12 rounded-full bg-white hover:bg-white text-black shadow-lg z-1000',
-                )}
+                size="icon"
+                variant="outline"
+                className="z-1000 absolute bottom-2 right-2 border-none bg-accent"
+
+
                 onClick={(e) => {
                   e.stopPropagation();
                   onAdd(track.id);

@@ -129,18 +129,18 @@ export function PlaylistCard({
         onMouseLeave={() => {
           setIsHovered(false);
         }}
-        className=" group flex justify-center items-center flex-wrap gap-0 p-0 max-w-60 max-h-60 min-w-60 min-h-60 shadow-md rounded-t-md hover:scale-105 transition-all duration-300"
+        className="  flex justify-center items-center flex-wrap gap-0 p-0 max-w-60 max-h-60 min-w-60 min-h-60 shadow-md rounded-t-md hover:scale-105 transition-all duration-300"
       >
-        {isHovered && (
-          <AnimatePresence initial={false}>
+        <AnimatePresence initial={false}>
+          {isHovered && (
             <motion.div
-              className="absolute  items-center justify-center z-2 h-full w-full rounded-t-md flex"
-              initial={{ opacity: 0, scale: 0.5 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.5 }}
+              className="absolute  items-center justify-center z-2 max-w-60 max-h-60 min-w-60 min-h-60 rounded-t-md flex"
+              initial={{ opacity: 0, }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0, }}
               transition={{ duration: 0.3, ease: 'easeInOut' }}
             >
-              <div className="absolute top-0 left-0 h-full w-full group-hover:mask-t-from-0% group-hover:mask-t-to-50% transition-all duration-300 bg-background opacity-90  rounded-t-md " />
+              <div className="absolute top-0 left-0 h-full w-full mask-t-from-0% mask-t-to-50% transition-all duration-300 bg-background/90  rounded-t-md " />
               <Button
                 size="icon"
                 variant="outline"
@@ -175,8 +175,8 @@ export function PlaylistCard({
                 </DropdownMenuContent>
               </DropdownMenu>
             </motion.div>
-          </AnimatePresence>
-        )}
+          )}
+        </AnimatePresence>
         {images.length === 4 ? images.map((image, index) => (
           <div
             className="w-1/2 h-1/2 min-w-1/2 min-h-1/2 max-w-1/2 max-h-1/2 "

@@ -2,6 +2,7 @@ import { SimpleMusicTrack } from '@/__generated__/types';
 import { Badge } from '@/components/ui/badge';
 import { CardContent } from '@/components/ui/card';
 import { AnimatePresence, motion } from 'motion/react';
+import { useState } from 'react';
 
 interface MusicCardContentProps {
   track: SimpleMusicTrack;
@@ -16,6 +17,8 @@ export function MusicCardContent({
   playButton,
   className,
 }: MusicCardContentProps) {
+  const [isHovered, setIsHovered] = useState(false);
+
   const formattedTitle = track.title || 'Unknown Title';
   const formattedArtist = track.artist || 'Unknown Artist';
   const formattedGenres =
@@ -28,20 +31,6 @@ export function MusicCardContent({
 
   return (
     <CardContent className={`p-0 ${className || ''} h-full`}>
-      <AnimatePresence initial={false}>
-        {showPlayButton && playButton && (
-          <motion.div
-            className="absolute flex items-center justify-center z-2 h-full w-full rounded-md"
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.8 }}
-            transition={{ duration: 0.3, ease: 'easeInOut' }}
-          >
-            <div className="absolute top-0 left-0 h-full w-full bg-background opacity-50 rounded-md" />
-            {playButton}
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       {/* Track Info */}
       <div className="flex flex-col h-full space-around">
@@ -49,10 +38,31 @@ export function MusicCardContent({
           <img
             src={`http://localhost:3000/api/images/serve?imagePath=${formattedImage}`}
             alt="Album Art"
-            className=" object-fit rounded-md"
+            className=" object-fit rounded-md w-full h-full"
           />
         </div>
-        <div className=" flex-1 h-5/8 backdrop-blur-md rounded-t-md">
+        <div className=" flex-1 h-5/8 backdrop-blur-md rounded-t-md" onMouseEnter={() => {
+          setIsHovered(true);
+        }}
+          onMouseLeave={() => {
+            setIsHovered(false);
+          }}>
+          {(
+            <AnimatePresence initial={false}>
+              {(isHovered || showPlayButton) && playButton && (
+                <motion.div
+                  className="absolute flex items-center justify-center z-2 h-full w-full rounded-md"
+                  initial={{ opacity: 0, }}
+                  animate={{ opacity: 1, }}
+                  exit={{ opacity: 0, }}
+                  transition={{ duration: 0.3, ease: 'easeInOut' }}
+                >
+                  <div className="absolute top-0 left-0 h-full w-full mask-t-from-0% mask-t-to-50%  duration-300 bg-background/90  rounded-t-md" />
+                  {playButton}
+                </motion.div>
+              )}
+            </AnimatePresence>)}
+
           <div className="flex items-center justify-center h-full w-full ">
             <img
               src={`http://localhost:3000/api/images/serve?imagePath=${formattedImage}`}
@@ -77,7 +87,7 @@ export function MusicCardContent({
             </p>
           </div>
           {/* Genre and Subgenre */}
-          <div className="flex flex-row  gap-2">
+          <div className="flex flex-row  gap-2 max-w-full overflow-x-scroll min-h-5">
             {formattedGenres !== 'Unknown Genre' &&
               formattedGenres.map((genre) => (
                 <Badge variant="secondary" className="text-xs capitalize">

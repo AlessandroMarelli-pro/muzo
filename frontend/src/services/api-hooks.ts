@@ -46,21 +46,10 @@ export type PlaybackSession = {
 export const queryKeys = {
   libraries: ['libraries'] as const,
   library: (id: string) => ['libraries', id] as const,
-  tracks: (libraryId?: string, status?: AnalysisStatus, isFavorite?: boolean) =>
-    ['tracks', { libraryId, status }] as const,
-  tracksList: (
-    libraryId?: string,
-    status?: AnalysisStatus,
-    isFavorite?: boolean,
-    limit?: number,
-    offset?: number,
-    orderBy?: string,
-    orderDirection?: 'asc' | 'desc',
-  ) =>
-    [
-      'tracksList',
-      { libraryId, status, isFavorite, limit, offset, orderBy, orderDirection },
-    ] as const,
+  tracks: (libraryId?: string, status?: AnalysisStatus, isFavorite?: boolean, orderBy?: string, orderDirection?: 'asc' | 'desc') =>
+    ['tracks', { libraryId, status, isFavorite, orderBy, orderDirection }] as const,
+  tracksList: (libraryId?: string, status?: AnalysisStatus, isFavorite?: boolean, limit?: number, offset?: number, orderBy?: string, orderDirection?: 'asc' | 'desc') =>
+    ['tracksList', { libraryId, status, isFavorite, limit, offset, orderBy, orderDirection }] as const,
 
   tracksByCategories: (category?: string, genre?: string) =>
     ['tracks', 'by-categories', { genre, category }] as const,
@@ -159,13 +148,17 @@ export const useTracks = ({
   libraryId,
   status,
   isFavorite,
+  orderBy = 'fileCreatedAt',
+  orderDirection = 'asc',
 }: {
   libraryId?: string;
   status?: AnalysisStatus;
   isFavorite?: boolean;
+  orderBy?: string;
+  orderDirection?: 'asc' | 'desc';
 }) => {
   return useQuery({
-    queryKey: queryKeys.tracks(libraryId, status, isFavorite),
+    queryKey: queryKeys.tracks(libraryId, status, isFavorite, orderBy, orderDirection),
     queryFn: async () => {
       const response = await graffleClient.request<{
         tracks: SimpleMusicTrack[];
@@ -178,7 +171,7 @@ export const useTracks = ({
             }
           }
         `,
-        { options: { libraryId, analysisStatus: status, isFavorite } },
+        { options: { libraryId, analysisStatus: status, isFavorite, orderBy, orderDirection } },
       );
       return response.tracks;
     },

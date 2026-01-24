@@ -87,7 +87,7 @@ export const TrackList = React.memo<TrackListProps>(
 
     if (staticFilterOptions.isLoading || isLoading) {
       return (
-        <div className="p-6 flex flex-col" key="loading-track-list">
+        <div className="p-6 flex flex-col " key="loading-track-list">
           <DataTableSkeleton
             columnCount={10}
             rowCount={10}
@@ -107,6 +107,7 @@ export const TrackList = React.memo<TrackListProps>(
             withViewOptions={true}
             withPagination={true}
             withTopPagination={true}
+            className='gap-4'
           />
         </div>
       );

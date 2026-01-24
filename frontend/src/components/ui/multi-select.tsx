@@ -14,8 +14,8 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
-import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
+import { ScrollArea } from '@radix-ui/react-scroll-area';
 import { Check, ChevronsUpDown, X } from 'lucide-react';
 import * as React from 'react';
 
@@ -56,10 +56,10 @@ export default function MultiSelect({
 
   return (
     <div className={cn('w-full', className)}>
-      <Popover open={open} onOpenChange={setOpen}>
+      <Popover open={open} onOpenChange={setOpen} modal={false} >
         <PopoverTrigger
           className={cn(
-            'flex h-10 w-full transition-all items-center justify-between rounded-md border border-input bg-background text-sm ',
+            'flex h-10 w-full  items-center justify-between rounded-md border border-input bg-background text-sm ',
             'focus:outline-none ',
             'disabled:cursor-not-allowed disabled:opacity-50',
             'hover:bg-accent hover:text-accent-foreground',
@@ -88,7 +88,7 @@ export default function MultiSelect({
                       <span
                         role="button"
                         tabIndex={0}
-                        className="ml-1 hover:bg-destructive transition-all hover:text-destructive-foreground rounded-full p-0.5"
+                        className="ml-1 hover:bg-destructive  hover:text-destructive-foreground rounded-full p-0.5"
                         onKeyDown={(e) =>
                           e.key === 'Enter' && handleUnselect(item)
                         }
@@ -119,48 +119,44 @@ export default function MultiSelect({
             </span>
           </div>
         </PopoverTrigger>
-        <PopoverContent className="w-full p-0 z-[9999]" align="start">
+        <PopoverContent
+          onWheel={(e) => {
+            e.stopPropagation();
+          }}
+          className="w-full p-0 z-[9999] max-h-[200px] overflow-y-auto" align="start">
           <Command>
             <CommandInput autoFocus={false} placeholder="Search items..." />
-            <CommandList>
-              <CommandEmpty className="p-0">
-                {isLoading ? (
-                  <div className="p-2">
-                    {Array.from({ length: 6 }).map((_, index) => (
-                      <Skeleton
-                        key={index}
-                        className="h-4 w-full mb-1 last:mb-0"
+            <ScrollArea className="max-h-[200px] overflow-y-auto">
+              <CommandList className="max-h-[200px] overflow-y-auto">
+                <CommandEmpty className="p-0">
+                  No items found.
+
+                </CommandEmpty>
+                <CommandGroup>
+
+                  {options?.map((option) => (
+                    <CommandItem
+                      key={option.value}
+                      value={option.value}
+                      onSelect={(selectedValue) => {
+                        handleSelect(selectedValue);
+                      }}
+                    >
+                      <Check
+                        className={cn(
+                          'mr-2 h-4 w-4',
+                          value.includes(option.value)
+                            ? 'opacity-100'
+                            : 'opacity-0',
+                        )}
                       />
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center text-sm py-4 text-muted-foreground">
-                    No items found.
-                  </div>
-                )}
-              </CommandEmpty>
-              <CommandGroup>
-                {options?.map((option) => (
-                  <CommandItem
-                    key={option.value}
-                    value={option.value}
-                    onSelect={(selectedValue) => {
-                      handleSelect(selectedValue);
-                    }}
-                  >
-                    <Check
-                      className={cn(
-                        'mr-2 h-4 w-4',
-                        value.includes(option.value)
-                          ? 'opacity-100'
-                          : 'opacity-0',
-                      )}
-                    />
-                    {option.label}
-                  </CommandItem>
-                ))}
-              </CommandGroup>
-            </CommandList>
+                      {option.label}
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              </CommandList>
+            </ScrollArea>
+
           </Command>
         </PopoverContent>
       </Popover>

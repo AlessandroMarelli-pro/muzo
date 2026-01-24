@@ -146,6 +146,16 @@ export class MusicTrackService {
       where = await this.filterService.buildPrismaWhereClause(filter);
     }
 
+    const changedNames = {
+      lastScannedAt: 'analysisCompletedAt',
+      danceabilityFeeling: 'danceability',
+      arousalMood: 'arousal',
+      valenceMood: 'valence',
+    };
+    const orderByProp = changedNames[orderBy] || orderBy;
+    const orderByClause = { [orderByProp]: orderDirection };
+
+
     // Build Prisma where clause
 
     if (libraryId) where.libraryId = libraryId;
@@ -157,7 +167,7 @@ export class MusicTrackService {
       where,
       take: limit,
       skip: offset,
-      orderBy: { [orderBy]: orderDirection },
+      orderBy: orderByClause,
       select: simpleMusicTrackFieldSelectors,
     });
     return tracks;
