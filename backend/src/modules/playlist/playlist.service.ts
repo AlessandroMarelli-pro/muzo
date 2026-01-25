@@ -19,7 +19,7 @@ export class PlaylistService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly filterService: FilterService,
-  ) {}
+  ) { }
 
   async createPlaylist(createPlaylistDto: CreatePlaylistDto) {
     const { filters, maxTracks, subgenreSelectionMode, ...playlistData } = createPlaylistDto;
@@ -47,11 +47,11 @@ export class PlaylistService {
         libraryId: filters.libraryId,
         tempo:
           filters.tempo &&
-          (filters.tempo.min !== undefined || filters.tempo.max !== undefined)
+            (filters.tempo.min !== undefined || filters.tempo.max !== undefined)
             ? {
-                min: filters.tempo.min ?? 0,
-                max: filters.tempo.max ?? 200,
-              }
+              min: filters.tempo.min ?? 0,
+              max: filters.tempo.max ?? 200,
+            }
             : undefined,
       };
 
@@ -122,9 +122,10 @@ export class PlaylistService {
     });
   }
 
-  async getPlaylistWithStats(searchName?: string) {
+  async getPlaylistWithStats(searchName?: string, verifyTrackId?: string) {
     const playlistsWithCalculations = await this.getPlaylistStatsQuery({
       searchName,
+      verifyTrackId,
     });
     return playlistsWithCalculations.map((playlist: any) =>
       this.mapPlaylistStatsToItem(playlist),
@@ -146,8 +147,9 @@ export class PlaylistService {
   private async getPlaylistStatsQuery(options?: {
     playlistId?: string;
     searchName?: string;
+    verifyTrackId?: string;
   }) {
-    const { playlistId, searchName } = options || {};
+    const { playlistId, searchName, verifyTrackId } = options || {};
     if (playlistId) {
       return (await this.prisma.$queryRaw`
         WITH track_stats AS (
@@ -416,6 +418,14 @@ export class PlaylistService {
           WHERE img_filtered.rn <= 5
           GROUP BY img_filtered.playlistId
         ),
+        is_track_in_playlist AS (
+          SELECT DISTINCT
+            pt.playlistId,
+            pt.trackId,
+            1 as is_in_playlist
+          FROM playlist_tracks pt
+          WHERE pt.trackId = ${verifyTrackId}
+        ),
         final_stats AS (
           -- Combine all aggregated data
           SELECT 
@@ -430,12 +440,14 @@ export class PlaylistService {
             COALESCE(sa.subgenres_count, 0) as subgenres_count,
             COALESCE(ga.all_genres, '') as all_genres,
             COALESCE(sa.all_subgenres, '') as all_subgenres,
-            COALESCE(ia.all_images, '') as all_images
+            COALESCE(ia.all_images, '') as all_images,
+            COALESCE(iti.is_in_playlist, 0) as isTrackInPlaylist
           FROM playlist_stats ps
           LEFT JOIN audio_aggregated aa ON ps.playlistId = aa.playlistId
           LEFT JOIN image_aggregated ia ON ps.playlistId = ia.playlistId
           LEFT JOIN genre_aggregated ga ON ps.playlistId = ga.playlistId
           LEFT JOIN subgenre_aggregated sa ON ps.playlistId = sa.playlistId
+          LEFT JOIN is_track_in_playlist iti ON ps.playlistId = iti.playlistId
         )
         SELECT 
           p.id,
@@ -467,8 +479,8 @@ export class PlaylistService {
           fs.all_subgenres as "allSubgenres",
           
           -- Images from tracks (from final CTE)
-          fs.all_images as "allImages"
-          
+          fs.all_images as "allImages",
+          fs.isTrackInPlaylist as "isTrackInPlaylist"
         FROM playlists p
         LEFT JOIN final_stats fs ON p.id = fs.playlistId
         WHERE ${searchName?.trim() ? Prisma.sql`p.name LIKE ${'%' + searchName.trim() + '%'}` : Prisma.sql`1=1`}
@@ -478,6 +490,7 @@ export class PlaylistService {
   }
 
   private mapPlaylistStatsToItem(playlist: any) {
+
     return {
       id: playlist.id,
       name: playlist.name,
@@ -505,6 +518,7 @@ export class PlaylistService {
         5,
       ),
       images: this.parseCommaSeparated(playlist.allImages),
+      isTrackInPlaylist: Boolean(playlist.isTrackInPlaylist),
     };
   }
 

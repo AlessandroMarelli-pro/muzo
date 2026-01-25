@@ -14,7 +14,7 @@ const toastOptions: ExternalToast = {
 export const ScanProgress = React.memo(() => {
     const { activeSessions, completedSessions, } = useScanSessionContext();
 
-    const { progress: scanProgress, error } = useScanProgress(Array.from(activeSessions.values())[0]?.sessionId);
+    const { progress: scanProgress, } = useScanProgress(Array.from(activeSessions.values())[0]?.sessionId);
     const [progress, setProgress] = useState(activeSessions.values().next().value?.overallProgress || -1);
     // Track processed events to prevent duplicate toasts
     const processedEvents = useRef<Set<string>>(new Set());
@@ -63,10 +63,10 @@ export const ScanProgress = React.memo(() => {
     const lastScan = completedSessions.values().next().value;
     const lastScanStartedAt = lastScan?.startedAt;
     const lastScanCompletedAt = lastScan?.completedAt;
-    const duration = lastScanCompletedAt ? intervalToDuration({ start: new Date(lastScanStartedAt).getTime(), end: new Date(lastScanCompletedAt).getTime() }) : undefined;
+    const duration = lastScanCompletedAt && lastScanStartedAt ? intervalToDuration({ start: new Date(lastScanStartedAt).getTime(), end: new Date(lastScanCompletedAt).getTime() }) : undefined;
     return (
         <div className="flex flex-row gap-2 text-xs max-w-md w-full">
-            {!scanProgress && lastScanCompletedAt && (
+            {!scanProgress && lastScanCompletedAt && duration && (
                 <div className="flex items-center gap-2 w-full">
                     <span>Last scan completed: {formatDate(new Date(lastScanCompletedAt), 'MM/dd/yyyy HH:mm')} in {formatDuration(duration)}</span>
                 </div>

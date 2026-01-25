@@ -7,6 +7,7 @@ import {
 import { cn, formatDuration } from '@/lib/utils';
 import { useNavigate } from '@tanstack/react-router';
 import { Brain, Pause, Play, Plus } from 'lucide-react';
+import { TrackMoreMenu } from '../track/track-more-menu';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
 import { Skeleton } from '../ui/skeleton';
@@ -189,14 +190,14 @@ export const TrackRecommendationsCard = ({
             )}
           </Button>
         }
-        {onAddTrack && (
-          <Button size="iconSm" onClick={handleAddTrack} variant="ghost">
-            <Plus className="h-4 w-4 " />
-          </Button>
-        )}
         <Button size="iconSm" onClick={handleResearch} variant="ghost">
           <Brain className="h-4 w-4 " />
         </Button>
+        {onAddTrack ? (
+          <Button size="iconSm" onClick={handleAddTrack} variant="ghost">
+            <Plus className="h-4 w-4 " />
+          </Button>
+        ) : <TrackMoreMenu trackId={track.id} />}
       </div>
     </div>
   );

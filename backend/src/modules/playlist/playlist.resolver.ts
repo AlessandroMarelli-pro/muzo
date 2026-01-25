@@ -32,8 +32,9 @@ export class PlaylistResolver {
   async playlists(
     @Args('userId') userId?: string,
     @Args('search', { type: () => String, nullable: true }) search?: string,
+    @Args('verifyTrackId', { type: () => String, nullable: true }) verifyTrackId?: string,
   ) {
-    const playlists = await this.playlistService.getPlaylistWithStats(search);
+    const playlists = await this.playlistService.getPlaylistWithStats(search, verifyTrackId);
     return playlists;
   }
 

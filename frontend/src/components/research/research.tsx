@@ -85,7 +85,6 @@ export function Research({
       <TrackRecommandationsComponent
         recommendations={trackRecommendations || []}
         isLoading={isLoadingTrackRecommendations || isLoading}
-        onAddTrack={() => { }}
       />
     </div>
   );

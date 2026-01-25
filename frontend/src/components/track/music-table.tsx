@@ -1,18 +1,11 @@
 'use client';
 
-import { QueueItem, SimpleMusicTrack } from '@/__generated__/types';
-import { SelectPlaylistDialog } from '@/components/playlist/select-playlist-dialog';
+import { SimpleMusicTrack } from '@/__generated__/types';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 import { ColumnDef, Row } from '@tanstack/react-table';
-import { Brain, Heart, MoreHorizontal, Pause, Play } from 'lucide-react';
+import { Brain, Heart, Pause, Play } from 'lucide-react';
 import * as React from 'react';
 
 import { DataTable } from '@/components/data-table/data-table';
@@ -28,11 +21,10 @@ import { useDataTable } from '@/hooks/use-data-table';
 import { AudioPlayerActions } from '@/hooks/useAudioPlayer';
 import { FilterState } from '@/hooks/useFiltering';
 import { StaticFilterOptionsData } from '@/hooks/useFilterOptions';
-import { useAddTrackToQueue } from '@/services/queue-hooks';
-import { UseMutationResult } from '@tanstack/react-query';
 import { useNavigate, UseNavigateResult } from '@tanstack/react-router';
 import { format } from 'date-fns';
 import { DataTablePagination } from '../data-table/data-table-pagination';
+import { TrackMoreMenu } from './track-more-menu';
 
 interface MusicTableProps {
   data: SimpleMusicTrack[];
@@ -101,17 +93,13 @@ const CamelotKeyOptions = [
 const ActionCells = ({
   row,
   navigate,
-  onAddToQueue,
   actions,
   setCurrentTrack,
-  onOpenAddToPlaylistDialog,
 }: {
   row: Row<SimpleMusicTrack>;
   navigate: UseNavigateResult<string>;
   actions: AudioPlayerActions;
   setCurrentTrack: (track: SimpleMusicTrack) => void;
-  onOpenAddToPlaylistDialog: (trackId: string) => void;
-  onAddToQueue: UseMutationResult<QueueItem, Error, string>;
 }) => {
   const { currentTrack } = useCurrentTrack();
   const isPlaying = useIsPlaying();
@@ -150,27 +138,7 @@ const ActionCells = ({
       >
         <Brain className="h-4 w-4 " />
       </Button>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="h-5 w-5 p-0">
-            <span className="sr-only">Open menu</span>
-            <MoreHorizontal className="h-4 w-4" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuItem
-            onClick={() => {
-              onAddToQueue.mutate(track.id);
-            }}
-          >
-            Add to Queue
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => onOpenAddToPlaylistDialog(track.id)}>
-            Add to Playlist
-          </DropdownMenuItem>
-          <DropdownMenuItem>View Details</DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+      <TrackMoreMenu trackId={track.id} />
     </div>
   );
 };
@@ -179,8 +147,6 @@ const columns = (
   navigate: UseNavigateResult<string>,
   actions: AudioPlayerActions,
   setCurrentTrack: (track: SimpleMusicTrack) => void,
-  handleOpenAddToPlaylistDialog: (trackId: string) => void,
-  addToQueueMutation: UseMutationResult<QueueItem, Error, string>,
 ) =>
   React.useMemo<ColumnDef<SimpleMusicTrack>[]>(
     () => [
@@ -600,8 +566,6 @@ const columns = (
             navigate={navigate}
             actions={actions}
             setCurrentTrack={setCurrentTrack}
-            onOpenAddToPlaylistDialog={handleOpenAddToPlaylistDialog}
-            onAddToQueue={addToQueueMutation}
           />
         ),
       },
@@ -611,8 +575,6 @@ const columns = (
       navigate,
       actions,
       setCurrentTrack,
-      handleOpenAddToPlaylistDialog,
-      addToQueueMutation,
     ],
   );
 
@@ -627,22 +589,7 @@ export function MusicTable({
   const navigate = useNavigate();
   const actions = useAudioPlayerActions();
   const { setCurrentTrack } = useCurrentTrack();
-  const addToQueueMutation = useAddTrackToQueue();
-  const [isAddToPlaylistDialogOpen, setIsAddToPlaylistDialogOpen] =
-    React.useState(false);
-  const [selectedTrackId, setSelectedTrackId] = React.useState<string | null>(
-    null,
-  );
 
-  const handleOpenAddToPlaylistDialog = React.useCallback((trackId: string) => {
-    setSelectedTrackId(trackId);
-    setIsAddToPlaylistDialogOpen(true);
-  }, []);
-
-  const handleCloseAddToPlaylistDialog = React.useCallback(() => {
-    setIsAddToPlaylistDialogOpen(false);
-    setSelectedTrackId(null);
-  }, []);
 
   const { table } = useDataTable({
     data,
@@ -651,8 +598,6 @@ export function MusicTable({
       navigate,
       actions,
       setCurrentTrack,
-      handleOpenAddToPlaylistDialog,
-      addToQueueMutation,
     ),
     pageCount: pageCount,
     initialState: {
@@ -689,13 +634,7 @@ export function MusicTable({
         </DataTableToolbar>
         <DataTablePagination table={table} />
       </DataTable>
-      {selectedTrackId && (
-        <SelectPlaylistDialog
-          isOpen={isAddToPlaylistDialogOpen}
-          onClose={handleCloseAddToPlaylistDialog}
-          trackId={selectedTrackId}
-        />
-      )}
+
     </div>
   );
 }

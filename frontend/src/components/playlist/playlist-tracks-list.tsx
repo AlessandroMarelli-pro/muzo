@@ -77,7 +77,7 @@ export function PlaylistTracksList({
   const handleRemoveTrack = async (trackId: string,) => {
 
     const track = localTracks.find((track) => track.track.id === trackId);
-    console.log('track', track, localTracks);
+
     const trackName = `${track?.track?.title} by ${track?.track?.artist}`;
     setRemovingTrackId(trackId);
     try {

@@ -13,7 +13,7 @@ import {
 } from '@/services/api-hooks';
 import { InfoIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { FilterButton } from '../filters';
 import { Skeleton } from '../ui/skeleton';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip';
@@ -65,17 +65,14 @@ const AnimatedNumber = ({ animationKey, value }: { animationKey: string, value: 
     </AnimatePresence>)
 }
 
-export function SwipePage() {
+export const SwipePage = React.memo(() => {
   const {
     data: trackData,
     isLoading: isLoadingTrack,
-    refetch,
   } = useRandomTrackWithStats();
   const track = trackData?.track || undefined;
   const [shouldAutoPlay, setShouldAutoPlay] = useState(false);
-  const [triggerSwipeDirection, setTriggerSwipeDirection] = useState<
-    'left' | 'right' | 'up' | null
-  >(null);
+
   const [isAnimating, setIsAnimating] = useState(false);
 
   const likeMutation = useLikeTrack();
@@ -87,11 +84,6 @@ export function SwipePage() {
   const actions = useAudioPlayerActions();
   const isPlaying = useIsPlaying();
   const containerRef = useRef<HTMLDivElement>(null);
-
-  const handleSwipeComplete = useCallback(() => {
-    // Reset to get a new random track
-    console.log('swipe complete');
-  }, []);
 
   // Auto-play next track if music was playing
   useEffect(() => {
@@ -113,7 +105,6 @@ export function SwipePage() {
 
     // Trigger swipe animation immediately
     setIsAnimating(true);
-    setTriggerSwipeDirection('right');
 
     // Start mutation asynchronously (don't wait)
     const mutationPromise = likeMutation.mutateAsync(track.id);
@@ -130,16 +121,13 @@ export function SwipePage() {
           setShouldAutoPlay(true);
         }
         // Reset animation and trigger refetch when both are complete
-        setTriggerSwipeDirection(null);
         setIsAnimating(false);
-        handleSwipeComplete();
       })
       .catch((error) => {
         console.error('Error liking track:', error);
-        setTriggerSwipeDirection(null);
         setIsAnimating(false);
       });
-  }, [track, likeMutation, handleSwipeComplete, isPlaying, currentTrack]);
+  }, [track, likeMutation, isPlaying, currentTrack]);
 
   const handleDislike = useCallback(async () => {
     if (!track) return;
@@ -147,7 +135,6 @@ export function SwipePage() {
 
     // Trigger swipe animation immediately
     setIsAnimating(true);
-    setTriggerSwipeDirection('left');
 
     // Start mutation asynchronously (don't wait)
     const mutationPromise = dislikeMutation.mutateAsync(track.id);
@@ -163,17 +150,13 @@ export function SwipePage() {
         if (wasPlaying) {
           setShouldAutoPlay(true);
         }
-        // Reset animation and trigger refetch when both are complete
-        setTriggerSwipeDirection(null);
         setIsAnimating(false);
-        handleSwipeComplete();
       })
       .catch((error) => {
         console.error('Error disliking track:', error);
-        setTriggerSwipeDirection(null);
         setIsAnimating(false);
       });
-  }, [track, dislikeMutation, handleSwipeComplete]);
+  }, [track, dislikeMutation,]);
 
   const handleBanger = useCallback(async () => {
     if (!track) return;
@@ -181,7 +164,6 @@ export function SwipePage() {
 
     // Trigger swipe animation immediately
     setIsAnimating(true);
-    setTriggerSwipeDirection('up');
 
     // Start mutation asynchronously (don't wait)
     const mutationPromise = bangerMutation.mutateAsync(track.id);
@@ -197,17 +179,13 @@ export function SwipePage() {
         if (wasPlaying) {
           setShouldAutoPlay(true);
         }
-        // Reset animation and trigger refetch when both are complete
-        setTriggerSwipeDirection(null);
         setIsAnimating(false);
-        handleSwipeComplete();
       })
       .catch((error) => {
         console.error('Error banger track:', error);
-        setTriggerSwipeDirection(null);
         setIsAnimating(false);
       });
-  }, [track, bangerMutation, handleSwipeComplete, isPlaying, currentTrack]);
+  }, [track, bangerMutation, isPlaying, currentTrack]);
 
   // Only show loading if not animating (to prevent loading message during swipe animation)
   const isLoading =
@@ -323,11 +301,9 @@ export function SwipePage() {
           onLike={handleLike}
           onDislike={handleDislike}
           onBanger={handleBanger}
-          onSwipeComplete={handleSwipeComplete}
-          triggerSwipeDirection={triggerSwipeDirection}
         />
       </div>
 
     </div>
   );
-}
+})

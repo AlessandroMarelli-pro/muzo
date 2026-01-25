@@ -4,6 +4,7 @@ import { Plus, Search } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Input } from '../ui/input';
 import { CreatePlaylistDialog } from './create-playlist-dialog';
+import { InlinePlaylistCard, InlinePlaylistCardSkeleton } from './inline-playlist-card';
 import { PlaylistCard, PlaylistCardSkeleton } from './playlist-card';
 
 interface PlaylistListProps {
@@ -11,6 +12,58 @@ interface PlaylistListProps {
   playlists: PlaylistItem[];
   refetch: () => void;
   loading: boolean;
+}
+
+export const PlaylistListComponent = ({ loading, playlists, onUpdate, onViewPlaylistDetails, onCardClick }: {
+  onViewPlaylistDetails?: (playlistId: string) => void;
+  playlists: PlaylistItem[];
+  onUpdate: () => void;
+  loading: boolean; onCardClick?: (playlistId: string) => void
+}) => {
+  return <div className="flex flex-row flex-wrap gap-4 justify-start ">
+    {loading ? (
+      <>
+        {Array.from({ length: 10 }).map((_, index) => (
+          <PlaylistCardSkeleton key={index} />
+        ))}
+      </>
+    ) : (
+      playlists.map((playlist) => (
+        <PlaylistCard
+          key={playlist.id}
+          playlist={playlist}
+          onUpdate={onUpdate}
+          onViewDetails={onViewPlaylistDetails}
+          onCardClick={onCardClick}
+        />
+      ))
+    )}
+  </div>
+}
+
+export const InlinePlaylistListComponent = ({ loading, playlists, onCardClick }: {
+  onViewPlaylistDetails?: (playlistId: string) => void;
+  playlists: (PlaylistItem & { disabled?: boolean })[];
+  onUpdate: () => void;
+  loading: boolean; onCardClick?: (playlistId: string) => void
+}) => {
+  return <div className="flex flex-col flex-wrap gap-4 justify-start ">
+    {loading ? (
+      <>
+        {Array.from({ length: 10 }).map((_, index) => (
+          <InlinePlaylistCardSkeleton key={index} />
+        ))}
+      </>
+    ) : (
+      playlists.map((playlist) => (
+        <InlinePlaylistCard
+          key={playlist.id}
+          playlist={playlist}
+          onCardClick={onCardClick}
+        />
+      ))
+    )}
+  </div>
 }
 
 export function PlaylistList({
@@ -62,24 +115,7 @@ export function PlaylistList({
           Create Playlist
         </Button>
       </div>
-      <div className="flex flex-row flex-wrap gap-4 justify-start ">
-        {loading ? (
-          <>
-            {Array.from({ length: 10 }).map((_, index) => (
-              <PlaylistCardSkeleton key={index} />
-            ))}
-          </>
-        ) : (
-          filteredPlaylists.map((playlist) => (
-            <PlaylistCard
-              key={playlist.id}
-              playlist={playlist}
-              onUpdate={refetch}
-              onViewDetails={onViewPlaylistDetails}
-            />
-          ))
-        )}
-      </div>
+      <PlaylistListComponent loading={loading} playlists={filteredPlaylists} onUpdate={refetch} onViewPlaylistDetails={onViewPlaylistDetails} />
       <CreatePlaylistDialog
         open={isCreateDialogOpen}
         onOpenChange={setIsCreateDialogOpen}

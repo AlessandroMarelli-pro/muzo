@@ -190,6 +190,9 @@ export class PlaylistItem {
   //images
   @Field(() => [String])
   images: string[];
+
+  @Field(() => Boolean, { nullable: true })
+  isTrackInPlaylist?: boolean;
 }
 
 @ObjectType()

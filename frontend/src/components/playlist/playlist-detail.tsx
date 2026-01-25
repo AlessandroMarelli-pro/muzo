@@ -40,7 +40,7 @@ import {
   useRemoveTrackFromQueue,
 } from '@/services/queue-hooks';
 import { Skeleton } from '../ui/skeleton';
-import { AddTrackDialog } from './add-track-dialog';
+import { AddTrackDrawer } from './add-track-drawer';
 import { PlaylistDetailActions } from './playlist-detail-actions';
 import { PlaylistDetailChart } from './playlist-detail-chart';
 import { PlaylistDetailThirdParties } from './playlist-detail-third-parties';
@@ -114,7 +114,7 @@ export function PlaylistDetail({ id, onBack }: PlaylistDetailProps) {
   const [activeTab, setActiveTab] = useState('tracks');
   const [isDeleting, setIsDeleting] = useState(false);
   const [isSettingAsQueue, setIsSettingAsQueue] = useState(false);
-  const [isAddTrackDialogOpen, setIsAddTrackDialogOpen] = useState(false);
+  const [isAddTrackDrawerOpen, setIsAddTrackDrawerOpen] = useState(false);
   const {
     playlist,
     loading,
@@ -258,7 +258,7 @@ export function PlaylistDetail({ id, onBack }: PlaylistDetailProps) {
             isSettingAsQueue={isSettingAsQueue}
             onDelete={handleDelete}
             onSetAsQueue={handleSetAsQueue}
-            onAddTrack={() => setIsAddTrackDialogOpen(true)}
+            onAddTrack={() => setIsAddTrackDrawerOpen(true)}
           />
           <PlaylistDetailThirdParties
             playlist={playlist || undefined}
@@ -367,9 +367,9 @@ export function PlaylistDetail({ id, onBack }: PlaylistDetailProps) {
         </TabsContent>
       </Tabs>
 
-      <AddTrackDialog
-        open={isAddTrackDialogOpen}
-        onOpenChange={setIsAddTrackDialogOpen}
+      <AddTrackDrawer
+        open={isAddTrackDrawerOpen}
+        onOpenChange={setIsAddTrackDrawerOpen}
         addTrackToPlaylist={addTrackToPlaylist}
         playlistId={id}
       />

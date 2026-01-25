@@ -728,6 +728,7 @@ export type Playlist = {
   genresCount: Scalars['Int']['output'];
   id: Scalars['ID']['output'];
   images: Array<Scalars['String']['output']>;
+  isTrackInPlaylist?: Maybe<Scalars['Boolean']['output']>;
   name: Scalars['String']['output'];
   numberOfTracks: Scalars['Int']['output'];
   sorting?: Maybe<PlaylistSorting>;
@@ -756,6 +757,7 @@ export type PlaylistItem = {
   genresCount: Scalars['Int']['output'];
   id: Scalars['ID']['output'];
   images: Array<Scalars['String']['output']>;
+  isTrackInPlaylist?: Maybe<Scalars['Boolean']['output']>;
   name: Scalars['String']['output'];
   numberOfTracks: Scalars['Int']['output'];
   subgenresCount: Scalars['Int']['output'];
@@ -952,6 +954,7 @@ export type QueryPlaylistTracksArgs = {
 export type QueryPlaylistsArgs = {
   search?: InputMaybe<Scalars['String']['input']>;
   userId: Scalars['String']['input'];
+  verifyTrackId?: InputMaybe<Scalars['ID']['input']>;
 };
 
 
@@ -1569,7 +1572,7 @@ export type GetPlaylistsQueryVariables = Exact<{
 }>;
 
 
-export type GetPlaylistsQuery = { __typename?: 'Query', playlists: Array<{ __typename?: 'PlaylistItem', id: string, name: string, description?: string | null, genresCount: number, subgenresCount: number, topGenres: Array<string>, topSubgenres: Array<string>, numberOfTracks: number, totalDuration: number, createdAt: any, updatedAt: any, images: Array<string>, bpmRange: { __typename?: 'Range', min: number, max: number }, energyRange: { __typename?: 'Range', min: number, max: number } }> };
+export type GetPlaylistsQuery = { __typename?: 'Query', playlists: Array<{ __typename?: 'PlaylistItem', id: string, name: string, description?: string | null, genresCount: number, subgenresCount: number, topGenres: Array<string>, topSubgenres: Array<string>, numberOfTracks: number, totalDuration: number, createdAt: any, updatedAt: any, images: Array<string>, isTrackInPlaylist?: boolean | null, bpmRange: { __typename?: 'Range', min: number, max: number }, energyRange: { __typename?: 'Range', min: number, max: number } }> };
 
 export type GetPlaylistQueryVariables = Exact<{
   id: Scalars['ID']['input'];

@@ -449,6 +449,7 @@ type Playlist {
   genresCount: Int!
   id: ID!
   images: [String!]!
+  isTrackInPlaylist: Boolean
   name: String!
   numberOfTracks: Int!
   sorting: PlaylistSorting
@@ -476,6 +477,7 @@ type PlaylistItem {
   genresCount: Int!
   id: ID!
   images: [String!]!
+  isTrackInPlaylist: Boolean
   name: String!
   numberOfTracks: Int!
   subgenresCount: Int!
@@ -539,7 +541,7 @@ type Query {
   playlistRecommendations(excludeTrackIds: [String!], limit: Int, playlistId: ID!): [TrackRecommendation!]!
   playlistStats(playlistId: ID!, userId: String!): PlaylistStats!
   playlistTracks(playlistId: ID!, userId: String!): [PlaylistTrack!]!
-  playlists(search: String, userId: String!): [PlaylistItem!]!
+  playlists(search: String, userId: String!, verifyTrackId: String): [PlaylistItem!]!
   preferences: UserPreferencesGraphQL!
   queue: [QueueItem!]!
   queueStats: String!

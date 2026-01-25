@@ -22,7 +22,8 @@ import { Skeleton } from '../ui/skeleton';
 interface PlaylistCardProps {
   playlist: PlaylistItem;
   onUpdate: () => void;
-  onViewDetails: (playlistId: string) => void;
+  onViewDetails?: (playlistId: string) => void;
+  onCardClick?: (playlistId: string) => void;
 }
 
 export const PlaylistCardSkeleton = () => {
@@ -52,35 +53,23 @@ export function PlaylistCard({
   playlist,
   onUpdate,
   onViewDetails,
+  onCardClick
 }: PlaylistCardProps) {
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [isExporting, setIsExporting] = useState(false);
   const deletePlaylistMutation = useDeletePlaylist('default');
   const exportPlaylistMutation = useExportPlaylistToM3U('default');
   const [isHovered, setIsHovered] = useState(false);
-  const formatDuration = (seconds: number) => {
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
 
-    if (hours > 0) {
-      return `${hours}h ${minutes}m`;
-    }
-    return `${minutes}m`;
-  };
 
   const handleDelete = async () => {
     if (!confirm(`Are you sure you want to delete "${playlist.name}"?`)) {
       return;
     }
 
-    setIsDeleting(true);
     try {
       await deletePlaylistMutation.mutateAsync(playlist.id);
       onUpdate();
     } catch (error) {
       console.error('Failed to delete playlist:', error);
-    } finally {
-      setIsDeleting(false);
     }
   };
 
@@ -90,11 +79,10 @@ export function PlaylistCard({
   };
 
   const handleEdit = () => {
-    onViewDetails(playlist.id);
+    onViewDetails?.(playlist.id);
   };
 
   const handleExport = async () => {
-    setIsExporting(true);
     try {
       const m3uContent = await exportPlaylistMutation.mutateAsync(playlist.id);
 
@@ -111,16 +99,20 @@ export function PlaylistCard({
     } catch (error) {
       console.error('Failed to export playlist:', error);
       alert('Failed to export playlist. Please try again.');
-    } finally {
-      setIsExporting(false);
     }
   };
   const images = playlist.images.slice(0, 4);
-
+  const handleCardClick = () => {
+    if (onCardClick) {
+      onCardClick(playlist.id);
+    }
+  };
   return (
     <Card
+
       key={playlist.id}
-      className="flex flex-col   rounded-none p-0 border-none bg-background gap-2 shadow-none"
+      className={cn("flex flex-col   rounded-none p-0 border-none bg-background gap-2 shadow-none ", onCardClick && 'cursor-pointer')}
+      onClick={handleCardClick}
     >
       <div
         onMouseEnter={() => {

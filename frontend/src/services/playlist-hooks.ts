@@ -49,8 +49,8 @@ export const simpleMusicTrackFragment = gql`
 
 // GraphQL Queries and Mutations
 const GET_PLAYLISTS = gql`
-  query GetPlaylists($userId: String!, $search: String) {
-    playlists(userId: $userId, search: $search) {
+  query GetPlaylists($userId: String!, $search: String, $verifyTrackId: String) {
+    playlists(userId: $userId, search: $search, verifyTrackId: $verifyTrackId) {
       id
       name
       description
@@ -71,6 +71,7 @@ const GET_PLAYLISTS = gql`
       createdAt
       updatedAt
       images
+      isTrackInPlaylist
     }
   }
 `;
@@ -415,10 +416,11 @@ const UPDATE_PLAYLIST_SORTING = gql`
 const fetchPlaylists = async (
   userId: string = 'default',
   search?: string,
+  verifyTrackId?: string,
 ): Promise<PlaylistItem[]> => {
   const data = await graffleClient.request<{ playlists: PlaylistItem[] }>(
     GET_PLAYLISTS,
-    { userId, search: search?.trim() || undefined },
+    { userId, search: search?.trim() || undefined, verifyTrackId },
   );
   return data.playlists;
 };
@@ -684,7 +686,7 @@ const updatePlaylistSorting = async (
 };
 
 // Hooks
-export function usePlaylists(userId: string = 'default', search?: string) {
+export function usePlaylists(userId: string = 'default', search?: string, verifyTrackId?: string) {
   const queryClient = useQueryClient();
 
   const {
@@ -694,8 +696,8 @@ export function usePlaylists(userId: string = 'default', search?: string) {
     refetch,
     isRefetching,
   } = useQuery<PlaylistItem[]>({
-    queryKey: ['playlists', userId, search],
-    queryFn: () => fetchPlaylists(userId, search),
+    queryKey: ['playlists', userId, search, verifyTrackId],
+    queryFn: () => fetchPlaylists(userId, search, verifyTrackId),
   });
 
   const createPlaylistMutation = useMutation({
@@ -953,6 +955,16 @@ export function useAddTrackToPlaylist(userId: string = 'default') {
       const trackName = ` ${data.track.title} by ${data.track.artist}`;
       toast.success(`Track added to playlist`, {
         description: capitalizeEveryWord(trackName),
+      });
+    },
+    onError: (error: any) => {
+      const errorMessage =
+        error?.response?.errors?.[0]?.message ||
+        error?.message ||
+        'Failed to add track to playlist';
+      console.error(errorMessage);
+      toast.error(errorMessage, {
+        duration: 3000,
       });
     },
   });
