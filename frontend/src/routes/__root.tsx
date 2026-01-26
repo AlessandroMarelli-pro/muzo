@@ -116,28 +116,28 @@ const RootComponent = React.memo(function RootComponent() {
         <ScanSessionProvider>
           <FilterProvider>
             <AudioPlayerProvider>
-              <SidebarProvider defaultOpen={true}>
-              <AppSidebar data={navigationData} />
+              <SidebarProvider defaultOpen={localStorage.getItem('sidebar_state') === 'expanded' ? true : false}>
+                <AppSidebar data={navigationData} />
 
-              <SidebarInset>
+                <SidebarInset>
 
-                <MusicPlayerInset>
-                  <SiteHeader />
-                  <Outlet />
+                  <MusicPlayerInset>
+                    <SiteHeader />
+                    <Outlet />
 
 
-                </MusicPlayerInset>
+                  </MusicPlayerInset>
 
-              </SidebarInset>
+                </SidebarInset>
 
-              {/* Enhanced Music Player - fixed at bottom, outside SidebarInset */}
-              <EnhancedMusicPlayer
-                onToggleShuffle={handleToggleShuffle}
-                showVisualizations={true}
-              />
-            </SidebarProvider>
-          </AudioPlayerProvider>
-        </FilterProvider>
+                {/* Enhanced Music Player - fixed at bottom, outside SidebarInset */}
+                <EnhancedMusicPlayer
+                  onToggleShuffle={handleToggleShuffle}
+                  showVisualizations={true}
+                />
+              </SidebarProvider>
+            </AudioPlayerProvider>
+          </FilterProvider>
         </ScanSessionProvider>
         <ReactQueryDevtools initialIsOpen={false} position="bottom" />
         {/* <TanStackRouterDevtools position="top-right" initialIsOpen={false} /> */}

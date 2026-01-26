@@ -12,17 +12,19 @@ import {
   useCurrentTrack,
   useIsPlaying,
 } from '@/contexts/audio-player-context';
+import { cn } from '@/lib/utils';
 import {
   Activity,
   Clock,
   Heart,
-  ListPlus,
   Music,
   Pause,
   Play,
   Shuffle,
-  Zap,
+  Zap
 } from 'lucide-react';
+import { useState } from 'react';
+import { SelectPlaylistTrigger } from '../playlist/select-playlist-dialog';
 import { Skeleton } from '../ui/skeleton';
 
 interface DetailedTrackCardProps {
@@ -111,12 +113,12 @@ function DetailedTrackCardSkeleton() {
 }
 
 export function DetailedTrackCard({ track, refetch, isLoading }: DetailedTrackCardProps) {
-  const { currentTrack, setCurrentTrack } = useCurrentTrack();
+  const { currentTrack, setCurrentTrack, } = useCurrentTrack();
   const actions = useAudioPlayerActions();
   const isPlaying = useIsPlaying();
   const isCurrentTrack = currentTrack?.id === track?.id;
   const isThisTrackPlaying = isCurrentTrack && isPlaying;
-
+  const [isFavorite, setIsFavorite] = useState(track?.isFavorite || false);
   const formatDuration = (seconds: number) => {
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = Math.floor(seconds % 60);
@@ -141,10 +143,15 @@ export function DetailedTrackCard({ track, refetch, isLoading }: DetailedTrackCa
       }
     }
   };
+  const handleToggleFavorite = () => {
+    actions.toggleFavorite(track?.id || '');
+    setIsFavorite(!isFavorite);
+  };
 
   if (isLoading || !track) {
     return <DetailedTrackCardSkeleton />;
   }
+
   return (
     <Card className="w-full  border-none ">
       <CardHeader className="flex flex-row justify-between items-center">
@@ -262,17 +269,19 @@ export function DetailedTrackCard({ track, refetch, isLoading }: DetailedTrackCa
           {/* Action Buttons */}
           <div className="flex flex-col items-end justify-center gap-2">
             <div className="flex gap-2">
+
+              <SelectPlaylistTrigger trackId={track.id} isDropdownMenuItem={false} />
+
+              <Button variant="destructive" size="sm" onClick={handleToggleFavorite}>
+                <Heart className={cn(
+                  'w-4 h-4',
+                  isFavorite ? 'fill-red-500 text-red-500' : '',
+                )} />
+                Add to favorite
+              </Button>
               <Button variant="outline" size="sm" onClick={refetch}>
                 <Shuffle className="w-4 h-4" />
-                Random Track
-              </Button>
-              <Button variant="outline" size="sm">
-                <ListPlus className="w-4 h-4" />
-                Add to playlist
-              </Button>
-              <Button variant="destructive" size="sm">
-                <Heart className="w-4 h-4" />
-                Add to favorite
+                Next Track
               </Button>
             </div>
           </div>

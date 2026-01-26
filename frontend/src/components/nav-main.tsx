@@ -17,7 +17,7 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
 } from '@/components/ui/sidebar';
-import { Link, useLocation } from '@tanstack/react-router';
+import { Link, useLocation, useNavigate } from '@tanstack/react-router';
 
 export function NavMain({
   items,
@@ -34,6 +34,11 @@ export function NavMain({
   }[];
 }) {
   const location = useLocation();
+  const navigate = useNavigate();
+  const handleNavigate = (url: string) => {
+    sessionStorage.setItem('isLoaded', 'true');
+    navigate({ to: url });
+  };
 
   return (
     <SidebarGroup>
@@ -50,7 +55,8 @@ export function NavMain({
                   tooltip={item.title}
                   isActive={isActive}
                 >
-                  <Link to={item.url} className="flex items-center gap-2">
+                  <Link to={item.url} className="flex items-center gap-2" onClick={() => handleNavigate(item.url)}
+                  >
                     <Icon className="h-4 w-4" />
                     {item.title}
                   </Link>

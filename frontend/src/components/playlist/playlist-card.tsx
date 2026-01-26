@@ -156,7 +156,7 @@ export function PlaylistCard({
                     Add to Queue
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={handleExport}>
-                    Add to Playlist
+                    Export Playlist
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     className="text-destructive focus:text-destructive"

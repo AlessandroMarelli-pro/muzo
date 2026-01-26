@@ -1,5 +1,6 @@
 'use client';
 
+import { RandomTrackWithStats } from '@/__generated__/types';
 import {
   useAudioPlayerActions,
   useCurrentTrack,
@@ -8,8 +9,7 @@ import {
 import {
   useBangerTrack,
   useDislikeTrack,
-  useLikeTrack,
-  useRandomTrackWithStats,
+  useLikeTrack
 } from '@/services/api-hooks';
 import { InfoIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
@@ -59,17 +59,19 @@ const AnimatedNumber = ({ animationKey, value }: { animationKey: string, value: 
           y: { type: "spring", stiffness: 100, damping: 30, duration: 0.5, ease: 'easeIn' },
           opacity: { type: "spring", stiffness: 100, damping: 30, duration: 0.5 },
         }}
-        className='font-bold capitalize  absolute top-0 text-muted-foreground'>
+        className='font-bold capitalize  absolute bottom-0 text-muted-foreground'>
         {value}
       </motion.span>
     </AnimatePresence>)
 }
 
-export const SwipePage = React.memo(() => {
-  const {
-    data: trackData,
-    isLoading: isLoadingTrack,
-  } = useRandomTrackWithStats();
+const Counter = ({ label, value }: { label: string, value: number }) => (
+  <span className='flex flex-col font-bold capitalize relative pr-4 h-18'>
+    <span>{label}</span>
+    <AnimatedNumber animationKey={label + value} value={value} />
+  </span>
+)
+export const SwipePage = React.memo(({ trackData, isLoadingTrack }: { trackData: RandomTrackWithStats | undefined, isLoadingTrack: boolean }) => {
   const track = trackData?.track || undefined;
   const [shouldAutoPlay, setShouldAutoPlay] = useState(false);
 
@@ -84,6 +86,7 @@ export const SwipePage = React.memo(() => {
   const actions = useAudioPlayerActions();
   const isPlaying = useIsPlaying();
   const containerRef = useRef<HTMLDivElement>(null);
+
 
   // Auto-play next track if music was playing
   useEffect(() => {
@@ -262,39 +265,25 @@ export const SwipePage = React.memo(() => {
   return (
     <div
       ref={containerRef}
-      className="flex flex-col  justify-center w-full mt-10 gap-4 h-full outline-none"
+      className="flex flex-col  justify-center w-full mt-10 gap-4 h-full outline-none "
       tabIndex={0}
     >
-      <div className="flex flex-row justify-between  text-center p-6">
+
+      <div className="flex flex-row justify-between  text-center p-6 backdrop-blur-2xl items-start">
         {!likedTracksCount ? <Skeleton className='w-10 h-4' /> :
-          <div className="text-xl text-foreground flex flex-row gap-10">
-            <span className='font-bold capitalize relative pr-4'>
-              <span className='pr-2'>Liked</span>
-              <AnimatedNumber animationKey={'like-counter' + likedTracksCount} value={likedTracksCount} />
-            </span>
-            <span className='font-bold capitalize relative pr-4'>
-              <span className='pr-2'>Bangers</span>
-              <AnimatedNumber animationKey={'bangers-counter' + bangersCount} value={bangersCount} />
-
-            </span>
-            <span className='font-bold capitalize relative pr-4'>
-              <span className='pr-2'>Disliked</span>
-              <AnimatedNumber animationKey={'disliked-counter' + dislikedTracksCount} value={dislikedTracksCount} />
-
-            </span>
-            <span className='font-bold capitalize relative pr-4'>
-              <span className='pr-2'>Remaining</span>
-              <AnimatedNumber animationKey={'remaining-counter' + remainingTracksCount} value={remainingTracksCount} />
-
-            </span>
+          <div className="text-3xl text-foreground flex flex-row gap-10">
+            {[{ label: 'Liked', value: likedTracksCount }, { label: 'Bangers', value: bangersCount }, { label: 'Disliked', value: dislikedTracksCount }, { label: 'Remaining', value: remainingTracksCount }].map((item) => (
+              <Counter key={item.label} label={item.label} value={item.value} />
+            ))}
           </div>}
 
-        <div className="flex flex-row justify-end gap-4">
+        <div className="flex flex-row justify-end gap-4 ">
           <FilterButton />
-          <UsageTooltip /></div>
+          <UsageTooltip />
+        </div>
 
       </div>
-      <div className="flex flex-row justify-center mb-8 text-center h-full w-full">
+      <div className="flex flex-row justify-center mb-8 text-center h-full w-full backdrop-blur-2xl">
         <SwipeView
           track={track || null}
           isLoading={isLoading}

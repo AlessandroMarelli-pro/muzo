@@ -1,4 +1,7 @@
+import { ToggleFavoriteMutation } from '@/__generated__/types';
+import { capitalizeEveryWord } from '@/lib/utils';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import { gql, graffleClient } from './graffle-client';
 
 // Music Player Types
@@ -586,15 +589,15 @@ export const useToggleFavorite = () => {
 
   return useMutation({
     mutationFn: async (trackId: string) => {
-      const response = await graffleClient.request<{
-        toggleFavorite: { id: string; isFavorite: boolean; updatedAt: string };
-      }>(
+      const response = await graffleClient.request<ToggleFavoriteMutation>(
         gql`
           mutation ToggleFavorite($trackId: String!) {
             toggleFavorite(trackId: $trackId) {
               id
               isFavorite
               updatedAt
+              originalArtist
+              originalTitle
             }
           }
         `,
@@ -604,7 +607,10 @@ export const useToggleFavorite = () => {
     },
     onSuccess: (data, trackId) => {
       queryClient.invalidateQueries({ queryKey: ['playlistRecommendations'] });
-
+      toast.success(`Track has been ${data.isFavorite ? 'added' : 'removed'} from your favorites`, {
+        duration: 3000,
+        description: capitalizeEveryWord(`${data.originalTitle} by ${data.originalArtist} `),
+      });
       // Update the playback state cache with the new favorite status
       queryClient.setQueryData(
         musicPlayerQueryKeys.playbackState(trackId),

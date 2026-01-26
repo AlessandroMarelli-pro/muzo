@@ -1,4 +1,5 @@
 import { useFilterMutations } from '@/services/filter-hooks';
+import { deepEqual } from '@tanstack/react-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 export interface Range {
@@ -177,8 +178,20 @@ export const useFiltering = (options: UseFilteringOptions = {}) => {
           libraryId: filters.libraryId,
           atmospheres: filters.atmospheres,
         };
+        // Compare saved filter state value with criteria
+        // savedFilterState.value is a json string, so we need to parse it and compare the values
+        const savedFilterStateValue = JSON.parse(savedFilterState.value as string);
+        const areFiltersEqual = deepEqual(savedFilterStateValue, criteria);
+        if (areFiltersEqual) {
+          setSavedFilterState((prev) => ({
+            ...prev,
+            isLoading: false,
+          }));
+          console.log('Filters are equal, skipping save');
+          return;
+        }
 
-        const result = await setCurrentFilterMutation.mutateAsync(criteria);
+        await setCurrentFilterMutation.mutateAsync(criteria);
 
         setSavedFilterState((prev) => ({
           ...prev,
@@ -331,6 +344,7 @@ export const useFiltering = (options: UseFilteringOptions = {}) => {
     }
 
     if (autoSave && saveCurrentFilterRef.current) {
+      console.log('Auto-saving filter');
       void saveCurrentFilterRef.current();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

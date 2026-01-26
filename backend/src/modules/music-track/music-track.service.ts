@@ -1049,9 +1049,7 @@ export class MusicTrackService {
 
     const skip = Math.floor(Math.random() * tracksCount);
     return this.prisma.musicTrack.findFirst({
-      where: {
-        isLiked: false,
-      },
+      where: filterLiked ? { isLiked: false } : {},
       take: 1,
       skip: skip,
       select: simpleMusicTrackFieldSelectors,

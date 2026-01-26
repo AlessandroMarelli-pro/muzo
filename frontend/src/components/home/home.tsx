@@ -1,6 +1,6 @@
-import { formatDuration } from '@/lib/utils';
 import { useRecentlyPlayed } from '@/services/api-hooks';
 import { TopGenre, useLibraryMetrics } from '@/services/metrics-hooks';
+import CountUp from '../CountUp';
 import { HorizontalMusicCardList } from '../track/music-card';
 import { Badge } from '../ui/badge';
 import { Card, CardDescription, CardHeader, CardTitle } from '../ui/card';
@@ -87,18 +87,30 @@ const StatsCard = ({
   title,
   value,
   isLoading,
+  isDuration = false,
 }: {
   title: string;
-  value: string;
+  value: number;
   isLoading: boolean;
+  isDuration?: boolean;
 }) => {
+  const isLoaded = sessionStorage.getItem('isLoaded');
+
   if (isLoading) return <StatsCardSkeleton />;
   return (
     <Card className="flex flex-col gap-2 w-full  rounded-xl border-none bg-card text-card-foreground shadow-2xl @container/card">
       <CardHeader>
         <CardDescription>{title}</CardDescription>
         <CardTitle className="text-2xl @[250px]/card:text-3xl font-normal tracking-tight">
-          {value}
+          <CountUp
+            to={value}
+            from={isLoaded === 'true' ? value : Math.floor(value * 0.7)}
+            direction="up"
+            delay={0}
+            duration={1}
+            className="text-2xl @[250px]/card:text-3xl font-normal tracking-tight"
+            isDuration={isDuration}
+          />
         </CardTitle>
       </CardHeader>
     </Card>
@@ -163,27 +175,28 @@ export function Home() {
       <div className="flex flex-row gap-6 *:data-[slot=card]:shadow   *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card ">
         <StatsCard
           title="Total Tracks"
-          value={totalTracks?.toString() || '0'}
+          value={totalTracks || 0}
           isLoading={isLoading}
         />
         <StatsCard
           title="Total Plays"
-          value={listeningStats?.totalPlays.toString() || '0'}
+          value={listeningStats?.totalPlays || 0}
           isLoading={isLoading}
         />
         <StatsCard
           title="Total Play Time"
-          value={formatDuration(listeningStats?.totalPlayTime || 0).toString()}
+          value={listeningStats?.totalPlayTime || 0}
           isLoading={isLoading}
+          isDuration={true}
         />
         <StatsCard
           title="Favorite Count"
-          value={listeningStats?.favoriteCount.toString() || '0'}
+          value={listeningStats?.favoriteCount || 0}
           isLoading={isLoading}
         />
         <StatsCard
           title="Total Artists"
-          value={totalArtists?.toString() || '0'}
+          value={totalArtists || 0}
           isLoading={isLoading}
         />
       </div>
@@ -200,27 +213,7 @@ export function Home() {
           emptyMessage="No recently played tracks"
         />
       </div>
-      {/*     <div className="flex flex-col gap-4 w-full">
-        <h2 className="text-lg font-semibold">Distributions</h2>
-        <div className="*:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card flex flex-row gap-4 *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:shadow-xs  ">
-          <ChartRadar
-            data={genreDistribution}
-            title="Genre Distribution"
-            description="Most popular genres in your library"
-            angleKey="genre"
-            dataKey="count"
-            color={chartConfig.genre.color as string}
-          />
-          <ChartRadar
-            data={subgenreDistribution}
-            title="Subgenre Distribution"
-            description="Most popular subgenres in your library"
-            angleKey="subgenre"
-            dataKey="count"
-            color={chartConfig.subgenre.color as string}
-          />
-        </div>
-      </div> */}
+
     </div>
   );
 }

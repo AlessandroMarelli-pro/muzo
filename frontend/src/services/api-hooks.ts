@@ -6,6 +6,7 @@ import type {
   MusicTrack,
   MusicTrackByCategoriesGraphQl,
   MusicTrackListPaginated,
+  RandomTrackWithStats,
   SimpleMusicTrack,
   TrackRecommendation,
   UpdateLibraryInput,
@@ -205,13 +206,8 @@ export const useRandomTrackWithStats = () => {
     queryKey: queryKeys.randomTrackWithStats(),
     queryFn: async () => {
       const response = await graffleClient.request<{
-        randomTrackWithStats: {
-          track: SimpleMusicTrack | null;
-          likedCount: number;
-          bangerCount: number;
-          dislikedCount: number;
-          remainingCount: number;
-        };
+        randomTrackWithStats: RandomTrackWithStats;
+
       }>(
         gql`
           ${simpleMusicTrackFragment}
@@ -681,7 +677,7 @@ export const useBangerTrack = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.tracks() });
-      queryClient.invalidateQueries({ queryKey: ['tracks', 'random-with-stats'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.randomTrackWithStats() });
     },
   });
 };
@@ -705,7 +701,7 @@ export const useDislikeTrack = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.tracks() });
-      queryClient.invalidateQueries({ queryKey: ['tracks', 'random-with-stats'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.randomTrackWithStats() });
     },
   });
 };

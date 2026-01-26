@@ -954,7 +954,7 @@ export type QueryPlaylistTracksArgs = {
 export type QueryPlaylistsArgs = {
   search?: InputMaybe<Scalars['String']['input']>;
   userId: Scalars['String']['input'];
-  verifyTrackId?: InputMaybe<Scalars['ID']['input']>;
+  verifyTrackId?: InputMaybe<Scalars['String']['input']>;
 };
 
 
@@ -1562,13 +1562,14 @@ export type ToggleFavoriteMutationVariables = Exact<{
 }>;
 
 
-export type ToggleFavoriteMutation = { __typename?: 'Mutation', toggleFavorite: { __typename?: 'MusicTrack', id: string, isFavorite: boolean, updatedAt: any } };
+export type ToggleFavoriteMutation = { __typename?: 'Mutation', toggleFavorite: { __typename?: 'MusicTrack', id: string, isFavorite: boolean, updatedAt: any, originalArtist?: string | null, originalTitle?: string | null } };
 
 export type SimpleMusicTrackFragmentFragment = { __typename?: 'SimpleMusicTrack', id: string, artist?: string | null, format?: string | null, title?: string | null, duration: number, genres?: Array<string> | null, subgenres?: Array<string> | null, date?: any | null, listeningCount?: number | null, lastPlayedAt?: any | null, isFavorite?: boolean | null, isLiked?: boolean | null, isBanger?: boolean | null, createdAt?: any | null, updatedAt?: any | null, tempo?: number | null, key?: string | null, valenceMood?: string | null, arousalMood?: string | null, danceabilityFeeling?: string | null, imagePath?: string | null, lastScannedAt?: any | null, fileCreatedAt?: any | null, description?: string | null, tags?: Array<string> | null, vocalsDescriptions?: string | null, atmosphereKeywords?: Array<string> | null, contextBackgrounds?: string | null, contextImpacts?: string | null, libraryId?: string | null };
 
 export type GetPlaylistsQueryVariables = Exact<{
   userId: Scalars['String']['input'];
   search?: InputMaybe<Scalars['String']['input']>;
+  verifyTrackId?: InputMaybe<Scalars['String']['input']>;
 }>;
 
 

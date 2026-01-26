@@ -32,8 +32,6 @@ export function SwipeTrack({
 }: SwipeTrackProps) {
   const [audioBars, setAudioBars] = useState([30, 60, 45]);
 
-
-
   // Audio player hooks
   const { currentTrack, } = useCurrentTrack();
   const isPlaying = useIsPlaying();
@@ -68,7 +66,7 @@ export function SwipeTrack({
       className={cn(
         'relative h-full w-full gap-0',
         'cursor-pointer',
-        'bg-background z-2',
+        'bg-transparent z-2',
         'py-0',
         'border-none',
         'shadow-none',
@@ -84,7 +82,7 @@ export function SwipeTrack({
           />
         </div>
         <div className="z-10 flex flex-row h-full  justify-center items-center w-full p-4">
-          <div className="flex flex-col text-left w-full gap-6 ml-10">
+          <div className="flex flex-col text-left w-full gap-1 ml-10">
             <h3 className="text-3xl font-bold capitalize ">{track.title}</h3>
             <p className="text-base text-muted-foreground capitalize">{track.artist}</p>
 

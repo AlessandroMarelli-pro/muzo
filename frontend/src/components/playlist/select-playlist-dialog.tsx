@@ -7,7 +7,9 @@ import {
 } from '@/components/ui/dialog';
 import { DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { useAddTrackToPlaylist, usePlaylists } from '@/services/playlist-hooks';
+import { ListPlus } from 'lucide-react';
 import React, { useState } from 'react';
+import { Button } from '../ui/button';
 import { InlinePlaylistListComponent } from './playlist-list';
 
 interface SelectPlaylistDialogProps {
@@ -16,10 +18,10 @@ interface SelectPlaylistDialogProps {
   trackId: string;
 }
 
-export const SelectPlaylistTrigger = ({ trackId }: { trackId: string }) => {
+export const SelectPlaylistTrigger = ({ trackId, isDropdownMenuItem = true }: { trackId: string, isDropdownMenuItem: boolean }) => {
   const [open, setOpen] = useState(false);
   const handleOpen = React.useCallback(
-    (e: React.PointerEvent) => {
+    (e: React.PointerEvent | React.MouseEvent) => {
       e.preventDefault();
       e.stopPropagation();
       setOpen(true);
@@ -29,9 +31,10 @@ export const SelectPlaylistTrigger = ({ trackId }: { trackId: string }) => {
 
   return (
     <>
-      <DropdownMenuItem onPointerDown={handleOpen} onSelect={(e) => e.preventDefault()}>
+      {isDropdownMenuItem ? <DropdownMenuItem onPointerDown={handleOpen} onSelect={(e) => e.preventDefault()}>
         Add to Playlist
-      </DropdownMenuItem>
+      </DropdownMenuItem> : <Button onClick={handleOpen} variant="outline" size="sm">                <ListPlus className="w-4 h-4" />
+        Add to Playlist</Button>}
       <SelectPlaylistDialog
         open={open}
         onOpenChange={setOpen}

@@ -29,9 +29,9 @@ export function AppSidebar({
             <SidebarMenuButton
               size="lg"
               asChild
-              className="h-12 group-data-[collapsible=icon]:!size-12 gap-2"
+              className="h-12 group-data-[collapsible=icon]:!size-12 gap-2 group-data-[collapsible=icon]:hover:bg-sidebar"
             >
-              <a href="#">
+              <a href="/">
                 <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
                   <DogIcon className="size-4" />
                 </div>
