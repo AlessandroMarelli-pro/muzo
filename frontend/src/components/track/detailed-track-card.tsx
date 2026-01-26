@@ -23,7 +23,7 @@ import {
   Shuffle,
   Zap
 } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { SelectPlaylistTrigger } from '../playlist/select-playlist-dialog';
 import { Skeleton } from '../ui/skeleton';
 
@@ -118,7 +118,11 @@ export function DetailedTrackCard({ track, refetch, isLoading }: DetailedTrackCa
   const isPlaying = useIsPlaying();
   const isCurrentTrack = currentTrack?.id === track?.id;
   const isThisTrackPlaying = isCurrentTrack && isPlaying;
-  const [isFavorite, setIsFavorite] = useState(track?.isFavorite || false);
+  const [isFavorite, setIsFavorite] = useState(track?.isFavorite);
+
+  useEffect(() => {
+    setIsFavorite(track?.isFavorite || false);
+  }, [track?.isFavorite]);
   const formatDuration = (seconds: number) => {
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = Math.floor(seconds % 60);

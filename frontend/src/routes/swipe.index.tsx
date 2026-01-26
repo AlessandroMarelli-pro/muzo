@@ -1,16 +1,15 @@
 import { SwipePage } from '@/components/swipe/swipe-page';
-import { useRandomTrackWithStats } from '@/services/api-hooks';
+import { fetchRandomTrackWithStats } from '@/services/api-hooks';
 import { createFileRoute } from '@tanstack/react-router';
 
 function SwipeRoute() {
-  const {
-    data: trackData,
-    isLoading: isLoadingTrack,
-  } = useRandomTrackWithStats();
-  return <SwipePage key={'swipe-page'} trackData={trackData} isLoadingTrack={isLoadingTrack} />;
+  return <SwipePage key={'swipe-page'} />;
 }
 
 export const Route = createFileRoute('/swipe/')({
   component: SwipeRoute,
-
+  loader: async () => {
+    const trackData = await fetchRandomTrackWithStats();
+    return { trackData, isLoading: false };
+  },
 });

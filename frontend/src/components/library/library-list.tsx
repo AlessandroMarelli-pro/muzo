@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/button';
-import { useLibraries } from '@/services/api-hooks';
+import { Route } from '@/routes/libraries.index';
 import { Plus, Search } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import { Loading } from '../loading';
@@ -23,7 +23,8 @@ export const LibraryList: React.FC<LibraryListProps> = ({
   onDeleteLibrary,
   isScanning = false,
 }) => {
-  const { data: libraries = [], isLoading } = useLibraries();
+  const isLoading = false;
+  const libraries = Route.useLoaderData();
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredLibraries, setFilteredLibraries] = useState(libraries);
 

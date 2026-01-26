@@ -1,8 +1,9 @@
-import { SimpleMusicTrack } from '@/__generated__/types';
 import { cn } from '@/lib/utils';
-import { useTrackRecommendations } from '@/services/api-hooks';
+import { Route } from '@/routes/research.{-$trackId}';
+import { fetchRandomTrack } from '@/services/api-hooks';
+import { useNavigate, useRouter } from '@tanstack/react-router';
 import { Check, PlusCircle } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useMemo } from 'react';
 import { TrackRecommandationsComponent } from '../playlist/track-recommendations';
 import { DetailedTrackCard } from '../track/detailed-track-card';
 import { Button } from '../ui/button';
@@ -33,35 +34,46 @@ const DashedButton = ({
   );
 };
 
-export function Research({
-  track,
-  refetch,
-  isLoading,
-}: {
-  track?: SimpleMusicTrack;
-  refetch: () => void;
-  isLoading: boolean;
-}) {
-  const [selectedBoost, setSelectedBoost] = useState<string[]>([]);
-  const {
-    data: trackRecommendations,
-    isLoading: isLoadingTrackRecommendations,
-    refetch: refetchTrackRecommendations,
-  } = useTrackRecommendations(track?.id, selectedBoost.join(','));
+export function Research() {
+  const router = useRouter();
+  const navigate = useNavigate();
+  const search = Route.useSearch();
 
-  useEffect(() => {
-    if (selectedBoost) {
-      refetchTrackRecommendations();
-    }
-  }, [selectedBoost]);
+  const { randomTrack: track, isLoading, trackRecommendations } = Route.useLoaderData();
+  const refetch = async () => {
+    const randomTrack = await fetchRandomTrack();
+    navigate({
+      to: '/research/{-$trackId}',
+      params: { trackId: randomTrack.id },
+    });
+  };
+  // Parse boost from search params (comma-separated string)
+  const selectedBoost = useMemo(() => {
+    return search.boost ? search.boost.split(',').filter(Boolean) : [];
+  }, [search.boost]);
 
   const handleSelectedBoost = (key: string) => {
-    if (selectedBoost?.some((k) => k === key)) {
-      setSelectedBoost((prev) => prev?.filter((k) => k !== key));
+    const currentBoost = selectedBoost;
+    let newBoost: string[];
+
+    if (currentBoost.some((k) => k === key)) {
+      newBoost = currentBoost.filter((k) => k !== key);
     } else {
-      setSelectedBoost((prev) => [...prev, key]);
+      newBoost = [...currentBoost, key];
     }
+
+    // Update search params - this will trigger loaderDeps to change and refetch
+    router.navigate({
+      search: {
+        boost: newBoost.length > 0 ? newBoost.join(',') : undefined,
+      },
+      replace: true,
+    });
   };
+
+
+
+
   return (
     <div className="p-6 space-y-6 min-w-fit">
       <DetailedTrackCard track={track} refetch={refetch} isLoading={isLoading} />
@@ -84,7 +96,7 @@ export function Research({
       </div>
       <TrackRecommandationsComponent
         recommendations={trackRecommendations || []}
-        isLoading={isLoadingTrackRecommendations || isLoading}
+        isLoading={isLoading}
       />
     </div>
   );

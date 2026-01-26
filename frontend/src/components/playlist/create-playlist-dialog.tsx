@@ -13,6 +13,7 @@ import { Switch } from '@/components/ui/switch';
 import { useFilterOptionsData } from '@/hooks/useFilterOptions';
 import { useCreatePlaylist } from '@/services/playlist-hooks';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@radix-ui/react-collapsible';
+import { useRouter } from '@tanstack/react-router';
 import { ChevronDownIcon, Info } from 'lucide-react';
 import React, { useState } from 'react';
 import { SliderComponent } from '../filters/filter-component';
@@ -38,6 +39,7 @@ export function CreatePlaylistDialog({
   const [description, setDescription] = useState('');
   const [isPublic, setIsPublic] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
+  const router = useRouter()
 
   // Filter states
   const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
@@ -98,6 +100,8 @@ export function CreatePlaylistDialog({
         maxTracks: maxTracks > 0 ? maxTracks : undefined,
         subgenreSelectionMode: selectedSubgenres.length > 0 ? subgenreSelectionMode : undefined,
       } as any);
+      router.invalidate()
+
 
       // Reset form
       setName('');

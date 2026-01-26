@@ -21,7 +21,6 @@ import { Skeleton } from '../ui/skeleton';
 
 interface PlaylistCardProps {
   playlist: PlaylistItem;
-  onUpdate: () => void;
   onViewDetails?: (playlistId: string) => void;
   onCardClick?: (playlistId: string) => void;
 }
@@ -51,7 +50,6 @@ export const PlaylistCardSkeleton = () => {
 
 export function PlaylistCard({
   playlist,
-  onUpdate,
   onViewDetails,
   onCardClick
 }: PlaylistCardProps) {
@@ -67,7 +65,6 @@ export function PlaylistCard({
 
     try {
       await deletePlaylistMutation.mutateAsync(playlist.id);
-      onUpdate();
     } catch (error) {
       console.error('Failed to delete playlist:', error);
     }

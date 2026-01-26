@@ -45,8 +45,8 @@ export function NavMain({
       <SidebarMenu className="flex flex-col gap-2">
         {items.map((item) => {
           const Icon = item.icon;
-          const isActive = location.pathname === item.url;
-
+          console.log('location.pathname', location.pathname, item.url);
+          const isActive = location.pathname !== '/' && item.url !== '/' && location.pathname.startsWith(item.url) || location.pathname === item.url;
           return (
             <Collapsible key={item.title} asChild defaultOpen={isActive}>
               <SidebarMenuItem>

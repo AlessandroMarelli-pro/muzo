@@ -1,16 +1,17 @@
 'use client';
 
-import { RandomTrackWithStats } from '@/__generated__/types';
 import {
   useAudioPlayerActions,
   useCurrentTrack,
   useIsPlaying,
 } from '@/contexts/audio-player-context';
+import { Route } from '@/routes/swipe.index';
 import {
   useBangerTrack,
   useDislikeTrack,
   useLikeTrack
 } from '@/services/api-hooks';
+import { useRouter } from '@tanstack/react-router';
 import { InfoIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
@@ -71,7 +72,13 @@ const Counter = ({ label, value }: { label: string, value: number }) => (
     <AnimatedNumber animationKey={label + value} value={value} />
   </span>
 )
-export const SwipePage = React.memo(({ trackData, isLoadingTrack }: { trackData: RandomTrackWithStats | undefined, isLoadingTrack: boolean }) => {
+
+export const SwipePage = React.memo(() => {
+  const { trackData, isLoading: isLoadingTrack } = Route.useLoaderData();
+  const router = useRouter();
+  const refetch = () => {
+    router.invalidate();
+  };
   const track = trackData?.track || undefined;
   const [shouldAutoPlay, setShouldAutoPlay] = useState(false);
 
@@ -116,6 +123,7 @@ export const SwipePage = React.memo(({ trackData, isLoadingTrack }: { trackData:
     const animationPromise = new Promise<void>((resolve) => {
       setTimeout(() => resolve(), 400);
     });
+    refetch();
 
     // Wait for both animation and mutation to complete
     Promise.all([mutationPromise, animationPromise])
@@ -146,6 +154,7 @@ export const SwipePage = React.memo(({ trackData, isLoadingTrack }: { trackData:
     const animationPromise = new Promise<void>((resolve) => {
       setTimeout(() => resolve(), 400);
     });
+    refetch();
 
     // Wait for both animation and mutation to complete
     Promise.all([mutationPromise, animationPromise])
@@ -154,6 +163,7 @@ export const SwipePage = React.memo(({ trackData, isLoadingTrack }: { trackData:
           setShouldAutoPlay(true);
         }
         setIsAnimating(false);
+
       })
       .catch((error) => {
         console.error('Error disliking track:', error);
@@ -175,6 +185,7 @@ export const SwipePage = React.memo(({ trackData, isLoadingTrack }: { trackData:
     const animationPromise = new Promise<void>((resolve) => {
       setTimeout(() => resolve(), 400);
     });
+    refetch();
 
     // Wait for both animation and mutation to complete
     Promise.all([mutationPromise, animationPromise])
@@ -183,10 +194,12 @@ export const SwipePage = React.memo(({ trackData, isLoadingTrack }: { trackData:
           setShouldAutoPlay(true);
         }
         setIsAnimating(false);
+
       })
       .catch((error) => {
         console.error('Error banger track:', error);
         setIsAnimating(false);
+
       });
   }, [track, bangerMutation, isPlaying, currentTrack]);
 

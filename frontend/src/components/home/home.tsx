@@ -1,5 +1,4 @@
-import { useRecentlyPlayed } from '@/services/api-hooks';
-import { TopGenre, useLibraryMetrics } from '@/services/metrics-hooks';
+import { TopGenre } from '@/services/metrics-hooks';
 import CountUp from '../CountUp';
 import { HorizontalMusicCardList } from '../track/music-card';
 import { Badge } from '../ui/badge';
@@ -16,6 +15,7 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from '@/components/ui/chart';
+import { Route } from '@/routes';
 import { Skeleton } from '../ui/skeleton';
 
 export const description = 'A radar chart';
@@ -158,11 +158,10 @@ const TopGenres = ({
 
 
 export function Home() {
-  const { data: recentlyPlayed } = useRecentlyPlayed();
-
-  const { data: metrics, isLoading, error } = useLibraryMetrics();
-
-  if (error) return <div>Error loading metrics</div>;
+  const isLoading = false
+  const loaderData = Route.useLoaderData()
+  const recentlyPlayed = loaderData.recentlyPlayed
+  const metrics = loaderData.metrics
 
   const listeningStats = metrics?.listeningStats;
   const totalTracks = metrics?.totalTracks;

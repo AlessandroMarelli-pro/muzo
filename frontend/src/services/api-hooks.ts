@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { parse } from 'graphql';
 import type {
   CreateLibraryInput,
+  GetRecentlyPlayedQuery,
   MusicLibrary,
   MusicTrack,
   MusicTrackByCategoriesGraphQl,
@@ -69,14 +70,10 @@ export const queryKeys = {
     ['tracks', 'recommendations', { id, criteria }] as const,
 };
 
-// Library Queries
-export const useLibraries = () => {
-  return useQuery({
-    queryKey: queryKeys.libraries,
-    queryFn: async () => {
-      const response = await graffleClient.request<{
-        libraries: MusicLibrary[];
-      }>(gql`
+export const fetchLibraries = async () => {
+  const response = await graffleClient.request<{
+    libraries: MusicLibrary[];
+  }>(gql`
         query GetLibraries {
           libraries {
             id
@@ -101,8 +98,14 @@ export const useLibraries = () => {
           }
         }
       `);
-      return response.libraries;
-    },
+  return response.libraries;
+};
+
+// Library Queries
+export const useLibraries = () => {
+  return useQuery({
+    queryKey: queryKeys.libraries,
+    queryFn: fetchLibraries,
   });
 };
 
@@ -179,80 +182,83 @@ export const useTracks = ({
   });
 };
 
+export const fetchRandomTrack = async (id?: string, filterLiked?: boolean) => {
+  const response = await graffleClient.request<{
+    randomTrack: SimpleMusicTrack;
+  }>(
+    gql`
+      ${simpleMusicTrackFragment}
+      query GetRandomTrack($id: String, $filterLiked: Boolean) {
+        randomTrack(id: $id, filterLiked: $filterLiked) {
+          ...SimpleMusicTrackFragment
+        }
+      }
+    `,
+    { id, filterLiked },
+  );
+  return response.randomTrack;
+};
+
 export const useRandomTrack = (id?: string, filterLiked?: boolean) => {
   return useQuery({
     queryKey: queryKeys.randomTrack(id, filterLiked),
-    queryFn: async () => {
-      const response = await graffleClient.request<{
-        randomTrack: SimpleMusicTrack;
-      }>(
-        gql`
-          ${simpleMusicTrackFragment}
-          query GetRandomTrack($id: String, $filterLiked: Boolean) {
-            randomTrack(id: $id, filterLiked: $filterLiked) {
-              ...SimpleMusicTrackFragment
-            }
-          }
-        `,
-        { id, filterLiked },
-      );
-      return response.randomTrack;
-    },
+    queryFn: async () => fetchRandomTrack(id, filterLiked)
   });
 };
 
+export const fetchRandomTrackWithStats = async () => {
+  const response = await graffleClient.request<{
+    randomTrackWithStats: RandomTrackWithStats;
+  }>(
+    gql`
+      ${simpleMusicTrackFragment}
+      query GetRandomTrackWithStats {
+        randomTrackWithStats {
+          track {
+            ...SimpleMusicTrackFragment
+          }
+          likedCount
+          bangerCount
+          dislikedCount
+          remainingCount
+        }
+      }
+    `,
+  );
+  return response.randomTrackWithStats;
+};
 export const useRandomTrackWithStats = () => {
   return useQuery({
     queryKey: queryKeys.randomTrackWithStats(),
-    queryFn: async () => {
-      const response = await graffleClient.request<{
-        randomTrackWithStats: RandomTrackWithStats;
-
-      }>(
-        gql`
-          ${simpleMusicTrackFragment}
-          query GetRandomTrackWithStats {
-            randomTrackWithStats {
-              track {
-                ...SimpleMusicTrackFragment
-              }
-              likedCount
-              bangerCount
-              dislikedCount
-              remainingCount
-            }
-          }
-        `,
-      );
-      return response.randomTrackWithStats;
-    },
+    queryFn: fetchRandomTrackWithStats,
   });
 };
 
+export const fetchTrackRecommendations = async (id?: string, criteria?: string) => {
+  const response = await graffleClient.request<{
+    trackRecommendations: TrackRecommendation[];
+  }>(
+    gql`
+      ${simpleMusicTrackFragment}
+      query GetTrackRecommendations($id: String!, $criteria: String) {
+        trackRecommendations(id: $id, criteria: $criteria) {
+          track {
+            ...SimpleMusicTrackFragment
+          }
+          similarity
+          reasons
+        }
+      }
+    `,
+    { id, criteria },
+  );
+  return response.trackRecommendations;
+};
 export const useTrackRecommendations = (id?: string, criteria?: string) => {
   return useQuery({
     enabled: !!id,
     queryKey: queryKeys.trackRecommendations(id, criteria),
-    queryFn: async () => {
-      const response = await graffleClient.request<{
-        trackRecommendations: TrackRecommendation[];
-      }>(
-        gql`
-          ${simpleMusicTrackFragment}
-          query GetTrackRecommendations($id: String!, $criteria: String) {
-            trackRecommendations(id: $id, criteria: $criteria) {
-              track {
-                ...SimpleMusicTrackFragment
-              }
-              similarity
-              reasons
-            }
-          }
-        `,
-        { id, criteria },
-      );
-      return response.trackRecommendations;
-    },
+    queryFn: async () => fetchTrackRecommendations(id, criteria),
   });
 };
 
@@ -481,27 +487,26 @@ export const useStaticFilters = () => {
     staleTime: 10 * 60 * 1000, // 10 minutes - static data doesn't change often
   });
 };
+export const fetchRecentlyPlayed = async (limit = 20) => {
+  const response = await graffleClient.request<GetRecentlyPlayedQuery>(
+    gql`
+      ${simpleMusicTrackFragment}
+      query GetRecentlyPlayed($limit: Float) {
+        recentlyPlayed(limit: $limit) {
+          ...SimpleMusicTrackFragment
+        }
+      }
+    `,
+    { limit },
+  );
+  return response.recentlyPlayed;
+};
 
 // Playback Queries
 export const useRecentlyPlayed = (limit = 20) => {
   return useQuery({
     queryKey: queryKeys.recentlyPlayed(limit),
-    queryFn: async () => {
-      const response = await graffleClient.request<{
-        recentlyPlayed: SimpleMusicTrack[];
-      }>(
-        gql`
-          ${simpleMusicTrackFragment}
-          query GetRecentlyPlayed($limit: Float) {
-            recentlyPlayed(limit: $limit) {
-              ...SimpleMusicTrackFragment
-            }
-          }
-        `,
-        { limit },
-      );
-      return response.recentlyPlayed;
-    },
+    queryFn: () => fetchRecentlyPlayed(limit)
   });
 };
 

@@ -638,4 +638,3 @@ export function MusicTable({
     </div>
   );
 }
-MusicTable.whyDidYouRender = true;

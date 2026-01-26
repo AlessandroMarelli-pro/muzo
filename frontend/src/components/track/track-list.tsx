@@ -138,4 +138,3 @@ export const TrackList = React.memo<TrackListProps>(
     );
   },
 );
-TrackList.whyDidYouRender = true;

@@ -44,7 +44,7 @@ export const TrackRecommandationsComponent = ({
                 recommendationsLength={recommendations.length}
               />
             ))
-            : Array.from({ length: 5 }).map((_, i) => (
+            : Array.from({ length: 10 }).map((_, i) => (
               <TrackRecommendationsCardSkeleton
                 key={`recommendations-skeleton-${i}`}
                 index={i}

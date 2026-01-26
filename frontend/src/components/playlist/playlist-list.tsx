@@ -1,5 +1,6 @@
 import { PlaylistItem } from '@/__generated__/types';
 import { Button } from '@/components/ui/button';
+import { Route } from '@/routes/playlists.index';
 import { Plus, Search } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Input } from '../ui/input';
@@ -9,15 +10,13 @@ import { PlaylistCard, PlaylistCardSkeleton } from './playlist-card';
 
 interface PlaylistListProps {
   onViewPlaylistDetails: (playlistId: string) => void;
-  playlists: PlaylistItem[];
-  refetch: () => void;
-  loading: boolean;
+  refetch?: () => void;
+  loading?: boolean;
 }
 
-export const PlaylistListComponent = ({ loading, playlists, onUpdate, onViewPlaylistDetails, onCardClick }: {
+export const PlaylistListComponent = ({ loading, playlists, onViewPlaylistDetails, onCardClick }: {
   onViewPlaylistDetails?: (playlistId: string) => void;
   playlists: PlaylistItem[];
-  onUpdate: () => void;
   loading: boolean; onCardClick?: (playlistId: string) => void
 }) => {
   return <div className="flex flex-row flex-wrap gap-4 justify-start ">
@@ -32,7 +31,6 @@ export const PlaylistListComponent = ({ loading, playlists, onUpdate, onViewPlay
         <PlaylistCard
           key={playlist.id}
           playlist={playlist}
-          onUpdate={onUpdate}
           onViewDetails={onViewPlaylistDetails}
           onCardClick={onCardClick}
         />
@@ -68,10 +66,10 @@ export const InlinePlaylistListComponent = ({ loading, playlists, onCardClick }:
 
 export function PlaylistList({
   onViewPlaylistDetails,
-  playlists,
-  loading,
-  refetch,
+  loading = false,
 }: PlaylistListProps) {
+  const playlists = Route.useLoaderData() as PlaylistItem[]
+
   const [filteredPlaylists, setFilteredPlaylists] = useState(playlists);
   const [searchQuery, setSearchQuery] = useState('');
   useEffect(() => {
@@ -115,13 +113,12 @@ export function PlaylistList({
           Create Playlist
         </Button>
       </div>
-      <PlaylistListComponent loading={loading} playlists={filteredPlaylists} onUpdate={refetch} onViewPlaylistDetails={onViewPlaylistDetails} />
+      <PlaylistListComponent loading={loading} playlists={filteredPlaylists} onViewPlaylistDetails={onViewPlaylistDetails} />
       <CreatePlaylistDialog
         open={isCreateDialogOpen}
         onOpenChange={setIsCreateDialogOpen}
         onSuccess={() => {
           setIsCreateDialogOpen(false);
-          refetch();
         }}
       />
     </div>

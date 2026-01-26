@@ -15,10 +15,9 @@ import { Route as FavoritesRouteImport } from './routes/favorites'
 import { Route as CategoriesRouteImport } from './routes/categories'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SwipeIndexRouteImport } from './routes/swipe.index'
-import { Route as ResearchIndexRouteImport } from './routes/research.index'
 import { Route as PlaylistsIndexRouteImport } from './routes/playlists.index'
 import { Route as LibrariesIndexRouteImport } from './routes/libraries.index'
-import { Route as ResearchTrackIdRouteImport } from './routes/research.$trackId'
+import { Route as ResearchChar123TrackIdChar125RouteImport } from './routes/research.{-$trackId}'
 import { Route as PlaylistsPlaylistIdRouteImport } from './routes/playlists.$playlistId'
 import { Route as LibrariesLibraryIdRouteImport } from './routes/libraries.$libraryId'
 
@@ -52,11 +51,6 @@ const SwipeIndexRoute = SwipeIndexRouteImport.update({
   path: '/swipe/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ResearchIndexRoute = ResearchIndexRouteImport.update({
-  id: '/research/',
-  path: '/research/',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const PlaylistsIndexRoute = PlaylistsIndexRouteImport.update({
   id: '/playlists/',
   path: '/playlists/',
@@ -67,11 +61,12 @@ const LibrariesIndexRoute = LibrariesIndexRouteImport.update({
   path: '/libraries/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ResearchTrackIdRoute = ResearchTrackIdRouteImport.update({
-  id: '/research/$trackId',
-  path: '/research/$trackId',
-  getParentRoute: () => rootRouteImport,
-} as any)
+const ResearchChar123TrackIdChar125Route =
+  ResearchChar123TrackIdChar125RouteImport.update({
+    id: '/research/{-$trackId}',
+    path: '/research/{-$trackId}',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const PlaylistsPlaylistIdRoute = PlaylistsPlaylistIdRouteImport.update({
   id: '/playlists/$playlistId',
   path: '/playlists/$playlistId',
@@ -91,10 +86,9 @@ export interface FileRoutesByFullPath {
   '/settings': typeof SettingsRoute
   '/libraries/$libraryId': typeof LibrariesLibraryIdRoute
   '/playlists/$playlistId': typeof PlaylistsPlaylistIdRoute
-  '/research/$trackId': typeof ResearchTrackIdRoute
+  '/research/{-$trackId}': typeof ResearchChar123TrackIdChar125Route
   '/libraries': typeof LibrariesIndexRoute
   '/playlists': typeof PlaylistsIndexRoute
-  '/research': typeof ResearchIndexRoute
   '/swipe': typeof SwipeIndexRoute
 }
 export interface FileRoutesByTo {
@@ -105,10 +99,9 @@ export interface FileRoutesByTo {
   '/settings': typeof SettingsRoute
   '/libraries/$libraryId': typeof LibrariesLibraryIdRoute
   '/playlists/$playlistId': typeof PlaylistsPlaylistIdRoute
-  '/research/$trackId': typeof ResearchTrackIdRoute
+  '/research/{-$trackId}': typeof ResearchChar123TrackIdChar125Route
   '/libraries': typeof LibrariesIndexRoute
   '/playlists': typeof PlaylistsIndexRoute
-  '/research': typeof ResearchIndexRoute
   '/swipe': typeof SwipeIndexRoute
 }
 export interface FileRoutesById {
@@ -120,10 +113,9 @@ export interface FileRoutesById {
   '/settings': typeof SettingsRoute
   '/libraries/$libraryId': typeof LibrariesLibraryIdRoute
   '/playlists/$playlistId': typeof PlaylistsPlaylistIdRoute
-  '/research/$trackId': typeof ResearchTrackIdRoute
+  '/research/{-$trackId}': typeof ResearchChar123TrackIdChar125Route
   '/libraries/': typeof LibrariesIndexRoute
   '/playlists/': typeof PlaylistsIndexRoute
-  '/research/': typeof ResearchIndexRoute
   '/swipe/': typeof SwipeIndexRoute
 }
 export interface FileRouteTypes {
@@ -136,10 +128,9 @@ export interface FileRouteTypes {
     | '/settings'
     | '/libraries/$libraryId'
     | '/playlists/$playlistId'
-    | '/research/$trackId'
+    | '/research/{-$trackId}'
     | '/libraries'
     | '/playlists'
-    | '/research'
     | '/swipe'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -150,10 +141,9 @@ export interface FileRouteTypes {
     | '/settings'
     | '/libraries/$libraryId'
     | '/playlists/$playlistId'
-    | '/research/$trackId'
+    | '/research/{-$trackId}'
     | '/libraries'
     | '/playlists'
-    | '/research'
     | '/swipe'
   id:
     | '__root__'
@@ -164,10 +154,9 @@ export interface FileRouteTypes {
     | '/settings'
     | '/libraries/$libraryId'
     | '/playlists/$playlistId'
-    | '/research/$trackId'
+    | '/research/{-$trackId}'
     | '/libraries/'
     | '/playlists/'
-    | '/research/'
     | '/swipe/'
   fileRoutesById: FileRoutesById
 }
@@ -179,10 +168,9 @@ export interface RootRouteChildren {
   SettingsRoute: typeof SettingsRoute
   LibrariesLibraryIdRoute: typeof LibrariesLibraryIdRoute
   PlaylistsPlaylistIdRoute: typeof PlaylistsPlaylistIdRoute
-  ResearchTrackIdRoute: typeof ResearchTrackIdRoute
+  ResearchChar123TrackIdChar125Route: typeof ResearchChar123TrackIdChar125Route
   LibrariesIndexRoute: typeof LibrariesIndexRoute
   PlaylistsIndexRoute: typeof PlaylistsIndexRoute
-  ResearchIndexRoute: typeof ResearchIndexRoute
   SwipeIndexRoute: typeof SwipeIndexRoute
 }
 
@@ -230,13 +218,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SwipeIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/research/': {
-      id: '/research/'
-      path: '/research'
-      fullPath: '/research'
-      preLoaderRoute: typeof ResearchIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/playlists/': {
       id: '/playlists/'
       path: '/playlists'
@@ -251,11 +232,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LibrariesIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/research/$trackId': {
-      id: '/research/$trackId'
-      path: '/research/$trackId'
-      fullPath: '/research/$trackId'
-      preLoaderRoute: typeof ResearchTrackIdRouteImport
+    '/research/{-$trackId}': {
+      id: '/research/{-$trackId}'
+      path: '/research/{-$trackId}'
+      fullPath: '/research/{-$trackId}'
+      preLoaderRoute: typeof ResearchChar123TrackIdChar125RouteImport
       parentRoute: typeof rootRouteImport
     }
     '/playlists/$playlistId': {
@@ -283,10 +264,9 @@ const rootRouteChildren: RootRouteChildren = {
   SettingsRoute: SettingsRoute,
   LibrariesLibraryIdRoute: LibrariesLibraryIdRoute,
   PlaylistsPlaylistIdRoute: PlaylistsPlaylistIdRoute,
-  ResearchTrackIdRoute: ResearchTrackIdRoute,
+  ResearchChar123TrackIdChar125Route: ResearchChar123TrackIdChar125Route,
   LibrariesIndexRoute: LibrariesIndexRoute,
   PlaylistsIndexRoute: PlaylistsIndexRoute,
-  ResearchIndexRoute: ResearchIndexRoute,
   SwipeIndexRoute: SwipeIndexRoute,
 }
 export const routeTree = rootRouteImport

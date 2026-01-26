@@ -412,8 +412,12 @@ const UPDATE_PLAYLIST_SORTING = gql`
   }
 `;
 
+const queryKeys = {
+  playlists: (userId: string = 'default', search?: string, verifyTrackId?: string) => ['playlists', userId, search, verifyTrackId] as const,
+}
+
 // API functions
-const fetchPlaylists = async (
+export const fetchPlaylists = async (
   userId: string = 'default',
   search?: string,
   verifyTrackId?: string,
@@ -696,21 +700,21 @@ export function usePlaylists(userId: string = 'default', search?: string, verify
     refetch,
     isRefetching,
   } = useQuery<PlaylistItem[]>({
-    queryKey: ['playlists', userId, search, verifyTrackId],
+    queryKey: queryKeys.playlists(userId, search, verifyTrackId),
     queryFn: () => fetchPlaylists(userId, search, verifyTrackId),
   });
 
   const createPlaylistMutation = useMutation({
     mutationFn: createPlaylist,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['playlists'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.playlists(userId, search, verifyTrackId) });
     },
   });
 
   const deletePlaylistMutation = useMutation({
     mutationFn: (id: string) => deletePlaylist(id, userId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['playlists'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.playlists(userId, search, verifyTrackId) });
     },
   });
 
@@ -723,7 +727,7 @@ export function usePlaylists(userId: string = 'default', search?: string, verify
       input: AddTrackToPlaylistInput;
     }) => addTrackToPlaylist(playlistId, input, userId),
     onSuccess: (data, { playlistId }) => {
-      queryClient.invalidateQueries({ queryKey: ['playlists'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.playlists(userId, search, verifyTrackId) });
       queryClient.invalidateQueries({ queryKey: ['playlist', playlistId] });
       queryClient.invalidateQueries({ queryKey: ['playlistRecommendations', playlistId] });
       const trackName = ` ${data.track.title} by ${data.track.artist}`;
@@ -742,7 +746,7 @@ export function usePlaylists(userId: string = 'default', search?: string, verify
       trackId: string;
     }) => removeTrackFromPlaylist(playlistId, trackId, userId),
     onSuccess: (_, { playlistId }) => {
-      queryClient.invalidateQueries({ queryKey: ['playlists'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.playlists(userId, search, verifyTrackId) });
       queryClient.invalidateQueries({ queryKey: ['playlist', playlistId] });
     },
   });
@@ -780,7 +784,7 @@ export function usePlaylist(id: string, userId: string = 'default') {
     mutationFn: (input: UpdatePlaylistInput) =>
       updatePlaylist(id, input, userId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['playlists'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.playlists(userId, undefined, undefined) });
       queryClient.invalidateQueries({ queryKey: ['playlist', id] });
     },
   });
@@ -788,7 +792,7 @@ export function usePlaylist(id: string, userId: string = 'default') {
   const syncToYouTubeMutation = useMutation({
     mutationFn: () => syncPlaylistToYouTube(id, userId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['playlists'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.playlists(userId, undefined, undefined) });
       queryClient.invalidateQueries({ queryKey: ['playlist', id] });
     },
   });
@@ -796,7 +800,7 @@ export function usePlaylist(id: string, userId: string = 'default') {
   const syncToTidalMutation = useMutation({
     mutationFn: () => syncPlaylistToTidal(id, userId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['playlists'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.playlists(userId, undefined, undefined) });
       queryClient.invalidateQueries({ queryKey: ['playlist', id] });
     },
   });
@@ -804,7 +808,7 @@ export function usePlaylist(id: string, userId: string = 'default') {
   const syncToSpotifyMutation = useMutation({
     mutationFn: () => syncPlaylistToSpotify(id, userId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['playlists'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.playlists(userId, undefined, undefined) });
       queryClient.invalidateQueries({ queryKey: ['playlist', id] });
     },
   });
@@ -912,7 +916,8 @@ export function useCreatePlaylist() {
   const createPlaylistMutation = useMutation({
     mutationFn: createPlaylist,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['playlists'] });
+      console.log('invalidating playlists');
+      queryClient.invalidateQueries({ queryKey: queryKeys.playlists('default', undefined, undefined) });
     },
   });
   return {
@@ -926,7 +931,7 @@ export function useDeletePlaylist(userId: string = 'default') {
   return useMutation({
     mutationFn: (id: string) => deletePlaylist(id, userId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['playlists'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.playlists(userId, undefined, undefined) });
     },
   });
 }
@@ -949,7 +954,7 @@ export function useAddTrackToPlaylist(userId: string = 'default') {
       input: AddTrackToPlaylistInput;
     }) => addTrackToPlaylist(playlistId, input, userId),
     onSuccess: (data, { playlistId }) => {
-      queryClient.invalidateQueries({ queryKey: ['playlists'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.playlists(userId, undefined, undefined) });
       queryClient.invalidateQueries({ queryKey: ['playlist', playlistId] });
       queryClient.invalidateQueries({ queryKey: ['playlistRecommendations', playlistId] });
       const trackName = ` ${data.track.title} by ${data.track.artist}`;
@@ -982,7 +987,7 @@ export function useRemoveTrackFromPlaylist(userId: string = 'default') {
       trackId: string;
     }) => removeTrackFromPlaylist(playlistId, trackId, userId),
     onSuccess: (_, { playlistId }) => {
-      queryClient.invalidateQueries({ queryKey: ['playlists'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.playlists(userId, undefined, undefined) });
       queryClient.invalidateQueries({ queryKey: ['playlist', playlistId] });
     },
   });
@@ -1045,7 +1050,7 @@ export function useUpdatePlaylistSorting(userId: string = 'default') {
       input: UpdatePlaylistSortingInput;
     }) => updatePlaylistSorting(playlistId, input, userId),
     onSuccess: (_, { playlistId }) => {
-      queryClient.invalidateQueries({ queryKey: ['playlists'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.playlists(userId, undefined, undefined) });
       queryClient.invalidateQueries({ queryKey: ['playlist', playlistId] });
     },
     onError: (error: any) => {

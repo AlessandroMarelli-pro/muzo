@@ -60,6 +60,7 @@ export function SiteHeader({ }: SiteHeaderProps) {
     if (pathname === '/favorites') return 'Favorites';
     if (pathname === '/settings') return 'Settings';
     if (pathname === '/research') return 'Research';
+    if (pathname.startsWith('/research/')) return 'Research';
     return 'Muzo';
   };
 

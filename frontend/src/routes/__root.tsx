@@ -19,6 +19,7 @@ import {
   Home,
   Library,
   ListMusic,
+  LucideIcon,
   Settings,
   Sparkles,
 } from 'lucide-react';
@@ -55,7 +56,13 @@ const MusicPlayerInset = React.memo(function MusicPlayerInset({
   );
 });
 
-const navigationData = {
+const navigationData: {
+  navMain: {
+    title: string;
+    url: string;
+    icon: LucideIcon;
+  }[];
+} = {
   navMain: [
     {
       title: 'Home',
