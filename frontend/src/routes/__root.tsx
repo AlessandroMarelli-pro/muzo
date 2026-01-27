@@ -1,4 +1,4 @@
-import { AppSidebar } from '@/components/layout/app-sidebar';
+import { AppSidebar, AppSidebarProps } from '@/components/layout/app-sidebar';
 import { EnhancedMusicPlayer } from '@/components/player/enhanced-music-player';
 import { SiteHeader } from '@/components/site-header';
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
@@ -19,9 +19,8 @@ import {
   Home,
   Library,
   ListMusic,
-  LucideIcon,
   Settings,
-  Sparkles,
+  Sparkles
 } from 'lucide-react';
 import { ThemeProvider } from 'next-themes';
 import * as React from 'react';
@@ -56,13 +55,7 @@ const MusicPlayerInset = React.memo(function MusicPlayerInset({
   );
 });
 
-const navigationData: {
-  navMain: {
-    title: string;
-    url: string;
-    icon: LucideIcon;
-  }[];
-} = {
+const navigationData: AppSidebarProps['data'] = {
   navMain: [
     {
       title: 'Home',
@@ -88,6 +81,7 @@ const navigationData: {
       title: 'Swipe',
       url: '/swipe',
       icon: Sparkles,
+      preload: false,
     },
     {
       title: 'Playlists',

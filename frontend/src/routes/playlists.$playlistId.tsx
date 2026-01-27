@@ -1,4 +1,5 @@
 import { PlaylistDetail } from '@/components/playlist';
+import { fetchPlaylist, fetchPlaylistRecommendations } from '@/services/playlist-hooks';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 
 function PlaylistDetailPage() {
@@ -18,7 +19,12 @@ function PlaylistDetailPage() {
 
   return <PlaylistDetail id={playlistId} onBack={handleBackToPlaylists} />;
 }
-
+const loader = async ({ params }: { params: { playlistId: string } }) => {
+  const { playlistId } = params;
+  const [playlist, recommendations] = await Promise.all([fetchPlaylist(playlistId), fetchPlaylistRecommendations(playlistId, 20)]);
+  return { playlist, recommendations };
+};
 export const Route = createFileRoute('/playlists/$playlistId')({
   component: PlaylistDetailPage,
+  loader,
 });

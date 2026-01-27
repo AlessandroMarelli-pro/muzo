@@ -1,4 +1,5 @@
 import { FavoriteList } from '@/components/favorites/favortite-list';
+import { fetchPlaylistByName, fetchPlaylistRecommendations } from '@/services/playlist-hooks';
 import { createFileRoute } from '@tanstack/react-router';
 
 function FavoritesPage() {
@@ -29,6 +30,13 @@ function FavoritesPage() {
   );
 }
 
+const loader = async () => {
+  const playlist = await fetchPlaylistByName('favorites');
+  const recommendations = await fetchPlaylistRecommendations(playlist.id, 20);
+  return { playlist, recommendations };
+}
+
 export const Route = createFileRoute('/favorites')({
   component: FavoritesPage,
+  loader,
 });

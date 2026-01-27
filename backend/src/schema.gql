@@ -375,7 +375,7 @@ type Mutation {
   createSavedFilter(input: CreateSavedFilterInput!): SavedFilter!
   deleteImageForTrack(trackId: ID!): DeleteImageResponse!
   deleteLibrary(id: ID!): Boolean!
-  deletePlaylist(id: ID!, userId: String!): Boolean!
+  deletePlaylist(id: ID!, userId: String!): Playlist!
   deleteSavedFilter(id: ID!): Boolean!
   dislikeTrack(trackId: ID!): Boolean!
   exportPlaylistToM3U(playlistId: ID!, userId: String!): String!

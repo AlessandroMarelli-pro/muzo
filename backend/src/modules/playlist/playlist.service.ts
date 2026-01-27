@@ -88,6 +88,14 @@ export class PlaylistService {
       }
     }
 
+    await this.prisma.playlistSorting.create({
+      data: {
+        playlistId: playlist.id,
+        sortingKey: 'position',
+        sortingDirection: 'asc',
+      },
+    });
+
     // Return the playlist with tracks
     return this.findPlaylistById(playlist.id);
   }

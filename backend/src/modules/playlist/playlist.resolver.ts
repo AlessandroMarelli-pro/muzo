@@ -112,13 +112,12 @@ export class PlaylistResolver {
     return this.playlistService.updatePlaylist(id, input);
   }
 
-  @Mutation(() => Boolean)
+  @Mutation(() => Playlist)
   async deletePlaylist(
     @Args('id', { type: () => ID }) id: string,
     @Args('userId') userId?: string,
   ) {
-    await this.playlistService.deletePlaylist(id);
-    return true;
+    return this.playlistService.deletePlaylist(id);
   }
 
   @Mutation(() => PlaylistTrack)

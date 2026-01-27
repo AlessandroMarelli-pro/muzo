@@ -4,6 +4,7 @@ import {
   useDeletePlaylist,
   useExportPlaylistToM3U,
 } from '@/services/playlist-hooks';
+import { useRouter } from '@tanstack/react-router';
 import { Eye, MoreHorizontal } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useState } from 'react';
@@ -57,14 +58,22 @@ export function PlaylistCard({
   const exportPlaylistMutation = useExportPlaylistToM3U('default');
   const [isHovered, setIsHovered] = useState(false);
 
-
+  const router = useRouter();
+  const refetch = () => {
+    router.invalidate();
+  };
   const handleDelete = async () => {
     if (!confirm(`Are you sure you want to delete "${playlist.name}"?`)) {
       return;
     }
 
     try {
-      await deletePlaylistMutation.mutateAsync(playlist.id);
+      await deletePlaylistMutation.mutateAsync(playlist.id).then(() => {
+        refetch();
+      }).catch((error) => {
+        console.error('Failed to delete playlist:', error);
+      });
+
     } catch (error) {
       console.error('Failed to delete playlist:', error);
     }

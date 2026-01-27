@@ -12,15 +12,26 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from '@/components/ui/sidebar';
-
+export interface NavMainItem {
+  title: string;
+  url: string;
+  icon: LucideIcon;
+  isActive?: boolean;
+  preload?: 'render' | 'intent' | false | 'viewport' | undefined;
+  items?: {
+    title: string;
+    url: string;
+  }[];
+}
+export interface AppSidebarProps {
+  data: {
+    navMain: NavMainItem[];
+  };
+}
 export function AppSidebar({
   data,
   ...props
-}: React.ComponentProps<typeof Sidebar> & {
-  data: {
-    navMain: { title: string; url: string; icon: LucideIcon }[];
-  };
-}) {
+}: React.ComponentProps<typeof Sidebar> & AppSidebarProps) {
   return (
     <Sidebar collapsible="icon" variant="inset" {...props}>
       <SidebarHeader>

@@ -3,8 +3,9 @@ import {
   useAudioPlayerActions,
   useAudioPlayerContext,
 } from '@/contexts/audio-player-context';
+import { Route } from '@/routes/favorites';
 import { AnalysisStatus } from '@/services/api-hooks';
-import { usePlaylistByName } from '@/services/playlist-hooks';
+import { useRouter } from '@tanstack/react-router';
 import { Music, Search, Sparkles } from 'lucide-react';
 import React, { useEffect } from 'react';
 import { NoData } from '../no-data';
@@ -34,7 +35,12 @@ export const FavoriteList: React.FC<TrackListProps> = ({
   searchQuery = '',
   onSearchChange,
 }) => {
-  const { playlist, isLoading, refetch } = usePlaylistByName('favorites');
+  const { playlist, recommendations } = Route.useLoaderData();
+  const router = useRouter();
+  const isLoading = false;
+  const refetch = () => {
+    router.invalidate();
+  };
 
   const tracks = playlist?.tracks?.map((track) => track.track) || [];
   const totalTracks = tracks?.length;
@@ -69,7 +75,7 @@ export const FavoriteList: React.FC<TrackListProps> = ({
   }
 
   return (
-    <div className="p-4  space-y-4 flex flex-col z-0">
+    <div className="p-6  space-y-4 flex flex-col z-0">
       {/* Header */}
 
       {/* Controls */}
@@ -82,7 +88,7 @@ export const FavoriteList: React.FC<TrackListProps> = ({
             placeholder="Search tracks..."
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full pl-10 pr-4 py-2 border  rounded-md "
           />
         </div>
 
@@ -111,6 +117,7 @@ export const FavoriteList: React.FC<TrackListProps> = ({
           <TrackRecommendations
             playlistId={playlist?.id ?? ''}
             onTrackAdded={addTrackToFavorite}
+            recommendations={recommendations}
           />
         </TabsContent>
       </Tabs>

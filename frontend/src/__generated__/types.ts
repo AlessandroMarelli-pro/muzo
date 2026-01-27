@@ -410,7 +410,7 @@ export type Mutation = {
   createSavedFilter: SavedFilter;
   deleteImageForTrack: DeleteImageResponse;
   deleteLibrary: Scalars['Boolean']['output'];
-  deletePlaylist: Scalars['Boolean']['output'];
+  deletePlaylist: Playlist;
   deleteSavedFilter: Scalars['Boolean']['output'];
   dislikeTrack: Scalars['Boolean']['output'];
   exportPlaylistToM3U: Scalars['String']['output'];
@@ -1612,7 +1612,7 @@ export type DeletePlaylistMutationVariables = Exact<{
 }>;
 
 
-export type DeletePlaylistMutation = { __typename?: 'Mutation', deletePlaylist: boolean };
+export type DeletePlaylistMutation = { __typename?: 'Mutation', deletePlaylist: { __typename?: 'Playlist', name: string } };
 
 export type ExportPlaylistToM3UMutationVariables = Exact<{
   playlistId: Scalars['ID']['input'];

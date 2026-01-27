@@ -34,11 +34,13 @@ import {
   useCurrentTrack,
 } from '@/contexts/audio-player-context';
 import { formatDuration } from '@/lib/utils';
+import { Route } from '@/routes/playlists.$playlistId';
 import {
   useAddTrackToQueue,
   useQueue,
   useRemoveTrackFromQueue,
 } from '@/services/queue-hooks';
+import { useRouter } from '@tanstack/react-router';
 import { Skeleton } from '../ui/skeleton';
 import { AddTrackDrawer } from './add-track-drawer';
 import { PlaylistDetailActions } from './playlist-detail-actions';
@@ -106,6 +108,9 @@ const PlaylistTitle = ({
   );
 };
 export function PlaylistDetail({ id, onBack }: PlaylistDetailProps) {
+  const { playlist, recommendations } = Route.useLoaderData();
+  const router = useRouter();
+  const loading = false;
   const { setCurrentTrack } = useCurrentTrack();
   const actions = useAudioPlayerActions();
   const { data: currentQueue = [] } = useQueue();
@@ -116,10 +121,6 @@ export function PlaylistDetail({ id, onBack }: PlaylistDetailProps) {
   const [isSettingAsQueue, setIsSettingAsQueue] = useState(false);
   const [isAddTrackDrawerOpen, setIsAddTrackDrawerOpen] = useState(false);
   const {
-    playlist,
-    loading,
-    error,
-    refetch,
     syncToYouTube,
     syncToTidal,
     syncToSpotify,
@@ -128,12 +129,19 @@ export function PlaylistDetail({ id, onBack }: PlaylistDetailProps) {
   const updatePlaylistSortingMutation = useUpdatePlaylistSorting('default');
   const addTrackToPlaylistMutation = useAddTrackToPlaylist();
 
+  const refetch = () => {
+    router.invalidate();
+  };
   const addTrackToPlaylist = async (trackId: string) => {
-    addTrackToPlaylistMutation.mutate({
+    return addTrackToPlaylistMutation.mutateAsync({
       playlistId: playlist?.id || '',
       input: {
         trackId,
       },
+    }).then(() => {
+      refetch();
+    }).catch((error) => {
+      console.error('Failed to add track to playlist:', error);
     });
   };
   const handleDelete = async () => {
@@ -212,6 +220,7 @@ export function PlaylistDetail({ id, onBack }: PlaylistDetailProps) {
         playlistId: playlist.id,
         input: { sortingKey, sortingDirection },
       });
+      refetch();
     } catch (error) {
       console.error('Failed to update playlist sorting:', error);
     }
@@ -224,17 +233,7 @@ export function PlaylistDetail({ id, onBack }: PlaylistDetailProps) {
   const currentSortingDirection =
     (playlist as any)?.sorting?.sortingDirection === 'desc' ? 'desc' : 'asc';
 
-  if (error) {
-    return (
-      <div className="text-center py-8">
-        <p className="text-red-500 mb-4">{error || 'Playlist not found'}</p>
-        <Button onClick={onBack}>
-          <ArrowLeft className="h-4 w-4" />
-          Back to Playlists
-        </Button>
-      </div>
-    );
-  }
+
 
   return (
     <div className="p-4 lg:p-6 space-y-8 flex flex-col z-0">
@@ -363,6 +362,7 @@ export function PlaylistDetail({ id, onBack }: PlaylistDetailProps) {
           <TrackRecommendations
             playlistId={playlist?.id || ''}
             onTrackAdded={() => refetch()}
+            recommendations={recommendations}
           />
         </TabsContent>
       </Tabs>

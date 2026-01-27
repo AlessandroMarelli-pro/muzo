@@ -274,17 +274,13 @@ export const LibraryDashboard: React.FC<LibraryDashboardProps> = ({
       {/* Active View Content */}
       <div className="min-h-[600px]">{renderActiveView()}</div>
 
-      <Card>
-        <CardContent className="p-6">
-          <div
-            className={'flex flex-wrap  justify-center gap-3  overflow-y-auto'}
-          >
-            {tracks?.map((track) => (
-              <MusicCard key={track.id} track={track} />
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+      <div
+        className={'flex flex-wrap  justify-center gap-3  overflow-y-auto'}
+      >
+        {tracks?.map((track) => (
+          <MusicCard key={track.id} track={track} />
+        ))}
+      </div>
 
       {/* Footer Actions */}
       <Card>
@@ -300,9 +296,8 @@ export const LibraryDashboard: React.FC<LibraryDashboardProps> = ({
               </Button>
               <Button variant="outline" size="sm" onClick={handleRefresh}>
                 <RefreshCw
-                  className={`h-4 w-4 mr-2 ${
-                    isRefreshing ? 'animate-spin' : ''
-                  }`}
+                  className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''
+                    }`}
                 />
                 Refresh All
               </Button>

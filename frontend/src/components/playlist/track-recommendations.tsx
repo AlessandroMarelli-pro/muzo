@@ -1,17 +1,12 @@
 import { TrackRecommendation } from '@/__generated__/types';
-import { Button } from '@/components/ui/button';
 import {
   Card,
-  CardContent,
-  CardHeader,
-  CardTitle
+  CardContent
 } from '@/components/ui/card';
 import {
-  useAddTrackToPlaylist,
-  usePlaylistRecommendations,
+  useAddTrackToPlaylist
 } from '@/services/playlist-hooks';
-import { Sparkles } from 'lucide-react';
-import { useEffect } from 'react';
+import { useRouter } from '@tanstack/react-router';
 import {
   TrackRecommendationsCard,
   TrackRecommendationsCardSkeleton,
@@ -20,6 +15,7 @@ import {
 interface TrackRecommendationsProps {
   playlistId: string;
   onTrackAdded: (trackId?: string) => void;
+  recommendations: TrackRecommendation[];
 }
 
 export const TrackRecommandationsComponent = ({
@@ -59,27 +55,21 @@ export const TrackRecommandationsComponent = ({
 export function TrackRecommendations({
   playlistId,
   onTrackAdded,
+  recommendations,
 }: TrackRecommendationsProps) {
-  const {
-    data: recommendations = [],
-    refetch,
-    isLoading: loading,
-    error,
-  } = usePlaylistRecommendations(playlistId, 20);
 
   const addTrackMutation = useAddTrackToPlaylist('default');
-
-  useEffect(() => {
-    refetch();
-  }, [playlistId]);
-
+  const router = useRouter();
+  const refetchRecommendations = () => {
+    router.invalidate();
+  }
   const handleAddTrack = async (trackId: string) => {
     try {
       await addTrackMutation.mutateAsync({ playlistId, input: { trackId } });
       onTrackAdded(trackId);
 
       // Remove the added track from recommendations
-      refetch();
+      refetchRecommendations();
     } catch (error) {
       console.error('Failed to add track:', error);
     } finally {
@@ -88,32 +78,12 @@ export function TrackRecommendations({
 
 
 
-  if (error) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5" />
-            Recommendations
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center py-8">
-            <p className="text-red-500 mb-4">{error?.message}</p>
-            <Button onClick={() => refetch()}>Retry</Button>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-
 
   return (
     <TrackRecommandationsComponent
       recommendations={recommendations}
       onAddTrack={handleAddTrack}
-      isLoading={loading || recommendations.length === 0}
+      isLoading={false}
     />
   );
 }

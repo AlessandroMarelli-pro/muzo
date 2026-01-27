@@ -87,9 +87,9 @@ export interface FileRoutesByFullPath {
   '/libraries/$libraryId': typeof LibrariesLibraryIdRoute
   '/playlists/$playlistId': typeof PlaylistsPlaylistIdRoute
   '/research/{-$trackId}': typeof ResearchChar123TrackIdChar125Route
-  '/libraries': typeof LibrariesIndexRoute
-  '/playlists': typeof PlaylistsIndexRoute
-  '/swipe': typeof SwipeIndexRoute
+  '/libraries/': typeof LibrariesIndexRoute
+  '/playlists/': typeof PlaylistsIndexRoute
+  '/swipe/': typeof SwipeIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -129,9 +129,9 @@ export interface FileRouteTypes {
     | '/libraries/$libraryId'
     | '/playlists/$playlistId'
     | '/research/{-$trackId}'
-    | '/libraries'
-    | '/playlists'
-    | '/swipe'
+    | '/libraries/'
+    | '/playlists/'
+    | '/swipe/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -214,21 +214,21 @@ declare module '@tanstack/react-router' {
     '/swipe/': {
       id: '/swipe/'
       path: '/swipe'
-      fullPath: '/swipe'
+      fullPath: '/swipe/'
       preLoaderRoute: typeof SwipeIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/playlists/': {
       id: '/playlists/'
       path: '/playlists'
-      fullPath: '/playlists'
+      fullPath: '/playlists/'
       preLoaderRoute: typeof PlaylistsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/libraries/': {
       id: '/libraries/'
       path: '/libraries'
-      fullPath: '/libraries'
+      fullPath: '/libraries/'
       preLoaderRoute: typeof LibrariesIndexRouteImport
       parentRoute: typeof rootRouteImport
     }

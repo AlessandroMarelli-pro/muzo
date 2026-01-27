@@ -27,6 +27,7 @@ export function NavMain({
     url: string;
     icon: LucideIcon;
     isActive?: boolean;
+    preload?: 'render' | 'intent' | false | 'viewport' | undefined;
     items?: {
       title: string;
       url: string;
@@ -55,7 +56,7 @@ export function NavMain({
                   tooltip={item.title}
                   isActive={isActive}
                 >
-                  <Link to={item.url} className="flex items-center gap-2" onClick={() => handleNavigate(item.url)}
+                  <Link to={item.url} className="flex items-center gap-2" onClick={() => handleNavigate(item.url)} preload={item.preload}
                   >
                     <Icon className="h-4 w-4" />
                     {item.title}

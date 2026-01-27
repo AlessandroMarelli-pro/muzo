@@ -5,7 +5,7 @@ import {
   PlaylistItem,
   PlaylistTrack,
   TrackRecommendation,
-  UpdatePlaylistInput,
+  UpdatePlaylistInput
 } from '@/__generated__/types';
 import { capitalizeEveryWord } from '@/lib/utils';
 import { gql, graffleClient } from '@/services/graffle-client';
@@ -194,7 +194,9 @@ const UPDATE_PLAYLIST = gql`
 
 const DELETE_PLAYLIST = gql`
   mutation DeletePlaylist($id: ID!, $userId: String!) {
-    deletePlaylist(id: $id, userId: $userId)
+    deletePlaylist(id: $id, userId: $userId){
+      name
+    }
   }
 `;
 
@@ -429,7 +431,7 @@ export const fetchPlaylists = async (
   return data.playlists;
 };
 
-const fetchPlaylist = async (
+export const fetchPlaylist = async (
   id: string,
   userId: string = 'default',
 ): Promise<Playlist> => {
@@ -440,7 +442,7 @@ const fetchPlaylist = async (
   return data.playlist;
 };
 
-const fetchPlaylistByName = async (
+export const fetchPlaylistByName = async (
   name: string,
   userId: string = 'default',
 ): Promise<Playlist> => {
@@ -476,8 +478,8 @@ const updatePlaylist = async (
 const deletePlaylist = async (
   id: string,
   userId: string = 'default',
-): Promise<boolean> => {
-  const data = await graffleClient.request<{ deletePlaylist: boolean }>(
+): Promise<Playlist> => {
+  const data = await graffleClient.request<{ deletePlaylist: Playlist }>(
     DELETE_PLAYLIST,
     { id, userId },
   );
@@ -615,7 +617,7 @@ const removeTrackFromPlaylist = async (
   return data.removeTrackFromPlaylist;
 };
 
-const fetchPlaylistRecommendations = async (
+export const fetchPlaylistRecommendations = async (
   playlistId: string,
   limit = 20,
   excludeTrackIds?: string[],
@@ -769,22 +771,12 @@ export function usePlaylists(userId: string = 'default', search?: string, verify
 export function usePlaylist(id: string, userId: string = 'default') {
   const queryClient = useQueryClient();
 
-  const {
-    data: playlist,
-    isLoading: loading,
-    error,
-    refetch,
-  } = useQuery({
-    queryKey: ['playlist', id, userId],
-    queryFn: () => fetchPlaylist(id, userId),
-    enabled: !!id,
-  });
 
   const updatePlaylistMutation = useMutation({
     mutationFn: (input: UpdatePlaylistInput) =>
       updatePlaylist(id, input, userId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.playlists(userId, undefined, undefined) });
+      queryClient.invalidateQueries({ queryKey: ['playlists'] });
       queryClient.invalidateQueries({ queryKey: ['playlist', id] });
     },
   });
@@ -792,7 +784,7 @@ export function usePlaylist(id: string, userId: string = 'default') {
   const syncToYouTubeMutation = useMutation({
     mutationFn: () => syncPlaylistToYouTube(id, userId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.playlists(userId, undefined, undefined) });
+      queryClient.invalidateQueries({ queryKey: ['playlists'] });
       queryClient.invalidateQueries({ queryKey: ['playlist', id] });
     },
   });
@@ -800,7 +792,7 @@ export function usePlaylist(id: string, userId: string = 'default') {
   const syncToTidalMutation = useMutation({
     mutationFn: () => syncPlaylistToTidal(id, userId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.playlists(userId, undefined, undefined) });
+      queryClient.invalidateQueries({ queryKey: ['playlists'] });
       queryClient.invalidateQueries({ queryKey: ['playlist', id] });
     },
   });
@@ -808,16 +800,12 @@ export function usePlaylist(id: string, userId: string = 'default') {
   const syncToSpotifyMutation = useMutation({
     mutationFn: () => syncPlaylistToSpotify(id, userId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.playlists(userId, undefined, undefined) });
+      queryClient.invalidateQueries({ queryKey: ['playlists'] });
       queryClient.invalidateQueries({ queryKey: ['playlist', id] });
     },
   });
 
   return {
-    playlist,
-    loading,
-    error: error?.message,
-    refetch,
     updatePlaylist: updatePlaylistMutation.mutateAsync,
     syncToYouTube: syncToYouTubeMutation.mutateAsync,
     isSyncingToYouTube: syncToYouTubeMutation.isPending,
@@ -915,9 +903,12 @@ export function useCreatePlaylist() {
 
   const createPlaylistMutation = useMutation({
     mutationFn: createPlaylist,
-    onSuccess: () => {
+    onSuccess: (data) => {
       console.log('invalidating playlists');
       queryClient.invalidateQueries({ queryKey: queryKeys.playlists('default', undefined, undefined) });
+      toast.success(`Playlist created successfully`, {
+        description: data.name,
+      });
     },
   });
   return {
@@ -930,8 +921,21 @@ export function useDeletePlaylist(userId: string = 'default') {
 
   return useMutation({
     mutationFn: (id: string) => deletePlaylist(id, userId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.playlists(userId, undefined, undefined) });
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['playlists'] });
+      toast.success(`Playlist deleted successfully`, {
+        description: data.name,
+      });
+    },
+    onError: (error: any) => {
+      const errorMessage =
+        error?.response?.errors?.[0]?.message ||
+        error?.message ||
+        'Failed to delete playlist';
+      console.error(errorMessage);
+      toast.error(errorMessage, {
+        duration: 3000,
+      });
     },
   });
 }
@@ -954,8 +958,8 @@ export function useAddTrackToPlaylist(userId: string = 'default') {
       input: AddTrackToPlaylistInput;
     }) => addTrackToPlaylist(playlistId, input, userId),
     onSuccess: (data, { playlistId }) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.playlists(userId, undefined, undefined) });
-      queryClient.invalidateQueries({ queryKey: ['playlist', playlistId] });
+      queryClient.invalidateQueries({ queryKey: ['playlists'] });
+      queryClient.invalidateQueries({ queryKey: ['playlist', playlistId, userId] });
       queryClient.invalidateQueries({ queryKey: ['playlistRecommendations', playlistId] });
       const trackName = ` ${data.track.title} by ${data.track.artist}`;
       toast.success(`Track added to playlist`, {
@@ -987,7 +991,7 @@ export function useRemoveTrackFromPlaylist(userId: string = 'default') {
       trackId: string;
     }) => removeTrackFromPlaylist(playlistId, trackId, userId),
     onSuccess: (_, { playlistId }) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.playlists(userId, undefined, undefined) });
+      queryClient.invalidateQueries({ queryKey: ['playlists'] });
       queryClient.invalidateQueries({ queryKey: ['playlist', playlistId] });
     },
   });
@@ -1050,7 +1054,7 @@ export function useUpdatePlaylistSorting(userId: string = 'default') {
       input: UpdatePlaylistSortingInput;
     }) => updatePlaylistSorting(playlistId, input, userId),
     onSuccess: (_, { playlistId }) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.playlists(userId, undefined, undefined) });
+      queryClient.invalidateQueries({ queryKey: ['playlists'] });
       queryClient.invalidateQueries({ queryKey: ['playlist', playlistId] });
     },
     onError: (error: any) => {
