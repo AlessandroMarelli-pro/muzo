@@ -230,7 +230,7 @@ export function DetailedTrackCard({ track, refetch, isLoading }: DetailedTrackCa
         {/* Header Section */}
         <div className="flex items-start gap-6">
           {/* Album Art */}
-          <div className="relative flex-shrink-0">
+          <div className="relative ">
             <div className="w-40 h-40 rounded-full overflow-hidden bg-muted flex items-center justify-center shadow-md hover:scale-105  duration-300">
               <img
                 src={`http://localhost:3000/api/images/serve?imagePath=${track.imagePath}`}

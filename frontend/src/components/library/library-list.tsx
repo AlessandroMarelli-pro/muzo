@@ -43,7 +43,11 @@ export const LibraryList: React.FC<LibraryListProps> = ({
   }
 
 
-
+  const handleScanLibrary = (e: React.MouseEvent<HTMLButtonElement>, libraryId: string) => {
+    e.stopPropagation();
+    e.preventDefault();
+    onScanLibrary(libraryId);
+  };
   return (
     <div className="p-6  flex flex-col z-0 gap-4">
       <div className="flex items-center justify-between">
@@ -71,7 +75,7 @@ export const LibraryList: React.FC<LibraryListProps> = ({
           <LibraryCard
             key={library.id}
             library={library}
-            onScan={() => onScanLibrary(library.id)}
+            onScan={handleScanLibrary}
             onView={() => onViewLibrary(library.id)}
             onPlay={() => onPlayLibrary(library.id)}
             isScanning={isScanning}

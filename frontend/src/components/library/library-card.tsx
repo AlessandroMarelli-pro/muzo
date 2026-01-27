@@ -16,7 +16,7 @@ import React, { useEffect, useState } from 'react';
 
 interface LibraryCardProps {
   library: MusicLibrary;
-  onScan: (libraryId: string) => void;
+  onScan: (e: React.MouseEvent<HTMLButtonElement>, libraryId: string) => void;
   onView: (libraryId: string) => void;
   onPlay: (libraryId: string) => void;
   isScanning?: boolean;
@@ -78,6 +78,16 @@ export const LibraryCard: React.FC<LibraryCardProps> = ({
     e.preventDefault();
     onDelete(e, library.id);
   }
+  const handleScan = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation();
+    e.preventDefault();
+    onScan(e, library.id);
+  }
+  const handlePlay = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation();
+    e.preventDefault();
+    onPlay(library.id);
+  }
   return (
 
     <Card className="hover:shadow-lg  cursor-pointer hover:scale-103 transition-all min-w-sm" onClick={() => onView(library.id)}>
@@ -130,7 +140,7 @@ export const LibraryCard: React.FC<LibraryCardProps> = ({
             variant="outline"
             className="w-full"
             size="sm"
-            onClick={() => onScan(library.id)}
+            onClick={handleScan}
             disabled={
               scanStatus === 'SCANNING' ||
               scanStatus === 'ANALYZING' ||
@@ -144,7 +154,7 @@ export const LibraryCard: React.FC<LibraryCardProps> = ({
             variant="outline"
             size="sm"
             className="w-full"
-            onClick={() => onPlay(library.id)}
+            onClick={handlePlay}
           >
             <Play className="h-4 w-4" /> Play
           </Button>

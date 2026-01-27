@@ -124,8 +124,10 @@ export const TrackRecommendationsCard = ({
       {/* Track Info */}
       <div className="flex-1 min-w-0">
         <div className="flex text-foreground truncate capitalize gap-2">
-          {track?.artist || 'Unknown Artist'} -{' '}
-          {track?.title || 'Unknown Track'}{' '}
+          <span className="max-w-md truncate">
+            {track?.artist || 'Unknown Artist'} -{' '}
+            {track?.title || 'Unknown Track'}{' '}
+          </span>
           <Badge variant="outline" className="text-xs border-none">
             {track.tempo} BPM
           </Badge>

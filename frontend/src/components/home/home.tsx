@@ -100,17 +100,18 @@ const StatsCard = ({
   return (
     <Card className="flex flex-col gap-2 w-full  rounded-xl border-none bg-card text-card-foreground shadow-2xl @container/card">
       <CardHeader>
-        <CardDescription>{title}</CardDescription>
-        <CardTitle className="text-2xl @[250px]/card:text-3xl font-normal tracking-tight">
+        <CardTitle className="text-xl @[250px]/card:text-3xl font-normal tracking-tight flex flex-col gap-2 items-center">
           <CountUp
             to={value}
             from={isLoaded === 'true' ? value : Math.floor(value * 0.7)}
             direction="up"
             delay={0}
             duration={1}
-            className="text-2xl @[250px]/card:text-3xl font-normal tracking-tight"
+            className=" font-normal tracking-tight text-foreground"
             isDuration={isDuration}
           />
+          <CardDescription className="text-2xl @[250px]/card:text-4xl text-normal font-semibold" >{title}</CardDescription>
+
         </CardTitle>
       </CardHeader>
     </Card>
@@ -170,31 +171,30 @@ export function Home() {
   const topGenres = metrics?.topGenres;
   return (
     <div className="p-6 space-y-6">
-      <h2 className="text-lg  text-foreground">Library Statistics</h2>
       <div className="flex flex-row gap-6 *:data-[slot=card]:shadow   *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card ">
         <StatsCard
-          title="Total Tracks"
+          title="Tracks"
           value={totalTracks || 0}
           isLoading={isLoading}
         />
         <StatsCard
-          title="Total Plays"
+          title="Plays"
           value={listeningStats?.totalPlays || 0}
           isLoading={isLoading}
         />
         <StatsCard
-          title="Total Play Time"
+          title="Played Time"
           value={listeningStats?.totalPlayTime || 0}
           isLoading={isLoading}
           isDuration={true}
         />
         <StatsCard
-          title="Favorite Count"
+          title="Favorites"
           value={listeningStats?.favoriteCount || 0}
           isLoading={isLoading}
         />
         <StatsCard
-          title="Total Artists"
+          title="Artists"
           value={totalArtists || 0}
           isLoading={isLoading}
         />
