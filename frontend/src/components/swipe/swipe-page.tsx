@@ -119,20 +119,15 @@ export const SwipePage = React.memo(() => {
     // Start mutation asynchronously (don't wait)
     const mutationPromise = likeMutation.mutateAsync(track.id);
 
-    // Wait for animation to complete (400ms)
-    const animationPromise = new Promise<void>((resolve) => {
-      setTimeout(() => resolve(), 400);
-    });
-    refetch();
-
     // Wait for both animation and mutation to complete
-    Promise.all([mutationPromise, animationPromise])
+    Promise.all([mutationPromise])
       .then(() => {
         if (wasPlaying) {
           setShouldAutoPlay(true);
         }
         // Reset animation and trigger refetch when both are complete
         setIsAnimating(false);
+        refetch();
       })
       .catch((error) => {
         console.error('Error liking track:', error);
@@ -150,19 +145,16 @@ export const SwipePage = React.memo(() => {
     // Start mutation asynchronously (don't wait)
     const mutationPromise = dislikeMutation.mutateAsync(track.id);
 
-    // Wait for animation to complete (400ms)
-    const animationPromise = new Promise<void>((resolve) => {
-      setTimeout(() => resolve(), 400);
-    });
-    refetch();
+
 
     // Wait for both animation and mutation to complete
-    Promise.all([mutationPromise, animationPromise])
+    mutationPromise
       .then(() => {
         if (wasPlaying) {
           setShouldAutoPlay(true);
         }
         setIsAnimating(false);
+        refetch();
 
       })
       .catch((error) => {
@@ -181,20 +173,14 @@ export const SwipePage = React.memo(() => {
     // Start mutation asynchronously (don't wait)
     const mutationPromise = bangerMutation.mutateAsync(track.id);
 
-    // Wait for animation to complete (400ms)
-    const animationPromise = new Promise<void>((resolve) => {
-      setTimeout(() => resolve(), 400);
-    });
-    refetch();
-
     // Wait for both animation and mutation to complete
-    Promise.all([mutationPromise, animationPromise])
+    mutationPromise
       .then(() => {
         if (wasPlaying) {
           setShouldAutoPlay(true);
         }
         setIsAnimating(false);
-
+        refetch();
       })
       .catch((error) => {
         console.error('Error banger track:', error);

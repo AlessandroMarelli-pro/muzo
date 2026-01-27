@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { queryOptions, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { parse } from 'graphql';
 import type {
   CreateLibraryInput,
@@ -69,6 +69,31 @@ export const queryKeys = {
   trackRecommendations: (id?: string, criteria?: string) =>
     ['tracks', 'recommendations', { id, criteria }] as const,
 };
+
+/** Query options for loaders (ensureQueryData dedupes preload + load). */
+export const recentlyPlayedQueryOptions = (limit = 20) =>
+  queryOptions({
+    queryKey: queryKeys.recentlyPlayed(limit),
+    queryFn: () => fetchRecentlyPlayed(limit),
+  });
+
+export const librariesQueryOptions = () =>
+  queryOptions({
+    queryKey: queryKeys.libraries,
+    queryFn: fetchLibraries,
+  });
+
+export const randomTrackQueryOptions = (id?: string, filterLiked?: boolean) =>
+  queryOptions({
+    queryKey: queryKeys.randomTrack(id, filterLiked),
+    queryFn: () => fetchRandomTrack(id, filterLiked),
+  });
+
+export const trackRecommendationsQueryOptions = (id?: string, criteria?: string) =>
+  queryOptions({
+    queryKey: queryKeys.trackRecommendations(id, criteria),
+    queryFn: () => fetchTrackRecommendations(id, criteria),
+  });
 
 export const fetchLibraries = async () => {
   const response = await graffleClient.request<{

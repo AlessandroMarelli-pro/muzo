@@ -1,5 +1,5 @@
 import { PlaylistList } from '@/components/playlist/playlist-list';
-import { fetchPlaylists } from '@/services/playlist-hooks';
+import { playlistsQueryOptions } from '@/services/playlist-hooks';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 
 const IMAGE_SERVE_BASE = 'http://localhost:3000/api/images/serve';
@@ -33,8 +33,10 @@ function PlaylistsPage() {
 
 export const Route = createFileRoute('/playlists/')({
   component: PlaylistsPage,
-  loader: async () => {
-    const playlists = await fetchPlaylists('default');
+  loader: async ({ context }) => {
+    const playlists = await context.queryClient.ensureQueryData(
+      playlistsQueryOptions('default'),
+    );
     prefetchPlaylistImages(playlists);
     return playlists;
   },

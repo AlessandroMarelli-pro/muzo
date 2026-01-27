@@ -9,7 +9,7 @@ import {
 } from '@/__generated__/types';
 import { capitalizeEveryWord } from '@/lib/utils';
 import { gql, graffleClient } from '@/services/graffle-client';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { queryOptions, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
 export const simpleMusicTrackFragment = gql`
@@ -416,7 +416,34 @@ const UPDATE_PLAYLIST_SORTING = gql`
 
 const queryKeys = {
   playlists: (userId: string = 'default', search?: string, verifyTrackId?: string) => ['playlists', userId, search, verifyTrackId] as const,
-}
+};
+
+/** Query options for use in loaders with queryClient.ensureQueryData (dedupes preload + load). */
+export const playlistsQueryOptions = (
+  userId: string = 'default',
+  search?: string,
+  verifyTrackId?: string,
+) =>
+  queryOptions({
+    queryKey: queryKeys.playlists(userId, search, verifyTrackId),
+    queryFn: () => fetchPlaylists(userId, search, verifyTrackId),
+  });
+
+export const playlistByNameQueryOptions = (name: string) =>
+  queryOptions({
+    queryKey: ['playlistByName', name] as const,
+    queryFn: () => fetchPlaylistByName(name),
+  });
+
+export const playlistRecommendationsQueryOptions = (
+  playlistId: string,
+  limit = 20,
+  excludeTrackIds?: string[],
+) =>
+  queryOptions({
+    queryKey: ['playlistRecommendations', playlistId, limit, excludeTrackIds] as const,
+    queryFn: () => fetchPlaylistRecommendations(playlistId, limit, excludeTrackIds),
+  });
 
 // API functions
 export const fetchPlaylists = async (

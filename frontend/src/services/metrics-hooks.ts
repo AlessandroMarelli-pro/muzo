@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { queryOptions, useQuery } from '@tanstack/react-query';
 import { gql, graffleClient } from '../services/graffle-client';
 
 // Define the metrics types based on the GraphQL schema
@@ -67,6 +67,13 @@ export interface LibraryMetrics {
 export const metricsQueryKeys = {
   libraryMetrics: ['libraryMetrics'] as const,
 };
+
+/** Query options for loaders (ensureQueryData dedupes preload + load). */
+export const libraryMetricsQueryOptions = () =>
+  queryOptions({
+    queryKey: metricsQueryKeys.libraryMetrics,
+    queryFn: fetchLibraryMetrics,
+  });
 
 export const fetchLibraryMetrics = async (): Promise<LibraryMetrics> => {
   const response = await graffleClient.request<{

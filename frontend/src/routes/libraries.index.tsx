@@ -1,7 +1,7 @@
 import { CreateLibraryDialog } from '@/components/library/create-library-dialog';
 import { LibraryList } from '@/components/library/library-list';
 import { useScanSessionContext } from '@/contexts/scan-session.context';
-import { fetchLibraries, useDeleteLibrary } from '@/services/api-hooks';
+import { librariesQueryOptions, useDeleteLibrary } from '@/services/api-hooks';
 import { useScanLibrary } from '@/services/rest-client';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
@@ -73,5 +73,7 @@ function LibrariesPage() {
 
 export const Route = createFileRoute('/libraries/')({
   component: LibrariesPage,
-  loader: fetchLibraries,
+  loader: async ({ context }) =>
+    context.queryClient.ensureQueryData(librariesQueryOptions()),
+  preload: true,
 });

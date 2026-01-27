@@ -9,9 +9,11 @@ import {
 import { FilterProvider } from '@/contexts/filter-context';
 import { ScanSessionProvider } from '@/contexts/scan-session.context';
 import { cn } from '@/lib/utils';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { queryClient } from '@/query-client';
+import type { QueryClient } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
-import { createRootRoute, Outlet } from '@tanstack/react-router';
+import { createRootRouteWithContext, Outlet } from '@tanstack/react-router';
 import {
   BookHeadphones,
   Brain,
@@ -25,15 +27,9 @@ import {
 import { ThemeProvider } from 'next-themes';
 import * as React from 'react';
 
-// Create a QueryClient instance
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: false,
-      refetchOnWindowFocus: false,
-    },
-  },
-});
+interface RouterContext {
+  queryClient: QueryClient;
+}
 
 // Music Player Inset Component - similar to SidebarInset
 const MusicPlayerInset = React.memo(function MusicPlayerInset({
@@ -76,6 +72,7 @@ const navigationData: AppSidebarProps['data'] = {
       title: 'Research',
       url: '/research',
       icon: Brain,
+      preload: false,
     },
     {
       title: 'Swipe',
@@ -147,6 +144,6 @@ const RootComponent = React.memo(function RootComponent() {
   );
 });
 
-export const Route = createRootRoute({
+export const Route = createRootRouteWithContext<RouterContext>()({
   component: RootComponent,
 });

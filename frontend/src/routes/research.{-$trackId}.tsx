@@ -1,5 +1,9 @@
 import { Research } from '@/components/research/research';
-import { fetchRandomTrack, fetchTrackRecommendations } from '@/services/api-hooks';
+import {
+  fetchRandomTrack,
+  randomTrackQueryOptions,
+  trackRecommendationsQueryOptions,
+} from '@/services/api-hooks';
 import { createFileRoute, redirect } from '@tanstack/react-router';
 import { z } from 'zod';
 
@@ -28,22 +32,18 @@ export const Route = createFileRoute('/research/{-$trackId}')({
       });
     }
   },
-  // Track both trackId (from params) and boost (from search) in loaderDeps
-  loaderDeps: ({ search: { boost } }) => ({
-    boost,
+  loaderDeps: ({ search }) => ({
+    boost: search.boost,
   }),
-  loader: async ({ params, deps, }) => {
+  loader: async ({ params, deps, context }) => {
     const { trackId } = params;
-    const criteria = deps.boost || undefined;
+    const criteria = deps.boost ?? undefined;
 
-    // Only fetch randomTrack if trackId changed (when cause is 'enter' or trackId in deps changed)
-    // If cause is 'stay', it means only search params changed, so we can skip fetching the track
-    let randomTrack = await fetchRandomTrack(trackId);
-
-    // Always fetch recommendations with current boost criteria
-    const trackRecommendations = await fetchTrackRecommendations(
-      randomTrack.id,
-      criteria
+    const randomTrack = await context.queryClient.ensureQueryData(
+      randomTrackQueryOptions(trackId),
+    );
+    const trackRecommendations = await context.queryClient.ensureQueryData(
+      trackRecommendationsQueryOptions(randomTrack.id, criteria),
     );
 
     return { randomTrack, trackRecommendations, isLoading: false };

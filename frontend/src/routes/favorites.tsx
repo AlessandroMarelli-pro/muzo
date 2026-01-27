@@ -1,5 +1,8 @@
 import { FavoriteList } from '@/components/favorites/favortite-list';
-import { fetchPlaylistByName, fetchPlaylistRecommendations } from '@/services/playlist-hooks';
+import {
+  playlistByNameQueryOptions,
+  playlistRecommendationsQueryOptions,
+} from '@/services/playlist-hooks';
 import { createFileRoute } from '@tanstack/react-router';
 
 function FavoritesPage() {
@@ -30,13 +33,16 @@ function FavoritesPage() {
   );
 }
 
-const loader = async () => {
-  const playlist = await fetchPlaylistByName('favorites');
-  const recommendations = await fetchPlaylistRecommendations(playlist.id, 20);
-  return { playlist, recommendations };
-}
-
 export const Route = createFileRoute('/favorites')({
   component: FavoritesPage,
-  loader,
+  loader: async ({ context }) => {
+    const playlist = await context.queryClient.ensureQueryData(
+      playlistByNameQueryOptions('favorites'),
+    );
+    const recommendations = await context.queryClient.ensureQueryData(
+      playlistRecommendationsQueryOptions(playlist.id, 20),
+    );
+    return { playlist, recommendations };
+  },
+  preload: true,
 });
