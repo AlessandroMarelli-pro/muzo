@@ -670,7 +670,7 @@ export class AudioScanProcessor extends WorkerHost {
 
     // Update duration if available
     if (analysisResult.audio_technical.duration_seconds) {
-      updateData.duration = analysisResult.audio_technical.duration_seconds;
+      updateData.duration = Math.round(analysisResult.audio_technical.duration_seconds);
     }
 
     // Update audio format details

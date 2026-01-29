@@ -99,18 +99,18 @@ const StatsCard = ({
   if (isLoading) return <StatsCardSkeleton />;
   return (
     <Card className="flex flex-col gap-2 w-full  rounded-xl border-none bg-card text-card-foreground shadow-2xl @container/card">
-      <CardHeader>
-        <CardTitle className="text-xl @[250px]/card:text-3xl font-normal tracking-tight flex flex-col gap-2 items-center">
+      <CardHeader className="px-1">
+        <CardTitle className="text-3xl @[250px]/card:text-3xl font-normal tracking-tight flex flex-col gap-2 items-center w-full text-center ">
           <CountUp
             to={value}
             from={isLoaded === 'true' ? value : Math.floor(value * 0.7)}
             direction="up"
             delay={0}
             duration={1}
-            className=" font-normal tracking-tight text-foreground"
+            className=" font-normal tracking-tight text-foreground w-full max-w-sm"
             isDuration={isDuration}
           />
-          <CardDescription className="text-2xl @[250px]/card:text-4xl text-normal font-semibold" >{title}</CardDescription>
+          <CardDescription className="text-lg @[250px]/card:text-lg text-normal w-full " >{title}</CardDescription>
 
         </CardTitle>
       </CardHeader>
@@ -142,13 +142,13 @@ const TopGenres = ({
 }) => {
   if (isLoading) return <TopGenresSkeleton />;
   return (
-    <div className="flex flex-row gap-6 items-center flex-wrap">
+    <div className="flex flex-row gap-6 justify-between flex-wrap">
       {genres?.map((genre, index) => (
         <Badge
           key={`${genre.genre}-${index}`}
           variant="secondary"
-          className=" h-6 shadow-xs capitalize "
-          size="xs"
+          className=" h-6 shadow-xs capitalize p-3 "
+          size="sm"
         >
           <strong>{genre.genre}:</strong> {genre.trackCount}
         </Badge>
@@ -170,7 +170,7 @@ export function Home() {
 
   const topGenres = metrics?.topGenres;
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 space-y-6 flex flex-col gap-6 justify-between">
       <div className="flex flex-row gap-6 *:data-[slot=card]:shadow   *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card ">
         <StatsCard
           title="Tracks"
@@ -199,12 +199,9 @@ export function Home() {
           isLoading={isLoading}
         />
       </div>
-      <div className="flex flex-row gap-6 items-center flex-wrap">
-        <h2 className="text-lg  text-foreground">Top Genres</h2>
-        <TopGenres genres={topGenres || []} isLoading={isLoading} />
-      </div>
+      <TopGenres genres={topGenres || []} isLoading={isLoading} />
+
       <div className="flex flex-col gap-6">
-        <h2 className="text-lg  text-foreground">Recently Played</h2>
 
         <HorizontalMusicCardList
           tracks={recentlyPlayed || []}

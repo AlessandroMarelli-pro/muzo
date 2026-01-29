@@ -5,9 +5,10 @@ import {
   SheetContent,
   SheetDescription,
   SheetHeader,
-  SheetTitle,
+  SheetTitle
 } from '@/components/ui/sheet';
 import { useQueue } from '@/services/queue-hooks';
+import { MUSIC_PLAYER_HEIGHT } from '../player/enhanced-music-player';
 import { QueueList } from './queue-list';
 
 interface QueueDrawerProps {
@@ -22,8 +23,13 @@ export function QueueDrawer({ open, onOpenChange }: QueueDrawerProps) {
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="right"
-        className="w-full sm:max-w-lg p-0 z-[9998]"
+        className="w-full sm:max-w-lg p-0  "
         onInteractOutside={(e) => e.preventDefault()}
+        style={
+          {
+            '--music-player-height': MUSIC_PLAYER_HEIGHT,
+          } as React.CSSProperties
+        }
       >
         <SheetHeader className="border-b px-6 py-4">
           <SheetTitle>
@@ -38,7 +44,7 @@ export function QueueDrawer({ open, onOpenChange }: QueueDrawerProps) {
             Playback queue with drag-and-drop reordering
           </SheetDescription>
         </SheetHeader>
-        <div className="h-[calc(100vh-5rem)] overflow-y-auto p-4">
+        <div className="pb-38 h-full overflow-y-auto p-4">
           <QueueList />
         </div>
       </SheetContent>

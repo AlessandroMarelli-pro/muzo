@@ -67,7 +67,7 @@ export const ScanProgress = React.memo(() => {
     return (
         <div className="flex flex-row gap-2 text-xs max-w-md w-full">
             {!scanProgress && lastScanCompletedAt && duration && (
-                <div className="flex items-center gap-2 w-full">
+                <div className="flex items-center justify-end gap-2 w-full">
                     <span>Last scan completed: {formatDate(new Date(lastScanCompletedAt), 'MM/dd/yyyy HH:mm')} in {formatDuration(duration)}</span>
                 </div>
             )}

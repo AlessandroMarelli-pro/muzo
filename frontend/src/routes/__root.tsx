@@ -128,12 +128,13 @@ const RootComponent = React.memo(function RootComponent() {
 
                 </SidebarInset>
 
-                {/* Enhanced Music Player - fixed at bottom, outside SidebarInset */}
-                <EnhancedMusicPlayer
-                  onToggleShuffle={handleToggleShuffle}
-                  showVisualizations={true}
-                />
+
               </SidebarProvider>
+              {/* Enhanced Music Player - fixed at bottom, outside SidebarInset */}
+              <EnhancedMusicPlayer
+                onToggleShuffle={handleToggleShuffle}
+                showVisualizations={true}
+              />
             </AudioPlayerProvider>
           </FilterProvider>
         </ScanSessionProvider>

@@ -75,7 +75,12 @@ export default function CountUp({
   useEffect(() => {
     if (ref.current) {
       const formattedValue = formatValue(direction === 'down' ? to : from);
-      ref.current.textContent = isDuration ? formatDuration(formattedValue) : formattedValue;
+      if (!isDuration) {
+        ref.current.textContent = formattedValue;
+      } else {
+        const valueInSeconds = Math.round(formattedValue)
+        ref.current.textContent = formatDuration(valueInSeconds, true);
+      }
     }
   }, [from, to, direction, formatValue]);
 
@@ -105,7 +110,17 @@ export default function CountUp({
     const unsubscribe = springValue.on('change', latest => {
       if (ref.current) {
         const formattedValue = formatValue(latest);
-        ref.current.textContent = isDuration ? formatDuration(formattedValue) : formattedValue;
+        if (!isDuration) {
+          ref.current.textContent = formattedValue;
+        } else {
+          const latestHours = Math.floor(formattedValue / 3600);
+          const toMinutes = Math.floor((to % 3600) / 60);
+          const toSeconds = Math.floor(to % 60);
+          const newTime = new Date(latestHours * 3600 + toMinutes * 60 + toSeconds);
+
+
+          ref.current.textContent = formatDuration(newTime, true);
+        }
       }
     });
 

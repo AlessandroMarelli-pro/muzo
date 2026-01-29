@@ -37,6 +37,8 @@ interface EnhancedMusicPlayerProps {
   className?: string;
   showVisualizations?: boolean;
 }
+export const MUSIC_PLAYER_HEIGHT = '8vh';
+export const MUSIC_PLAYER_HEIGHT_CSS = `var(--music-player-height)`;
 
 export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
   onToggleShuffle,
@@ -152,34 +154,35 @@ export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
   // Note: Volume and playback rate controls removed for simplification
   // They can be re-added later if needed by calling mutations directly
 
-  if (!currentTrack) {
-    return null;
-  }
 
   return (
     <div
+      style={{
+        '--music-player-height': MUSIC_PLAYER_HEIGHT,
+      } as React.CSSProperties}
       className={cn(
-        'fixed bottom-0 left-0 right-0 bg-background border-t border-border z-[9999]',
+        `fixed bottom-0 left-0 right-0 bg-background border-t border-border z-[9999] h-(--music-player-height)`,
         'flex flex-col',
         className,
+        'bg-background shadow-lg',
       )}
     >
-      <div className="z-0 absolute top-0 left-0 w-full h-full   opacity-50 ">
+      {currentTrack && <div className="z-0 absolute top-0 left-0 w-full h-full   opacity-50 ">
         <img
           src={`http://localhost:3000/api/images/serve?imagePath=${formattedImage}`}
           alt="Album Art"
           className="w-full h-full object-cover rounded-md "
         />
-      </div>
+      </div>}
       {/* Main Player Bar */}
       <div className=" backdrop-blur-2xl z-10 flex items-center justify-between  py-2 h-20 sm:h-16 flex-col sm:flex-row gap-2 sm:gap-0">
         {/* Track Info */}
         <div className="z-10 flex  gap-2 sm:gap-3 min-w-0 order-1 sm:order-1 items-center justify-start">
-          <div className="w-16 h-16 bg-muted rounded-md flex-shrink-0 flex items-center justify-center ">
+          <div className="w-16 h-16 bg-muted rounded-md  flex items-center justify-center ">
             <img
               src={`http://localhost:3000/api/images/serve?imagePath=${formattedImage}`}
               alt="Album Art"
-              className="w-16 h-16 object-cover rounded-md rounded-l-none "
+              className="w-16 h-16 object-cover   "
             />
           </div>
           {currentTrack && (

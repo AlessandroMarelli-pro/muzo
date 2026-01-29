@@ -24,6 +24,7 @@ import {
 } from '@/components/ui/tooltip';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
+import { MUSIC_PLAYER_HEIGHT } from '../player/enhanced-music-player';
 
 const SIDEBAR_COOKIE_NAME = 'sidebar_state';
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7;
@@ -152,11 +153,12 @@ const SidebarProvider = React.forwardRef<
               {
                 '--sidebar-width': SIDEBAR_WIDTH,
                 '--sidebar-width-icon': SIDEBAR_WIDTH_ICON,
+                '--music-player-height': MUSIC_PLAYER_HEIGHT,
                 ...style,
               } as React.CSSProperties
             }
             className={cn(
-              'group/sidebar-wrapper flex min-h-svh w-full has-data-[variant=inset]:bg-sidebar',
+              'group/sidebar-wrapper flex max-h-[calc(100vh-var(--music-player-height))] h-[calc(100vh-var(--music-player-height))] min-h-[calc(100vh-var(--music-player-height))] w-full has-data-[variant=inset]:bg-sidebar',
               className,
             )}
             ref={ref}
@@ -350,6 +352,7 @@ const SidebarInset = React.forwardRef<
         'md:peer-data-[variant=inset]:m-2 md:peer-data-[state=collapsed]:peer-data-[variant=inset]:ml-0 md:peer-data-[variant=inset]:ml-0 md:peer-data-[variant=inset]:rounded-xl md:peer-data-[variant=inset]:shadow',
         'w-[calc(99vw-var(--sidebar-width))]',
         className,
+        "overflow-scroll",
       )}
       {...props}
     />

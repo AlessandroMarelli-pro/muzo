@@ -23,4 +23,9 @@ export class AdminMethodsController {
   async syncElasticsearch() {
     return this.adminMethodsService.syncElasticsearch();
   }
+  @Get('update-track-duration-to-rounded-duration')
+  @HttpCode(HttpStatus.OK)
+  async updateTrackDurationToRoundedDuration() {
+    return this.adminMethodsService.updateTrackDurationToRoundedDuration();
+  }
 }

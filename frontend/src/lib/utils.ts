@@ -5,18 +5,18 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export const formatDuration = (seconds: number) => {
+export const formatDuration = (seconds: number, withAllTime = false) => {
   const hours = Math.floor(seconds / 3600);
   const minutes = Math.floor((seconds % 3600) / 60);
   const remainingSeconds = Math.floor(seconds % 60);
   let duration = '';
-  if (hours > 0) {
+  if (hours > 0 || withAllTime) {
     duration += `${hours}h `;
   }
-  if (minutes > 0) {
+  if (minutes > 0 || withAllTime) {
     duration += `${minutes}m `;
   }
-  if (remainingSeconds > 0) {
+  if (remainingSeconds > 0 || withAllTime) {
     duration += `${remainingSeconds}s`;
   }
   return duration;

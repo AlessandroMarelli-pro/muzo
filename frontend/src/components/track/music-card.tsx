@@ -83,15 +83,17 @@ export const HorizontalMusicCardList = ({
 }) => {
   if (isLoading) return <HorizontalMusicCardListSkeleton numberOfCards={numberOfCards} />;
   return (
-    <div className="pl-3 flex-row  *:data-[slot=card]:shadow-   *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card  flex flex-nowrap gap-6  overflow-x-scroll scroll-mb-0 pb-3">
-      {tracks ? (
-        tracks?.map((track, index) => (
-          <MusicCard key={`${track.id}-${index}`} track={track} />
-        ))
-      ) : (
-        <div>{emptyMessage}</div>
-      )}
-    </div>
+    <div className="pl-3 flex-row  *:data-[slot=card]:shadow-    flex flex-nowrap gap-6  overflow-x-scroll scroll-mb-0 pb-3 mask-l-from-95% mask-l-to-100% mask-r-from-95% mask-r-to-100%" >
+      {
+        tracks ? (
+          tracks?.map((track, index) => (
+            <MusicCard key={`${track.id}-${index}`} track={track} />
+          ))
+        ) : (
+          <div>{emptyMessage}</div>
+        )
+      }
+    </div >
   );
 };
 
