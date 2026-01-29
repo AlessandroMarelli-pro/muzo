@@ -1,5 +1,5 @@
 import { fail } from '../common';
-import { Model } from '../types/domain-types';
+import { Model } from '../types/model-types';
 import { Brand } from './scalars';
 
 export const modelIdFactory = <

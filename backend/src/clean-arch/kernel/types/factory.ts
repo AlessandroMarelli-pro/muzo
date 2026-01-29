@@ -1,7 +1,7 @@
 import { createId } from '@paralleldrive/cuid2';
 
 import { now, user } from './context';
-import { ModelBase } from './domain-types';
+import { ModelBase } from './model-types';
 
 export function modelFactory<M extends ModelBase<Id>, Id extends string>(id: {
   id: (id: string) => M['id'];
@@ -16,7 +16,7 @@ export function modelFactory<M extends ModelBase<Id>, Id extends string>(id: {
         id: id.id(createId()),
         createdAt: now(),
         createdById: user().id,
-        updatedAt: null,
+        updatedAt: now(),
         updatedById: null,
         ...x,
       }) as M,
@@ -30,7 +30,7 @@ export function createNewInstance<T extends string>(id: T): ModelBase<T> {
     id,
     createdAt: now(),
     createdById: user().id,
-    updatedAt: null,
+    updatedAt: now(),
     updatedById: null,
   };
 }

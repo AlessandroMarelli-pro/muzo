@@ -319,7 +319,9 @@ model Playlist {
   userId      String?  // For future multi-user support
   isPublic    Boolean  @default(false)
   createdAt   DateTime @default(now())
+  createdById   String @default("userId")
   updatedAt   DateTime @updatedAt
+  updatedById  String?
   
   // Relations
   tracks      PlaylistTrack[]

@@ -1,2 +1,3 @@
 export * from '../common';
-export * from './domain-types';
+export * from './errors';
+export * from './model-types';

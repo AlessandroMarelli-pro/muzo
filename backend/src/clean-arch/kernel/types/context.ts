@@ -1,7 +1,7 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { fail } from '../common';
 
-import { ActionContext } from './domain-types';
+import { ActionContext } from './model-types';
 
 export const als = new AsyncLocalStorage<ActionContext>();
 
