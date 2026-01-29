@@ -81,6 +81,9 @@ export class CreatePlaylistInput {
 
   @Field(() => Int, { nullable: true })
   maxTracks?: number;
+
+  @Field({ nullable: true })
+  subgenreSelectionMode?: 'exact' | 'contain';
 }
 
 @InputType()
@@ -119,6 +122,30 @@ export class ReorderTracksInput {
   trackOrders: TrackOrderInput[];
 }
 
+@InputType()
+export class UpdatePlaylistPositionInput {
+  @Field(() => ID)
+  trackId: string;
+
+  @Field(() => Int)
+  position: number;
+}
+
+@InputType()
+export class UpdatePlaylistPositionsInput {
+  @Field(() => [UpdatePlaylistPositionInput])
+  positions: UpdatePlaylistPositionInput[];
+}
+
+@InputType()
+export class UpdatePlaylistSortingInput {
+  @Field()
+  sortingKey: string;
+
+  @Field()
+  sortingDirection: string;
+}
+
 @ObjectType()
 export class PlaylistItem {
   @Field(() => ID)
@@ -127,8 +154,8 @@ export class PlaylistItem {
   @Field(() => String)
   name: string;
 
-  @Field(() => String)
-  description: string;
+  @Field(() => String, { nullable: true })
+  description?: string;
 
   @Field(() => Range)
   bpmRange: Range;
@@ -163,6 +190,30 @@ export class PlaylistItem {
   //images
   @Field(() => [String])
   images: string[];
+
+  @Field(() => Boolean, { nullable: true })
+  isTrackInPlaylist?: boolean;
+}
+
+@ObjectType()
+export class PlaylistSorting {
+  @Field(() => ID)
+  id: string;
+
+  @Field(() => ID)
+  playlistId: string;
+
+  @Field()
+  sortingKey: string;
+
+  @Field()
+  sortingDirection: string;
+
+  @Field(() => Date)
+  createdAt: Date;
+
+  @Field(() => Date)
+  updatedAt: Date;
 }
 
 @ObjectType()
@@ -175,4 +226,7 @@ export class Playlist extends PlaylistItem {
 
   @Field(() => [PlaylistTrack])
   tracks: PlaylistTrack[];
+
+  @Field(() => PlaylistSorting, { nullable: true })
+  sorting?: PlaylistSorting;
 }

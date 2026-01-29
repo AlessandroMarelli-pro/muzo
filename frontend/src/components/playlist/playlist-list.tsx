@@ -1,76 +1,124 @@
+import { PlaylistItem } from '@/__generated__/types';
 import { Button } from '@/components/ui/button';
-import { usePlaylists } from '@/services/playlist-hooks';
-import { Music, Plus } from 'lucide-react';
-import { useState } from 'react';
-import { Loading } from '../loading';
-import { NoData } from '../no-data';
+import { Route } from '@/routes/playlists.index';
+import { Plus, Search } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Input } from '../ui/input';
 import { CreatePlaylistDialog } from './create-playlist-dialog';
-import { PlaylistCard } from './playlist-card';
+import { InlinePlaylistCard, InlinePlaylistCardSkeleton } from './inline-playlist-card';
+import { PlaylistCard, PlaylistCardSkeleton } from './playlist-card';
 
 interface PlaylistListProps {
   onViewPlaylistDetails: (playlistId: string) => void;
+  refetch?: () => void;
+  loading?: boolean;
 }
 
-export function PlaylistList({ onViewPlaylistDetails }: PlaylistListProps) {
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const { playlists, loading, error, refetch } = usePlaylists('default');
+export const PlaylistListComponent = ({ loading, playlists, onViewPlaylistDetails, onCardClick }: {
+  onViewPlaylistDetails?: (playlistId: string) => void;
+  playlists: PlaylistItem[];
+  loading: boolean; onCardClick?: (playlistId: string) => void
+}) => {
+  return <div className="flex flex-row flex-wrap gap-4 justify-start ">
+    {loading ? (
+      <>
+        {Array.from({ length: 10 }).map((_, index) => (
+          <PlaylistCardSkeleton key={index} />
+        ))}
+      </>
+    ) : (
+      playlists.map((playlist) => (
+        <PlaylistCard
+          key={playlist.id}
+          playlist={playlist}
+          onViewDetails={onViewPlaylistDetails}
+          onCardClick={onCardClick}
+        />
+      ))
+    )}
+  </div>
+}
 
-  if (loading) {
-    return <Loading />;
-  }
+export const InlinePlaylistListComponent = ({ loading, playlists, onCardClick }: {
+  onViewPlaylistDetails?: (playlistId: string) => void;
+  playlists: (PlaylistItem & { disabled?: boolean })[];
+  onUpdate: () => void;
+  loading: boolean; onCardClick?: (playlistId: string) => void
+}) => {
+  return <div className="flex flex-col flex-wrap gap-4 justify-start ">
+    {loading ? (
+      <>
+        {Array.from({ length: 10 }).map((_, index) => (
+          <InlinePlaylistCardSkeleton key={index} />
+        ))}
+      </>
+    ) : (
+      playlists.map((playlist) => (
+        <InlinePlaylistCard
+          key={playlist.id}
+          playlist={playlist}
+          onCardClick={onCardClick}
+        />
+      ))
+    )}
+  </div>
+}
 
-  if (error) {
-    return (
-      <div className="text-center py-8">
-        <p className="text-red-500 mb-4">Error loading playlists: {error}</p>
-        <Button onClick={() => refetch()}>Retry</Button>
-      </div>
+export function PlaylistList({
+  onViewPlaylistDetails,
+  loading = false,
+}: PlaylistListProps) {
+  const playlists = Route.useLoaderData() as PlaylistItem[]
+
+  const [filteredPlaylists, setFilteredPlaylists] = useState(playlists);
+  const [searchQuery, setSearchQuery] = useState('');
+  useEffect(() => {
+    setFilteredPlaylists(
+      playlists.filter((playlist) =>
+        playlist.name.toLowerCase().includes(searchQuery.toLowerCase()),
+      ),
     );
-  }
+  }, [searchQuery, playlists]);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const handleCreatePlaylist = () => {
+    setIsCreateDialogOpen(true);
+  };
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
+  };
 
   return (
-    <div className="p-4 space-y-4 flex flex-col z-0">
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-muted-foreground">
-            Manage your music collections and discover new tracks
-          </p>
+    <div className="p-6  flex flex-col z-0 gap-4">
+      {/*   <PlaylistTable
+        data={playlists}
+        onUpdate={refetch}
+        onViewDetails={onViewPlaylistDetails}
+        isLoading={false}
+        onCreatePlaylist={handleCreatePlaylist}
+      /> */}
+      <div className="flex flex-row justify-between items-center">
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Input
+            type="text"
+            placeholder="Filter playlists..."
+            value={searchQuery}
+            onChange={handleSearchChange}
+            className="w-full pl-10 pr-4 py-2 border rounded-md "
+          />
         </div>
-        <Button
-          onClick={() => setIsCreateDialogOpen(true)}
-          size="sm"
-          variant="secondary"
-        >
+
+        <Button onClick={handleCreatePlaylist} size="sm" variant="link">
           <Plus className="h-4 w-4" />
           Create Playlist
         </Button>
       </div>
-
-      {playlists.length === 0 ? (
-        <NoData
-          Icon={Music}
-          title="No Playlists Found"
-          subtitle="Create your first playlist to organize your music"
-        />
-      ) : (
-        <div className="flex flex-col gap-4">
-          {playlists.map((playlist) => (
-            <PlaylistCard
-              key={playlist.id}
-              playlist={playlist}
-              onUpdate={refetch}
-              onViewDetails={onViewPlaylistDetails}
-            />
-          ))}
-        </div>
-      )}
-
+      <PlaylistListComponent loading={loading} playlists={filteredPlaylists} onViewPlaylistDetails={onViewPlaylistDetails} />
       <CreatePlaylistDialog
         open={isCreateDialogOpen}
         onOpenChange={setIsCreateDialogOpen}
         onSuccess={() => {
           setIsCreateDialogOpen(false);
-          refetch();
         }}
       />
     </div>

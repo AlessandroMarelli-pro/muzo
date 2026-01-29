@@ -1,11 +1,13 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { queryOptions, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { parse } from 'graphql';
 import type {
   CreateLibraryInput,
+  GetRecentlyPlayedQuery,
   MusicLibrary,
   MusicTrack,
   MusicTrackByCategoriesGraphQl,
   MusicTrackListPaginated,
+  RandomTrackWithStats,
   SimpleMusicTrack,
   TrackRecommendation,
   UpdateLibraryInput,
@@ -46,21 +48,10 @@ export type PlaybackSession = {
 export const queryKeys = {
   libraries: ['libraries'] as const,
   library: (id: string) => ['libraries', id] as const,
-  tracks: (libraryId?: string, status?: AnalysisStatus, isFavorite?: boolean) =>
-    ['tracks', { libraryId, status }] as const,
-  tracksList: (
-    libraryId?: string,
-    status?: AnalysisStatus,
-    isFavorite?: boolean,
-    limit?: number,
-    offset?: number,
-    orderBy?: string,
-    orderDirection?: 'asc' | 'desc',
-  ) =>
-    [
-      'tracksList',
-      { libraryId, status, isFavorite, limit, offset, orderBy, orderDirection },
-    ] as const,
+  tracks: (libraryId?: string, status?: AnalysisStatus, isFavorite?: boolean, orderBy?: string, orderDirection?: 'asc' | 'desc') =>
+    ['tracks', { libraryId, status, isFavorite, orderBy, orderDirection }] as const,
+  tracksList: (libraryId?: string, status?: AnalysisStatus, isFavorite?: boolean, limit?: number, offset?: number, orderBy?: string, orderDirection?: 'asc' | 'desc') =>
+    ['tracksList', { libraryId, status, isFavorite, limit, offset, orderBy, orderDirection }] as const,
 
   tracksByCategories: (category?: string, genre?: string) =>
     ['tracks', 'by-categories', { genre, category }] as const,
@@ -74,18 +65,40 @@ export const queryKeys = {
   staticFilters: ['static-filters'] as const,
   randomTrack: (id?: string, filterLiked?: boolean) =>
     ['tracks', 'random', { id, filterLiked }] as const,
+  randomTrackWithStats: () => ['tracks', 'random-with-stats'] as const,
   trackRecommendations: (id?: string, criteria?: string) =>
     ['tracks', 'recommendations', { id, criteria }] as const,
 };
 
-// Library Queries
-export const useLibraries = () => {
-  return useQuery({
+/** Query options for loaders (ensureQueryData dedupes preload + load). */
+export const recentlyPlayedQueryOptions = (limit = 20) =>
+  queryOptions({
+    queryKey: queryKeys.recentlyPlayed(limit),
+    queryFn: () => fetchRecentlyPlayed(limit),
+  });
+
+export const librariesQueryOptions = () =>
+  queryOptions({
     queryKey: queryKeys.libraries,
-    queryFn: async () => {
-      const response = await graffleClient.request<{
-        libraries: MusicLibrary[];
-      }>(gql`
+    queryFn: fetchLibraries,
+  });
+
+export const randomTrackQueryOptions = (id?: string, filterLiked?: boolean) =>
+  queryOptions({
+    queryKey: queryKeys.randomTrack(id, filterLiked),
+    queryFn: () => fetchRandomTrack(id, filterLiked),
+  });
+
+export const trackRecommendationsQueryOptions = (id?: string, criteria?: string) =>
+  queryOptions({
+    queryKey: queryKeys.trackRecommendations(id, criteria),
+    queryFn: () => fetchTrackRecommendations(id, criteria),
+  });
+
+export const fetchLibraries = async () => {
+  const response = await graffleClient.request<{
+    libraries: MusicLibrary[];
+  }>(gql`
         query GetLibraries {
           libraries {
             id
@@ -110,8 +123,14 @@ export const useLibraries = () => {
           }
         }
       `);
-      return response.libraries;
-    },
+  return response.libraries;
+};
+
+// Library Queries
+export const useLibraries = () => {
+  return useQuery({
+    queryKey: queryKeys.libraries,
+    queryFn: fetchLibraries,
   });
 };
 
@@ -158,13 +177,17 @@ export const useTracks = ({
   libraryId,
   status,
   isFavorite,
+  orderBy = 'fileCreatedAt',
+  orderDirection = 'asc',
 }: {
   libraryId?: string;
   status?: AnalysisStatus;
   isFavorite?: boolean;
+  orderBy?: string;
+  orderDirection?: 'asc' | 'desc';
 }) => {
   return useQuery({
-    queryKey: queryKeys.tracks(libraryId, status, isFavorite),
+    queryKey: queryKeys.tracks(libraryId, status, isFavorite, orderBy, orderDirection),
     queryFn: async () => {
       const response = await graffleClient.request<{
         tracks: SimpleMusicTrack[];
@@ -177,59 +200,90 @@ export const useTracks = ({
             }
           }
         `,
-        { options: { libraryId, analysisStatus: status, isFavorite } },
+        { options: { libraryId, analysisStatus: status, isFavorite, orderBy, orderDirection } },
       );
       return response.tracks;
     },
   });
 };
 
+export const fetchRandomTrack = async (id?: string, filterLiked?: boolean) => {
+  const response = await graffleClient.request<{
+    randomTrack: SimpleMusicTrack;
+  }>(
+    gql`
+      ${simpleMusicTrackFragment}
+      query GetRandomTrack($id: String, $filterLiked: Boolean) {
+        randomTrack(id: $id, filterLiked: $filterLiked) {
+          ...SimpleMusicTrackFragment
+        }
+      }
+    `,
+    { id, filterLiked },
+  );
+  return response.randomTrack;
+};
+
 export const useRandomTrack = (id?: string, filterLiked?: boolean) => {
   return useQuery({
     queryKey: queryKeys.randomTrack(id, filterLiked),
-    queryFn: async () => {
-      const response = await graffleClient.request<{
-        randomTrack: SimpleMusicTrack;
-      }>(
-        gql`
-          ${simpleMusicTrackFragment}
-          query GetRandomTrack($id: String, $filterLiked: Boolean) {
-            randomTrack(id: $id, filterLiked: $filterLiked) {
-              ...SimpleMusicTrackFragment
-            }
-          }
-        `,
-        { id, filterLiked },
-      );
-      return response.randomTrack;
-    },
+    queryFn: async () => fetchRandomTrack(id, filterLiked)
   });
 };
 
+export const fetchRandomTrackWithStats = async () => {
+  const response = await graffleClient.request<{
+    randomTrackWithStats: RandomTrackWithStats;
+  }>(
+    gql`
+      ${simpleMusicTrackFragment}
+      query GetRandomTrackWithStats {
+        randomTrackWithStats {
+          track {
+            ...SimpleMusicTrackFragment
+          }
+          likedCount
+          bangerCount
+          dislikedCount
+          remainingCount
+        }
+      }
+    `,
+  );
+  return response.randomTrackWithStats;
+};
+export const useRandomTrackWithStats = () => {
+  return useQuery({
+    queryKey: queryKeys.randomTrackWithStats(),
+    queryFn: fetchRandomTrackWithStats,
+  });
+};
+
+export const fetchTrackRecommendations = async (id?: string, criteria?: string) => {
+  const response = await graffleClient.request<{
+    trackRecommendations: TrackRecommendation[];
+  }>(
+    gql`
+      ${simpleMusicTrackFragment}
+      query GetTrackRecommendations($id: String!, $criteria: String) {
+        trackRecommendations(id: $id, criteria: $criteria) {
+          track {
+            ...SimpleMusicTrackFragment
+          }
+          similarity
+          reasons
+        }
+      }
+    `,
+    { id, criteria },
+  );
+  return response.trackRecommendations;
+};
 export const useTrackRecommendations = (id?: string, criteria?: string) => {
   return useQuery({
     enabled: !!id,
     queryKey: queryKeys.trackRecommendations(id, criteria),
-    queryFn: async () => {
-      const response = await graffleClient.request<{
-        trackRecommendations: TrackRecommendation[];
-      }>(
-        gql`
-          ${simpleMusicTrackFragment}
-          query GetTrackRecommendations($id: String!, $criteria: String) {
-            trackRecommendations(id: $id, criteria: $criteria) {
-              track {
-                ...SimpleMusicTrackFragment
-              }
-              similarity
-              reasons
-            }
-          }
-        `,
-        { id, criteria },
-      );
-      return response.trackRecommendations;
-    },
+    queryFn: async () => fetchTrackRecommendations(id, criteria),
   });
 };
 
@@ -458,27 +512,26 @@ export const useStaticFilters = () => {
     staleTime: 10 * 60 * 1000, // 10 minutes - static data doesn't change often
   });
 };
+export const fetchRecentlyPlayed = async (limit = 20) => {
+  const response = await graffleClient.request<GetRecentlyPlayedQuery>(
+    gql`
+      ${simpleMusicTrackFragment}
+      query GetRecentlyPlayed($limit: Float) {
+        recentlyPlayed(limit: $limit) {
+          ...SimpleMusicTrackFragment
+        }
+      }
+    `,
+    { limit },
+  );
+  return response.recentlyPlayed;
+};
 
 // Playback Queries
 export const useRecentlyPlayed = (limit = 20) => {
   return useQuery({
     queryKey: queryKeys.recentlyPlayed(limit),
-    queryFn: async () => {
-      const response = await graffleClient.request<{
-        recentlyPlayed: SimpleMusicTrack[];
-      }>(
-        gql`
-          ${simpleMusicTrackFragment}
-          query GetRecentlyPlayed($limit: Float) {
-            recentlyPlayed(limit: $limit) {
-              ...SimpleMusicTrackFragment
-            }
-          }
-        `,
-        { limit },
-      );
-      return response.recentlyPlayed;
-    },
+    queryFn: () => fetchRecentlyPlayed(limit)
   });
 };
 
@@ -585,7 +638,7 @@ export const useDeleteLibrary = () => {
   return useMutation({
     mutationFn: async (id: string) => {
       const response = await graffleClient.request<{ deleteLibrary: boolean }>(
-        gql(
+        parse(
           `
           mutation DeleteLibrary($id: ID!) {
             deleteLibrary(id: $id)
@@ -598,6 +651,9 @@ export const useDeleteLibrary = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.libraries });
+    },
+    onError: (error) => {
+      console.error('Failed to delete library:', error);
     },
   });
 };
@@ -624,6 +680,7 @@ export const useLikeTrack = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.tracks() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.randomTrackWithStats() });
     },
   });
 };
@@ -650,6 +707,7 @@ export const useBangerTrack = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.tracks() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.randomTrackWithStats() });
     },
   });
 };
@@ -673,6 +731,7 @@ export const useDislikeTrack = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.tracks() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.randomTrackWithStats() });
     },
   });
 };

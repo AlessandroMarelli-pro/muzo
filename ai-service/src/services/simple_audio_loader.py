@@ -215,7 +215,7 @@ class SimpleAudioLoader:
 
                 # Ensure we don't go beyond the available duration
                 max_start_sample = int(available_duration * sr)
-                print(segment_start_sample, window_samples, max_start_sample)
+
                 if segment_start_sample + window_samples > max_start_sample:
                     continue
                 # Load segment

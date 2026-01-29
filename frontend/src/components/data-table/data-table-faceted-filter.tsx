@@ -1,11 +1,11 @@
-"use client";
+'use client';
 
-import type { Column } from "@tanstack/react-table";
-import { PlusCircle, XCircle } from "lucide-react";
-import * as React from "react";
+import type { Column } from '@tanstack/react-table';
+import { PlusCircle, XCircle } from 'lucide-react';
+import * as React from 'react';
 
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
   Command,
   CommandEmpty,
@@ -14,16 +14,16 @@ import {
   CommandItem,
   CommandList,
   CommandSeparator,
-} from "@/components/ui/command";
+} from '@/components/ui/command';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/components/ui/popover";
-import { Separator } from "@/components/ui/separator";
-import { cn } from "@/lib/utils";
-import type { Option } from "@/components/data-table/data-table";
-import { CheckIcon } from "@radix-ui/react-icons";
+} from '@/components/ui/popover';
+import { Separator } from '@/components/ui/separator';
+import { cn } from '@/lib/utils';
+import type { Option } from '@/types/data-table';
+import { CheckIcon } from '@radix-ui/react-icons';
 
 interface DataTableFacetedFilterProps<TData, TValue> {
   column?: Column<TData, TValue>;
@@ -77,7 +77,7 @@ export function DataTableFacetedFilter<TData, TValue>({
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button variant="outline" size="sm" className="border-dashed">
+        <Button variant="outline" size="sm" className="border-dashed shadow-xs">
           {selectedValues?.size > 0 ? (
             <div
               role="button"
@@ -146,10 +146,10 @@ export function DataTableFacetedFilter<TData, TValue>({
                   >
                     <div
                       className={cn(
-                        "flex size-4 items-center justify-center rounded-sm border border-primary",
+                        'flex size-4 items-center justify-center rounded-sm border border-primary',
                         isSelected
-                          ? "bg-primary"
-                          : "opacity-50 [&_svg]:invisible",
+                          ? 'bg-primary'
+                          : 'opacity-50 [&_svg]:invisible',
                       )}
                     >
                       <CheckIcon />

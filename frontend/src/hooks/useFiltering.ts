@@ -1,5 +1,6 @@
 import { useFilterMutations } from '@/services/filter-hooks';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { deepEqual } from '@tanstack/react-router';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 export interface Range {
   min: number;
@@ -16,6 +17,7 @@ export interface FilterState {
   liveness: Range;
   acousticness: Range;
   artist: string;
+  title: string;
   valenceMood: string[];
   arousalMood: string[];
   danceabilityFeeling: string[];
@@ -38,6 +40,7 @@ export interface FilterActions {
     key: K,
     value: FilterState[K],
   ) => void;
+  updateFilters: (values: Record<string, any>) => void;
   resetFilters: () => void;
 
   // Server Persistence
@@ -47,6 +50,11 @@ export interface FilterActions {
 
   // Utility
   hasActiveFilters: boolean;
+}
+
+export interface UseFilteringOptions {
+  autoSave?: boolean;
+  onSaveError?: (error: Error) => void;
 }
 
 const defaultFilterState: FilterState = {
@@ -62,11 +70,14 @@ const defaultFilterState: FilterState = {
   liveness: { min: 0, max: 1 },
   acousticness: { min: 0, max: 1 },
   artist: '',
+  title: '',
   libraryId: [],
   atmospheres: [],
 };
 
-export const useFiltering = () => {
+export const useFiltering = (options: UseFilteringOptions = {}) => {
+  const { autoSave = false, onSaveError } = options;
+
   // UI State - immediate updates for filter controls
   const [filters, setFilters] = useState<FilterState>(defaultFilterState);
 
@@ -80,6 +91,13 @@ export const useFiltering = () => {
     error: null,
   });
 
+  // Refs to prevent infinite loops
+  const isInitialMount = useRef(true);
+  const isLoadingFromServer = useRef(false);
+  const saveCurrentFilterRef = useRef<
+    ((name?: string) => Promise<void>) | null
+  >(null);
+
   // Server mutations
   const {
     setCurrentFilter: setCurrentFilterMutation,
@@ -92,7 +110,7 @@ export const useFiltering = () => {
     <K extends keyof FilterState>(key: K, value: FilterState[K]) => {
       setFilters((prev) => ({
         ...prev,
-        [key]: value,
+        [key]: value ?? defaultFilterState[key],
       }));
     },
     [],
@@ -101,6 +119,37 @@ export const useFiltering = () => {
   const resetFilters = useCallback(() => {
     setFilters(defaultFilterState);
   }, []);
+
+  const updateFilters = useCallback(
+    (values: Record<string, any>) => {
+      for (const [key, value] of Object.entries(values)) {
+        const isString = typeof value === 'string';
+        const isStringArray =
+          Array.isArray(value) && value.every((v) => typeof v === 'string');
+        const isMinMaxRange =
+          Array.isArray(value) &&
+          value.length === 2 &&
+          value.every((v) => typeof v === 'number');
+
+        if (value === null) {
+          updateFilter(key as keyof FilterState, value);
+        } else if (isString) {
+          updateFilter(key as keyof FilterState, value as string);
+        } else if (isStringArray) {
+          updateFilter(key as keyof FilterState, value as string[]);
+        } else if (isMinMaxRange) {
+          updateFilter(
+            key as keyof FilterState,
+            {
+              min: value[0],
+              max: value[1],
+            } as Range,
+          );
+        }
+      }
+    },
+    [updateFilter],
+  );
 
   // Server Actions
   const saveCurrentFilter = useCallback(
@@ -125,12 +174,24 @@ export const useFiltering = () => {
           liveness: filters.liveness,
           acousticness: filters.acousticness,
           artist: filters.artist,
+          title: filters.title,
           libraryId: filters.libraryId,
           atmospheres: filters.atmospheres,
         };
+        // Compare saved filter state value with criteria
+        // savedFilterState.value is a json string, so we need to parse it and compare the values
+        const savedFilterStateValue = JSON.parse(savedFilterState.value as string);
+        const areFiltersEqual = deepEqual(savedFilterStateValue, criteria);
+        if (areFiltersEqual) {
+          setSavedFilterState((prev) => ({
+            ...prev,
+            isLoading: false,
+          }));
+          console.log('Filters are equal, skipping save');
+          return;
+        }
 
-        const result = await setCurrentFilterMutation.mutateAsync(criteria);
-        console.log('Filter saved:', result);
+        await setCurrentFilterMutation.mutateAsync(criteria);
 
         setSavedFilterState((prev) => ({
           ...prev,
@@ -141,18 +202,29 @@ export const useFiltering = () => {
           isLoading: false,
         }));
       } catch (error) {
+        const errorObj = error as Error;
         setSavedFilterState((prev) => ({
           ...prev,
-          error: error as Error,
+          error: errorObj,
           isLoading: false,
         }));
+
+        if (onSaveError) {
+          onSaveError(errorObj);
+        } else {
+          console.error('Failed to save filter:', errorObj);
+        }
       }
     },
-    [filters, setCurrentFilterMutation],
+    [filters, setCurrentFilterMutation, onSaveError],
   );
+
+  // Store the latest saveCurrentFilter in ref for auto-save effect
+  saveCurrentFilterRef.current = saveCurrentFilter;
 
   const loadSavedFilter = useCallback(async () => {
     setSavedFilterState((prev) => ({ ...prev, isLoading: true, error: null }));
+    isLoadingFromServer.current = true;
 
     try {
       const result = await getCurrentFilterQuery.refetch();
@@ -175,6 +247,7 @@ export const useFiltering = () => {
           liveness: loadedFilters.liveness || { min: 0, max: 1 },
           acousticness: loadedFilters.acousticness || { min: 0, max: 1 },
           artist: loadedFilters.artist || '',
+          title: loadedFilters.title || '',
           libraryId: loadedFilters.libraryId || [],
           atmospheres: loadedFilters.atmospheres || [],
         });
@@ -194,6 +267,9 @@ export const useFiltering = () => {
         error: error as Error,
         isLoading: false,
       }));
+    } finally {
+      // Flag will be reset in the auto-save effect after it checks it
+      // This ensures the effect has a chance to see the flag before it's reset
     }
   }, [getCurrentFilterQuery]);
 
@@ -202,7 +278,6 @@ export const useFiltering = () => {
 
     try {
       const result = await clearCurrentFilterMutation.mutateAsync();
-      console.log('Filter cleared:', result);
 
       // Also reset UI state
       setFilters(defaultFilterState);
@@ -226,7 +301,7 @@ export const useFiltering = () => {
 
   // Computed values
   const hasActiveFilters = useMemo(() => {
-    return (
+    const areFiltersActive =
       filters.genres.length > 0 ||
       filters.subgenres.length > 0 ||
       filters.keys.length > 0 ||
@@ -243,9 +318,37 @@ export const useFiltering = () => {
       filters.liveness.max !== 1 ||
       filters.acousticness.min !== 0 ||
       filters.acousticness.max !== 1 ||
-      filters.artist !== ''
-    );
+      filters.artist !== '' ||
+      filters.title !== '' ||
+      filters.libraryId.length > 0 ||
+      filters.atmospheres.length > 0;
+
+    return areFiltersActive;
   }, [filters]);
+
+  // Auto-save filters when they change (if enabled)
+  useEffect(() => {
+    // Skip auto-save on initial mount (filters are loaded from server)
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+
+    // Skip auto-save when loading filters from server
+    if (isLoadingFromServer.current) {
+      // Reset the flag after this effect has run
+      requestAnimationFrame(() => {
+        isLoadingFromServer.current = false;
+      });
+      return;
+    }
+
+    if (autoSave && saveCurrentFilterRef.current) {
+      console.log('Auto-saving filter');
+      void saveCurrentFilterRef.current();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filters, autoSave]);
 
   // Sync server state when query data changes
   useEffect(() => {
@@ -266,6 +369,7 @@ export const useFiltering = () => {
   const actions: FilterActions = useMemo(
     () => ({
       updateFilter,
+      updateFilters,
       resetFilters,
       saveCurrentFilter,
       loadSavedFilter,
@@ -274,6 +378,7 @@ export const useFiltering = () => {
     }),
     [
       updateFilter,
+      updateFilters,
       resetFilters,
       saveCurrentFilter,
       loadSavedFilter,

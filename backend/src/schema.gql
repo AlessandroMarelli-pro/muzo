@@ -105,6 +105,7 @@ input CreatePlaylistInput {
   isPublic: Boolean
   maxTracks: Int
   name: String!
+  subgenreSelectionMode: String
   userId: String
 }
 
@@ -156,6 +157,7 @@ input FilterCriteriaInput {
   speechiness: RangeInput
   subgenres: [String!]
   tempo: RangeInput
+  title: String
   valenceMood: [String!]
 }
 
@@ -173,6 +175,7 @@ type FilterCriteriaType {
   speechiness: Range
   subgenres: [String!]
   tempo: Range
+  title: String
   valenceMood: [String!]
 }
 
@@ -254,17 +257,6 @@ input LibraryQueryOptions {
   offset: Float
   orderBy: String
   orderDirection: String
-}
-
-type LibraryScanProgressUpdate {
-  estimatedCompletion: DateTime
-  libraryId: ID!
-  libraryName: String!
-  processedFiles: Float!
-  progressPercentage: Float!
-  remainingFiles: Float!
-  status: String!
-  totalFiles: Float!
 }
 
 type LibraryScanResult {
@@ -372,6 +364,7 @@ type MusicTrackListPaginated {
 
 type Mutation {
   addTrackToPlaylist(input: AddTrackToPlaylistInput!, playlistId: ID!, userId: String!): PlaylistTrack!
+  addTrackToQueue(trackId: ID!): QueueItem!
   authenticateSpotify(code: String!, codeVerifier: String!, userId: String!): SpotifyAuthResult!
   authenticateTidal(code: String!, codeVerifier: String!, userId: String!): TidalAuthResult!
   authenticateYouTube(code: String!, userId: String!): YouTubeAuthResult!
@@ -382,7 +375,7 @@ type Mutation {
   createSavedFilter(input: CreateSavedFilterInput!): SavedFilter!
   deleteImageForTrack(trackId: ID!): DeleteImageResponse!
   deleteLibrary(id: ID!): Boolean!
-  deletePlaylist(id: ID!, userId: String!): Boolean!
+  deletePlaylist(id: ID!, userId: String!): Playlist!
   deleteSavedFilter(id: ID!): Boolean!
   dislikeTrack(trackId: ID!): Boolean!
   exportPlaylistToM3U(playlistId: ID!, userId: String!): String!
@@ -391,6 +384,7 @@ type Mutation {
   playTrack(startTime: Float! = 0, trackId: String!): PlaybackState!
   recordPlayback(duration: Float!, trackId: ID!): MusicTrack!
   removeTrackFromPlaylist(playlistId: ID!, trackId: ID!, userId: String!): Boolean!
+  removeTrackFromQueue(trackId: ID!): RemoveTrackFromQueueResponse!
   reorderPlaylistTracks(input: ReorderTracksInput!, playlistId: ID!, userId: String!): Playlist!
   resumeTrack(trackId: String!): PlaybackState!
   scheduleLibraryScan(libraryId: ID!): LibraryScanResult!
@@ -407,7 +401,10 @@ type Mutation {
   toggleFavorite(trackId: String!): MusicTrack!
   updateLibrary(id: ID!, input: UpdateLibraryInput!): MusicLibrary!
   updatePlaylist(id: ID!, input: UpdatePlaylistInput!, userId: String!): Playlist!
+  updatePlaylistPositions(input: UpdatePlaylistPositionsInput!, playlistId: ID!, userId: String!): [PlaylistTrack!]!
+  updatePlaylistSorting(input: UpdatePlaylistSortingInput!, playlistId: ID!, userId: String!): PlaylistSorting!
   updatePreferences(input: UpdatePreferencesInput!): UserPreferencesGraphQL!
+  updateQueuePositions(input: UpdateQueuePositionsInput!): [QueueItem!]!
   updateSavedFilter(id: ID!, input: UpdateSavedFilterInput!): SavedFilter!
 }
 
@@ -447,13 +444,15 @@ type PlaybackState {
 type Playlist {
   bpmRange: Range!
   createdAt: DateTime!
-  description: String!
+  description: String
   energyRange: Range!
   genresCount: Int!
   id: ID!
   images: [String!]!
+  isTrackInPlaylist: Boolean
   name: String!
   numberOfTracks: Int!
+  sorting: PlaylistSorting
   subgenresCount: Int!
   topGenres: [String!]!
   topSubgenres: [String!]!
@@ -473,17 +472,27 @@ input PlaylistFilterInput {
 type PlaylistItem {
   bpmRange: Range!
   createdAt: DateTime!
-  description: String!
+  description: String
   energyRange: Range!
   genresCount: Int!
   id: ID!
   images: [String!]!
+  isTrackInPlaylist: Boolean
   name: String!
   numberOfTracks: Int!
   subgenresCount: Int!
   topGenres: [String!]!
   topSubgenres: [String!]!
   totalDuration: Float!
+  updatedAt: DateTime!
+}
+
+type PlaylistSorting {
+  createdAt: DateTime!
+  id: ID!
+  playlistId: ID!
+  sortingDirection: String!
+  sortingKey: String!
   updatedAt: DateTime!
 }
 
@@ -532,16 +541,35 @@ type Query {
   playlistRecommendations(excludeTrackIds: [String!], limit: Int, playlistId: ID!): [TrackRecommendation!]!
   playlistStats(playlistId: ID!, userId: String!): PlaylistStats!
   playlistTracks(playlistId: ID!, userId: String!): [PlaylistTrack!]!
-  playlists(userId: String!): [PlaylistItem!]!
+  playlists(search: String, userId: String!, verifyTrackId: String): [PlaylistItem!]!
   preferences: UserPreferencesGraphQL!
+  queue: [QueueItem!]!
   queueStats: String!
   randomTrack(filterLiked: Boolean, id: String): SimpleMusicTrack!
+  randomTrackWithStats: RandomTrackWithStats!
   recentlyPlayed(limit: Float! = 20): [SimpleMusicTrack!]!
   searchTracks(libraryId: ID, query: String!): [SimpleMusicTrack!]!
   trackRecommendations(criteria: String, id: String!): [TrackRecommendation!]!
   tracks(options: TrackQueryOptions): [SimpleMusicTrack!]!
   tracksByCategories(options: TrackQueryOptionsByCategories): [MusicTrackByCategoriesGraphQL!]!
   tracksList(options: TrackQueryOptions): MusicTrackListPaginated!
+}
+
+type QueueItem {
+  createdAt: DateTime!
+  id: ID!
+  position: Int!
+  track: SimpleMusicTrack
+  trackId: ID!
+  updatedAt: DateTime!
+}
+
+type RandomTrackWithStats {
+  bangerCount: Float!
+  dislikedCount: Float!
+  likedCount: Float!
+  remainingCount: Float!
+  track: SimpleMusicTrack
 }
 
 type Range {
@@ -566,6 +594,13 @@ type RecentActivity {
   date: String!
   tracksAdded: Int!
   tracksAnalyzed: Int!
+}
+
+type RemoveTrackFromQueueResponse {
+  artist: String!
+  success: Boolean!
+  title: String!
+  trackId: ID!
 }
 
 input ReorderTracksInput {
@@ -637,10 +672,6 @@ type StaticFilterOptions {
 type SubgenreDistribution {
   count: Int!
   subgenre: String!
-}
-
-type Subscription {
-  libraryScanProgress(libraryId: ID): LibraryScanProgressUpdate!
 }
 
 type SyncResult {
@@ -739,11 +770,34 @@ input UpdatePlaylistInput {
   name: String
 }
 
+input UpdatePlaylistPositionInput {
+  position: Int!
+  trackId: ID!
+}
+
+input UpdatePlaylistPositionsInput {
+  positions: [UpdatePlaylistPositionInput!]!
+}
+
+input UpdatePlaylistSortingInput {
+  sortingDirection: String!
+  sortingKey: String!
+}
+
 input UpdatePreferencesInput {
   analysisPreferences: AnalysisPreferencesInput
   editorPreferences: EditorPreferencesInput
   organizationPreferences: OrganizationPreferencesInput
   uiPreferences: UIPreferencesInput
+}
+
+input UpdateQueuePositionInput {
+  position: Int!
+  trackId: ID!
+}
+
+input UpdateQueuePositionsInput {
+  positions: [UpdateQueuePositionInput!]!
 }
 
 input UpdateSavedFilterInput {

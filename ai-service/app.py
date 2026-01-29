@@ -17,6 +17,7 @@ from loguru import logger
 load_dotenv()
 
 # Import API resources
+from src.api.batch_simple_analysis import BatchSimpleAnalysisResource
 from src.api.bpm_detection import BPMDetectionResource
 from src.api.health import HealthResource
 from src.api.openai_metadata import OpenAIMetadataResource
@@ -144,6 +145,9 @@ def register_resources(api, app):
     # Simple analysis endpoints (if enabled)
     if os.getenv("ENABLE_SIMPLE_ANALYSIS") == "true":
         api.add_resource(SimpleAnalysisResource, "/audio/analyze/simple")
+        api.add_resource(
+            BatchSimpleAnalysisResource, "/audio/analyze/batch"
+        )
         logger.info("✅ Simple analysis endpoints registered")
     else:
         logger.info("🚫 Simple analysis endpoints disabled by configuration")

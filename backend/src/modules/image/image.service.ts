@@ -129,7 +129,8 @@ export class ImageService {
   }
 
   /**
-   * Serve image file
+   * Serve image file. Caching is handled by the browser via Cache-Control
+   * headers set in the controller (public, max-age=31536000 for track images).
    */
   async serveImage(
     imagePath: string,

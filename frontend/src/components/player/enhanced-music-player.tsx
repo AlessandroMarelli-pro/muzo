@@ -1,23 +1,22 @@
 import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
 import {
   useAudioPlayerActions,
   useAudioPlayerContext,
   useCurrentTrack,
   useIsPlaying,
-  useQueue,
 } from '@/contexts/audio-player-context';
 import { cn } from '@/lib/utils';
 import { useWaveformData } from '@/services/music-player-hooks';
+import { useQueue } from '@/services/queue-hooks';
+import { useNavigate } from '@tanstack/react-router';
 import {
+  Brain,
   Heart,
   Pause,
   Play,
   Shuffle,
   SkipBack,
   SkipForward,
-  Volume2,
-  VolumeX,
 } from 'lucide-react';
 import React, { useEffect, useRef, useState } from 'react';
 import { WaveformVisualizer } from './waveform-visualizer';
@@ -38,6 +37,8 @@ interface EnhancedMusicPlayerProps {
   className?: string;
   showVisualizations?: boolean;
 }
+export const MUSIC_PLAYER_HEIGHT = '8vh';
+export const MUSIC_PLAYER_HEIGHT_CSS = `var(--music-player-height)`;
 
 export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
   onToggleShuffle,
@@ -45,33 +46,49 @@ export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
 }: EnhancedMusicPlayerProps) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [showAdvancedControls] = useState(false);
+  const navigate = useNavigate();
 
   // Audio player hooks
-  const { currentTrack, setCurrentTrack } = useCurrentTrack();
-  const { queue } = useQueue();
+  const { currentTrack, } = useCurrentTrack();
+  const { data: queueItems = [] } = useQueue();
+  // Map queue items to tracks for backward compatibility
+  const queue = queueItems
+    .map((item) => item.track)
+    .filter((track): track is NonNullable<typeof track> => track !== null);
   const [queueIndex, setQueueIndex] = useState(
-    queue?.findIndex((track) => track.id === currentTrack?.id) || 0,
+    queue.findIndex((track) => track.id === currentTrack?.id) || 0,
   );
 
   useEffect(() => {
     setQueueIndex(
-      queue?.findIndex((track) => track.id === currentTrack?.id) || 0,
+      queue.findIndex((track) => track.id === currentTrack?.id) || 0,
     );
-  }, [currentTrack]);
+  }, [currentTrack, queue]);
   const actions = useAudioPlayerActions();
   const isPlaying = useIsPlaying();
   const formattedImage = currentTrack?.imagePath || 'Unknown Image';
   // Get full playback state from context
   const { state: playbackState } = useAudioPlayerContext();
+  // Update audio element when track changes - reload the audio source
+  useEffect(() => {
+    if (audioRef.current && currentTrack) {
+      // When track changes, reload the audio element to load the new source
+      audioRef.current.load();
+    }
+  }, [currentTrack?.id]);
 
   // Update audio element when state changes
   useEffect(() => {
-    if (audioRef.current) {
+    if (audioRef.current && currentTrack) {
       audioRef.current.volume = playbackState.volume;
       audioRef.current.playbackRate = playbackState.playbackRate;
       audioRef.current.muted = false;
-      if (isPlaying) {
-        audioRef.current.play();
+      if (isPlaying && playbackState.trackId === currentTrack.id) {
+        // Only play if the playback state matches the current track
+        // Use a promise to handle potential play() errors
+        audioRef.current.play().catch((error) => {
+          console.error('Error playing audio:', error);
+        });
       } else {
         audioRef.current.pause();
       }
@@ -81,6 +98,8 @@ export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
     playbackState.volume,
     playbackState.playbackRate,
     playbackState.isFavorite,
+    playbackState.trackId,
+    currentTrack?.id,
   ]);
 
   // Queries for visualizations
@@ -93,8 +112,8 @@ export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
     if (!audio) return;
 
     const handleEnded = () => {
-      // Track ended, could trigger next track logic here
-      handleNextTrack();
+      // Track ended, trigger next track
+      actions.next();
     };
 
     audio.addEventListener('ended', handleEnded);
@@ -102,84 +121,68 @@ export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
     return () => {
       audio.removeEventListener('ended', handleEnded);
     };
-  }, [isPlaying]);
+  }, [actions]);
 
   const handleToggleFavorite = () => {
     if (!currentTrack) return;
     actions.toggleFavorite(currentTrack.id);
   };
 
+  const handleToggleResearch = () => {
+    if (!currentTrack) return;
+    navigate({ to: `/research/${currentTrack.id}` });
+  };
+
   const handlePlay = () => {
     if (!currentTrack) return;
-    setQueueIndex(queueIndex);
 
-    actions.togglePlayPause(currentTrack.id);
+    if (isPlaying) {
+      actions.pause(currentTrack.id);
+    } else {
+      actions.play(currentTrack.id);
+    }
   };
 
   const handlePreviousTrack = () => {
-    if (!queue) return;
-    const nextIndex = queueIndex - 1;
-    setQueueIndex(nextIndex);
-    setCurrentTrack(queue[nextIndex]);
-    actions.togglePlayPause(queue[nextIndex].id);
+    actions.previous();
   };
 
   const handleNextTrack = () => {
-    if (!queue) return;
-    const nextIndex = queueIndex + 1;
-    setQueueIndex(nextIndex);
-    setCurrentTrack(queue[nextIndex]);
-    actions.togglePlayPause(queue[nextIndex].id);
+    actions.next();
   };
 
-  const handleVolumeChange = (newVolume: number) => {
-    if (currentTrack) {
-      actions.setVolume(currentTrack.id, newVolume / 100);
-    }
-  };
+  // Note: Volume and playback rate controls removed for simplification
+  // They can be re-added later if needed by calling mutations directly
 
-  const handlePlaybackRateChange = (newRate: number) => {
-    if (currentTrack) {
-      actions.setPlaybackRate(currentTrack.id, newRate);
-    }
-  };
-
-  const toggleMute = () => {
-    if (playbackState.volume === 0) {
-      handleVolumeChange(50); // Default volume
-    } else {
-      handleVolumeChange(0);
-    }
-  };
-
-  if (!currentTrack) {
-    return null;
-  }
 
   return (
     <div
+      style={{
+        '--music-player-height': MUSIC_PLAYER_HEIGHT,
+      } as React.CSSProperties}
       className={cn(
-        'fixed bottom-0 left-0 right-0 bg-background border-t border-border z-[9999]',
+        `fixed bottom-0 left-0 right-0 bg-background border-t border-border z-[9999] h-(--music-player-height)`,
         'flex flex-col',
         className,
+        'bg-background shadow-lg',
       )}
     >
-      <div className="z-0 absolute top-0 left-0 w-full h-full   opacity-50 ">
+      {currentTrack && <div className="z-0 absolute top-0 left-0 w-full h-full   opacity-50 ">
         <img
           src={`http://localhost:3000/api/images/serve?imagePath=${formattedImage}`}
           alt="Album Art"
           className="w-full h-full object-cover rounded-md "
         />
-      </div>
+      </div>}
       {/* Main Player Bar */}
       <div className=" backdrop-blur-2xl z-10 flex items-center justify-between  py-2 h-20 sm:h-16 flex-col sm:flex-row gap-2 sm:gap-0">
         {/* Track Info */}
         <div className="z-10 flex  gap-2 sm:gap-3 min-w-0 order-1 sm:order-1 items-center justify-start">
-          <div className="w-16 h-16 bg-muted rounded-md flex-shrink-0 flex items-center justify-center ">
+          <div className="w-16 h-16 bg-muted rounded-md  flex items-center justify-center ">
             <img
               src={`http://localhost:3000/api/images/serve?imagePath=${formattedImage}`}
               alt="Album Art"
-              className="w-16 h-16 object-cover rounded-md rounded-l-none "
+              className="w-16 h-16 object-cover   "
             />
           </div>
           {currentTrack && (
@@ -242,7 +245,7 @@ export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
                 size="sm"
                 onClick={handleToggleFavorite}
                 className="h-8 w-8 p-0"
-                //disabled={playbackState.isLoading}
+              //disabled={playbackState.isLoading}
               >
                 <Heart
                   className={cn(
@@ -252,6 +255,14 @@ export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
                       : '',
                   )}
                 />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleToggleResearch}
+                className="h-8 w-8 p-0"
+              >
+                <Brain className="h-4 w-4" />
               </Button>
             </div>
             {/* Visualizations */}
@@ -263,27 +274,7 @@ export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
                 isPlaying={isPlaying}
               />
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={toggleMute}
-              className="h-8 w-8 p-0"
-            >
-              {playbackState.volume === 0 ? (
-                <VolumeX className="h-4 w-4" />
-              ) : (
-                <Volume2 className="h-4 w-4" />
-              )}
-            </Button>
-            <Progress
-              value={playbackState.volume * 100}
-              className="w-16 sm:w-20 h-1 hidden sm:block"
-              onClick={(e) => {
-                const rect = e.currentTarget.getBoundingClientRect();
-                const percent = (e.clientX - rect.left) / rect.width;
-                handleVolumeChange(percent * 100);
-              }}
-            />
+            {/* Volume controls removed for simplification */}
           </div>
         </div>
       </div>
@@ -292,20 +283,9 @@ export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
         <div className="px-4 py-2 border-t border-border">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
-              <span className="text-xs text-muted-foreground">Speed:</span>
-              <input
-                type="range"
-                min="0.25"
-                max="4.0"
-                step="0.25"
-                value={playbackState.playbackRate}
-                onChange={(e) =>
-                  handlePlaybackRateChange(parseFloat(e.target.value))
-                }
-                className="w-20"
-              />
-              <span className="text-xs text-muted-foreground w-8">
-                {playbackState.playbackRate}x
+              {/* Playback rate controls removed for simplification */}
+              <span className="text-xs text-muted-foreground">
+                Rate: {playbackState.playbackRate}x
               </span>
             </div>
           </div>

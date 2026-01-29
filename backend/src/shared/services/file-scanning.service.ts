@@ -32,7 +32,7 @@ export interface FileInfo {
 
 @Injectable()
 export class FileScanningService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   async scanLibrary(
     libraryId: string,
@@ -59,9 +59,10 @@ export class FileScanningService {
 
       // Scan directory
       // For incremental scans, only scan files modified after last scan
+      const isIncrementalScan = options.incremental;
       const newerThan =
-        options.incremental && library.lastScanAt
-          ? library.lastScanAt
+        isIncrementalScan && library.lastIncrementalScanAt
+          ? library.lastIncrementalScanAt
           : undefined;
 
       const files = await this.scanDirectory(

@@ -28,7 +28,7 @@ model MusicLibrary {
   autoScan              Boolean  @default(true)
   scanInterval          Int?     // in hours
   includeSubdirectories Boolean  @default(true)
-  supportedFormats      String   @default("MP3,FLAC,WAV,AAC,OGG,OPUS") // comma-separated
+  supportedFormats      String   @default("MP3,FLAC,WAV,AAC,OGG,OPUS,M4A") // comma-separated
   maxFileSize           Int?     // in MB
   
   // Timestamps
@@ -118,6 +118,7 @@ model MusicTrack {
   imageSearches         ImageSearch[]
   trackGenres           TrackGenre[]
   trackSubgenres        TrackSubgenre[]
+  queue                 Queue?
   
   // Indexes for query performance
   @@index([libraryId])
@@ -298,7 +299,7 @@ model UserPreferences {
   autoScan              Boolean  @default(true)
   scanInterval          Int      @default(24) // in hours
   includeSubdirectories Boolean  @default(true)
-  supportedFormats      String   @default("MP3,FLAC,WAV,AAC,OGG,OPUS")
+  supportedFormats      String   @default("MP3,FLAC,WAV,AAC,OGG,OPUS,M4A")
   
   // Privacy Preferences
   shareListeningData    Boolean  @default(false)
@@ -322,6 +323,7 @@ model Playlist {
   
   // Relations
   tracks      PlaylistTrack[]
+  sorting     PlaylistSorting?
   
   @@map("playlists")
 }
@@ -601,4 +603,69 @@ enum ImageSearchStatus {
   PENDING
   COMPLETED
   FAILED
+}
+
+enum PlaylistSortingKey {
+  addedAt
+  position
+}
+
+enum PlaylistSortingDirection {
+  asc
+  desc
+}
+
+model PlaylistSorting {
+  id              String                  @id @default(uuid())
+  playlistId      String                  @unique
+  sortingKey      PlaylistSortingKey      @default(position)
+  sortingDirection PlaylistSortingDirection @default(asc)
+  createdAt       DateTime                @default(now())
+  updatedAt       DateTime                @updatedAt
+  
+  // Relations
+  playlist        Playlist                @relation(fields: [playlistId], references: [id], onDelete: Cascade)
+  
+  @@map("playlist_sorting")
+}
+
+model Queue {
+  id        String   @id @default(uuid())
+  trackId   String
+  position  Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Relations
+  track     MusicTrack @relation(fields: [trackId], references: [id], onDelete: Cascade)
+  
+  // Indexes
+  @@index([trackId])
+  @@index([position])
+  @@unique([trackId])
+  @@map("queue")
+}
+
+model ScanSession {
+  id                String        @id @default(uuid())
+  sessionId         String        @unique // The UUID used for Redis channels
+  status            ScanStatus    @default(SCANNING)
+  totalBatches      Int           @default(0)
+  completedBatches  Int           @default(0)
+  totalTracks       Int           @default(0)
+  completedTracks   Int           @default(0)
+  failedTracks      Int           @default(0)
+  overallProgress   Int           @default(0)
+  startedAt         DateTime      @default(now())
+  completedAt       DateTime?
+  errorMessage      String?
+  
+  // Timestamps
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  
+  @@index([sessionId])
+  @@index([status])
+  @@index([startedAt])
+  @@map("scan_sessions")
 }

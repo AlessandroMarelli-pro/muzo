@@ -7,7 +7,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { useQueue } from '@/contexts/audio-player-context';
 import { useLibrary, useTracks } from '@/services/api-hooks';
 import {
   BarChart3,
@@ -46,10 +45,7 @@ export const LibraryDashboard: React.FC<LibraryDashboardProps> = ({
 
   const [activeView, setActiveView] = useState<DashboardView>('overview');
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const { setQueue } = useQueue();
-  const handleSetQueue = () => {
-    setQueue(tracks);
-  };
+
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
@@ -203,9 +199,7 @@ export const LibraryDashboard: React.FC<LibraryDashboardProps> = ({
                 <p className="text-2xl font-bold">
                   {
                     new Set(
-                      tracks
-                        .flatMap((t) => t.genres || [])
-                        .filter(Boolean),
+                      tracks.flatMap((t) => t.genres || []).filter(Boolean),
                     ).size
                   }
                 </p>
@@ -280,21 +274,13 @@ export const LibraryDashboard: React.FC<LibraryDashboardProps> = ({
       {/* Active View Content */}
       <div className="min-h-[600px]">{renderActiveView()}</div>
 
-      <Card>
-        <CardContent className="p-6">
-          <div
-            className={'flex flex-wrap  justify-center gap-3  overflow-y-auto'}
-          >
-            {tracks?.map((track) => (
-              <MusicCard
-                key={track.id}
-                track={track}
-                setQueue={handleSetQueue}
-              />
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+      <div
+        className={'flex flex-wrap  justify-center gap-3  overflow-y-auto'}
+      >
+        {tracks?.map((track) => (
+          <MusicCard key={track.id} track={track} />
+        ))}
+      </div>
 
       {/* Footer Actions */}
       <Card>
@@ -310,9 +296,8 @@ export const LibraryDashboard: React.FC<LibraryDashboardProps> = ({
               </Button>
               <Button variant="outline" size="sm" onClick={handleRefresh}>
                 <RefreshCw
-                  className={`h-4 w-4 mr-2 ${
-                    isRefreshing ? 'animate-spin' : ''
-                  }`}
+                  className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''
+                    }`}
                 />
                 Refresh All
               </Button>

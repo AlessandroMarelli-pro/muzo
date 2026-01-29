@@ -12,6 +12,7 @@ export interface FilterCriteria {
   liveness?: { min?: number; max?: number };
   acousticness?: { min?: number; max?: number };
   artist?: string;
+  title?: string;
   libraryId?: string[];
   atmospheres?: string[];
 }

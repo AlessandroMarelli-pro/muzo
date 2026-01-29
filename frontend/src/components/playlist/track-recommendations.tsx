@@ -1,46 +1,51 @@
 import { TrackRecommendation } from '@/__generated__/types';
-import { Button } from '@/components/ui/button';
 import {
   Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
+  CardContent
 } from '@/components/ui/card';
-import { useQueue } from '@/contexts/audio-player-context';
 import {
-  useAddTrackToPlaylist,
-  usePlaylistRecommendations,
+  useAddTrackToPlaylist
 } from '@/services/playlist-hooks';
-import { Music, Sparkles } from 'lucide-react';
-import { useEffect } from 'react';
-import { TrackRecommendationsCard } from './track-recommendations-card';
+import { useRouter } from '@tanstack/react-router';
+import {
+  TrackRecommendationsCard,
+  TrackRecommendationsCardSkeleton,
+} from './track-recommendations-card';
 
 interface TrackRecommendationsProps {
   playlistId: string;
   onTrackAdded: (trackId?: string) => void;
+  recommendations: TrackRecommendation[];
 }
 
 export const TrackRecommandationsComponent = ({
   recommendations,
   onAddTrack,
-  setQueue,
+  isLoading,
 }: {
   recommendations: TrackRecommendation[];
   onAddTrack?: (trackId: string) => void;
-  setQueue?: () => void;
+  isLoading: boolean;
 }) => {
   return (
     <Card className="py-0">
       <CardContent className="p-0">
         <div className="divide-y">
-          {recommendations.map((recommendation) => (
-            <TrackRecommendationsCard
-              recommendation={recommendation}
-              onAddTrack={onAddTrack}
-              setQueue={setQueue}
-            />
-          ))}
+          {!isLoading
+            ? recommendations.map((recommendation, index) => (
+              <TrackRecommendationsCard
+                recommendation={recommendation}
+                onAddTrack={onAddTrack}
+                index={index}
+                recommendationsLength={recommendations.length}
+              />
+            ))
+            : Array.from({ length: 10 }).map((_, i) => (
+              <TrackRecommendationsCardSkeleton
+                key={`recommendations-skeleton-${i}`}
+                index={i}
+              />
+            ))}
         </div>
       </CardContent>
     </Card>
@@ -50,120 +55,35 @@ export const TrackRecommandationsComponent = ({
 export function TrackRecommendations({
   playlistId,
   onTrackAdded,
+  recommendations,
 }: TrackRecommendationsProps) {
-  const {
-    data: recommendations = [],
-    refetch,
-    isLoading: loading,
-    error,
-  } = usePlaylistRecommendations(playlistId, 20);
-
-  const { setQueue } = useQueue();
 
   const addTrackMutation = useAddTrackToPlaylist('default');
-
-  const handleSetQueue = () => {
-    setQueue(recommendations.map((recommendation) => recommendation.track));
-  };
-
-  useEffect(() => {
-    refetch();
-  }, [playlistId]);
-
+  const router = useRouter();
+  const refetchRecommendations = () => {
+    router.invalidate();
+  }
   const handleAddTrack = async (trackId: string) => {
     try {
       await addTrackMutation.mutateAsync({ playlistId, input: { trackId } });
       onTrackAdded(trackId);
 
       // Remove the added track from recommendations
-      refetch();
+      refetchRecommendations();
     } catch (error) {
       console.error('Failed to add track:', error);
     } finally {
     }
   };
 
-  if (loading) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5" />
-            Recommendations
-          </CardTitle>
-          <CardDescription>
-            Finding tracks similar to your playlist...
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <div
-                key={i}
-                className="flex items-center gap-4 p-4 border rounded-lg animate-pulse"
-              >
-                <div className="h-12 w-12 bg-gray-200 rounded"></div>
-                <div className="flex-1 space-y-2">
-                  <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-                  <div className="h-3 bg-gray-200 rounded w-1/2"></div>
-                </div>
-                <div className="h-8 bg-gray-200 rounded w-20"></div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
 
-  if (error) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5" />
-            Recommendations
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center py-8">
-            <p className="text-red-500 mb-4">{error?.message}</p>
-            <Button onClick={() => refetch()}>Retry</Button>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
 
-  if (recommendations.length === 0) {
-    return (
-      <Card className="py-0">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5" />
-            Recommendations
-          </CardTitle>
-          <CardDescription>
-            No recommendations available for this playlist
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center py-8 text-muted-foreground">
-            <Music className="h-12 w-12 mx-auto mb-4" />
-            <p>
-              Add more tracks to your playlist to get better recommendations
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
 
   return (
     <TrackRecommandationsComponent
       recommendations={recommendations}
       onAddTrack={handleAddTrack}
-      setQueue={handleSetQueue}
+      isLoading={false}
     />
   );
 }

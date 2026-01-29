@@ -4,7 +4,6 @@ Simple audio analysis API endpoint for minimal operations.
 
 import atexit
 import gc
-import json
 import os
 import tempfile
 import threading

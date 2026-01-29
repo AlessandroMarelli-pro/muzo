@@ -1,9 +1,9 @@
-import { SimpleMusicTrack } from '@/__generated__/types';
 import { cn } from '@/lib/utils';
-import { useTrackRecommendations } from '@/services/api-hooks';
+import { Route } from '@/routes/research.{-$trackId}';
+import { fetchRandomTrack } from '@/services/api-hooks';
+import { useNavigate, useRouter } from '@tanstack/react-router';
 import { Check, PlusCircle } from 'lucide-react';
-import { useEffect, useState } from 'react';
-import { Loading } from '../loading';
+import { useMemo } from 'react';
 import { TrackRecommandationsComponent } from '../playlist/track-recommendations';
 import { DetailedTrackCard } from '../track/detailed-track-card';
 import { Button } from '../ui/button';
@@ -20,15 +20,12 @@ const DashedButton = ({
   return (
     <Button
       onClick={onClick}
-      className={cn(
-        'border-dashed',
-        selected && 'bg-green-500 text-white !border-green-500',
-      )}
-      variant={selected ? 'outline-success' : 'outline'}
+      className={cn('border-dashed')}
+      variant={selected ? 'default' : 'outline'}
       size="sm"
     >
       {selected ? (
-        <Check className="w-4 h-4 text-green-500" />
+        <Check className="w-4 h-4 " />
       ) : (
         <PlusCircle className="w-4 h-4" />
       )}
@@ -37,37 +34,49 @@ const DashedButton = ({
   );
 };
 
-export function Research({
-  track,
-  refetch,
-}: {
-  track: SimpleMusicTrack;
-  refetch: () => void;
-}) {
-  const [selectedBoost, setSelectedBoost] = useState<string[]>([]);
-  const {
-    data: trackRecommendations,
-    isLoading: isLoadingTrackRecommendations,
-    refetch: refetchTrackRecommendations,
-  } = useTrackRecommendations(track?.id, selectedBoost.join(','));
+export function Research() {
+  const router = useRouter();
+  const navigate = useNavigate();
+  const search = Route.useSearch();
 
-  useEffect(() => {
-    if (selectedBoost) {
-      refetchTrackRecommendations();
-    }
-  }, [selectedBoost]);
+  const { randomTrack: track, isLoading, trackRecommendations } = Route.useLoaderData();
+  const refetch = async () => {
+    const randomTrack = await fetchRandomTrack();
+    navigate({
+      to: '/research/{-$trackId}',
+      params: { trackId: randomTrack.id },
+    });
+  };
+  // Parse boost from search params (comma-separated string)
+  const selectedBoost = useMemo(() => {
+    return search.boost ? search.boost.split(',').filter(Boolean) : [];
+  }, [search.boost]);
 
   const handleSelectedBoost = (key: string) => {
-    console.log('selectedBoost', selectedBoost);
-    if (selectedBoost?.some((k) => k === key)) {
-      setSelectedBoost((prev) => prev?.filter((k) => k !== key));
+    const currentBoost = selectedBoost;
+    let newBoost: string[];
+
+    if (currentBoost.some((k) => k === key)) {
+      newBoost = currentBoost.filter((k) => k !== key);
     } else {
-      setSelectedBoost((prev) => [...prev, key]);
+      newBoost = [...currentBoost, key];
     }
+
+    // Update search params - this will trigger loaderDeps to change and refetch
+    router.navigate({
+      search: {
+        boost: newBoost.length > 0 ? newBoost.join(',') : undefined,
+      },
+      replace: true,
+    });
   };
+
+
+
+
   return (
-    <div className="p-4 space-y-4 flex flex-col z-0">
-      <DetailedTrackCard track={track} refetch={refetch} />
+    <div className="p-6 space-y-6 min-w-fit">
+      <DetailedTrackCard track={track} refetch={refetch} isLoading={isLoading} />
       <div className="flex flex-wrap gap-2">
         {[
           { key: 'audioSimilarity', label: 'Audio Similarity' },
@@ -85,14 +94,10 @@ export function Research({
           </DashedButton>
         ))}
       </div>
-      {isLoadingTrackRecommendations ? (
-        <Loading />
-      ) : (
-        <TrackRecommandationsComponent
-          recommendations={trackRecommendations || []}
-          setQueue={() => {}}
-        />
-      )}
+      <TrackRecommandationsComponent
+        recommendations={trackRecommendations || []}
+        isLoading={isLoading}
+      />
     </div>
   );
 }

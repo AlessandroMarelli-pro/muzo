@@ -1,14 +1,14 @@
 import {
-  Body,
   Controller,
   Delete,
   Get,
   Logger,
   Param,
-  Post,
+  Post
 } from '@nestjs/common';
 import { PrismaService } from '../../shared/services/prisma.service';
 import { QueueService } from './queue.service';
+import { ScanSessionService } from './scan-session.service';
 
 @Controller('queue')
 export class QueueController {
@@ -17,7 +17,8 @@ export class QueueController {
   constructor(
     private readonly queueService: QueueService,
     private readonly prismaService: PrismaService,
-  ) {}
+    private readonly scanSessionService: ScanSessionService
+  ) { }
 
   /**
    * Start scanning all libraries
@@ -26,6 +27,7 @@ export class QueueController {
   async scanAllLibraries(): Promise<{
     message: string;
     librariesScheduled: number;
+    sessionIds: string[];
   }> {
     try {
       const libraries = await this.prismaService.musicLibrary.findMany({
@@ -33,12 +35,14 @@ export class QueueController {
       });
 
       let scheduledCount = 0;
+      const sessionIds: string[] = [];
       for (const library of libraries) {
-        await this.queueService.scheduleLibraryScan(
+        const sessionId = await this.queueService.scheduleLibraryScan(
           library.id,
           library.rootPath,
           library.name,
         );
+        sessionIds.push(sessionId);
         scheduledCount++;
       }
 
@@ -47,6 +51,7 @@ export class QueueController {
       return {
         message: `Scheduled ${scheduledCount} libraries for scanning`,
         librariesScheduled: scheduledCount,
+        sessionIds,
       };
     } catch (error) {
       this.logger.error('Failed to schedule library scans:', error);
@@ -60,26 +65,28 @@ export class QueueController {
   @Post('scan-library/:libraryId')
   async scanLibrary(
     @Param('libraryId') libraryId: string,
-  ): Promise<{ message: string }> {
+  ): Promise<{ message: string; sessionId: string }> {
     try {
       const library = await this.prismaService.musicLibrary.findUnique({
         where: { id: libraryId },
       });
+      this.logger.log(`Scanning library: ${libraryId}`, library);
 
       if (!library) {
         throw new Error(`Library not found: ${libraryId}`);
       }
 
-      await this.queueService.scheduleLibraryScan(
+      const sessionId = await this.queueService.scheduleLibraryScan(
         library.id,
         library.rootPath,
         library.name,
       );
 
-      this.logger.log(`Scheduled library scan for: ${library.name}`);
+      this.logger.log(`Scheduled library scan for: ${library.name} with session: ${sessionId}`);
 
       return {
         message: `Scheduled library scan for: ${library.name}`,
+        sessionId,
       };
     } catch (error) {
       this.logger.error(
@@ -145,167 +152,9 @@ export class QueueController {
     }
   }
 
-  /**
-   * Update BPM for a specific track
-   */
-  @Post('bpm-update/:trackId')
-  async updateTrackBPM(
-    @Param('trackId') trackId: string,
-    @Body()
-    body: {} = {},
-  ): Promise<{ message: string }> {
-    try {
-      const track = await this.prismaService.musicTrack.findUnique({
-        where: { id: trackId },
-        include: {
-          library: {
-            select: { id: true },
-          },
-        },
-      });
 
-      if (!track) {
-        throw new Error(`Track not found: ${trackId}`);
-      }
 
-      await this.queueService.scheduleBPMUpdate(
-        track.id,
-        track.filePath,
-        track.fileName,
-        track.libraryId,
-      );
 
-      this.logger.log(`Scheduled BPM update for track: ${track.fileName}`);
-
-      return {
-        message: `Scheduled BPM update for track: ${track.fileName}`,
-      };
-    } catch (error) {
-      this.logger.error(
-        `Failed to schedule BPM update for track ${trackId}:`,
-        error,
-      );
-      throw error;
-    }
-  }
-
-  /**
-   * Update BPM for all tracks in a library
-   */
-  @Post('bpm-update-library/:libraryId')
-  async updateLibraryBPM(
-    @Param('libraryId') libraryId: string,
-    @Body()
-    body: {} = {},
-  ): Promise<{ message: string; tracksScheduled: number }> {
-    try {
-      const library = await this.prismaService.musicLibrary.findUnique({
-        where: { id: libraryId },
-      });
-
-      if (!library) {
-        throw new Error(`Library not found: ${libraryId}`);
-      }
-
-      // Get all tracks in the library
-      const tracks = await this.prismaService.musicTrack.findMany({
-        where: { libraryId },
-        select: {
-          id: true,
-          filePath: true,
-          fileName: true,
-          libraryId: true,
-        },
-      });
-
-      if (tracks.length === 0) {
-        this.logger.log(`No tracks found in library: ${library.name}`);
-        return {
-          message: `No tracks found in library: ${library.name}`,
-          tracksScheduled: 0,
-        };
-      }
-
-      // Schedule BPM updates for all tracks
-      await this.queueService.scheduleBatchBPMUpdates(
-        tracks.map((track) => ({
-          trackId: track.id,
-          filePath: track.filePath,
-          fileName: track.fileName,
-          libraryId: track.libraryId,
-        })),
-      );
-
-      this.logger.log(
-        `Scheduled BPM updates for ${tracks.length} tracks in library: ${library.name}`,
-      );
-
-      return {
-        message: `Scheduled BPM updates for ${tracks.length} tracks in library: ${library.name}`,
-        tracksScheduled: tracks.length,
-      };
-    } catch (error) {
-      this.logger.error(
-        `Failed to schedule BPM updates for library ${libraryId}:`,
-        error,
-      );
-      throw error;
-    }
-  }
-
-  /**
-   * Update BPM for all tracks across all libraries
-   */
-  @Post('bpm-update-all')
-  async updateAllTracksBPM(
-    @Body()
-    body: {} = {},
-  ): Promise<{ message: string; tracksScheduled: number }> {
-    try {
-      // Get all tracks from all libraries
-      const tracks = await this.prismaService.musicTrack.findMany({
-        select: {
-          id: true,
-          filePath: true,
-          fileName: true,
-          libraryId: true,
-        },
-      });
-
-      if (tracks.length === 0) {
-        this.logger.log('No tracks found in any library');
-        return {
-          message: 'No tracks found in any library',
-          tracksScheduled: 0,
-        };
-      }
-
-      // Schedule BPM updates for all tracks
-      await this.queueService.scheduleBatchBPMUpdates(
-        tracks.map((track) => ({
-          trackId: track.id,
-          filePath: track.filePath,
-          fileName: track.fileName,
-          libraryId: track.libraryId,
-        })),
-      );
-
-      this.logger.log(
-        `Scheduled BPM updates for ${tracks.length} tracks across all libraries`,
-      );
-
-      return {
-        message: `Scheduled BPM updates for ${tracks.length} tracks across all libraries`,
-        tracksScheduled: tracks.length,
-      };
-    } catch (error) {
-      this.logger.error(
-        'Failed to schedule BPM updates for all tracks:',
-        error,
-      );
-      throw error;
-    }
-  }
 
   /**
    * Trigger audio scan for tracks with null originalArtist
@@ -320,50 +169,37 @@ export class QueueController {
       const tracksWithNullArtist = await this.prismaService.musicTrack.findMany(
         {
           where: {
-            OR: [
-              {
-                trackGenres: {
-                  none: {},
-                },
-              },
-              {
-                trackSubgenres: {
-                  none: {},
-                },
-              },
-              {
-                imageSearches: {
-                  none: {},
-                },
-              },
-              {
-                id: 'edf9418a-c2da-4d8a-b600-b92f4a073922',
-              },
-            ],
+            libraryId: 'a8b6b258-4789-4db7-a14d-27ad2d37c00b',
+            analysisCompletedAt: {
+              lte: new Date(Date.now() - 1000 * 60 * 60 * 24 * 10), // 1 days ago
+            }
+            // libraryId: 'f1119048-c2c7-41e2-a273-f4a8b3a4b99e'
           },
+
         },
       );
       const filteredTracks = tracksWithNullArtist.filter(
         (track) => track.fileSize <= 100000000, // 100MB
       );
-      console.log(tracksWithNullArtist.map((track) => track.fileName));
 
-      if (filteredTracks.length === 0) {
+      if (filteredTracks.length >= 0) {
         this.logger.log('No tracks found with null originalArtist');
         return {
           message: 'No tracks found with null originalArtist',
           tracksScheduled: 0,
         };
       }
-      await this.queueService.scheduleScanForMissingData(filteredTracks, false);
-      /* await this.queueService.scheduleBatchAudioScans(
-        filteredTracks.map((track) => ({
-          trackId: track.id,
-          filePath: track.filePath,
-          fileName: track.fileName,
-          libraryId: track.libraryId,
-        })),
-      ); */
+      const groupByLibrary = filteredTracks.reduce((acc, track) => {
+        acc[track.libraryId] = [...(acc[track.libraryId] || []), track];
+        return acc;
+      }, {});
+      for (const libraryId in groupByLibrary) {
+
+        // Create scan session
+        await this.scanSessionService.createSession(libraryId);
+
+        await this.queueService.scheduleBulkBatchAudioScans(groupByLibrary[libraryId], false, true, libraryId);
+      }
       this.logger.log(
         `Scheduled audio scans for ${tracksWithNullArtist.length} tracks with null originalArtist`,
       );

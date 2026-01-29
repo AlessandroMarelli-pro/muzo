@@ -1,18 +1,11 @@
 'use client';
 
 import { SimpleMusicTrack } from '@/__generated__/types';
-import { SelectPlaylistDialog } from '@/components/playlist/select-playlist-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
-import { ColumnDef } from '@tanstack/react-table';
-import { Brain, Heart, MoreHorizontal, Pause, Play } from 'lucide-react';
+import { ColumnDef, Row } from '@tanstack/react-table';
+import { Brain, Heart, Pause, Play } from 'lucide-react';
 import * as React from 'react';
 
 import { DataTable } from '@/components/data-table/data-table';
@@ -22,20 +15,27 @@ import { DataTableToolbar } from '@/components/data-table/data-table-toolbar';
 import {
   useAudioPlayerActions,
   useCurrentTrack,
+  useIsPlaying,
 } from '@/contexts/audio-player-context';
 import { useDataTable } from '@/hooks/use-data-table';
+import { AudioPlayerActions } from '@/hooks/useAudioPlayer';
+import { FilterState } from '@/hooks/useFiltering';
 import { StaticFilterOptionsData } from '@/hooks/useFilterOptions';
-import { useNavigate } from '@tanstack/react-router';
+import { useNavigate, UseNavigateResult } from '@tanstack/react-router';
 import { format } from 'date-fns';
+import { DataTablePagination } from '../data-table/data-table-pagination';
+import { TrackMoreMenu } from './track-more-menu';
 
 interface MusicTableProps {
   data: SimpleMusicTrack[];
   pageCount: number;
-  onAddToQueue?: (tracks: SimpleMusicTrack[]) => void;
-  isLoading?: boolean;
   staticFilterOptions: StaticFilterOptionsData;
   initialPageSize?: number;
   playingTrackId?: string;
+  initialFilters: FilterState;
+  handleFilterChange: (
+    values: Record<string, string | string[] | null>,
+  ) => void;
 }
 const danceabilityFeelingOptions = [
   { label: 'Highly Danceable', value: 'highly-danceable' },
@@ -93,28 +93,39 @@ const CamelotKeyOptions = [
 const ActionCells = ({
   row,
   navigate,
-  onAddToQueue,
   actions,
-  currentTrack,
   setCurrentTrack,
-  onOpenAddToPlaylistDialog,
-}: any) => {
-  const [isTrackPlaying, setIsTrackPlaying] = React.useState(false);
+}: {
+  row: Row<SimpleMusicTrack>;
+  navigate: UseNavigateResult<string>;
+  actions: AudioPlayerActions;
+  setCurrentTrack: (track: SimpleMusicTrack) => void;
+}) => {
+  const { currentTrack } = useCurrentTrack();
+  const isPlaying = useIsPlaying();
 
   const track = row.original;
+  const isCurrentTrack = currentTrack?.id === track.id;
+  const isThisTrackPlaying = isCurrentTrack && isPlaying;
 
   const playMusic = () => {
-    setIsTrackPlaying((prev) => !prev);
-    setCurrentTrack(track);
-    /*    if (currentTrack?.id !== track.id) {
+    if (currentTrack?.id !== track.id) {
+      setCurrentTrack(track);
+      actions.play(track.id);
+    } else {
+      // Same track - toggle play/pause
+      if (isPlaying) {
+        actions.pause(track.id);
+      } else {
+        actions.play(track.id);
+      }
     }
-    */
-    actions.togglePlayPause(track.id);
   };
+
   return (
     <div className="flex items-center gap-2">
       <Button variant="ghost" size="sm" onClick={playMusic}>
-        {isTrackPlaying ? (
+        {isThisTrackPlaying ? (
           <Pause className="h-4 w-4" />
         ) : (
           <Play className="h-4 w-4" />
@@ -127,60 +138,17 @@ const ActionCells = ({
       >
         <Brain className="h-4 w-4 " />
       </Button>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="h-5 w-5 p-0">
-            <span className="sr-only">Open menu</span>
-            <MoreHorizontal className="h-4 w-4" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuItem
-            onClick={() => {
-              if (onAddToQueue) {
-                onAddToQueue([track]);
-              }
-            }}
-          >
-            Add to Queue
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => onOpenAddToPlaylistDialog(track.id)}>
-            Add to Playlist
-          </DropdownMenuItem>
-          <DropdownMenuItem>View Details</DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+      <TrackMoreMenu trackId={track.id} />
     </div>
   );
 };
-export function MusicTable({
-  data,
-  pageCount,
-  onAddToQueue,
-  isLoading,
-  staticFilterOptions,
-  initialPageSize = 10,
-}: MusicTableProps) {
-  const navigate = useNavigate();
-  const actions = useAudioPlayerActions();
-  const { currentTrack, setCurrentTrack } = useCurrentTrack();
-  const [isAddToPlaylistDialogOpen, setIsAddToPlaylistDialogOpen] =
-    React.useState(false);
-  const [selectedTrackId, setSelectedTrackId] = React.useState<string | null>(
-    null,
-  );
-
-  const handleOpenAddToPlaylistDialog = React.useCallback((trackId: string) => {
-    setSelectedTrackId(trackId);
-    setIsAddToPlaylistDialogOpen(true);
-  }, []);
-
-  const handleCloseAddToPlaylistDialog = React.useCallback(() => {
-    setIsAddToPlaylistDialogOpen(false);
-    setSelectedTrackId(null);
-  }, []);
-
-  const columns = React.useMemo<ColumnDef<SimpleMusicTrack>[]>(
+const columns = (
+  staticFilterOptions: StaticFilterOptionsData,
+  navigate: UseNavigateResult<string>,
+  actions: AudioPlayerActions,
+  setCurrentTrack: (track: SimpleMusicTrack) => void,
+) =>
+  React.useMemo<ColumnDef<SimpleMusicTrack>[]>(
     () => [
       {
         id: 'libraryId',
@@ -191,7 +159,7 @@ export function MusicTable({
           const imagePath = track.imagePath || 'Unknown Image';
 
           return (
-            <div className="flex items-center justify-cente h-5 w-8">
+            <div className="flex items-center justify-center h-5 w-8">
               <img
                 src={`http://localhost:3000/api/images/serve?imagePath=${imagePath}`}
                 alt="Album Art"
@@ -235,6 +203,7 @@ export function MusicTable({
       {
         id: 'title',
         accessorKey: 'title',
+
         header: ({ column }) => (
           <DataTableColumnHeader column={column} title="Title" />
         ),
@@ -249,6 +218,11 @@ export function MusicTable({
         },
         enableColumnFilter: true,
         width: 200,
+        meta: {
+          label: 'Title',
+          placeholder: 'Search title...',
+          variant: 'text',
+        },
       },
       {
         id: 'duration',
@@ -298,8 +272,13 @@ export function MusicTable({
 
           return (
             <div className="flex  gap-1">
-              {atmosphereKeywords?.map((atmosphereKeyword) => (
-                <Badge variant="secondary" className="capitalize" size="xs">
+              {atmosphereKeywords?.map((atmosphereKeyword, index) => (
+                <Badge
+                  key={`atmosphere-${index}-${atmosphereKeyword}`}
+                  variant="secondary"
+                  className="capitalize"
+                  size="xs"
+                >
                   {atmosphereKeyword}
                 </Badge>
               ))}
@@ -327,8 +306,13 @@ export function MusicTable({
 
           return (
             <div className="flex  gap-1">
-              {genres.map((genre) => (
-                <Badge variant="secondary" className="capitalize" size="xs">
+              {genres.map((genre, index) => (
+                <Badge
+                  key={`genre-${index}-${genre}`}
+                  variant="secondary"
+                  className="capitalize"
+                  size="xs"
+                >
                   {genre}
                 </Badge>
               ))}
@@ -353,8 +337,13 @@ export function MusicTable({
 
           return (
             <div className="flex  gap-1">
-              {subgenres.map((subgenre) => (
-                <Badge variant="outline" className="capitalize" size="xs">
+              {subgenres.map((subgenre, index) => (
+                <Badge
+                  key={`subgenre-${index}-${subgenre}`}
+                  variant="default"
+                  className="capitalize"
+                  size="xs"
+                >
                   {subgenre}
                 </Badge>
               ))}
@@ -392,14 +381,13 @@ export function MusicTable({
         enableColumnFilter: true,
       },
       {
-        id: 'key',
+        id: 'keys',
         accessorKey: 'key',
         header: ({ column }) => (
           <DataTableColumnHeader column={column} title="Key" />
         ),
         cell: ({ row }) => {
-          const key = row.getValue('key') as string;
-
+          const key = row.original.key as string;
           return (
             <Badge
               variant="outline"
@@ -407,12 +395,13 @@ export function MusicTable({
               size="xs"
               style={{
                 backgroundColor: CamelotKeyOptions.find(
-                  (option) => option.label === key,
+                  (option) => option.label.toLowerCase() === key.toLowerCase(),
                 )?.color,
               }}
             >
-              {CamelotKeyOptions.find((option) => option.label === key)
-                ?.label || 'N/A'}
+              {CamelotKeyOptions.find(
+                (option) => option.label.toLowerCase() === key.toLowerCase(),
+              )?.label || 'N/A'}
             </Badge>
           );
         },
@@ -575,21 +564,41 @@ export function MusicTable({
           <ActionCells
             row={row}
             navigate={navigate}
-            onAddToQueue={onAddToQueue}
             actions={actions}
-            currentTrack={currentTrack}
             setCurrentTrack={setCurrentTrack}
-            onOpenAddToPlaylistDialog={handleOpenAddToPlaylistDialog}
           />
         ),
       },
     ],
-    [onAddToQueue, handleOpenAddToPlaylistDialog],
+    [
+      staticFilterOptions,
+      navigate,
+      actions,
+      setCurrentTrack,
+    ],
   );
+
+export function MusicTable({
+  data,
+  pageCount,
+  staticFilterOptions,
+  initialPageSize = 10,
+  initialFilters,
+  handleFilterChange,
+}: MusicTableProps) {
+  const navigate = useNavigate();
+  const actions = useAudioPlayerActions();
+  const { setCurrentTrack } = useCurrentTrack();
+
 
   const { table } = useDataTable({
     data,
-    columns,
+    columns: columns(
+      staticFilterOptions,
+      navigate,
+      actions,
+      setCurrentTrack,
+    ),
     pageCount: pageCount,
     initialState: {
       sorting: [{ id: 'title', desc: false }],
@@ -607,24 +616,25 @@ export function MusicTable({
       },
     },
 
+    filterValues: initialFilters as unknown as Record<
+      string,
+      string | string[] | null
+    >,
+    setFilterValues: handleFilterChange,
+
     getRowId: (row) => row.id,
     enableAdvancedFilter: false,
   });
 
   return (
-    <div className="w-full space-y-4">
-      <DataTable table={table} isLoading={isLoading}>
+    <div className="w-full space-y-4 ">
+      <DataTable table={table}>
         <DataTableToolbar table={table}>
           <DataTableSortList table={table} />
         </DataTableToolbar>
+        <DataTablePagination table={table} />
       </DataTable>
-      {selectedTrackId && (
-        <SelectPlaylistDialog
-          isOpen={isAddToPlaylistDialogOpen}
-          onClose={handleCloseAddToPlaylistDialog}
-          trackId={selectedTrackId}
-        />
-      )}
+
     </div>
   );
 }

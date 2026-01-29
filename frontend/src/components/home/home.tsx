@@ -1,7 +1,6 @@
-import { formatDuration } from '@/lib/utils';
-import { useRecentlyPlayed } from '@/services/api-hooks';
-import { useLibraryMetrics } from '@/services/metrics-hooks';
-import MusicCard from '../track/music-card';
+import { TopGenre } from '@/services/metrics-hooks';
+import CountUp from '../CountUp';
+import { HorizontalMusicCardList } from '../track/music-card';
 import { Badge } from '../ui/badge';
 import { Card, CardDescription, CardHeader, CardTitle } from '../ui/card';
 
@@ -16,7 +15,8 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from '@/components/ui/chart';
-import { Loading } from '../loading';
+import { Route } from '@/routes';
+import { Skeleton } from '../ui/skeleton';
 
 export const description = 'A radar chart';
 
@@ -47,7 +47,7 @@ export function ChartRadar({
   color: string;
 }) {
   return (
-    <Card className="w-full">
+    <Card className="w-full shadow-xs">
       <CardHeader className="items-center pb-4">
         <CardTitle>{title}</CardTitle>
         <CardDescription>{description}</CardDescription>
@@ -68,114 +68,148 @@ export function ChartRadar({
     </Card>
   );
 }
-
-const StatsCard = ({ title, value }: { title: string; value: string }) => {
+const StatsCardSkeleton = () => {
   return (
-    <Card className="flex flex-col gap-2 w-full">
+    <Card className="flex flex-col gap-2 w-full  rounded-xl border-none bg-card text-card-foreground shadow-2xl @container/card">
       <CardHeader>
-        <CardDescription>{title}</CardDescription>
-        <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-          {value}
+        <CardDescription>
+          <Skeleton className="w-10 h-6" />
+        </CardDescription>
+        <CardTitle className="text-2xl @[250px]/card:text-3xl font-normal tracking-tight">
+          <Skeleton className="w-full h-7" />
         </CardTitle>
       </CardHeader>
     </Card>
   );
 };
 
+const StatsCard = ({
+  title,
+  value,
+  isLoading,
+  isDuration = false,
+}: {
+  title: string;
+  value: number;
+  isLoading: boolean;
+  isDuration?: boolean;
+}) => {
+  const isLoaded = sessionStorage.getItem('isLoaded');
+
+  if (isLoading) return <StatsCardSkeleton />;
+  return (
+    <Card className="flex flex-col gap-2 w-full  rounded-xl border-none bg-card text-card-foreground shadow-2xl @container/card">
+      <CardHeader className="px-1">
+        <CardTitle className="text-3xl @[250px]/card:text-3xl font-normal tracking-tight flex flex-col gap-2 items-center w-full text-center ">
+          <CountUp
+            to={value}
+            from={isLoaded === 'true' ? value : Math.floor(value * 0.7)}
+            direction="up"
+            delay={0}
+            duration={1}
+            className=" font-normal tracking-tight text-foreground w-full max-w-sm"
+            isDuration={isDuration}
+          />
+          <CardDescription className="text-lg @[250px]/card:text-lg text-normal w-full " >{title}</CardDescription>
+
+        </CardTitle>
+      </CardHeader>
+    </Card>
+  );
+};
+
+const TopGenresSkeleton = () => {
+  return (
+    <div className="flex flex-row gap-6 items-center flex-wrap">
+      {Array.from({ length: 10 }).map((_, index) => (
+        <Badge
+          key={index}
+          variant="secondary"
+          className=" h-6 shadow-xs capitalize "
+        >
+          <Skeleton key={index} className="w-15 h-6 bg-secondary" />
+        </Badge>
+      ))}
+    </div>
+  );
+};
+const TopGenres = ({
+  genres,
+  isLoading,
+}: {
+  genres: TopGenre[];
+  isLoading: boolean;
+}) => {
+  if (isLoading) return <TopGenresSkeleton />;
+  return (
+    <div className="flex flex-row gap-6 justify-between flex-wrap">
+      {genres?.map((genre, index) => (
+        <Badge
+          key={`${genre.genre}-${index}`}
+          variant="secondary"
+          className=" h-6 shadow-xs capitalize p-3 "
+          size="sm"
+        >
+          <strong>{genre.genre}:</strong> {genre.trackCount}
+        </Badge>
+      ))}
+    </div>
+  );
+};
+
+
 export function Home() {
-  const { data: recentlyPlayed } = useRecentlyPlayed();
-
-  const { data: metrics, isLoading, error } = useLibraryMetrics();
-
-  if (isLoading) return <Loading />;
-  if (error) return <div>Error loading metrics</div>;
+  const isLoading = false
+  const loaderData = Route.useLoaderData()
+  const recentlyPlayed = loaderData.recentlyPlayed
+  const metrics = loaderData.metrics
 
   const listeningStats = metrics?.listeningStats;
   const totalTracks = metrics?.totalTracks;
   const totalArtists = metrics?.artistCount;
 
   const topGenres = metrics?.topGenres;
-  const genreDistribution = metrics?.genreDistribution;
-  const subgenreDistribution = metrics?.subgenreDistribution;
   return (
-    <div className="p-6 min-h-screen space-y-4">
-      <h2 className="text-lg font-semibold ">Library Statistics</h2>
-      <div className="flex flex-col gap-4  md:gap-6">
-        <div className="*:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card flex flex-row gap-4 *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:shadow-xs  ">
-          <StatsCard
-            title="Total Tracks"
-            value={totalTracks?.toString() || '0'}
-          />
-          <StatsCard
-            title="Total Plays"
-            value={listeningStats?.totalPlays.toString() || '0'}
-          />
-          <StatsCard
-            title="Total Play Time"
-            value={formatDuration(
-              listeningStats?.totalPlayTime || 0,
-            ).toString()}
-          />
-          <StatsCard
-            title="Favorite Count"
-            value={listeningStats?.favoriteCount.toString() || '0'}
-          />
-          <StatsCard
-            title="Total Artists"
-            value={totalArtists?.toString() || '0'}
-          />
-        </div>
+    <div className="p-6 space-y-6 flex flex-col gap-6 justify-between">
+      <div className="flex flex-row gap-6 *:data-[slot=card]:shadow   *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card ">
+        <StatsCard
+          title="Tracks"
+          value={totalTracks || 0}
+          isLoading={isLoading}
+        />
+        <StatsCard
+          title="Plays"
+          value={listeningStats?.totalPlays || 0}
+          isLoading={isLoading}
+        />
+        <StatsCard
+          title="Played Time"
+          value={listeningStats?.totalPlayTime || 0}
+          isLoading={isLoading}
+          isDuration={true}
+        />
+        <StatsCard
+          title="Favorites"
+          value={listeningStats?.favoriteCount || 0}
+          isLoading={isLoading}
+        />
+        <StatsCard
+          title="Artists"
+          value={totalArtists || 0}
+          isLoading={isLoading}
+        />
       </div>
-      <div className="flex flex-row gap-4 items-center">
-        <h2 className="text-lg font-semibold ">Top Genres</h2>
-        {topGenres?.map((genre, index) => (
-          <Badge
-            key={`${genre.genre}-${index}`}
-            variant="outline"
-            className="text-xs h-6"
-            size="sm"
-          >
-            <strong>{genre.genre}:</strong> {genre.trackCount}
-          </Badge>
-        ))}
+      <TopGenres genres={topGenres || []} isLoading={isLoading} />
+
+      <div className="flex flex-col gap-6">
+
+        <HorizontalMusicCardList
+          tracks={recentlyPlayed || []}
+          isLoading={isLoading}
+          emptyMessage="No recently played tracks"
+        />
       </div>
-      <div className="flex flex-col gap-4">
-        <h2 className="text-lg font-semibold ">Recently Played</h2>
-        <div className="flex flex-nowrap gap-1 max-w-screen overflow-x-scroll scroll-mb-0 ">
-          {recentlyPlayed ? (
-            recentlyPlayed?.map((track, index) => (
-              <MusicCard
-                key={`${track.id}-${index}`}
-                track={track}
-                setQueue={() => {}}
-              />
-            ))
-          ) : (
-            <div>No recently played tracks</div>
-          )}
-        </div>
-      </div>
-      <div className="flex flex-col gap-4 w-full">
-        <h2 className="text-lg font-semibold">Distributions</h2>
-        <div className="*:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card flex flex-row gap-4 *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:shadow-xs  ">
-          <ChartRadar
-            data={genreDistribution}
-            title="Genre Distribution"
-            description="Most popular genres in your library"
-            angleKey="genre"
-            dataKey="count"
-            color={chartConfig.genre.color as string}
-          />
-          <ChartRadar
-            data={subgenreDistribution}
-            title="Subgenre Distribution"
-            description="Most popular subgenres in your library"
-            angleKey="subgenre"
-            dataKey="count"
-            color={chartConfig.subgenre.color as string}
-          />
-        </div>
-      </div>
+
     </div>
   );
 }

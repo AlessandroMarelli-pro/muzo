@@ -436,6 +436,24 @@ export class SimpleMusicTrack {
 }
 
 @ObjectType()
+export class RandomTrackWithStats {
+  @Field(() => SimpleMusicTrack, { nullable: true })
+  track: SimpleMusicTrack | null;
+
+  @Field(() => Float)
+  likedCount: number;
+
+  @Field(() => Float)
+  bangerCount: number;
+
+  @Field(() => Float)
+  dislikedCount: number;
+
+  @Field(() => Float)
+  remainingCount: number;
+}
+
+@ObjectType()
 export class MusicTrackListPaginated {
   @Field(() => [SimpleMusicTrack])
   tracks: SimpleMusicTrack[];

@@ -1,4 +1,8 @@
 import { FavoriteList } from '@/components/favorites/favortite-list';
+import {
+  playlistByNameQueryOptions,
+  playlistRecommendationsQueryOptions,
+} from '@/services/playlist-hooks';
 import { createFileRoute } from '@tanstack/react-router';
 
 function FavoritesPage() {
@@ -31,4 +35,14 @@ function FavoritesPage() {
 
 export const Route = createFileRoute('/favorites')({
   component: FavoritesPage,
+  loader: async ({ context }) => {
+    const playlist = await context.queryClient.ensureQueryData(
+      playlistByNameQueryOptions('favorites'),
+    );
+    const recommendations = await context.queryClient.ensureQueryData(
+      playlistRecommendationsQueryOptions(playlist.id, 20),
+    );
+    return { playlist, recommendations };
+  },
+  preload: true,
 });

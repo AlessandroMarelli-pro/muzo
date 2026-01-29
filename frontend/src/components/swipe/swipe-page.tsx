@@ -5,27 +5,83 @@ import {
   useCurrentTrack,
   useIsPlaying,
 } from '@/contexts/audio-player-context';
+import { Route } from '@/routes/swipe.index';
 import {
   useBangerTrack,
   useDislikeTrack,
-  useLikeTrack,
-  useRandomTrack,
+  useLikeTrack
 } from '@/services/api-hooks';
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { SwipeControls } from './swipe-controls';
+import { useRouter } from '@tanstack/react-router';
+import { InfoIcon } from 'lucide-react';
+import { AnimatePresence, motion } from 'motion/react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { FilterButton } from '../filters';
+import { Skeleton } from '../ui/skeleton';
+import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip';
 import { SwipeView } from './swipe-track';
 
-export function SwipePage() {
-  const [trackId, setTrackId] = useState<string | undefined>(undefined);
-  const {
-    data: track,
-    isLoading: isLoadingTrack,
-    refetch,
-  } = useRandomTrack(trackId, true);
+const UsageTooltip = () => {
+  return (
+    <Tooltip>
+      <TooltipTrigger>
+        <InfoIcon className="w-8 h-8 text-foreground hover:text-foreground cursor-pointer" />
+      </TooltipTrigger>
+      <TooltipContent side="bottom" align="end" sideOffset={10} className='bg-secondary text-background p-4'>
+        <span className="text-base text-muted-foreground flex flex-col gap-2">
+          Swipe right to like, left to dislike, or up for BANGER!
+          <span>
+            <kbd className="px-2 py-1 bg-background rounded text-xs font-bold capitalize">Space</kbd>{' '}
+            play/pause
+          </span>
+          <span>
+            <kbd className="px-2 py-1 bg-background rounded text-xs font-bold capitalize">E</kbd> like
+          </span>
+          <span><kbd className="px-2 py-1 bg-background rounded text-xs font-bold capitalize">Z</kbd>{' '}
+            banger </span>
+          <span>
+            <kbd className="px-2 py-1 bg-background rounded text-xs font-bold capitalize">A</kbd>{' '}
+            dislike
+          </span>
+        </span>
+      </TooltipContent>
+    </Tooltip>
+  );
+};
+
+const AnimatedNumber = ({ animationKey, value }: { animationKey: string, value: number }) => {
+  return (
+    <AnimatePresence initial={false}>
+      <motion.span
+        key={animationKey}
+        initial={{ y: -15, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        exit={{ y: 20, opacity: 0, scale: 0.8 }}
+        transition={{
+          y: { type: "spring", stiffness: 100, damping: 30, duration: 0.5, ease: 'easeIn' },
+          opacity: { type: "spring", stiffness: 100, damping: 30, duration: 0.5 },
+        }}
+        className='font-bold capitalize  absolute bottom-0 text-muted-foreground'>
+        {value}
+      </motion.span>
+    </AnimatePresence>)
+}
+
+const Counter = ({ label, value }: { label: string, value: number }) => (
+  <span className='flex flex-col font-bold capitalize relative pr-4 h-18'>
+    <span>{label}</span>
+    <AnimatedNumber animationKey={label + value} value={value} />
+  </span>
+)
+
+export const SwipePage = React.memo(() => {
+  const { trackData, isLoading: isLoadingTrack } = Route.useLoaderData();
+  const router = useRouter();
+  const refetch = () => {
+    router.invalidate();
+  };
+  const track = trackData?.track || undefined;
   const [shouldAutoPlay, setShouldAutoPlay] = useState(false);
-  const [triggerSwipeDirection, setTriggerSwipeDirection] = useState<
-    'left' | 'right' | 'up' | null
-  >(null);
+
   const [isAnimating, setIsAnimating] = useState(false);
 
   const likeMutation = useLikeTrack();
@@ -38,20 +94,20 @@ export function SwipePage() {
   const isPlaying = useIsPlaying();
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const handleSwipeComplete = useCallback(() => {
-    // Reset to get a new random track
-    setTrackId(undefined);
-    refetch();
-  }, [refetch]);
 
   // Auto-play next track if music was playing
   useEffect(() => {
     if (track && shouldAutoPlay && !isLoadingTrack) {
       setCurrentTrack(track);
-      actions.togglePlayPause(track.id);
+      if (isPlaying && currentTrack?.id === track.id) {
+        actions.pause(track.id);
+      } else {
+        actions.play(track.id);
+      }
       setShouldAutoPlay(false);
     }
   }, [track, shouldAutoPlay, isLoadingTrack, setCurrentTrack, actions]);
+
 
   const handleLike = useCallback(async () => {
     if (!track) return;
@@ -59,63 +115,53 @@ export function SwipePage() {
 
     // Trigger swipe animation immediately
     setIsAnimating(true);
-    setTriggerSwipeDirection('right');
 
     // Start mutation asynchronously (don't wait)
     const mutationPromise = likeMutation.mutateAsync(track.id);
 
-    // Wait for animation to complete (400ms)
-    const animationPromise = new Promise<void>((resolve) => {
-      setTimeout(() => resolve(), 400);
-    });
-
     // Wait for both animation and mutation to complete
-    Promise.all([mutationPromise, animationPromise])
+    Promise.all([mutationPromise])
       .then(() => {
         if (wasPlaying) {
           setShouldAutoPlay(true);
         }
         // Reset animation and trigger refetch when both are complete
-        setTriggerSwipeDirection(null);
         setIsAnimating(false);
-        handleSwipeComplete();
+        refetch();
       })
       .catch((error) => {
         console.error('Error liking track:', error);
-        setTriggerSwipeDirection(null);
         setIsAnimating(false);
       });
-  }, [track, likeMutation, handleSwipeComplete, isPlaying, currentTrack]);
+  }, [track, likeMutation, isPlaying, currentTrack]);
 
   const handleDislike = useCallback(async () => {
     if (!track) return;
+    const wasPlaying = isPlaying && currentTrack?.id === track.id;
 
     // Trigger swipe animation immediately
     setIsAnimating(true);
-    setTriggerSwipeDirection('left');
 
     // Start mutation asynchronously (don't wait)
     const mutationPromise = dislikeMutation.mutateAsync(track.id);
 
-    // Wait for animation to complete (400ms)
-    const animationPromise = new Promise<void>((resolve) => {
-      setTimeout(() => resolve(), 400);
-    });
+
 
     // Wait for both animation and mutation to complete
-    Promise.all([mutationPromise, animationPromise])
+    mutationPromise
       .then(() => {
-        // Reset animation and trigger refetch when both are complete
-        setTriggerSwipeDirection(null);
+        if (wasPlaying) {
+          setShouldAutoPlay(true);
+        }
         setIsAnimating(false);
-        handleSwipeComplete();
+        refetch();
+
       })
       .catch((error) => {
         console.error('Error disliking track:', error);
-        setTriggerSwipeDirection(null);
         setIsAnimating(false);
       });
-  }, [track, dislikeMutation, handleSwipeComplete]);
+  }, [track, dislikeMutation,]);
 
   const handleBanger = useCallback(async () => {
     if (!track) return;
@@ -123,33 +169,25 @@ export function SwipePage() {
 
     // Trigger swipe animation immediately
     setIsAnimating(true);
-    setTriggerSwipeDirection('up');
 
     // Start mutation asynchronously (don't wait)
     const mutationPromise = bangerMutation.mutateAsync(track.id);
 
-    // Wait for animation to complete (400ms)
-    const animationPromise = new Promise<void>((resolve) => {
-      setTimeout(() => resolve(), 400);
-    });
-
     // Wait for both animation and mutation to complete
-    Promise.all([mutationPromise, animationPromise])
+    mutationPromise
       .then(() => {
         if (wasPlaying) {
           setShouldAutoPlay(true);
         }
-        // Reset animation and trigger refetch when both are complete
-        setTriggerSwipeDirection(null);
         setIsAnimating(false);
-        handleSwipeComplete();
+        refetch();
       })
       .catch((error) => {
         console.error('Error banger track:', error);
-        setTriggerSwipeDirection(null);
         setIsAnimating(false);
+
       });
-  }, [track, bangerMutation, handleSwipeComplete, isPlaying, currentTrack]);
+  }, [track, bangerMutation, isPlaying, currentTrack]);
 
   // Only show loading if not animating (to prevent loading message during swipe animation)
   const isLoading =
@@ -179,7 +217,11 @@ export function SwipePage() {
         if (currentTrack?.id !== track.id) {
           setCurrentTrack(track);
         }
-        actions.togglePlayPause(track.id);
+        if (isPlaying && currentTrack?.id === track.id) {
+          actions.pause(track.id);
+        } else {
+          actions.play(track.id);
+        }
         return;
       }
 
@@ -215,51 +257,41 @@ export function SwipePage() {
     handleDislike,
     handleBanger,
   ]);
-
+  const likedTracksCount = trackData?.likedCount ?? 0;
+  const bangersCount = trackData?.bangerCount ?? 0;
+  const dislikedTracksCount = trackData?.dislikedCount ?? 0;
+  const remainingTracksCount = trackData?.remainingCount ?? 0;
   return (
     <div
       ref={containerRef}
-      className="flex flex-col  justify-center w-full mt-10"
+      className="flex flex-col  justify-center w-full mt-10 gap-4 h-full outline-none "
       tabIndex={0}
     >
-      <div className="flex flex-col mb-8 text-center">
-        <h1 className="text-3xl font-bold mb-2">Filter Your Music</h1>
-        <p className="text-muted-foreground">
-          Swipe right to like, left to dislike, or up for BANGER!
-        </p>
-        <div className="text-sm text-muted-foreground mt-2 space-y-1">
-          <p>
-            <kbd className="px-2 py-1 bg-secondary rounded text-xs">Space</kbd>{' '}
-            play/pause
-          </p>
-          <p>
-            <kbd className="px-2 py-1 bg-secondary rounded text-xs">E</kbd> like
-            • <kbd className="px-2 py-1 bg-secondary rounded text-xs">Z</kbd>{' '}
-            banger •{' '}
-            <kbd className="px-2 py-1 bg-secondary rounded text-xs">A</kbd>{' '}
-            dislike
-          </p>
+
+      <div className="flex flex-row justify-between  text-center p-6 backdrop-blur-2xl items-start">
+        {!likedTracksCount ? <Skeleton className='w-10 h-4' /> :
+          <div className="text-3xl text-foreground flex flex-row gap-10">
+            {[{ label: 'Liked', value: likedTracksCount }, { label: 'Bangers', value: bangersCount }, { label: 'Disliked', value: dislikedTracksCount }, { label: 'Remaining', value: remainingTracksCount }].map((item) => (
+              <Counter key={item.label} label={item.label} value={item.value} />
+            ))}
+          </div>}
+
+        <div className="flex flex-row justify-end gap-4 ">
+          <FilterButton />
+          <UsageTooltip />
         </div>
+
       </div>
-      <div className="flex flex-row justify-center mb-8 text-center">
+      <div className="flex flex-row justify-center mb-8 text-center h-full w-full backdrop-blur-2xl">
         <SwipeView
           track={track || null}
           isLoading={isLoading}
           onLike={handleLike}
           onDislike={handleDislike}
           onBanger={handleBanger}
-          onSwipeComplete={handleSwipeComplete}
-          triggerSwipeDirection={triggerSwipeDirection}
         />
       </div>
-      <div className="flex flex-row justify-center mb-8 text-center">
-        <SwipeControls
-          onLike={handleLike}
-          onDislike={handleDislike}
-          onBanger={handleBanger}
-          disabled={isLoading || !track}
-        />
-      </div>
+
     </div>
   );
-}
+})

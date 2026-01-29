@@ -8,7 +8,7 @@ from audio filenames, including artist, title, genre, style, credits, and more.
 import json
 import os
 import re
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 from jsonschema import validate
 from jsonschema.exceptions import ValidationError
@@ -119,6 +119,29 @@ class OpenAIMetadataExtractor(BaseMetadataExtractor):
         max_retries = int(os.getenv("OPENAI_MAX_RETRIES", "3"))
         initial_backoff = float(os.getenv("OPENAI_INITIAL_BACKOFF", "1.0"))
 
+        # Determinism parameters from environment (for maximum consistency)
+        temperature = (
+            float(os.getenv("OPENAI_TEMPERATURE"))
+            if os.getenv("OPENAI_TEMPERATURE")
+            else None
+        )
+        top_p = (
+            float(os.getenv("OPENAI_TOP_P"))
+            if os.getenv("OPENAI_TOP_P")
+            else None
+        )
+        seed = (
+            int(os.getenv("OPENAI_SEED"))
+            if os.getenv("OPENAI_SEED")
+            else None
+        )
+        frequency_penalty = (
+            float(os.getenv("OPENAI_FREQUENCY_PENALTY", "0.0"))
+        )
+        presence_penalty = (
+            float(os.getenv("OPENAI_PRESENCE_PENALTY", "0.0"))
+        )
+
         # Initialize base class
         super().__init__(
             api_key=api_key,
@@ -126,7 +149,14 @@ class OpenAIMetadataExtractor(BaseMetadataExtractor):
             max_requests_per_day=max_requests_per_day,
             max_retries=max_retries,
             initial_backoff=initial_backoff,
+            temperature=temperature,
+            top_p=top_p,
+            seed=seed,
         )
+        
+        # OpenAI-specific parameters
+        self.frequency_penalty = frequency_penalty
+        self.presence_penalty = presence_penalty
 
     def _initialize_client(self):
         """Initialize the OpenAI API client."""
@@ -144,12 +174,85 @@ class OpenAIMetadataExtractor(BaseMetadataExtractor):
         """Check if the service is available (API key configured)."""
         return self.client is not None
 
-    def _make_api_call(self, user_content: str):
+    def _clean_filename_with_llm(self, filename: str) -> str:
+        """
+        Clean and normalize filename using LLM to extract core artist-title format.
+        
+        This removes extra metadata like country tags, years in parentheses, 
+        genre tags, etc., and normalizes the format to "Artist - Title".
+
+        Args:
+            filename: Raw filename to clean
+
+        Returns:
+            Cleaned filename in normalized format (e.g., "Artist - Title")
+        """
+        if not self._is_available():
+            # Fallback to original filename if service unavailable
+            return filename
+
+        try:
+            cleaning_prompt = f"""Clean and normalize this music filename to extract only the core artist and title information.
+
+Remove:
+- Country tags in brackets like [nigeria], [uk], [us]
+- Years in parentheses like (1979), (1985)
+- Genre/style tags like "soul", "funk", "electronic" when they appear as separate tags
+- Extra metadata, labels, or identifiers
+
+Keep:
+- Artist name (normalize case to Title Case)
+- Title name (normalize case to Title Case)
+- Mix names in parentheses if they're part of the title (e.g., "Remix", "Extended Mix")
+
+Format the output as: "Artist - Title" or "Artist - Title (Mix Name)"
+
+Examples:
+- "t-fire - say a prayer [nigeria] soul (1979)" -> "T-Fire - Say A Prayer"
+- "T-Fire - Say A Prayer" -> "T-Fire - Say A Prayer"
+- "artist - title (remix) [2020]" -> "Artist - Title (Remix)"
+
+Filename to clean: "{filename}"
+
+Return ONLY the cleaned filename, nothing else. No explanations, no markdown, just the cleaned filename."""
+            
+            response = self.client.chat.completions.create(
+                model=self.MODEL,
+                temperature=0.0,  # Deterministic output
+                messages=[
+                    {
+                        "role": "user",
+                        "content": cleaning_prompt,
+                    },
+                ],
+                max_tokens=100,  # Short response needed
+                timeout=10.0,  # Fast timeout for this lightweight task
+            )
+            
+            # Extract cleaned filename from response
+            content = response.choices[0].message.content
+            if content:
+                cleaned = content.strip()
+                # Remove any quotes if present
+                cleaned = cleaned.strip('"').strip("'").strip()
+                # Remove markdown code blocks if present
+                cleaned = cleaned.replace("```", "").strip()
+                return cleaned
+            else:
+                logger.warning("Empty response from filename cleaning, using original")
+                return filename
+                
+        except Exception as e:
+            logger.warning(f"Failed to clean filename with LLM: {e}. Using original filename.")
+            return filename
+
+    def _make_api_call(self, user_content: str, urls: Optional[List[str]] = None):
         """
         Make a single API call to OpenAI.
 
         Args:
             user_content: User message content
+            urls: Optional list of URLs (not used by OpenAI, but kept for interface compatibility)
 
         Returns:
             OpenAI API response
@@ -157,12 +260,16 @@ class OpenAIMetadataExtractor(BaseMetadataExtractor):
         Raises:
             Exception: If API call fails
         """
+        # Note: OpenAI doesn't have a URL context tool like Gemini,
+        # so URLs are already included in the user_content prompt
         # Combine example and filename into single user message for efficiency
         combined_user_message = self._build_example_message() + "\n\n" + user_content
-        response = self.client.chat.completions.create(
-            model=self.MODEL,
-            temperature=self.TEMPERATURE,
-            messages=[
+        
+        # Configure for maximum determinism
+        request_params = {
+            "model": self.MODEL,
+            "temperature": self.temperature,
+            "messages": [
                 {
                     "role": "system",
                     "content": "\n".join(self.INSTRUCTIONS),
@@ -172,10 +279,19 @@ class OpenAIMetadataExtractor(BaseMetadataExtractor):
                     "content": combined_user_message,
                 },
             ],
-            response_format={"type": "json_object"},
-            max_tokens=1500,  # Reasonable limit to speed up generation without truncation
-            timeout=30.0,  # Fail fast if response takes too long
-        )
+            "response_format": {"type": "json_object"},
+            "max_tokens": 1500,  # Fixed limit for consistency
+            "timeout": 30.0,
+            "top_p": self.top_p,
+            "frequency_penalty": self.frequency_penalty,
+            "presence_penalty": self.presence_penalty,
+        }
+        
+        # Add seed if provided (for reproducibility)
+        if self.seed is not None:
+            request_params["seed"] = self.seed
+        
+        response = self.client.chat.completions.create(**request_params)
         return response
 
     def _parse_response(self, response) -> Dict[str, Any]:
@@ -268,12 +384,13 @@ class OpenAIMetadataExtractor(BaseMetadataExtractor):
             return True
         return super()._is_retryable_error(error_message)
 
-    def _make_api_call_with_retry(self, user_content: str):
+    def _make_api_call_with_retry(self, user_content: str, urls: Optional[List[str]] = None):
         """
         Override to handle RateLimitError with custom retry logic.
 
         Args:
             user_content: User message content
+            urls: Optional list of URLs (passed through to _make_api_call for compatibility)
 
         Returns:
             API response object
@@ -297,7 +414,7 @@ class OpenAIMetadataExtractor(BaseMetadataExtractor):
                 self.rate_limiter.record_request()
 
                 # Make API call
-                response = self._make_api_call(user_content)
+                response = self._make_api_call(user_content, urls)
                 return response
 
             except RateLimitError as e:

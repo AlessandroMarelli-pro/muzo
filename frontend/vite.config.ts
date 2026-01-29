@@ -3,6 +3,7 @@ import { tanstackRouter } from '@tanstack/router-plugin/vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
 import { defineConfig } from 'vite';
+import commonjs from 'vite-plugin-commonjs';
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -13,6 +14,7 @@ export default defineConfig({
     }),
     react(),
     tailwindcss(),
+    commonjs(),
   ],
   resolve: {
     alias: {
@@ -26,5 +28,6 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     sourcemap: true,
+    commonjsOptions: { transformMixedEsModules: true }, // Change
   },
 });

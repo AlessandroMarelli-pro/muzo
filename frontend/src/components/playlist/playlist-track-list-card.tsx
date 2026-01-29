@@ -6,27 +6,56 @@ import {
   useCurrentTrack,
   useIsPlaying,
 } from '@/contexts/audio-player-context';
-import { formatDuration } from '@/lib/utils';
+import { cn, formatDuration } from '@/lib/utils';
+import { useAddTrackToQueue } from '@/services/queue-hooks';
 import { useNavigate } from '@tanstack/react-router';
-import { Brain, GripVertical, Pause, Play, Trash2 } from 'lucide-react';
+import {
+  Brain,
+  GripVertical,
+  ListMusic,
+  Pause,
+  Play,
+  Trash2,
+} from 'lucide-react';
+import { Skeleton } from '../ui/skeleton';
+export const PlaylistTrackListCardSkeleton = ({
+  position,
+}: {
+  position: number;
+}) => {
+  return (
+    <div className="flex items-center gap-4 p-4 hover:bg-muted/50 transition-colors group h-20">
+      <div className="flex items-center gap-2 text-muted-foreground text-sm w-8 ">
+        <GripVertical className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity" />
+        <span>{position}</span>
+      </div>
+      <Skeleton className="min-w-10 min-h-10 w-10 h-10 rounded-md" />
+      <Skeleton className="w-full h-6" />
+      <Skeleton className="w-full h-6" />
+    </div>
+  );
+};
 
 export const PlaylistTrackListCard = ({
   playlistTrack,
-  index,
   handleRemoveTrack,
   removingTrackId,
-  setQueue,
+  dragHandleProps,
+  index,
+  playlistLength,
 }: {
   playlistTrack: PlaylistTrack;
-  index: number;
   handleRemoveTrack: (trackId: string) => void;
   removingTrackId: string | null;
-  setQueue: () => void;
+  dragHandleProps?: any;
+  index: number;
+  playlistLength: number;
 }) => {
   const { currentTrack, setCurrentTrack } = useCurrentTrack();
   const actions = useAudioPlayerActions();
   const isPlaying = useIsPlaying();
   const navigate = useNavigate();
+  const addToQueueMutation = useAddTrackToQueue();
   // Only check if this specific track is the current track and playing
   const isCurrentTrack = currentTrack?.id === playlistTrack.track.id;
   const isThisTrackPlaying = isCurrentTrack && isPlaying;
@@ -36,19 +65,46 @@ export const PlaylistTrackListCard = ({
     e.stopPropagation();
     if (currentTrack?.id !== playlistTrack.track.id) {
       setCurrentTrack(playlistTrack.track);
+      actions.play(playlistTrack.track.id);
+    } else {
+      // Same track - toggle play/pause
+      if (isThisTrackPlaying) {
+        actions.pause(playlistTrack.track.id);
+      } else {
+        actions.play(playlistTrack.track.id);
+      }
     }
-    setQueue();
-    actions.togglePlayPause(playlistTrack.track.id);
   };
   return (
     <div
       key={playlistTrack.id}
-      className="flex items-center gap-4 p-4 hover:bg-muted/50 transition-colors group"
+      className={cn(
+        'flex items-center gap-4 p-4 hover:bg-muted/50 transition-colors group',
+        isThisTrackPlaying && 'bg-muted/80  ',
+        isThisTrackPlaying &&
+        index === 0 &&
+        'border-l-2 border-l-primary rounded-t-xl',
+        isCurrentTrack &&
+        index === playlistLength - 1 &&
+        'border-l-2 border-l-primary rounded-b-xl',
+        isCurrentTrack &&
+        index !== 0 &&
+        index !== playlistLength - 1 &&
+        'border-l-2 border-l-primary',
+      )}
     >
       {/* Position */}
       <div className="flex items-center gap-2 text-muted-foreground text-sm w-8">
-        <GripVertical className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity" />
-        <span>{index + 1}</span>
+        {dragHandleProps && (
+          <GripVertical
+            {...dragHandleProps}
+            className="h-4 w-4 min-h-4 min-w-4 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing"
+          />
+        )}
+        {!dragHandleProps && (
+          <GripVertical className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity" />
+        )}
+        <span>{playlistTrack.position}</span>
       </div>
       <img
         src={`http://localhost:3000/api/images/serve?imagePath=${formattedImage}`}
@@ -75,7 +131,8 @@ export const PlaylistTrackListCard = ({
       </div>
       <div className="hidden md:block">
         <Badge variant="outline" className="text-xs">
-          {playlistTrack.track.subgenres && playlistTrack.track.subgenres.length > 0
+          {playlistTrack.track.subgenres &&
+            playlistTrack.track.subgenres.length > 0
             ? playlistTrack.track.subgenres.join(', ')
             : 'Unknown'}
         </Badge>
@@ -98,8 +155,20 @@ export const PlaylistTrackListCard = ({
           )}
         </Button>
         <Button
-          variant="ghost-destructive"
+          variant="ghost"
           size="sm"
+          onClick={(e) => {
+            e.stopPropagation();
+            addToQueueMutation.mutate(playlistTrack.track.id);
+          }}
+          title="Add to queue"
+        >
+          <ListMusic className="h-4 w-4" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-destructive hover:text-destructive"
           onClick={() => handleRemoveTrack(playlistTrack.track.id)}
         >
           <Trash2 className="h-4 w-4 " />

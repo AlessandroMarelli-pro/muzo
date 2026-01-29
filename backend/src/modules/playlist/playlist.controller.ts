@@ -23,7 +23,7 @@ export class PlaylistController {
   constructor(
     private readonly playlistService: PlaylistService,
     private readonly recommendationService: RecommendationService,
-  ) {}
+  ) { }
 
   @Post()
   async createPlaylist(@Body() createPlaylistDto: CreatePlaylistDto) {
@@ -116,4 +116,5 @@ export class PlaylistController {
       excludeTrackIds: excludeIds,
     });
   }
+
 }

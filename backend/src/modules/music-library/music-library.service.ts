@@ -8,15 +8,14 @@ import {
   CreateMusicLibraryDto,
   MusicLibrary,
   MusicLibraryQueryOptions,
-  MusicLibraryStats,
   MusicLibraryWithTracks,
-  UpdateMusicLibraryDto,
+  UpdateMusicLibraryDto
 } from '../../models/music-library.model';
 import { PrismaService } from '../../shared/services/prisma.service';
 
 @Injectable()
 export class MusicLibraryService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   async create(createDto: CreateMusicLibraryDto): Promise<MusicLibrary> {
     // Validate root path exists and is accessible
@@ -48,7 +47,7 @@ export class MusicLibraryService {
         scanInterval: createDto.scanInterval,
         includeSubdirectories: createDto.includeSubdirectories ?? true,
         supportedFormats:
-          createDto.supportedFormats ?? 'MP3,FLAC,WAV,AAC,OGG,OPUS',
+          createDto.supportedFormats ?? 'MP3,FLAC,WAV,AAC,OGG,OPUS,M4A',
         maxFileSize: createDto.maxFileSize,
       },
     });
@@ -147,48 +146,6 @@ export class MusicLibraryService {
     });
   }
 
-  async getStats(id: string): Promise<MusicLibraryStats> {
-    const library = await this.findOne(id);
-
-    // Calculate statistics
-    const totalDuration = library.tracks.reduce(
-      (sum, track) => sum + track.duration,
-      0,
-    );
-    const averageDuration =
-      library.tracks.length > 0 ? totalDuration / library.tracks.length : 0;
-
-    // Format distribution
-    const formatDistribution = library.tracks.reduce(
-      (acc, track) => {
-        acc[track.format] = (acc[track.format] || 0) + 1;
-        return acc;
-      },
-      {} as Record<string, number>,
-    );
-
-    // Analysis status distribution
-    const analysisStatusDistribution = library.tracks.reduce(
-      (acc, track) => {
-        acc[track.analysisStatus] = (acc[track.analysisStatus] || 0) + 1;
-        return acc;
-      },
-      {} as Record<string, number>,
-    );
-
-    return {
-      totalTracks: library.totalTracks,
-      analyzedTracks: library.analyzedTracks,
-      pendingTracks: library.pendingTracks,
-      failedTracks: library.failedTracks,
-      totalDuration,
-      averageDuration,
-      formatDistribution,
-      genreDistribution: {}, // Will be populated when AI analysis is implemented
-      yearDistribution: {}, // Will be populated when metadata is available
-    };
-  }
-
   async updateScanStatus(
     id: string,
     status: ScanStatus,
@@ -213,28 +170,7 @@ export class MusicLibraryService {
     });
   }
 
-  async updateTrackCounts(
-    id: string,
-    counts: {
-      totalTracks?: number;
-      analyzedTracks?: number;
-      pendingTracks?: number;
-      failedTracks?: number;
-    },
-  ): Promise<MusicLibrary> {
-    const library = await this.prisma.musicLibrary.findUnique({
-      where: { id },
-    });
 
-    if (!library) {
-      throw new NotFoundException(`Music library with ID ${id} not found`);
-    }
-
-    return this.prisma.musicLibrary.update({
-      where: { id },
-      data: counts,
-    });
-  }
 
   private isValidPath(path: string): boolean {
     // Basic path validation - in a real implementation, you'd check if the path exists

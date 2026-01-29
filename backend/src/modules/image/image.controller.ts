@@ -78,12 +78,12 @@ export class ImageController {
         ? 'image/svg+xml'
         : 'image/jpeg';
 
-      // Set appropriate headers
+      // Browser caching: 1 year for track images, no cache for random default
       res.set({
         'Content-Type': contentType,
         ...(!isDefault
-          ? { 'Cache-Control': 'public, max-age=31536000' }
-          : { 'Cache-Control': 'no-cache' }), // 1 year cache
+          ? { 'Cache-Control': 'public, max-age=31536000, immutable' }
+          : { 'Cache-Control': 'no-cache' }),
         'Content-Length': imageBuffer.length.toString(),
       });
 

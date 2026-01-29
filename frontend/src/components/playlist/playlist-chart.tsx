@@ -9,6 +9,7 @@ import {
   ChartTooltipContent,
 } from '@/components/ui/chart';
 import { formatTime } from '@/lib/utils';
+import { Skeleton } from '../ui/skeleton';
 
 export interface PlaylistChartData {
   key?: string;
@@ -26,7 +27,16 @@ const chartConfig = {
   },
 } satisfies ChartConfig;
 
-export function PlaylistChart({ data }: { data: PlaylistChartData[] }) {
+export function PlaylistChart({
+  data,
+  isLoading,
+}: {
+  data: PlaylistChartData[];
+  isLoading: boolean;
+}) {
+  if (isLoading) {
+    return <Skeleton className="h-[30vh] aspect-auto" />;
+  }
   const minTempo = Math.min(...data.map((item) => item.tempo || 0)) - 1;
   const dataWithTempoAdjusted = data.map((item, index) => {
     const cumulatedDuration = data

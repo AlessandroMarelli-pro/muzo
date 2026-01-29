@@ -73,6 +73,10 @@ export class CreatePlaylistDto {
   @IsInt()
   @Min(1)
   maxTracks?: number;
+
+  @IsOptional()
+  @IsString()
+  subgenreSelectionMode?: 'exact' | 'contain';
 }
 
 export class UpdatePlaylistDto {
@@ -128,4 +132,12 @@ export class PlaylistRecommendationDto {
   @IsArray()
   @IsString({ each: true })
   excludeTrackIds?: string[];
+}
+
+export class UpdatePlaylistSortingDto {
+  @IsString()
+  sortingKey: string;
+
+  @IsString()
+  sortingDirection: string;
 }

@@ -273,26 +273,6 @@ describe('MusicLibraryService', () => {
     });
   });
 
-  describe('getStats', () => {
-    it('should return library statistics', async () => {
-      const libraryWithTracks = { ...mockLibrary, tracks: mockTracks };
-      jest.spyOn(service, 'findOne').mockResolvedValue(libraryWithTracks);
-
-      const result = await service.getStats('test-library-id');
-
-      expect(result).toEqual({
-        totalTracks: 0,
-        analyzedTracks: 0,
-        pendingTracks: 0,
-        failedTracks: 0,
-        totalDuration: 420.5,
-        averageDuration: 210.25,
-        formatDistribution: { MP3: 1, FLAC: 1 },
-        genreDistribution: {},
-        yearDistribution: {},
-      });
-    });
-  });
 
   describe('updateScanStatus', () => {
     it('should update scan status', async () => {

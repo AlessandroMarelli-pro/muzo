@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { queryOptions, useQuery } from '@tanstack/react-query';
 import { gql, graffleClient } from '../services/graffle-client';
 
 // Define the metrics types based on the GraphQL schema
@@ -68,14 +68,17 @@ export const metricsQueryKeys = {
   libraryMetrics: ['libraryMetrics'] as const,
 };
 
-// Library Metrics Query
-export const useLibraryMetrics = () => {
-  return useQuery({
+/** Query options for loaders (ensureQueryData dedupes preload + load). */
+export const libraryMetricsQueryOptions = () =>
+  queryOptions({
     queryKey: metricsQueryKeys.libraryMetrics,
-    queryFn: async (): Promise<LibraryMetrics> => {
-      const response = await graffleClient.request<{
-        libraryMetrics: LibraryMetrics;
-      }>(gql`
+    queryFn: fetchLibraryMetrics,
+  });
+
+export const fetchLibraryMetrics = async (): Promise<LibraryMetrics> => {
+  const response = await graffleClient.request<{
+    libraryMetrics: LibraryMetrics;
+  }>(gql`
         query GetLibraryMetrics {
           libraryMetrics {
             totalTracks
@@ -123,8 +126,14 @@ export const useLibraryMetrics = () => {
           }
         }
       `);
-      return response.libraryMetrics;
-    },
+  return response.libraryMetrics;
+}
+
+// Library Metrics Query
+export const useLibraryMetrics = () => {
+  return useQuery({
+    queryKey: metricsQueryKeys.libraryMetrics,
+    queryFn: fetchLibraryMetrics,
     staleTime: 5 * 60 * 1000, // 5 minutes - metrics don't change frequently
   });
 };

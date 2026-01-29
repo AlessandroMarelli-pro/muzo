@@ -15,8 +15,7 @@ import {
   MusicTrack,
   MusicTrackByCategories,
   MusicTrackQueryOptions,
-  MusicTrackStats,
-  UpdateMusicTrackDto,
+  UpdateMusicTrackDto
 } from '../../models/music-track.model';
 import { ElasticsearchService } from '../../shared/services/elasticsearch.service';
 import { PrismaService } from '../../shared/services/prisma.service';
@@ -36,7 +35,7 @@ export class MusicTrackService {
     private readonly filterService: FilterService,
     private readonly recommendationService: RecommendationService,
     private readonly elasticsearchService: ElasticsearchService,
-  ) {}
+  ) { }
 
   async create(createDto: CreateMusicTrackDto): Promise<MusicTrack> {
     // Validate library exists
@@ -147,6 +146,16 @@ export class MusicTrackService {
       where = await this.filterService.buildPrismaWhereClause(filter);
     }
 
+    const changedNames = {
+      lastScannedAt: 'analysisCompletedAt',
+      danceabilityFeeling: 'danceability',
+      arousalMood: 'arousal',
+      valenceMood: 'valence',
+    };
+    const orderByProp = changedNames[orderBy] || orderBy;
+    const orderByClause = { [orderByProp]: orderDirection };
+
+
     // Build Prisma where clause
 
     if (libraryId) where.libraryId = libraryId;
@@ -158,7 +167,7 @@ export class MusicTrackService {
       where,
       take: limit,
       skip: offset,
-      orderBy: { [orderBy]: orderDirection },
+      orderBy: orderByClause,
       select: simpleMusicTrackFieldSelectors,
     });
     return tracks;
@@ -183,7 +192,7 @@ export class MusicTrackService {
     let where: any = {};
 
     const filter = this.filterService.getCurrentFilter();
-    console.log(filter);
+
     if (filter) {
       where = await this.filterService.buildPrismaWhereClause(filter);
     }
@@ -690,58 +699,6 @@ export class MusicTrackService {
     await this.updateLibraryTrackCounts(existingTrack.libraryId, 'decrement');
   }
 
-  async getStats(libraryId?: string): Promise<MusicTrackStats> {
-    const where = libraryId ? { libraryId } : {};
-    const tracks = await this.prisma.musicTrack.findMany({
-      where,
-      select: {
-        duration: true,
-        fileSize: true,
-        format: true,
-        analysisStatus: true,
-      },
-    });
-
-    const totalTracks = tracks.length;
-    const totalDuration = tracks.reduce(
-      (sum, track) => sum + track.duration,
-      0,
-    );
-    const averageDuration = totalTracks > 0 ? totalDuration / totalTracks : 0;
-    const totalFileSize = tracks.reduce(
-      (sum, track) => sum + track.fileSize,
-      0,
-    );
-    const averageFileSize = totalTracks > 0 ? totalFileSize / totalTracks : 0;
-
-    // Format distribution
-    const formatDistribution = tracks.reduce(
-      (acc, track) => {
-        acc[track.format] = (acc[track.format] || 0) + 1;
-        return acc;
-      },
-      {} as Record<string, number>,
-    );
-
-    // Analysis status distribution
-    const analysisStatusDistribution = tracks.reduce(
-      (acc, track) => {
-        acc[track.analysisStatus] = (acc[track.analysisStatus] || 0) + 1;
-        return acc;
-      },
-      {} as Record<AnalysisStatus, number>,
-    );
-
-    return {
-      totalTracks,
-      totalDuration,
-      averageDuration,
-      totalFileSize,
-      averageFileSize,
-      formatDistribution,
-      analysisStatusDistribution,
-    };
-  }
 
   async incrementListeningCount(id: string): Promise<MusicTrack> {
     const track = await this.prisma.musicTrack.findUnique({
@@ -1092,12 +1049,75 @@ export class MusicTrackService {
 
     const skip = Math.floor(Math.random() * tracksCount);
     return this.prisma.musicTrack.findFirst({
-      where: {
-        isLiked: false,
-      },
+      where: filterLiked ? { isLiked: false } : {},
       take: 1,
       skip: skip,
       select: simpleMusicTrackFieldSelectors,
     });
+  }
+
+  async getRandomTrackWithStats(
+  ): Promise<{
+    track: SimpleMusicTrackInterface | null;
+    likedCount: number;
+    bangerCount: number;
+    dislikedCount: number;
+    remainingCount: number;
+  }> {
+
+    let where: any = {};
+
+    // Apply filters the same way as findAllPaginated
+    const filter = this.filterService.getCurrentFilter();
+    if (filter) {
+      where = await this.filterService.buildPrismaWhereClause(filter);
+    }
+
+
+    // Get counts for liked, bangers, disliked (from hidden table), and remaining tracks
+    const [likedCount, bangerCount] =
+      await Promise.all([
+        this.prisma.musicTrack.count({
+          where: { isLiked: true, isBanger: false },
+        }),
+        this.prisma.musicTrack.count({
+          where: { isBanger: true },
+        })
+      ]);
+
+    const dislikedCount = await this.prisma.hiddenMusicTrack.count()
+    // Remaining tracks are those that are not liked, not bangers (and still in musicTrack table)
+    const remainingCount = await this.prisma.musicTrack.count({
+      where: {
+        isLiked: false,
+        isBanger: false,
+      },
+    });
+
+    // Get a random track from remaining tracks (not liked, not banger)
+    const remainingTracksCount = remainingCount;
+    let track: SimpleMusicTrackInterface | null = null;
+
+    if (remainingTracksCount > 0) {
+      const skip = Math.floor(Math.random() * remainingTracksCount);
+      track = await this.prisma.musicTrack.findFirst({
+        where: {
+          ...where,
+          isLiked: false,
+          isBanger: false,
+        },
+        take: 1,
+        skip: skip,
+        select: simpleMusicTrackFieldSelectors,
+      });
+    }
+
+    return {
+      track,
+      likedCount,
+      bangerCount,
+      dislikedCount,
+      remainingCount,
+    };
   }
 }

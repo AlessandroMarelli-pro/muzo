@@ -1,4 +1,8 @@
-import { FilterState, useFiltering } from '@/hooks/useFiltering';
+import {
+  FilterState,
+  useFiltering,
+  UseFilteringOptions,
+} from '@/hooks/useFiltering';
 import { createContext, ReactNode, useContext, useMemo, useState } from 'react';
 
 export interface Range {
@@ -20,6 +24,7 @@ const FilterContext = createContext<{
     key: K,
     value: FilterState[K],
   ) => void;
+  updateFilters: (values: Record<string, any>) => void;
   resetFilters: () => void;
   hasActiveFilters: boolean;
   // Server persistence actions
@@ -37,9 +42,13 @@ const FilterOptionsContext = createContext<{
 
 interface FilterProviderProps {
   children: ReactNode;
+  filterOptions?: UseFilteringOptions;
 }
 
-export function FilterProvider({ children }: FilterProviderProps) {
+export function FilterProvider({
+  children,
+  filterOptions = { autoSave: true },
+}: FilterProviderProps) {
   const [options, setOptions] = useState<FilterOptions>({
     genres: [],
     subgenres: [],
@@ -48,12 +57,13 @@ export function FilterProvider({ children }: FilterProviderProps) {
     atmospheres: [],
   });
 
-  const filtering = useFiltering();
+  const filtering = useFiltering(filterOptions);
 
   const filterValue = useMemo(
     () => ({
       filters: filtering.filters,
       updateFilter: filtering.actions.updateFilter,
+      updateFilters: filtering.actions.updateFilters,
       resetFilters: filtering.actions.resetFilters,
       hasActiveFilters: filtering.actions.hasActiveFilters,
       saveCurrentFilter: filtering.actions.saveCurrentFilter,
