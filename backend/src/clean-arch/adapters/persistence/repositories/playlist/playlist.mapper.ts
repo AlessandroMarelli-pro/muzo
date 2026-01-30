@@ -1,5 +1,7 @@
 import { Playlist as PrismaPlaylist } from '@prisma/client';
+import { PlaylistUpdateData } from 'src/clean-arch/application/ports/repositories/IPlaylistRepository';
 import { extractModelId } from 'src/clean-arch/kernel/ids/factory';
+import { now, user } from 'src/clean-arch/kernel/types/context';
 import { Playlist } from 'src/clean-arch/kernel/types/model-types';
 import { models } from 'src/clean-arch/kernel/types/models';
 import { toDbModel } from '../db';
@@ -36,18 +38,16 @@ export const toPrisma: ToPrisma = (domainModel) => {
 };
 
 export type ToPrismaUpdateData = (
-  domainModel: Playlist,
-) => Pick<
-  PrismaPlaylist,
-  'updatedAt' | 'updatedById' | 'name' | 'description' | 'isPublic'
->;
+  data: PlaylistUpdateData,
+) => Partial<PrismaPlaylist>;
 
-export const toPrismaUpdateData: ToPrismaUpdateData = (domainModel) => {
-  return {
-    updatedAt: new Date(),
-    updatedById: extractModelId(domainModel.updatedById).dbId,
-    name: domainModel.name,
-    description: domainModel.description,
-    isPublic: domainModel.isPublic,
+export const toPrismaUpdateData: ToPrismaUpdateData = (data) => {
+  const result: Partial<PrismaPlaylist> = {
+    updatedAt: now(),
+    updatedById: extractModelId(user().id).dbId,
   };
+  if (data.name !== undefined) result.name = data.name;
+  if (data.description !== undefined) result.description = data.description;
+  if (data.isPublic !== undefined) result.isPublic = data.isPublic;
+  return result;
 };

@@ -6,8 +6,6 @@ export type PlaylistUpdateData = {
   name?: string;
   description?: Maybe<string>;
   isPublic?: boolean;
-  updatedById: UserId;
-  updatedAt: Date;
 };
 
 export const PLAYLIST_REPOSITORY = Symbol('IPlaylistRepository');

@@ -1,5 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { IPlaylistRepository } from 'src/clean-arch/application/ports/repositories/IPlaylistRepository';
+import {
+  IPlaylistRepository,
+  PlaylistUpdateData,
+} from 'src/clean-arch/application/ports/repositories/IPlaylistRepository';
 import { PlaylistId, UserId } from 'src/clean-arch/kernel/ids';
 import { extractModelId } from 'src/clean-arch/kernel/ids/factory';
 import { createNotFoundError } from 'src/clean-arch/kernel/types';
@@ -37,17 +40,16 @@ export class PlaylistRepository implements IPlaylistRepository {
       })
       .then((rows) => rows.map(toDomain));
   }
-
-  async updateOneById(id: PlaylistId, data: Playlist): Promise<Playlist> {
+  async updateOneById(
+    id: PlaylistId,
+    data: PlaylistUpdateData,
+  ): Promise<Playlist> {
     return this.prisma.playlist
       .update({
         where: { id: extractModelId(id).dbId },
         data: toPrismaUpdateData(data),
       })
-      .then((row) => {
-        if (!row) throw createNotFoundError(`Playlist with ID ${id} not found`);
-        return toDomain(row);
-      });
+      .then(toDomain);
   }
 
   async deleteOneById(id: PlaylistId): Promise<boolean> {
