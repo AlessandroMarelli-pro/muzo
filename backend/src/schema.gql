@@ -100,10 +100,13 @@ input CleanArchCreatePlaylistInput {
 
 type CleanArchPlaylist {
   createdAt: DateTime!
+  createdById: Base64ID!
   description: String
   id: Base64ID!
   isPublic: Boolean!
   name: String!
+  updatedAt: DateTime!
+  updatedById: Base64ID!
 }
 
 input CreateLibraryInput {

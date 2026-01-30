@@ -1,5 +1,4 @@
-import { createId } from '@paralleldrive/cuid2';
-
+import { v4 as uuidv4 } from 'uuid';
 import { now, user } from './context';
 import { ModelBase } from './model-types';
 
@@ -13,7 +12,7 @@ export function modelFactory<M extends ModelBase<Id>, Id extends string>(id: {
     id: id.id,
     instantiateNew: (x: NewInstanceParams<M>): M =>
       ({
-        id: id.id(createId()),
+        id: id.id(uuidv4()),
         createdAt: now(),
         createdById: user().id,
         updatedAt: now(),

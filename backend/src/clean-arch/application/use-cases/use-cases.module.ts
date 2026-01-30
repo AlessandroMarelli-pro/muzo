@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { RepositoriesModule } from '../../adaptaters/persistence/repositories/repositories.module';
+import { RepositoriesModule } from '../../adapters/persistence/repositories/repositories.module';
 import { CreatePlaylistUseCase } from './playlist/CreatePlaylist';
 import { GetPlaylistsUseCase } from './playlist/GetPlaylists';
 

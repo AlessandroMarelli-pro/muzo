@@ -17,6 +17,15 @@ export class CleanArchPlaylist {
 
   @Field()
   createdAt: Date;
+
+  @Field()
+  updatedAt: Date;
+
+  @Field(() => Base64ID)
+  createdById: string;
+
+  @Field(() => Base64ID)
+  updatedById: string;
   /*   @Field(() => [PlaylistTrack])
   tracks: PlaylistTrack[];
 
