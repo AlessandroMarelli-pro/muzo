@@ -1,3 +1,4 @@
+import { Injectable } from '@nestjs/common';
 import { IPlaylistRepository } from 'src/clean-arch/application/ports/repositories/IPlaylistRepository';
 import { PlaylistId, UserId } from 'src/clean-arch/kernel/ids';
 import { extractModelId } from 'src/clean-arch/kernel/ids/factory';
@@ -7,6 +8,7 @@ import { PrismaService } from '../../../../infrastructure/database/prisma.servic
 import { handlePrismaNotFound } from '../prisma-errors';
 import { toDomain, toPrisma } from './playlist.mapper';
 
+@Injectable()
 export class PlaylistRepository implements IPlaylistRepository {
   constructor(private readonly prisma: PrismaService) {}
 

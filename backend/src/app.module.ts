@@ -3,6 +3,7 @@ import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { GraphQLModule } from '@nestjs/graphql';
 import { join } from 'path';
+import { CleanArchGraphQLModule } from './clean-arch/adaptaters/graphql/graphql.module';
 import { RepositoriesModule } from './clean-arch/adaptaters/persistence/repositories/repositories.module';
 import { UseCasesModule } from './clean-arch/application/use-cases/use-cases.module';
 import { ConfigModuleSetup } from './config';
@@ -43,6 +44,9 @@ import { SharedModule } from './shared/shared.module';
       }),
       inject: [ConfigService],
     }),
+
+    // Clean architecture graphql module
+    CleanArchGraphQLModule,
 
     // Shared module for common services
     SharedModule,

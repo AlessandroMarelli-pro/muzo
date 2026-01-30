@@ -83,10 +83,27 @@ type AudioInfo {
   trackId: ID!
 }
 
+"""ID encoded as base64 for transport"""
+scalar Base64ID
+
 type BeatData {
   confidence: Float!
   strength: Float!
   timestamp: Float!
+}
+
+input CleanArchCreatePlaylistInput {
+  description: String
+  isPublic: Boolean
+  name: String!
+}
+
+type CleanArchPlaylist {
+  createdAt: DateTime!
+  description: String
+  id: Base64ID!
+  isPublic: Boolean!
+  name: String!
 }
 
 input CreateLibraryInput {
@@ -369,6 +386,7 @@ type Mutation {
   authenticateTidal(code: String!, codeVerifier: String!, userId: String!): TidalAuthResult!
   authenticateYouTube(code: String!, userId: String!): YouTubeAuthResult!
   bangerTrack(trackId: ID!): SimpleMusicTrack!
+  caCreatePlaylist(input: CleanArchCreatePlaylistInput!): CleanArchPlaylist!
   clearCurrentFilter: Boolean!
   createLibrary(input: CreateLibraryInput!): MusicLibrary!
   createPlaylist(input: CreatePlaylistInput!): Playlist!
@@ -511,6 +529,7 @@ type PlaylistTrack {
 }
 
 type Query {
+  caPlaylists: [CleanArchPlaylist!]!
   getActiveSessions: [PlaybackSession!]!
   getAudioAnalysis(trackId: String!): AudioAnalysisResult!
   getAudioInfo(trackId: String!): AudioInfo!
