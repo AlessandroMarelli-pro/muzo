@@ -45,6 +45,14 @@ import { SharedModule } from './shared/shared.module';
           'graphql-ws': true,
           'subscriptions-transport-ws': true,
         },
+        formatError: (formattedError) => {
+          // Remove stacktrace from response (keep it in server logs if needed)
+          if (formattedError.extensions?.stacktrace) {
+            const { stacktrace, ...rest } = formattedError.extensions;
+            return { ...formattedError, extensions: rest };
+          }
+          return formattedError;
+        },
       }),
       inject: [ConfigService],
     }),

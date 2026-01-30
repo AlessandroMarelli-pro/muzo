@@ -5,7 +5,6 @@ import {
 } from 'src/clean-arch/application/ports/repositories/IPlaylistRepository';
 import { PlaylistId, UserId } from 'src/clean-arch/kernel/ids';
 import { extractModelId } from 'src/clean-arch/kernel/ids/factory';
-import { createNotFoundError } from 'src/clean-arch/kernel/types';
 import { Playlist } from 'src/clean-arch/kernel/types/model-types';
 import { PrismaService } from '../../../../infrastructure/database/prisma.service';
 import { handlePrismaNotFound } from '../prisma-errors';
@@ -24,13 +23,13 @@ export class PlaylistRepository implements IPlaylistRepository {
   }
   async getOneById(id: PlaylistId): Promise<Playlist> {
     return this.prisma.playlist
-      .findUnique({
+      .findUniqueOrThrow({
         where: { id: extractModelId(id).dbId },
       })
-      .then((row) => {
-        if (!row) throw createNotFoundError(`Playlist with ID ${id} not found`);
-        return toDomain(row);
-      });
+      .then(toDomain)
+      .catch((e: unknown) =>
+        handlePrismaNotFound(e, `Playlist with ID ${id} not found`),
+      );
   }
 
   async getManyByUserId(userId: UserId): Promise<Playlist[]> {
@@ -49,7 +48,10 @@ export class PlaylistRepository implements IPlaylistRepository {
         where: { id: extractModelId(id).dbId },
         data: toPrismaUpdateData(data),
       })
-      .then(toDomain);
+      .then(toDomain)
+      .catch((e: unknown) =>
+        handlePrismaNotFound(e, `Playlist with ID ${id} not found`),
+      );
   }
 
   async deleteOneById(id: PlaylistId): Promise<boolean> {
