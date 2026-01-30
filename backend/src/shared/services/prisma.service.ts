@@ -8,14 +8,16 @@ export class PrismaService
   extends PrismaClient
   implements OnModuleInit, OnModuleDestroy
 {
-  constructor(private configService: ConfigService) {
+  constructor(
+    private configService: ConfigService<{ database: DatabaseConfig }>,
+  ) {
     super({
       datasources: {
         db: {
-          url: configService.get<DatabaseConfig>('database').url,
+          url: configService.get('database')?.url ?? 'file:./muzo.db',
         },
       },
-      log: configService.get<DatabaseConfig>('database').logging
+      log: configService.get('database')?.logging
         ? ['query', 'info', 'warn', 'error']
         : ['error'],
     });

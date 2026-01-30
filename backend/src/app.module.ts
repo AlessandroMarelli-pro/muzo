@@ -3,6 +3,8 @@ import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { GraphQLModule } from '@nestjs/graphql';
 import { join } from 'path';
+import { RepositoriesModule } from './clean-arch/adaptaters/persistence/repositories/repositories.module';
+import { UseCasesModule } from './clean-arch/application/use-cases/use-cases.module';
 import { ConfigModuleSetup } from './config';
 import { AdminMethodsModule } from './modules/admin-methods/admin-methods.module';
 import { AiIntegrationModule } from './modules/ai-integration/ai-integration.module';
@@ -44,6 +46,10 @@ import { SharedModule } from './shared/shared.module';
 
     // Shared module for common services
     SharedModule,
+
+    // Clean architecture modules
+    RepositoriesModule,
+    UseCasesModule,
 
     // Queue module for background processing
     QueueModule,

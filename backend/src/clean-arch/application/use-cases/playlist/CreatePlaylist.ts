@@ -1,12 +1,18 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { Playlist } from 'src/clean-arch/kernel/types/model-types';
 import { models } from 'src/clean-arch/kernel/types/models';
-import { IPlaylistRepository } from '../../ports/repositories/IPlaylistRepository';
+import {
+  IPlaylistRepository,
+  PLAYLIST_REPOSITORY,
+} from '../../ports/repositories/IPlaylistRepository';
 import { CreatePlaylistInput } from './CreatePlaylist.input';
 
 @Injectable()
 export class CreatePlaylistUseCase {
-  constructor(private readonly playlistRepository: IPlaylistRepository) {}
+  constructor(
+    @Inject(PLAYLIST_REPOSITORY)
+    private readonly playlistRepository: IPlaylistRepository,
+  ) {}
 
   async execute(createPlaylistInput: CreatePlaylistInput): Promise<Playlist> {
     const playlist = models.playlist.instantiateNew({

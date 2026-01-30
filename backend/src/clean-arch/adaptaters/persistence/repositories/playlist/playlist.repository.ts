@@ -3,10 +3,9 @@ import { PlaylistId, UserId } from 'src/clean-arch/kernel/ids';
 import { extractModelId } from 'src/clean-arch/kernel/ids/factory';
 import { createNotFoundError } from 'src/clean-arch/kernel/types';
 import { Playlist } from 'src/clean-arch/kernel/types/model-types';
-import { PrismaService } from 'src/shared/services/prisma.service';
+import { PrismaService } from '../../../../infrastructure/database/prisma.service';
 import { handlePrismaNotFound } from '../prisma-errors';
-import { toDomain } from './toDomain';
-import { toPrisma } from './toPrisma';
+import { toDomain, toPrisma } from './playlist.mapper';
 
 export class PlaylistRepository implements IPlaylistRepository {
   constructor(private readonly prisma: PrismaService) {}
