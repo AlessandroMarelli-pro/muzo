@@ -7,6 +7,7 @@ import { CleanArchGraphQLModule } from './clean-arch/adapters/graphql/graphql.mo
 import { RepositoriesModule } from './clean-arch/adapters/persistence/repositories/repositories.module';
 import { UseCasesModule } from './clean-arch/application/use-cases/use-cases.module';
 import { ConfigModuleSetup } from './config';
+import { GraphiQLModule } from './graphiql/graphiql.module';
 import { AdminMethodsModule } from './modules/admin-methods/admin-methods.module';
 import { AiIntegrationModule } from './modules/ai-integration/ai-integration.module';
 import { FilterModule } from './modules/filter/filter.module';
@@ -29,13 +30,16 @@ import { SharedModule } from './shared/shared.module';
     // Configuration module
     ConfigModuleSetup,
 
+    // GraphiQL IDE at GET /graphql (must be before GraphQL module so middleware runs first)
+    GraphiQLModule,
+
     // GraphQL module
     GraphQLModule.forRootAsync<ApolloDriverConfig>({
       driver: ApolloDriver,
       useFactory: (configService: ConfigService) => ({
         autoSchemaFile: join(process.cwd(), 'src/schema.gql'),
         sortSchema: true,
-        playground: configService.get<boolean>('app.graphqlPlayground'),
+        playground: false,
         introspection: configService.get<boolean>('app.graphqlIntrospection'),
         subscriptions: {
           'graphql-ws': true,
