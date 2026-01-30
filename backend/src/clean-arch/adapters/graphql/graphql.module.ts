@@ -5,12 +5,14 @@ import { ActionContextInterceptor } from './context/action-context.interceptor';
 import { AuthGuard } from './context/auth.guard';
 import { DomainErrorExceptionFilter } from './filters/domain-error.exception-filter';
 import { CleanArchPlaylistResolver } from './resolvers/playlist.resolver';
+import { UserResolver } from './resolvers/user.resolver';
 import { Base64ID } from './scalars/base64-id.scalar';
 @Module({
   imports: [UseCasesModule],
   providers: [
     CleanArchPlaylistResolver,
     ActionContextInterceptor,
+    UserResolver,
     Base64ID,
     AuthGuard,
     {

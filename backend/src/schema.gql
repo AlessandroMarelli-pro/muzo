@@ -539,6 +539,10 @@ type PlaylistTrack {
   track: SimpleMusicTrack!
 }
 
+type PlaylistsResult {
+  items: [CleanArchPlaylist!]!
+}
+
 type Query {
   caPlaylist(id: Base64ID!): CleanArchPlaylist!
   caPlaylists: [CleanArchPlaylist!]!
@@ -567,6 +571,7 @@ type Query {
   libraries(options: LibraryQueryOptions): [MusicLibrary!]!
   library(id: ID!): MusicLibrary
   libraryMetrics: LibraryMetrics!
+  me: User!
   playlist(id: ID!, userId: String!): Playlist!
   playlistByName(name: String!): Playlist!
   playlistRecommendations(excludeTrackIds: [String!], limit: Int, playlistId: ID!): [TrackRecommendation!]!
@@ -834,6 +839,14 @@ input UpdateQueuePositionsInput {
 input UpdateSavedFilterInput {
   criteria: FilterCriteriaInput
   name: String
+}
+
+type User {
+  email: String
+  firstName: String
+  id: Base64ID!
+  lastName: String
+  playlists: PlaylistsResult!
 }
 
 type UserPreferencesGraphQL {
