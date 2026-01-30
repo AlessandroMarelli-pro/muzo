@@ -106,7 +106,13 @@ type CleanArchPlaylist {
   isPublic: Boolean!
   name: String!
   updatedAt: DateTime!
-  updatedById: Base64ID!
+  updatedById: Base64ID
+}
+
+input CleanArchUpdatePlaylistInput {
+  description: String
+  isPublic: Boolean
+  name: String
 }
 
 input CreateLibraryInput {
@@ -390,6 +396,8 @@ type Mutation {
   authenticateYouTube(code: String!, userId: String!): YouTubeAuthResult!
   bangerTrack(trackId: ID!): SimpleMusicTrack!
   caCreatePlaylist(input: CleanArchCreatePlaylistInput!): CleanArchPlaylist!
+  caDeletePlaylist(id: Base64ID!): Boolean!
+  caUpdatePlaylist(id: Base64ID!, input: CleanArchUpdatePlaylistInput!): CleanArchPlaylist!
   clearCurrentFilter: Boolean!
   createLibrary(input: CreateLibraryInput!): MusicLibrary!
   createPlaylist(input: CreatePlaylistInput!): Playlist!
@@ -532,6 +540,7 @@ type PlaylistTrack {
 }
 
 type Query {
+  caPlaylist(id: Base64ID!): CleanArchPlaylist!
   caPlaylists: [CleanArchPlaylist!]!
   getActiveSessions: [PlaybackSession!]!
   getAudioAnalysis(trackId: String!): AudioAnalysisResult!

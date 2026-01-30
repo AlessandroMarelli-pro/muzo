@@ -10,14 +10,16 @@ export class CleanArchCreatePlaylistInput {
 
   @Field({ nullable: true })
   isPublic?: boolean;
+}
 
-  /*   @Field(() => PlaylistFilterInput, { nullable: true })
-  filters?: PlaylistFilterInput;
-
-  @Field(() => Int, { nullable: true })
-  maxTracks?: number;
+@InputType()
+export class CleanArchUpdatePlaylistInput {
+  @Field({ nullable: true })
+  name?: string;
 
   @Field({ nullable: true })
-  subgenreSelectionMode?: 'exact' | 'contain';
- */
+  description?: string;
+
+  @Field({ nullable: true })
+  isPublic?: boolean;
 }

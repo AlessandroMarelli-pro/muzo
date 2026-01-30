@@ -6,7 +6,7 @@ import { createNotFoundError } from 'src/clean-arch/kernel/types';
 import { Playlist } from 'src/clean-arch/kernel/types/model-types';
 import { PrismaService } from '../../../../infrastructure/database/prisma.service';
 import { handlePrismaNotFound } from '../prisma-errors';
-import { toDomain, toPrisma } from './playlist.mapper';
+import { toDomain, toPrisma, toPrismaUpdateData } from './playlist.mapper';
 
 @Injectable()
 export class PlaylistRepository implements IPlaylistRepository {
@@ -38,13 +38,16 @@ export class PlaylistRepository implements IPlaylistRepository {
       .then((rows) => rows.map(toDomain));
   }
 
-  async updateOneById(id: PlaylistId, playlist: Playlist): Promise<Playlist> {
+  async updateOneById(id: PlaylistId, data: Playlist): Promise<Playlist> {
     return this.prisma.playlist
       .update({
         where: { id: extractModelId(id).dbId },
-        data: toPrisma(playlist),
+        data: toPrismaUpdateData(data),
       })
-      .then(toDomain);
+      .then((row) => {
+        if (!row) throw createNotFoundError(`Playlist with ID ${id} not found`);
+        return toDomain(row);
+      });
   }
 
   async deleteOneById(id: PlaylistId): Promise<boolean> {

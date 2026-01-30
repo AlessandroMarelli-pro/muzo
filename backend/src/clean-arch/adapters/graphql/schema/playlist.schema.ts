@@ -24,7 +24,7 @@ export class CleanArchPlaylist {
   @Field(() => Base64ID)
   createdById: string;
 
-  @Field(() => Base64ID)
+  @Field(() => Base64ID, { nullable: true })
   updatedById: string;
   /*   @Field(() => [PlaylistTrack])
   tracks: PlaylistTrack[];

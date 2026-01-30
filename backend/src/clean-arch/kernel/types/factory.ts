@@ -1,4 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
+import { UserId } from '../ids';
 import { now, user } from './context';
 import { ModelBase } from './model-types';
 
@@ -19,6 +20,13 @@ export function modelFactory<M extends ModelBase<Id>, Id extends string>(id: {
         updatedById: null,
         ...x,
       }) as M,
+    update: (
+      x: Partial<M>,
+    ): Partial<M> & { updatedAt: Date; updatedById: UserId } => ({
+      ...x,
+      updatedAt: now(),
+      updatedById: user().id,
+    }),
   } as const;
 }
 
