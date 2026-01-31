@@ -629,9 +629,13 @@ model PlaylistSorting {
   playlistId      String                  @unique
   sortingKey      PlaylistSortingKey      @default(position)
   sortingDirection PlaylistSortingDirection @default(asc)
-  createdAt       DateTime                @default(now())
-  updatedAt       DateTime                @updatedAt
+  createdAt   DateTime @default(now())
+  createdById   String @default("userId")
+  updatedAt   DateTime? @updatedAt
+  updatedById  String?
   
+
+
   // Relations
   playlist        Playlist                @relation(fields: [playlistId], references: [id], onDelete: Cascade)
   

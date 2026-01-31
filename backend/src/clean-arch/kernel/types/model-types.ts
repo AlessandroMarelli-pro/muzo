@@ -3,6 +3,7 @@ import type {
   Brand,
   MusicTrackId,
   PlaylistId,
+  PlaylistSortingId,
   PlaylistTrackId,
   UserId,
 } from '../ids'; // or your ids index
@@ -45,6 +46,21 @@ export type PlaylistTrack = Readonly<ModelBase<PlaylistTrackId>> & {
   playlistId: PlaylistId;
   position: number;
   addedAt: Date;
+};
+
+export const playlistSortingKeys = ['addedAt', 'position'] as const;
+
+export type PlaylistSortingKey = (typeof playlistSortingKeys)[number];
+
+export const playlistSortingDirections = ['asc', 'desc'] as const;
+
+export type PlaylistSortingDirection =
+  (typeof playlistSortingDirections)[number];
+
+export type PlaylistSorting = Readonly<ModelBase<PlaylistSortingId>> & {
+  playlistId: PlaylistId;
+  sortingKey: PlaylistSortingKey;
+  sortingDirection: PlaylistSortingDirection;
 };
 
 export type MusicTrack = Readonly<ModelBase<MusicTrackId>> & {};
