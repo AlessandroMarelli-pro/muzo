@@ -6,6 +6,17 @@ import {
 import { extractModelId } from 'src/clean-arch/kernel/ids';
 import { PlaylistId } from 'src/clean-arch/kernel/ids/scalars';
 
+const defaultPlaylistStats = (playlistId: PlaylistId): PlaylistStatsDto => ({
+  playlistId,
+  bpmRange: { min: 0, max: 0 },
+  energyRange: { min: 0, max: 0 },
+  genresCount: 0,
+  subgenresCount: 0,
+  topGenres: [],
+  topSubgenres: [],
+  numberOfTracks: 0,
+  totalDuration: 0,
+});
 export const batchPlaylistStats = async (
   keys: readonly PlaylistId[],
   statsQuery: IPlaylistStatsQuery,
@@ -17,12 +28,7 @@ export const batchPlaylistStats = async (
   }
   return keys.map((id) => {
     const dbId = extractModelId(id).dbId;
-    const stats = map.get(dbId);
-    if (!stats) {
-      // Optional: return empty stats or throw; DataLoader can also use Error.
-      throw new Error(`Playlist stats not found for ${id}`);
-    }
-    return stats;
+    return map.get(dbId) || defaultPlaylistStats(id);
   });
 };
 
