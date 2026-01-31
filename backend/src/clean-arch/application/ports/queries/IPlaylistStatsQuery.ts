@@ -7,6 +7,7 @@ export interface RangeDto {
   max: number;
 }
 export interface PlaylistStatsDto {
+  playlistId: PlaylistId;
   bpmRange: RangeDto;
   energyRange: RangeDto;
   genresCount: number;
@@ -40,4 +41,7 @@ export type RawPlaylistStatsRow = {
 export interface IPlaylistStatsQuery {
   getPlaylistStats(playlistId: PlaylistId): Promise<PlaylistStatsDto>;
   getPlaylistsStats(): Promise<PlaylistStatsDto[]>;
+  getPlaylistsStatsWithIds(): Promise<
+    { playlistId: PlaylistId; stats: PlaylistStatsDto }[]
+  >;
 }

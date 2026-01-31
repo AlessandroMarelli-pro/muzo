@@ -1,12 +1,14 @@
 import { UseGuards } from '@nestjs/common';
 import {
   Args,
+  Context,
   Mutation,
   Parent,
   Query,
   ResolveField,
   Resolver,
 } from '@nestjs/graphql';
+import { PlaylistStatsLoader } from 'src/clean-arch/adapters/persistence/queries/playlist-stats.loader';
 import {
   CreatePlaylistUseCase,
   DeletePlaylistUseCase,
@@ -50,8 +52,11 @@ export class CleanArchPlaylistResolver {
   }
 
   @ResolveField(() => PlaylistStats)
-  async stats(@Parent() parent: CleanArchPlaylist): Promise<PlaylistStats> {
-    return this.getPlaylistStatsUseCase.execute(parent.id);
+  async stats(
+    @Parent() parent: CleanArchPlaylist,
+    @Context() context: { loaders: { playlistStats: PlaylistStatsLoader } },
+  ): Promise<PlaylistStats> {
+    return context.loaders.playlistStats.load(parent.id);
   }
 
   @ResolveField(() => [PlaylistTrack])

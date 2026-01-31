@@ -2,6 +2,7 @@ import type {
   PlaylistStatsDto,
   RawPlaylistStatsRow,
 } from 'src/clean-arch/application/ports/queries/IPlaylistStatsQuery';
+import { models } from 'src/clean-arch/kernel/types';
 
 // Helper method to parse comma-separated string from SQLite GROUP_CONCAT
 function parseCommaSeparated(value: string | null): string[] {
@@ -28,6 +29,7 @@ export function mapRawRowToPlaylistStatsDto(
   row: RawPlaylistStatsRow,
 ): PlaylistStatsDto {
   return {
+    playlistId: models.playlist.id(row.id),
     bpmRange: { min: Number(row.bpmMin), max: Number(row.bpmMax) },
     energyRange: {
       min: Math.round(Number(row.energyMin) * 100) / 100,

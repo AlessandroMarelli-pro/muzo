@@ -5,7 +5,12 @@ import { GraphQLModule } from '@nestjs/graphql';
 import { join } from 'path';
 import { ActionContextMiddleware } from './clean-arch/adapters/graphql/context/action-context.middleware';
 import { CleanArchGraphQLModule } from './clean-arch/adapters/graphql/graphql.module';
+import { createPlaylistStatsLoader } from './clean-arch/adapters/persistence/queries/playlist-stats.loader';
 import { RepositoriesModule } from './clean-arch/adapters/persistence/repositories/repositories.module';
+import {
+  IPlaylistStatsQuery,
+  PLAYLIST_STATS_QUERY,
+} from './clean-arch/application/ports/queries/IPlaylistStatsQuery';
 import { UseCasesModule } from './clean-arch/application/use-cases/use-cases.module';
 import { ConfigModuleSetup } from './config';
 import { GraphiQLModule } from './graphiql/graphiql.module';
@@ -34,10 +39,18 @@ import { SharedModule } from './shared/shared.module';
     // GraphiQL IDE at GET /graphql (must be before GraphQL module so middleware runs first)
     GraphiQLModule,
 
+    // Clean architecture modules
+    RepositoriesModule,
+    UseCasesModule,
+
     // GraphQL module
     GraphQLModule.forRootAsync<ApolloDriverConfig>({
       driver: ApolloDriver,
-      useFactory: (configService: ConfigService) => ({
+      imports: [RepositoriesModule],
+      useFactory: (
+        configService: ConfigService,
+        statsQuery: IPlaylistStatsQuery,
+      ) => ({
         autoSchemaFile: join(process.cwd(), 'src/schema.gql'),
         sortSchema: true,
         playground: false,
@@ -54,8 +67,15 @@ import { SharedModule } from './shared/shared.module';
           }
           return formattedError;
         },
+        context: ({ req, res }) => ({
+          req,
+          res,
+          loaders: {
+            playlistStats: createPlaylistStatsLoader(statsQuery),
+          },
+        }),
       }),
-      inject: [ConfigService],
+      inject: [ConfigService, PLAYLIST_STATS_QUERY],
     }),
 
     // Clean architecture graphql module
@@ -63,10 +83,6 @@ import { SharedModule } from './shared/shared.module';
 
     // Shared module for common services
     SharedModule,
-
-    // Clean architecture modules
-    RepositoriesModule,
-    UseCasesModule,
 
     // Queue module for background processing
     QueueModule,
