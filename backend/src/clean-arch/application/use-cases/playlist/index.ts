@@ -3,5 +3,8 @@ export * from './CreatePlaylist.input';
 export * from './DeletePlaylist';
 export * from './GetPlaylist';
 export * from './GetPlaylists';
+export * from './GetPlaylistsStats';
+export * from './GetPlaylistStats';
+export * from './GetPlaylistTracks';
 export * from './UpdatePlaylist';
 export * from './UpdatePlaylist.input';

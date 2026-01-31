@@ -1,5 +1,11 @@
 import { Maybe } from '../common';
-import type { Brand, PlaylistId, UserId } from '../ids'; // or your ids index
+import type {
+  Brand,
+  MusicTrackId,
+  PlaylistId,
+  PlaylistTrackId,
+  UserId,
+} from '../ids'; // or your ids index
 import { Email, Name } from './value-object';
 
 export type ActionContext = {
@@ -7,7 +13,7 @@ export type ActionContext = {
   user: User;
 };
 
-export type Model = Playlist | User;
+export type Model = Playlist | User | PlaylistTrack | MusicTrack;
 
 export type ModelBase<
   Id extends string | Brand<T, string> = string,
@@ -33,3 +39,12 @@ export type User = Readonly<
     lastName: Maybe<Name>;
   }
 >;
+
+export type PlaylistTrack = Readonly<ModelBase<PlaylistTrackId>> & {
+  trackId: MusicTrackId;
+  playlistId: PlaylistId;
+  position: number;
+  addedAt: Date;
+};
+
+export type MusicTrack = Readonly<ModelBase<MusicTrackId>> & {};

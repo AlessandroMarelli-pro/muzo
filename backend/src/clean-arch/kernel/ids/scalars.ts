@@ -7,3 +7,7 @@ export type Brand<T, BrandT extends string> = T & Branding<BrandT>;
 export type PlaylistId = Brand<string, 'PlaylistId'>;
 
 export type UserId = Brand<string, 'UserId'>;
+
+export type PlaylistTrackId = Brand<string, 'PlaylistTrackId'>;
+
+export type MusicTrackId = Brand<string, 'MusicTrackId'>;

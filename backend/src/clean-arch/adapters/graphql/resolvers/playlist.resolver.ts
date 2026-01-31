@@ -1,5 +1,12 @@
 import { UseGuards, UseInterceptors } from '@nestjs/common';
-import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
+import {
+  Args,
+  Mutation,
+  Parent,
+  Query,
+  ResolveField,
+  Resolver,
+} from '@nestjs/graphql';
 import {
   CreatePlaylistUseCase,
   DeletePlaylistUseCase,
@@ -7,10 +14,14 @@ import {
   GetPlaylistUseCase,
   UpdatePlaylistUseCase,
 } from 'src/clean-arch/application/use-cases';
-import { user } from 'src/clean-arch/kernel/types/context';
+import { GetPlaylistStatsUseCase } from 'src/clean-arch/application/use-cases/playlist/GetPlaylistStats';
+import { GetPlaylistTracksUseCase } from 'src/clean-arch/application/use-cases/playlist/GetPlaylistTracks';
+import { user } from 'src/clean-arch/kernel/types';
 import { ActionContextInterceptor } from '../context/action-context.interceptor';
 import { AuthGuard } from '../context/auth.guard';
 import { Base64ID } from '../scalars/base64-id.scalar';
+import { CleanArchPlaylistStats as PlaylistStats } from '../schema/playlist-stats.schema';
+import { CleanArchPlaylistTrack as PlaylistTrack } from '../schema/playlist-track.schema';
 import {
   CleanArchCreatePlaylistInput,
   CleanArchUpdatePlaylistInput,
@@ -18,17 +29,39 @@ import {
 import { CleanArchPlaylist } from '../schema/playlist.schema';
 import { parsePlaylistId } from '../utils/parse-id';
 
-@Resolver('CleanArchPlaylist')
+@Resolver(() => CleanArchPlaylist)
 @UseGuards(AuthGuard)
 @UseInterceptors(ActionContextInterceptor)
 export class CleanArchPlaylistResolver {
   constructor(
     private readonly createPlaylistUseCase: CreatePlaylistUseCase,
-    private readonly getPlaylistsUseCase: GetPlaylistsUseCase,
-    private readonly getPlaylistUseCase: GetPlaylistUseCase,
     private readonly updatePlaylistUseCase: UpdatePlaylistUseCase,
     private readonly deletePlaylistUseCase: DeletePlaylistUseCase,
+    private readonly getPlaylistStatsUseCase: GetPlaylistStatsUseCase,
+    private readonly getPlaylistTracksUseCase: GetPlaylistTracksUseCase,
+    private readonly getPlaylistUseCase: GetPlaylistUseCase,
+    private readonly getPlaylistsUseCase: GetPlaylistsUseCase,
   ) {}
+
+  @Query(() => CleanArchPlaylist)
+  async playlist(@Args('id', { type: () => Base64ID }) id: string) {
+    return this.getPlaylistUseCase.execute(parsePlaylistId(id));
+  }
+  @Query(() => [CleanArchPlaylist])
+  async playlists() {
+    const userId = user().id;
+    return this.getPlaylistsUseCase.execute(userId);
+  }
+
+  @ResolveField(() => PlaylistStats)
+  async stats(@Parent() parent: CleanArchPlaylist): Promise<PlaylistStats> {
+    return this.getPlaylistStatsUseCase.execute(parent.id);
+  }
+
+  @ResolveField(() => [PlaylistTrack])
+  async tracks(@Parent() parent: CleanArchPlaylist): Promise<PlaylistTrack[]> {
+    return this.getPlaylistTracksUseCase.execute(parent.id);
+  }
 
   @Mutation(() => CleanArchPlaylist)
   async caCreatePlaylist(
@@ -39,19 +72,6 @@ export class CleanArchPlaylistResolver {
       description: input.description ?? null,
       isPublic: input.isPublic ?? false,
     });
-  }
-
-  @Query(() => [CleanArchPlaylist])
-  async caPlaylists(): Promise<CleanArchPlaylist[]> {
-    const userId = user().id;
-    return this.getPlaylistsUseCase.execute(userId);
-  }
-
-  @Query(() => CleanArchPlaylist)
-  async caPlaylist(
-    @Args('id', { type: () => Base64ID }) id: string,
-  ): Promise<CleanArchPlaylist> {
-    return this.getPlaylistUseCase.execute(parsePlaylistId(id));
   }
 
   @Mutation(() => CleanArchPlaylist)

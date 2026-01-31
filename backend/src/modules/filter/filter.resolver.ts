@@ -9,6 +9,7 @@ import {
   Query,
   Resolver,
 } from '@nestjs/graphql';
+import { Range } from 'src/clean-arch/adapters/graphql/schema/common.schema';
 import {
   CreateFilterDto,
   FilterCriteria,
@@ -94,16 +95,6 @@ export class UpdateSavedFilterInput {
 
   @Field(() => FilterCriteriaInput, { nullable: true })
   criteria?: FilterCriteriaInput;
-}
-
-// GraphQL Object Types
-@ObjectType()
-export class Range {
-  @Field(() => Float)
-  min: number;
-
-  @Field(() => Float)
-  max: number;
 }
 
 @ObjectType()

@@ -1,7 +1,7 @@
 import { Field, Float, ID, InputType, Int, ObjectType } from '@nestjs/graphql';
-import { Range, RangeInput } from '../filter/filter.resolver';
+import { Range } from 'src/clean-arch/adapters/graphql/schema/common.schema';
+import { RangeInput } from '../filter/filter.resolver';
 import { SimpleMusicTrack } from '../music-track/music-track.model';
-
 @ObjectType()
 export class PlaylistTrack {
   @Field(() => ID)

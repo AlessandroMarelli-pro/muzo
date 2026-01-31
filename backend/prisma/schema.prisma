@@ -320,7 +320,7 @@ model Playlist {
   isPublic    Boolean  @default(false)
   createdAt   DateTime @default(now())
   createdById   String @default("userId")
-  updatedAt   DateTime @updatedAt
+  updatedAt   DateTime? @updatedAt
   updatedById  String?
   
   // Relations
@@ -336,7 +336,11 @@ model PlaylistTrack {
   trackId    String
   position   Int
   addedAt    DateTime @default(now())
-  
+  createdAt   DateTime @default(now())
+  createdById   String @default("userId")
+  updatedAt   DateTime? @updatedAt
+  updatedById  String?
+
   // Relations
   playlist   Playlist @relation(fields: [playlistId], references: [id], onDelete: Cascade)
   track      MusicTrack @relation(fields: [trackId], references: [id], onDelete: Cascade)

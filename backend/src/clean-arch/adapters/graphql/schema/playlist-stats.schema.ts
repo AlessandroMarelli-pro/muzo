@@ -1,0 +1,29 @@
+import { Field, Float, Int, ObjectType } from '@nestjs/graphql';
+import { Range } from './common.schema';
+
+@ObjectType()
+export class CleanArchPlaylistStats {
+  @Field(() => Range)
+  bpmRange: Range;
+
+  @Field(() => Range)
+  energyRange: Range;
+
+  @Field(() => Int)
+  genresCount: number;
+
+  @Field(() => Int)
+  subgenresCount: number;
+
+  @Field(() => [String])
+  topGenres: string[];
+
+  @Field(() => [String])
+  topSubgenres: string[];
+
+  @Field(() => Int)
+  numberOfTracks: number;
+
+  @Field(() => Float)
+  totalDuration: number;
+}

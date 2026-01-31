@@ -105,8 +105,29 @@ type CleanArchPlaylist {
   id: Base64ID!
   isPublic: Boolean!
   name: String!
+  stats: CleanArchPlaylistStats
+  tracks: [CleanArchPlaylistTrack!]
   updatedAt: DateTime!
   updatedById: Base64ID
+}
+
+type CleanArchPlaylistStats {
+  bpmRange: Range!
+  energyRange: Range!
+  genresCount: Int!
+  numberOfTracks: Int!
+  subgenresCount: Int!
+  topGenres: [String!]!
+  topSubgenres: [String!]!
+  totalDuration: Float!
+}
+
+type CleanArchPlaylistTrack {
+  addedAt: DateTime!
+  id: Base64ID!
+  playlistId: Base64ID!
+  position: Int!
+  trackId: Base64ID!
 }
 
 input CleanArchUpdatePlaylistInput {
@@ -544,8 +565,6 @@ type PlaylistsResult {
 }
 
 type Query {
-  caPlaylist(id: Base64ID!): CleanArchPlaylist!
-  caPlaylists: [CleanArchPlaylist!]!
   getActiveSessions: [PlaybackSession!]!
   getAudioAnalysis(trackId: String!): AudioAnalysisResult!
   getAudioInfo(trackId: String!): AudioInfo!
