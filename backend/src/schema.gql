@@ -99,6 +99,8 @@ input CleanArchCreatePlaylistInput {
 }
 
 type CleanArchPlaylist {
+  """True if the given track is already in this playlist"""
+  containsTrack(trackId: Base64ID): Boolean
   createdAt: DateTime!
   createdById: Base64ID!
   description: String

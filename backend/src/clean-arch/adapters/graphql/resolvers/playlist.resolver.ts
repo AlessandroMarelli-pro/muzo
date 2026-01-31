@@ -18,6 +18,7 @@ import {
 } from 'src/clean-arch/application/use-cases';
 import { GetPlaylistStatsUseCase } from 'src/clean-arch/application/use-cases/playlist/GetPlaylistStats';
 import { GetPlaylistTracksUseCase } from 'src/clean-arch/application/use-cases/playlist/GetPlaylistTracks';
+import { PlaylistContainsTrackLoader } from '../../persistence/repositories/playlist-track/playlist-contains-track.loader';
 import { PlaylistTracksLoader } from '../../persistence/repositories/playlist-track/playlist-track.loader';
 import { AuthGuard } from '../context/auth.guard';
 import { Base64ID } from '../scalars/base64-id.scalar';
@@ -28,7 +29,7 @@ import {
   CleanArchUpdatePlaylistInput,
 } from '../schema/playlist.input';
 import { CleanArchPlaylist } from '../schema/playlist.schema';
-import { parsePlaylistId } from '../utils/parse-id';
+import { parseMusicTrackId, parsePlaylistId } from '../utils/parse-id';
 
 @Resolver(() => CleanArchPlaylist)
 @UseGuards(AuthGuard)
@@ -57,7 +58,7 @@ export class CleanArchPlaylistResolver {
     @Parent() parent: CleanArchPlaylist,
     @Context() context: { loaders: { playlistStats: PlaylistStatsLoader } },
   ): Promise<PlaylistStats> {
-    return context.loaders.playlistStats.load(parent.id);
+    return context.loaders.playlistStats.load(parsePlaylistId(parent.id));
   }
 
   @ResolveField(() => [PlaylistTrack])
@@ -65,7 +66,26 @@ export class CleanArchPlaylistResolver {
     @Parent() parent: CleanArchPlaylist,
     @Context() context: { loaders: { playlistTracks: PlaylistTracksLoader } },
   ): Promise<PlaylistTrack[]> {
-    return context.loaders.playlistTracks.load(parent.id);
+    return context.loaders.playlistTracks.load(parsePlaylistId(parent.id));
+  }
+
+  @ResolveField(() => Boolean)
+  async containsTrack(
+    @Parent() parent: CleanArchPlaylist,
+    @Args('trackId', { type: () => Base64ID, nullable: true })
+    trackId: string | null,
+    @Context()
+    context: {
+      loaders: { playlistContainsTrack: PlaylistContainsTrackLoader };
+    },
+  ): Promise<boolean> {
+    if (!trackId) {
+      return false;
+    }
+    return context.loaders.playlistContainsTrack.load({
+      playlistId: parsePlaylistId(parent.id),
+      trackId: parseMusicTrackId(trackId),
+    });
   }
 
   @Mutation(() => CleanArchPlaylist)

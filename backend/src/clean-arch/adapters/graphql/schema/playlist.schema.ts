@@ -35,6 +35,13 @@ export class CleanArchPlaylist {
 
   @Field(() => PlaylistStats, { nullable: true })
   stats?: PlaylistStats;
+
+  @Field(() => Boolean, {
+    description: 'True if the given track is already in this playlist',
+    nullable: true,
+  })
+  containsTrack?: boolean;
+
   /*
   @Field(() => PlaylistSorting, { nullable: true })
   sorting?: PlaylistSorting;
