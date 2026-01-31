@@ -363,14 +363,4 @@ export class PlaylistStatsQuery implements IPlaylistStatsQuery {
         ORDER BY p.createdAt DESC
       `.then((rows) => rows.map((row) => mapRawRowToPlaylistStatsDto(row)));
   }
-  async getPlaylistsStatsWithIds(): Promise<
-    { playlistId: PlaylistId; stats: PlaylistStatsDto }[]
-  > {
-    return this.getPlaylistsStats().then((stats) =>
-      stats.map((stat) => ({
-        playlistId: stat.playlistId,
-        stats: stat,
-      })),
-    );
-  }
 }

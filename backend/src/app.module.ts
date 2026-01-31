@@ -6,11 +6,16 @@ import { join } from 'path';
 import { ActionContextMiddleware } from './clean-arch/adapters/graphql/context/action-context.middleware';
 import { CleanArchGraphQLModule } from './clean-arch/adapters/graphql/graphql.module';
 import { createPlaylistStatsLoader } from './clean-arch/adapters/persistence/queries/playlist-stats.loader';
+import { createPlaylistTracksLoader } from './clean-arch/adapters/persistence/repositories/playlist-track/playlist-track.loader';
 import { RepositoriesModule } from './clean-arch/adapters/persistence/repositories/repositories.module';
 import {
   IPlaylistStatsQuery,
   PLAYLIST_STATS_QUERY,
 } from './clean-arch/application/ports/queries/IPlaylistStatsQuery';
+import {
+  IPlaylistTrackRepository,
+  PLAYLIST_TRACK_REPOSITORY,
+} from './clean-arch/application/ports/repositories/IPlaylistTrackRepository';
 import { UseCasesModule } from './clean-arch/application/use-cases/use-cases.module';
 import { ConfigModuleSetup } from './config';
 import { GraphiQLModule } from './graphiql/graphiql.module';
@@ -50,6 +55,7 @@ import { SharedModule } from './shared/shared.module';
       useFactory: (
         configService: ConfigService,
         statsQuery: IPlaylistStatsQuery,
+        playlistTrackRepository: IPlaylistTrackRepository,
       ) => ({
         autoSchemaFile: join(process.cwd(), 'src/schema.gql'),
         sortSchema: true,
@@ -72,10 +78,11 @@ import { SharedModule } from './shared/shared.module';
           res,
           loaders: {
             playlistStats: createPlaylistStatsLoader(statsQuery),
+            playlistTracks: createPlaylistTracksLoader(playlistTrackRepository),
           },
         }),
       }),
-      inject: [ConfigService, PLAYLIST_STATS_QUERY],
+      inject: [ConfigService, PLAYLIST_STATS_QUERY, PLAYLIST_TRACK_REPOSITORY],
     }),
 
     // Clean architecture graphql module

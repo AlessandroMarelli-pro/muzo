@@ -10,10 +10,10 @@ export const batchPlaylistStats = async (
   keys: readonly PlaylistId[],
   statsQuery: IPlaylistStatsQuery,
 ): Promise<PlaylistStatsDto[]> => {
-  const pairs = await statsQuery.getPlaylistsStatsWithIds();
+  const pairs = await statsQuery.getPlaylistsStats();
   const map = new Map<string, PlaylistStatsDto>();
-  for (const { playlistId, stats } of pairs) {
-    map.set(extractModelId(playlistId).dbId, stats);
+  for (const stat of pairs) {
+    map.set(extractModelId(stat.playlistId).dbId, stat);
   }
   return keys.map((id) => {
     const dbId = extractModelId(id).dbId;

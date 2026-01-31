@@ -22,4 +22,13 @@ export class PlaylistTrackRepository implements IPlaylistTrackRepository {
       })
       .then((rows) => rows.map(toDomain));
   }
+  async getTracks(): Promise<PlaylistTrack[]> {
+    return this.prisma.playlistTrack
+      .findMany({
+        where: {
+          createdById: getCurrentUserId(),
+        },
+      })
+      .then((rows) => rows.map(toDomain));
+  }
 }

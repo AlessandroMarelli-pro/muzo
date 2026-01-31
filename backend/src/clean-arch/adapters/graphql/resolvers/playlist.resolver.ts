@@ -18,6 +18,7 @@ import {
 } from 'src/clean-arch/application/use-cases';
 import { GetPlaylistStatsUseCase } from 'src/clean-arch/application/use-cases/playlist/GetPlaylistStats';
 import { GetPlaylistTracksUseCase } from 'src/clean-arch/application/use-cases/playlist/GetPlaylistTracks';
+import { PlaylistTracksLoader } from '../../persistence/repositories/playlist-track/playlist-track.loader';
 import { AuthGuard } from '../context/auth.guard';
 import { Base64ID } from '../scalars/base64-id.scalar';
 import { CleanArchPlaylistStats as PlaylistStats } from '../schema/playlist-stats.schema';
@@ -60,8 +61,11 @@ export class CleanArchPlaylistResolver {
   }
 
   @ResolveField(() => [PlaylistTrack])
-  async tracks(@Parent() parent: CleanArchPlaylist): Promise<PlaylistTrack[]> {
-    return this.getPlaylistTracksUseCase.execute(parent.id);
+  async tracks(
+    @Parent() parent: CleanArchPlaylist,
+    @Context() context: { loaders: { playlistTracks: PlaylistTracksLoader } },
+  ): Promise<PlaylistTrack[]> {
+    return context.loaders.playlistTracks.load(parent.id);
   }
 
   @Mutation(() => CleanArchPlaylist)

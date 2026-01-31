@@ -41,7 +41,4 @@ export type RawPlaylistStatsRow = {
 export interface IPlaylistStatsQuery {
   getPlaylistStats(playlistId: PlaylistId): Promise<PlaylistStatsDto>;
   getPlaylistsStats(): Promise<PlaylistStatsDto[]>;
-  getPlaylistsStatsWithIds(): Promise<
-    { playlistId: PlaylistId; stats: PlaylistStatsDto }[]
-  >;
 }

@@ -5,4 +5,5 @@ export const PLAYLIST_TRACK_REPOSITORY = Symbol('IPlaylistTrackRepository');
 
 export interface IPlaylistTrackRepository {
   getTracksByPlaylistId(playlistId: PlaylistId): Promise<PlaylistTrack[]>;
+  getTracks(): Promise<PlaylistTrack[]>;
 }
