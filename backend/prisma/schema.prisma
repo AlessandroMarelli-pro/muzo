@@ -103,8 +103,10 @@ model MusicTrack {
   hasDiscogs            Boolean?
 
   // Timestamps
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
+  createdAt   DateTime @default(now())
+  createdById   String @default("userId")
+  updatedAt   DateTime? @updatedAt
+  updatedById  String?
 
   
   // Relations
@@ -119,7 +121,8 @@ model MusicTrack {
   trackGenres           TrackGenre[]
   trackSubgenres        TrackSubgenre[]
   queue                 Queue?
-  
+
+
   // Indexes for query performance
   @@index([libraryId])
   @@index([analysisStatus])

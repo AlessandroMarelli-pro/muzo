@@ -3,7 +3,7 @@ import { AdminMethodsService } from './admin-methods.service';
 
 @Controller('admin-methods')
 export class AdminMethodsController {
-  constructor(private readonly adminMethodsService: AdminMethodsService) { }
+  constructor(private readonly adminMethodsService: AdminMethodsService) {}
 
   /**
    * Updates the fileCreatedAt field for all tracks by reading the actual file modification time
@@ -23,9 +23,9 @@ export class AdminMethodsController {
   async syncElasticsearch() {
     return this.adminMethodsService.syncElasticsearch();
   }
-  @Get('update-track-duration-to-rounded-duration')
+  @Get('set-created-by-id-anonymous')
   @HttpCode(HttpStatus.OK)
-  async updateTrackDurationToRoundedDuration() {
-    return this.adminMethodsService.updateTrackDurationToRoundedDuration();
+  async setCreatedByIdToUserId() {
+    return this.adminMethodsService.setCreatedByIdAnonymous();
   }
 }

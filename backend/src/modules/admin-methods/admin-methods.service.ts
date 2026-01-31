@@ -8,11 +8,15 @@ import { RecommendationService } from '../recommendation/services/recommendation
 export class AdminMethodsService {
   private readonly logger = new Logger(AdminMethodsService.name);
 
-  constructor(private readonly prisma: PrismaService, private readonly elasticsearchService: ElasticsearchService, private readonly recommendationService: RecommendationService) { }
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly elasticsearchService: ElasticsearchService,
+    private readonly recommendationService: RecommendationService,
+  ) {}
 
   /**
    * This method will get all tracks from elastic search and ensure they are in the database
-   * If not, remove them from elastic search 
+   * If not, remove them from elastic search
    * Recreate the index if needed
    * Resync all track to elastic search at the end
    */
@@ -92,7 +96,7 @@ export class AdminMethodsService {
           // Get file stats to read the modification time
           const stats = fs.statSync(track.filePath);
           const fileCreatedAt = stats.birthtime;
-          console.log('fileCreatedAt', fileCreatedAt);
+
           // Update the track's fileCreatedAt field
           await this.prisma.musicTrack.update({
             where: { id: track.id },
@@ -157,5 +161,14 @@ export class AdminMethodsService {
         errors: [],
       });
     });
+  }
+
+  async setCreatedByIdAnonymous(): Promise<void> {
+    const tables = ['musicTrack', 'playlist', 'playlistTrack'];
+    for (const table of tables) {
+      await this.prisma[table].updateMany({
+        data: { createdById: 'anonymous' },
+      });
+    }
   }
 }

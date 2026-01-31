@@ -1,5 +1,4 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { UserId } from 'src/clean-arch/kernel/ids';
 import { Playlist } from 'src/clean-arch/kernel/types';
 import {
   IPlaylistRepository,
@@ -13,7 +12,7 @@ export class GetPlaylistsUseCase {
     private readonly playlistRepository: IPlaylistRepository,
   ) {}
 
-  async execute(createdById: UserId): Promise<Playlist[]> {
-    return this.playlistRepository.getManyByUserId(createdById);
+  async execute(): Promise<Playlist[]> {
+    return this.playlistRepository.getMany();
   }
 }

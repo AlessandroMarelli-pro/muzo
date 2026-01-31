@@ -3,8 +3,9 @@ import {
   IPlaylistRepository,
   PlaylistUpdateData,
 } from 'src/clean-arch/application/ports/repositories/IPlaylistRepository';
-import { PlaylistId, UserId } from 'src/clean-arch/kernel/ids';
+import { PlaylistId } from 'src/clean-arch/kernel/ids';
 import { extractModelId } from 'src/clean-arch/kernel/ids/factory';
+import { getCurrentUserId } from 'src/clean-arch/kernel/types/context';
 import { Playlist } from 'src/clean-arch/kernel/types/model-types';
 import { PrismaService } from '../../../../infrastructure/database/prisma.service';
 import { handlePrismaNotFound } from '../prisma-errors';
@@ -24,7 +25,7 @@ export class PlaylistRepository implements IPlaylistRepository {
   async getOneById(id: PlaylistId): Promise<Playlist> {
     return this.prisma.playlist
       .findUniqueOrThrow({
-        where: { id: extractModelId(id).dbId },
+        where: { id: extractModelId(id).dbId, createdById: getCurrentUserId() },
       })
       .then(toDomain)
       .catch((e: unknown) =>
@@ -32,10 +33,10 @@ export class PlaylistRepository implements IPlaylistRepository {
       );
   }
 
-  async getManyByUserId(userId: UserId): Promise<Playlist[]> {
+  async getMany(): Promise<Playlist[]> {
     return this.prisma.playlist
       .findMany({
-        where: { createdById: extractModelId(userId).dbId },
+        where: { createdById: getCurrentUserId() },
       })
       .then((rows) => rows.map(toDomain));
   }
@@ -45,7 +46,7 @@ export class PlaylistRepository implements IPlaylistRepository {
   ): Promise<Playlist> {
     return this.prisma.playlist
       .update({
-        where: { id: extractModelId(id).dbId },
+        where: { id: extractModelId(id).dbId, createdById: getCurrentUserId() },
         data: toPrismaUpdateData(data),
       })
       .then(toDomain)
@@ -57,7 +58,7 @@ export class PlaylistRepository implements IPlaylistRepository {
   async deleteOneById(id: PlaylistId): Promise<boolean> {
     return this.prisma.playlist
       .delete({
-        where: { id: extractModelId(id).dbId },
+        where: { id: extractModelId(id).dbId, createdById: getCurrentUserId() },
       })
       .then(() => true)
       .catch((e: unknown) =>

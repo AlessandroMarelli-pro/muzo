@@ -5,7 +5,9 @@ import {
   RawPlaylistStatsRow,
 } from 'src/clean-arch/application/ports/queries/IPlaylistStatsQuery';
 import { PrismaService } from 'src/clean-arch/infrastructure/database/prisma.service';
+import { extractModelId } from 'src/clean-arch/kernel/ids';
 import { PlaylistId } from 'src/clean-arch/kernel/ids/scalars';
+import { getCurrentUserId } from 'src/clean-arch/kernel/types/context';
 import { handlePrismaNotFound } from '../repositories/prisma-errors';
 import { mapRawRowToPlaylistStatsDto } from './playlist-stats.mapper';
 
@@ -18,6 +20,8 @@ export class PlaylistStatsQuery implements IPlaylistStatsQuery {
   }
 
   async getPlaylistStats(playlistId: PlaylistId): Promise<PlaylistStatsDto> {
+    const currentUserId = getCurrentUserId();
+    const playlistIdDb = extractModelId(playlistId).dbId;
     return this.prisma.$queryRaw<RawPlaylistStatsRow[]>`
         WITH track_stats AS (
           -- First CTE: Get unique track data without duplicates
@@ -27,7 +31,7 @@ export class PlaylistStatsQuery implements IPlaylistStatsQuery {
             t.duration
           FROM playlist_tracks pt
           JOIN music_tracks t ON pt.trackId = t.id
-          WHERE pt.playlistId = ${playlistId}
+          WHERE pt.playlistId = ${playlistIdDb} AND pt.createdById = ${currentUserId}
         ),
         genre_stats AS (
           -- Get genres for tracks
@@ -38,7 +42,7 @@ export class PlaylistStatsQuery implements IPlaylistStatsQuery {
           FROM playlist_tracks pt
           JOIN track_genres tg ON pt.trackId = tg.trackId
           JOIN genres g ON tg.genreId = g.id
-          WHERE pt.playlistId = ${playlistId}
+          WHERE pt.playlistId = ${playlistIdDb} AND pt.createdById = ${currentUserId}
         ),
         subgenre_stats AS (
           -- Get subgenres for tracks
@@ -49,7 +53,7 @@ export class PlaylistStatsQuery implements IPlaylistStatsQuery {
           FROM playlist_tracks pt
           JOIN track_subgenres ts ON pt.trackId = ts.trackId
           JOIN subgenres s ON ts.subgenreId = s.id
-          WHERE pt.playlistId = ${playlistId}
+          WHERE pt.playlistId = ${playlistIdDb} AND pt.createdById = ${currentUserId}
         ),
         audio_stats AS (
           -- Second CTE: Get audio fingerprint data
@@ -60,7 +64,7 @@ export class PlaylistStatsQuery implements IPlaylistStatsQuery {
             af.energyFactor
           FROM playlist_tracks pt
           JOIN audio_fingerprints af ON pt.trackId = af.trackId
-          WHERE pt.playlistId = ${playlistId}
+          WHERE pt.playlistId = ${playlistIdDb} AND pt.createdById = ${currentUserId}
         ),
         image_stats AS (
           -- Third CTE: Get image data
@@ -70,7 +74,7 @@ export class PlaylistStatsQuery implements IPlaylistStatsQuery {
             img.imagePath
           FROM playlist_tracks pt
           JOIN image_searches img ON pt.trackId = img.trackId
-          WHERE pt.playlistId = ${playlistId}
+          WHERE pt.playlistId = ${playlistIdDb} AND pt.createdById = ${currentUserId} 
         ),
         playlist_stats AS (
           -- Aggregate track data separately to avoid duplication
@@ -180,11 +184,9 @@ export class PlaylistStatsQuery implements IPlaylistStatsQuery {
           
         FROM playlists p
         LEFT JOIN final_stats fs ON p.id = fs.playlistId
-        WHERE p.id = ${playlistId}
+        WHERE p.id = ${playlistIdDb} AND p.createdById = ${currentUserId}
       `
-      .then((rows) => {
-        return mapRawRowToPlaylistStatsDto(rows[0]);
-      })
+      .then((rows) => mapRawRowToPlaylistStatsDto(rows[0]))
       .catch((error) => {
         handlePrismaNotFound(error, `Playlist with ID ${playlistId} not found`);
       });

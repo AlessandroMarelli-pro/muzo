@@ -1,4 +1,4 @@
-import { UseGuards, UseInterceptors } from '@nestjs/common';
+import { UseGuards } from '@nestjs/common';
 import {
   Args,
   Mutation,
@@ -16,8 +16,6 @@ import {
 } from 'src/clean-arch/application/use-cases';
 import { GetPlaylistStatsUseCase } from 'src/clean-arch/application/use-cases/playlist/GetPlaylistStats';
 import { GetPlaylistTracksUseCase } from 'src/clean-arch/application/use-cases/playlist/GetPlaylistTracks';
-import { user } from 'src/clean-arch/kernel/types';
-import { ActionContextInterceptor } from '../context/action-context.interceptor';
 import { AuthGuard } from '../context/auth.guard';
 import { Base64ID } from '../scalars/base64-id.scalar';
 import { CleanArchPlaylistStats as PlaylistStats } from '../schema/playlist-stats.schema';
@@ -31,7 +29,6 @@ import { parsePlaylistId } from '../utils/parse-id';
 
 @Resolver(() => CleanArchPlaylist)
 @UseGuards(AuthGuard)
-@UseInterceptors(ActionContextInterceptor)
 export class CleanArchPlaylistResolver {
   constructor(
     private readonly createPlaylistUseCase: CreatePlaylistUseCase,
@@ -49,8 +46,7 @@ export class CleanArchPlaylistResolver {
   }
   @Query(() => [CleanArchPlaylist])
   async playlists() {
-    const userId = user().id;
-    return this.getPlaylistsUseCase.execute(userId);
+    return this.getPlaylistsUseCase.execute();
   }
 
   @ResolveField(() => PlaylistStats)

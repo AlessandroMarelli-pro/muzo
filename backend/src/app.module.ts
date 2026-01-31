@@ -1,8 +1,9 @@
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module, RequestMethod } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { GraphQLModule } from '@nestjs/graphql';
 import { join } from 'path';
+import { ActionContextMiddleware } from './clean-arch/adapters/graphql/context/action-context.middleware';
 import { CleanArchGraphQLModule } from './clean-arch/adapters/graphql/graphql.module';
 import { RepositoriesModule } from './clean-arch/adapters/persistence/repositories/repositories.module';
 import { UseCasesModule } from './clean-arch/application/use-cases/use-cases.module';
@@ -87,4 +88,10 @@ import { SharedModule } from './shared/shared.module';
     AdminMethodsModule,
   ],
 })
-export class AppModule {}
+export class AppModule {
+  configure(consumer: MiddlewareConsumer): void {
+    consumer
+      .apply(ActionContextMiddleware)
+      .forRoutes({ path: 'graphql', method: RequestMethod.ALL });
+  }
+}
