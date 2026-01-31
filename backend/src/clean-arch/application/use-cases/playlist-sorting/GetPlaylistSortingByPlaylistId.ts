@@ -1,4 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { Maybe } from 'src/clean-arch/kernel/common';
 import { PlaylistId } from 'src/clean-arch/kernel/ids';
 import { PlaylistSorting } from 'src/clean-arch/kernel/types/model-types';
 import {
@@ -12,7 +13,7 @@ export class GetPlaylistSortingByPlaylistIdUseCase {
     @Inject(PLAYLIST_SORTING_REPOSITORY)
     private readonly playlistSortingRepository: IPlaylistSortingRepository,
   ) {}
-  async execute(playlistId: PlaylistId): Promise<PlaylistSorting> {
+  async execute(playlistId: PlaylistId): Promise<Maybe<PlaylistSorting>> {
     return this.playlistSortingRepository.getByPlaylistId(playlistId);
   }
 }

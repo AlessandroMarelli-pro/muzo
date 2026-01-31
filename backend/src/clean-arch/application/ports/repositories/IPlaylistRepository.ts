@@ -24,7 +24,7 @@ export interface IPlaylistRepository {
   getOneById(id: PlaylistId): Promise<PlaylistWithSorting>;
   getOneByIdWithTracks(
     id: PlaylistId,
-    sorting?: PlaylistSortingOptions,
+    sorting: Maybe<PlaylistSortingOptions>,
   ): Promise<PlaylistWithSortingAndTracks>;
   getMany(): Promise<Playlist[]>;
   updateOneById(id: PlaylistId, data: PlaylistUpdateData): Promise<Playlist>;

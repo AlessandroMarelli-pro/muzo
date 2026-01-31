@@ -1,3 +1,4 @@
+import { Maybe } from 'src/clean-arch/kernel/common';
 import { PlaylistId } from 'src/clean-arch/kernel/ids';
 import {
   PlaylistSorting,
@@ -12,5 +13,5 @@ export type PlaylistSortingUpdateData = {
 export const PLAYLIST_SORTING_REPOSITORY = Symbol('IPlaylistSortingRepository');
 
 export interface IPlaylistSortingRepository {
-  getByPlaylistId(playlistId: PlaylistId): Promise<PlaylistSorting>;
+  getByPlaylistId(playlistId: PlaylistId): Promise<Maybe<PlaylistSorting>>;
 }

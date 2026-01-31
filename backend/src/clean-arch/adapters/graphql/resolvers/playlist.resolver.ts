@@ -12,16 +12,17 @@ import { PlaylistStatsLoader } from 'src/clean-arch/adapters/persistence/queries
 import {
   CreatePlaylistUseCase,
   DeletePlaylistUseCase,
+  GetPlaylistSortingByPlaylistIdUseCase,
   GetPlaylistsUseCase,
   GetPlaylistUseCase,
   UpdatePlaylistUseCase,
 } from 'src/clean-arch/application/use-cases';
-import { GetPlaylistTracksUseCase } from 'src/clean-arch/application/use-cases/playlist-track/GetPlaylistTracks';
-import { GetPlaylistStatsUseCase } from 'src/clean-arch/application/use-cases/playlist/GetPlaylistStats';
+import { Maybe } from 'src/clean-arch/kernel/common';
 import { PlaylistContainsTrackLoader } from '../../persistence/repositories/playlist-track/playlist-contains-track.loader';
 import { PlaylistTracksWithTrackLoader } from '../../persistence/repositories/playlist-track/playlist-track-with-track.loader';
 import { AuthGuard } from '../context/auth.guard';
 import { Base64ID } from '../scalars/base64-id.scalar';
+import { CleanArchPlaylistSorting } from '../schema/playlist-sorting.schema';
 import { CleanArchPlaylistStats as PlaylistStats } from '../schema/playlist-stats.schema';
 import { CleanArchPlaylistTrack as PlaylistTrack } from '../schema/playlist-track.schema';
 import {
@@ -38,10 +39,9 @@ export class CleanArchPlaylistResolver {
     private readonly createPlaylistUseCase: CreatePlaylistUseCase,
     private readonly updatePlaylistUseCase: UpdatePlaylistUseCase,
     private readonly deletePlaylistUseCase: DeletePlaylistUseCase,
-    private readonly getPlaylistStatsUseCase: GetPlaylistStatsUseCase,
-    private readonly getPlaylistTracksUseCase: GetPlaylistTracksUseCase,
     private readonly getPlaylistUseCase: GetPlaylistUseCase,
     private readonly getPlaylistsUseCase: GetPlaylistsUseCase,
+    private readonly getPlaylistSortingByPlaylistIdUseCase: GetPlaylistSortingByPlaylistIdUseCase,
   ) {}
 
   @Query(() => CleanArchPlaylist)
@@ -73,6 +73,18 @@ export class CleanArchPlaylistResolver {
       return parent.tracks;
     }
     return context.loaders.playlistTracksWithTrack.load(
+      parsePlaylistId(parent.id),
+    );
+  }
+
+  @ResolveField(() => CleanArchPlaylistSorting)
+  async sorting(
+    @Parent() parent: CleanArchPlaylist,
+  ): Promise<Maybe<CleanArchPlaylistSorting>> {
+    if (parent.sorting != null) {
+      return parent.sorting;
+    }
+    return this.getPlaylistSortingByPlaylistIdUseCase.execute(
       parsePlaylistId(parent.id),
     );
   }

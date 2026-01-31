@@ -6,6 +6,7 @@ import {
   PlaylistWithSortingAndTracks,
 } from 'src/clean-arch/application/ports/repositories/IPlaylistRepository';
 import { PlaylistSortingOptions } from 'src/clean-arch/application/ports/repositories/IPlaylistTrackRepository';
+import { Maybe } from 'src/clean-arch/kernel/common';
 import { PlaylistId } from 'src/clean-arch/kernel/ids';
 import { extractModelId } from 'src/clean-arch/kernel/ids/factory';
 import { getCurrentUserId } from 'src/clean-arch/kernel/types/context';
@@ -30,7 +31,7 @@ export class PlaylistRepository implements IPlaylistRepository {
   }
   async getOneById(id: PlaylistId): Promise<PlaylistWithSorting> {
     return this.prisma.playlist
-      .findFirst({
+      .findFirstOrThrow({
         where: { id: extractModelId(id).dbId, createdById: getCurrentUserId() },
         include: { sorting: true },
       })
@@ -45,10 +46,17 @@ export class PlaylistRepository implements IPlaylistRepository {
 
   async getOneByIdWithTracks(
     id: PlaylistId,
-    sorting?: PlaylistSortingOptions,
+    sorting: Maybe<PlaylistSortingOptions>,
   ): Promise<PlaylistWithSortingAndTracks> {
+    const sortingOpts = sorting
+      ? {
+          sortingKey: sorting.sortingKey,
+          sortingDirection: sorting.sortingDirection,
+        }
+      : { sortingKey: 'position' as const, sortingDirection: 'asc' as const };
+
     return this.prisma.playlist
-      .findFirst({
+      .findFirstOrThrow({
         where: { id: extractModelId(id).dbId, createdById: getCurrentUserId() },
         include: {
           sorting: true,
@@ -57,20 +65,24 @@ export class PlaylistRepository implements IPlaylistRepository {
               track: true,
             },
             orderBy: {
-              [sorting?.sortingKey || 'position']:
-                sorting?.sortingDirection || 'asc',
+              [sortingOpts.sortingKey]: sortingOpts.sortingDirection,
             },
           },
         },
       })
-      .then((row) => ({
-        ...toDomain(row),
-        sorting: row.sorting ? toDomainSorting(row.sorting) : null,
-        tracks: row.tracks.map((track) => ({
-          ...toDomainPlaylistTrack(track),
-          track: toDomainMusicTrack(track.track),
-        })),
-      }));
+      .then((row) => {
+        return {
+          ...toDomain(row),
+          sorting: row.sorting ? toDomainSorting(row.sorting) : null,
+          tracks: row.tracks.map((track) => ({
+            ...toDomainPlaylistTrack(track),
+            track: toDomainMusicTrack(track.track),
+          })),
+        };
+      })
+      .catch((e: unknown) =>
+        handlePrismaNotFound(e, `Playlist with ID ${id} not found`),
+      );
   }
 
   async getMany(): Promise<Playlist[]> {

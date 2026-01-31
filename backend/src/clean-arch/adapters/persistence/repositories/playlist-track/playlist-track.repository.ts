@@ -15,6 +15,7 @@ import { models } from 'src/clean-arch/kernel/types';
 import { getCurrentUserId } from 'src/clean-arch/kernel/types/context';
 import { PlaylistTrack } from 'src/clean-arch/kernel/types/model-types';
 import { toDomain as toDomainMusicTrack } from '../music-track/music-track.mapper';
+import { handlePrismaNotFound } from '../prisma-errors';
 import { toDomain } from './playlist-track.mapper';
 @Injectable()
 export class PlaylistTrackRepository implements IPlaylistTrackRepository {
@@ -47,7 +48,7 @@ export class PlaylistTrackRepository implements IPlaylistTrackRepository {
     trackId: MusicTrackId,
   ): Promise<PlaylistTrackWithTrackDetail> {
     return this.prisma.playlistTrack
-      .findFirst({
+      .findFirstOrThrow({
         where: {
           playlistId: extractModelId(playlistId).dbId,
           trackId: extractModelId(trackId).dbId,
@@ -60,7 +61,13 @@ export class PlaylistTrackRepository implements IPlaylistTrackRepository {
       .then((row) => ({
         ...toDomain(row),
         track: toDomainMusicTrack(row.track),
-      }));
+      }))
+      .catch((e: unknown) =>
+        handlePrismaNotFound(
+          e,
+          `Playlist track with ID ${playlistId} and track ID ${trackId} not found`,
+        ),
+      );
   }
 
   async getTracksWithTrack(): Promise<PlaylistTrackWithTrackDetail[]> {

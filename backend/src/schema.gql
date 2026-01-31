@@ -118,7 +118,6 @@ type CleanArchPlaylistSorting {
   createdAt: DateTime!
   id: Base64ID!
   playlistId: Base64ID!
-  sorting: CleanArchPlaylistSorting!
   sortingDirection: String!
   sortingKey: String!
   updatedAt: DateTime!
