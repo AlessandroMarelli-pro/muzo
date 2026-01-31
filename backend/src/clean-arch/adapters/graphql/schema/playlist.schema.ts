@@ -1,6 +1,7 @@
 import { Field, ObjectType } from '@nestjs/graphql';
 import { PlaylistId } from 'src/clean-arch/kernel/ids/scalars';
 import { Base64ID } from '../scalars/base64-id.scalar';
+import { CleanArchPlaylistSorting } from './playlist-sorting.schema';
 import { CleanArchPlaylistStats as PlaylistStats } from './playlist-stats.schema';
 import { CleanArchPlaylistTrack as PlaylistTrack } from './playlist-track.schema';
 
@@ -42,8 +43,6 @@ export class CleanArchPlaylist {
   })
   containsTrack?: boolean;
 
-  /*
-  @Field(() => PlaylistSorting, { nullable: true })
-  sorting?: PlaylistSorting;
- */
+  @Field(() => CleanArchPlaylistSorting, { nullable: true })
+  sorting?: CleanArchPlaylistSorting;
 }

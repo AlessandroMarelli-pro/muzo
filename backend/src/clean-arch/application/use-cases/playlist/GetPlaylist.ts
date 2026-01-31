@@ -1,9 +1,11 @@
+// GetPlaylist.ts
 import { Inject, Injectable } from '@nestjs/common';
 import { PlaylistId } from 'src/clean-arch/kernel/ids';
-import { Playlist } from 'src/clean-arch/kernel/types/model-types';
+
 import {
   IPlaylistRepository,
   PLAYLIST_REPOSITORY,
+  PlaylistWithSortingAndTracks,
 } from '../../ports/repositories/IPlaylistRepository';
 
 @Injectable()
@@ -13,7 +15,8 @@ export class GetPlaylistUseCase {
     private readonly playlistRepository: IPlaylistRepository,
   ) {}
 
-  async execute(id: PlaylistId): Promise<Playlist> {
-    return this.playlistRepository.getOneById(id);
+  async execute(id: PlaylistId): Promise<PlaylistWithSortingAndTracks> {
+    const playlist = await this.playlistRepository.getOneByIdWithTracks(id);
+    return playlist;
   }
 }

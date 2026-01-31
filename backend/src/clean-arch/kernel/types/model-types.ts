@@ -14,7 +14,12 @@ export type ActionContext = {
   user: User;
 };
 
-export type Model = Playlist | User | PlaylistTrack | MusicTrack;
+export type Model =
+  | Playlist
+  | User
+  | PlaylistTrack
+  | MusicTrack
+  | PlaylistSorting;
 
 export type ModelBase<
   Id extends string | Brand<T, string> = string,
@@ -63,4 +68,12 @@ export type PlaylistSorting = Readonly<ModelBase<PlaylistSortingId>> & {
   sortingDirection: PlaylistSortingDirection;
 };
 
-export type MusicTrack = Readonly<ModelBase<MusicTrackId>> & {};
+export type MusicTrack = Readonly<ModelBase<MusicTrackId>> & {
+  title: string;
+  artist: string;
+  duration: number;
+  date: Date;
+  isFavorite: boolean;
+  isLiked: boolean;
+  isBanger: boolean;
+};

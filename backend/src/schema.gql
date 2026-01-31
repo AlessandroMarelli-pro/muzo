@@ -107,10 +107,21 @@ type CleanArchPlaylist {
   id: Base64ID!
   isPublic: Boolean!
   name: String!
+  sorting: CleanArchPlaylistSorting
   stats: CleanArchPlaylistStats
   tracks: [CleanArchPlaylistTrack!]
   updatedAt: DateTime!
   updatedById: Base64ID
+}
+
+type CleanArchPlaylistSorting {
+  createdAt: DateTime!
+  id: Base64ID!
+  playlistId: Base64ID!
+  sorting: CleanArchPlaylistSorting!
+  sortingDirection: String!
+  sortingKey: String!
+  updatedAt: DateTime!
 }
 
 type CleanArchPlaylistStats {
@@ -130,6 +141,7 @@ type CleanArchPlaylistTrack {
   id: Base64ID!
   playlistId: Base64ID!
   position: Int!
+  track: SimpleMusicTrack!
   trackId: Base64ID!
 }
 
@@ -531,13 +543,6 @@ type PlaylistSorting {
   updatedAt: DateTime!
 }
 
-type PlaylistStats {
-  averageDuration: Int!
-  genreDistribution: String
-  totalDuration: Int!
-  totalTracks: Int!
-}
-
 type PlaylistTrack {
   addedAt: String!
   id: ID!
@@ -550,6 +555,7 @@ type PlaylistsResult {
 }
 
 type Query {
+  caPlaylist(id: ID!, userId: String!): Playlist!
   getActiveSessions: [PlaybackSession!]!
   getAudioAnalysis(trackId: String!): AudioAnalysisResult!
   getAudioInfo(trackId: String!): AudioInfo!
@@ -576,11 +582,9 @@ type Query {
   library(id: ID!): MusicLibrary
   libraryMetrics: LibraryMetrics!
   me: User!
-  playlist(id: ID!, userId: String!): Playlist!
+  playlist(id: Base64ID!): CleanArchPlaylist!
   playlistByName(name: String!): Playlist!
   playlistRecommendations(excludeTrackIds: [String!], limit: Int, playlistId: ID!): [TrackRecommendation!]!
-  playlistStats(playlistId: ID!, userId: String!): PlaylistStats!
-  playlistTracks(playlistId: ID!, userId: String!): [PlaylistTrack!]!
   playlists: [CleanArchPlaylist!]!
   preferences: UserPreferencesGraphQL!
   queue: [QueueItem!]!

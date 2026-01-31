@@ -16,10 +16,10 @@ import {
   GetPlaylistUseCase,
   UpdatePlaylistUseCase,
 } from 'src/clean-arch/application/use-cases';
+import { GetPlaylistTracksUseCase } from 'src/clean-arch/application/use-cases/playlist-track/GetPlaylistTracks';
 import { GetPlaylistStatsUseCase } from 'src/clean-arch/application/use-cases/playlist/GetPlaylistStats';
-import { GetPlaylistTracksUseCase } from 'src/clean-arch/application/use-cases/playlist/GetPlaylistTracks';
 import { PlaylistContainsTrackLoader } from '../../persistence/repositories/playlist-track/playlist-contains-track.loader';
-import { PlaylistTracksLoader } from '../../persistence/repositories/playlist-track/playlist-track.loader';
+import { PlaylistTracksWithTrackLoader } from '../../persistence/repositories/playlist-track/playlist-track-with-track.loader';
 import { AuthGuard } from '../context/auth.guard';
 import { Base64ID } from '../scalars/base64-id.scalar';
 import { CleanArchPlaylistStats as PlaylistStats } from '../schema/playlist-stats.schema';
@@ -64,9 +64,17 @@ export class CleanArchPlaylistResolver {
   @ResolveField(() => [PlaylistTrack])
   async tracks(
     @Parent() parent: CleanArchPlaylist,
-    @Context() context: { loaders: { playlistTracks: PlaylistTracksLoader } },
+    @Context()
+    context: {
+      loaders: { playlistTracksWithTrack: PlaylistTracksWithTrackLoader };
+    },
   ): Promise<PlaylistTrack[]> {
-    return context.loaders.playlistTracks.load(parsePlaylistId(parent.id));
+    if (parent.tracks != null) {
+      return parent.tracks;
+    }
+    return context.loaders.playlistTracksWithTrack.load(
+      parsePlaylistId(parent.id),
+    );
   }
 
   @ResolveField(() => Boolean)
@@ -82,7 +90,6 @@ export class CleanArchPlaylistResolver {
     if (!trackId) {
       return false;
     }
-    console.log('trackId', trackId);
     return context.loaders.playlistContainsTrack.load({
       playlistId: parsePlaylistId(parent.id),
       trackId: parseMusicTrackId(trackId),

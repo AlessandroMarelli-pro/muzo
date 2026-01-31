@@ -3,13 +3,15 @@ import { RepositoriesModule } from '../../adapters/persistence/repositories/repo
 import {
   CreatePlaylistUseCase,
   DeletePlaylistUseCase,
+  GetPlaylistSortingByPlaylistIdUseCase,
   GetPlaylistsStatsUseCase,
   GetPlaylistStatsUseCase,
   GetPlaylistsUseCase,
   GetPlaylistTracksUseCase,
+  GetPlaylistTracksWithDetailUseCase,
   GetPlaylistUseCase,
   UpdatePlaylistUseCase,
-} from './playlist/';
+} from './';
 
 @Module({
   imports: [RepositoriesModule],
@@ -22,6 +24,8 @@ import {
     GetPlaylistStatsUseCase,
     GetPlaylistTracksUseCase,
     GetPlaylistsStatsUseCase,
+    GetPlaylistSortingByPlaylistIdUseCase,
+    GetPlaylistTracksWithDetailUseCase,
   ],
   exports: [
     CreatePlaylistUseCase,
@@ -32,6 +36,8 @@ import {
     GetPlaylistStatsUseCase,
     GetPlaylistTracksUseCase,
     GetPlaylistsStatsUseCase,
+    GetPlaylistSortingByPlaylistIdUseCase,
+    GetPlaylistTracksWithDetailUseCase,
   ],
 })
 export class UseCasesModule {}

@@ -1,6 +1,8 @@
 import { Injectable } from '@nestjs/common';
+import { PlaylistTrackWithTrackDetail } from 'src/clean-arch/application/dtos/PlaylistTrackWithDetail';
 import {
   IPlaylistTrackRepository,
+  PlaylistSortingOptions,
   PlaylistTrackPresence,
 } from 'src/clean-arch/application/ports/repositories/IPlaylistTrackRepository';
 import { PrismaService } from 'src/clean-arch/infrastructure/database/prisma.service';
@@ -12,8 +14,8 @@ import {
 import { models } from 'src/clean-arch/kernel/types';
 import { getCurrentUserId } from 'src/clean-arch/kernel/types/context';
 import { PlaylistTrack } from 'src/clean-arch/kernel/types/model-types';
+import { toDomain as toDomainMusicTrack } from '../music-track/music-track.mapper';
 import { toDomain } from './playlist-track.mapper';
-
 @Injectable()
 export class PlaylistTrackRepository implements IPlaylistTrackRepository {
   constructor(private readonly prisma: PrismaService) {}
@@ -40,6 +42,71 @@ export class PlaylistTrackRepository implements IPlaylistTrackRepository {
       .then((rows) => rows.map(toDomain));
   }
 
+  async getTrackForPlaylist(
+    playlistId: PlaylistId,
+    trackId: MusicTrackId,
+  ): Promise<PlaylistTrackWithTrackDetail> {
+    return this.prisma.playlistTrack
+      .findFirst({
+        where: {
+          playlistId: extractModelId(playlistId).dbId,
+          trackId: extractModelId(trackId).dbId,
+          createdById: getCurrentUserId(),
+        },
+        include: {
+          track: true,
+        },
+      })
+      .then((row) => ({
+        ...toDomain(row),
+        track: toDomainMusicTrack(row.track),
+      }));
+  }
+
+  async getTracksWithTrack(): Promise<PlaylistTrackWithTrackDetail[]> {
+    return this.prisma.playlistTrack
+      .findMany({
+        where: {
+          createdById: getCurrentUserId(),
+        },
+        include: {
+          track: true,
+        },
+      })
+      .then((rows) =>
+        rows.map((row) => ({
+          ...toDomain(row),
+          track: toDomainMusicTrack(row.track),
+        })),
+      );
+  }
+  async getTracksByPlaylistIdWithTrack(
+    playlistId: PlaylistId,
+    sorting: PlaylistSortingOptions = {
+      sortingKey: 'position',
+      sortingDirection: 'asc',
+    },
+  ): Promise<PlaylistTrackWithTrackDetail[]> {
+    return this.prisma.playlistTrack
+      .findMany({
+        where: {
+          createdById: getCurrentUserId(),
+          playlistId: extractModelId(playlistId).dbId,
+        },
+        include: {
+          track: true,
+        },
+        orderBy: {
+          [sorting.sortingKey]: sorting.sortingDirection,
+        },
+      })
+      .then((rows) =>
+        rows.map((row) => ({
+          ...toDomain(row),
+          track: toDomainMusicTrack(row.track),
+        })),
+      );
+  }
   async getPresenceBatch(
     pairs: Array<{ playlistId: PlaylistId; trackId: MusicTrackId }>,
   ): Promise<PlaylistTrackPresence[]> {

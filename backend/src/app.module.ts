@@ -7,6 +7,7 @@ import { ActionContextMiddleware } from './clean-arch/adapters/graphql/context/a
 import { CleanArchGraphQLModule } from './clean-arch/adapters/graphql/graphql.module';
 import { createPlaylistStatsLoader } from './clean-arch/adapters/persistence/queries/playlist-stats.loader';
 import { createPlaylistContainsTrackLoader } from './clean-arch/adapters/persistence/repositories/playlist-track/playlist-contains-track.loader';
+import { createPlaylistTracksWithTrackLoader } from './clean-arch/adapters/persistence/repositories/playlist-track/playlist-track-with-track.loader';
 import { createPlaylistTracksLoader } from './clean-arch/adapters/persistence/repositories/playlist-track/playlist-track.loader';
 import { RepositoriesModule } from './clean-arch/adapters/persistence/repositories/repositories.module';
 import {
@@ -81,6 +82,9 @@ import { SharedModule } from './shared/shared.module';
             playlistStats: createPlaylistStatsLoader(statsQuery),
             playlistTracks: createPlaylistTracksLoader(playlistTrackRepository),
             playlistContainsTrack: createPlaylistContainsTrackLoader(
+              playlistTrackRepository,
+            ),
+            playlistTracksWithTrack: createPlaylistTracksWithTrackLoader(
               playlistTrackRepository,
             ),
           },

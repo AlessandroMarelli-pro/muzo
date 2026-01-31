@@ -1,4 +1,4 @@
-import { PlaylistSortingId } from 'src/clean-arch/kernel/ids';
+import { PlaylistId } from 'src/clean-arch/kernel/ids';
 import {
   PlaylistSorting,
   PlaylistSortingDirection,
@@ -9,14 +9,8 @@ export type PlaylistSortingUpdateData = {
   sortingKey?: PlaylistSortingKey;
   sortingDirection?: PlaylistSortingDirection;
 };
+export const PLAYLIST_SORTING_REPOSITORY = Symbol('IPlaylistSortingRepository');
 
 export interface IPlaylistSortingRepository {
-  save(playlistSorting: PlaylistSorting): Promise<PlaylistSorting>;
-  getOneById(id: PlaylistSortingId): Promise<PlaylistSorting>;
-  getMany(): Promise<PlaylistSorting[]>;
-  updateOneById(
-    id: PlaylistSortingId,
-    data: PlaylistSortingUpdateData,
-  ): Promise<PlaylistSorting>;
-  deleteOneById(id: PlaylistSortingId): Promise<boolean>;
+  getByPlaylistId(playlistId: PlaylistId): Promise<PlaylistSorting>;
 }

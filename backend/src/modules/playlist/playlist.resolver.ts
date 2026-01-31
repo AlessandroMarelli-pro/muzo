@@ -10,7 +10,6 @@ import {
   CreatePlaylistInput,
   Playlist,
   PlaylistSorting,
-  PlaylistStats,
   PlaylistTrack,
   ReorderTracksInput,
   TrackRecommendation,
@@ -43,7 +42,7 @@ export class PlaylistResolver {
   }
 
   @Query(() => Playlist)
-  async playlist(
+  async caPlaylist(
     @Args('id', { type: () => ID }) id: string,
     @Args('userId') userId?: string,
   ) {
@@ -55,22 +54,6 @@ export class PlaylistResolver {
   async playlistByName(@Args('name', { type: () => String }) name: string) {
     const playlist = await this.playlistService.findPlaylistByName(name);
     return this.formatPlaylist(playlist as PlaylistWithRelations);
-  }
-
-  @Query(() => [PlaylistTrack])
-  async playlistTracks(
-    @Args('playlistId', { type: () => ID }) playlistId: string,
-    @Args('userId') userId?: string,
-  ) {
-    return this.playlistService.getPlaylistTracks(playlistId);
-  }
-
-  @Query(() => PlaylistStats)
-  async playlistStats(
-    @Args('playlistId', { type: () => ID }) playlistId: string,
-    @Args('userId') userId?: string,
-  ) {
-    return this.playlistService.getPlaylistStats(playlistId);
   }
 
   @Query(() => [TrackRecommendation])

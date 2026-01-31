@@ -164,7 +164,12 @@ export class AdminMethodsService {
   }
 
   async setCreatedByIdAnonymous(): Promise<void> {
-    const tables = ['musicTrack', 'playlist', 'playlistTrack'];
+    const tables = [
+      'musicTrack',
+      'playlist',
+      'playlistTrack',
+      'playlistSorting',
+    ];
     for (const table of tables) {
       await this.prisma[table].updateMany({
         data: { createdById: 'anonymous' },

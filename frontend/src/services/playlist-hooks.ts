@@ -1,8 +1,8 @@
 import {
 	AddTrackToPlaylistInput,
+	CleanArchPlaylist,
 	CreatePlaylistInput,
 	Playlist,
-	PlaylistItem,
 	PlaylistsResult,
 	PlaylistTrack,
 	TrackRecommendation,
@@ -94,28 +94,33 @@ const GET_PLAYLISTS = gql`
 
 const GET_PLAYLIST = gql`
 	${simpleMusicTrackFragment}
-	query GetPlaylist($id: ID!, $userId: String!) {
-		playlist(id: $id, userId: $userId) {
+	query GetPlaylist($id: Base64ID!) {
+		playlist(id: $id) {
 			id
 			name
 			description
-			bpmRange {
-				min
-				max
-			}
-			energyRange {
-				min
-				max
-			}
-			genresCount
-			subgenresCount
-			topGenres
-			topSubgenres
-			numberOfTracks
-			totalDuration
 			createdAt
 			updatedAt
-			images
+			isPublic
+			createdById
+			updatedById
+			stats {
+				bpmRange {
+					min
+					max
+				}
+				energyRange {
+					min
+					max
+				}
+				genresCount
+				numberOfTracks
+				subgenresCount
+				topGenres
+				topSubgenres
+				totalDuration
+				images
+			}
 			sorting {
 				id
 				playlistId
@@ -128,6 +133,8 @@ const GET_PLAYLIST = gql`
 				id
 				position
 				addedAt
+				playlistId
+				trackId
 				track {
 					...SimpleMusicTrackFragment
 				}
@@ -476,7 +483,7 @@ export const fetchPlaylists = async (
 	userId: string = 'default',
 	search?: string,
 	verifyTrackId?: string
-): Promise<PlaylistItem[]> => {
+): Promise<Playlist[]> => {
 	console.log('verifyTrackId', verifyTrackId);
 	console.log(
 		'encodeBase64(MusicTrack:' + verifyTrackId + ')',
@@ -497,11 +504,14 @@ export const fetchPlaylist = async (
 	id: string,
 	userId: string = 'default'
 ): Promise<Playlist> => {
-	const data = await graffleClient.request<{ playlist: Playlist }>(
+	const data = await graffleClient.request<{ playlist: CleanArchPlaylist }>(
 		GET_PLAYLIST,
-		{ id, userId }
+		{
+			id,
+			userId,
+		}
 	);
-	return data.playlist;
+	return toPlaylistItem(data.playlist);
 };
 
 export const fetchPlaylistByName = async (
@@ -767,7 +777,7 @@ export function usePlaylists(
 		error,
 		refetch,
 		isRefetching,
-	} = useQuery<PlaylistItem[]>({
+	} = useQuery<Playlist[]>({
 		queryKey: queryKeys.playlists(userId, search, verifyTrackId),
 		queryFn: () => fetchPlaylists(userId, search, verifyTrackId),
 	});
