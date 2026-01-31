@@ -82,6 +82,7 @@ export class CleanArchPlaylistResolver {
     if (!trackId) {
       return false;
     }
+    console.log('trackId', trackId);
     return context.loaders.playlistContainsTrack.load({
       playlistId: parsePlaylistId(parent.id),
       trackId: parseMusicTrackId(trackId),

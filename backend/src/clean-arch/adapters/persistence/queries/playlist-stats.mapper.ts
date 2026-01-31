@@ -41,5 +41,6 @@ export function mapRawRowToPlaylistStatsDto(
     topSubgenres: getTopItems(parseCommaSeparated(row.allSubgenres), 5),
     numberOfTracks: Number(row.numberOfTracks),
     totalDuration: parseFloat(String(row.totalDuration)),
+    images: parseCommaSeparated(row.allImages),
   };
 }

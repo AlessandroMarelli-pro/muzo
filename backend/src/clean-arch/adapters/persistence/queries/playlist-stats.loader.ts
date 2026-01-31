@@ -16,6 +16,7 @@ const defaultPlaylistStats = (playlistId: PlaylistId): PlaylistStatsDto => ({
   topSubgenres: [],
   numberOfTracks: 0,
   totalDuration: 0,
+  images: [],
 });
 export const batchPlaylistStats = async (
   keys: readonly PlaylistId[],

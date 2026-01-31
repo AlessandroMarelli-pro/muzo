@@ -9,7 +9,6 @@ import {
   AddTrackToPlaylistInput,
   CreatePlaylistInput,
   Playlist,
-  PlaylistItem,
   PlaylistSorting,
   PlaylistStats,
   PlaylistTrack,
@@ -26,17 +25,7 @@ export class PlaylistResolver {
   constructor(
     private readonly playlistService: PlaylistService,
     private readonly recommendationService: RecommendationService,
-  ) { }
-
-  @Query(() => [PlaylistItem])
-  async playlists(
-    @Args('userId') userId?: string,
-    @Args('search', { type: () => String, nullable: true }) search?: string,
-    @Args('verifyTrackId', { type: () => String, nullable: true }) verifyTrackId?: string,
-  ) {
-    const playlists = await this.playlistService.getPlaylistWithStats(search, verifyTrackId);
-    return playlists;
-  }
+  ) {}
 
   private async formatPlaylist(playlist: PlaylistWithRelations) {
     const tracks = playlist.tracks.map((track) => ({
@@ -126,8 +115,16 @@ export class PlaylistResolver {
     @Args('input') input: AddTrackToPlaylistInput,
     @Args('userId') userId?: string,
   ) {
-    const dbPlaylistTrack = await this.playlistService.addTrackToPlaylist(playlistId, input);
-    return { ...dbPlaylistTrack, track: mapToSimpleMusicTrack(dbPlaylistTrack.track as MusicTrackWithRelations) };
+    const dbPlaylistTrack = await this.playlistService.addTrackToPlaylist(
+      playlistId,
+      input,
+    );
+    return {
+      ...dbPlaylistTrack,
+      track: mapToSimpleMusicTrack(
+        dbPlaylistTrack.track as MusicTrackWithRelations,
+      ),
+    };
   }
 
   @Mutation(() => Boolean)

@@ -16,6 +16,7 @@ export interface PlaylistStatsDto {
   topSubgenres: string[];
   numberOfTracks: number;
   totalDuration: number;
+  images: string[];
 }
 
 export type RawPlaylistStatsRow = {

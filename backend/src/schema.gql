@@ -117,6 +117,7 @@ type CleanArchPlaylistStats {
   bpmRange: Range!
   energyRange: Range!
   genresCount: Int!
+  images: [String!]!
   numberOfTracks: Int!
   subgenresCount: Int!
   topGenres: [String!]!
@@ -521,24 +522,6 @@ input PlaylistFilterInput {
   tempo: RangeInput
 }
 
-type PlaylistItem {
-  bpmRange: Range!
-  createdAt: DateTime!
-  description: String
-  energyRange: Range!
-  genresCount: Int!
-  id: ID!
-  images: [String!]!
-  isTrackInPlaylist: Boolean
-  name: String!
-  numberOfTracks: Int!
-  subgenresCount: Int!
-  topGenres: [String!]!
-  topSubgenres: [String!]!
-  totalDuration: Float!
-  updatedAt: DateTime!
-}
-
 type PlaylistSorting {
   createdAt: DateTime!
   id: ID!
@@ -598,7 +581,7 @@ type Query {
   playlistRecommendations(excludeTrackIds: [String!], limit: Int, playlistId: ID!): [TrackRecommendation!]!
   playlistStats(playlistId: ID!, userId: String!): PlaylistStats!
   playlistTracks(playlistId: ID!, userId: String!): [PlaylistTrack!]!
-  playlists(search: String, userId: String!, verifyTrackId: String): [PlaylistItem!]!
+  playlists: [CleanArchPlaylist!]!
   preferences: UserPreferencesGraphQL!
   queue: [QueueItem!]!
   queueStats: String!

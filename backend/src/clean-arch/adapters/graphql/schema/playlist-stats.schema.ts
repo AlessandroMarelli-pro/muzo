@@ -26,4 +26,7 @@ export class CleanArchPlaylistStats {
 
   @Field(() => Float)
   totalDuration: number;
+
+  @Field(() => [String])
+  images: string[];
 }
