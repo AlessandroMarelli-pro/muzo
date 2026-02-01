@@ -662,39 +662,6 @@ export class PlaylistService {
     });
   }
 
-  async removeTrackFromPlaylist(playlistId: string, trackId: string) {
-    // Verify playlist access
-    const playlist = await this.findPlaylistById(playlistId);
-
-    const playlistTrack = await this.prisma.playlistTrack.findUnique({
-      where: {
-        playlistId_trackId: {
-          playlistId,
-          trackId,
-        },
-      },
-    });
-
-    if (!playlistTrack) {
-      throw new NotFoundException('Track not found in this playlist');
-    }
-
-    // Remove the track
-    await this.prisma.playlistTrack.delete({
-      where: {
-        playlistId_trackId: {
-          playlistId,
-          trackId,
-        },
-      },
-    });
-
-    // Reorder remaining tracks
-    await this.reorderTracksAfterRemoval(playlistId, playlistTrack.position);
-
-    return { success: true };
-  }
-
   async reorderTracks(playlistId: string, reorderDto: ReorderTracksDto) {
     // Verify playlist access
     const playlist = await this.findPlaylistById(playlistId);
@@ -797,30 +764,6 @@ export class PlaylistService {
     }
 
     return updatedPlaylist.tracks;
-  }
-
-  private async reorderTracksAfterRemoval(
-    playlistId: string,
-    removedPosition: number,
-  ) {
-    // Get all tracks with position greater than the removed position
-    const tracksToReorder = await this.prisma.playlistTrack.findMany({
-      where: {
-        playlistId,
-        position: { gt: removedPosition },
-      },
-      orderBy: { position: 'asc' },
-    });
-
-    // Update positions to fill the gap
-    const updatePromises = tracksToReorder.map((track, index) =>
-      this.prisma.playlistTrack.update({
-        where: { id: track.id },
-        data: { position: removedPosition + index },
-      }),
-    );
-
-    await Promise.all(updatePromises);
   }
 
   async getPlaylistTracks(playlistId: string) {

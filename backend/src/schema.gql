@@ -446,7 +446,7 @@ type Mutation {
   pauseTrack(trackId: String!): PlaybackState!
   playTrack(startTime: Float! = 0, trackId: String!): PlaybackState!
   recordPlayback(duration: Float!, trackId: ID!): MusicTrack!
-  removeTrackFromPlaylist(playlistId: ID!, trackId: ID!, userId: String!): Boolean!
+  removeTrackFromPlaylist(playlistId: Base64ID!, trackId: Base64ID!): Boolean!
   removeTrackFromQueue(trackId: ID!): RemoveTrackFromQueueResponse!
   reorderPlaylistTracks(input: ReorderTracksInput!, playlistId: ID!, userId: String!): Playlist!
   resumeTrack(trackId: String!): PlaybackState!

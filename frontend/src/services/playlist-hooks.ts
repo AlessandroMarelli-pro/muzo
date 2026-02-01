@@ -259,15 +259,10 @@ const ADD_TRACK_TO_PLAYLIST = gql`
 
 const REMOVE_TRACK_FROM_PLAYLIST = gql`
 	mutation RemoveTrackFromPlaylist(
-		$playlistId: ID!
-		$trackId: ID!
-		$userId: String!
+		$playlistId: Base64ID!
+		$trackId: Base64ID!
 	) {
-		removeTrackFromPlaylist(
-			playlistId: $playlistId
-			trackId: $trackId
-			userId: $userId
-		)
+		removeTrackFromPlaylist(playlistId: $playlistId, trackId: $trackId)
 	}
 `;
 
@@ -563,12 +558,23 @@ const addTrackToPlaylist = async (
 const removeTrackFromPlaylist = async (
 	playlistId: string,
 	trackId: string,
-	userId: string = 'default'
-): Promise<boolean> => {
+	artist: string,
+	title: string
+): Promise<{
+	success: boolean;
+	track: { id: string; artist: string; title: string };
+}> => {
 	const data = await graffleClient.request<{
 		removeTrackFromPlaylist: boolean;
-	}>(REMOVE_TRACK_FROM_PLAYLIST, { playlistId, trackId, userId });
-	return data.removeTrackFromPlaylist;
+	}>(REMOVE_TRACK_FROM_PLAYLIST, { playlistId, trackId });
+	return {
+		success: data.removeTrackFromPlaylist,
+		track: {
+			id: trackId,
+			artist,
+			title,
+		},
+	};
 };
 
 export const fetchPlaylistRecommendations = async (
@@ -710,10 +716,14 @@ export function usePlaylists(search?: string, verifyTrackId?: string) {
 		mutationFn: ({
 			playlistId,
 			trackId,
+			artist,
+			title,
 		}: {
 			playlistId: string;
 			trackId: string;
-		}) => removeTrackFromPlaylist(playlistId, trackId),
+			artist: string;
+			title: string;
+		}) => removeTrackFromPlaylist(playlistId, trackId, artist, title),
 		onSuccess: (_, { playlistId }) => {
 			queryClient.invalidateQueries({
 				queryKey: queryKeys.playlists(search, verifyTrackId),
@@ -736,8 +746,13 @@ export function usePlaylists(search?: string, verifyTrackId?: string) {
 			artist: string,
 			title: string
 		) => addTrackMutation.mutateAsync({ playlistId, input, artist, title }),
-		removeTrackFromPlaylist: (playlistId: string, trackId: string) =>
-			removeTrackMutation.mutateAsync({ playlistId, trackId }),
+		removeTrackFromPlaylist: (
+			playlistId: string,
+			trackId: string,
+			artist: string,
+			title: string
+		) =>
+			removeTrackMutation.mutateAsync({ playlistId, trackId, artist, title }),
 	};
 }
 
@@ -959,17 +974,21 @@ export function useAddTrackToPlaylist(userId: string = 'default') {
 	});
 }
 
-export function useRemoveTrackFromPlaylist(userId: string = 'default') {
+export function useRemoveTrackFromPlaylist() {
 	const queryClient = useQueryClient();
 
 	return useMutation({
 		mutationFn: ({
 			playlistId,
 			trackId,
+			artist,
+			title,
 		}: {
 			playlistId: string;
 			trackId: string;
-		}) => removeTrackFromPlaylist(playlistId, trackId, userId),
+			artist: string;
+			title: string;
+		}) => removeTrackFromPlaylist(playlistId, trackId, artist, title),
 		onSuccess: (_, { playlistId }) => {
 			queryClient.invalidateQueries({ queryKey: ['playlists'] });
 			queryClient.invalidateQueries({ queryKey: ['playlist', playlistId] });

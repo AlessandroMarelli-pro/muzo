@@ -49,7 +49,7 @@ export function PlaylistTracksList({
 	const [localTracks, setLocalTracks] = useState<PlaylistTrack[]>(
 		playlist?.tracks || []
 	);
-	const removeTrackMutation = useRemoveTrackFromPlaylist('default');
+	const removeTrackMutation = useRemoveTrackFromPlaylist();
 	const updatePositionsMutation = useUpdatePlaylistPositions('default');
 
 	// Sync localTracks with playlist.tracks when playlist changes (e.g., after sorting)
@@ -83,6 +83,8 @@ export function PlaylistTracksList({
 			await removeTrackMutation.mutateAsync({
 				playlistId: playlist?.id || '',
 				trackId,
+				artist: track?.track?.artist || '',
+				title: track?.track?.title || '',
 			});
 			toast.success(`Track removed from playlist`, {
 				description: capitalizeEveryWord(trackName),

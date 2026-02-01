@@ -4,12 +4,14 @@ import {
   IPlaylistTrackRepository,
   PlaylistSortingOptions,
   PlaylistTrackPresence,
+  PlaylistTrackUpdateData,
 } from 'src/clean-arch/application/ports/repositories/IPlaylistTrackRepository';
 import { PrismaService } from 'src/clean-arch/infrastructure/database/prisma.service';
 import {
   extractModelId,
   MusicTrackId,
   PlaylistId,
+  PlaylistTrackId,
 } from 'src/clean-arch/kernel/ids';
 import { models } from 'src/clean-arch/kernel/types';
 import { getCurrentUserId } from 'src/clean-arch/kernel/types/context';
@@ -211,4 +213,53 @@ export class PlaylistTrackRepository implements IPlaylistTrackRepository {
       })
       .then((row) => row?.position ?? 0);
   }
+  removeTrackFromPlaylist(
+    playlistId: PlaylistId,
+    trackId: MusicTrackId,
+  ): Promise<PlaylistTrack> {
+    return this.prisma.playlistTrack
+      .delete({
+        where: {
+          playlistId_trackId: {
+            playlistId: extractModelId(playlistId).dbId,
+            trackId: extractModelId(trackId).dbId,
+          },
+          createdById: getCurrentUserId(),
+        },
+      })
+      .then(toDomain)
+      .catch((e: unknown) =>
+        handlePrismaNotFound(
+          e,
+          `Playlist track with ID ${playlistId} and track ID ${trackId} not found`,
+        ),
+      );
+  }
+  updateOneById(
+    id: PlaylistTrackId,
+    data: PlaylistTrackUpdateData,
+  ): Promise<PlaylistTrack> {
+    return this.prisma.playlistTrack
+      .update({
+        where: { id: extractModelId(id).dbId, createdById: getCurrentUserId() },
+        data: { position: data.position },
+      })
+      .then(toDomain);
+  }
+
+  decrementTracksPosition = async (
+    playlistId: PlaylistId,
+    startingPosition: number,
+  ): Promise<boolean> => {
+    return this.prisma.playlistTrack
+      .updateMany({
+        where: {
+          playlistId: extractModelId(playlistId).dbId,
+          createdById: getCurrentUserId(),
+          position: { gt: startingPosition },
+        },
+        data: { position: { decrement: 1 } },
+      })
+      .then(() => true);
+  };
 }

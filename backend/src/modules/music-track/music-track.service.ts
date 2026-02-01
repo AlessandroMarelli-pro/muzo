@@ -748,7 +748,7 @@ export class MusicTrackService {
         trackId: id,
       }); */
     } else {
-      await this.playlistService.removeTrackFromPlaylist(favPlaylist.id, id);
+      ///await this.playlistService.removeTrackFromPlaylist(favPlaylist.id, id);
     }
 
     return updatedTrack;

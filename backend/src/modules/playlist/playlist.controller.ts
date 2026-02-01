@@ -62,15 +62,6 @@ export class PlaylistController {
     return this.playlistService.getPlaylistStats(playlistId);
   }
 
-  @Delete(':id/tracks/:trackId')
-  async removeTrackFromPlaylist(
-    @Param('id') playlistId: string,
-    @Param('trackId') trackId: string,
-    @Query('userId') userId?: string,
-  ) {
-    return this.playlistService.removeTrackFromPlaylist(playlistId, trackId);
-  }
-
   @Put(':id/tracks/reorder')
   async reorderTracks(
     @Param('id') playlistId: string,

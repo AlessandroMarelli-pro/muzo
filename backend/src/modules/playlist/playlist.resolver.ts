@@ -40,16 +40,6 @@ export class PlaylistResolver {
     return this.playlistService.createPlaylist(input);
   }
 
-  @Mutation(() => Boolean)
-  async removeTrackFromPlaylist(
-    @Args('playlistId', { type: () => ID }) playlistId: string,
-    @Args('trackId', { type: () => ID }) trackId: string,
-    @Args('userId') userId?: string,
-  ) {
-    await this.playlistService.removeTrackFromPlaylist(playlistId, trackId);
-    return true;
-  }
-
   @Mutation(() => Playlist)
   async reorderPlaylistTracks(
     @Args('playlistId', { type: () => ID }) playlistId: string,

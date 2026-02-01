@@ -12,6 +12,7 @@ import {
   GetPlaylistTracksUseCase,
   GetPlaylistTracksWithDetailUseCase,
   GetPlaylistUseCase,
+  RemoveTrackFromPlaylistUseCase,
   UpdatePlaylistUseCase,
 } from './';
 
@@ -30,6 +31,7 @@ import {
     GetPlaylistTracksWithDetailUseCase,
     GetFavoriteUseCase,
     AddTrackToPlaylistUseCase,
+    RemoveTrackFromPlaylistUseCase,
   ],
   exports: [
     CreatePlaylistUseCase,
@@ -44,6 +46,7 @@ import {
     GetPlaylistTracksWithDetailUseCase,
     GetFavoriteUseCase,
     AddTrackToPlaylistUseCase,
+    RemoveTrackFromPlaylistUseCase,
   ],
 })
 export class UseCasesModule {}
