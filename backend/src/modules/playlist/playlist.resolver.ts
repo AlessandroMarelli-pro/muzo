@@ -5,11 +5,9 @@ import { RecommendationService } from '../recommendation/services/recommendation
 import {
   CreatePlaylistInput,
   Playlist,
-  PlaylistSorting,
   PlaylistTrack,
   TrackRecommendation,
   UpdatePlaylistPositionsInput,
-  UpdatePlaylistSortingInput,
 } from './playlist.model';
 import { PlaylistService } from './playlist.service';
 
@@ -57,25 +55,5 @@ export class PlaylistResolver {
         playlistTrack.track as MusicTrackWithRelations,
       ),
     }));
-  }
-
-  @Mutation(() => PlaylistSorting)
-  async updatePlaylistSorting(
-    @Args('playlistId', { type: () => ID }) playlistId: string,
-    @Args('input') input: UpdatePlaylistSortingInput,
-    @Args('userId') userId?: string,
-  ) {
-    const sorting = await this.playlistService.updatePlaylistSorting(
-      playlistId,
-      input,
-    );
-    return {
-      id: sorting.id,
-      playlistId: sorting.playlistId,
-      sortingKey: sorting.sortingKey,
-      sortingDirection: sorting.sortingDirection,
-      createdAt: sorting.createdAt,
-      updatedAt: sorting.updatedAt,
-    };
   }
 }

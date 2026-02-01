@@ -17,12 +17,14 @@ import {
   GetPlaylistSortingByPlaylistIdUseCase,
   UpdatePlaylistUseCase,
 } from 'src/clean-arch/application/use-cases';
+import { UpdatePlaylistSortingUseCase } from 'src/clean-arch/application/use-cases/playlist-sorting/UpdatePlaylistSorting';
 import { Maybe } from 'src/clean-arch/kernel/common';
 import { PlaylistContainsTrackLoader } from '../../persistence/repositories/playlist-track/playlist-contains-track.loader';
 import { PlaylistTracksWithTrackLoader } from '../../persistence/repositories/playlist-track/playlist-track-with-track.loader';
 import { AuthGuard } from '../context/auth.guard';
 import { toTrack } from '../mappers/track.mapper';
 import { Base64ID } from '../scalars/base64-id.scalar';
+import { UpdatePlaylistSortingInput } from '../schema/playlist-sorting.input';
 import { CleanArchPlaylistSorting } from '../schema/playlist-sorting.schema';
 import { CleanArchPlaylistStats as PlaylistStats } from '../schema/playlist-stats.schema';
 import { CleanArchPlaylistTrack as PlaylistTrack } from '../schema/playlist-track.schema';
@@ -43,6 +45,7 @@ export class CleanArchPlaylistResolver {
     private readonly getFavoriteUseCase: GetFavoriteUseCase,
     private readonly getPlaylistSortingByPlaylistIdUseCase: GetPlaylistSortingByPlaylistIdUseCase,
     private readonly exportPlaylistToM3UUseCase: ExportPlaylistToM3UUseCase,
+    private readonly updatePlaylistSortingUseCase: UpdatePlaylistSortingUseCase,
   ) {}
 
   @Query(() => CleanArchPlaylist)
@@ -151,5 +154,19 @@ export class CleanArchPlaylistResolver {
     @Args('playlistId', { type: () => Base64ID }) playlistId: string,
   ) {
     return this.exportPlaylistToM3UUseCase.execute(parsePlaylistId(playlistId));
+  }
+
+  @Mutation(() => CleanArchPlaylistSorting)
+  async updatePlaylistSorting(
+    @Args('playlistId', { type: () => Base64ID }) playlistId: string,
+    @Args('input') input: UpdatePlaylistSortingInput,
+  ) {
+    return this.updatePlaylistSortingUseCase.execute(
+      parsePlaylistId(playlistId),
+      {
+        sortingKey: input.sortingKey,
+        sortingDirection: input.sortingDirection,
+      },
+    );
   }
 }

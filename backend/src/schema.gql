@@ -463,7 +463,7 @@ type Mutation {
   toggleFavorite(trackId: String!): MusicTrack!
   updateLibrary(id: ID!, input: UpdateLibraryInput!): MusicLibrary!
   updatePlaylistPositions(input: UpdatePlaylistPositionsInput!, playlistId: ID!, userId: String!): [PlaylistTrack!]!
-  updatePlaylistSorting(input: UpdatePlaylistSortingInput!, playlistId: ID!, userId: String!): PlaylistSorting!
+  updatePlaylistSorting(input: UpdatePlaylistSortingInput!, playlistId: Base64ID!): CleanArchPlaylistSorting!
   updatePreferences(input: UpdatePreferencesInput!): UserPreferencesGraphQL!
   updateQueuePositions(input: UpdateQueuePositionsInput!): [QueueItem!]!
   updateSavedFilter(id: ID!, input: UpdateSavedFilterInput!): SavedFilter!

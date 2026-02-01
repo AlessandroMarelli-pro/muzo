@@ -16,6 +16,7 @@ import {
   RemoveTrackFromPlaylistUseCase,
   UpdatePlaylistUseCase,
 } from './';
+import { UpdatePlaylistSortingUseCase } from './playlist-sorting/UpdatePlaylistSorting';
 
 @Module({
   imports: [RepositoriesModule],
@@ -34,6 +35,7 @@ import {
     AddTrackToPlaylistUseCase,
     RemoveTrackFromPlaylistUseCase,
     ExportPlaylistToM3UUseCase,
+    UpdatePlaylistSortingUseCase,
   ],
   exports: [
     CreatePlaylistUseCase,
@@ -50,6 +52,7 @@ import {
     AddTrackToPlaylistUseCase,
     RemoveTrackFromPlaylistUseCase,
     ExportPlaylistToM3UUseCase,
+    UpdatePlaylistSortingUseCase,
   ],
 })
 export class UseCasesModule {}

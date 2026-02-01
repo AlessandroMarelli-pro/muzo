@@ -3,6 +3,7 @@ import {
 	CleanArchPlaylist,
 	CreatePlaylistInput,
 	Playlist,
+	PlaylistSorting,
 	PlaylistsResult,
 	PlaylistTrack,
 	TrackRecommendation,
@@ -311,15 +312,10 @@ const UPDATE_PLAYLIST_POSITIONS = gql`
 
 const UPDATE_PLAYLIST_SORTING = gql`
 	mutation UpdatePlaylistSorting(
-		$playlistId: ID!
+		$playlistId: Base64ID!
 		$input: UpdatePlaylistSortingInput!
-		$userId: String!
 	) {
-		updatePlaylistSorting(
-			playlistId: $playlistId
-			input: $input
-			userId: $userId
-		) {
+		updatePlaylistSorting(playlistId: $playlistId, input: $input) {
 			id
 			playlistId
 			sortingKey
@@ -621,29 +617,13 @@ interface UpdatePlaylistSortingInput {
 
 const updatePlaylistSorting = async (
 	playlistId: string,
-	input: UpdatePlaylistSortingInput,
-	userId: string = 'default'
-): Promise<{
-	id: string;
-	playlistId: string;
-	sortingKey: string;
-	sortingDirection: string;
-	createdAt: string;
-	updatedAt: string;
-}> => {
+	input: UpdatePlaylistSortingInput
+): Promise<PlaylistSorting> => {
 	const data = await graffleClient.request<{
-		updatePlaylistSorting: {
-			id: string;
-			playlistId: string;
-			sortingKey: string;
-			sortingDirection: string;
-			createdAt: string;
-			updatedAt: string;
-		};
+		updatePlaylistSorting: PlaylistSorting;
 	}>(UPDATE_PLAYLIST_SORTING, {
 		playlistId,
 		input,
-		userId,
 	});
 	return data.updatePlaylistSorting;
 };
@@ -1048,7 +1028,7 @@ export function useUpdatePlaylistSorting(userId: string = 'default') {
 		}: {
 			playlistId: string;
 			input: UpdatePlaylistSortingInput;
-		}) => updatePlaylistSorting(playlistId, input, userId),
+		}) => updatePlaylistSorting(playlistId, input),
 		onSuccess: (_, { playlistId }) => {
 			queryClient.invalidateQueries({ queryKey: ['playlists'] });
 			queryClient.invalidateQueries({ queryKey: ['playlist', playlistId] });

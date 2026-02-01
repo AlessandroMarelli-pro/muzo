@@ -1,15 +1,8 @@
-import {
-  BadRequestException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../shared/services/prisma.service';
 import { FilterService } from '../filter/filter.service';
-import {
-  CreatePlaylistDto,
-  UpdatePlaylistSortingDto,
-} from './dto/playlist.dto';
+import { CreatePlaylistDto } from './dto/playlist.dto';
 
 @Injectable()
 export class PlaylistService {
@@ -780,52 +773,5 @@ export class PlaylistService {
       averageDuration:
         playlist.tracks.length > 0 ? totalDuration / playlist.tracks.length : 0,
     };
-  }
-
-  /**
-   * Update or create playlist sorting configuration
-   * @param playlistId - The ID of the playlist
-   * @param sortingDto - The sorting configuration
-   */
-  async updatePlaylistSorting(
-    playlistId: string,
-    sortingDto: UpdatePlaylistSortingDto,
-  ) {
-    // Verify playlist access
-    const playlist = await this.findPlaylistById(playlistId);
-
-    // Validate sorting key
-    const validSortingKeys = ['addedAt', 'position'];
-    if (!validSortingKeys.includes(sortingDto.sortingKey)) {
-      throw new BadRequestException(
-        `Invalid sortingKey. Must be one of: ${validSortingKeys.join(', ')}`,
-      );
-    }
-
-    // Validate sorting direction
-    const validSortingDirections = ['asc', 'desc'];
-    if (!validSortingDirections.includes(sortingDto.sortingDirection)) {
-      throw new BadRequestException(
-        `Invalid sortingDirection. Must be one of: ${validSortingDirections.join(', ')}`,
-      );
-    }
-
-    // Upsert the sorting configuration
-    const sorting = await (this.prisma as any).playlistSorting.upsert({
-      where: {
-        playlistId,
-      },
-      update: {
-        sortingKey: sortingDto.sortingKey,
-        sortingDirection: sortingDto.sortingDirection,
-      },
-      create: {
-        playlistId,
-        sortingKey: sortingDto.sortingKey,
-        sortingDirection: sortingDto.sortingDirection,
-      },
-    });
-
-    return sorting;
   }
 }

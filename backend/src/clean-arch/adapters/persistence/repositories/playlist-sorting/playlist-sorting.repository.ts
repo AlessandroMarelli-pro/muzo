@@ -1,15 +1,27 @@
 import { Injectable } from '@nestjs/common';
-import { IPlaylistSortingRepository } from 'src/clean-arch/application/ports/repositories/IPlaylistSortingRepository';
+import {
+  IPlaylistSortingRepository,
+  PlaylistSortingUpsertData,
+} from 'src/clean-arch/application/ports/repositories/IPlaylistSortingRepository';
 import { PrismaService } from 'src/clean-arch/infrastructure/database/prisma.service';
 import { Maybe } from 'src/clean-arch/kernel/common';
 import { extractModelId, PlaylistId } from 'src/clean-arch/kernel/ids';
 import { getCurrentUserId } from 'src/clean-arch/kernel/types/context';
 import { PlaylistSorting } from 'src/clean-arch/kernel/types/model-types';
-import { toDomain } from './playlist-sorting.mapper';
+import { handlePrismaNotFound } from '../prisma-errors';
+import { toDomain, toPrisma } from './playlist-sorting.mapper';
 
 @Injectable()
 export class PlaylistSortingRepository implements IPlaylistSortingRepository {
   constructor(private readonly prisma: PrismaService) {}
+
+  async save(data: PlaylistSorting): Promise<PlaylistSorting> {
+    return this.prisma.playlistSorting
+      .create({
+        data: toPrisma(data),
+      })
+      .then(toDomain);
+  }
 
   async getByPlaylistId(
     playlistId: PlaylistId,
@@ -22,5 +34,40 @@ export class PlaylistSortingRepository implements IPlaylistSortingRepository {
         },
       })
       .then((row) => (row ? toDomain(row) : null));
+  }
+
+  update(
+    playlistId: PlaylistId,
+    data: PlaylistSortingUpsertData,
+  ): Promise<PlaylistSorting> {
+    return this.prisma.playlistSorting
+      .update({
+        where: {
+          playlistId: extractModelId(playlistId).dbId,
+          createdById: getCurrentUserId(),
+        },
+        data: {
+          sortingKey: data.sortingKey,
+          sortingDirection: data.sortingDirection,
+        },
+      })
+      .then(toDomain)
+      .catch((e: unknown) =>
+        handlePrismaNotFound(
+          e,
+          `Playlist sorting with ID ${playlistId} not found`,
+        ),
+      );
+  }
+
+  verifyExistence(playlistId: PlaylistId): Promise<boolean> {
+    return this.prisma.playlistSorting
+      .findFirst({
+        where: {
+          playlistId: extractModelId(playlistId).dbId,
+          createdById: getCurrentUserId(),
+        },
+      })
+      .then((row) => row !== null);
   }
 }

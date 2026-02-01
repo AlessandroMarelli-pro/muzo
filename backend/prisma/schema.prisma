@@ -365,7 +365,11 @@ model ImageSearch {
   imageUrl   String?
   error      String?
   source     String?
-  
+  createdAt   DateTime @default(now())
+  createdById   String @default("userId")
+  updatedAt   DateTime? @updatedAt
+  updatedById  String?
+    
   // Timestamps
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
@@ -383,7 +387,11 @@ model SavedFilter {
   id        String   @id @default(uuid())
   name      String
   criteria  String   // JSON string containing filter criteria
-  
+  createdAt   DateTime @default(now())
+  createdById   String @default("userId")
+  updatedAt   DateTime? @updatedAt
+  updatedById  String?
+    
   // Timestamps
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
