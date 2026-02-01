@@ -431,7 +431,6 @@ type Mutation {
   authenticateYouTube(code: String!, userId: String!): YouTubeAuthResult!
   bangerTrack(trackId: ID!): SimpleMusicTrack!
   caCreatePlaylist(input: CleanArchCreatePlaylistInput!): CleanArchPlaylist!
-  caDeletePlaylist(id: Base64ID!): Boolean!
   caUpdatePlaylist(id: Base64ID!, input: CleanArchUpdatePlaylistInput!): CleanArchPlaylist!
   clearCurrentFilter: Boolean!
   createLibrary(input: CreateLibraryInput!): MusicLibrary!
@@ -439,7 +438,7 @@ type Mutation {
   createSavedFilter(input: CreateSavedFilterInput!): SavedFilter!
   deleteImageForTrack(trackId: ID!): DeleteImageResponse!
   deleteLibrary(id: ID!): Boolean!
-  deletePlaylist(id: ID!, userId: String!): Playlist!
+  deletePlaylist(id: Base64ID!): Boolean!
   deleteSavedFilter(id: ID!): Boolean!
   dislikeTrack(trackId: ID!): Boolean!
   exportPlaylistToM3U(playlistId: ID!, userId: String!): String!
@@ -464,7 +463,6 @@ type Mutation {
   syncPlaylistToYouTube(playlistId: ID!, userId: String!): SyncResult!
   toggleFavorite(trackId: String!): MusicTrack!
   updateLibrary(id: ID!, input: UpdateLibraryInput!): MusicLibrary!
-  updatePlaylist(id: ID!, input: UpdatePlaylistInput!, userId: String!): Playlist!
   updatePlaylistPositions(input: UpdatePlaylistPositionsInput!, playlistId: ID!, userId: String!): [PlaylistTrack!]!
   updatePlaylistSorting(input: UpdatePlaylistSortingInput!, playlistId: ID!, userId: String!): PlaylistSorting!
   updatePreferences(input: UpdatePreferencesInput!): UserPreferencesGraphQL!
@@ -590,7 +588,6 @@ type Query {
   Fetch any node by global ID. Use inline fragments (... on CleanArchPlaylist { ... }) to request fields.
   """
   node(id: Base64ID!): Node
-  playlistByName(name: String!): Playlist!
   playlistRecommendations(excludeTrackIds: [String!], limit: Int, playlistId: ID!): [TrackRecommendation!]!
   preferences: UserPreferencesGraphQL!
   queue: [QueueItem!]!
@@ -877,12 +874,6 @@ input UpdateLibraryInput {
   rootPath: String
   scanInterval: Int
   supportedFormats: [String!]
-}
-
-input UpdatePlaylistInput {
-  description: String
-  isPublic: Boolean
-  name: String
 }
 
 input UpdatePlaylistPositionInput {

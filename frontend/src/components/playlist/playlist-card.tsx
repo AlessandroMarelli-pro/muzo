@@ -54,28 +54,25 @@ export function PlaylistCard({
 	onViewDetails,
 	onCardClick,
 }: PlaylistCardProps) {
-	const deletePlaylistMutation = useDeletePlaylist('default');
+	const deletePlaylistMutation = useDeletePlaylist();
 	const exportPlaylistMutation = useExportPlaylistToM3U('default');
 	const [isHovered, setIsHovered] = useState(false);
 
 	const router = useRouter();
-	const refetch = () => {
-		router.invalidate();
-	};
+	const refetch = async () => router.invalidate();
 	const handleDelete = async () => {
 		if (!confirm(`Are you sure you want to delete "${playlist.name}"?`)) {
 			return;
 		}
 
 		try {
-			await deletePlaylistMutation
-				.mutateAsync(playlist.id)
-				.then(() => {
-					refetch();
-				})
-				.catch((error) => {
-					console.error('Failed to delete playlist:', error);
-				});
+			await deletePlaylistMutation.mutateAsync({
+				id: playlist.id,
+				name: playlist.name,
+			});
+			console.log('before router invalidate');
+			await refetch();
+			console.log('after router invalidate');
 		} catch (error) {
 			console.error('Failed to delete playlist:', error);
 		}

@@ -10,7 +10,6 @@ import {
   AddTrackToPlaylistDto,
   CreatePlaylistDto,
   ReorderTracksDto,
-  UpdatePlaylistDto,
   UpdatePlaylistSortingDto,
 } from './dto/playlist.dto';
 
@@ -19,10 +18,11 @@ export class PlaylistService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly filterService: FilterService,
-  ) { }
+  ) {}
 
   async createPlaylist(createPlaylistDto: CreatePlaylistDto) {
-    const { filters, maxTracks, subgenreSelectionMode, ...playlistData } = createPlaylistDto;
+    const { filters, maxTracks, subgenreSelectionMode, ...playlistData } =
+      createPlaylistDto;
 
     // Create the playlist first
     const playlist = await this.prisma.playlist.create({
@@ -47,22 +47,21 @@ export class PlaylistService {
         libraryId: filters.libraryId,
         tempo:
           filters.tempo &&
-            (filters.tempo.min !== undefined || filters.tempo.max !== undefined)
+          (filters.tempo.min !== undefined || filters.tempo.max !== undefined)
             ? {
-              min: filters.tempo.min ?? 0,
-              max: filters.tempo.max ?? 200,
-            }
+                min: filters.tempo.min ?? 0,
+                max: filters.tempo.max ?? 200,
+              }
             : undefined,
       };
 
       // Build Prisma where clause using FilterService
-      const where =
-        await this.filterService.buildPrismaWhereClause(
-          filterCriteria,
-          false,
-          false,
-          subgenreSelectionMode || 'exact',
-        );
+      const where = await this.filterService.buildPrismaWhereClause(
+        filterCriteria,
+        false,
+        false,
+        subgenreSelectionMode || 'exact',
+      );
 
       // Find matching tracks
       const matchingTracks = await this.prisma.musicTrack.findMany({
@@ -498,7 +497,6 @@ export class PlaylistService {
   }
 
   private mapPlaylistStatsToItem(playlist: any) {
-
     return {
       id: playlist.id,
       name: playlist.name,
@@ -654,46 +652,6 @@ export class PlaylistService {
       ...playlist,
       tracks: sortedTracks,
     };
-  }
-
-  async updatePlaylist(id: string, updatePlaylistDto: UpdatePlaylistDto) {
-    const sorting = await this.prisma.playlistSorting.findFirst({
-      where: {
-        playlistId: id,
-      },
-    });
-    const playlist = await this.prisma.playlist.update({
-      where: { id },
-      data: updatePlaylistDto,
-      include: {
-        tracks: {
-          include: {
-            track: {
-              include: {
-                audioFingerprint: true,
-                aiAnalysisResult: true,
-                imageSearches: true,
-                trackGenres: {
-                  include: {
-                    genre: true,
-                  },
-                },
-                trackSubgenres: {
-                  include: {
-                    subgenre: true,
-                  },
-                },
-              },
-            },
-          },
-          orderBy: {
-            [sorting?.sortingKey || 'position']:
-              sorting?.sortingDirection || 'asc',
-          },
-        },
-      },
-    });
-    return { ...playlist, sorting };
   }
 
   async deletePlaylist(id: string) {

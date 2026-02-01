@@ -13,7 +13,6 @@ import {
   PlaylistTrack,
   ReorderTracksInput,
   TrackRecommendation,
-  UpdatePlaylistInput,
   UpdatePlaylistPositionsInput,
   UpdatePlaylistSortingInput,
 } from './playlist.model';
@@ -41,12 +40,6 @@ export class PlaylistResolver {
     };
   }
 
-  @Query(() => Playlist)
-  async playlistByName(@Args('name', { type: () => String }) name: string) {
-    const playlist = await this.playlistService.findPlaylistByName(name);
-    return this.formatPlaylist(playlist as PlaylistWithRelations);
-  }
-
   @Query(() => [TrackRecommendation])
   async playlistRecommendations(
     @Args('playlistId', { type: () => ID }) playlistId: string,
@@ -64,23 +57,6 @@ export class PlaylistResolver {
   @Mutation(() => Playlist)
   async createPlaylist(@Args('input') input: CreatePlaylistInput) {
     return this.playlistService.createPlaylist(input);
-  }
-
-  @Mutation(() => Playlist)
-  async updatePlaylist(
-    @Args('id', { type: () => ID }) id: string,
-    @Args('input') input: UpdatePlaylistInput,
-    @Args('userId') userId?: string,
-  ) {
-    return this.playlistService.updatePlaylist(id, input);
-  }
-
-  @Mutation(() => Playlist)
-  async deletePlaylist(
-    @Args('id', { type: () => ID }) id: string,
-    @Args('userId') userId?: string,
-  ) {
-    return this.playlistService.deletePlaylist(id);
   }
 
   @Mutation(() => PlaylistTrack)

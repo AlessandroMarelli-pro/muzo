@@ -14,7 +14,6 @@ import {
   AddTrackToPlaylistDto,
   CreatePlaylistDto,
   ReorderTracksDto,
-  UpdatePlaylistDto,
 } from './dto/playlist.dto';
 import { PlaylistService } from './playlist.service';
 
@@ -23,7 +22,7 @@ export class PlaylistController {
   constructor(
     private readonly playlistService: PlaylistService,
     private readonly recommendationService: RecommendationService,
-  ) { }
+  ) {}
 
   @Post()
   async createPlaylist(@Body() createPlaylistDto: CreatePlaylistDto) {
@@ -41,15 +40,6 @@ export class PlaylistController {
     @Query('userId') userId?: string,
   ) {
     return this.playlistService.findPlaylistById(id);
-  }
-
-  @Put(':id')
-  async updatePlaylist(
-    @Param('id') id: string,
-    @Body() updatePlaylistDto: UpdatePlaylistDto,
-    @Query('userId') userId?: string,
-  ) {
-    return this.playlistService.updatePlaylist(id, updatePlaylistDto);
   }
 
   @Delete(':id')
@@ -116,5 +106,4 @@ export class PlaylistController {
       excludeTrackIds: excludeIds,
     });
   }
-
 }

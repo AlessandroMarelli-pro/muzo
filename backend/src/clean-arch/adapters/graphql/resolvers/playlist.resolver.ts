@@ -139,7 +139,7 @@ export class CleanArchPlaylistResolver {
     });
   }
   @Mutation(() => Boolean)
-  async caDeletePlaylist(
+  async deletePlaylist(
     @Args('id', { type: () => Base64ID }) id: string,
   ): Promise<boolean> {
     return this.deletePlaylistUseCase.execute(parsePlaylistId(id));
