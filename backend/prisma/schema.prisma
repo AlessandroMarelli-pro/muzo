@@ -47,11 +47,11 @@ model MusicTrack {
   filePath              String   @unique
   fileName              String
   fileSize              Int
-  duration              Float
   format                String
   bitrate               Int?
   sampleRate            Int?
   fileCreatedAt         DateTime @default(now())
+  duration              Float
 
   // Original Metadata
   originalTitle         String?

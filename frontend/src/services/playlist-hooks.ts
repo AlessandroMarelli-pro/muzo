@@ -93,15 +93,14 @@ const GET_PLAYLISTS = gql`
 `;
 
 const GET_PLAYLIST = gql`
-	${simpleMusicTrackFragment}
 	query GetPlaylist($id: Base64ID!) {
 		playlist(id: $id) {
 			id
 			name
 			description
+			isPublic
 			createdAt
 			updatedAt
-			isPublic
 			createdById
 			updatedById
 			stats {
@@ -133,10 +132,59 @@ const GET_PLAYLIST = gql`
 				id
 				position
 				addedAt
-				playlistId
 				trackId
+				playlistId
 				track {
-					...SimpleMusicTrackFragment
+					id
+					artist
+					title
+					stats {
+						listeningCount
+						lastPlayedAt
+						isFavorite
+						isLiked
+						isBanger
+					}
+					fileInfo {
+						filePath
+						fileName
+						fileSize
+						fileCreatedAt
+					}
+					technicalInfo {
+						duration
+						format
+					}
+					metadata {
+						album
+						date
+						genres
+						subgenres
+					}
+					aiMetadata {
+						tags
+						vocalsDesc
+						description
+						vocalsDescriptions
+						atmosphereKeywords
+						contextBackgrounds
+						contextImpacts
+					}
+					createdAt
+					updatedAt
+					musicalFeatures {
+						tempo
+						key
+						valenceMood
+						arousalMood
+						danceabilityFeeling
+						acousticness
+						instrumentalness
+						speechiness
+					}
+					imagePath
+					lastScannedAt
+					libraryId
 				}
 			}
 		}
@@ -484,11 +532,6 @@ export const fetchPlaylists = async (
 	search?: string,
 	verifyTrackId?: string
 ): Promise<Playlist[]> => {
-	console.log('verifyTrackId', verifyTrackId);
-	console.log(
-		'encodeBase64(MusicTrack:' + verifyTrackId + ')',
-		encodeBase64('MusicTrack:' + verifyTrackId)
-	);
 	const data = await graffleClient.request<{
 		me: { playlists: PlaylistsResult };
 	}>(GET_PLAYLISTS, {

@@ -13,3 +13,7 @@ export type PlaylistTrackId = Brand<string, 'PlaylistTrackId'>;
 export type MusicTrackId = Brand<string, 'MusicTrackId'>;
 
 export type PlaylistSortingId = Brand<string, 'PlaylistSortingId'>;
+
+export type MusicLibraryId = Brand<string, 'MusicLibraryId'>;
+
+export type ImageSearchId = Brand<string, 'ImageSearchId'>;

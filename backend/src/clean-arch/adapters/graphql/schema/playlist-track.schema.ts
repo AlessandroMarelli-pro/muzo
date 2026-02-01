@@ -4,8 +4,8 @@ import {
   PlaylistId,
   PlaylistTrackId,
 } from 'src/clean-arch/kernel/ids';
-import { SimpleMusicTrack } from 'src/modules/music-track/music-track.model';
 import { Base64ID } from '../scalars/base64-id.scalar';
+import { Track } from './track.schema';
 
 @ObjectType()
 export class CleanArchPlaylistTrack {
@@ -24,6 +24,6 @@ export class CleanArchPlaylistTrack {
   @Field(() => Base64ID)
   playlistId: PlaylistId;
 
-  @Field(() => SimpleMusicTrack)
-  track: SimpleMusicTrack;
+  @Field(() => Track)
+  track: Track;
 }

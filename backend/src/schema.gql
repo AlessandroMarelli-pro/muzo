@@ -140,7 +140,7 @@ type CleanArchPlaylistTrack {
   id: Base64ID!
   playlistId: Base64ID!
   position: Int!
-  track: SimpleMusicTrack!
+  track: Track!
   trackId: Base64ID!
 }
 
@@ -554,7 +554,6 @@ type PlaylistsResult {
 }
 
 type Query {
-  caPlaylist(id: ID!, userId: String!): Playlist!
   getActiveSessions: [PlaybackSession!]!
   getAudioAnalysis(trackId: String!): AudioAnalysisResult!
   getAudioInfo(trackId: String!): AudioInfo!
@@ -750,6 +749,58 @@ type TopGenre {
   trackCount: Int!
 }
 
+type Track {
+  aiMetadata: TrackAIMetadata!
+  artist: String
+  createdAt: DateTime
+  fileInfo: TrackFileInfo!
+  id: Base64ID!
+  imagePath: String
+  lastScannedAt: DateTime
+  libraryId: String
+  metadata: TrackMetadata!
+  musicalFeatures: TrackMusicalFeatures!
+  stats: TrackStats!
+  technicalInfo: TrackTechnicalInfo!
+  title: String
+  updatedAt: DateTime
+}
+
+type TrackAIMetadata {
+  atmosphereKeywords: [String!]
+  contextBackgrounds: String
+  contextImpacts: String
+  description: String
+  tags: [String!]
+  vocalsDesc: String
+  vocalsDescriptions: String
+}
+
+type TrackFileInfo {
+  fileCreatedAt: DateTime!
+  fileName: String!
+  filePath: String!
+  fileSize: Float!
+}
+
+type TrackMetadata {
+  album: String
+  date: DateTime
+  genres: [String!]
+  subgenres: [String!]
+}
+
+type TrackMusicalFeatures {
+  acousticness: Float
+  arousalMood: String
+  danceabilityFeeling: String
+  instrumentalness: Float
+  key: String
+  speechiness: Float
+  tempo: Float
+  valenceMood: String
+}
+
 input TrackOrderInput {
   position: Int!
   trackId: ID!
@@ -783,6 +834,19 @@ type TrackRecommendation {
   reasons: [String!]!
   similarity: Float!
   track: SimpleMusicTrack!
+}
+
+type TrackStats {
+  isBanger: Boolean!
+  isFavorite: Boolean!
+  isLiked: Boolean!
+  lastPlayedAt: DateTime
+  listeningCount: Float!
+}
+
+type TrackTechnicalInfo {
+  duration: Float!
+  format: String!
 }
 
 type UIPreferences {

@@ -55,7 +55,22 @@ export class PlaylistTrackRepository implements IPlaylistTrackRepository {
           createdById: getCurrentUserId(),
         },
         include: {
-          track: true,
+          track: {
+            include: {
+              audioFingerprint: true,
+              trackGenres: {
+                include: {
+                  genre: true,
+                },
+              },
+              trackSubgenres: {
+                include: {
+                  subgenre: true,
+                },
+              },
+              imageSearches: true,
+            },
+          },
         },
       })
       .then((row) => ({
@@ -77,7 +92,22 @@ export class PlaylistTrackRepository implements IPlaylistTrackRepository {
           createdById: getCurrentUserId(),
         },
         include: {
-          track: true,
+          track: {
+            include: {
+              audioFingerprint: true,
+              trackGenres: {
+                include: {
+                  genre: true,
+                },
+              },
+              trackSubgenres: {
+                include: {
+                  subgenre: true,
+                },
+              },
+              imageSearches: true,
+            },
+          },
         },
       })
       .then((rows) =>
@@ -101,7 +131,22 @@ export class PlaylistTrackRepository implements IPlaylistTrackRepository {
           playlistId: extractModelId(playlistId).dbId,
         },
         include: {
-          track: true,
+          track: {
+            include: {
+              audioFingerprint: true,
+              trackGenres: {
+                include: {
+                  genre: true,
+                },
+              },
+              trackSubgenres: {
+                include: {
+                  subgenre: true,
+                },
+              },
+              imageSearches: true,
+            },
+          },
         },
         orderBy: {
           [sorting.sortingKey]: sorting.sortingDirection,

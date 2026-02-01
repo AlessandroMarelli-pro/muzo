@@ -21,6 +21,7 @@ import { Maybe } from 'src/clean-arch/kernel/common';
 import { PlaylistContainsTrackLoader } from '../../persistence/repositories/playlist-track/playlist-contains-track.loader';
 import { PlaylistTracksWithTrackLoader } from '../../persistence/repositories/playlist-track/playlist-track-with-track.loader';
 import { AuthGuard } from '../context/auth.guard';
+import { toTrack } from '../mappers/track.mapper';
 import { Base64ID } from '../scalars/base64-id.scalar';
 import { CleanArchPlaylistSorting } from '../schema/playlist-sorting.schema';
 import { CleanArchPlaylistStats as PlaylistStats } from '../schema/playlist-stats.schema';
@@ -46,7 +47,17 @@ export class CleanArchPlaylistResolver {
 
   @Query(() => CleanArchPlaylist)
   async playlist(@Args('id', { type: () => Base64ID }) id: string) {
-    return this.getPlaylistUseCase.execute(parsePlaylistId(id));
+    return this.getPlaylistUseCase
+      .execute(parsePlaylistId(id))
+      .then((playlist) => {
+        return {
+          ...playlist,
+          tracks: playlist.tracks.map((track) => ({
+            ...track,
+            track: toTrack(track.track),
+          })),
+        };
+      });
   }
   @Query(() => [CleanArchPlaylist])
   async playlists() {
@@ -72,9 +83,14 @@ export class CleanArchPlaylistResolver {
     if (parent.tracks != null) {
       return parent.tracks;
     }
-    return context.loaders.playlistTracksWithTrack.load(
-      parsePlaylistId(parent.id),
-    );
+    return context.loaders.playlistTracksWithTrack
+      .load(parsePlaylistId(parent.id))
+      .then((playlistTracks) =>
+        playlistTracks.map((playlistTrack) => ({
+          ...playlistTrack,
+          track: toTrack(playlistTrack.track),
+        })),
+      );
   }
 
   @ResolveField(() => CleanArchPlaylistSorting)

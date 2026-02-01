@@ -1,4 +1,5 @@
 import {
+  MusicLibraryId,
   MusicTrackId,
   PlaylistId,
   PlaylistSortingId,
@@ -8,6 +9,7 @@ import {
 import { modelIdFactory } from '../ids/factory';
 import { modelFactory } from './factory';
 import {
+  MusicLibrary,
   MusicTrack,
   Playlist,
   PlaylistSorting,
@@ -26,5 +28,8 @@ export const models = {
   ),
   musicTrack: modelFactory<MusicTrack, MusicTrackId>(
     modelIdFactory('MusicTrack'),
+  ),
+  musicLibrary: modelFactory<MusicLibrary, MusicLibraryId>(
+    modelIdFactory('MusicLibrary'),
   ),
 };

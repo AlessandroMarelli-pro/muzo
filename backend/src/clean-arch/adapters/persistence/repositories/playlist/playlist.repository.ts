@@ -62,7 +62,22 @@ export class PlaylistRepository implements IPlaylistRepository {
           sorting: true,
           tracks: {
             include: {
-              track: true,
+              track: {
+                include: {
+                  audioFingerprint: true,
+                  imageSearches: true,
+                  trackGenres: {
+                    include: {
+                      genre: true,
+                    },
+                  },
+                  trackSubgenres: {
+                    include: {
+                      subgenre: true,
+                    },
+                  },
+                },
+              },
             },
             orderBy: {
               [sortingOpts.sortingKey]: sortingOpts.sortingDirection,

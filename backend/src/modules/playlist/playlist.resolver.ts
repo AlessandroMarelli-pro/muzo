@@ -42,15 +42,6 @@ export class PlaylistResolver {
   }
 
   @Query(() => Playlist)
-  async caPlaylist(
-    @Args('id', { type: () => ID }) id: string,
-    @Args('userId') userId?: string,
-  ) {
-    const playlist = await this.playlistService.findPlaylistById(id);
-    return this.formatPlaylist(playlist as PlaylistWithRelations);
-  }
-
-  @Query(() => Playlist)
   async playlistByName(@Args('name', { type: () => String }) name: string) {
     const playlist = await this.playlistService.findPlaylistByName(name);
     return this.formatPlaylist(playlist as PlaylistWithRelations);
