@@ -18,7 +18,7 @@ type AIAnalysisResult {
 
 input AddTrackToPlaylistInput {
   position: Int
-  trackId: ID!
+  trackId: Base64ID!
 }
 
 type AnalysisPreferences {
@@ -140,7 +140,7 @@ type CleanArchPlaylistTrack {
   id: Base64ID!
   playlistId: Base64ID!
   position: Int!
-  track: Track!
+  track: Track
   trackId: Base64ID!
 }
 
@@ -424,7 +424,7 @@ type MusicTrackListPaginated {
 }
 
 type Mutation {
-  addTrackToPlaylist(input: AddTrackToPlaylistInput!, playlistId: ID!, userId: String!): PlaylistTrack!
+  addTrackToPlaylist(input: AddTrackToPlaylistInput!, playlistId: Base64ID!): CleanArchPlaylistTrack!
   addTrackToQueue(trackId: ID!): QueueItem!
   authenticateSpotify(code: String!, codeVerifier: String!, userId: String!): SpotifyAuthResult!
   authenticateTidal(code: String!, codeVerifier: String!, userId: String!): TidalAuthResult!

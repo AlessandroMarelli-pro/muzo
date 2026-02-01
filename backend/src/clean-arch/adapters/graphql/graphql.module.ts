@@ -5,9 +5,11 @@ import { ActionContextInterceptor } from './context/action-context.interceptor';
 import { AuthGuard } from './context/auth.guard';
 import { DomainErrorExceptionFilter } from './filters/domain-error.exception-filter';
 import { NodeResolver } from './resolvers/node.resolver';
+import { PlaylistTrackResolver } from './resolvers/playlist-track.resolver';
 import { CleanArchPlaylistResolver } from './resolvers/playlist.resolver';
 import { UserResolver } from './resolvers/user.resolver';
 import { Base64ID } from './scalars/base64-id.scalar';
+
 @Module({
   imports: [UseCasesModule],
   providers: [
@@ -17,6 +19,7 @@ import { Base64ID } from './scalars/base64-id.scalar';
     UserResolver,
     Base64ID,
     AuthGuard,
+    PlaylistTrackResolver,
     {
       provide: APP_FILTER,
       useClass: DomainErrorExceptionFilter,

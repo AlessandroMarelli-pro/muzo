@@ -1,12 +1,8 @@
 import { Args, ID, Int, Mutation, Query, Resolver } from '@nestjs/graphql';
-import {
-  MusicTrackWithRelations,
-  PlaylistWithRelations,
-} from 'src/models/index';
+import { MusicTrackWithRelations } from 'src/models/index';
 import { mapToSimpleMusicTrack } from '../music-track/music-track.resolver';
 import { RecommendationService } from '../recommendation/services/recommendation.service';
 import {
-  AddTrackToPlaylistInput,
   CreatePlaylistInput,
   Playlist,
   PlaylistSorting,
@@ -25,21 +21,6 @@ export class PlaylistResolver {
     private readonly recommendationService: RecommendationService,
   ) {}
 
-  private async formatPlaylist(playlist: PlaylistWithRelations) {
-    const tracks = playlist.tracks.map((track) => ({
-      ...track,
-      track: mapToSimpleMusicTrack(track.track as MusicTrackWithRelations),
-    }));
-    const playlistStats = await this.playlistService.getPlaylistWithStatsById(
-      playlist.id,
-    );
-    return {
-      ...playlist,
-      ...playlistStats,
-      tracks,
-    };
-  }
-
   @Query(() => [TrackRecommendation])
   async playlistRecommendations(
     @Args('playlistId', { type: () => ID }) playlistId: string,
@@ -57,24 +38,6 @@ export class PlaylistResolver {
   @Mutation(() => Playlist)
   async createPlaylist(@Args('input') input: CreatePlaylistInput) {
     return this.playlistService.createPlaylist(input);
-  }
-
-  @Mutation(() => PlaylistTrack)
-  async addTrackToPlaylist(
-    @Args('playlistId', { type: () => ID }) playlistId: string,
-    @Args('input') input: AddTrackToPlaylistInput,
-    @Args('userId') userId?: string,
-  ) {
-    const dbPlaylistTrack = await this.playlistService.addTrackToPlaylist(
-      playlistId,
-      input,
-    );
-    return {
-      ...dbPlaylistTrack,
-      track: mapToSimpleMusicTrack(
-        dbPlaylistTrack.track as MusicTrackWithRelations,
-      ),
-    };
   }
 
   @Mutation(() => Boolean)

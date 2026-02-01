@@ -13,11 +13,18 @@ export type PlaylistTrackPresence = {
   trackId: MusicTrackId;
   presence: boolean;
 };
+
+export type AddTrackToPlaylistData = {
+  trackId: MusicTrackId;
+  position?: number;
+};
+
 export type PlaylistSortingOptions = {
   sortingKey?: PlaylistSortingKey;
   sortingDirection?: PlaylistSortingDirection;
 };
 export interface IPlaylistTrackRepository {
+  save(playlistTrack: PlaylistTrack): Promise<PlaylistTrack>;
   getTracksByPlaylistId(playlistId: PlaylistId): Promise<PlaylistTrack[]>;
   getTracks(): Promise<PlaylistTrack[]>;
   getTracksWithTrack(): Promise<PlaylistTrackWithTrackDetail[]>;
@@ -32,4 +39,9 @@ export interface IPlaylistTrackRepository {
   getPresenceBatch(
     pairs: Array<{ playlistId: PlaylistId; trackId: MusicTrackId }>,
   ): Promise<PlaylistTrackPresence[]>;
+  verifyPresence(
+    playlistId: PlaylistId,
+    trackId: MusicTrackId,
+  ): Promise<boolean>;
+  getLastPosition(playlistId: PlaylistId): Promise<number>;
 }

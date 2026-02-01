@@ -16,11 +16,18 @@ import { getCurrentUserId } from 'src/clean-arch/kernel/types/context';
 import { PlaylistTrack } from 'src/clean-arch/kernel/types/model-types';
 import { toDomain as toDomainMusicTrack } from '../music-track/music-track.mapper';
 import { handlePrismaNotFound } from '../prisma-errors';
-import { toDomain } from './playlist-track.mapper';
+import { toDomain, toPrisma } from './playlist-track.mapper';
 @Injectable()
 export class PlaylistTrackRepository implements IPlaylistTrackRepository {
   constructor(private readonly prisma: PrismaService) {}
 
+  async save(playlistTrack: PlaylistTrack): Promise<PlaylistTrack> {
+    return this.prisma.playlistTrack
+      .create({
+        data: toPrisma(playlistTrack),
+      })
+      .then(toDomain);
+  }
   async getTracksByPlaylistId(
     playlistId: PlaylistId,
   ): Promise<PlaylistTrack[]> {
@@ -179,5 +186,29 @@ export class PlaylistTrackRepository implements IPlaylistTrackRepository {
           presence: true,
         })),
       );
+  }
+  verifyPresence(
+    playlistId: PlaylistId,
+    trackId: MusicTrackId,
+  ): Promise<boolean> {
+    return this.prisma.playlistTrack
+      .findUnique({
+        where: {
+          playlistId_trackId: {
+            playlistId: extractModelId(playlistId).dbId,
+            trackId: extractModelId(trackId).dbId,
+          },
+        },
+      })
+      .then((row) => row !== null);
+  }
+
+  getLastPosition(playlistId: PlaylistId): Promise<number> {
+    return this.prisma.playlistTrack
+      .findFirst({
+        where: { playlistId: extractModelId(playlistId).dbId },
+        orderBy: { position: 'desc' },
+      })
+      .then((row) => row?.position ?? 0);
   }
 }

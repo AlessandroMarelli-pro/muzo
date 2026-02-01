@@ -1,4 +1,5 @@
 import { Field, Int, ObjectType } from '@nestjs/graphql';
+import { Maybe } from 'src/clean-arch/kernel/common';
 import {
   MusicTrackId,
   PlaylistId,
@@ -24,6 +25,6 @@ export class CleanArchPlaylistTrack {
   @Field(() => Base64ID)
   playlistId: PlaylistId;
 
-  @Field(() => Track)
-  track: Track;
+  @Field(() => Track, { nullable: true })
+  track: Maybe<Track>;
 }

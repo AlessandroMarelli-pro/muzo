@@ -114,4 +114,15 @@ export class PlaylistRepository implements IPlaylistRepository {
         handlePrismaNotFound(e, `Playlist with ID ${id} not found`),
       );
   }
+
+  async verifyAccess(id: PlaylistId): Promise<boolean> {
+    return this.prisma.playlist
+      .findFirstOrThrow({
+        where: { id: extractModelId(id).dbId, createdById: getCurrentUserId() },
+      })
+      .then(() => true)
+      .catch((e: unknown) =>
+        handlePrismaNotFound(e, `Playlist with ID ${id} not found`),
+      );
+  }
 }

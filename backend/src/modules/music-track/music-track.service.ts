@@ -15,7 +15,7 @@ import {
   MusicTrack,
   MusicTrackByCategories,
   MusicTrackQueryOptions,
-  UpdateMusicTrackDto
+  UpdateMusicTrackDto,
 } from '../../models/music-track.model';
 import { ElasticsearchService } from '../../shared/services/elasticsearch.service';
 import { PrismaService } from '../../shared/services/prisma.service';
@@ -35,7 +35,7 @@ export class MusicTrackService {
     private readonly filterService: FilterService,
     private readonly recommendationService: RecommendationService,
     private readonly elasticsearchService: ElasticsearchService,
-  ) { }
+  ) {}
 
   async create(createDto: CreateMusicTrackDto): Promise<MusicTrack> {
     // Validate library exists
@@ -154,7 +154,6 @@ export class MusicTrackService {
     };
     const orderByProp = changedNames[orderBy] || orderBy;
     const orderByClause = { [orderByProp]: orderDirection };
-
 
     // Build Prisma where clause
 
@@ -699,7 +698,6 @@ export class MusicTrackService {
     await this.updateLibraryTrackCounts(existingTrack.libraryId, 'decrement');
   }
 
-
   async incrementListeningCount(id: string): Promise<MusicTrack> {
     const track = await this.prisma.musicTrack.findUnique({
       where: { id },
@@ -746,9 +744,9 @@ export class MusicTrackService {
       });
     }
     if (updatedTrack.isFavorite) {
-      await this.playlistService.addTrackToPlaylist(favPlaylist.id, {
+      /*  await this.playlistService.addTrackToPlaylist(favPlaylist.id, {
         trackId: id,
-      });
+      }); */
     } else {
       await this.playlistService.removeTrackFromPlaylist(favPlaylist.id, id);
     }
@@ -1056,15 +1054,13 @@ export class MusicTrackService {
     });
   }
 
-  async getRandomTrackWithStats(
-  ): Promise<{
+  async getRandomTrackWithStats(): Promise<{
     track: SimpleMusicTrackInterface | null;
     likedCount: number;
     bangerCount: number;
     dislikedCount: number;
     remainingCount: number;
   }> {
-
     let where: any = {};
 
     // Apply filters the same way as findAllPaginated
@@ -1073,19 +1069,17 @@ export class MusicTrackService {
       where = await this.filterService.buildPrismaWhereClause(filter);
     }
 
-
     // Get counts for liked, bangers, disliked (from hidden table), and remaining tracks
-    const [likedCount, bangerCount] =
-      await Promise.all([
-        this.prisma.musicTrack.count({
-          where: { isLiked: true, isBanger: false },
-        }),
-        this.prisma.musicTrack.count({
-          where: { isBanger: true },
-        })
-      ]);
+    const [likedCount, bangerCount] = await Promise.all([
+      this.prisma.musicTrack.count({
+        where: { isLiked: true, isBanger: false },
+      }),
+      this.prisma.musicTrack.count({
+        where: { isBanger: true },
+      }),
+    ]);
 
-    const dislikedCount = await this.prisma.hiddenMusicTrack.count()
+    const dislikedCount = await this.prisma.hiddenMusicTrack.count();
     // Remaining tracks are those that are not liked, not bangers (and still in musicTrack table)
     const remainingCount = await this.prisma.musicTrack.count({
       where: {

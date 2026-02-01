@@ -131,13 +131,19 @@ export function PlaylistDetail({ id, onBack }: PlaylistDetailProps) {
 	const refetch = () => {
 		router.invalidate();
 	};
-	const addTrackToPlaylist = async (trackId: string) => {
+	const addTrackToPlaylist = async (
+		trackId: string,
+		artist: string,
+		title: string
+	) => {
 		return addTrackToPlaylistMutation
 			.mutateAsync({
 				playlistId: playlist?.id || '',
 				input: {
 					trackId,
 				},
+				artist,
+				title,
 			})
 			.then(() => {
 				refetch();

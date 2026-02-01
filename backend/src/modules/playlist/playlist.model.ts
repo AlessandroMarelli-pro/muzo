@@ -99,15 +99,6 @@ export class UpdatePlaylistInput {
 }
 
 @InputType()
-export class AddTrackToPlaylistInput {
-  @Field(() => ID)
-  trackId: string;
-
-  @Field(() => Int, { nullable: true })
-  position?: number;
-}
-
-@InputType()
 export class TrackOrderInput {
   @Field(() => ID)
   trackId: string;

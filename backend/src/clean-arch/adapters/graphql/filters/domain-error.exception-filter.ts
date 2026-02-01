@@ -9,11 +9,11 @@ import { GraphQLError } from 'graphql';
 import {
   isDomainError,
   type DomainError,
-  type NotFoundError,
 } from 'src/clean-arch/kernel/types/errors';
 
 const DOMAIN_ERROR_CODES: Record<DomainError['errorType'], string> = {
   NotFoundError: 'NOT_FOUND',
+  ConflictError: 'CONFLICT',
 } as const;
 
 function domainErrorToGraphQL(exception: DomainError): GraphQLError {
@@ -42,7 +42,7 @@ export class DomainErrorExceptionFilter
     }
 
     if (isDomainError(exception)) {
-      return domainErrorToGraphQL(exception as NotFoundError);
+      return domainErrorToGraphQL(exception as DomainError);
     }
 
     throw exception;

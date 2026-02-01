@@ -10,11 +10,7 @@ import {
 } from '@nestjs/common';
 import { TrackSimilarity } from '../recommendation/interfaces/recommendation.interface';
 import { RecommendationService } from '../recommendation/services/recommendation.service';
-import {
-  AddTrackToPlaylistDto,
-  CreatePlaylistDto,
-  ReorderTracksDto,
-} from './dto/playlist.dto';
+import { CreatePlaylistDto, ReorderTracksDto } from './dto/playlist.dto';
 import { PlaylistService } from './playlist.service';
 
 @Controller('playlists')
@@ -64,15 +60,6 @@ export class PlaylistController {
     @Query('userId') userId?: string,
   ) {
     return this.playlistService.getPlaylistStats(playlistId);
-  }
-
-  @Post(':id/tracks')
-  async addTrackToPlaylist(
-    @Param('id') playlistId: string,
-    @Body() addTrackDto: AddTrackToPlaylistDto,
-    @Query('userId') userId?: string,
-  ) {
-    return this.playlistService.addTrackToPlaylist(playlistId, addTrackDto);
   }
 
   @Delete(':id/tracks/:trackId')

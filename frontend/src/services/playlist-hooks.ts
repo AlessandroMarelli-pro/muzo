@@ -245,23 +245,14 @@ const AUTHENTICATE_SPOTIFY = gql`
 `;
 
 const ADD_TRACK_TO_PLAYLIST = gql`
-	${simpleMusicTrackFragment}
 	mutation AddTrackToPlaylist(
-		$playlistId: ID!
+		$playlistId: Base64ID!
 		$input: AddTrackToPlaylistInput!
-		$userId: String!
 	) {
-		addTrackToPlaylist(
-			playlistId: $playlistId
-			input: $input
-			userId: $userId
-		) {
+		addTrackToPlaylist(playlistId: $playlistId, input: $input) {
 			id
 			position
 			addedAt
-			track {
-				...SimpleMusicTrackFragment
-			}
 		}
 	}
 `;
@@ -552,12 +543,21 @@ const authenticateSpotify = async (
 const addTrackToPlaylist = async (
 	playlistId: string,
 	input: AddTrackToPlaylistInput,
-	userId: string = 'default'
+	artist: string,
+	title: string
 ): Promise<PlaylistTrack> => {
+	input.trackId = encodeBase64('MusicTrack:' + input.trackId);
 	const data = await graffleClient.request<{
 		addTrackToPlaylist: PlaylistTrack;
-	}>(ADD_TRACK_TO_PLAYLIST, { playlistId, input, userId });
-	return data.addTrackToPlaylist;
+	}>(ADD_TRACK_TO_PLAYLIST, { playlistId, input });
+	return {
+		...data.addTrackToPlaylist,
+		track: {
+			...data.addTrackToPlaylist.track,
+			artist,
+			title,
+		},
+	};
 };
 
 const removeTrackFromPlaylist = async (
@@ -683,10 +683,14 @@ export function usePlaylists(search?: string, verifyTrackId?: string) {
 		mutationFn: ({
 			playlistId,
 			input,
+			artist,
+			title,
 		}: {
 			playlistId: string;
 			input: AddTrackToPlaylistInput;
-		}) => addTrackToPlaylist(playlistId, input),
+			artist: string;
+			title: string;
+		}) => addTrackToPlaylist(playlistId, input, artist, title),
 		onSuccess: (data, { playlistId }) => {
 			queryClient.invalidateQueries({
 				queryKey: queryKeys.playlists(search, verifyTrackId),
@@ -726,8 +730,12 @@ export function usePlaylists(search?: string, verifyTrackId?: string) {
 		isRefetching,
 		createPlaylist: createPlaylistMutation.mutateAsync,
 		deletePlaylist: deletePlaylistMutation.mutateAsync,
-		addTrackToPlaylist: (playlistId: string, input: AddTrackToPlaylistInput) =>
-			addTrackMutation.mutateAsync({ playlistId, input }),
+		addTrackToPlaylist: (
+			playlistId: string,
+			input: AddTrackToPlaylistInput,
+			artist: string,
+			title: string
+		) => addTrackMutation.mutateAsync({ playlistId, input, artist, title }),
 		removeTrackFromPlaylist: (playlistId: string, trackId: string) =>
 			removeTrackMutation.mutateAsync({ playlistId, trackId }),
 	};
@@ -917,10 +925,14 @@ export function useAddTrackToPlaylist(userId: string = 'default') {
 		mutationFn: ({
 			playlistId,
 			input,
+			artist,
+			title,
 		}: {
 			playlistId: string;
 			input: AddTrackToPlaylistInput;
-		}) => addTrackToPlaylist(playlistId, input, userId),
+			artist: string;
+			title: string;
+		}) => addTrackToPlaylist(playlistId, input, artist, title),
 		onSuccess: (data, { playlistId }) => {
 			queryClient.invalidateQueries({ queryKey: ['playlists'] });
 			queryClient.invalidateQueries({

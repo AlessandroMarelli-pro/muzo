@@ -7,7 +7,16 @@ export const createNotFoundError = (message: string): NotFoundError => ({
   message,
 });
 
-export type DomainError = NotFoundError;
+export type ConflictError = {
+  errorType: 'ConflictError';
+  message: string;
+};
+export const createConflictError = (message: string): ConflictError => ({
+  errorType: 'ConflictError',
+  message,
+});
+
+export type DomainError = NotFoundError | ConflictError;
 
 export const isDomainError = (x: unknown): x is DomainError =>
   typeof x === 'object' && x !== null && 'errorType' in x && !('error' in x);

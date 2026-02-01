@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { RepositoriesModule } from '../../adapters/persistence/repositories/repositories.module';
 import {
+  AddTrackToPlaylistUseCase,
   CreatePlaylistUseCase,
   DeletePlaylistUseCase,
   GetFavoriteUseCase,
@@ -28,6 +29,7 @@ import {
     GetPlaylistSortingByPlaylistIdUseCase,
     GetPlaylistTracksWithDetailUseCase,
     GetFavoriteUseCase,
+    AddTrackToPlaylistUseCase,
   ],
   exports: [
     CreatePlaylistUseCase,
@@ -41,6 +43,7 @@ import {
     GetPlaylistSortingByPlaylistIdUseCase,
     GetPlaylistTracksWithDetailUseCase,
     GetFavoriteUseCase,
+    AddTrackToPlaylistUseCase,
   ],
 })
 export class UseCasesModule {}

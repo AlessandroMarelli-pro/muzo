@@ -31,4 +31,5 @@ export interface IPlaylistRepository {
   getMany(): Promise<Playlist[]>;
   updateOneById(id: PlaylistId, data: PlaylistUpdateData): Promise<Playlist>;
   deleteOneById(id: PlaylistId): Promise<boolean>;
+  verifyAccess(id: PlaylistId): Promise<boolean>;
 }

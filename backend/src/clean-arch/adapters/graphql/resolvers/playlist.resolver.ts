@@ -138,6 +138,7 @@ export class CleanArchPlaylistResolver {
       isPublic: input.isPublic ?? undefined,
     });
   }
+
   @Mutation(() => Boolean)
   async deletePlaylist(
     @Args('id', { type: () => Base64ID }) id: string,

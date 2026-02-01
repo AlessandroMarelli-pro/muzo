@@ -7,7 +7,6 @@ import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../shared/services/prisma.service';
 import { FilterService } from '../filter/filter.service';
 import {
-  AddTrackToPlaylistDto,
   CreatePlaylistDto,
   ReorderTracksDto,
   UpdatePlaylistSortingDto,
@@ -660,74 +659,6 @@ export class PlaylistService {
 
     return this.prisma.playlist.delete({
       where: { id },
-    });
-  }
-
-  async addTrackToPlaylist(
-    playlistId: string,
-    addTrackDto: AddTrackToPlaylistDto,
-  ) {
-    // Verify playlist access
-    const playlist = await this.findPlaylistById(playlistId);
-
-    // Check if track exists
-    const track = await this.prisma.musicTrack.findUnique({
-      where: { id: addTrackDto.trackId },
-    });
-
-    if (!track) {
-      throw new NotFoundException(
-        `Track with ID ${addTrackDto.trackId} not found`,
-      );
-    }
-
-    // Check if track is already in playlist
-    const existingPlaylistTrack = await this.prisma.playlistTrack.findUnique({
-      where: {
-        playlistId_trackId: {
-          playlistId,
-          trackId: addTrackDto.trackId,
-        },
-      },
-    });
-
-    if (existingPlaylistTrack) {
-      throw new BadRequestException('Track is already in this playlist');
-    }
-
-    // Get the next position
-    const lastTrack = await this.prisma.playlistTrack.findFirst({
-      where: { playlistId },
-      orderBy: { position: 'desc' },
-    });
-
-    const nextPosition = (lastTrack?.position ?? 0) + 1;
-
-    return this.prisma.playlistTrack.create({
-      data: {
-        playlistId,
-        trackId: addTrackDto.trackId,
-        position: addTrackDto.position ?? nextPosition,
-      },
-      include: {
-        track: {
-          include: {
-            audioFingerprint: true,
-            aiAnalysisResult: true,
-            imageSearches: true,
-            trackGenres: {
-              include: {
-                genre: true,
-              },
-            },
-            trackSubgenres: {
-              include: {
-                subgenre: true,
-              },
-            },
-          },
-        },
-      },
     });
   }
 
