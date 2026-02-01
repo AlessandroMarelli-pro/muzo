@@ -8,7 +8,6 @@ import { PrismaService } from '../../shared/services/prisma.service';
 import { FilterService } from '../filter/filter.service';
 import {
   CreatePlaylistDto,
-  ReorderTracksDto,
   UpdatePlaylistSortingDto,
 } from './dto/playlist.dto';
 
@@ -662,28 +661,6 @@ export class PlaylistService {
     });
   }
 
-  async reorderTracks(playlistId: string, reorderDto: ReorderTracksDto) {
-    // Verify playlist access
-    const playlist = await this.findPlaylistById(playlistId);
-
-    // Update track positions
-    const updatePromises = reorderDto.trackOrders.map(({ trackId, position }) =>
-      this.prisma.playlistTrack.update({
-        where: {
-          playlistId_trackId: {
-            playlistId,
-            trackId,
-          },
-        },
-        data: { position },
-      }),
-    );
-
-    await Promise.all(updatePromises);
-
-    return this.findPlaylistById(playlistId);
-  }
-
   /**
    * Update playlist track positions
    * @param playlistId - The ID of the playlist
@@ -803,42 +780,6 @@ export class PlaylistService {
       averageDuration:
         playlist.tracks.length > 0 ? totalDuration / playlist.tracks.length : 0,
     };
-  }
-
-  async exportPlaylistToM3U(playlistId: string): Promise<string> {
-    const playlist = await this.findPlaylistById(playlistId);
-
-    if (!playlist) {
-      throw new NotFoundException(`Playlist with ID ${playlistId} not found`);
-    }
-
-    // Start with M3U header
-    let m3uContent = '#EXTM3U\n';
-
-    // Add each track
-    for (const playlistTrack of playlist.tracks) {
-      const track = (playlistTrack as any).track;
-      const duration = Math.floor(track?.duration || 0);
-      const artist =
-        track?.originalArtist ||
-        track?.aiArtist ||
-        track?.userArtist ||
-        'Unknown Artist';
-      const title =
-        track?.originalTitle ||
-        track?.aiTitle ||
-        track?.userTitle ||
-        'Unknown Title';
-      const displayName = `${artist} - ${title}`;
-
-      // Add EXTINF line with duration and display name
-      m3uContent += `#EXTINF:${duration},${displayName}\n`;
-
-      // Add file path (absolute path)
-      m3uContent += `${track?.filePath || ''}\n`;
-    }
-
-    return m3uContent;
   }
 
   /**

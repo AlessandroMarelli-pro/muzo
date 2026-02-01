@@ -12,9 +12,9 @@ import { PlaylistStatsLoader } from 'src/clean-arch/adapters/persistence/queries
 import {
   CreatePlaylistUseCase,
   DeletePlaylistUseCase,
+  ExportPlaylistToM3UUseCase,
   GetFavoriteUseCase,
   GetPlaylistSortingByPlaylistIdUseCase,
-  GetPlaylistsUseCase,
   UpdatePlaylistUseCase,
 } from 'src/clean-arch/application/use-cases';
 import { Maybe } from 'src/clean-arch/kernel/common';
@@ -41,8 +41,8 @@ export class CleanArchPlaylistResolver {
     private readonly updatePlaylistUseCase: UpdatePlaylistUseCase,
     private readonly deletePlaylistUseCase: DeletePlaylistUseCase,
     private readonly getFavoriteUseCase: GetFavoriteUseCase,
-    private readonly getPlaylistsUseCase: GetPlaylistsUseCase,
     private readonly getPlaylistSortingByPlaylistIdUseCase: GetPlaylistSortingByPlaylistIdUseCase,
+    private readonly exportPlaylistToM3UUseCase: ExportPlaylistToM3UUseCase,
   ) {}
 
   @Query(() => CleanArchPlaylist)
@@ -144,5 +144,12 @@ export class CleanArchPlaylistResolver {
     @Args('id', { type: () => Base64ID }) id: string,
   ): Promise<boolean> {
     return this.deletePlaylistUseCase.execute(parsePlaylistId(id));
+  }
+
+  @Mutation(() => String)
+  async exportPlaylistToM3U(
+    @Args('playlistId', { type: () => Base64ID }) playlistId: string,
+  ) {
+    return this.exportPlaylistToM3UUseCase.execute(parsePlaylistId(playlistId));
   }
 }

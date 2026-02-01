@@ -441,14 +441,13 @@ type Mutation {
   deletePlaylist(id: Base64ID!): Boolean!
   deleteSavedFilter(id: ID!): Boolean!
   dislikeTrack(trackId: ID!): Boolean!
-  exportPlaylistToM3U(playlistId: ID!, userId: String!): String!
+  exportPlaylistToM3U(playlistId: Base64ID!): String!
   likeTrack(trackId: ID!): SimpleMusicTrack!
   pauseTrack(trackId: String!): PlaybackState!
   playTrack(startTime: Float! = 0, trackId: String!): PlaybackState!
   recordPlayback(duration: Float!, trackId: ID!): MusicTrack!
   removeTrackFromPlaylist(playlistId: Base64ID!, trackId: Base64ID!): Boolean!
   removeTrackFromQueue(trackId: ID!): RemoveTrackFromQueueResponse!
-  reorderPlaylistTracks(input: ReorderTracksInput!, playlistId: ID!, userId: String!): Playlist!
   resumeTrack(trackId: String!): PlaybackState!
   scheduleLibraryScan(libraryId: ID!): LibraryScanResult!
   seekTrack(timeInSeconds: Float!, trackId: String!): PlaybackState!
@@ -650,10 +649,6 @@ type RemoveTrackFromQueueResponse {
   trackId: ID!
 }
 
-input ReorderTracksInput {
-  trackOrders: [TrackOrderInput!]!
-}
-
 type SavedFilter {
   createdAt: DateTime!
   criteria: FilterCriteriaType!
@@ -804,11 +799,6 @@ type TrackMusicalFeatures {
   speechiness: Float
   tempo: Float
   valenceMood: String
-}
-
-input TrackOrderInput {
-  position: Int!
-  trackId: ID!
 }
 
 input TrackQueryOptions {

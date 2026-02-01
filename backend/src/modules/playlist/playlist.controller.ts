@@ -5,12 +5,11 @@ import {
   Get,
   Param,
   Post,
-  Put,
   Query,
 } from '@nestjs/common';
 import { TrackSimilarity } from '../recommendation/interfaces/recommendation.interface';
 import { RecommendationService } from '../recommendation/services/recommendation.service';
-import { CreatePlaylistDto, ReorderTracksDto } from './dto/playlist.dto';
+import { CreatePlaylistDto } from './dto/playlist.dto';
 import { PlaylistService } from './playlist.service';
 
 @Controller('playlists')
@@ -60,15 +59,6 @@ export class PlaylistController {
     @Query('userId') userId?: string,
   ) {
     return this.playlistService.getPlaylistStats(playlistId);
-  }
-
-  @Put(':id/tracks/reorder')
-  async reorderTracks(
-    @Param('id') playlistId: string,
-    @Body() reorderDto: ReorderTracksDto,
-    @Query('userId') userId?: string,
-  ) {
-    return this.playlistService.reorderTracks(playlistId, reorderDto);
   }
 
   @Get(':id/recommendations')

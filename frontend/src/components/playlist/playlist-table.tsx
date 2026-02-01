@@ -65,7 +65,7 @@ const ActionCells = ({
 	const [isDeleting, setIsDeleting] = React.useState(false);
 	const [isExporting, setIsExporting] = React.useState(false);
 	const deletePlaylistMutation = useDeletePlaylist();
-	const exportPlaylistMutation = useExportPlaylistToM3U('default');
+	const exportPlaylistMutation = useExportPlaylistToM3U();
 
 	const playlist = row.original;
 

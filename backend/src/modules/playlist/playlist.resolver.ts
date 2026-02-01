@@ -7,7 +7,6 @@ import {
   Playlist,
   PlaylistSorting,
   PlaylistTrack,
-  ReorderTracksInput,
   TrackRecommendation,
   UpdatePlaylistPositionsInput,
   UpdatePlaylistSortingInput,
@@ -38,23 +37,6 @@ export class PlaylistResolver {
   @Mutation(() => Playlist)
   async createPlaylist(@Args('input') input: CreatePlaylistInput) {
     return this.playlistService.createPlaylist(input);
-  }
-
-  @Mutation(() => Playlist)
-  async reorderPlaylistTracks(
-    @Args('playlistId', { type: () => ID }) playlistId: string,
-    @Args('input') input: ReorderTracksInput,
-    @Args('userId') userId?: string,
-  ) {
-    return this.playlistService.reorderTracks(playlistId, input);
-  }
-
-  @Mutation(() => String)
-  async exportPlaylistToM3U(
-    @Args('playlistId', { type: () => ID }) playlistId: string,
-    @Args('userId') userId?: string,
-  ) {
-    return this.playlistService.exportPlaylistToM3U(playlistId);
   }
 
   @Mutation(() => [PlaylistTrack])

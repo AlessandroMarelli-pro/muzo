@@ -55,7 +55,7 @@ export function PlaylistCard({
 	onCardClick,
 }: PlaylistCardProps) {
 	const deletePlaylistMutation = useDeletePlaylist();
-	const exportPlaylistMutation = useExportPlaylistToM3U('default');
+	const exportPlaylistMutation = useExportPlaylistToM3U();
 	const [isHovered, setIsHovered] = useState(false);
 
 	const router = useRouter();

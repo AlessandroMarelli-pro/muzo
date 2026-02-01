@@ -4,6 +4,7 @@ import {
   AddTrackToPlaylistUseCase,
   CreatePlaylistUseCase,
   DeletePlaylistUseCase,
+  ExportPlaylistToM3UUseCase,
   GetFavoriteUseCase,
   GetPlaylistSortingByPlaylistIdUseCase,
   GetPlaylistsStatsUseCase,
@@ -32,6 +33,7 @@ import {
     GetFavoriteUseCase,
     AddTrackToPlaylistUseCase,
     RemoveTrackFromPlaylistUseCase,
+    ExportPlaylistToM3UUseCase,
   ],
   exports: [
     CreatePlaylistUseCase,
@@ -47,6 +49,7 @@ import {
     GetFavoriteUseCase,
     AddTrackToPlaylistUseCase,
     RemoveTrackFromPlaylistUseCase,
+    ExportPlaylistToM3UUseCase,
   ],
 })
 export class UseCasesModule {}
