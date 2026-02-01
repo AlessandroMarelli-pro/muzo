@@ -289,24 +289,11 @@ const GET_PLAYLIST_RECOMMENDATIONS = gql`
 `;
 
 const UPDATE_PLAYLIST_POSITIONS = gql`
-	${simpleMusicTrackFragment}
 	mutation UpdatePlaylistPositions(
-		$playlistId: ID!
+		$playlistId: Base64ID!
 		$input: UpdatePlaylistPositionsInput!
-		$userId: String!
 	) {
-		updatePlaylistPositions(
-			playlistId: $playlistId
-			input: $input
-			userId: $userId
-		) {
-			id
-			position
-			addedAt
-			track {
-				...SimpleMusicTrackFragment
-			}
-		}
+		updatePlaylistTracksPositions(playlistId: $playlistId, input: $input)
 	}
 `;
 
@@ -586,7 +573,7 @@ export const fetchPlaylistRecommendations = async (
 };
 
 interface UpdatePlaylistPositionInput {
-	trackId: string;
+	id: string;
 	position: number;
 }
 
@@ -596,16 +583,14 @@ interface UpdatePlaylistPositionsInput {
 
 const updatePlaylistPositions = async (
 	playlistId: string,
-	positions: UpdatePlaylistPositionInput[],
-	userId: string = 'default'
-): Promise<PlaylistTrack[]> => {
+	positions: UpdatePlaylistPositionInput[]
+): Promise<boolean> => {
 	const input: UpdatePlaylistPositionsInput = { positions };
 	const data = await graffleClient.request<{
-		updatePlaylistPositions: PlaylistTrack[];
+		updatePlaylistPositions: boolean;
 	}>(UPDATE_PLAYLIST_POSITIONS, {
 		playlistId,
 		input,
-		userId,
 	});
 	return data.updatePlaylistPositions;
 };
@@ -993,7 +978,7 @@ export function usePlaylistRecommendations(
 	};
 }
 
-export function useUpdatePlaylistPositions(userId: string = 'default') {
+export function useUpdatePlaylistPositions() {
 	const queryClient = useQueryClient();
 
 	return useMutation({
@@ -1003,7 +988,7 @@ export function useUpdatePlaylistPositions(userId: string = 'default') {
 		}: {
 			playlistId: string;
 			positions: UpdatePlaylistPositionInput[];
-		}) => updatePlaylistPositions(playlistId, positions, userId),
+		}) => updatePlaylistPositions(playlistId, positions),
 		onSuccess: (_, { playlistId }) => {
 			queryClient.invalidateQueries({ queryKey: ['playlists'] });
 			queryClient.invalidateQueries({ queryKey: ['playlist', playlistId] });

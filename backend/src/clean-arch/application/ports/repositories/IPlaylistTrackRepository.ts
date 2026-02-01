@@ -31,7 +31,10 @@ export type PlaylistSortingOptions = {
 export type PlaylistTrackUpdateData = {
   position?: number;
 };
-
+export type UpdatePositionsData = {
+  id: PlaylistTrackId;
+  position: number;
+};
 export interface IPlaylistTrackRepository {
   save(playlistTrack: PlaylistTrack): Promise<PlaylistTrack>;
   updateOneById(

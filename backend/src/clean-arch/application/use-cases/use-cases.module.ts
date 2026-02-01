@@ -14,6 +14,7 @@ import {
   GetPlaylistTracksWithDetailUseCase,
   GetPlaylistUseCase,
   RemoveTrackFromPlaylistUseCase,
+  UpdatePlaylistTracksPositionsUseCase,
   UpdatePlaylistUseCase,
 } from './';
 import { UpdatePlaylistSortingUseCase } from './playlist-sorting/UpdatePlaylistSorting';
@@ -36,6 +37,7 @@ import { UpdatePlaylistSortingUseCase } from './playlist-sorting/UpdatePlaylistS
     RemoveTrackFromPlaylistUseCase,
     ExportPlaylistToM3UUseCase,
     UpdatePlaylistSortingUseCase,
+    UpdatePlaylistTracksPositionsUseCase,
   ],
   exports: [
     CreatePlaylistUseCase,
@@ -53,6 +55,7 @@ import { UpdatePlaylistSortingUseCase } from './playlist-sorting/UpdatePlaylistS
     RemoveTrackFromPlaylistUseCase,
     ExportPlaylistToM3UUseCase,
     UpdatePlaylistSortingUseCase,
+    UpdatePlaylistTracksPositionsUseCase,
   ],
 })
 export class UseCasesModule {}

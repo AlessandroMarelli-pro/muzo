@@ -61,5 +61,16 @@ export function toPlaylistItem(item: CleanArchPlaylist): Playlist {
 		images: s?.images ?? [],
 		isTrackInPlaylist: item.containsTrack ?? false,
 		tracks: tracks as PlaylistTrack[],
+		sorting: item.sorting
+			? {
+					__typename: 'PlaylistSorting',
+					id: item.sorting.id,
+					playlistId: item.sorting.playlistId,
+					sortingKey: item.sorting.sortingKey,
+					sortingDirection: item.sorting.sortingDirection,
+					createdAt: item.sorting.createdAt,
+					updatedAt: item.sorting.updatedAt,
+				}
+			: undefined,
 	};
 }

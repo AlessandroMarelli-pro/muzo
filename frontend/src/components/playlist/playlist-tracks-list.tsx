@@ -49,8 +49,10 @@ export function PlaylistTracksList({
 	const [localTracks, setLocalTracks] = useState<PlaylistTrack[]>(
 		playlist?.tracks || []
 	);
+	console.log('sortingOrder', playlist);
+
 	const removeTrackMutation = useRemoveTrackFromPlaylist();
-	const updatePositionsMutation = useUpdatePlaylistPositions('default');
+	const updatePositionsMutation = useUpdatePlaylistPositions();
 
 	// Sync localTracks with playlist.tracks when playlist changes (e.g., after sorting)
 	// Use a stringified version of track IDs and positions to detect order changes
@@ -121,13 +123,16 @@ export function PlaylistTracksList({
 
 				// Update positions in backend
 				try {
-					const positions = newTracks.map((track, index) => ({
-						trackId: track.track.id,
-						position:
-							sortingOrder > 0
-								? index + 1
-								: playlist?.tracks?.length || 0 - index,
-					}));
+					if (!playlist?.tracks?.length) return;
+					const initialPosition = sortingOrder > 0 ? 0 : playlist.tracks.length;
+					const positions = newTracks.map((track, index) => {
+						const position =
+							sortingOrder > 0 ? index + 1 : initialPosition - index;
+						return {
+							id: track.id,
+							position,
+						};
+					});
 					await updatePositionsMutation.mutateAsync({
 						playlistId: playlist?.id || '',
 						positions,

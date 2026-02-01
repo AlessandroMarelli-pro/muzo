@@ -114,21 +114,6 @@ export class ReorderTracksInput {
 }
 
 @InputType()
-export class UpdatePlaylistPositionInput {
-  @Field(() => ID)
-  trackId: string;
-
-  @Field(() => Int)
-  position: number;
-}
-
-@InputType()
-export class UpdatePlaylistPositionsInput {
-  @Field(() => [UpdatePlaylistPositionInput])
-  positions: UpdatePlaylistPositionInput[];
-}
-
-@InputType()
 export class UpdatePlaylistSortingInput {
   @Field()
   sortingKey: string;
