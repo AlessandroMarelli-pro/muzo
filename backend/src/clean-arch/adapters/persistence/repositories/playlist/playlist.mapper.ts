@@ -1,14 +1,82 @@
-import { Playlist as PrismaPlaylist } from '@prisma/client';
+import {
+  Playlist as PrismaPlaylist,
+  PlaylistSorting as PrismaPlaylistSorting,
+  PlaylistTrack as PrismaPlaylistTrack,
+} from '@prisma/client';
+import { PlaylistTrackWithTrackDetailAndSorting } from 'src/clean-arch/application/dtos/PlaylistWithTrackDetailsAndSorting';
 import { PlaylistUpdateData } from 'src/clean-arch/application/ports/repositories/IPlaylistRepository';
 import { extractModelId } from 'src/clean-arch/kernel/ids/factory';
 import { now, user } from 'src/clean-arch/kernel/types/context';
-import { Playlist } from 'src/clean-arch/kernel/types/model-types';
+import {
+  Playlist,
+  PlaylistSorting,
+  PlaylistTrack,
+} from 'src/clean-arch/kernel/types/model-types';
 import { models } from 'src/clean-arch/kernel/types/models';
 import { toDbModel } from '../db';
 import { toDomainModel } from '../domain';
+import { toDomain as toDomainMusicTrack } from '../music-track/music-track.mapper';
+import { toDomain as toDomainSorting } from '../playlist-sorting/playlist-sorting.mapper';
+import {
+  PrismaPlaylistTrackWithTrackDetail,
+  toDomain as toDomainPlaylistTrack,
+} from '../playlist-track/playlist-track.mapper';
+
+export type PrismaPlaylistWithSorting = PrismaPlaylist & {
+  sorting: PrismaPlaylistSorting;
+};
+export type PrismaPlaylistWithTracksAndSorting = PrismaPlaylistWithSorting & {
+  tracks: PrismaPlaylistTrack[];
+};
+
+export type PrismaPlaylistWithTracksWithRelationsAndSorting =
+  PrismaPlaylistWithSorting & {
+    tracks: PrismaPlaylistTrackWithTrackDetail[];
+  };
 
 export type ToDomain = (row: PrismaPlaylist) => Playlist;
 
+export type ToDomainWithSorting = (
+  row: PrismaPlaylistWithSorting,
+) => Playlist & { sorting: PlaylistSorting };
+
+export type ToDomainWithTracksAndSorting = (
+  row: PrismaPlaylistWithTracksAndSorting,
+) => Playlist & {
+  sorting: PlaylistSorting;
+  tracks: PlaylistTrack[];
+};
+
+export type ToDomainWithTracksWithRelationsAndSorting = (
+  row: PrismaPlaylistWithTracksWithRelationsAndSorting,
+) => PlaylistTrackWithTrackDetailAndSorting;
+
+export const toDomainWithSorting: ToDomainWithSorting = (row) => {
+  return {
+    ...toDomain(row),
+    sorting: row.sorting ? toDomainSorting(row.sorting) : null,
+  };
+};
+
+export const toDomainWithTracksAndSorting: ToDomainWithTracksAndSorting = (
+  row,
+) => {
+  return {
+    ...toDomainWithSorting(row),
+    tracks: row.tracks.map((track) => toDomainPlaylistTrack(track)),
+  };
+};
+
+export const toDomainWithTracksWithRelationsAndSorting: ToDomainWithTracksWithRelationsAndSorting =
+  (row) => {
+    return {
+      ...toDomainWithSorting(row),
+      tracks: row.tracks.map((track) => ({
+        ...toDomainPlaylistTrack(track),
+        track: toDomainMusicTrack(track.track),
+      })),
+    };
+  };
 export const toDomain: ToDomain = (row) => {
   return {
     id: models.playlist.id(row.id),
@@ -21,6 +89,7 @@ export const toDomain: ToDomain = (row) => {
     name: row.name,
     description: row.description ?? null,
     isPublic: row.isPublic,
+    isFavorite: row.isFavorite,
   };
 };
 
@@ -34,6 +103,7 @@ export const toPrisma: ToPrisma = (domainModel) => {
     name: domainModel.name,
     description: domainModel.description,
     isPublic: domainModel.isPublic,
+    isFavorite: domainModel.isFavorite,
   };
 };
 

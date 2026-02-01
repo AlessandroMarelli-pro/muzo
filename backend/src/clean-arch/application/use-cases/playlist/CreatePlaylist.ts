@@ -19,6 +19,7 @@ export class CreatePlaylistUseCase {
       ...createPlaylistInput,
       isPublic: createPlaylistInput.isPublic ?? false,
       description: createPlaylistInput.description ?? null,
+      isFavorite: false,
     });
     return this.playlistRepository.save(playlist);
   }

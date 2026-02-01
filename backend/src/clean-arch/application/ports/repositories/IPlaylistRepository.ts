@@ -2,6 +2,7 @@ import { Maybe } from 'src/clean-arch/kernel/common';
 import { PlaylistId } from 'src/clean-arch/kernel/ids';
 import { Playlist, PlaylistSorting } from '../../../kernel/types/model-types';
 import { PlaylistTrackWithTrackDetail } from '../../dtos/PlaylistTrackWithDetail';
+import { PlaylistTrackWithTrackDetailAndSorting } from '../../dtos/PlaylistWithTrackDetailsAndSorting';
 import { PlaylistSortingOptions } from './IPlaylistTrackRepository';
 
 export type PlaylistUpdateData = {
@@ -25,7 +26,8 @@ export interface IPlaylistRepository {
   getOneByIdWithTracks(
     id: PlaylistId,
     sorting: Maybe<PlaylistSortingOptions>,
-  ): Promise<PlaylistWithSortingAndTracks>;
+  ): Promise<PlaylistTrackWithTrackDetailAndSorting>;
+  getFavorite(): Promise<PlaylistTrackWithTrackDetailAndSorting>;
   getMany(): Promise<Playlist[]>;
   updateOneById(id: PlaylistId, data: PlaylistUpdateData): Promise<Playlist>;
   deleteOneById(id: PlaylistId): Promise<boolean>;

@@ -39,6 +39,7 @@ export type Playlist = Readonly<ModelBase<PlaylistId>> & {
   name: string;
   description: Maybe<string>;
   isPublic: boolean;
+  isFavorite: boolean;
 };
 
 export type User = Readonly<

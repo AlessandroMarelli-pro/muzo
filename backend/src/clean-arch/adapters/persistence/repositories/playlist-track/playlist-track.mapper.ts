@@ -4,6 +4,11 @@ import { PlaylistTrack } from 'src/clean-arch/kernel/types/model-types';
 import { models } from 'src/clean-arch/kernel/types/models';
 import { toDbModel } from '../db';
 import { toDomainModel } from '../domain';
+import { PrismaMusicTrackWithRelations } from '../music-track/music-track.mapper';
+
+export type PrismaPlaylistTrackWithTrackDetail = PrismaPlaylistTrack & {
+  track: PrismaMusicTrackWithRelations;
+};
 
 export type ToDomain = (row: PrismaPlaylistTrack) => PlaylistTrack;
 

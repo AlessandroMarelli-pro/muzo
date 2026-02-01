@@ -2,6 +2,7 @@ export * from '../playlist-track/GetPlaylistTracks';
 export * from './CreatePlaylist';
 export * from './CreatePlaylist.input';
 export * from './DeletePlaylist';
+export * from './GetFavorite';
 export * from './GetPlaylist';
 export * from './GetPlaylists';
 export * from './GetPlaylistsStats';

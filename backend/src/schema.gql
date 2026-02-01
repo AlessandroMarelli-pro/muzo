@@ -558,6 +558,7 @@ type PlaylistsResult {
 }
 
 type Query {
+  favoritePlaylist: CleanArchPlaylist!
   getActiveSessions: [PlaybackSession!]!
   getAudioAnalysis(trackId: String!): AudioAnalysisResult!
   getAudioInfo(trackId: String!): AudioInfo!

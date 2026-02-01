@@ -23,7 +23,7 @@ import {
 import { models } from 'src/clean-arch/kernel/types/models';
 import { toDbModel } from '../db';
 import { toDomainModel } from '../domain';
-type PrismaMusicTrackWithRelations = PrismaMusicTrack & {
+export type PrismaMusicTrackWithRelations = PrismaMusicTrack & {
   audioFingerprint: PrismaAudioFingerprint;
   trackGenres?: (PrismaTrackGenre & { genre: PrismaGenre })[];
   trackSubgenres?: (PrismaTrackSubgenre & { subgenre: PrismaSubgenre })[];

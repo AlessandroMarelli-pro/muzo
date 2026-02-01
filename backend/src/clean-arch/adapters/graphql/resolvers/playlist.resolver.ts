@@ -4,6 +4,7 @@ import {
   Context,
   Mutation,
   Parent,
+  Query,
   ResolveField,
   Resolver,
 } from '@nestjs/graphql';
@@ -11,9 +12,9 @@ import { PlaylistStatsLoader } from 'src/clean-arch/adapters/persistence/queries
 import {
   CreatePlaylistUseCase,
   DeletePlaylistUseCase,
+  GetFavoriteUseCase,
   GetPlaylistSortingByPlaylistIdUseCase,
   GetPlaylistsUseCase,
-  GetPlaylistUseCase,
   UpdatePlaylistUseCase,
 } from 'src/clean-arch/application/use-cases';
 import { Maybe } from 'src/clean-arch/kernel/common';
@@ -39,10 +40,21 @@ export class CleanArchPlaylistResolver {
     private readonly createPlaylistUseCase: CreatePlaylistUseCase,
     private readonly updatePlaylistUseCase: UpdatePlaylistUseCase,
     private readonly deletePlaylistUseCase: DeletePlaylistUseCase,
-    private readonly getPlaylistUseCase: GetPlaylistUseCase,
+    private readonly getFavoriteUseCase: GetFavoriteUseCase,
     private readonly getPlaylistsUseCase: GetPlaylistsUseCase,
     private readonly getPlaylistSortingByPlaylistIdUseCase: GetPlaylistSortingByPlaylistIdUseCase,
   ) {}
+
+  @Query(() => CleanArchPlaylist)
+  async favoritePlaylist(): Promise<CleanArchPlaylist> {
+    return this.getFavoriteUseCase.execute().then((playlist) => ({
+      ...playlist,
+      tracks: playlist.tracks.map((track) => ({
+        ...track,
+        track: toTrack(track.track),
+      })),
+    }));
+  }
 
   @ResolveField(() => PlaylistStats)
   async stats(
