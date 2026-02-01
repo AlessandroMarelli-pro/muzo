@@ -115,7 +115,7 @@ export type CleanArchCreatePlaylistInput = {
   name: Scalars['String']['input'];
 };
 
-export type CleanArchPlaylist = {
+export type CleanArchPlaylist = Node & {
   __typename?: 'CleanArchPlaylist';
   /** True if the given track is already in this playlist */
   containsTrack?: Maybe<Scalars['Boolean']['output']>;
@@ -770,6 +770,10 @@ export type MutationUpdateSavedFilterArgs = {
   input: UpdateSavedFilterInput;
 };
 
+export type Node = {
+  id: Scalars['Base64ID']['output'];
+};
+
 export type OrganizationPreferences = {
   __typename?: 'OrganizationPreferences';
   autoOrganize: Scalars['Boolean']['output'];
@@ -886,6 +890,8 @@ export type Query = {
   library?: Maybe<MusicLibrary>;
   libraryMetrics: LibraryMetrics;
   me: User;
+  /** Fetch any node by global ID. Use inline fragments (... on CleanArchPlaylist { ... }) to request fields. */
+  node?: Maybe<Node>;
   playlist: CleanArchPlaylist;
   playlistByName: Playlist;
   playlistRecommendations: Array<TrackRecommendation>;
@@ -982,6 +988,11 @@ export type QueryLibrariesArgs = {
 
 export type QueryLibraryArgs = {
   id: Scalars['ID']['input'];
+};
+
+
+export type QueryNodeArgs = {
+  id: Scalars['Base64ID']['input'];
 };
 
 
@@ -1233,7 +1244,7 @@ export type TrackAiMetadata = {
   contextImpacts?: Maybe<Scalars['String']['output']>;
   description?: Maybe<Scalars['String']['output']>;
   tags?: Maybe<Array<Scalars['String']['output']>>;
-  vocalsDesc: Scalars['String']['output'];
+  vocalsDesc?: Maybe<Scalars['String']['output']>;
   vocalsDescriptions?: Maybe<Scalars['String']['output']>;
 };
 
@@ -1247,8 +1258,8 @@ export type TrackFileInfo = {
 
 export type TrackMetadata = {
   __typename?: 'TrackMetadata';
-  album: Scalars['String']['output'];
-  date: Scalars['DateTime']['output'];
+  album?: Maybe<Scalars['String']['output']>;
+  date?: Maybe<Scalars['DateTime']['output']>;
   genres?: Maybe<Array<Scalars['String']['output']>>;
   subgenres?: Maybe<Array<Scalars['String']['output']>>;
 };
@@ -1380,7 +1391,7 @@ export type UpdateSavedFilterInput = {
   name?: InputMaybe<Scalars['String']['input']>;
 };
 
-export type User = {
+export type User = Node & {
   __typename?: 'User';
   email?: Maybe<Scalars['String']['output']>;
   firstName?: Maybe<Scalars['String']['output']>;
@@ -1703,7 +1714,10 @@ export type GetPlaylistQueryVariables = Exact<{
 }>;
 
 
-export type GetPlaylistQuery = { __typename?: 'Query', playlist: { __typename?: 'CleanArchPlaylist', id: any, name: string, description?: string | null, isPublic: boolean, createdAt: any, updatedAt: any, createdById: any, updatedById?: any | null, stats?: { __typename?: 'CleanArchPlaylistStats', genresCount: number, numberOfTracks: number, subgenresCount: number, topGenres: Array<string>, topSubgenres: Array<string>, totalDuration: number, images: Array<string>, bpmRange: { __typename?: 'Range', min: number, max: number }, energyRange: { __typename?: 'Range', min: number, max: number } } | null, sorting?: { __typename?: 'CleanArchPlaylistSorting', id: any, playlistId: any, sortingKey: string, sortingDirection: string, createdAt: any, updatedAt: any } | null, tracks?: Array<{ __typename?: 'CleanArchPlaylistTrack', id: any, position: number, addedAt: any, trackId: any, playlistId: any, track: { __typename?: 'Track', id: any, artist?: string | null, title?: string | null, createdAt?: any | null, updatedAt?: any | null, imagePath?: string | null, lastScannedAt?: any | null, libraryId?: string | null, stats: { __typename?: 'TrackStats', listeningCount: number, lastPlayedAt?: any | null, isFavorite: boolean, isLiked: boolean, isBanger: boolean }, fileInfo: { __typename?: 'TrackFileInfo', filePath: string, fileName: string, fileSize: number, fileCreatedAt: any }, technicalInfo: { __typename?: 'TrackTechnicalInfo', duration: number, format: string }, metadata: { __typename?: 'TrackMetadata', album: string, date: any, genres?: Array<string> | null, subgenres?: Array<string> | null }, aiMetadata: { __typename?: 'TrackAIMetadata', tags?: Array<string> | null, vocalsDesc: string, description?: string | null, vocalsDescriptions?: string | null, atmosphereKeywords?: Array<string> | null, contextBackgrounds?: string | null, contextImpacts?: string | null }, musicalFeatures: { __typename?: 'TrackMusicalFeatures', tempo?: number | null, key?: string | null, valenceMood?: string | null, arousalMood?: string | null, danceabilityFeeling?: string | null, acousticness?: number | null, instrumentalness?: number | null, speechiness?: number | null } } }> | null } };
+export type GetPlaylistQuery = { __typename?: 'Query', node?:
+    | { __typename?: 'CleanArchPlaylist', id: any, name: string, description?: string | null, isPublic: boolean, createdAt: any, updatedAt: any, createdById: any, updatedById?: any | null, stats?: { __typename?: 'CleanArchPlaylistStats', genresCount: number, numberOfTracks: number, subgenresCount: number, topGenres: Array<string>, topSubgenres: Array<string>, totalDuration: number, images: Array<string>, bpmRange: { __typename?: 'Range', min: number, max: number }, energyRange: { __typename?: 'Range', min: number, max: number } } | null, sorting?: { __typename?: 'CleanArchPlaylistSorting', id: any, playlistId: any, sortingKey: string, sortingDirection: string, createdAt: any, updatedAt: any } | null, tracks?: Array<{ __typename?: 'CleanArchPlaylistTrack', id: any, position: number, addedAt: any, trackId: any, playlistId: any, track: { __typename?: 'Track', id: any, artist?: string | null, title?: string | null, createdAt?: any | null, updatedAt?: any | null, imagePath?: string | null, lastScannedAt?: any | null, libraryId?: string | null, stats: { __typename?: 'TrackStats', listeningCount: number, lastPlayedAt?: any | null, isFavorite: boolean, isLiked: boolean, isBanger: boolean }, fileInfo: { __typename?: 'TrackFileInfo', filePath: string, fileName: string, fileSize: number, fileCreatedAt: any }, technicalInfo: { __typename?: 'TrackTechnicalInfo', duration: number, format: string }, metadata: { __typename?: 'TrackMetadata', album?: string | null, date?: any | null, genres?: Array<string> | null, subgenres?: Array<string> | null }, aiMetadata: { __typename?: 'TrackAIMetadata', tags?: Array<string> | null, vocalsDesc?: string | null, description?: string | null, vocalsDescriptions?: string | null, atmosphereKeywords?: Array<string> | null, contextBackgrounds?: string | null, contextImpacts?: string | null }, musicalFeatures: { __typename?: 'TrackMusicalFeatures', tempo?: number | null, key?: string | null, valenceMood?: string | null, arousalMood?: string | null, danceabilityFeeling?: string | null, acousticness?: number | null, instrumentalness?: number | null, speechiness?: number | null } } }> | null }
+    | { __typename?: 'User' }
+   | null };
 
 export type GetPlaylistByNameQueryVariables = Exact<{
   name: Scalars['String']['input'];

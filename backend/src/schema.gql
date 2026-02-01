@@ -98,7 +98,7 @@ input CleanArchCreatePlaylistInput {
   name: String!
 }
 
-type CleanArchPlaylist {
+type CleanArchPlaylist implements Node {
   """True if the given track is already in this playlist"""
   containsTrack(trackId: Base64ID): Boolean
   createdAt: DateTime!
@@ -472,6 +472,10 @@ type Mutation {
   updateSavedFilter(id: ID!, input: UpdateSavedFilterInput!): SavedFilter!
 }
 
+interface Node {
+  id: Base64ID!
+}
+
 type OrganizationPreferences {
   autoOrganize: Boolean!
   createPlaylists: Boolean!
@@ -580,10 +584,13 @@ type Query {
   library(id: ID!): MusicLibrary
   libraryMetrics: LibraryMetrics!
   me: User!
-  playlist(id: Base64ID!): CleanArchPlaylist!
+
+  """
+  Fetch any node by global ID. Use inline fragments (... on CleanArchPlaylist { ... }) to request fields.
+  """
+  node(id: Base64ID!): Node
   playlistByName(name: String!): Playlist!
   playlistRecommendations(excludeTrackIds: [String!], limit: Int, playlistId: ID!): [TrackRecommendation!]!
-  playlists: [CleanArchPlaylist!]!
   preferences: UserPreferencesGraphQL!
   queue: [QueueItem!]!
   queueStats: String!
@@ -912,7 +919,7 @@ input UpdateSavedFilterInput {
   name: String
 }
 
-type User {
+type User implements Node {
   email: String
   firstName: String
   id: Base64ID!

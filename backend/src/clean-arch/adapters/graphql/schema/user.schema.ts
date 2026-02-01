@@ -1,6 +1,7 @@
 // user.schema.ts
 import { Field, ObjectType } from '@nestjs/graphql';
 import { Base64ID } from '../scalars/base64-id.scalar';
+import { Node } from './common.schema';
 import { CleanArchPlaylist } from './playlist.schema';
 
 @ObjectType()
@@ -9,7 +10,7 @@ export class PlaylistsResult {
   items: CleanArchPlaylist[];
 }
 
-@ObjectType()
+@ObjectType({ implements: () => [Node] })
 export class User {
   @Field(() => Base64ID)
   id: string;

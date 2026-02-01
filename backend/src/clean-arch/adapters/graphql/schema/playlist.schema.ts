@@ -1,11 +1,12 @@
 import { Field, ObjectType } from '@nestjs/graphql';
 import { PlaylistId } from 'src/clean-arch/kernel/ids/scalars';
 import { Base64ID } from '../scalars/base64-id.scalar';
+import { Node } from './common.schema';
 import { CleanArchPlaylistSorting } from './playlist-sorting.schema';
 import { CleanArchPlaylistStats as PlaylistStats } from './playlist-stats.schema';
 import { CleanArchPlaylistTrack as PlaylistTrack } from './playlist-track.schema';
 
-@ObjectType()
+@ObjectType({ implements: () => [Node] })
 export class CleanArchPlaylist {
   @Field(() => Base64ID)
   id: PlaylistId;

@@ -4,7 +4,6 @@ import {
   Context,
   Mutation,
   Parent,
-  Query,
   ResolveField,
   Resolver,
 } from '@nestjs/graphql';
@@ -44,25 +43,6 @@ export class CleanArchPlaylistResolver {
     private readonly getPlaylistsUseCase: GetPlaylistsUseCase,
     private readonly getPlaylistSortingByPlaylistIdUseCase: GetPlaylistSortingByPlaylistIdUseCase,
   ) {}
-
-  @Query(() => CleanArchPlaylist)
-  async playlist(@Args('id', { type: () => Base64ID }) id: string) {
-    return this.getPlaylistUseCase
-      .execute(parsePlaylistId(id))
-      .then((playlist) => {
-        return {
-          ...playlist,
-          tracks: playlist.tracks.map((track) => ({
-            ...track,
-            track: toTrack(track.track),
-          })),
-        };
-      });
-  }
-  @Query(() => [CleanArchPlaylist])
-  async playlists() {
-    return this.getPlaylistsUseCase.execute();
-  }
 
   @ResolveField(() => PlaylistStats)
   async stats(

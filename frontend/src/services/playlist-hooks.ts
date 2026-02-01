@@ -94,97 +94,99 @@ const GET_PLAYLISTS = gql`
 
 const GET_PLAYLIST = gql`
 	query GetPlaylist($id: Base64ID!) {
-		playlist(id: $id) {
-			id
-			name
-			description
-			isPublic
-			createdAt
-			updatedAt
-			createdById
-			updatedById
-			stats {
-				bpmRange {
-					min
-					max
-				}
-				energyRange {
-					min
-					max
-				}
-				genresCount
-				numberOfTracks
-				subgenresCount
-				topGenres
-				topSubgenres
-				totalDuration
-				images
-			}
-			sorting {
+		node(id: $id) {
+			... on CleanArchPlaylist {
 				id
-				playlistId
-				sortingKey
-				sortingDirection
+				name
+				description
+				isPublic
 				createdAt
 				updatedAt
-			}
-			tracks {
-				id
-				position
-				addedAt
-				trackId
-				playlistId
-				track {
+				createdById
+				updatedById
+				stats {
+					bpmRange {
+						min
+						max
+					}
+					energyRange {
+						min
+						max
+					}
+					genresCount
+					numberOfTracks
+					subgenresCount
+					topGenres
+					topSubgenres
+					totalDuration
+					images
+				}
+				sorting {
 					id
-					artist
-					title
-					stats {
-						listeningCount
-						lastPlayedAt
-						isFavorite
-						isLiked
-						isBanger
-					}
-					fileInfo {
-						filePath
-						fileName
-						fileSize
-						fileCreatedAt
-					}
-					technicalInfo {
-						duration
-						format
-					}
-					metadata {
-						album
-						date
-						genres
-						subgenres
-					}
-					aiMetadata {
-						tags
-						vocalsDesc
-						description
-						vocalsDescriptions
-						atmosphereKeywords
-						contextBackgrounds
-						contextImpacts
-					}
+					playlistId
+					sortingKey
+					sortingDirection
 					createdAt
 					updatedAt
-					musicalFeatures {
-						tempo
-						key
-						valenceMood
-						arousalMood
-						danceabilityFeeling
-						acousticness
-						instrumentalness
-						speechiness
+				}
+				tracks {
+					id
+					position
+					addedAt
+					trackId
+					playlistId
+					track {
+						id
+						artist
+						title
+						stats {
+							listeningCount
+							lastPlayedAt
+							isFavorite
+							isLiked
+							isBanger
+						}
+						fileInfo {
+							filePath
+							fileName
+							fileSize
+							fileCreatedAt
+						}
+						technicalInfo {
+							duration
+							format
+						}
+						metadata {
+							album
+							date
+							genres
+							subgenres
+						}
+						aiMetadata {
+							tags
+							vocalsDesc
+							description
+							vocalsDescriptions
+							atmosphereKeywords
+							contextBackgrounds
+							contextImpacts
+						}
+						createdAt
+						updatedAt
+						musicalFeatures {
+							tempo
+							key
+							valenceMood
+							arousalMood
+							danceabilityFeeling
+							acousticness
+							instrumentalness
+							speechiness
+						}
+						imagePath
+						lastScannedAt
+						libraryId
 					}
-					imagePath
-					lastScannedAt
-					libraryId
 				}
 			}
 		}
@@ -547,14 +549,14 @@ export const fetchPlaylist = async (
 	id: string,
 	userId: string = 'default'
 ): Promise<Playlist> => {
-	const data = await graffleClient.request<{ playlist: CleanArchPlaylist }>(
+	const data = await graffleClient.request<{ node: CleanArchPlaylist }>(
 		GET_PLAYLIST,
 		{
 			id,
 			userId,
 		}
 	);
-	return toPlaylistItem(data.playlist);
+	return toPlaylistItem(data.node);
 };
 
 export const fetchPlaylistByName = async (
