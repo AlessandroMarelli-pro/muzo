@@ -662,8 +662,10 @@ model Queue {
   id        String   @id @default(uuid())
   trackId   String
   position  Int
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt   DateTime @default(now())
+  createdById   String @default("userId")
+  updatedAt   DateTime? @updatedAt
+  updatedById  String?
   
   // Relations
   track     MusicTrack @relation(fields: [trackId], references: [id], onDelete: Cascade)

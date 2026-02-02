@@ -27,3 +27,5 @@ export type GenreId = Brand<string, 'GenreId'>;
 export type SubgenreId = Brand<string, 'SubgenreId'>;
 
 export type SavedFilterId = Brand<string, 'SavedFilterId'>;
+
+export type QueueItemId = Brand<string, 'QueueItemId'>;

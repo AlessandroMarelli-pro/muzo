@@ -411,7 +411,8 @@ type MusicTrackListPaginated {
 
 type Mutation {
   addTrackToPlaylist(input: AddTrackToPlaylistInput!, playlistId: Base64ID!): CleanArchPlaylistTrack!
-  addTrackToQueue(trackId: ID!): QueueItem!
+  addTrackToQueue(trackId: Base64ID!): QueueItem!
+  addTracksToQueue(trackIds: [Base64ID!]!): [QueueItem!]!
   authenticateSpotify(code: String!, codeVerifier: String!, userId: String!): SpotifyAuthResult!
   authenticateTidal(code: String!, codeVerifier: String!, userId: String!): TidalAuthResult!
   authenticateYouTube(code: String!, userId: String!): YouTubeAuthResult!
@@ -431,7 +432,8 @@ type Mutation {
   playTrack(startTime: Float! = 0, trackId: String!): PlaybackState!
   recordPlayback(duration: Float!, trackId: ID!): MusicTrack!
   removeTrackFromPlaylist(playlistId: Base64ID!, trackId: Base64ID!): Boolean!
-  removeTrackFromQueue(trackId: ID!): RemoveTrackFromQueueResponse!
+  removeTrackFromQueue(trackId: Base64ID!): RemoveTrackFromQueueResponse!
+  resetQueue: Boolean!
   resumeTrack(trackId: String!): PlaybackState!
   scheduleLibraryScan(libraryId: ID!): LibraryScanResult!
   seekTrack(timeInSeconds: Float!, trackId: String!): PlaybackState!
@@ -547,7 +549,6 @@ type Query {
   node(id: Base64ID!): Node
   playlistRecommendations(excludeTrackIds: [String!], limit: Int, playlistId: Base64ID!): [TrackRecommendation!]!
   preferences: UserPreferencesGraphQL!
-  queue: [QueueItem!]!
   queueStats: String!
   randomTrack(filterLiked: Boolean, id: String): SimpleMusicTrack!
   randomTrackWithStats: RandomTrackWithStats!
@@ -561,10 +562,10 @@ type Query {
 
 type QueueItem {
   createdAt: DateTime!
-  id: ID!
+  id: Base64ID!
   position: Int!
-  track: SimpleMusicTrack
-  trackId: ID!
+  track: Track
+  trackId: Base64ID!
   updatedAt: DateTime!
 }
 
@@ -601,10 +602,10 @@ type RecentActivity {
 }
 
 type RemoveTrackFromQueueResponse {
-  artist: String!
+  artist: String
   success: Boolean!
-  title: String!
-  trackId: ID!
+  title: String
+  trackId: Base64ID!
 }
 
 input SavedFilterInput {
@@ -845,7 +846,7 @@ input UpdatePreferencesInput {
 
 input UpdateQueuePositionInput {
   position: Int!
-  trackId: ID!
+  trackId: Base64ID!
 }
 
 input UpdateQueuePositionsInput {
@@ -860,6 +861,7 @@ type User implements Node {
   id: Base64ID!
   lastName: String
   playlists: PlaylistsResult!
+  queue: [QueueItem!]!
   staticFilterOptions: StaticFilterOptions!
 }
 

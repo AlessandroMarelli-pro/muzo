@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
 import {
+  AddTracksToQueueUseCase,
   AddTrackToPlaylistUseCase,
+  AddTrackToQueueUseCase,
   CreatePlaylistUseCase,
   CreateSavedFilterUseCase,
   DeletePlaylistUseCase,
@@ -16,11 +18,15 @@ import {
   GetPlaylistTracksUseCase,
   GetPlaylistTracksWithDetailUseCase,
   GetPlaylistUseCase,
+  GetQueueUseCase,
   GetSavedFilterUseCase,
   GetStaticFilterOptionsUseCase,
   RemoveTrackFromPlaylistUseCase,
+  RemoveTrackFromQueueUseCase,
+  ResetQueueUseCase,
   UpdatePlaylistTracksPositionsUseCase,
   UpdatePlaylistUseCase,
+  UpdateQueuePositionsUseCase,
   UpdateSavedFilterUseCase,
 } from './';
 import { UpdatePlaylistSortingUseCase } from './playlist-sorting/UpdatePlaylistSorting';
@@ -49,6 +55,12 @@ const useCasesProviders = [
   DeleteSavedFilterUseCase,
   UpdateSavedFilterUseCase,
   GetCurrentFilterUseCase,
+  GetQueueUseCase,
+  AddTrackToQueueUseCase,
+  AddTracksToQueueUseCase,
+  RemoveTrackFromQueueUseCase,
+  ResetQueueUseCase,
+  UpdateQueuePositionsUseCase,
 ];
 @Module({
   imports: [],

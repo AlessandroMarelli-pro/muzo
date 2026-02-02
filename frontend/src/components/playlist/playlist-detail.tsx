@@ -36,6 +36,7 @@ import {
 import { formatDuration } from '@/lib/utils';
 import { Route } from '@/routes/playlists.$playlistId';
 import {
+	useAddTracksToQueue,
 	useAddTrackToQueue,
 	useQueue,
 	useRemoveTrackFromQueue,
@@ -115,6 +116,7 @@ export function PlaylistDetail({ id, onBack }: PlaylistDetailProps) {
 	const actions = useAudioPlayerActions();
 	const { data: currentQueue = [] } = useQueue();
 	const addTrackToQueue = useAddTrackToQueue();
+	const addTracksToQueue = useAddTracksToQueue();
 	const removeTrackFromQueue = useRemoveTrackFromQueue();
 	const [activeTab, setActiveTab] = useState('tracks');
 	const [isDeleting, setIsDeleting] = useState(false);
@@ -191,23 +193,11 @@ export function PlaylistDetail({ id, onBack }: PlaylistDetailProps) {
 			await Promise.all(removePromises);
 
 			// Add all playlist tracks to queue (ignore errors for duplicates)
-			const addPromises = playlist.tracks
+			const trackIds = playlist.tracks
 				.filter((pt) => pt.track?.id)
-				.map((pt) =>
-					addTrackToQueue.mutateAsync(pt.track!.id).catch((err) => {
-						// Ignore "already in queue" errors
-						if (
-							err?.message?.includes('already in the queue') ||
-							err?.response?.errors?.[0]?.message?.includes(
-								'already in the queue'
-							)
-						) {
-							return;
-						}
-						console.warn(`Failed to add track ${pt.track!.id} to queue:`, err);
-					})
-				);
-			await Promise.all(addPromises);
+				.map((pt) => pt.track!.id);
+
+			addTracksToQueue.mutateAsync(trackIds);
 
 			// Optionally start playing the first track
 			if (playlist.tracks[0]?.track) {

@@ -3,6 +3,7 @@ import { Field, ObjectType } from '@nestjs/graphql';
 import { Base64ID } from '../scalars/base64-id.scalar';
 import { Node } from './common.schema';
 import { CleanArchPlaylist } from './playlist.schema';
+import { CleanArchQueueItem } from './queue-item.schema';
 import { StaticFilterOptions } from './saved-filter.schema';
 
 @ObjectType()
@@ -30,4 +31,7 @@ export class User {
 
   @Field(() => StaticFilterOptions)
   staticFilterOptions: StaticFilterOptions;
+
+  @Field(() => [CleanArchQueueItem])
+  queue: CleanArchQueueItem[];
 }

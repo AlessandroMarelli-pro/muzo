@@ -8,6 +8,7 @@ import type {
   MusicTrack,
   MusicTrackStats,
 } from 'src/clean-arch/kernel/types/model-types';
+
 import type {
   Track,
   TrackAIMetadata,
@@ -110,5 +111,5 @@ export function toTrack(domain: MusicTrack): Track {
 
 /** Batch variant for list endpoints */
 export function toTracks(domains: MusicTrack[]): Track[] {
-  return domains.map((d, i) => toTrack(d));
+  return domains.map((d) => toTrack(d));
 }

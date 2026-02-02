@@ -1,7 +1,10 @@
 // user.resolver.ts
 import { UseGuards } from '@nestjs/common';
 import { Query, ResolveField, Resolver } from '@nestjs/graphql';
-import { GetPlaylistsUseCase } from 'src/clean-arch/application/use-cases';
+import {
+  GetPlaylistsUseCase,
+  GetQueueUseCase,
+} from 'src/clean-arch/application/use-cases';
 import {
   GetCurrentFilterUseCase,
   GetStaticFilterOptionsUseCase,
@@ -10,6 +13,9 @@ import { GetActiveFiltersUseCase } from 'src/clean-arch/application/use-cases/sa
 import { user } from 'src/clean-arch/kernel/types/context';
 import { AuthGuard } from '../context/auth.guard';
 import { toFilter } from '../mappers/saved-filter.mapper';
+
+import { toTrack } from '../mappers/track.mapper';
+import { CleanArchQueueItem } from '../schema/queue-item.schema';
 import {
   FilterCriteriaResult,
   StaticFilterOptions,
@@ -21,6 +27,7 @@ import { PlaylistsResult, User } from '../schema/user.schema';
 export class UserResolver {
   constructor(
     private readonly getPlaylistsUseCase: GetPlaylistsUseCase,
+    private readonly getQueueUseCase: GetQueueUseCase,
     private readonly getStaticFilterOptionsUseCase: GetStaticFilterOptionsUseCase,
     private readonly getActiveFiltersUseCase: GetActiveFiltersUseCase,
     private readonly getCurrentFilterUseCase: GetCurrentFilterUseCase,
@@ -35,6 +42,19 @@ export class UserResolver {
   async playlists(): Promise<PlaylistsResult> {
     const items = await this.getPlaylistsUseCase.execute();
     return { items };
+  }
+
+  @ResolveField(() => [CleanArchQueueItem])
+  async queue(): Promise<CleanArchQueueItem[]> {
+    const items = await this.getQueueUseCase.execute();
+    return items.map((item) => ({
+      id: item.id,
+      trackId: item.trackId,
+      position: item.position,
+      track: item.track ? toTrack(item.track) : null,
+      createdAt: item.createdAt,
+      updatedAt: item.updatedAt,
+    }));
   }
 
   @ResolveField(() => StaticFilterOptions)

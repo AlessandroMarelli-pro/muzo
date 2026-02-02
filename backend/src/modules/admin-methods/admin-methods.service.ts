@@ -174,6 +174,7 @@ export class AdminMethodsService {
       'genre',
       'trackGenre',
       'trackSubgenre',
+      'queue',
     ];
     for (const table of tables) {
       await this.prisma[table].updateMany({

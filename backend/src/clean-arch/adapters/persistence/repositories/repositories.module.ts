@@ -6,6 +6,7 @@ import { MUSIC_TRACK_REPOSITORY } from 'src/clean-arch/application/ports/reposit
 import { PLAYLIST_REPOSITORY } from 'src/clean-arch/application/ports/repositories/IPlaylistRepository';
 import { PLAYLIST_SORTING_REPOSITORY } from 'src/clean-arch/application/ports/repositories/IPlaylistSortingRepository';
 import { PLAYLIST_TRACK_REPOSITORY } from 'src/clean-arch/application/ports/repositories/IPlaylistTrackRepository';
+import { QUEUE_REPOSITORY } from 'src/clean-arch/application/ports/repositories/IQueueRepository';
 import { SAVED_FILTER_REPOSITORY } from 'src/clean-arch/application/ports/repositories/ISavedFilterRepository';
 import { PrismaService } from '../../../infrastructure/database/prisma.service';
 import { PlaylistStatsQuery } from '../queries/playlist/playlist-stats.query';
@@ -14,6 +15,7 @@ import { MusicTrackRepository } from './music-track/music-track.repository';
 import { PlaylistSortingRepository } from './playlist-sorting/playlist-sorting.repository';
 import { PlaylistTrackRepository } from './playlist-track/playlist-track.repository';
 import { PlaylistRepository } from './playlist/playlist.repository';
+import { QueueRepository } from './queue/queue.repository';
 import { SavedFilterRepository } from './saved-filter/saved-filter.repository';
 
 @Global()
@@ -28,6 +30,7 @@ import { SavedFilterRepository } from './saved-filter/saved-filter.repository';
       useClass: PlaylistSortingRepository,
     },
     { provide: MUSIC_TRACK_REPOSITORY, useClass: MusicTrackRepository },
+    { provide: QUEUE_REPOSITORY, useClass: QueueRepository },
     { provide: SAVED_FILTER_QUERY, useClass: SavedFilterQuery },
     { provide: SAVED_FILTER_REPOSITORY, useClass: SavedFilterRepository },
   ],
@@ -37,6 +40,7 @@ import { SavedFilterRepository } from './saved-filter/saved-filter.repository';
     PLAYLIST_STATS_QUERY,
     PLAYLIST_SORTING_REPOSITORY,
     MUSIC_TRACK_REPOSITORY,
+    QUEUE_REPOSITORY,
     SAVED_FILTER_QUERY,
     SAVED_FILTER_REPOSITORY,
   ],

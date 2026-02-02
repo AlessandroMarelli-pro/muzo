@@ -5,6 +5,7 @@ import {
   PlaylistId,
   PlaylistSortingId,
   PlaylistTrackId,
+  QueueItemId,
   SavedFilterId,
   SubgenreId,
   UserId,
@@ -18,6 +19,7 @@ import {
   Playlist,
   PlaylistSorting,
   PlaylistTrack,
+  QueueItem,
   SavedFilter,
   Subgenre,
   User,
@@ -46,4 +48,5 @@ export const models = {
   library: modelFactory<MusicLibrary, MusicLibraryId>(
     modelIdFactory('MusicLibrary'),
   ),
+  queueItem: modelFactory<QueueItem, QueueItemId>(modelIdFactory('QueueItem')),
 };

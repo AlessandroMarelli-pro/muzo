@@ -8,6 +8,7 @@ import type {
   PlaylistId,
   PlaylistSortingId,
   PlaylistTrackId,
+  QueueItemId,
   SavedFilterId,
   SubgenreId,
   TrackGenreId,
@@ -228,4 +229,9 @@ export type FilterCriteria = {
   title: Maybe<string>;
   libraryIds: Maybe<MusicLibraryId[]>;
   atmosphereIds: Maybe<string[]>;
+};
+
+export type QueueItem = Readonly<ModelBase<QueueItemId>> & {
+  trackId: MusicTrackId;
+  position: number;
 };
