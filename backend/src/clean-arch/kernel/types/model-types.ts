@@ -209,12 +209,13 @@ export type Subgenre = Readonly<ModelBase<SubgenreId>> & {
 export type SavedFilter = Readonly<ModelBase<SavedFilterId>> & {
   name: string;
   criteria: FilterCriteria;
+  isCurrent: boolean;
 };
 
 export type FilterCriteria = {
   genreIds: Maybe<GenreId[]>;
   subgenreIds: Maybe<SubgenreId[]>;
-  keys: Maybe<string[]>;
+  keyIds: Maybe<string[]>;
   tempo: Maybe<{ min?: number; max?: number }>;
   valenceMood: Maybe<string[]>;
   arousalMood: Maybe<string[]>;
@@ -226,5 +227,5 @@ export type FilterCriteria = {
   artist: Maybe<string>;
   title: Maybe<string>;
   libraryIds: Maybe<MusicLibraryId[]>;
-  atmospheres: Maybe<string[]>;
+  atmosphereIds: Maybe<string[]>;
 };

@@ -108,3 +108,42 @@ export const playlistFragment = gql`
 		}
 	}
 `;
+
+export const filterFragment = gql`
+	fragment FilterFragment on FilterCriteriaResult {
+		id
+		name
+		criteria {
+			valenceMood
+			arousalMood
+			danceabilityFeeling
+			genreIds
+			keyIds
+			subgenreIds
+			tempo {
+				max
+				min
+			}
+			speechiness {
+				max
+				min
+			}
+			instrumentalness {
+				max
+				min
+			}
+			liveness {
+				max
+				min
+			}
+			acousticness {
+				max
+				min
+			}
+			artist
+			title
+			libraryIds
+			atmosphereIds
+		}
+	}
+`;

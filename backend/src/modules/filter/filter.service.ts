@@ -106,38 +106,6 @@ export class FilterService {
     };
   }
 
-  async findAllSavedFilters(): Promise<SavedFilter[]> {
-    const filters = await this.prisma.savedFilter.findMany({
-      orderBy: { createdAt: 'desc' },
-    });
-
-    return filters.map((filter) => ({
-      id: filter.id,
-      name: filter.name,
-      criteria: JSON.parse(filter.criteria),
-      createdAt: filter.createdAt,
-      updatedAt: filter.updatedAt,
-    }));
-  }
-
-  async findOneSavedFilter(id: string): Promise<SavedFilter> {
-    const filter = await this.prisma.savedFilter.findUnique({
-      where: { id },
-    });
-
-    if (!filter) {
-      throw new NotFoundException(`Saved filter with ID ${id} not found`);
-    }
-
-    return {
-      id: filter.id,
-      name: filter.name,
-      criteria: JSON.parse(filter.criteria),
-      createdAt: filter.createdAt,
-      updatedAt: filter.updatedAt,
-    };
-  }
-
   async updateSavedFilter(
     id: string,
     dto: UpdateFilterDto,

@@ -2,10 +2,18 @@
 import { UseGuards } from '@nestjs/common';
 import { Query, ResolveField, Resolver } from '@nestjs/graphql';
 import { GetPlaylistsUseCase } from 'src/clean-arch/application/use-cases';
-import { GetStaticFilterOptionsUseCase } from 'src/clean-arch/application/use-cases/saved-filter';
+import {
+  GetCurrentFilterUseCase,
+  GetStaticFilterOptionsUseCase,
+} from 'src/clean-arch/application/use-cases/saved-filter';
+import { GetActiveFiltersUseCase } from 'src/clean-arch/application/use-cases/saved-filter/GetActiveFilters';
 import { user } from 'src/clean-arch/kernel/types/context';
 import { AuthGuard } from '../context/auth.guard';
-import { StaticFilterOptions } from '../schema/saved-filter.schema';
+import { toFilter } from '../mappers/saved-filter.mapper';
+import {
+  FilterCriteriaResult,
+  StaticFilterOptions,
+} from '../schema/saved-filter.schema';
 import { PlaylistsResult, User } from '../schema/user.schema';
 
 @Resolver(() => User)
@@ -14,6 +22,8 @@ export class UserResolver {
   constructor(
     private readonly getPlaylistsUseCase: GetPlaylistsUseCase,
     private readonly getStaticFilterOptionsUseCase: GetStaticFilterOptionsUseCase,
+    private readonly getActiveFiltersUseCase: GetActiveFiltersUseCase,
+    private readonly getCurrentFilterUseCase: GetCurrentFilterUseCase,
   ) {}
 
   @Query(() => User)
@@ -30,5 +40,17 @@ export class UserResolver {
   @ResolveField(() => StaticFilterOptions)
   async staticFilterOptions(): Promise<StaticFilterOptions> {
     return this.getStaticFilterOptionsUseCase.execute();
+  }
+
+  @ResolveField(() => [FilterCriteriaResult])
+  async activeFilters(): Promise<FilterCriteriaResult[]> {
+    return this.getActiveFiltersUseCase
+      .execute()
+      .then((filters) => filters.map(toFilter));
+  }
+
+  @ResolveField(() => FilterCriteriaResult, { nullable: true })
+  async currentFilter(): Promise<FilterCriteriaResult> {
+    return this.getCurrentFilterUseCase.execute().then(toFilter);
   }
 }

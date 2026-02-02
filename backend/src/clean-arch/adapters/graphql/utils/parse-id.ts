@@ -4,6 +4,7 @@ import type {
   MusicTrackId,
   PlaylistId,
   PlaylistTrackId,
+  SavedFilterId,
   UserId,
 } from 'src/clean-arch/kernel/ids';
 import { models } from 'src/clean-arch/kernel/types/models';
@@ -30,3 +31,6 @@ export const parseMusicTrackId = (value: string): MusicTrackId =>
 
 export const parsePlaylistTrackId = (value: string): PlaylistTrackId =>
   parseId(value, models.playlistTrack.isId, 'PlaylistTrack');
+
+export const parseSavedFilterId = (value: string): SavedFilterId =>
+  parseId(value, models.savedFilter.isId, 'SavedFilter');

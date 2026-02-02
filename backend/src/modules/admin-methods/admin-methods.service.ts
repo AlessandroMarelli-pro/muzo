@@ -169,6 +169,11 @@ export class AdminMethodsService {
       'playlist',
       'playlistTrack',
       'playlistSorting',
+      'savedFilter',
+      'subgenre',
+      'genre',
+      'trackGenre',
+      'trackSubgenre',
     ];
     for (const table of tables) {
       await this.prisma[table].updateMany({

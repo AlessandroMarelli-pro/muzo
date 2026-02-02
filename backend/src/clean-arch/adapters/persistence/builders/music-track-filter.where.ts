@@ -53,7 +53,7 @@ export const buildMusicTrackFilterWhereClause = async (
   if (
     criteria.artist ||
     criteria.title ||
-    criteria.keys ||
+    criteria.keyIds ||
     criteria.tempo?.min !== 0 ||
     criteria.tempo?.max !== 200 ||
     criteria.valenceMood ||
@@ -84,8 +84,8 @@ export const buildMusicTrackFilterWhereClause = async (
       ];
     }
 
-    if (criteria.keys && criteria.keys.length > 0) {
-      fingerprintWhere.key = { in: criteria.keys };
+    if (criteria.keyIds && criteria.keyIds.length > 0) {
+      fingerprintWhere.key = { in: criteria.keyIds };
     }
 
     if (criteria.valenceMood && criteria.valenceMood?.length > 0) {
@@ -176,8 +176,8 @@ export const buildMusicTrackFilterWhereClause = async (
       };
     }
 
-    if (criteria.atmospheres && criteria.atmospheres.length > 0) {
-      where.atmosphereDesc = { contains: criteria.atmospheres.join(',') };
+    if (criteria.atmosphereIds && criteria.atmosphereIds.length > 0) {
+      where.atmosphereDesc = { contains: criteria.atmosphereIds.join(',') };
     }
     if (Object.keys(fingerprintWhere).length > 0) {
       where.audioFingerprint = fingerprintWhere;

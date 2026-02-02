@@ -57,12 +57,11 @@ export class CreatePlaylistUseCase {
         (filters.tempo &&
           (filters.tempo.min !== undefined || filters.tempo.max !== undefined)))
     ) {
-      // Build filter criteria for FilterService
       const filterCriteria: FilterCriteria = {
         genreIds: filters.genreIds,
         subgenreIds: filters.subgenreIds,
-        keys: [],
-        atmospheres: filters.atmospheres,
+        keyIds: [],
+        atmosphereIds: filters.atmospheres,
         libraryIds: filters.libraryIds,
         tempo: filters.tempo,
         valenceMood: [],

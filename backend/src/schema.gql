@@ -163,11 +163,6 @@ input CreatePlaylistInput {
   subgenreSelectionMode: String
 }
 
-input CreateSavedFilterInput {
-  criteria: FilterCriteriaInput!
-  name: String!
-}
-
 """
 A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
 """
@@ -201,44 +196,42 @@ input FilterCriteriaInput {
   acousticness: RangeInput
   arousalMood: [String!]
   artist: String
-  atmospheres: [String!]
+  atmosphereIds: [String!]
   danceabilityFeeling: [String!]
-  genres: [String!]
+  genreIds: [Base64ID!]
   instrumentalness: RangeInput
-  keys: [String!]
-  libraryId: [String!]
+  keyIds: [String!]
+  libraryIds: [Base64ID!]
   liveness: RangeInput
   speechiness: RangeInput
-  subgenres: [String!]
+  subgenreIds: [Base64ID!]
   tempo: RangeInput
   title: String
   valenceMood: [String!]
+}
+
+type FilterCriteriaResult {
+  criteria: FilterCriteriaType!
+  id: Base64ID!
+  name: String!
 }
 
 type FilterCriteriaType {
   acousticness: Range
   arousalMood: [String!]
   artist: String
-  atmospheres: [String!]
+  atmosphereIds: [String!]
   danceabilityFeeling: [String!]
-  genres: [String!]
+  genreIds: [Base64ID!]
   instrumentalness: Range
-  keys: [String!]
-  libraryId: [String!]
+  keyIds: [String!]
+  libraryIds: [Base64ID!]
   liveness: Range
   speechiness: Range
-  subgenres: [String!]
+  subgenreIds: [Base64ID!]
   tempo: Range
   title: String
   valenceMood: [String!]
-}
-
-type FilterOptions {
-  acousticnessRange: Range!
-  instrumentalnessRange: Range!
-  livenessRange: Range!
-  speechinessRange: Range!
-  tempoRange: Range!
 }
 
 type FilterWithID {
@@ -424,14 +417,13 @@ type Mutation {
   authenticateYouTube(code: String!, userId: String!): YouTubeAuthResult!
   bangerTrack(trackId: ID!): SimpleMusicTrack!
   caUpdatePlaylist(id: Base64ID!, input: CleanArchUpdatePlaylistInput!): CleanArchPlaylist!
-  clearCurrentFilter: Boolean!
   createLibrary(input: CreateLibraryInput!): MusicLibrary!
   createPlaylist(input: CreatePlaylistInput!): CleanArchPlaylist!
-  createSavedFilter(input: CreateSavedFilterInput!): SavedFilter!
+  createSavedFilter(input: SavedFilterInput!): FilterCriteriaResult!
   deleteImageForTrack(trackId: ID!): DeleteImageResponse!
   deleteLibrary(id: ID!): Boolean!
   deletePlaylist(id: Base64ID!): Boolean!
-  deleteSavedFilter(id: ID!): Boolean!
+  deleteSavedFilter(id: Base64ID!): Boolean!
   dislikeTrack(trackId: ID!): Boolean!
   exportPlaylistToM3U(playlistId: Base64ID!): String!
   likeTrack(trackId: ID!): SimpleMusicTrack!
@@ -443,7 +435,6 @@ type Mutation {
   resumeTrack(trackId: String!): PlaybackState!
   scheduleLibraryScan(libraryId: ID!): LibraryScanResult!
   seekTrack(timeInSeconds: Float!, trackId: String!): PlaybackState!
-  setCurrentFilter(criteria: FilterCriteriaInput!): FilterCriteriaType!
   setPlaybackRate(rate: Float!, trackId: String!): PlaybackState!
   setVolume(trackId: String!, volume: Float!): PlaybackState!
   startLibraryScan(incremental: Boolean, libraryId: ID!): LibraryScanResult!
@@ -458,7 +449,7 @@ type Mutation {
   updatePlaylistTracksPositions(input: UpdatePlaylistPositionsInput!, playlistId: Base64ID!): Boolean!
   updatePreferences(input: UpdatePreferencesInput!): UserPreferencesGraphQL!
   updateQueuePositions(input: UpdateQueuePositionsInput!): [QueueItem!]!
-  updateSavedFilter(id: ID!, input: UpdateSavedFilterInput!): SavedFilter!
+  updateSavedFilter(id: Base64ID!, input: SavedFilterInput!): FilterCriteriaResult!
 }
 
 interface Node {
@@ -533,18 +524,14 @@ type Query {
   getAudioInfo(trackId: String!): AudioInfo!
   getAudioStreamUrl(trackId: String!): String!
   getBeatData(trackId: String!): [BeatData!]!
-  getCurrentFilter: FilterCriteriaType
   getDetailedWaveformData(trackId: String!): WaveformData!
   getEnergyData(trackId: String!): [EnergyData!]!
-  getFilterOptions: FilterOptions!
   getImageForTrack(trackId: ID!): ImageSearchResultType
   getImageSearchStatus(searchId: ID!): ImageSearchResultType
   getImageSearchesForTrack(trackId: ID!): [ImageSearchResultType!]!
   getImageUrl(trackId: ID!): ImageUrlResponse!
   getPlaybackState(trackId: String!): PlaybackState
   getRealTimeAnalysis(currentTime: Float!, trackId: String!): RealTimeAnalysis!
-  getSavedFilter(id: ID!): SavedFilter
-  getSavedFilters: [SavedFilter!]!
   getSpotifyAuthUrl: SpotifyAuthUrl!
   getTidalAuthUrl: TidalAuthUrl!
   getWaveformData(trackId: String!): [Float!]!
@@ -620,12 +607,10 @@ type RemoveTrackFromQueueResponse {
   trackId: ID!
 }
 
-type SavedFilter {
-  createdAt: DateTime!
-  criteria: FilterCriteriaType!
-  id: ID!
+input SavedFilterInput {
+  criteria: FilterCriteriaInput!
+  isCurrent: Boolean
   name: String!
-  updatedAt: DateTime!
 }
 
 type SimpleMusicTrack {
@@ -867,12 +852,9 @@ input UpdateQueuePositionsInput {
   positions: [UpdateQueuePositionInput!]!
 }
 
-input UpdateSavedFilterInput {
-  criteria: FilterCriteriaInput
-  name: String
-}
-
 type User implements Node {
+  activeFilters: [FilterCriteriaResult!]!
+  currentFilter: FilterCriteriaResult
   email: String
   firstName: String
   id: Base64ID!

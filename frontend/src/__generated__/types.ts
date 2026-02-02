@@ -189,11 +189,6 @@ export type CreatePlaylistInput = {
   subgenreSelectionMode?: InputMaybe<Scalars['String']['input']>;
 };
 
-export type CreateSavedFilterInput = {
-  criteria: FilterCriteriaInput;
-  name: Scalars['String']['input'];
-};
-
 export type DeleteImageResponse = {
   __typename?: 'DeleteImageResponse';
   success: Scalars['Boolean']['output'];
@@ -225,18 +220,25 @@ export type FilterCriteriaInput = {
   acousticness?: InputMaybe<RangeInput>;
   arousalMood?: InputMaybe<Array<Scalars['String']['input']>>;
   artist?: InputMaybe<Scalars['String']['input']>;
-  atmospheres?: InputMaybe<Array<Scalars['String']['input']>>;
+  atmosphereIds?: InputMaybe<Array<Scalars['String']['input']>>;
   danceabilityFeeling?: InputMaybe<Array<Scalars['String']['input']>>;
-  genres?: InputMaybe<Array<Scalars['String']['input']>>;
+  genreIds?: InputMaybe<Array<Scalars['Base64ID']['input']>>;
   instrumentalness?: InputMaybe<RangeInput>;
-  keys?: InputMaybe<Array<Scalars['String']['input']>>;
-  libraryId?: InputMaybe<Array<Scalars['String']['input']>>;
+  keyIds?: InputMaybe<Array<Scalars['String']['input']>>;
+  libraryIds?: InputMaybe<Array<Scalars['Base64ID']['input']>>;
   liveness?: InputMaybe<RangeInput>;
   speechiness?: InputMaybe<RangeInput>;
-  subgenres?: InputMaybe<Array<Scalars['String']['input']>>;
+  subgenreIds?: InputMaybe<Array<Scalars['Base64ID']['input']>>;
   tempo?: InputMaybe<RangeInput>;
   title?: InputMaybe<Scalars['String']['input']>;
   valenceMood?: InputMaybe<Array<Scalars['String']['input']>>;
+};
+
+export type FilterCriteriaResult = {
+  __typename?: 'FilterCriteriaResult';
+  criteria: FilterCriteriaType;
+  id: Scalars['Base64ID']['output'];
+  name: Scalars['String']['output'];
 };
 
 export type FilterCriteriaType = {
@@ -244,15 +246,15 @@ export type FilterCriteriaType = {
   acousticness?: Maybe<Range>;
   arousalMood?: Maybe<Array<Scalars['String']['output']>>;
   artist?: Maybe<Scalars['String']['output']>;
-  atmospheres?: Maybe<Array<Scalars['String']['output']>>;
+  atmosphereIds?: Maybe<Array<Scalars['String']['output']>>;
   danceabilityFeeling?: Maybe<Array<Scalars['String']['output']>>;
-  genres?: Maybe<Array<Scalars['String']['output']>>;
+  genreIds?: Maybe<Array<Scalars['Base64ID']['output']>>;
   instrumentalness?: Maybe<Range>;
-  keys?: Maybe<Array<Scalars['String']['output']>>;
-  libraryId?: Maybe<Array<Scalars['String']['output']>>;
+  keyIds?: Maybe<Array<Scalars['String']['output']>>;
+  libraryIds?: Maybe<Array<Scalars['Base64ID']['output']>>;
   liveness?: Maybe<Range>;
   speechiness?: Maybe<Range>;
-  subgenres?: Maybe<Array<Scalars['String']['output']>>;
+  subgenreIds?: Maybe<Array<Scalars['Base64ID']['output']>>;
   tempo?: Maybe<Range>;
   title?: Maybe<Scalars['String']['output']>;
   valenceMood?: Maybe<Array<Scalars['String']['output']>>;
@@ -466,10 +468,9 @@ export type Mutation = {
   authenticateYouTube: YouTubeAuthResult;
   bangerTrack: SimpleMusicTrack;
   caUpdatePlaylist: CleanArchPlaylist;
-  clearCurrentFilter: Scalars['Boolean']['output'];
   createLibrary: MusicLibrary;
   createPlaylist: CleanArchPlaylist;
-  createSavedFilter: SavedFilter;
+  createSavedFilter: FilterCriteriaResult;
   deleteImageForTrack: DeleteImageResponse;
   deleteLibrary: Scalars['Boolean']['output'];
   deletePlaylist: Scalars['Boolean']['output'];
@@ -485,7 +486,6 @@ export type Mutation = {
   resumeTrack: PlaybackState;
   scheduleLibraryScan: LibraryScanResult;
   seekTrack: PlaybackState;
-  setCurrentFilter: FilterCriteriaType;
   setPlaybackRate: PlaybackState;
   setVolume: PlaybackState;
   startLibraryScan: LibraryScanResult;
@@ -500,7 +500,7 @@ export type Mutation = {
   updatePlaylistTracksPositions: Scalars['Boolean']['output'];
   updatePreferences: UserPreferencesGraphQl;
   updateQueuePositions: Array<QueueItem>;
-  updateSavedFilter: SavedFilter;
+  updateSavedFilter: FilterCriteriaResult;
 };
 
 
@@ -557,7 +557,7 @@ export type MutationCreatePlaylistArgs = {
 
 
 export type MutationCreateSavedFilterArgs = {
-  input: CreateSavedFilterInput;
+  input: SavedFilterInput;
 };
 
 
@@ -577,7 +577,7 @@ export type MutationDeletePlaylistArgs = {
 
 
 export type MutationDeleteSavedFilterArgs = {
-  id: Scalars['ID']['input'];
+  id: Scalars['Base64ID']['input'];
 };
 
 
@@ -637,11 +637,6 @@ export type MutationScheduleLibraryScanArgs = {
 export type MutationSeekTrackArgs = {
   timeInSeconds: Scalars['Float']['input'];
   trackId: Scalars['String']['input'];
-};
-
-
-export type MutationSetCurrentFilterArgs = {
-  criteria: FilterCriteriaInput;
 };
 
 
@@ -725,8 +720,8 @@ export type MutationUpdateQueuePositionsArgs = {
 
 
 export type MutationUpdateSavedFilterArgs = {
-  id: Scalars['ID']['input'];
-  input: UpdateSavedFilterInput;
+  id: Scalars['Base64ID']['input'];
+  input: SavedFilterInput;
 };
 
 export type Node = {
@@ -771,9 +766,9 @@ export type PlaybackState = {
 
 export type PlaylistFilterInput = {
   atmospheres?: InputMaybe<Array<Scalars['String']['input']>>;
-  genreIds?: InputMaybe<Array<Scalars['String']['input']>>;
-  libraryIds?: InputMaybe<Array<Scalars['String']['input']>>;
-  subgenreIds?: InputMaybe<Array<Scalars['String']['input']>>;
+  genreIds?: InputMaybe<Array<Scalars['Base64ID']['input']>>;
+  libraryIds?: InputMaybe<Array<Scalars['Base64ID']['input']>>;
+  subgenreIds?: InputMaybe<Array<Scalars['Base64ID']['input']>>;
   tempo?: InputMaybe<RangeInput>;
 };
 
@@ -808,7 +803,6 @@ export type Query = {
   getAudioInfo: AudioInfo;
   getAudioStreamUrl: Scalars['String']['output'];
   getBeatData: Array<BeatData>;
-  getCurrentFilter?: Maybe<FilterCriteriaType>;
   getDetailedWaveformData: WaveformData;
   getEnergyData: Array<EnergyData>;
   getFilterOptions: FilterOptions;
@@ -818,8 +812,6 @@ export type Query = {
   getImageUrl: ImageUrlResponse;
   getPlaybackState?: Maybe<PlaybackState>;
   getRealTimeAnalysis: RealTimeAnalysis;
-  getSavedFilter?: Maybe<SavedFilter>;
-  getSavedFilters: Array<SavedFilter>;
   getSpotifyAuthUrl: SpotifyAuthUrl;
   getTidalAuthUrl: TidalAuthUrl;
   getWaveformData: Array<Scalars['Float']['output']>;
@@ -903,11 +895,6 @@ export type QueryGetPlaybackStateArgs = {
 export type QueryGetRealTimeAnalysisArgs = {
   currentTime: Scalars['Float']['input'];
   trackId: Scalars['String']['input'];
-};
-
-
-export type QueryGetSavedFilterArgs = {
-  id: Scalars['ID']['input'];
 };
 
 
@@ -1029,13 +1016,9 @@ export type RemoveTrackFromQueueResponse = {
   trackId: Scalars['ID']['output'];
 };
 
-export type SavedFilter = {
-  __typename?: 'SavedFilter';
-  createdAt: Scalars['DateTime']['output'];
-  criteria: FilterCriteriaType;
-  id: Scalars['ID']['output'];
-  name: Scalars['String']['output'];
-  updatedAt: Scalars['DateTime']['output'];
+export type SavedFilterInput = {
+  criteria: FilterCriteriaInput;
+  name: Scalars['String']['input'];
 };
 
 export type SimpleMusicTrack = {
@@ -1296,13 +1279,9 @@ export type UpdateQueuePositionsInput = {
   positions: Array<UpdateQueuePositionInput>;
 };
 
-export type UpdateSavedFilterInput = {
-  criteria?: InputMaybe<FilterCriteriaInput>;
-  name?: InputMaybe<Scalars['String']['input']>;
-};
-
 export type User = Node & {
   __typename?: 'User';
+  activeFilters: Array<FilterCriteriaResult>;
   email?: Maybe<Scalars['String']['output']>;
   firstName?: Maybe<Scalars['String']['output']>;
   id: Scalars['Base64ID']['output'];
@@ -1347,6 +1326,25 @@ export type YouTubeAuthResult = {
 export type YouTubeAuthUrl = {
   __typename?: 'YouTubeAuthUrl';
   authUrl: Scalars['String']['output'];
+};
+
+export type _OldFilterCriteriaType = {
+  __typename?: '_OldFilterCriteriaType';
+  acousticness?: Maybe<Range>;
+  arousalMood?: Maybe<Array<Scalars['String']['output']>>;
+  artist?: Maybe<Scalars['String']['output']>;
+  atmospheres?: Maybe<Array<Scalars['String']['output']>>;
+  danceabilityFeeling?: Maybe<Array<Scalars['String']['output']>>;
+  genres?: Maybe<Array<Scalars['String']['output']>>;
+  instrumentalness?: Maybe<Range>;
+  keys?: Maybe<Array<Scalars['String']['output']>>;
+  libraryId?: Maybe<Array<Scalars['String']['output']>>;
+  liveness?: Maybe<Range>;
+  speechiness?: Maybe<Range>;
+  subgenres?: Maybe<Array<Scalars['String']['output']>>;
+  tempo?: Maybe<Range>;
+  title?: Maybe<Scalars['String']['output']>;
+  valenceMood?: Maybe<Array<Scalars['String']['output']>>;
 };
 
 export type GetLibrariesQueryVariables = Exact<{ [key: string]: never; }>;
@@ -1439,54 +1437,37 @@ export type DislikeTrackMutation = { __typename?: 'Mutation', dislikeTrack: bool
 export type GetCurrentFilterQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type GetCurrentFilterQuery = { __typename?: 'Query', getCurrentFilter?: { __typename?: 'FilterCriteriaType', valenceMood?: Array<string> | null, arousalMood?: Array<string> | null, danceabilityFeeling?: Array<string> | null, genres?: Array<string> | null, keys?: Array<string> | null, subgenres?: Array<string> | null, artist?: string | null, title?: string | null, libraryId?: Array<string> | null, atmospheres?: Array<string> | null, tempo?: { __typename?: 'Range', max: number, min: number } | null, speechiness?: { __typename?: 'Range', max: number, min: number } | null, instrumentalness?: { __typename?: 'Range', max: number, min: number } | null, liveness?: { __typename?: 'Range', max: number, min: number } | null, acousticness?: { __typename?: 'Range', max: number, min: number } | null } | null };
+export type GetCurrentFilterQuery = { __typename?: 'Query', me: { __typename?: 'User', activeFilters: Array<{ __typename?: 'FilterCriteriaResult', id: any, name: string, criteria: { __typename?: 'FilterCriteriaType', valenceMood?: Array<string> | null, arousalMood?: Array<string> | null, danceabilityFeeling?: Array<string> | null, genreIds?: Array<any> | null, keyIds?: Array<string> | null, subgenreIds?: Array<any> | null, artist?: string | null, title?: string | null, libraryIds?: Array<any> | null, atmosphereIds?: Array<string> | null, tempo?: { __typename?: 'Range', max: number, min: number } | null, speechiness?: { __typename?: 'Range', max: number, min: number } | null, instrumentalness?: { __typename?: 'Range', max: number, min: number } | null, liveness?: { __typename?: 'Range', max: number, min: number } | null, acousticness?: { __typename?: 'Range', max: number, min: number } | null } }> } };
 
-export type SetCurrentFilterMutationVariables = Exact<{
-  criteria: FilterCriteriaInput;
+export type CreateFilterMutationVariables = Exact<{
+  input: SavedFilterInput;
 }>;
 
 
-export type SetCurrentFilterMutation = { __typename?: 'Mutation', setCurrentFilter: { __typename?: 'FilterCriteriaType', valenceMood?: Array<string> | null, arousalMood?: Array<string> | null, danceabilityFeeling?: Array<string> | null, genres?: Array<string> | null, keys?: Array<string> | null, subgenres?: Array<string> | null, artist?: string | null, title?: string | null, libraryId?: Array<string> | null, atmospheres?: Array<string> | null, tempo?: { __typename?: 'Range', max: number, min: number } | null, speechiness?: { __typename?: 'Range', max: number, min: number } | null, instrumentalness?: { __typename?: 'Range', max: number, min: number } | null, liveness?: { __typename?: 'Range', max: number, min: number } | null, acousticness?: { __typename?: 'Range', max: number, min: number } | null } };
+export type CreateFilterMutation = { __typename?: 'Mutation', createSavedFilter: { __typename?: 'FilterCriteriaResult', id: any, name: string, criteria: { __typename?: 'FilterCriteriaType', valenceMood?: Array<string> | null, arousalMood?: Array<string> | null, danceabilityFeeling?: Array<string> | null, genreIds?: Array<any> | null, keyIds?: Array<string> | null, subgenreIds?: Array<any> | null, artist?: string | null, title?: string | null, libraryIds?: Array<any> | null, atmosphereIds?: Array<string> | null, tempo?: { __typename?: 'Range', max: number, min: number } | null, speechiness?: { __typename?: 'Range', max: number, min: number } | null, instrumentalness?: { __typename?: 'Range', max: number, min: number } | null, liveness?: { __typename?: 'Range', max: number, min: number } | null, acousticness?: { __typename?: 'Range', max: number, min: number } | null } } };
 
-export type ClearCurrentFilterMutationVariables = Exact<{ [key: string]: never; }>;
-
-
-export type ClearCurrentFilterMutation = { __typename?: 'Mutation', clearCurrentFilter: boolean };
-
-export type GetFilterOptionsQueryVariables = Exact<{ [key: string]: never; }>;
-
-
-export type GetFilterOptionsQuery = { __typename?: 'Query', getFilterOptions: { __typename?: 'FilterOptions', tempoRange: { __typename?: 'Range', max: number, min: number } } };
-
-export type GetStaticFilterOptionsQueryVariables = Exact<{ [key: string]: never; }>;
-
-
-export type GetStaticFilterOptionsQuery = { __typename?: 'Query', me: { __typename?: 'User', staticFilterOptions: { __typename?: 'StaticFilterOptions', genres: Array<{ __typename?: 'FilterWithID', id: any, name: string }>, subgenres: Array<{ __typename?: 'FilterWithID', id: any, name: string }>, keys: Array<{ __typename?: 'FilterWithID', id: any, name: string }>, libraries: Array<{ __typename?: 'FilterWithID', id: any, name: string }>, atmospheres: Array<{ __typename?: 'FilterWithID', id: any, name: string }> } } };
-
-export type GetSavedFiltersQueryVariables = Exact<{ [key: string]: never; }>;
-
-
-export type GetSavedFiltersQuery = { __typename?: 'Query', getSavedFilters: Array<{ __typename?: 'SavedFilter', id: string, name: string, createdAt: any, updatedAt: any, criteria: { __typename?: 'FilterCriteriaType', valenceMood?: Array<string> | null, arousalMood?: Array<string> | null, danceabilityFeeling?: Array<string> | null, genres?: Array<string> | null, keys?: Array<string> | null, subgenres?: Array<string> | null, artist?: string | null, title?: string | null, libraryId?: Array<string> | null, atmospheres?: Array<string> | null, tempo?: { __typename?: 'Range', max: number, min: number } | null, speechiness?: { __typename?: 'Range', max: number, min: number } | null, instrumentalness?: { __typename?: 'Range', max: number, min: number } | null, liveness?: { __typename?: 'Range', max: number, min: number } | null, acousticness?: { __typename?: 'Range', max: number, min: number } | null } }> };
-
-export type CreateSavedFilterMutationVariables = Exact<{
-  input: CreateSavedFilterInput;
+export type UpdateFilterMutationVariables = Exact<{
+  id: Scalars['Base64ID']['input'];
+  input: SavedFilterInput;
 }>;
 
 
-export type CreateSavedFilterMutation = { __typename?: 'Mutation', createSavedFilter: { __typename?: 'SavedFilter', id: string, name: string, createdAt: any, updatedAt: any, criteria: { __typename?: 'FilterCriteriaType', valenceMood?: Array<string> | null, arousalMood?: Array<string> | null, danceabilityFeeling?: Array<string> | null, genres?: Array<string> | null, keys?: Array<string> | null, subgenres?: Array<string> | null, artist?: string | null, title?: string | null, libraryId?: Array<string> | null, tempo?: { __typename?: 'Range', max: number, min: number } | null, speechiness?: { __typename?: 'Range', max: number, min: number } | null, instrumentalness?: { __typename?: 'Range', max: number, min: number } | null, liveness?: { __typename?: 'Range', max: number, min: number } | null, acousticness?: { __typename?: 'Range', max: number, min: number } | null } } };
+export type UpdateFilterMutation = { __typename?: 'Mutation', updateSavedFilter: { __typename?: 'FilterCriteriaResult', id: any, name: string, criteria: { __typename?: 'FilterCriteriaType', valenceMood?: Array<string> | null, arousalMood?: Array<string> | null, danceabilityFeeling?: Array<string> | null, genreIds?: Array<any> | null, keyIds?: Array<string> | null, subgenreIds?: Array<any> | null, artist?: string | null, title?: string | null, libraryIds?: Array<any> | null, atmosphereIds?: Array<string> | null, tempo?: { __typename?: 'Range', max: number, min: number } | null, speechiness?: { __typename?: 'Range', max: number, min: number } | null, instrumentalness?: { __typename?: 'Range', max: number, min: number } | null, liveness?: { __typename?: 'Range', max: number, min: number } | null, acousticness?: { __typename?: 'Range', max: number, min: number } | null } } };
 
-export type DeleteSavedFilterMutationVariables = Exact<{
-  id: Scalars['ID']['input'];
+export type ClearCurrentFilterMutationVariables = Exact<{
+  id: Scalars['Base64ID']['input'];
 }>;
 
 
-export type DeleteSavedFilterMutation = { __typename?: 'Mutation', deleteSavedFilter: boolean };
+export type ClearCurrentFilterMutation = { __typename?: 'Mutation', deleteSavedFilter: boolean };
 
 export type TrackFragmentFragment = { __typename?: 'Track', id: any, artist?: string | null, title?: string | null, createdAt?: any | null, updatedAt?: any | null, imagePath?: string | null, lastScannedAt?: any | null, libraryId?: string | null, stats: { __typename?: 'TrackStats', listeningCount: number, lastPlayedAt?: any | null, isFavorite: boolean, isLiked: boolean, isBanger: boolean }, fileInfo: { __typename?: 'TrackFileInfo', filePath: string, fileName: string, fileSize: number, fileCreatedAt: any }, technicalInfo: { __typename?: 'TrackTechnicalInfo', duration: number, format: string }, metadata: { __typename?: 'TrackMetadata', album?: string | null, date?: any | null, genres?: Array<string> | null, subgenres?: Array<string> | null }, aiMetadata: { __typename?: 'TrackAIMetadata', tags?: Array<string> | null, vocalsDesc?: string | null, description?: string | null, vocalsDescriptions?: string | null, atmosphereKeywords?: Array<string> | null, contextBackgrounds?: string | null, contextImpacts?: string | null }, musicalFeatures: { __typename?: 'TrackMusicalFeatures', tempo?: number | null, key?: string | null, valenceMood?: string | null, arousalMood?: string | null, danceabilityFeeling?: string | null, acousticness?: number | null, instrumentalness?: number | null, speechiness?: number | null } };
 
 export type PlaylistTrackFragmentFragment = { __typename?: 'CleanArchPlaylistTrack', id: any, position: number, addedAt: any, track?: { __typename?: 'Track', id: any, artist?: string | null, title?: string | null, createdAt?: any | null, updatedAt?: any | null, imagePath?: string | null, lastScannedAt?: any | null, libraryId?: string | null, stats: { __typename?: 'TrackStats', listeningCount: number, lastPlayedAt?: any | null, isFavorite: boolean, isLiked: boolean, isBanger: boolean }, fileInfo: { __typename?: 'TrackFileInfo', filePath: string, fileName: string, fileSize: number, fileCreatedAt: any }, technicalInfo: { __typename?: 'TrackTechnicalInfo', duration: number, format: string }, metadata: { __typename?: 'TrackMetadata', album?: string | null, date?: any | null, genres?: Array<string> | null, subgenres?: Array<string> | null }, aiMetadata: { __typename?: 'TrackAIMetadata', tags?: Array<string> | null, vocalsDesc?: string | null, description?: string | null, vocalsDescriptions?: string | null, atmosphereKeywords?: Array<string> | null, contextBackgrounds?: string | null, contextImpacts?: string | null }, musicalFeatures: { __typename?: 'TrackMusicalFeatures', tempo?: number | null, key?: string | null, valenceMood?: string | null, arousalMood?: string | null, danceabilityFeeling?: string | null, acousticness?: number | null, instrumentalness?: number | null, speechiness?: number | null } } | null };
 
 export type PlaylistFragmentFragment = { __typename?: 'CleanArchPlaylist', id: any, name: string, description?: string | null, isPublic: boolean, createdAt: any, updatedAt: any, createdById: any, updatedById?: any | null, stats?: { __typename?: 'CleanArchPlaylistStats', genresCount: number, numberOfTracks: number, subgenresCount: number, topGenres: Array<string>, topSubgenres: Array<string>, totalDuration: number, images: Array<string>, bpmRange: { __typename?: 'Range', min: number, max: number }, energyRange: { __typename?: 'Range', min: number, max: number } } | null, sorting?: { __typename?: 'CleanArchPlaylistSorting', id: any, playlistId: any, sortingKey: string, sortingDirection: string, createdAt: any, updatedAt: any } | null, tracks?: Array<{ __typename?: 'CleanArchPlaylistTrack', id: any, position: number, addedAt: any, track?: { __typename?: 'Track', id: any, artist?: string | null, title?: string | null, createdAt?: any | null, updatedAt?: any | null, imagePath?: string | null, lastScannedAt?: any | null, libraryId?: string | null, stats: { __typename?: 'TrackStats', listeningCount: number, lastPlayedAt?: any | null, isFavorite: boolean, isLiked: boolean, isBanger: boolean }, fileInfo: { __typename?: 'TrackFileInfo', filePath: string, fileName: string, fileSize: number, fileCreatedAt: any }, technicalInfo: { __typename?: 'TrackTechnicalInfo', duration: number, format: string }, metadata: { __typename?: 'TrackMetadata', album?: string | null, date?: any | null, genres?: Array<string> | null, subgenres?: Array<string> | null }, aiMetadata: { __typename?: 'TrackAIMetadata', tags?: Array<string> | null, vocalsDesc?: string | null, description?: string | null, vocalsDescriptions?: string | null, atmosphereKeywords?: Array<string> | null, contextBackgrounds?: string | null, contextImpacts?: string | null }, musicalFeatures: { __typename?: 'TrackMusicalFeatures', tempo?: number | null, key?: string | null, valenceMood?: string | null, arousalMood?: string | null, danceabilityFeeling?: string | null, acousticness?: number | null, instrumentalness?: number | null, speechiness?: number | null } } | null }> | null };
+
+export type FilterFragmentFragment = { __typename?: 'FilterCriteriaResult', id: any, name: string, criteria: { __typename?: 'FilterCriteriaType', valenceMood?: Array<string> | null, arousalMood?: Array<string> | null, danceabilityFeeling?: Array<string> | null, genreIds?: Array<any> | null, keyIds?: Array<string> | null, subgenreIds?: Array<any> | null, artist?: string | null, title?: string | null, libraryIds?: Array<any> | null, atmosphereIds?: Array<string> | null, tempo?: { __typename?: 'Range', max: number, min: number } | null, speechiness?: { __typename?: 'Range', max: number, min: number } | null, instrumentalness?: { __typename?: 'Range', max: number, min: number } | null, liveness?: { __typename?: 'Range', max: number, min: number } | null, acousticness?: { __typename?: 'Range', max: number, min: number } | null } };
 
 export type GetLibraryMetricsQueryVariables = Exact<{ [key: string]: never; }>;
 

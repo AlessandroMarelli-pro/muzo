@@ -384,6 +384,8 @@ model ImageSearch {
 model SavedFilter {
   id        String   @id @default(uuid())
   name      String
+  isCurrent Boolean @default(false)
+
   criteria  String   // JSON string containing filter criteria
   createdAt   DateTime @default(now())
   createdById   String @default("userId")

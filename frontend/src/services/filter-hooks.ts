@@ -1,5 +1,7 @@
-import { FilterCriteriaType } from '@/__generated__/types';
+import { FilterCriteriaResult } from '@/__generated__/types';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { toFilterState } from './filter.mapper';
+import { filterFragment } from './fragments';
 import { gql, graffleClient } from './graffle-client';
 
 // Filter Types
@@ -37,102 +39,69 @@ export const filterQueryKeys = {
 };
 
 // Queries
-export const useCurrentFilter = () => {
+export const useActiveFilters = () => {
 	return useQuery({
 		queryKey: filterQueryKeys.currentFilter(),
 		queryFn: async () => {
 			const response = await graffleClient.request<{
-				getCurrentFilter: FilterCriteriaType | null;
+				me: { activeFilters: FilterCriteriaResult[] };
 			}>(gql`
+				${filterFragment}
 				query GetCurrentFilter {
-					getCurrentFilter {
-						valenceMood
-						arousalMood
-						danceabilityFeeling
-						genres
-						keys
-						subgenres
-						tempo {
-							max
-							min
+					me {
+						activeFilters {
+							...FilterFragment
 						}
-						speechiness {
-							max
-							min
-						}
-						instrumentalness {
-							max
-							min
-						}
-						liveness {
-							max
-							min
-						}
-						acousticness {
-							max
-							min
-						}
-						artist
-						title
-						libraryId
-						atmospheres
 					}
 				}
 			`);
-			return response.getCurrentFilter;
+			return response.me.activeFilters;
 		},
 		staleTime: 10 * 60 * 1000, // 10 minutes - static data doesn't change often
 	});
 };
 
+export const useCurrentFilter = () => {
+	return useQuery({
+		queryKey: filterQueryKeys.currentFilter(),
+		queryFn: async () => {
+			const response = await graffleClient.request<{
+				me: { currentFilter: FilterCriteriaResult };
+			}>(gql`
+				${filterFragment}
+				query GetCurrentFilter {
+					me {
+						currentFilter {
+							...FilterFragment
+						}
+					}
+				}
+			`);
+			return toFilterState(response.me.currentFilter);
+		},
+		staleTime: 10 * 60 * 1000, // 10 minutes - static data doesn't change often
+	});
+};
 // Mutations
-export const useSetCurrentFilter = () => {
+export const useCreateActiveFilter = () => {
 	const queryClient = useQueryClient();
 
 	return useMutation({
 		mutationFn: async (criteria: FilterCriteriaInput) => {
 			const response = await graffleClient.request<{
-				setCurrentFilter: FilterCriteriaType;
+				createSavedFilter: FilterCriteriaResult;
 			}>(
 				gql`
-					mutation SetCurrentFilter($criteria: FilterCriteriaInput!) {
-						setCurrentFilter(criteria: $criteria) {
-							valenceMood
-							arousalMood
-							danceabilityFeeling
-							genres
-							keys
-							subgenres
-							tempo {
-								max
-								min
-							}
-							speechiness {
-								max
-								min
-							}
-							instrumentalness {
-								max
-								min
-							}
-							liveness {
-								max
-								min
-							}
-							acousticness {
-								max
-								min
-							}
-							artist
-							title
-							libraryId
-							atmospheres
+					${filterFragment}
+					mutation CreateFilter($input: SavedFilterInput!) {
+						createSavedFilter(input: $input) {
+							...FilterFragment
 						}
 					}
 				`,
-				{ criteria }
+				{ input: { criteria, name: 'current', isCurrent: true } }
 			);
-			return response.setCurrentFilter;
+			return response.createSavedFilter;
 		},
 		onSuccess: (data) => {
 			queryClient.setQueryData(filterQueryKeys.currentFilter(), data);
@@ -150,20 +119,64 @@ export const useSetCurrentFilter = () => {
 		},
 	});
 };
-
-export const useClearCurrentFilter = () => {
+export const useUpdateActiveFilter = () => {
 	const queryClient = useQueryClient();
 
 	return useMutation({
-		mutationFn: async () => {
+		mutationFn: async ({
+			id,
+			criteria,
+		}: {
+			id: string;
+			criteria: FilterCriteriaInput;
+		}) => {
 			const response = await graffleClient.request<{
-				clearCurrentFilter: boolean;
-			}>(gql`
-				mutation ClearCurrentFilter {
-					clearCurrentFilter
-				}
-			`);
-			return response.clearCurrentFilter;
+				updateSavedFilter: FilterCriteriaResult;
+			}>(
+				gql`
+					${filterFragment}
+					mutation UpdateFilter($id: Base64ID!, $input: SavedFilterInput!) {
+						updateSavedFilter(id: $id, input: $input) {
+							...FilterFragment
+						}
+					}
+				`,
+				{ input: { criteria, name: 'current', isCurrent: true }, id }
+			);
+			return response.updateSavedFilter;
+		},
+		onSuccess: (data) => {
+			queryClient.setQueryData(filterQueryKeys.currentFilter(), data);
+			console.log('Filter set successfully:', data);
+
+			// Invalidate all queries that depend on filters
+			queryClient.invalidateQueries({ queryKey: ['music-tracks'] });
+			queryClient.invalidateQueries({ queryKey: ['tracksByCategories'] });
+			queryClient.invalidateQueries({ queryKey: ['tracks'] });
+			queryClient.invalidateQueries({ queryKey: ['playlistRecommendations'] });
+			queryClient.invalidateQueries({ queryKey: ['tracksList'] });
+		},
+		onError: (error) => {
+			console.error('Error setting filter:', error);
+		},
+	});
+};
+export const useDeleteActiveFilter = () => {
+	const queryClient = useQueryClient();
+
+	return useMutation({
+		mutationFn: async (id: string) => {
+			const response = await graffleClient.request<{
+				deleteSavedFilter: boolean;
+			}>(
+				gql`
+					mutation DeleteActiveFilter($id: Base64ID!) {
+						deleteSavedFilter(id: $id)
+					}
+				`,
+				{ id }
+			);
+			return response.deleteSavedFilter;
 		},
 		onSuccess: (data) => {
 			queryClient.setQueryData(filterQueryKeys.currentFilter(), null);
@@ -179,133 +192,4 @@ export const useClearCurrentFilter = () => {
 			console.error('Error clearing filter:', error);
 		},
 	});
-};
-
-// Additional utility hooks for filter options
-export const useFilterOptions = () => {
-	return useQuery({
-		queryKey: ['filter', 'options'],
-		queryFn: async () => {
-			const response = await graffleClient.request<{
-				getFilterOptions: {
-					tempoRange: Range;
-				};
-			}>(gql`
-				query GetFilterOptions {
-					getFilterOptions {
-						tempoRange {
-							max
-							min
-						}
-					}
-				}
-			`);
-			return response.getFilterOptions;
-		},
-		staleTime: 30 * 60 * 1000, // 30 minutes - filter options don't change often
-	});
-};
-
-export const useCreateSavedFilter = () => {
-	const queryClient = useQueryClient();
-
-	return useMutation({
-		mutationFn: async (input: {
-			name: string;
-			criteria: FilterCriteriaInput;
-		}) => {
-			const response = await graffleClient.request<{
-				createSavedFilter: {
-					id: string;
-					name: string;
-					criteria: FilterCriteriaType;
-					createdAt: string;
-					updatedAt: string;
-				};
-			}>(
-				gql`
-					mutation CreateSavedFilter($input: CreateSavedFilterInput!) {
-						createSavedFilter(input: $input) {
-							id
-							name
-							criteria {
-								valenceMood
-								arousalMood
-								danceabilityFeeling
-								genres
-								keys
-								subgenres
-								tempo {
-									max
-									min
-								}
-								speechiness {
-									max
-									min
-								}
-								instrumentalness {
-									max
-									min
-								}
-								liveness {
-									max
-									min
-								}
-								acousticness {
-									max
-									min
-								}
-								artist
-								title
-								libraryId
-							}
-							createdAt
-							updatedAt
-						}
-					}
-				`,
-				{ input }
-			);
-			return response.createSavedFilter;
-		},
-		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ['saved-filters'] });
-		},
-	});
-};
-
-export const useDeleteSavedFilter = () => {
-	const queryClient = useQueryClient();
-
-	return useMutation({
-		mutationFn: async (id: string) => {
-			const response = await graffleClient.request<{
-				deleteSavedFilter: boolean;
-			}>(
-				gql`
-					mutation DeleteSavedFilter($id: ID!) {
-						deleteSavedFilter(id: $id)
-					}
-				`,
-				{ id }
-			);
-			return response.deleteSavedFilter;
-		},
-		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ['saved-filters'] });
-		},
-	});
-};
-
-// Combined hook for all filter mutations
-export const useFilterMutations = () => {
-	const setCurrentFilter = useSetCurrentFilter();
-	const clearCurrentFilter = useClearCurrentFilter();
-	const getCurrentFilter = useCurrentFilter();
-
-	return {
-		setCurrentFilter,
-		clearCurrentFilter,
-		getCurrentFilter,
-	};
 };

@@ -7,6 +7,7 @@ import { DomainErrorExceptionFilter } from './filters/domain-error.exception-fil
 import { NodeResolver } from './resolvers/node.resolver';
 import { PlaylistTrackResolver } from './resolvers/playlist-track.resolver';
 import { CleanArchPlaylistResolver } from './resolvers/playlist.resolver';
+import { SavedFilterResolver } from './resolvers/saved-filter.resolver';
 import { UserResolver } from './resolvers/user.resolver';
 import { Base64ID } from './scalars/base64-id.scalar';
 
@@ -20,6 +21,7 @@ import { Base64ID } from './scalars/base64-id.scalar';
     Base64ID,
     AuthGuard,
     PlaylistTrackResolver,
+    SavedFilterResolver,
     {
       provide: APP_FILTER,
       useClass: DomainErrorExceptionFilter,
