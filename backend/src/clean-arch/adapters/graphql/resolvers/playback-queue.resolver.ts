@@ -72,8 +72,7 @@ export class PlaybackQueueResolver {
 
   @Mutation(() => Boolean)
   async resetQueue(): Promise<boolean> {
-    await this.resetQueueUseCase.execute();
-    return true;
+    return this.resetQueueUseCase.execute();
   }
 
   @Mutation(() => [CleanArchQueueItem])

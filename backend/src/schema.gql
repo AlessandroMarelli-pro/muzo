@@ -168,10 +168,6 @@ A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date
 """
 scalar DateTime
 
-type DeleteImageResponse {
-  success: Boolean!
-}
-
 type EditorPreferences {
   autoSave: Boolean!
   batchMode: Boolean!
@@ -254,22 +250,6 @@ type ImageSearch {
   imagePath: String!
   imageUrl: String!
   source: String!
-}
-
-type ImageSearchResultType {
-  createdAt: DateTime!
-  error: String
-  id: ID!
-  imagePath: String
-  imageUrl: String
-  searchUrl: String!
-  status: String!
-  trackId: ID!
-  updatedAt: DateTime!
-}
-
-type ImageUrlResponse {
-  url: String
 }
 
 type IntelligentEditorSession {
@@ -421,7 +401,6 @@ type Mutation {
   createLibrary(input: CreateLibraryInput!): MusicLibrary!
   createPlaylist(input: CreatePlaylistInput!): CleanArchPlaylist!
   createSavedFilter(input: SavedFilterInput!): FilterCriteriaResult!
-  deleteImageForTrack(trackId: ID!): DeleteImageResponse!
   deleteLibrary(id: ID!): Boolean!
   deletePlaylist(id: Base64ID!): Boolean!
   deleteSavedFilter(id: Base64ID!): Boolean!
@@ -528,10 +507,6 @@ type Query {
   getBeatData(trackId: String!): [BeatData!]!
   getDetailedWaveformData(trackId: String!): WaveformData!
   getEnergyData(trackId: String!): [EnergyData!]!
-  getImageForTrack(trackId: ID!): ImageSearchResultType
-  getImageSearchStatus(searchId: ID!): ImageSearchResultType
-  getImageSearchesForTrack(trackId: ID!): [ImageSearchResultType!]!
-  getImageUrl(trackId: ID!): ImageUrlResponse!
   getPlaybackState(trackId: String!): PlaybackState
   getRealTimeAnalysis(currentTime: Float!, trackId: String!): RealTimeAnalysis!
   getSpotifyAuthUrl: SpotifyAuthUrl!

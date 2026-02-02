@@ -11,7 +11,7 @@ export class ResetQueueUseCase {
     private readonly queueRepository: IQueueRepository,
   ) {}
 
-  async execute(): Promise<void> {
-    await this.queueRepository.resetQueue();
+  async execute(): Promise<boolean> {
+    return this.queueRepository.resetQueue();
   }
 }

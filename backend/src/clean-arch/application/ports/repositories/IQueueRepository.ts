@@ -28,7 +28,7 @@ export interface IQueueRepository {
   updatePositions(
     positions: UpdateQueuePositionInput[],
   ): Promise<QueueItemWithTrack[]>;
-  resetQueue(): Promise<void>;
+  resetQueue(): Promise<boolean>;
   findByTrackId(trackId: MusicTrackId): Promise<QueueItem | null>;
   getLastPosition(): Promise<number | null>;
 }

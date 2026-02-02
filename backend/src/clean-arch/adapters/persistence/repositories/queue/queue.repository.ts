@@ -8,7 +8,6 @@ import {
 import { MusicTrackId } from 'src/clean-arch/kernel/ids';
 import { extractModelId } from 'src/clean-arch/kernel/ids/factory';
 import { getCurrentUserId } from 'src/clean-arch/kernel/types/context';
-import { createNotFoundError } from 'src/clean-arch/kernel/types/errors';
 import { QueueItem } from 'src/clean-arch/kernel/types/model-types';
 import { PrismaService } from '../../../../infrastructure/database/prisma.service';
 import { toDomain, toDomainWithTrack, toPrismaCreate } from './queue.mapper';
@@ -50,7 +49,6 @@ export class QueueRepository implements IQueueRepository {
   }
 
   async addTracks(trackIds: MusicTrackId[]): Promise<QueueItemWithTrack[]> {
-    if (trackIds.length === 0) return this.getQueue();
     const results: QueueItemWithTrack[] = [];
     let nextPosition = ((await this.getLastPosition()) ?? 0) + 1;
     const userId = getCurrentUserId();
@@ -70,26 +68,16 @@ export class QueueRepository implements IQueueRepository {
     trackId: MusicTrackId,
   ): Promise<RemoveTrackFromQueueResult> {
     const trackIdDb = extractModelId(trackId).dbId;
-    const queueItem = await this.prisma.queue.findUnique({
+    const queueItem = await this.prisma.queue.delete({
       where: { trackId: trackIdDb, createdById: getCurrentUserId() },
+      include: queueTrackInclude,
     });
-    if (!queueItem) {
-      throw createNotFoundError('Track not found in queue');
-    }
-    const track = await this.prisma.musicTrack.findUnique({
-      where: { id: trackIdDb },
-      select: { originalArtist: true, originalTitle: true },
-    });
-    const removedPosition = queueItem.position;
-    await this.prisma.queue.delete({
-      where: { trackId: trackIdDb, createdById: getCurrentUserId() },
-    });
-    await this.reorderPositionsAfterRemoval(removedPosition);
+    await this.reorderPositionsAfterRemoval(queueItem.position);
     return {
       success: true,
       trackId,
-      artist: track?.originalArtist ?? null,
-      title: track?.originalTitle ?? null,
+      artist: queueItem.track?.originalArtist ?? null,
+      title: queueItem.track?.originalTitle ?? null,
     };
   }
 
@@ -108,44 +96,42 @@ export class QueueRepository implements IQueueRepository {
 
   async findByTrackId(trackId: MusicTrackId): Promise<QueueItem | null> {
     const trackIdDb = extractModelId(trackId).dbId;
-    const row = await this.prisma.queue.findUnique({
-      where: { trackId: trackIdDb, createdById: getCurrentUserId() },
-    });
-    return row ? toDomain(row) : null;
+    return this.prisma.queue
+      .findUnique({
+        where: { trackId: trackIdDb, createdById: getCurrentUserId() },
+      })
+      .then((row) => (row ? toDomain(row) : null));
   }
 
   async getLastPosition(): Promise<number | null> {
-    const last = await this.prisma.queue.findFirst({
-      where: { createdById: getCurrentUserId() },
-      orderBy: { position: 'desc' },
-      select: { position: true },
-    });
-    return last?.position ?? null;
+    return this.prisma.queue
+      .findFirst({
+        where: { createdById: getCurrentUserId() },
+        orderBy: { position: 'desc' },
+        select: { position: true },
+      })
+      .then((row) => row?.position ?? null);
   }
 
-  async resetQueue(): Promise<void> {
-    await this.prisma.queue.deleteMany({
-      where: { createdById: getCurrentUserId() },
-    });
+  async resetQueue(): Promise<boolean> {
+    return this.prisma.queue
+      .deleteMany({
+        where: { createdById: getCurrentUserId() },
+      })
+      .then((result) => result.count > 0);
   }
 
   private async reorderPositionsAfterRemoval(
     removedPosition: number,
-  ): Promise<void> {
-    const items = await this.prisma.queue.findMany({
-      where: {
-        createdById: getCurrentUserId(),
-        position: { gt: removedPosition },
-      },
-      orderBy: { position: 'asc' },
-    });
-    await Promise.all(
-      items.map((item, index) =>
-        this.prisma.queue.update({
-          where: { id: item.id },
-          data: { position: removedPosition + index },
-        }),
-      ),
-    );
+  ): Promise<boolean> {
+    return this.prisma.queue
+      .updateMany({
+        where: {
+          createdById: getCurrentUserId(),
+          position: { gt: removedPosition },
+        },
+        data: { position: { decrement: 1 } },
+      })
+      .then(() => true);
   }
 }
