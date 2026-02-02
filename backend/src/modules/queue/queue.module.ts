@@ -3,9 +3,9 @@ import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { QueueConfig } from 'src/config/queue.config';
 import { FileScanningService } from 'src/shared/services/file-scanning.service';
+import { UseCasesModule } from '../../clean-arch/application/use-cases/use-cases.module';
 import { SharedModule } from '../../shared/shared.module';
 import { AiIntegrationModule } from '../ai-integration/ai-integration.module';
-import { ImageModule } from '../image/image.module';
 import { RecommendationModule } from '../recommendation/recommendation.module';
 import { AudioScanProcessor } from './processors/audio-scan.processor';
 import { LibraryScanProcessor } from './processors/library-scan.processor';
@@ -20,7 +20,7 @@ import { ScanSessionService } from './scan-session.service';
   imports: [
     SharedModule,
     AiIntegrationModule,
-    ImageModule,
+    UseCasesModule,
     RecommendationModule,
     BullModule.forRootAsync({
       useFactory: (configService: ConfigService) => {
@@ -60,4 +60,4 @@ import { ScanSessionService } from './scan-session.service';
   ],
   exports: [QueueService, ProgressTrackingService, BullModule],
 })
-export class QueueModule { }
+export class QueueModule {}

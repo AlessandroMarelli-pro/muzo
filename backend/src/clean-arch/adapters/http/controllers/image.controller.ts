@@ -8,15 +8,7 @@ import {
 } from '@nestjs/common';
 import { Response } from 'express';
 import path from 'path';
-import { ImageService } from './image.service';
-
-export interface SearchImageRequest {
-  trackId: string;
-}
-
-export interface BatchSearchRequest {
-  trackIds: string[];
-}
+import { ServeImageUseCase } from 'src/clean-arch/application/use-cases/image/ServeImage';
 
 @Controller('api/images')
 export class ImageController {
@@ -26,7 +18,7 @@ export class ImageController {
     './default-images',
   );
 
-  constructor(private readonly imageService: ImageService) {}
+  constructor(private readonly serveImageUseCase: ServeImageUseCase) {}
 
   /**
    * Serve image file
@@ -55,7 +47,7 @@ export class ImageController {
         isDefault = true;
       }
 
-      const imageBuffer = await this.imageService.serveImage(
+      const imageBuffer = await this.serveImageUseCase.execute(
         imagePath,
         isDefault,
       );

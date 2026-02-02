@@ -5,11 +5,12 @@ import { Job, Queue } from 'bullmq';
 import { isDate } from 'class-validator';
 import * as fs from 'fs';
 import * as path from 'path';
+import { AddImageSearchRecordUseCase } from 'src/clean-arch/application/use-cases/image/AddImageSearchRecord';
+import { models } from 'src/clean-arch/kernel/types/models';
 import {
   AIMetadataResponse,
   SimpleAudioAnalysisResponse,
 } from 'src/modules/ai-integration/ai-service-simple.types';
-import { ImageService } from 'src/modules/image/image.service';
 import { ElasticsearchSyncService } from 'src/modules/recommendation/services/elasticsearch-sync.service';
 import { AiIntegrationService } from '../../../modules/ai-integration/ai-integration.service';
 import { PrismaService } from '../../../shared/services/prisma.service';
@@ -24,7 +25,7 @@ import { ScanProgressPubSubService } from '../scan-progress-pubsub.service';
 import {
   BatchCompleteEvent,
   ScanErrorEvent,
-  TrackCompleteEvent
+  TrackCompleteEvent,
 } from '../scan-progress.types';
 import { ScanSessionService } from '../scan-session.service';
 
@@ -40,7 +41,7 @@ export class AudioScanProcessor extends WorkerHost {
     private readonly audioScanQueue: Queue<
       AudioScanJobData | EndScanLibraryJobData
     >,
-    private readonly imageService: ImageService,
+    private readonly addImageSearchRecordUseCase: AddImageSearchRecordUseCase,
     private readonly elasticsearchSyncService: ElasticsearchSyncService,
     private readonly pubSubService: ScanProgressPubSubService,
     private readonly scanSessionService: ScanSessionService,
@@ -49,14 +50,21 @@ export class AudioScanProcessor extends WorkerHost {
   }
 
   async process(
-    job: Job<AudioScanJobData | EndScanLibraryJobData | AIMetadataJobData | AudioScanJobData[]>,
+    job: Job<
+      | AudioScanJobData
+      | EndScanLibraryJobData
+      | AIMetadataJobData
+      | AudioScanJobData[]
+    >,
   ): Promise<void> {
     if (job.name === 'end-scan-library') {
       await this.processEndScanLibrary(job as Job<EndScanLibraryJobData>);
     } else if (job.name === 'extract-ai-metadata') {
       await this.processAIMetadataExtraction(job as Job<AIMetadataJobData>);
     } else if (job.name === 'audio-scan-batch') {
-      await this.processAudioScanBatch(job as unknown as Job<AudioScanBatchJobData>);
+      await this.processAudioScanBatch(
+        job as unknown as Job<AudioScanBatchJobData>,
+      );
     }
   }
 
@@ -67,13 +75,20 @@ export class AudioScanProcessor extends WorkerHost {
     job: Job<AudioScanBatchJobData>,
   ): Promise<void> {
     const jobs = job.data;
-    const { audioFiles, skipImageSearch, forced, sessionId, totalFiles, totalBatches, batchIndex, libraryId, } = jobs;
-    const progression = Math.round(((batchIndex) / totalBatches!) * 10000) / 100;
+    const {
+      audioFiles,
+      skipImageSearch,
+      forced,
+      sessionId,
+      totalFiles,
+      totalBatches,
+      batchIndex,
+      libraryId,
+    } = jobs;
+    const progression = Math.round((batchIndex / totalBatches!) * 10000) / 100;
     this.logger.log(
       `Starting batch audio scan for ${audioFiles.length} files in library ${libraryId} (${batchIndex}/${totalBatches}) - Overall progress: ${progression}%`,
     );
-
-
 
     try {
       // Validate all files exist
@@ -111,7 +126,6 @@ export class AudioScanProcessor extends WorkerHost {
           ) {
             this.logger.log(`Track already analyzed: ${jobData.fileName}`);
             if (sessionId) {
-
               const trackCompleteEvent: TrackCompleteEvent = {
                 type: 'track.complete',
                 sessionId,
@@ -146,7 +160,7 @@ export class AudioScanProcessor extends WorkerHost {
 
       this.logger.log(
         `Processing ${validJobs.length} files in batch (${audioFiles.length - validJobs.length} skipped)`,
-        filePaths
+        filePaths,
       );
 
       // Create or update all tracks first
@@ -176,12 +190,13 @@ export class AudioScanProcessor extends WorkerHost {
       );
 
       // Analyze all files in batch
-      const batchAnalysisResult = await this.aiIntegrationService.analyzeAudioBatch(
-        filePaths,
-        skipImageSearch,
-        sessionId,
-        batchIndex,
-      );
+      const batchAnalysisResult =
+        await this.aiIntegrationService.analyzeAudioBatch(
+          filePaths,
+          skipImageSearch,
+          sessionId,
+          batchIndex,
+        );
 
       // Process each result
       let successful = 0;
@@ -238,8 +253,6 @@ export class AudioScanProcessor extends WorkerHost {
             }
             continue;
           }
-
-
 
           // Process this track using extracted helper methods
           await this.processTrackAnalysis(track.id, analysisResult);
@@ -315,21 +328,29 @@ export class AudioScanProcessor extends WorkerHost {
       }
 
       await this.batchComplete({ libraryId, job });
-
     } catch (error) {
       this.logger.error(`Batch audio scan failed:`, error.message);
       throw error;
     }
   }
-  private async batchComplete({ libraryId, job }: { libraryId, job: Job<AudioScanBatchJobData> }): Promise<void> {
+  private async batchComplete({
+    libraryId,
+    job,
+  }: {
+    libraryId;
+    job: Job<AudioScanBatchJobData>;
+  }): Promise<void> {
     const { totalFiles, totalBatches, audioFiles, startDateTS } = job.data;
-    const progressPercentage = Math.round(((1) / totalBatches!) * 10000);
+    const progressPercentage = Math.round((1 / totalBatches!) * 10000);
     // Update session progress
-    const session = await this.scanSessionService.updateSessionProgress(libraryId, {
-      completedBatches: 1,
-      progressPercentage,
-      completedTracks: audioFiles.length,
-    });
+    const session = await this.scanSessionService.updateSessionProgress(
+      libraryId,
+      {
+        completedBatches: 1,
+        progressPercentage,
+        completedTracks: audioFiles.length,
+      },
+    );
     if (!session) {
       return;
     }
@@ -345,14 +366,13 @@ export class AudioScanProcessor extends WorkerHost {
         failed: 0,
         totalTracks: totalFiles,
       },
-      overallProgress: isComplete ? 10000 : session.overallProgress
+      overallProgress: isComplete ? 10000 : session.overallProgress,
     };
 
     this.logger.debug(
       `Progress update for ${libraryId}: ${session.completedBatches}/${session.totalBatches} (${session.overallProgress.toFixed(1)}%)`,
     );
     await this.pubSubService.publishEvent(libraryId, batchCompleteEvent);
-
 
     // Update progress tracking
     const library = await this.prismaService.musicLibrary.findUnique({
@@ -365,12 +385,11 @@ export class AudioScanProcessor extends WorkerHost {
         library.name,
         totalFiles,
         startDateTS,
-        isComplete
+        isComplete,
       );
     }
     // Update job progress
     await job.updateProgress(100);
-
   }
 
   /**
@@ -420,9 +439,13 @@ export class AudioScanProcessor extends WorkerHost {
       analysisResult.album_art?.imageUrl ||
       analysisResult.album_art?.imagePath
     ) {
-      await this.imageService.addImageSearchRecord(
-        trackId,
-        analysisResult.album_art,
+      await this.addImageSearchRecordUseCase.execute(
+        models.musicTrack.id(trackId),
+        {
+          imagePath: analysisResult.album_art.imagePath,
+          imageUrl: analysisResult.album_art.imageUrl,
+          source: analysisResult.album_art.source,
+        },
       );
     }
   }
@@ -670,7 +693,9 @@ export class AudioScanProcessor extends WorkerHost {
 
     // Update duration if available
     if (analysisResult.audio_technical.duration_seconds) {
-      updateData.duration = Math.round(analysisResult.audio_technical.duration_seconds);
+      updateData.duration = Math.round(
+        analysisResult.audio_technical.duration_seconds,
+      );
     }
 
     // Update audio format details

@@ -1,5 +1,6 @@
 import {
   GenreId,
+  ImageSearchId,
   MusicLibraryId,
   MusicTrackId,
   PlaylistId,
@@ -14,6 +15,7 @@ import { modelIdFactory } from '../ids/factory';
 import { modelFactory } from './factory';
 import {
   Genre,
+  ImageSearch,
   MusicLibrary,
   MusicTrack,
   Playlist,
@@ -49,4 +51,7 @@ export const models = {
     modelIdFactory('MusicLibrary'),
   ),
   queueItem: modelFactory<QueueItem, QueueItemId>(modelIdFactory('QueueItem')),
+  imageSearch: modelFactory<ImageSearch, ImageSearchId>(
+    modelIdFactory('ImageSearch'),
+  ),
 };

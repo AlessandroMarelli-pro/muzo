@@ -5,6 +5,7 @@ import { GraphQLModule } from '@nestjs/graphql';
 import { join } from 'path';
 import { ActionContextMiddleware } from './clean-arch/adapters/graphql/context/action-context.middleware';
 import { CleanArchGraphQLModule } from './clean-arch/adapters/graphql/graphql.module';
+import { HttpModule } from './clean-arch/adapters/http/http.module';
 import { createPlaylistStatsLoader } from './clean-arch/adapters/persistence/queries/playlist/playlist-stats.loader';
 import { createPlaylistContainsTrackLoader } from './clean-arch/adapters/persistence/repositories/playlist-track/playlist-contains-track.loader';
 import { createPlaylistTracksWithTrackLoader } from './clean-arch/adapters/persistence/repositories/playlist-track/playlist-track-with-track.loader';
@@ -25,7 +26,6 @@ import { AdminMethodsModule } from './modules/admin-methods/admin-methods.module
 import { AiIntegrationModule } from './modules/ai-integration/ai-integration.module';
 import { FilterModule } from './modules/filter/filter.module';
 import { HealthModule } from './modules/health/health.module';
-import { ImageModule } from './modules/image/image.module';
 import { MetricsModule } from './modules/metrics/metrics.module';
 import { MusicLibraryModule } from './modules/music-library/music-library.module';
 import { MusicPlayerModule } from './modules/music-player/music-player.module';
@@ -103,7 +103,7 @@ import { SharedModule } from './shared/shared.module';
 
     // Feature modules
     HealthModule,
-    ImageModule,
+    HttpModule,
     MusicLibraryModule,
     MusicTrackModule,
     MusicPlayerModule,

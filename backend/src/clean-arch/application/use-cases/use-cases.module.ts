@@ -1,5 +1,7 @@
 import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
 import {
+  AddImageSearchRecordUseCase,
   AddTracksToQueueUseCase,
   AddTrackToPlaylistUseCase,
   AddTrackToQueueUseCase,
@@ -24,6 +26,7 @@ import {
   RemoveTrackFromPlaylistUseCase,
   RemoveTrackFromQueueUseCase,
   ResetQueueUseCase,
+  ServeImageUseCase,
   UpdatePlaylistTracksPositionsUseCase,
   UpdatePlaylistUseCase,
   UpdateQueuePositionsUseCase,
@@ -32,6 +35,8 @@ import {
 import { UpdatePlaylistSortingUseCase } from './playlist-sorting/UpdatePlaylistSorting';
 
 const useCasesProviders = [
+  AddImageSearchRecordUseCase,
+  ServeImageUseCase,
   CreatePlaylistUseCase,
   GetPlaylistsUseCase,
   GetPlaylistUseCase,
@@ -63,7 +68,7 @@ const useCasesProviders = [
   UpdateQueuePositionsUseCase,
 ];
 @Module({
-  imports: [],
+  imports: [ConfigModule],
   providers: useCasesProviders,
   exports: useCasesProviders,
 })

@@ -1,7 +1,10 @@
 import { Global, Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
 
+import { IMAGE_FILE_READER } from 'src/clean-arch/application/ports/infrastructure/IImageFileReader';
 import { PLAYLIST_STATS_QUERY } from 'src/clean-arch/application/ports/queries/IPlaylistStatsQuery';
 import { SAVED_FILTER_QUERY } from 'src/clean-arch/application/ports/queries/ISavedFilterQuery';
+import { IMAGE_SEARCH_REPOSITORY } from 'src/clean-arch/application/ports/repositories/IImageSearchRepository';
 import { MUSIC_TRACK_REPOSITORY } from 'src/clean-arch/application/ports/repositories/IMusicTrackRepository';
 import { PLAYLIST_REPOSITORY } from 'src/clean-arch/application/ports/repositories/IPlaylistRepository';
 import { PLAYLIST_SORTING_REPOSITORY } from 'src/clean-arch/application/ports/repositories/IPlaylistSortingRepository';
@@ -9,8 +12,10 @@ import { PLAYLIST_TRACK_REPOSITORY } from 'src/clean-arch/application/ports/repo
 import { QUEUE_REPOSITORY } from 'src/clean-arch/application/ports/repositories/IQueueRepository';
 import { SAVED_FILTER_REPOSITORY } from 'src/clean-arch/application/ports/repositories/ISavedFilterRepository';
 import { PrismaService } from '../../../infrastructure/database/prisma.service';
+import { FileSystemImageReader } from '../../../infrastructure/filesystem/image-file.reader';
 import { PlaylistStatsQuery } from '../queries/playlist/playlist-stats.query';
 import { SavedFilterQuery } from '../queries/saved-filter/saved-filter.query';
+import { ImageSearchRepository } from './image-search/image-search.repository';
 import { MusicTrackRepository } from './music-track/music-track.repository';
 import { PlaylistSortingRepository } from './playlist-sorting/playlist-sorting.repository';
 import { PlaylistTrackRepository } from './playlist-track/playlist-track.repository';
@@ -20,6 +25,7 @@ import { SavedFilterRepository } from './saved-filter/saved-filter.repository';
 
 @Global()
 @Module({
+  imports: [ConfigModule],
   providers: [
     PrismaService,
     { provide: PLAYLIST_REPOSITORY, useClass: PlaylistRepository },
@@ -33,6 +39,8 @@ import { SavedFilterRepository } from './saved-filter/saved-filter.repository';
     { provide: QUEUE_REPOSITORY, useClass: QueueRepository },
     { provide: SAVED_FILTER_QUERY, useClass: SavedFilterQuery },
     { provide: SAVED_FILTER_REPOSITORY, useClass: SavedFilterRepository },
+    { provide: IMAGE_SEARCH_REPOSITORY, useClass: ImageSearchRepository },
+    { provide: IMAGE_FILE_READER, useClass: FileSystemImageReader },
   ],
   exports: [
     PLAYLIST_REPOSITORY,
@@ -43,6 +51,8 @@ import { SavedFilterRepository } from './saved-filter/saved-filter.repository';
     QUEUE_REPOSITORY,
     SAVED_FILTER_QUERY,
     SAVED_FILTER_REPOSITORY,
+    IMAGE_SEARCH_REPOSITORY,
+    IMAGE_FILE_READER,
   ],
 })
 export class RepositoriesModule {}
