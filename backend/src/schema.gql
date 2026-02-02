@@ -92,12 +92,6 @@ type BeatData {
   timestamp: Float!
 }
 
-input CleanArchCreatePlaylistInput {
-  description: String
-  isPublic: Boolean
-  name: String!
-}
-
 type CleanArchPlaylist implements Node {
   """True if the given track is already in this playlist"""
   containsTrack(trackId: Base64ID): Boolean
@@ -167,7 +161,6 @@ input CreatePlaylistInput {
   maxTracks: Int
   name: String!
   subgenreSelectionMode: String
-  userId: String
 }
 
 input CreateSavedFilterInput {
@@ -248,6 +241,11 @@ type FilterOptions {
   tempoRange: Range!
 }
 
+type FilterWithID {
+  id: Base64ID!
+  name: String!
+}
+
 type FormatDistribution {
   count: Int!
   format: String!
@@ -292,11 +290,6 @@ type IntelligentEditorSession {
   updatedAt: DateTime!
   userActions: String!
   userId: ID
-}
-
-type LibraryFilterOptionType {
-  id: ID!
-  name: String!
 }
 
 type LibraryMetrics {
@@ -430,11 +423,10 @@ type Mutation {
   authenticateTidal(code: String!, codeVerifier: String!, userId: String!): TidalAuthResult!
   authenticateYouTube(code: String!, userId: String!): YouTubeAuthResult!
   bangerTrack(trackId: ID!): SimpleMusicTrack!
-  caCreatePlaylist(input: CleanArchCreatePlaylistInput!): CleanArchPlaylist!
   caUpdatePlaylist(id: Base64ID!, input: CleanArchUpdatePlaylistInput!): CleanArchPlaylist!
   clearCurrentFilter: Boolean!
   createLibrary(input: CreateLibraryInput!): MusicLibrary!
-  createPlaylist(input: CreatePlaylistInput!): Playlist!
+  createPlaylist(input: CreatePlaylistInput!): CleanArchPlaylist!
   createSavedFilter(input: CreateSavedFilterInput!): SavedFilter!
   deleteImageForTrack(trackId: ID!): DeleteImageResponse!
   deleteLibrary(id: ID!): Boolean!
@@ -506,31 +498,11 @@ type PlaybackState {
   volume: Float!
 }
 
-type Playlist {
-  bpmRange: Range!
-  createdAt: DateTime!
-  description: String
-  energyRange: Range!
-  genresCount: Int!
-  id: ID!
-  images: [String!]!
-  isTrackInPlaylist: Boolean
-  name: String!
-  numberOfTracks: Int!
-  sorting: PlaylistSorting
-  subgenresCount: Int!
-  topGenres: [String!]!
-  topSubgenres: [String!]!
-  totalDuration: Float!
-  tracks: [PlaylistTrack!]!
-  updatedAt: DateTime!
-}
-
 input PlaylistFilterInput {
   atmospheres: [String!]
-  genres: [String!]
-  libraryId: [String!]
-  subgenres: [String!]
+  genreIds: [Base64ID!]
+  libraryIds: [Base64ID!]
+  subgenreIds: [Base64ID!]
   tempo: RangeInput
 }
 
@@ -574,7 +546,6 @@ type Query {
   getSavedFilter(id: ID!): SavedFilter
   getSavedFilters: [SavedFilter!]!
   getSpotifyAuthUrl: SpotifyAuthUrl!
-  getStaticFilterOptions: StaticFilterOptions!
   getTidalAuthUrl: TidalAuthUrl!
   getWaveformData(trackId: String!): [Float!]!
   getYouTubeAuthUrl: YouTubeAuthUrl!
@@ -587,7 +558,7 @@ type Query {
   Fetch any node by global ID. Use inline fragments (... on CleanArchPlaylist { ... }) to request fields.
   """
   node(id: Base64ID!): Node
-  playlistRecommendations(excludeTrackIds: [String!], limit: Int, playlistId: ID!): [TrackRecommendation!]!
+  playlistRecommendations(excludeTrackIds: [String!], limit: Int, playlistId: Base64ID!): [TrackRecommendation!]!
   preferences: UserPreferencesGraphQL!
   queue: [QueueItem!]!
   queueStats: String!
@@ -704,11 +675,11 @@ type SpotifyAuthUrl {
 }
 
 type StaticFilterOptions {
-  atmospheres: [String!]!
-  genres: [String!]!
-  keys: [String!]!
-  libraries: [LibraryFilterOptionType!]!
-  subgenres: [String!]!
+  atmospheres: [FilterWithID!]!
+  genres: [FilterWithID!]!
+  keys: [FilterWithID!]!
+  libraries: [FilterWithID!]!
+  subgenres: [FilterWithID!]!
 }
 
 type SubgenreDistribution {
@@ -907,6 +878,7 @@ type User implements Node {
   id: Base64ID!
   lastName: String
   playlists: PlaylistsResult!
+  staticFilterOptions: StaticFilterOptions!
 }
 
 type UserPreferencesGraphQL {

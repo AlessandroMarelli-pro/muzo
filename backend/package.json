@@ -76,6 +76,7 @@
     "graphql": "^16.11.0",
     "graphql-subscriptions": "^3.0.0",
     "ioredis": "^5.7.0",
+    "lodash": "^4.17.23",
     "music-metadata": "^11.10.5",
     "node-wav": "^0.0.2",
     "prisma": "^6.16.2",

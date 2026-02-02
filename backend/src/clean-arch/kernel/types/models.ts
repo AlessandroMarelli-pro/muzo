@@ -1,19 +1,25 @@
 import {
+  GenreId,
   MusicLibraryId,
   MusicTrackId,
   PlaylistId,
   PlaylistSortingId,
   PlaylistTrackId,
+  SavedFilterId,
+  SubgenreId,
   UserId,
 } from '../ids';
 import { modelIdFactory } from '../ids/factory';
 import { modelFactory } from './factory';
 import {
+  Genre,
   MusicLibrary,
   MusicTrack,
   Playlist,
   PlaylistSorting,
   PlaylistTrack,
+  SavedFilter,
+  Subgenre,
   User,
 } from './model-types';
 
@@ -30,6 +36,14 @@ export const models = {
     modelIdFactory('MusicTrack'),
   ),
   musicLibrary: modelFactory<MusicLibrary, MusicLibraryId>(
+    modelIdFactory('MusicLibrary'),
+  ),
+  savedFilter: modelFactory<SavedFilter, SavedFilterId>(
+    modelIdFactory('SavedFilter'),
+  ),
+  genre: modelFactory<Genre, GenreId>(modelIdFactory('Genre')),
+  subgenre: modelFactory<Subgenre, SubgenreId>(modelIdFactory('Subgenre')),
+  library: modelFactory<MusicLibrary, MusicLibraryId>(
     modelIdFactory('MusicLibrary'),
   ),
 };

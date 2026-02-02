@@ -5,7 +5,7 @@ import { GraphQLModule } from '@nestjs/graphql';
 import { join } from 'path';
 import { ActionContextMiddleware } from './clean-arch/adapters/graphql/context/action-context.middleware';
 import { CleanArchGraphQLModule } from './clean-arch/adapters/graphql/graphql.module';
-import { createPlaylistStatsLoader } from './clean-arch/adapters/persistence/queries/playlist-stats.loader';
+import { createPlaylistStatsLoader } from './clean-arch/adapters/persistence/queries/playlist/playlist-stats.loader';
 import { createPlaylistContainsTrackLoader } from './clean-arch/adapters/persistence/repositories/playlist-track/playlist-contains-track.loader';
 import { createPlaylistTracksWithTrackLoader } from './clean-arch/adapters/persistence/repositories/playlist-track/playlist-track-with-track.loader';
 import { createPlaylistTracksLoader } from './clean-arch/adapters/persistence/repositories/playlist-track/playlist-track.loader';

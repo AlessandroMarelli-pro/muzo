@@ -1,6 +1,6 @@
 import { Field, Float, ID, InputType, Int, ObjectType } from '@nestjs/graphql';
 import { Range } from 'src/clean-arch/adapters/graphql/schema/common.schema';
-import { RangeInput } from '../filter/filter.resolver';
+
 import { SimpleMusicTrack } from '../music-track/music-track.model';
 @ObjectType()
 export class PlaylistTrack {
@@ -42,48 +42,6 @@ export class TrackRecommendation {
 
   @Field(() => [String])
   reasons: string[];
-}
-
-@InputType()
-export class PlaylistFilterInput {
-  @Field(() => [String], { nullable: true })
-  genres?: string[];
-
-  @Field(() => [String], { nullable: true })
-  subgenres?: string[];
-
-  @Field(() => [String], { nullable: true })
-  atmospheres?: string[];
-
-  @Field(() => [String], { nullable: true })
-  libraryId?: string[];
-
-  @Field(() => RangeInput, { nullable: true })
-  tempo?: { min?: number; max?: number };
-}
-
-@InputType()
-export class CreatePlaylistInput {
-  @Field()
-  name: string;
-
-  @Field({ nullable: true })
-  description?: string;
-
-  @Field({ nullable: true })
-  userId?: string;
-
-  @Field({ nullable: true })
-  isPublic?: boolean;
-
-  @Field(() => PlaylistFilterInput, { nullable: true })
-  filters?: PlaylistFilterInput;
-
-  @Field(() => Int, { nullable: true })
-  maxTracks?: number;
-
-  @Field({ nullable: true })
-  subgenreSelectionMode?: 'exact' | 'contain';
 }
 
 @InputType()

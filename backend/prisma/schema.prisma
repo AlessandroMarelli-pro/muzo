@@ -370,9 +370,7 @@ model ImageSearch {
   updatedAt   DateTime? @updatedAt
   updatedById  String?
     
-  // Timestamps
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+
   
   // Relations
   track      MusicTrack @relation(fields: [trackId], references: [id], onDelete: Cascade)
@@ -392,10 +390,7 @@ model SavedFilter {
   updatedAt   DateTime? @updatedAt
   updatedById  String?
     
-  // Timestamps
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  
+
   @@map("saved_filters")
 }
 
@@ -422,8 +417,10 @@ model Genre {
   name        String   @unique
   description String?
   createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
+  createdById   String @default("userId")
+  updatedAt   DateTime? @updatedAt
+  updatedById  String?
+
   // Relations
   trackGenres TrackGenre[]
   subgenres   Subgenre[]
@@ -438,7 +435,9 @@ model Subgenre {
   description String?
   genreId     String?  // Optional parent genre
   createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdById   String @default("userId")
+  updatedAt   DateTime? @updatedAt
+  updatedById  String?
   
   // Relations
   genre         Genre?         @relation(fields: [genreId], references: [id], onDelete: SetNull)
@@ -453,7 +452,10 @@ model TrackGenre {
   id        String   @id @default(uuid())
   trackId   String
   genreId   String
-  createdAt DateTime @default(now())
+  createdAt   DateTime @default(now())
+  createdById   String @default("userId")
+  updatedAt   DateTime? @updatedAt
+  updatedById  String?
   
   // Relations
   track     MusicTrack @relation(fields: [trackId], references: [id], onDelete: Cascade)
@@ -469,7 +471,10 @@ model TrackSubgenre {
   id        String   @id @default(uuid())
   trackId   String
   subgenreId String
-  createdAt DateTime @default(now())
+  createdAt   DateTime @default(now())
+  createdById   String @default("userId")
+  updatedAt   DateTime? @updatedAt
+  updatedById  String?
   
   // Relations
   track     MusicTrack @relation(fields: [trackId], references: [id], onDelete: Cascade)

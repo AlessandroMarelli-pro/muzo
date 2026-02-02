@@ -109,12 +109,6 @@ export type BeatData = {
   timestamp: Scalars['Float']['output'];
 };
 
-export type CleanArchCreatePlaylistInput = {
-  description?: InputMaybe<Scalars['String']['input']>;
-  isPublic?: InputMaybe<Scalars['Boolean']['input']>;
-  name: Scalars['String']['input'];
-};
-
 export type CleanArchPlaylist = Node & {
   __typename?: 'CleanArchPlaylist';
   /** True if the given track is already in this playlist */
@@ -193,7 +187,6 @@ export type CreatePlaylistInput = {
   maxTracks?: InputMaybe<Scalars['Int']['input']>;
   name: Scalars['String']['input'];
   subgenreSelectionMode?: InputMaybe<Scalars['String']['input']>;
-  userId?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type CreateSavedFilterInput = {
@@ -274,6 +267,12 @@ export type FilterOptions = {
   tempoRange: Range;
 };
 
+export type FilterWithId = {
+  __typename?: 'FilterWithID';
+  id: Scalars['Base64ID']['output'];
+  name: Scalars['String']['output'];
+};
+
 export type FormatDistribution = {
   __typename?: 'FormatDistribution';
   count: Scalars['Int']['output'];
@@ -324,12 +323,6 @@ export type IntelligentEditorSession = {
   updatedAt: Scalars['DateTime']['output'];
   userActions: Scalars['String']['output'];
   userId?: Maybe<Scalars['ID']['output']>;
-};
-
-export type LibraryFilterOptionType = {
-  __typename?: 'LibraryFilterOptionType';
-  id: Scalars['ID']['output'];
-  name: Scalars['String']['output'];
 };
 
 export type LibraryMetrics = {
@@ -472,11 +465,10 @@ export type Mutation = {
   authenticateTidal: TidalAuthResult;
   authenticateYouTube: YouTubeAuthResult;
   bangerTrack: SimpleMusicTrack;
-  caCreatePlaylist: CleanArchPlaylist;
   caUpdatePlaylist: CleanArchPlaylist;
   clearCurrentFilter: Scalars['Boolean']['output'];
   createLibrary: MusicLibrary;
-  createPlaylist: Playlist;
+  createPlaylist: CleanArchPlaylist;
   createSavedFilter: SavedFilter;
   deleteImageForTrack: DeleteImageResponse;
   deleteLibrary: Scalars['Boolean']['output'];
@@ -545,11 +537,6 @@ export type MutationAuthenticateYouTubeArgs = {
 
 export type MutationBangerTrackArgs = {
   trackId: Scalars['ID']['input'];
-};
-
-
-export type MutationCaCreatePlaylistArgs = {
-  input: CleanArchCreatePlaylistInput;
 };
 
 
@@ -782,32 +769,11 @@ export type PlaybackState = {
   volume: Scalars['Float']['output'];
 };
 
-export type Playlist = {
-  __typename?: 'Playlist';
-  bpmRange: Range;
-  createdAt: Scalars['DateTime']['output'];
-  description?: Maybe<Scalars['String']['output']>;
-  energyRange: Range;
-  genresCount: Scalars['Int']['output'];
-  id: Scalars['ID']['output'];
-  images: Array<Scalars['String']['output']>;
-  isTrackInPlaylist?: Maybe<Scalars['Boolean']['output']>;
-  name: Scalars['String']['output'];
-  numberOfTracks: Scalars['Int']['output'];
-  sorting?: Maybe<PlaylistSorting>;
-  subgenresCount: Scalars['Int']['output'];
-  topGenres: Array<Scalars['String']['output']>;
-  topSubgenres: Array<Scalars['String']['output']>;
-  totalDuration: Scalars['Float']['output'];
-  tracks: Array<PlaylistTrack>;
-  updatedAt: Scalars['DateTime']['output'];
-};
-
 export type PlaylistFilterInput = {
   atmospheres?: InputMaybe<Array<Scalars['String']['input']>>;
-  genres?: InputMaybe<Array<Scalars['String']['input']>>;
-  libraryId?: InputMaybe<Array<Scalars['String']['input']>>;
-  subgenres?: InputMaybe<Array<Scalars['String']['input']>>;
+  genreIds?: InputMaybe<Array<Scalars['String']['input']>>;
+  libraryIds?: InputMaybe<Array<Scalars['String']['input']>>;
+  subgenreIds?: InputMaybe<Array<Scalars['String']['input']>>;
   tempo?: InputMaybe<RangeInput>;
 };
 
@@ -855,7 +821,6 @@ export type Query = {
   getSavedFilter?: Maybe<SavedFilter>;
   getSavedFilters: Array<SavedFilter>;
   getSpotifyAuthUrl: SpotifyAuthUrl;
-  getStaticFilterOptions: StaticFilterOptions;
   getTidalAuthUrl: TidalAuthUrl;
   getWaveformData: Array<Scalars['Float']['output']>;
   getYouTubeAuthUrl: YouTubeAuthUrl;
@@ -969,7 +934,7 @@ export type QueryNodeArgs = {
 export type QueryPlaylistRecommendationsArgs = {
   excludeTrackIds?: InputMaybe<Array<Scalars['String']['input']>>;
   limit?: InputMaybe<Scalars['Int']['input']>;
-  playlistId: Scalars['ID']['input'];
+  playlistId: Scalars['Base64ID']['input'];
 };
 
 
@@ -1124,11 +1089,11 @@ export type SpotifyAuthUrl = {
 
 export type StaticFilterOptions = {
   __typename?: 'StaticFilterOptions';
-  atmospheres: Array<Scalars['String']['output']>;
-  genres: Array<Scalars['String']['output']>;
-  keys: Array<Scalars['String']['output']>;
-  libraries: Array<LibraryFilterOptionType>;
-  subgenres: Array<Scalars['String']['output']>;
+  atmospheres: Array<FilterWithId>;
+  genres: Array<FilterWithId>;
+  keys: Array<FilterWithId>;
+  libraries: Array<FilterWithId>;
+  subgenres: Array<FilterWithId>;
 };
 
 export type SubgenreDistribution = {
@@ -1343,6 +1308,7 @@ export type User = Node & {
   id: Scalars['Base64ID']['output'];
   lastName?: Maybe<Scalars['String']['output']>;
   playlists: PlaylistsResult;
+  staticFilterOptions: StaticFilterOptions;
 };
 
 export type UserPreferencesGraphQl = {
@@ -1440,7 +1406,7 @@ export type GetTracksByCategoriesQuery = { __typename?: 'Query', tracksByCategor
 export type GetStaticFiltersQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type GetStaticFiltersQuery = { __typename?: 'Query', getStaticFilterOptions: { __typename?: 'StaticFilterOptions', genres: Array<string>, subgenres: Array<string>, keys: Array<string>, atmospheres: Array<string>, libraries: Array<{ __typename?: 'LibraryFilterOptionType', id: string, name: string }> } };
+export type GetStaticFiltersQuery = { __typename?: 'Query', me: { __typename?: 'User', staticFilterOptions: { __typename?: 'StaticFilterOptions', genres: Array<{ __typename?: 'FilterWithID', id: any, name: string }>, subgenres: Array<{ __typename?: 'FilterWithID', id: any, name: string }>, keys: Array<{ __typename?: 'FilterWithID', id: any, name: string }>, libraries: Array<{ __typename?: 'FilterWithID', id: any, name: string }>, atmospheres: Array<{ __typename?: 'FilterWithID', id: any, name: string }> } } };
 
 export type GetRecentlyPlayedQueryVariables = Exact<{
   limit?: InputMaybe<Scalars['Float']['input']>;
@@ -1495,7 +1461,7 @@ export type GetFilterOptionsQuery = { __typename?: 'Query', getFilterOptions: { 
 export type GetStaticFilterOptionsQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type GetStaticFilterOptionsQuery = { __typename?: 'Query', getStaticFilterOptions: { __typename?: 'StaticFilterOptions', genres: Array<string>, keys: Array<string>, subgenres: Array<string>, atmospheres: Array<string>, libraries: Array<{ __typename?: 'LibraryFilterOptionType', id: string, name: string }> } };
+export type GetStaticFilterOptionsQuery = { __typename?: 'Query', me: { __typename?: 'User', staticFilterOptions: { __typename?: 'StaticFilterOptions', genres: Array<{ __typename?: 'FilterWithID', id: any, name: string }>, subgenres: Array<{ __typename?: 'FilterWithID', id: any, name: string }>, keys: Array<{ __typename?: 'FilterWithID', id: any, name: string }>, libraries: Array<{ __typename?: 'FilterWithID', id: any, name: string }>, atmospheres: Array<{ __typename?: 'FilterWithID', id: any, name: string }> } } };
 
 export type GetSavedFiltersQueryVariables = Exact<{ [key: string]: never; }>;
 
@@ -1680,7 +1646,7 @@ export type CreatePlaylistMutationVariables = Exact<{
 }>;
 
 
-export type CreatePlaylistMutation = { __typename?: 'Mutation', createPlaylist: { __typename?: 'Playlist', id: string, name: string, description?: string | null, createdAt: any, updatedAt: any } };
+export type CreatePlaylistMutation = { __typename?: 'Mutation', createPlaylist: { __typename?: 'CleanArchPlaylist', id: any, name: string, description?: string | null, createdAt: any, updatedAt: any } };
 
 export type DeletePlaylistMutationVariables = Exact<{
   id: Scalars['Base64ID']['input'];
@@ -1778,7 +1744,7 @@ export type RemoveTrackFromPlaylistMutationVariables = Exact<{
 export type RemoveTrackFromPlaylistMutation = { __typename?: 'Mutation', removeTrackFromPlaylist: boolean };
 
 export type GetPlaylistRecommendationsQueryVariables = Exact<{
-  playlistId: Scalars['ID']['input'];
+  playlistId: Scalars['Base64ID']['input'];
   limit?: InputMaybe<Scalars['Int']['input']>;
   excludeTrackIds?: InputMaybe<Array<Scalars['String']['input']> | Scalars['String']['input']>;
 }>;

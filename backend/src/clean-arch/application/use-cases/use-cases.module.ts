@@ -18,6 +18,7 @@ import {
   UpdatePlaylistUseCase,
 } from './';
 import { UpdatePlaylistSortingUseCase } from './playlist-sorting/UpdatePlaylistSorting';
+import { GetStaticFilterOptionsUseCase } from './saved-filter';
 
 @Module({
   imports: [RepositoriesModule],
@@ -38,6 +39,7 @@ import { UpdatePlaylistSortingUseCase } from './playlist-sorting/UpdatePlaylistS
     ExportPlaylistToM3UUseCase,
     UpdatePlaylistSortingUseCase,
     UpdatePlaylistTracksPositionsUseCase,
+    GetStaticFilterOptionsUseCase,
   ],
   exports: [
     CreatePlaylistUseCase,
@@ -56,6 +58,7 @@ import { UpdatePlaylistSortingUseCase } from './playlist-sorting/UpdatePlaylistS
     ExportPlaylistToM3UUseCase,
     UpdatePlaylistSortingUseCase,
     UpdatePlaylistTracksPositionsUseCase,
+    GetStaticFilterOptionsUseCase,
   ],
 })
 export class UseCasesModule {}

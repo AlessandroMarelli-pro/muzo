@@ -2,7 +2,6 @@ import {
 	AddTrackToPlaylistInput,
 	CleanArchPlaylist,
 	CreatePlaylistInput,
-	Playlist,
 	PlaylistSorting,
 	PlaylistsResult,
 	PlaylistTrack,
@@ -270,7 +269,7 @@ const REMOVE_TRACK_FROM_PLAYLIST = gql`
 const GET_PLAYLIST_RECOMMENDATIONS = gql`
 	${simpleMusicTrackFragment}
 	query GetPlaylistRecommendations(
-		$playlistId: ID!
+		$playlistId: Base64ID!
 		$limit: Int
 		$excludeTrackIds: [String!]
 	) {
@@ -354,7 +353,7 @@ export const playlistRecommendationsQueryOptions = (
 export const fetchPlaylists = async (
 	search?: string,
 	verifyTrackId?: string
-): Promise<Playlist[]> => {
+): Promise<CleanArchPlaylist[]> => {
 	return graffleClient
 		.request<{
 			me: { playlists: PlaylistsResult };
@@ -370,7 +369,7 @@ export const fetchPlaylists = async (
 export const fetchPlaylist = async (
 	id: string,
 	userId: string = 'default'
-): Promise<Playlist> => {
+): Promise<CleanArchPlaylist> => {
 	const data = await graffleClient.request<{ node: CleanArchPlaylist }>(
 		GET_PLAYLIST,
 		{
@@ -381,7 +380,7 @@ export const fetchPlaylist = async (
 	return toPlaylistItem(data.node);
 };
 
-export const fetchFavoritePlaylist = async (): Promise<Playlist> => {
+export const fetchFavoritePlaylist = async (): Promise<CleanArchPlaylist> => {
 	const data = await graffleClient.request<{
 		favoritePlaylist: CleanArchPlaylist;
 	}>(GET_FAVORITE_PLAYLIST);
@@ -390,11 +389,10 @@ export const fetchFavoritePlaylist = async (): Promise<Playlist> => {
 
 const createPlaylist = async (
 	input: CreatePlaylistInput
-): Promise<Playlist> => {
-	const data = await graffleClient.request<{ createPlaylist: Playlist }>(
-		CREATE_PLAYLIST,
-		{ input }
-	);
+): Promise<CleanArchPlaylist> => {
+	const data = await graffleClient.request<{
+		createPlaylist: CleanArchPlaylist;
+	}>(CREATE_PLAYLIST, { input });
 	return data.createPlaylist;
 };
 
@@ -623,7 +621,7 @@ export function usePlaylists(search?: string, verifyTrackId?: string) {
 		error,
 		refetch,
 		isRefetching,
-	} = useQuery<Playlist[]>({
+	} = useQuery<CleanArchPlaylist[]>({
 		queryKey: playlistsQueryOptions(search, verifyTrackId).queryKey,
 		queryFn: () => fetchPlaylists(search, verifyTrackId),
 	});
@@ -841,11 +839,15 @@ export function useCreatePlaylist() {
 
 	const createPlaylistMutation = useMutation({
 		mutationFn: createPlaylist,
-		onSuccess: (data) => {
-			console.log('invalidating playlists');
-			queryClient.invalidateQueries({
-				queryKey: queryKeys.playlists(undefined, undefined),
+		onSuccess: async (data) => {
+			await queryClient.invalidateQueries({
+				queryKey: playlistsQueryOptions().queryKey,
 			});
+			// Ensure the playlists query has refetched and cache is updated
+			await queryClient.refetchQueries({
+				queryKey: playlistsQueryOptions().queryKey,
+			});
+
 			toast.success(`Playlist created successfully`, {
 				description: data.name,
 			});

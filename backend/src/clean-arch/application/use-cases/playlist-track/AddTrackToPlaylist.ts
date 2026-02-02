@@ -45,7 +45,7 @@ export class AddTrackToPlaylistUseCase {
         addTrackDto.trackId,
       );
 
-    if (!existingPlaylistTrack) {
+    if (existingPlaylistTrack) {
       throw createConflictError('Track is already in this playlist');
     }
     // Get the next position

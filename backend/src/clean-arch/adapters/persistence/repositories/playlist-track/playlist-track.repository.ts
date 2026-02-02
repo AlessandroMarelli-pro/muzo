@@ -30,6 +30,14 @@ export class PlaylistTrackRepository implements IPlaylistTrackRepository {
       })
       .then(toDomain);
   }
+
+  async saveMany(playlistTracks: PlaylistTrack[]): Promise<PlaylistTrack[]> {
+    return this.prisma.playlistTrack
+      .createManyAndReturn({
+        data: playlistTracks.map(toPrisma),
+      })
+      .then((rows) => rows.map(toDomain));
+  }
   async getTracksByPlaylistId(
     playlistId: PlaylistId,
   ): Promise<PlaylistTrack[]> {

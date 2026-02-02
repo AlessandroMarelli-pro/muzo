@@ -4,7 +4,6 @@ import {
   FilterCriteria,
   FilterOptions,
   SavedFilter,
-  StaticFilterOptions,
   UpdateFilterDto,
 } from '../../models/filter.model';
 import { PrismaService } from '../../shared/services/prisma.service';
@@ -14,70 +13,6 @@ export class FilterService {
   private currentFilter: FilterCriteria | null = null;
 
   constructor(private readonly prisma: PrismaService) {}
-
-  async getStaticFilterOptions(): Promise<StaticFilterOptions> {
-    // Get distinct genres from trackGenres relation
-    const genres = await this.prisma.genre.findMany({
-      select: {
-        name: true,
-      },
-      orderBy: {
-        name: 'asc',
-      },
-    });
-
-    // Get distinct subgenres from trackSubgenres relation
-    const subgenres = await this.prisma.subgenre.findMany({
-      select: {
-        name: true,
-      },
-      orderBy: {
-        name: 'asc',
-      },
-    });
-
-    // Get distinct keys from audio fingerprints
-    const keyResults = await this.prisma.audioFingerprint.findMany({
-      select: {
-        key: true,
-      },
-    });
-
-    // Get distinct libraries from music libraries
-    const libraryResults = await this.prisma.musicLibrary.findMany({
-      select: {
-        id: true,
-        name: true,
-      },
-    });
-    // Extract and deduplicate keys
-    const keys = new Set<string>();
-    keyResults.forEach((fp) => {
-      if (fp.key) keys.add(fp.key);
-    });
-
-    // Get distinct atmospheres from atmospheres relation
-    const atmosphereResults = await this.prisma.musicTrack.findMany({
-      select: {
-        atmosphereDesc: true,
-      },
-    });
-
-    const atmospheres = atmosphereResults
-      .map((at) => JSON.parse(at.atmosphereDesc))
-      .flat();
-    const uniqueAtmospheres = new Set(atmospheres);
-    return {
-      genres: genres.map((g) => g.name),
-      subgenres: subgenres.map((s) => s.name),
-      keys: Array.from(keys).sort(),
-      libraries: libraryResults.map((l) => ({
-        id: l.id,
-        name: l.name,
-      })),
-      atmospheres: Array.from(uniqueAtmospheres).filter((a) => a !== null),
-    };
-  }
 
   async getFilterOptions(): Promise<FilterOptions> {
     // Get audio features from audio fingerprints

@@ -1,12 +1,17 @@
 import { Maybe } from '../common';
 import type {
   Brand,
+  GenreId,
   ImageSearchId,
   MusicLibraryId,
   MusicTrackId,
   PlaylistId,
   PlaylistSortingId,
   PlaylistTrackId,
+  SavedFilterId,
+  SubgenreId,
+  TrackGenreId,
+  TrackSubgenreId,
   UserId,
 } from '../ids'; // or your ids index
 import { Email, Name } from './value-object';
@@ -22,7 +27,13 @@ export type Model =
   | PlaylistTrack
   | MusicTrack
   | PlaylistSorting
-  | MusicLibrary;
+  | MusicLibrary
+  | ImageSearch
+  | TrackGenre
+  | Genre
+  | TrackSubgenre
+  | Subgenre
+  | SavedFilter;
 
 export type ModelBase<
   Id extends string | Brand<T, string> = string,
@@ -172,4 +183,48 @@ export type ImageSearch = Readonly<ModelBase<ImageSearchId>> & {
   imagePath: string;
   imageUrl: string;
   error: Maybe<string>;
+};
+
+export type TrackGenre = Readonly<ModelBase<TrackGenreId>> & {
+  trackId: MusicTrackId;
+  genreId: GenreId;
+};
+
+export type Genre = Readonly<ModelBase<GenreId>> & {
+  name: string;
+  description: Maybe<string>;
+};
+
+export type TrackSubgenre = Readonly<ModelBase<TrackSubgenreId>> & {
+  trackId: MusicTrackId;
+  subgenreId: SubgenreId;
+};
+
+export type Subgenre = Readonly<ModelBase<SubgenreId>> & {
+  name: string;
+  description: Maybe<string>;
+  genreId: Maybe<GenreId>;
+};
+
+export type SavedFilter = Readonly<ModelBase<SavedFilterId>> & {
+  name: string;
+  criteria: FilterCriteria;
+};
+
+export type FilterCriteria = {
+  genreIds: Maybe<GenreId[]>;
+  subgenreIds: Maybe<SubgenreId[]>;
+  keys: Maybe<string[]>;
+  tempo: Maybe<{ min?: number; max?: number }>;
+  valenceMood: Maybe<string[]>;
+  arousalMood: Maybe<string[]>;
+  danceabilityFeeling: Maybe<string[]>;
+  speechiness: Maybe<{ min?: number; max?: number }>;
+  instrumentalness: Maybe<{ min?: number; max?: number }>;
+  liveness: Maybe<{ min?: number; max?: number }>;
+  acousticness: Maybe<{ min?: number; max?: number }>;
+  artist: Maybe<string>;
+  title: Maybe<string>;
+  libraryIds: Maybe<MusicLibraryId[]>;
+  atmospheres: Maybe<string[]>;
 };

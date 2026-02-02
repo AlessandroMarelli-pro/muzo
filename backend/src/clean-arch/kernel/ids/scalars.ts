@@ -17,3 +17,13 @@ export type PlaylistSortingId = Brand<string, 'PlaylistSortingId'>;
 export type MusicLibraryId = Brand<string, 'MusicLibraryId'>;
 
 export type ImageSearchId = Brand<string, 'ImageSearchId'>;
+
+export type TrackGenreId = Brand<string, 'TrackGenreId'>;
+
+export type TrackSubgenreId = Brand<string, 'TrackSubgenreId'>;
+
+export type GenreId = Brand<string, 'GenreId'>;
+
+export type SubgenreId = Brand<string, 'SubgenreId'>;
+
+export type SavedFilterId = Brand<string, 'SavedFilterId'>;

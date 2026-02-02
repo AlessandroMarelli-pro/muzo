@@ -8,7 +8,7 @@ import {
   ResolveField,
   Resolver,
 } from '@nestjs/graphql';
-import { PlaylistStatsLoader } from 'src/clean-arch/adapters/persistence/queries/playlist-stats.loader';
+import { PlaylistStatsLoader } from 'src/clean-arch/adapters/persistence/queries/playlist/playlist-stats.loader';
 import {
   CreatePlaylistUseCase,
   DeletePlaylistUseCase,
@@ -29,8 +29,8 @@ import { CleanArchPlaylistSorting } from '../schema/playlist-sorting.schema';
 import { CleanArchPlaylistStats as PlaylistStats } from '../schema/playlist-stats.schema';
 import { CleanArchPlaylistTrack as PlaylistTrack } from '../schema/playlist-track.schema';
 import {
-  CleanArchCreatePlaylistInput,
   CleanArchUpdatePlaylistInput,
+  CreatePlaylistInput,
 } from '../schema/playlist.input';
 import { CleanArchPlaylist } from '../schema/playlist.schema';
 import { parseMusicTrackId, parsePlaylistId } from '../utils/parse-id';
@@ -120,13 +120,16 @@ export class CleanArchPlaylistResolver {
   }
 
   @Mutation(() => CleanArchPlaylist)
-  async caCreatePlaylist(
-    @Args('input') input: CleanArchCreatePlaylistInput,
+  async createPlaylist(
+    @Args('input') input: CreatePlaylistInput,
   ): Promise<CleanArchPlaylist> {
     return this.createPlaylistUseCase.execute({
       name: input.name,
       description: input.description ?? null,
       isPublic: input.isPublic ?? false,
+      filters: input.filters ?? undefined,
+      maxTracks: input.maxTracks ?? undefined,
+      subgenreSelectionMode: input.subgenreSelectionMode ?? undefined,
     });
   }
 

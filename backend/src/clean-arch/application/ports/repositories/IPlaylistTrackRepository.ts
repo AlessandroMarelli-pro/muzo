@@ -37,6 +37,7 @@ export type UpdatePositionsData = {
 };
 export interface IPlaylistTrackRepository {
   save(playlistTrack: PlaylistTrack): Promise<PlaylistTrack>;
+  saveMany(playlistTracks: PlaylistTrack[]): Promise<PlaylistTrack[]>;
   updateOneById(
     id: PlaylistTrackId,
     data: PlaylistTrackUpdateData,

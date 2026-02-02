@@ -1,7 +1,6 @@
 import {
   Args,
   Field,
-  Float,
   ID,
   InputType,
   Mutation,
@@ -9,27 +8,18 @@ import {
   Query,
   Resolver,
 } from '@nestjs/graphql';
+import { RangeInput } from 'src/clean-arch/adapters/graphql/schema/common.input';
 import { Range } from 'src/clean-arch/adapters/graphql/schema/common.schema';
 import {
   CreateFilterDto,
   FilterCriteria,
   FilterOptions as FilterOptionsModel,
-  LibraryFilterOption,
   SavedFilter as SavedFilterModel,
-  StaticFilterOptions as StaticFilterOptionsModel,
   UpdateFilterDto,
 } from '../../models/filter.model';
 import { FilterService } from './filter.service';
 
 // GraphQL Input Types
-@InputType()
-export class RangeInput {
-  @Field(() => Float, { nullable: true })
-  min?: number;
-
-  @Field(() => Float, { nullable: true })
-  max?: number;
-}
 
 @InputType()
 export class FilterCriteriaInput {
@@ -155,24 +145,6 @@ export class LibraryFilterOptionType {
 }
 
 @ObjectType()
-export class StaticFilterOptions {
-  @Field(() => [String])
-  genres: string[];
-
-  @Field(() => [String])
-  subgenres: string[];
-
-  @Field(() => [String])
-  keys: string[];
-
-  @Field(() => [LibraryFilterOptionType])
-  libraries: LibraryFilterOption[];
-
-  @Field(() => [String])
-  atmospheres: string[];
-}
-
-@ObjectType()
 export class FilterOptions {
   @Field(() => Range)
   tempoRange: { min: number; max: number };
@@ -211,11 +183,6 @@ export class SavedFilter {
 @Resolver()
 export class FilterResolver {
   constructor(private readonly filterService: FilterService) {}
-
-  @Query(() => StaticFilterOptions)
-  async getStaticFilterOptions(): Promise<StaticFilterOptionsModel> {
-    return this.filterService.getStaticFilterOptions();
-  }
 
   @Query(() => FilterOptions)
   async getFilterOptions(): Promise<FilterOptionsModel> {

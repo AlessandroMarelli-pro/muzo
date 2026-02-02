@@ -3,6 +3,7 @@ import { Field, ObjectType } from '@nestjs/graphql';
 import { Base64ID } from '../scalars/base64-id.scalar';
 import { Node } from './common.schema';
 import { CleanArchPlaylist } from './playlist.schema';
+import { StaticFilterOptions } from './saved-filter.schema';
 
 @ObjectType()
 export class PlaylistsResult {
@@ -26,4 +27,7 @@ export class User {
 
   @Field(() => PlaylistsResult)
   playlists: PlaylistsResult;
+
+  @Field(() => StaticFilterOptions)
+  staticFilterOptions: StaticFilterOptions;
 }

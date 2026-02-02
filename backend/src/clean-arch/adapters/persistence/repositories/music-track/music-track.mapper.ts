@@ -47,6 +47,7 @@ export type ToImagePath = (row: PrismaMusicTrackWithRelations) => string;
 export type ToAudioFileAnalysis = (row: PrismaMusicTrack) => AudioFileAnalysis;
 
 export const toMusicTrackStats: ToMusicTrackStats = (row) => {
+  if (!row) return null;
   return {
     listeningCount: row.listeningCount,
     lastPlayedAt: row.lastPlayedAt,
@@ -56,6 +57,7 @@ export const toMusicTrackStats: ToMusicTrackStats = (row) => {
   };
 };
 export const toAudioFileInfo: ToAudioFileInfo = (row) => {
+  if (!row) return null;
   return {
     filePath: row.filePath,
     fileName: row.fileName,
@@ -64,6 +66,7 @@ export const toAudioFileInfo: ToAudioFileInfo = (row) => {
   };
 };
 export const toAudioTechnical: ToAudioTechnical = (row) => {
+  if (!row) return null;
   return {
     duration: row.duration,
     format: row.format,
@@ -72,6 +75,7 @@ export const toAudioTechnical: ToAudioTechnical = (row) => {
   };
 };
 export const toAudioFileFeatures: ToAudioFileFeatures = (row) => {
+  if (!row) return null;
   return {
     musicalFeatures: {
       camelotKey: row.camelotKey,
@@ -95,16 +99,19 @@ export const toAudioFileFeatures: ToAudioFileFeatures = (row) => {
 };
 
 export const toAudioFileMetadata: ToAudioFileMetadata = (row) => {
+  if (!row) return null;
   return {
     album: row.aiAlbum,
     duration: row.duration,
     date: row.originalDate,
-    genres: row.trackGenres.map((genre) => genre.genre.name),
-    subgenres: row.trackSubgenres.map((subgenre) => subgenre.subgenre.name),
+    genres: row.trackGenres?.map((genre) => genre.genre.name) || [],
+    subgenres:
+      row.trackSubgenres?.map((subgenre) => subgenre.subgenre.name) || [],
   };
 };
 
 export const toAudioFileAIMetadata: ToAudioFileAIMetadata = (row) => {
+  if (!row) return null;
   return {
     description: row.aiDescription,
     tags: row.aiTags.split(','),
@@ -116,6 +123,7 @@ export const toAudioFileAIMetadata: ToAudioFileAIMetadata = (row) => {
 };
 
 export const toAudioFileAnalysis: ToAudioFileAnalysis = (row) => {
+  if (!row) return null;
   return {
     status: row.analysisStatus,
     startedAt: row.analysisStartedAt,
@@ -124,6 +132,7 @@ export const toAudioFileAnalysis: ToAudioFileAnalysis = (row) => {
   };
 };
 export const toImagePath: ToImagePath = (row) => {
+  if (!row) return null;
   return row.imageSearches?.[0]?.imagePath || '';
 };
 export const toDomain: ToDomain = (row) => {
