@@ -1,5 +1,4 @@
 import { Module } from '@nestjs/common';
-import { RepositoriesModule } from '../../adapters/persistence/repositories/repositories.module';
 import {
   AddTrackToPlaylistUseCase,
   CreatePlaylistUseCase,
@@ -52,7 +51,7 @@ const useCasesProviders = [
   GetCurrentFilterUseCase,
 ];
 @Module({
-  imports: [RepositoriesModule],
+  imports: [],
   providers: useCasesProviders,
   exports: useCasesProviders,
 })

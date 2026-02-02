@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Global, Module } from '@nestjs/common';
 
 import { PLAYLIST_STATS_QUERY } from 'src/clean-arch/application/ports/queries/IPlaylistStatsQuery';
 import { SAVED_FILTER_QUERY } from 'src/clean-arch/application/ports/queries/ISavedFilterQuery';
@@ -16,6 +16,7 @@ import { PlaylistTrackRepository } from './playlist-track/playlist-track.reposit
 import { PlaylistRepository } from './playlist/playlist.repository';
 import { SavedFilterRepository } from './saved-filter/saved-filter.repository';
 
+@Global()
 @Module({
   providers: [
     PrismaService,
