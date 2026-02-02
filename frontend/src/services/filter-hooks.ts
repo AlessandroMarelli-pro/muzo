@@ -109,7 +109,6 @@ export const useCreateActiveFilter = () => {
 
 			// Invalidate all queries that depend on filters
 			queryClient.invalidateQueries({ queryKey: ['music-tracks'] });
-			queryClient.invalidateQueries({ queryKey: ['tracksByCategories'] });
 			queryClient.invalidateQueries({ queryKey: ['tracks'] });
 			queryClient.invalidateQueries({ queryKey: ['playlistRecommendations'] });
 			queryClient.invalidateQueries({ queryKey: ['tracksList'] });
@@ -151,7 +150,6 @@ export const useUpdateActiveFilter = () => {
 
 			// Invalidate all queries that depend on filters
 			queryClient.invalidateQueries({ queryKey: ['music-tracks'] });
-			queryClient.invalidateQueries({ queryKey: ['tracksByCategories'] });
 			queryClient.invalidateQueries({ queryKey: ['tracks'] });
 			queryClient.invalidateQueries({ queryKey: ['playlistRecommendations'] });
 			queryClient.invalidateQueries({ queryKey: ['tracksList'] });
@@ -184,7 +182,6 @@ export const useDeleteActiveFilter = () => {
 
 			// Invalidate all queries that depend on filters
 			queryClient.invalidateQueries({ queryKey: ['music-tracks'] });
-			queryClient.invalidateQueries({ queryKey: ['tracksByCategories'] });
 			queryClient.invalidateQueries({ queryKey: ['tracks'] });
 			queryClient.invalidateQueries({ queryKey: ['playlistRecommendations'] });
 		},

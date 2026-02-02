@@ -1,35 +1,21 @@
-import {
-  Args,
-  ID,
-  Mutation,
-  Query,
-  ResolveField,
-  Resolver,
-} from '@nestjs/graphql';
+import { Args, ID, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { AnalysisStatus } from '@prisma/client';
 import {
   MusicTrackWithRelations,
   SimpleMusicTrackInterface,
 } from '../../models/index';
-import {
-  MusicTrackByCategories,
-  MusicTrackQueryOptions,
-} from '../../models/music-track.model';
+import { MusicTrackQueryOptions } from '../../models/music-track.model';
 import { MusicTrackService } from './music-track.service';
 
 import { MusicTrack as MusicTrackModel } from '@prisma/client';
 
 import { TrackRecommendation } from '../playlist/playlist.model';
 import {
-  AIAnalysisResult,
-  IntelligentEditorSession,
   MusicTrack,
-  MusicTrackByCategoriesGraphQL,
   MusicTrackListPaginated,
   RandomTrackWithStats,
   SimpleMusicTrack,
   TrackQueryOptions,
-  TrackQueryOptionsByCategories,
 } from './music-track.model';
 
 export function mapToSimpleMusicTrack(
@@ -93,17 +79,6 @@ export class MusicTrackResolver {
     tracks: (MusicTrackWithRelations | SimpleMusicTrackInterface)[],
   ): SimpleMusicTrack[] {
     return tracks.map((track) => mapToSimpleMusicTrack(track));
-  }
-
-  private mapToGraphQLTracksByCategories(
-    tracksByCategories: MusicTrackByCategories<MusicTrackModel>[],
-  ): MusicTrackByCategoriesGraphQL[] {
-    return tracksByCategories.map((trackByCategory) => ({
-      ...trackByCategory,
-      tracks: trackByCategory.tracks.map((track) =>
-        mapToSimpleMusicTrack(track as MusicTrackWithRelations),
-      ),
-    }));
   }
 
   @Query(() => [SimpleMusicTrack])
@@ -180,48 +155,6 @@ export class MusicTrackResolver {
     return this.musicTrackService.getTrackRecommendations(id, criteria);
   }
 
-  @Query(() => [MusicTrackByCategoriesGraphQL])
-  async tracksByCategories(
-    @Args('options', { nullable: true })
-    options?: TrackQueryOptionsByCategories,
-  ): Promise<MusicTrackByCategoriesGraphQL[]> {
-    const queryOptions: MusicTrackQueryOptions & {
-      category?: 'genre' | 'subgenre';
-      genre?: string;
-    } = {
-      libraryId: options?.libraryId,
-      genre: options?.genre,
-      analysisStatus: options?.analysisStatus as AnalysisStatus,
-      format: options?.format,
-      limit: options?.limit,
-      offset: options?.offset,
-      orderBy: options?.orderBy as any,
-      orderDirection: options?.orderDirection as any,
-      category: options?.category as 'genre' | 'subgenre',
-    };
-    const tracks =
-      await this.musicTrackService.findAllByCategories(queryOptions);
-    return this.mapToGraphQLTracksByCategories(tracks);
-  }
-
-  @Query(() => [SimpleMusicTrack])
-  async searchTracks(
-    @Args('query') query: string,
-    @Args('libraryId', { type: () => ID, nullable: true }) libraryId?: string,
-  ): Promise<SimpleMusicTrack[]> {
-    // Simple search implementation - in a real app, you'd use a proper search engine
-    const options: MusicTrackQueryOptions = {
-      libraryId,
-      limit: 50,
-    };
-    //TODO: IMPLEMENT SEARCH
-
-    const searchQuery = query.toLowerCase();
-    const tracks = await this.musicTrackService.findAll(options);
-
-    return this.mapToGraphQLTracksList(tracks);
-  }
-
   @Query(() => [SimpleMusicTrack])
   async recentlyPlayed(
     @Args('limit', { defaultValue: 20 }) limit: number,
@@ -237,16 +170,6 @@ export class MusicTrackResolver {
       (track) => track.lastPlayedAt !== null,
     );
     return this.mapToGraphQLTracksList(filteredTracks);
-  }
-
-  @Mutation(() => MusicTrack)
-  async recordPlayback(
-    @Args('trackId', { type: () => ID }) trackId: string,
-    @Args('duration') duration: number,
-  ): Promise<MusicTrack> {
-    // Record playback and increment listening count
-    const track = await this.musicTrackService.incrementListeningCount(trackId);
-    return this.mapToGraphQLTrack(track);
   }
 
   @Mutation(() => MusicTrack)
@@ -279,28 +202,5 @@ export class MusicTrackResolver {
   ): Promise<boolean> {
     await this.musicTrackService.dislikeTrack(trackId);
     return true;
-  }
-
-  /*  @ResolveField(() => AudioFingerprint, { nullable: true })
-  async audioFingerprint(track: MusicTrack): Promise<AudioFingerprint | null> {
-    // This would typically fetch from the database
-    // For now, return null as we haven't implemented audio fingerprinting yet
-    return null;
-  } */
-
-  @ResolveField(() => AIAnalysisResult, { nullable: true })
-  async analysisResult(track: MusicTrack): Promise<AIAnalysisResult | null> {
-    // This would typically fetch from the database
-    // For now, return null as we haven't implemented AI analysis yet
-    return null;
-  }
-
-  @ResolveField(() => IntelligentEditorSession, { nullable: true })
-  async editorSession(
-    track: MusicTrack,
-  ): Promise<IntelligentEditorSession | null> {
-    // This would typically fetch from the database
-    // For now, return null as we haven't implemented editor sessions yet
-    return null;
   }
 }

@@ -10,7 +10,6 @@ import type {
 	GetRecentlyPlayedQuery,
 	MusicLibrary,
 	MusicTrack,
-	MusicTrackByCategoriesGraphQl,
 	MusicTrackListPaginated,
 	RandomTrackWithStats,
 	SimpleMusicTrack,
@@ -79,10 +78,6 @@ export const queryKeys = {
 			{ libraryId, status, isFavorite, limit, offset, orderBy, orderDirection },
 		] as const,
 
-	tracksByCategories: (category?: string, genre?: string) =>
-		['tracks', 'by-categories', { genre, category }] as const,
-	searchTracks: (query: string, libraryId?: string) =>
-		['tracks', 'search', { query, libraryId }] as const,
 	preferences: ['preferences'] as const,
 	recentlyPlayed: (limit?: number) =>
 		['tracks', 'recently-played', { limit }] as const,
@@ -388,138 +383,6 @@ export const useTracksList = ({
 				}
 			);
 			return response.tracksList;
-		},
-	});
-};
-
-export const useTracksByCategories = (category?: string, genre?: string) => {
-	return useQuery({
-		queryKey: queryKeys.tracksByCategories(category, genre),
-		queryFn: async () => {
-			const response = await graffleClient.request<{
-				tracksByCategories: MusicTrackByCategoriesGraphQl[];
-			}>(
-				gql`
-					${simpleMusicTrackFragment}
-					query GetTracksByCategories($options: TrackQueryOptionsByCategories) {
-						tracksByCategories(options: $options) {
-							category
-							name
-							trackCount
-							tracks {
-								...SimpleMusicTrackFragment
-							}
-						}
-					}
-				`,
-				{ options: { category, genre } }
-			);
-			return response.tracksByCategories;
-		},
-	});
-};
-
-export const useSearchTracks = (query: string, libraryId?: string) => {
-	return useQuery({
-		queryKey: queryKeys.searchTracks(query, libraryId),
-		queryFn: async () => {
-			const response = await graffleClient.request<{
-				searchTracks: MusicTrack[];
-			}>(
-				gql(
-					`
-          query SearchTracks($query: String!, $libraryId: ID) {
-            searchTracks(query: $query, libraryId: $libraryId) {
-              id
-              filePath
-              fileName
-              fileSize
-              duration
-              format
-              originalTitle
-              originalArtist
-              originalAlbum
-              aiTitle
-              aiArtist
-              aiAlbum
-              aiSubgenreConfidence
-              aiConfidence
-              userTitle
-              userArtist
-              userAlbum
-              listeningCount
-              analysisStatus
-              libraryId
-              audioFingerprint {
-                tempo
-                key
-                energy
-                valence
-                danceability
-              }
-              imageSearches {
-                id
-                imagePath
-                imageUrl
-                source
-              }
-            }
-          }
-        ` as any
-				),
-				{ query, libraryId }
-			);
-			return response.searchTracks;
-		},
-		enabled: !!query,
-	});
-};
-
-// Preferences Queries
-export const usePreferences = () => {
-	return useQuery({
-		queryKey: queryKeys.preferences,
-		queryFn: async () => {
-			const response = await graffleClient.request<{
-				preferences: UserPreferences;
-			}>(
-				gql(
-					`
-          query GetPreferences {
-            preferences {
-              id
-              userId
-              analysisPreferences {
-                autoAnalyze
-                confidenceThreshold
-                preferredGenres
-                skipLowConfidence
-              }
-              organizationPreferences {
-                autoOrganize
-                organizationMethod
-                createPlaylists
-                exportToDJSoftware
-              }
-              editorPreferences {
-                showConfidenceScores
-                batchMode
-                autoSave
-                undoLevels
-              }
-              uiPreferences {
-                theme
-                language
-                defaultView
-              }
-              createdAt
-              updatedAt
-            }
-          }
-        ` as any
-				)
-			);
-			return response.preferences;
 		},
 	});
 };

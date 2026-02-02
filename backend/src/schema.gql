@@ -2,20 +2,6 @@
 # THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
 # ------------------------------------------------------
 
-type AIAnalysisResult {
-  albumSuggestion: String
-  artistSuggestion: String
-  createdAt: DateTime!
-  errorMessage: String
-  fingerprintId: ID!
-  genreClassification: String!
-  id: ID!
-  modelVersion: String!
-  processingTime: Float!
-  trackId: ID!
-  updatedAt: DateTime!
-}
-
 input AddTrackToPlaylistInput {
   position: Int
   trackId: Base64ID!
@@ -252,19 +238,6 @@ type ImageSearch {
   source: String!
 }
 
-type IntelligentEditorSession {
-  confidenceThreshold: Float
-  createdAt: DateTime!
-  id: ID!
-  sessionDuration: Float
-  sessionStatus: String!
-  suggestions: String!
-  trackId: ID!
-  updatedAt: DateTime!
-  userActions: String!
-  userId: ID
-}
-
 type LibraryMetrics {
   artistCount: Int!
   formatDistribution: [FormatDistribution!]!
@@ -345,14 +318,12 @@ type MusicTrack {
   albumArtPath: String
   analysisCompletedAt: DateTime
   analysisError: String
-  analysisResult: AIAnalysisResult
   analysisStartedAt: DateTime
   analysisStatus: String!
   audioFingerprint: AudioFingerprint
   bitrate: Float
   createdAt: DateTime!
   duration: Float!
-  editorSession: IntelligentEditorSession
   fileName: String!
   filePath: String!
   fileSize: Float!
@@ -373,13 +344,6 @@ type MusicTrack {
   userArtist: String
   userTags: [String!]
   userTitle: String
-}
-
-type MusicTrackByCategoriesGraphQL {
-  category: ID!
-  name: String!
-  trackCount: Float!
-  tracks: [SimpleMusicTrack!]!
 }
 
 type MusicTrackListPaginated {
@@ -409,7 +373,6 @@ type Mutation {
   likeTrack(trackId: ID!): SimpleMusicTrack!
   pauseTrack(trackId: String!): PlaybackState!
   playTrack(startTime: Float! = 0, trackId: String!): PlaybackState!
-  recordPlayback(duration: Float!, trackId: ID!): MusicTrack!
   removeTrackFromPlaylist(playlistId: Base64ID!, trackId: Base64ID!): Boolean!
   removeTrackFromQueue(trackId: Base64ID!): RemoveTrackFromQueueResponse!
   resetQueue: Boolean!
@@ -528,10 +491,8 @@ type Query {
   randomTrack(filterLiked: Boolean, id: String): SimpleMusicTrack!
   randomTrackWithStats: RandomTrackWithStats!
   recentlyPlayed(limit: Float! = 20): [SimpleMusicTrack!]!
-  searchTracks(libraryId: ID, query: String!): [SimpleMusicTrack!]!
   trackRecommendations(criteria: String, id: String!): [TrackRecommendation!]!
   tracks(options: TrackQueryOptions): [SimpleMusicTrack!]!
-  tracksByCategories(options: TrackQueryOptionsByCategories): [MusicTrackByCategoriesGraphQL!]!
   tracksList(options: TrackQueryOptions): MusicTrackListPaginated!
 }
 
@@ -736,19 +697,6 @@ type TrackMusicalFeatures {
 input TrackQueryOptions {
   analysisStatus: String
   format: String
-  isFavorite: Boolean
-  libraryId: ID
-  limit: Float
-  offset: Float
-  orderBy: String
-  orderDirection: String
-}
-
-input TrackQueryOptionsByCategories {
-  analysisStatus: String
-  category: String
-  format: String
-  genre: String
   isFavorite: Boolean
   libraryId: ID
   limit: Float
