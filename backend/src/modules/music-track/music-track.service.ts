@@ -20,7 +20,6 @@ import {
 import { ElasticsearchService } from '../../shared/services/elasticsearch.service';
 import { PrismaService } from '../../shared/services/prisma.service';
 import { FilterService } from '../filter/filter.service';
-import { PlaylistService } from '../playlist/playlist.service';
 import {
   DEFAULT_RECOMMENDATION_WEIGHTS,
   RecommendationService,
@@ -31,7 +30,6 @@ import {
 export class MusicTrackService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly playlistService: PlaylistService,
     private readonly filterService: FilterService,
     private readonly recommendationService: RecommendationService,
     private readonly elasticsearchService: ElasticsearchService,
@@ -733,7 +731,7 @@ export class MusicTrackService {
       },
     });
 
-    let favPlaylist =
+    /* let favPlaylist =
       await this.playlistService.findPlaylistByName('favorites');
     if (!favPlaylist) {
       favPlaylist = await this.playlistService.createPlaylist({
@@ -742,14 +740,14 @@ export class MusicTrackService {
         userId: 'system',
         description: 'Favorites playlist',
       });
-    }
+    } 
     if (updatedTrack.isFavorite) {
-      /*  await this.playlistService.addTrackToPlaylist(favPlaylist.id, {
+        await this.playlistService.addTrackToPlaylist(favPlaylist.id, {
         trackId: id,
-      }); */
+      });
     } else {
       ///await this.playlistService.removeTrackFromPlaylist(favPlaylist.id, id);
-    }
+    } */
 
     return updatedTrack;
   }

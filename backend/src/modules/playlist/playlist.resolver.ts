@@ -4,14 +4,10 @@ import { parsePlaylistId } from 'src/clean-arch/adapters/graphql/utils/parse-id'
 import { extractModelId } from 'src/clean-arch/kernel/ids/factory';
 import { RecommendationService } from '../recommendation/services/recommendation.service';
 import { TrackRecommendation } from './playlist.model';
-import { PlaylistService } from './playlist.service';
 
 @Resolver('Playlist')
 export class PlaylistResolver {
-  constructor(
-    private readonly playlistService: PlaylistService,
-    private readonly recommendationService: RecommendationService,
-  ) {}
+  constructor(private readonly recommendationService: RecommendationService) {}
 
   @Query(() => [TrackRecommendation])
   async playlistRecommendations(

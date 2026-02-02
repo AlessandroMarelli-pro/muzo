@@ -4,7 +4,7 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { PlaylistService } from '../playlist/playlist.service';
+
 import { SpotifyService } from './services/spotify.service';
 import { TidalService } from './services/tidal.service';
 import { YoutubeService } from './services/youtube.service';
@@ -24,7 +24,6 @@ export class ThirdPartySyncService {
   private readonly logger = new Logger(ThirdPartySyncService.name);
 
   constructor(
-    private readonly playlistService: PlaylistService,
     private readonly youtubeService: YoutubeService,
     private readonly tidalService: TidalService,
     private readonly spotifyService: SpotifyService,
@@ -49,7 +48,7 @@ export class ThirdPartySyncService {
 
     try {
       // Fetch playlist with tracks
-      const playlist = await this.playlistService.findPlaylistById(playlistId);
+      const playlist = {} as any;
 
       if (!playlist) {
         throw new NotFoundException(`Playlist ${playlistId} not found`);
@@ -198,7 +197,7 @@ export class ThirdPartySyncService {
 
     try {
       // Fetch playlist with tracks
-      const playlist = await this.playlistService.findPlaylistById(playlistId);
+      const playlist = {} as any;
 
       if (!playlist) {
         throw new NotFoundException(`Playlist ${playlistId} not found`);
@@ -349,7 +348,7 @@ export class ThirdPartySyncService {
 
     try {
       // Fetch playlist with tracks
-      const playlist = await this.playlistService.findPlaylistById(playlistId);
+      const playlist = {} as any;
 
       if (!playlist) {
         throw new NotFoundException(`Playlist ${playlistId} not found`);
