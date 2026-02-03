@@ -31,12 +31,6 @@ type AudioFingerprint {
 """ID encoded as base64 for transport"""
 scalar Base64ID
 
-type BeatData {
-  confidence: Float!
-  strength: Float!
-  timestamp: Float!
-}
-
 type CleanArchPlaylist implements Node {
   """True if the given track is already in this playlist"""
   containsTrack(trackId: Base64ID): Boolean
@@ -112,12 +106,6 @@ input CreatePlaylistInput {
 A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
 """
 scalar DateTime
-
-type EnergyData {
-  energy: Float!
-  frequency: Float!
-  timestamp: Float!
-}
 
 input FilterCriteriaInput {
   acousticness: RangeInput
@@ -316,18 +304,12 @@ type Mutation {
   dislikeTrack(trackId: ID!): Boolean!
   exportPlaylistToM3U(playlistId: Base64ID!): String!
   likeTrack(trackId: ID!): SimpleMusicTrack!
-  pauseTrack(trackId: String!): PlaybackState!
-  playTrack(startTime: Float! = 0, trackId: String!): PlaybackState!
   removeTrackFromPlaylist(playlistId: Base64ID!, trackId: Base64ID!): Boolean!
   removeTrackFromQueue(trackId: Base64ID!): RemoveTrackFromQueueResponse!
   resetQueue: Boolean!
-  resumeTrack(trackId: String!): PlaybackState!
   scheduleLibraryScan(libraryId: ID!): LibraryScanResult!
-  seekTrack(timeInSeconds: Float!, trackId: String!): PlaybackState!
-  setVolume(trackId: String!, volume: Float!): PlaybackState!
   startLibraryScan(incremental: Boolean, libraryId: ID!): LibraryScanResult!
   stopLibraryScan(libraryId: ID!): Boolean!
-  stopTrack(trackId: String!): Boolean!
   syncPlaylistToSpotify(playlistId: ID!, userId: String!): SyncResult!
   syncPlaylistToTidal(playlistId: ID!, userId: String!): SyncResult!
   syncPlaylistToYouTube(playlistId: ID!, userId: String!): SyncResult!
@@ -341,16 +323,6 @@ type Mutation {
 
 interface Node {
   id: Base64ID!
-}
-
-type PlaybackState {
-  currentTime: Float!
-  duration: Float!
-  isFavorite: Boolean!
-  isPlaying: Boolean!
-  playbackRate: Float!
-  trackId: ID!
-  volume: Float!
 }
 
 input PlaylistFilterInput {
@@ -383,7 +355,6 @@ type PlaylistsResult {
 
 type Query {
   favoritePlaylist: CleanArchPlaylist!
-  getPlaybackState(trackId: String!): PlaybackState
   getSpotifyAuthUrl: SpotifyAuthUrl!
   getTidalAuthUrl: TidalAuthUrl!
   getWaveformData(trackId: String!): [Float!]!

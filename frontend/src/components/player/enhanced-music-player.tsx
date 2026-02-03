@@ -45,16 +45,17 @@ export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
 	className,
 }: EnhancedMusicPlayerProps) {
 	const audioRef = useRef<HTMLAudioElement>(null);
-	const [showAdvancedControls] = useState(false);
 	const navigate = useNavigate();
 
 	// Audio player hooks
 	const { currentTrack } = useCurrentTrack();
 	const { data: queueItems = [] } = useQueue();
+
 	// Map queue items to tracks for backward compatibility
 	const queue = queueItems
 		.map((item) => item.track)
 		.filter((track): track is NonNullable<typeof track> => track !== null);
+
 	const [queueIndex, setQueueIndex] = useState(
 		queue.findIndex((track) => track.id === currentTrack?.id) || 0
 	);
@@ -64,6 +65,7 @@ export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
 			queue.findIndex((track) => track.id === currentTrack?.id) || 0
 		);
 	}, [currentTrack, queue]);
+
 	const actions = useAudioPlayerActions();
 	const isPlaying = useIsPlaying();
 	const formattedImage = currentTrack?.imagePath || 'Unknown Image';
@@ -80,8 +82,6 @@ export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
 	// Update audio element when state changes
 	useEffect(() => {
 		if (audioRef.current && currentTrack) {
-			audioRef.current.volume = playbackState.volume;
-			audioRef.current.playbackRate = playbackState.playbackRate;
 			audioRef.current.muted = false;
 			if (isPlaying && playbackState.trackId === currentTrack.id) {
 				// Only play if the playback state matches the current track
@@ -95,8 +95,6 @@ export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
 		}
 	}, [
 		isPlaying,
-		playbackState.volume,
-		playbackState.playbackRate,
 		playbackState.isFavorite,
 		playbackState.trackId,
 		currentTrack?.id,
@@ -150,9 +148,6 @@ export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
 	const handleNextTrack = () => {
 		actions.next();
 	};
-
-	// Note: Volume and playback rate controls removed for simplification
-	// They can be re-added later if needed by calling mutations directly
 
 	return (
 		<div
@@ -279,19 +274,7 @@ export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
 					</div>
 				</div>
 			</div>
-			{/* Advanced Controls */}
-			{showAdvancedControls && (
-				<div className="px-4 py-2 border-t border-border">
-					<div className="flex items-center gap-4">
-						<div className="flex items-center gap-2">
-							{/* Playback rate controls removed for simplification */}
-							<span className="text-xs text-muted-foreground">
-								Rate: {playbackState.playbackRate}x
-							</span>
-						</div>
-					</div>
-				</div>
-			)}
+
 			{/* Hidden Audio Element */}
 			{currentTrack && (
 				<audio
