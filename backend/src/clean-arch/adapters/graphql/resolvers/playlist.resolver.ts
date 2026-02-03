@@ -19,6 +19,10 @@ import {
 } from 'src/clean-arch/application/use-cases';
 import { UpdatePlaylistSortingUseCase } from 'src/clean-arch/application/use-cases/playlist-sorting/UpdatePlaylistSorting';
 import { Maybe } from 'src/clean-arch/kernel/common';
+import {
+  parseMusicTrackId,
+  parsePlaylistId,
+} from '../../common/utils/parse-id';
 import { PlaylistContainsTrackLoader } from '../../persistence/repositories/playlist-track/playlist-contains-track.loader';
 import { PlaylistTracksWithTrackLoader } from '../../persistence/repositories/playlist-track/playlist-track-with-track.loader';
 import { AuthGuard } from '../context/auth.guard';
@@ -33,7 +37,6 @@ import {
   CreatePlaylistInput,
 } from '../schema/playlist.input';
 import { CleanArchPlaylist } from '../schema/playlist.schema';
-import { parseMusicTrackId, parsePlaylistId } from '../utils/parse-id';
 
 @Resolver(() => CleanArchPlaylist)
 @UseGuards(AuthGuard)

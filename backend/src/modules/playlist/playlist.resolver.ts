@@ -1,6 +1,6 @@
 import { Args, Int, Query, Resolver } from '@nestjs/graphql';
+import { parsePlaylistId } from 'src/clean-arch/adapters/common/utils/parse-id';
 import { Base64ID } from 'src/clean-arch/adapters/graphql/scalars/base64-id.scalar';
-import { parsePlaylistId } from 'src/clean-arch/adapters/graphql/utils/parse-id';
 import { extractModelId } from 'src/clean-arch/kernel/ids/factory';
 import { RecommendationService } from '../recommendation/services/recommendation.service';
 import { TrackRecommendation } from './playlist.model';

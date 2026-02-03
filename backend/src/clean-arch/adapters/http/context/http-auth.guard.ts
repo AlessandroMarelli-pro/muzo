@@ -1,21 +1,17 @@
-// backend/src/clean-arch/adaptaters/graphql/context/auth.guard.ts
 import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
-import { GqlExecutionContext } from '@nestjs/graphql';
 import { Observable } from 'rxjs';
 import { getAnonymousUser } from '../../../kernel/types/default-user';
 
 @Injectable()
-export class AuthGuard implements CanActivate {
+export class HttpAuthGuard implements CanActivate {
   canActivate(
     context: ExecutionContext,
   ): boolean | Promise<boolean> | Observable<boolean> {
-    const gqlContext = GqlExecutionContext.create(context).getContext();
-    const request = gqlContext.req;
+    const request = context.switchToHttp().getRequest();
 
     if (request) {
       (request as { user?: unknown }).user = getAnonymousUser();
     }
-
     return true;
   }
 }

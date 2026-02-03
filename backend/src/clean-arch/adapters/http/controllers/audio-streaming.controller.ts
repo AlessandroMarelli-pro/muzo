@@ -7,48 +7,64 @@ import {
   NotFoundException,
   Param,
   Res,
+  UseGuards,
 } from '@nestjs/common';
 import { Response } from 'express';
 import * as fs from 'fs';
 import { createReadStream, statSync } from 'fs';
 import * as path from 'path';
-import { MusicTrackService } from '../music-track/music-track.service';
+
+import { GetTrackUseCase } from 'src/clean-arch/application/use-cases/music-track';
+import { MusicTrackId } from 'src/clean-arch/kernel/ids';
+import { fromBase64Id } from '../../common/utils/id-encoding';
+import { parseMusicTrackId } from '../../common/utils/parse-id';
+import { HttpAuthGuard } from '../context/http-auth.guard';
+import { getContentType } from '../utils/audio-content-type';
 
 @Controller('api/audio')
+@UseGuards(HttpAuthGuard)
 export class AudioStreamingController {
-  constructor(private readonly musicTrackService: MusicTrackService) {}
+  constructor(private readonly getTrackUseCase: GetTrackUseCase) {}
 
   @Get('stream/:trackId')
   async streamAudio(
-    @Param('trackId') trackId: string,
+    @Param('trackId') trackId: MusicTrackId,
     @Res() res: Response,
     @Headers('range') range?: string,
   ): Promise<void> {
-    const track = await this.musicTrackService.findOne(trackId);
+    const decodedTrackId = fromBase64Id(trackId);
+    console.log('decodedTrackId', decodedTrackId);
+    const track = await this.getTrackUseCase.execute(
+      parseMusicTrackId(decodedTrackId),
+    );
 
     if (!track) {
       throw new NotFoundException(`Track with ID ${trackId} not found`);
     }
-
-    if (!fs.existsSync(track.filePath)) {
+    const filePath = track.fileInfo?.filePath;
+    if (!filePath) {
       throw new BadRequestException(
-        `Audio file not found at path: ${track.filePath}`,
+        `Track with ID ${trackId} has no file path`,
+      );
+    }
+    if (!fs.existsSync(filePath)) {
+      throw new BadRequestException(
+        `Audio file not found at path: ${filePath}`,
       );
     }
 
-    const filePath = track.filePath;
     const fileSize = statSync(filePath).size;
     const fileExtension = path.extname(filePath).toLowerCase();
 
     // Set appropriate content type based on file extension
-    const contentType = this.getContentType(fileExtension);
+    const contentType = getContentType(fileExtension);
 
     // Set common headers
     res.set({
       'Accept-Ranges': 'bytes',
       'Cache-Control': 'public, max-age=31536000',
       'Content-Type': contentType,
-      'Content-Disposition': `inline; filename="${encodeURI(track.fileName)}"`,
+      'Content-Disposition': `inline; filename="${encodeURI(track.fileInfo?.fileName || '')}"`,
     });
 
     if (range) {
@@ -78,22 +94,5 @@ export class AudioStreamingController {
 
       file.pipe(res);
     }
-  }
-
-  private getContentType(fileExtension: string): string {
-    const contentTypes: Record<string, string> = {
-      '.mp3': 'audio/mpeg',
-      '.wav': 'audio/wav',
-      '.flac': 'audio/flac',
-      '.m4a': 'audio/mp4',
-      '.aac': 'audio/aac',
-      '.ogg': 'audio/ogg',
-      '.wma': 'audio/x-ms-wma',
-      '.aiff': 'audio/aiff',
-      '.au': 'audio/basic',
-      '.opus': 'audio/opus',
-    };
-
-    return contentTypes[fileExtension] || 'audio/mpeg';
   }
 }

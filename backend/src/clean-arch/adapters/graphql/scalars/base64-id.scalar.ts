@@ -1,7 +1,7 @@
 // adaptaters/graphql/scalars/base64-id.scalar.ts
 import { CustomScalar, Scalar } from '@nestjs/graphql';
 import { Kind, ValueNode } from 'graphql';
-import { fromBase64Id, toBase64Id } from '../utils/id-encoding';
+import { fromBase64Id, toBase64Id } from '../../common/utils/id-encoding';
 
 @Scalar('Base64ID')
 export class Base64ID implements CustomScalar<string, string> {

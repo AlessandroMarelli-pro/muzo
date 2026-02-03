@@ -3,6 +3,10 @@ import { Args, Mutation, Resolver } from '@nestjs/graphql';
 import { AddTrackToPlaylistUseCase } from 'src/clean-arch/application/use-cases/playlist-track/AddTrackToPlaylist';
 import { RemoveTrackFromPlaylistUseCase } from 'src/clean-arch/application/use-cases/playlist-track/RemoveTrackFromPlaylist';
 import { UpdatePlaylistTracksPositionsUseCase } from 'src/clean-arch/application/use-cases/playlist-track/UpdatePlaylistTracksPositions';
+import {
+  parseMusicTrackId,
+  parsePlaylistId,
+} from '../../common/utils/parse-id';
 import { AuthGuard } from '../context/auth.guard';
 import { Base64ID } from '../scalars/base64-id.scalar';
 import {
@@ -10,7 +14,6 @@ import {
   UpdatePlaylistPositionsInput,
 } from '../schema/playlist-track.input';
 import { CleanArchPlaylistTrack } from '../schema/playlist-track.schema';
-import { parseMusicTrackId, parsePlaylistId } from '../utils/parse-id';
 
 @Resolver(() => CleanArchPlaylistTrack)
 @UseGuards(AuthGuard)

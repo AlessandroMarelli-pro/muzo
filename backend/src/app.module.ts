@@ -3,7 +3,7 @@ import { MiddlewareConsumer, Module, RequestMethod } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { GraphQLModule } from '@nestjs/graphql';
 import { join } from 'path';
-import { ActionContextMiddleware } from './clean-arch/adapters/graphql/context/action-context.middleware';
+import { ActionContextMiddleware } from './clean-arch/adapters/common/middlewares/action-context.middleware';
 import { CleanArchGraphQLModule } from './clean-arch/adapters/graphql/graphql.module';
 import { HttpModule } from './clean-arch/adapters/http/http.module';
 import { createPlaylistStatsLoader } from './clean-arch/adapters/persistence/queries/playlist/playlist-stats.loader';
@@ -119,6 +119,6 @@ export class AppModule {
   configure(consumer: MiddlewareConsumer): void {
     consumer
       .apply(ActionContextMiddleware)
-      .forRoutes({ path: 'graphql', method: RequestMethod.ALL });
+      .forRoutes({ path: '*', method: RequestMethod.ALL });
   }
 }

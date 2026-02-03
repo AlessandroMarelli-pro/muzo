@@ -9,6 +9,7 @@ import {
 } from 'src/clean-arch/application/use-cases';
 import { AuthGuard } from '../context/auth.guard';
 
+import { parseMusicTrackId } from '../../common/utils/parse-id';
 import { toTrack } from '../mappers/track.mapper';
 import { Base64ID } from '../scalars/base64-id.scalar';
 import {
@@ -16,7 +17,6 @@ import {
   RemoveTrackFromQueueResponse,
 } from '../schema/queue-item.schema';
 import { UpdateQueuePositionsInput } from '../schema/queue.input';
-import { parseMusicTrackId } from '../utils/parse-id';
 
 @Resolver(() => CleanArchQueueItem)
 @UseGuards(AuthGuard)

@@ -2,13 +2,13 @@ import { UseGuards } from '@nestjs/common';
 import { Args, Query, Resolver } from '@nestjs/graphql';
 import { GetPlaylistUseCase } from 'src/clean-arch/application/use-cases';
 import { extractModelId } from 'src/clean-arch/kernel/ids/factory';
-import type { Model } from 'src/clean-arch/kernel/types/model-types';
 import { createNotFoundError } from 'src/clean-arch/kernel/types/errors';
+import type { Model } from 'src/clean-arch/kernel/types/model-types';
+import { parsePlaylistId } from '../../common/utils/parse-id';
 import { AuthGuard } from '../context/auth.guard';
 import { toTrack } from '../mappers/track.mapper';
 import { Base64ID } from '../scalars/base64-id.scalar';
 import { Node } from '../schema/common.schema';
-import { parsePlaylistId } from '../utils/parse-id';
 
 /**
  * Resolver for Relay-style global object identification.
@@ -33,13 +33,15 @@ export class NodeResolver {
     const { modelName } = extractModelId(id as Model['id']);
 
     if (modelName === 'Playlist') {
-      return this.getPlaylistUseCase.execute(parsePlaylistId(id)).then((playlist) => ({
-        ...playlist,
-        tracks: playlist.tracks.map((track) => ({
-          ...track,
-          track: toTrack(track.track),
-        })),
-      }));
+      return this.getPlaylistUseCase
+        .execute(parsePlaylistId(id))
+        .then((playlist) => ({
+          ...playlist,
+          tracks: playlist.tracks.map((track) => ({
+            ...track,
+            track: toTrack(track.track),
+          })),
+        }));
     }
 
     if (modelName === 'User') {

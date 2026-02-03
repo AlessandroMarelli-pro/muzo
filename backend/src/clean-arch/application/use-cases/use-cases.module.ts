@@ -23,6 +23,7 @@ import {
   GetQueueUseCase,
   GetSavedFilterUseCase,
   GetStaticFilterOptionsUseCase,
+  GetTrackUseCase,
   RemoveTrackFromPlaylistUseCase,
   RemoveTrackFromQueueUseCase,
   ResetQueueUseCase,
@@ -35,6 +36,7 @@ import {
 import { UpdatePlaylistSortingUseCase } from './playlist-sorting/UpdatePlaylistSorting';
 
 const useCasesProviders = [
+  GetTrackUseCase,
   AddImageSearchRecordUseCase,
   ServeImageUseCase,
   CreatePlaylistUseCase,

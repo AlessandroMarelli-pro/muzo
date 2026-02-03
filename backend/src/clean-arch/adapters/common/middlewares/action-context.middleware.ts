@@ -2,7 +2,7 @@ import { Injectable, NestMiddleware } from '@nestjs/common';
 import { NextFunction, Request, Response } from 'express';
 import { als } from 'src/clean-arch/kernel/types/context';
 import type { ActionContext } from 'src/clean-arch/kernel/types/model-types';
-import { getAnonymousUser } from './default-user';
+import { getAnonymousUser } from '../../../kernel/types/default-user';
 
 declare global {
   namespace Express {
