@@ -44,9 +44,6 @@ export class ListeningStats {
   @Field(() => Float)
   totalPlayTime: number;
 
-  @Field(() => Float)
-  averageConfidence: number;
-
   @Field(() => Int)
   favoriteCount: number;
 }
@@ -61,9 +58,6 @@ export class TopArtist {
 
   @Field(() => Float)
   totalDuration: number;
-
-  @Field(() => Float)
-  averageConfidence: number;
 }
 
 @ObjectType()
@@ -73,12 +67,6 @@ export class TopGenre {
 
   @Field(() => Int)
   trackCount: number;
-
-  @Field(() => Float)
-  averageConfidence: number;
-
-  @Field(() => Float)
-  averageDuration: number;
 }
 
 @ObjectType()
@@ -94,27 +82,15 @@ export class RecentActivity {
 }
 
 @ObjectType()
-export class LibraryMetrics {
+export class HomeMetrics {
   @Field(() => Int)
   totalTracks: number;
 
   @Field(() => Float)
   totalListeningTime: number;
 
-  @Field(() => [GenreDistribution])
-  genreDistribution: GenreDistribution[];
-
-  @Field(() => [SubgenreDistribution])
-  subgenreDistribution: SubgenreDistribution[];
-
   @Field(() => Int)
   artistCount: number;
-
-  @Field(() => [YearDistribution])
-  yearDistribution: YearDistribution[];
-
-  @Field(() => [FormatDistribution])
-  formatDistribution: FormatDistribution[];
 
   @Field(() => ListeningStats)
   listeningStats: ListeningStats;

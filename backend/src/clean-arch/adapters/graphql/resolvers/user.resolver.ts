@@ -14,7 +14,9 @@ import { user } from 'src/clean-arch/kernel/types/context';
 import { AuthGuard } from '../context/auth.guard';
 import { toFilter } from '../mappers/saved-filter.mapper';
 
+import { GetHomeMetricsUseCase } from 'src/clean-arch/application/use-cases/metrics/GetHomeMetrics';
 import { toTrack } from '../mappers/track.mapper';
+import { HomeMetrics } from '../schema/metrics.schema';
 import { CleanArchQueueItem } from '../schema/queue-item.schema';
 import {
   FilterCriteriaResult,
@@ -31,6 +33,7 @@ export class UserResolver {
     private readonly getStaticFilterOptionsUseCase: GetStaticFilterOptionsUseCase,
     private readonly getActiveFiltersUseCase: GetActiveFiltersUseCase,
     private readonly getCurrentFilterUseCase: GetCurrentFilterUseCase,
+    private readonly getHomeMetricsUseCase: GetHomeMetricsUseCase,
   ) {}
 
   @Query(() => User)
@@ -72,5 +75,10 @@ export class UserResolver {
   @ResolveField(() => FilterCriteriaResult, { nullable: true })
   async currentFilter(): Promise<FilterCriteriaResult> {
     return this.getCurrentFilterUseCase.execute().then(toFilter);
+  }
+
+  @ResolveField(() => HomeMetrics)
+  async homeMetrics(): Promise<HomeMetrics> {
+    return this.getHomeMetricsUseCase.execute();
   }
 }

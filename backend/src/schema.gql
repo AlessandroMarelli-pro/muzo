@@ -154,14 +154,14 @@ type FilterWithID {
   name: String!
 }
 
-type FormatDistribution {
-  count: Int!
-  format: String!
-}
-
-type GenreDistribution {
-  count: Int!
-  genre: String!
+type HomeMetrics {
+  artistCount: Int!
+  listeningStats: ListeningStats!
+  recentActivity: [RecentActivity!]!
+  topArtists: [TopArtist!]!
+  topGenres: [TopGenre!]!
+  totalListeningTime: Float!
+  totalTracks: Int!
 }
 
 type ImageSearch {
@@ -169,20 +169,6 @@ type ImageSearch {
   imagePath: String!
   imageUrl: String!
   source: String!
-}
-
-type LibraryMetrics {
-  artistCount: Int!
-  formatDistribution: [FormatDistribution!]!
-  genreDistribution: [GenreDistribution!]!
-  listeningStats: ListeningStats!
-  recentActivity: [RecentActivity!]!
-  subgenreDistribution: [SubgenreDistribution!]!
-  topArtists: [TopArtist!]!
-  topGenres: [TopGenre!]!
-  totalListeningTime: Float!
-  totalTracks: Int!
-  yearDistribution: [YearDistribution!]!
 }
 
 input LibraryQueryOptions {
@@ -213,7 +199,6 @@ type LibrarySettings {
 }
 
 type ListeningStats {
-  averageConfidence: Float!
   favoriteCount: Int!
   totalPlayTime: Float!
   totalPlays: Int!
@@ -361,7 +346,6 @@ type Query {
   getYouTubeAuthUrl: YouTubeAuthUrl!
   libraries(options: LibraryQueryOptions): [MusicLibrary!]!
   library(id: ID!): MusicLibrary
-  libraryMetrics: LibraryMetrics!
   me: User!
 
   """
@@ -477,11 +461,6 @@ type StaticFilterOptions {
   subgenres: [FilterWithID!]!
 }
 
-type SubgenreDistribution {
-  count: Int!
-  subgenre: String!
-}
-
 type SyncResult {
   errors: [String!]!
   playlistId: String
@@ -503,14 +482,11 @@ type TidalAuthUrl {
 
 type TopArtist {
   artist: String!
-  averageConfidence: Float!
   totalDuration: Float!
   trackCount: Int!
 }
 
 type TopGenre {
-  averageConfidence: Float!
-  averageDuration: Float!
   genre: String!
   trackCount: Int!
 }
@@ -635,16 +611,12 @@ type User implements Node {
   currentFilter: FilterCriteriaResult
   email: String
   firstName: String
+  homeMetrics: HomeMetrics!
   id: Base64ID!
   lastName: String
   playlists: PlaylistsResult!
   queue: [QueueItem!]!
   staticFilterOptions: StaticFilterOptions!
-}
-
-type YearDistribution {
-  count: Int
-  year: Int
 }
 
 type YouTubeAuthResult {

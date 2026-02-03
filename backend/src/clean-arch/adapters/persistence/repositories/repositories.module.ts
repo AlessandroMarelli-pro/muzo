@@ -2,6 +2,7 @@ import { Global, Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 
 import { IMAGE_FILE_READER } from 'src/clean-arch/application/ports/infrastructure/IImageFileReader';
+import { METRICS_QUERY } from 'src/clean-arch/application/ports/queries/IMetricsQuery';
 import { PLAYLIST_STATS_QUERY } from 'src/clean-arch/application/ports/queries/IPlaylistStatsQuery';
 import { SAVED_FILTER_QUERY } from 'src/clean-arch/application/ports/queries/ISavedFilterQuery';
 import { IMAGE_SEARCH_REPOSITORY } from 'src/clean-arch/application/ports/repositories/IImageSearchRepository';
@@ -13,6 +14,7 @@ import { QUEUE_REPOSITORY } from 'src/clean-arch/application/ports/repositories/
 import { SAVED_FILTER_REPOSITORY } from 'src/clean-arch/application/ports/repositories/ISavedFilterRepository';
 import { PrismaService } from '../../../infrastructure/database/prisma.service';
 import { FileSystemImageReader } from '../../../infrastructure/filesystem/image-file.reader';
+import { MetricsQuery } from '../queries/metrics/metrics.query';
 import { PlaylistStatsQuery } from '../queries/playlist/playlist-stats.query';
 import { SavedFilterQuery } from '../queries/saved-filter/saved-filter.query';
 import { ImageSearchRepository } from './image-search/image-search.repository';
@@ -41,6 +43,7 @@ import { SavedFilterRepository } from './saved-filter/saved-filter.repository';
     { provide: SAVED_FILTER_REPOSITORY, useClass: SavedFilterRepository },
     { provide: IMAGE_SEARCH_REPOSITORY, useClass: ImageSearchRepository },
     { provide: IMAGE_FILE_READER, useClass: FileSystemImageReader },
+    { provide: METRICS_QUERY, useClass: MetricsQuery },
   ],
   exports: [
     PLAYLIST_REPOSITORY,
@@ -53,6 +56,7 @@ import { SavedFilterRepository } from './saved-filter/saved-filter.repository';
     SAVED_FILTER_REPOSITORY,
     IMAGE_SEARCH_REPOSITORY,
     IMAGE_FILE_READER,
+    METRICS_QUERY,
   ],
 })
 export class RepositoriesModule {}

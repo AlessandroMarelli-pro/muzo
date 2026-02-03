@@ -47,7 +47,7 @@ export const useActiveFilters = () => {
 				me: { activeFilters: FilterCriteriaResult[] };
 			}>(gql`
 				${filterFragment}
-				query GetCurrentFilter {
+				query ActiveFilters {
 					me {
 						activeFilters {
 							...FilterFragment

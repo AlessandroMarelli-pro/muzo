@@ -13,6 +13,7 @@ import {
   GetActiveFiltersUseCase,
   GetCurrentFilterUseCase,
   GetFavoriteUseCase,
+  GetHomeMetricsUseCase,
   GetPlaylistSortingByPlaylistIdUseCase,
   GetPlaylistsStatsUseCase,
   GetPlaylistStatsUseCase,
@@ -68,6 +69,7 @@ const useCasesProviders = [
   RemoveTrackFromQueueUseCase,
   ResetQueueUseCase,
   UpdateQueuePositionsUseCase,
+  GetHomeMetricsUseCase,
 ];
 @Module({
   imports: [ConfigModule],

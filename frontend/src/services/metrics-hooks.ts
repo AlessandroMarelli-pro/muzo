@@ -1,3 +1,4 @@
+import { HomeMetrics } from '@/__generated__/types';
 import { queryOptions } from '@tanstack/react-query';
 import { gql, graffleClient } from '../services/graffle-client';
 
@@ -75,56 +76,37 @@ export const libraryMetricsQueryOptions = () =>
 		queryFn: fetchLibraryMetrics,
 	});
 
-export const fetchLibraryMetrics = async (): Promise<LibraryMetrics> => {
+export const fetchLibraryMetrics = async (): Promise<HomeMetrics> => {
 	const response = await graffleClient.request<{
-		libraryMetrics: LibraryMetrics;
+		me: { homeMetrics: HomeMetrics };
 	}>(gql`
-		query GetLibraryMetrics {
-			libraryMetrics {
-				totalTracks
-				totalListeningTime
-				genreDistribution {
-					genre
-					count
-				}
-				subgenreDistribution {
-					subgenre
-					count
-				}
-				artistCount
-				yearDistribution {
-					year
-					count
-				}
-				formatDistribution {
-					format
-					count
-				}
-				listeningStats {
-					totalPlays
-					totalPlayTime
-					averageConfidence
-					favoriteCount
-				}
-				topArtists {
-					artist
-					trackCount
-					totalDuration
-					averageConfidence
-				}
-				topGenres {
-					genre
-					trackCount
-					averageConfidence
-					averageDuration
-				}
-				recentActivity {
-					date
-					tracksAdded
-					tracksAnalyzed
+		query HomeMetrics {
+			me {
+				homeMetrics {
+					totalTracks
+					totalListeningTime
+					artistCount
+					listeningStats {
+						totalPlays
+						totalPlayTime
+					}
+					topArtists {
+						artist
+						trackCount
+						totalDuration
+					}
+					topGenres {
+						genre
+						trackCount
+					}
+					recentActivity {
+						date
+						tracksAdded
+						tracksAnalyzed
+					}
 				}
 			}
 		}
 	`);
-	return response.libraryMetrics;
+	return response.me.homeMetrics;
 };
