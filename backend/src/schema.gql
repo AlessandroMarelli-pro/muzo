@@ -225,6 +225,10 @@ type MusicLibrary {
   updatedAt: DateTime!
 }
 
+type MusicPlayer {
+  currentWaveformData(trackId: Base64ID!): [Float!]
+}
+
 type MusicTrack {
   aiAlbum: String
   aiArtist: String
@@ -342,7 +346,6 @@ type Query {
   favoritePlaylist: CleanArchPlaylist!
   getSpotifyAuthUrl: SpotifyAuthUrl!
   getTidalAuthUrl: TidalAuthUrl!
-  getWaveformData(trackId: String!): [Float!]!
   getYouTubeAuthUrl: YouTubeAuthUrl!
   libraries(options: LibraryQueryOptions): [MusicLibrary!]!
   library(id: ID!): MusicLibrary
@@ -614,6 +617,7 @@ type User implements Node {
   homeMetrics: HomeMetrics!
   id: Base64ID!
   lastName: String
+  musicPlayer: MusicPlayer!
   playlists: PlaylistsResult!
   queue: [QueueItem!]!
   staticFilterOptions: StaticFilterOptions!

@@ -33,7 +33,7 @@ export class AudioStreamingController {
     @Headers('range') range?: string,
   ): Promise<void> {
     const decodedTrackId = fromBase64Id(trackId);
-    console.log('decodedTrackId', decodedTrackId);
+
     const track = await this.getTrackUseCase.execute(
       parseMusicTrackId(decodedTrackId),
     );

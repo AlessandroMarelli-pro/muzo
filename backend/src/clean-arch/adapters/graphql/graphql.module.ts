@@ -3,6 +3,7 @@ import { APP_FILTER } from '@nestjs/core';
 import { UseCasesModule } from 'src/clean-arch/application/use-cases/use-cases.module';
 import { AuthGuard } from './context/auth.guard';
 import { DomainErrorExceptionFilter } from './filters/domain-error.exception-filter';
+import { MusicPlayerResolver } from './resolvers/music-player.resolver';
 import { NodeResolver } from './resolvers/node.resolver';
 import { PlaybackQueueResolver } from './resolvers/playback-queue.resolver';
 import { PlaylistTrackResolver } from './resolvers/playlist-track.resolver';
@@ -22,6 +23,7 @@ import { Base64ID } from './scalars/base64-id.scalar';
     PlaylistTrackResolver,
     PlaybackQueueResolver,
     SavedFilterResolver,
+    MusicPlayerResolver,
     {
       provide: APP_FILTER,
       useClass: DomainErrorExceptionFilter,

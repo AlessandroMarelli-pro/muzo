@@ -27,7 +27,6 @@ import { AiIntegrationModule } from './modules/ai-integration/ai-integration.mod
 import { FilterModule } from './modules/filter/filter.module';
 import { HealthModule } from './modules/health/health.module';
 import { MusicLibraryModule } from './modules/music-library/music-library.module';
-import { MusicPlayerModule } from './modules/music-player/music-player.module';
 import { MusicTrackModule } from './modules/music-track/music-track.module';
 import { PlaylistModule } from './modules/playlist/playlist.module';
 import { QueueModule } from './modules/queue/queue.module';
@@ -104,7 +103,6 @@ import { SharedModule } from './shared/shared.module';
     HttpModule,
     MusicLibraryModule,
     MusicTrackModule,
-    MusicPlayerModule,
     PlaylistModule,
     RecommendationModule,
     ThirdPartySyncModule,

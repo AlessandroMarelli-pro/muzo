@@ -80,16 +80,24 @@ export const useWaveformData = (trackId: string) => {
 		queryKey: musicPlayerQueryKeys.waveform(trackId),
 		queryFn: async () => {
 			const response = await graffleClient.request<{
-				getWaveformData: number[];
+				me: {
+					musicPlayer: {
+						currentWaveformData: number[];
+					};
+				};
 			}>(
 				gql`
-					query GetWaveformData($trackId: String!) {
-						getWaveformData(trackId: $trackId)
+					query GetWaveformData($trackId: Base64ID!) {
+						me {
+							musicPlayer {
+								currentWaveformData(trackId: $trackId)
+							}
+						}
 					}
 				`,
 				{ trackId }
 			);
-			return response.getWaveformData;
+			return response.me.musicPlayer.currentWaveformData;
 		},
 		enabled: !!trackId,
 	});

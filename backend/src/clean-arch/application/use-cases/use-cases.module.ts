@@ -25,6 +25,7 @@ import {
   GetSavedFilterUseCase,
   GetStaticFilterOptionsUseCase,
   GetTrackUseCase,
+  GetWaveformDataUseCase,
   RemoveTrackFromPlaylistUseCase,
   RemoveTrackFromQueueUseCase,
   ResetQueueUseCase,
@@ -70,6 +71,7 @@ const useCasesProviders = [
   ResetQueueUseCase,
   UpdateQueuePositionsUseCase,
   GetHomeMetricsUseCase,
+  GetWaveformDataUseCase,
 ];
 @Module({
   imports: [ConfigModule],

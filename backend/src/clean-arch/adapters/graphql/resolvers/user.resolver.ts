@@ -17,6 +17,7 @@ import { toFilter } from '../mappers/saved-filter.mapper';
 import { GetHomeMetricsUseCase } from 'src/clean-arch/application/use-cases/metrics/GetHomeMetrics';
 import { toTrack } from '../mappers/track.mapper';
 import { HomeMetrics } from '../schema/metrics.schema';
+import { MusicPlayer } from '../schema/music-player.schema';
 import { CleanArchQueueItem } from '../schema/queue-item.schema';
 import {
   FilterCriteriaResult,
@@ -80,5 +81,12 @@ export class UserResolver {
   @ResolveField(() => HomeMetrics)
   async homeMetrics(): Promise<HomeMetrics> {
     return this.getHomeMetricsUseCase.execute();
+  }
+
+  @ResolveField(() => MusicPlayer)
+  async musicPlayer(): Promise<MusicPlayer> {
+    return {
+      currentWaveformData: [],
+    };
   }
 }

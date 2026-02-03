@@ -1,6 +1,7 @@
 import { Global, Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 
+import { AUDIO_WAVEFORM_GENERATOR } from 'src/clean-arch/application/ports/infrastructure/IAudioWaveformGenerator';
 import { IMAGE_FILE_READER } from 'src/clean-arch/application/ports/infrastructure/IImageFileReader';
 import { METRICS_QUERY } from 'src/clean-arch/application/ports/queries/IMetricsQuery';
 import { PLAYLIST_STATS_QUERY } from 'src/clean-arch/application/ports/queries/IPlaylistStatsQuery';
@@ -12,6 +13,7 @@ import { PLAYLIST_SORTING_REPOSITORY } from 'src/clean-arch/application/ports/re
 import { PLAYLIST_TRACK_REPOSITORY } from 'src/clean-arch/application/ports/repositories/IPlaylistTrackRepository';
 import { QUEUE_REPOSITORY } from 'src/clean-arch/application/ports/repositories/IQueueRepository';
 import { SAVED_FILTER_REPOSITORY } from 'src/clean-arch/application/ports/repositories/ISavedFilterRepository';
+import { WaveformGenerator } from 'src/clean-arch/infrastructure/audio/waveform-generator';
 import { PrismaService } from '../../../infrastructure/database/prisma.service';
 import { FileSystemImageReader } from '../../../infrastructure/filesystem/image-file.reader';
 import { MetricsQuery } from '../queries/metrics/metrics.query';
@@ -44,6 +46,7 @@ import { SavedFilterRepository } from './saved-filter/saved-filter.repository';
     { provide: IMAGE_SEARCH_REPOSITORY, useClass: ImageSearchRepository },
     { provide: IMAGE_FILE_READER, useClass: FileSystemImageReader },
     { provide: METRICS_QUERY, useClass: MetricsQuery },
+    { provide: AUDIO_WAVEFORM_GENERATOR, useClass: WaveformGenerator },
   ],
   exports: [
     PLAYLIST_REPOSITORY,
@@ -57,6 +60,7 @@ import { SavedFilterRepository } from './saved-filter/saved-filter.repository';
     IMAGE_SEARCH_REPOSITORY,
     IMAGE_FILE_READER,
     METRICS_QUERY,
+    AUDIO_WAVEFORM_GENERATOR,
   ],
 })
 export class RepositoriesModule {}

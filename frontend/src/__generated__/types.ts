@@ -250,6 +250,16 @@ export type MusicLibrary = {
   updatedAt: Scalars['DateTime']['output'];
 };
 
+export type MusicPlayer = {
+  __typename?: 'MusicPlayer';
+  currentWaveformData?: Maybe<Array<Scalars['Float']['output']>>;
+};
+
+
+export type MusicPlayerCurrentWaveformDataArgs = {
+  trackId: Scalars['Base64ID']['input'];
+};
+
 export type MusicTrack = {
   __typename?: 'MusicTrack';
   aiAlbum?: Maybe<Scalars['String']['output']>;
@@ -891,6 +901,7 @@ export type User = Node & {
   homeMetrics: HomeMetrics;
   id: Scalars['Base64ID']['output'];
   lastName?: Maybe<Scalars['String']['output']>;
+  musicPlayer: MusicPlayer;
   playlists: PlaylistsResult;
   queue: Array<QueueItem>;
   staticFilterOptions: StaticFilterOptions;
@@ -1033,11 +1044,11 @@ export type HomeMetricsQueryVariables = Exact<{ [key: string]: never; }>;
 export type HomeMetricsQuery = { __typename?: 'Query', me: { __typename?: 'User', homeMetrics: { __typename?: 'HomeMetrics', totalTracks: number, totalListeningTime: number, artistCount: number, listeningStats: { __typename?: 'ListeningStats', totalPlays: number, totalPlayTime: number }, topArtists: Array<{ __typename?: 'TopArtist', artist: string, trackCount: number, totalDuration: number }>, topGenres: Array<{ __typename?: 'TopGenre', genre: string, trackCount: number }>, recentActivity: Array<{ __typename?: 'RecentActivity', date: string, tracksAdded: number, tracksAnalyzed: number }> } } };
 
 export type GetWaveformDataQueryVariables = Exact<{
-  trackId: Scalars['String']['input'];
+  trackId: Scalars['Base64ID']['input'];
 }>;
 
 
-export type GetWaveformDataQuery = { __typename?: 'Query', getWaveformData: Array<number> };
+export type GetWaveformDataQuery = { __typename?: 'Query', me: { __typename?: 'User', musicPlayer: { __typename?: 'MusicPlayer', currentWaveformData?: Array<number> | null } } };
 
 export type ToggleFavoriteMutationVariables = Exact<{
   trackId: Scalars['String']['input'];

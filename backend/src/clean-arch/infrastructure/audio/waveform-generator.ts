@@ -4,6 +4,8 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { Writable } from 'stream';
 
+import { IAudioWaveformGenerator } from 'src/clean-arch/application/ports/infrastructure/IAudioWaveformGenerator';
+
 export interface WaveformData {
   peaks: number[];
   duration: number;
@@ -20,7 +22,7 @@ export interface WaveformOptions {
 }
 
 @Injectable()
-export class WaveformService {
+export class WaveformGenerator implements IAudioWaveformGenerator {
   private readonly SUPPORTED_FORMATS = [
     '.mp3',
     '.wav',
