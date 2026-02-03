@@ -16,8 +16,6 @@ import type {
 	StaticFilterOptions,
 	TrackRecommendation,
 	UpdateLibraryInput,
-	UpdatePreferencesInput,
-	UserPreferencesGraphQl as UserPreferences,
 } from '../__generated__/types';
 import { gql, graffleClient } from './graffle-client';
 import { simpleMusicTrackFragment } from './playlist-hooks';
@@ -78,7 +76,6 @@ export const queryKeys = {
 			{ libraryId, status, isFavorite, limit, offset, orderBy, orderDirection },
 		] as const,
 
-	preferences: ['preferences'] as const,
 	recentlyPlayed: (limit?: number) =>
 		['tracks', 'recently-played', { limit }] as const,
 
@@ -653,57 +650,6 @@ export const useDislikeTrack = () => {
 			queryClient.invalidateQueries({
 				queryKey: queryKeys.randomTrackWithStats(),
 			});
-		},
-	});
-};
-
-export const useUpdatePreferences = () => {
-	const queryClient = useQueryClient();
-
-	return useMutation({
-		mutationFn: async (input: UpdatePreferencesInput) => {
-			const response = await graffleClient.request<{
-				updatePreferences: UserPreferences;
-			}>(
-				gql(
-					`
-          mutation UpdatePreferences($input: UpdatePreferencesInput!) {
-            updatePreferences(input: $input) {
-              id
-              analysisPreferences {
-                autoAnalyze
-                confidenceThreshold
-                preferredGenres
-                skipLowConfidence
-              }
-              organizationPreferences {
-                autoOrganize
-                organizationMethod
-                createPlaylists
-                exportToDJSoftware
-              }
-              editorPreferences {
-                showConfidenceScores
-                batchMode
-                autoSave
-                undoLevels
-              }
-              uiPreferences {
-                theme
-                language
-                defaultView
-              }
-              updatedAt
-            }
-          }
-        ` as any
-				),
-				{ input }
-			);
-			return response.updatePreferences;
-		},
-		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: queryKeys.preferences });
 		},
 	});
 };

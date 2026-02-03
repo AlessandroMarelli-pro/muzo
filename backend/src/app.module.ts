@@ -34,7 +34,6 @@ import { PlaylistModule } from './modules/playlist/playlist.module';
 import { QueueModule } from './modules/queue/queue.module';
 import { RecommendationModule } from './modules/recommendation/recommendation.module';
 import { ThirdPartySyncModule } from './modules/third-party-sync/third-party-sync.module';
-import { UserPreferencesModule } from './modules/user-preferences/user-preferences.module';
 import { SharedModule } from './shared/shared.module';
 
 @Module({
@@ -110,7 +109,6 @@ import { SharedModule } from './shared/shared.module';
     PlaylistModule,
     RecommendationModule,
     ThirdPartySyncModule,
-    UserPreferencesModule,
     AiIntegrationModule,
     FilterModule,
     MetricsModule,

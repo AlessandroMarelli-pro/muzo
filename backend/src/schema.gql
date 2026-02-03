@@ -7,36 +7,6 @@ input AddTrackToPlaylistInput {
   trackId: Base64ID!
 }
 
-type AnalysisPreferences {
-  autoAnalyze: Boolean!
-  confidenceThreshold: Float!
-  preferredGenres: [String!]
-  skipLowConfidence: Boolean!
-}
-
-input AnalysisPreferencesInput {
-  autoAnalyze: Boolean
-  confidenceThreshold: Float
-  preferredGenres: [String!]
-  skipLowConfidence: Boolean
-}
-
-type AudioAnalysisResult {
-  acousticness: Float!
-  analysisVersion: String!
-  beats: [BeatData!]!
-  danceability: Float!
-  duration: Float!
-  energy: [EnergyData!]!
-  instrumentalness: Float!
-  key: String!
-  liveness: Float!
-  mode: String!
-  speechiness: Float!
-  tempo: Float!
-  valence: Float!
-}
-
 type AudioFingerprint {
   acousticness: Float
   chroma: [Float!]
@@ -56,17 +26,6 @@ type AudioFingerprint {
   updatedAt: DateTime!
   valence: Float
   zeroCrossingRate: Float
-}
-
-type AudioInfo {
-  bitrate: Float
-  contentType: String!
-  duration: Float!
-  fileName: String!
-  fileSize: Float!
-  format: String!
-  sampleRate: Int
-  trackId: ID!
 }
 
 """ID encoded as base64 for transport"""
@@ -153,20 +112,6 @@ input CreatePlaylistInput {
 A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
 """
 scalar DateTime
-
-type EditorPreferences {
-  autoSave: Boolean!
-  batchMode: Boolean!
-  showConfidenceScores: Boolean!
-  undoLevels: Float!
-}
-
-input EditorPreferencesInput {
-  autoSave: Boolean
-  batchMode: Boolean
-  showConfidenceScores: Boolean
-  undoLevels: Float
-}
 
 type EnergyData {
   energy: Float!
@@ -379,7 +324,6 @@ type Mutation {
   resumeTrack(trackId: String!): PlaybackState!
   scheduleLibraryScan(libraryId: ID!): LibraryScanResult!
   seekTrack(timeInSeconds: Float!, trackId: String!): PlaybackState!
-  setPlaybackRate(rate: Float!, trackId: String!): PlaybackState!
   setVolume(trackId: String!, volume: Float!): PlaybackState!
   startLibraryScan(incremental: Boolean, libraryId: ID!): LibraryScanResult!
   stopLibraryScan(libraryId: ID!): Boolean!
@@ -391,36 +335,12 @@ type Mutation {
   updateLibrary(id: ID!, input: UpdateLibraryInput!): MusicLibrary!
   updatePlaylistSorting(input: UpdatePlaylistSortingInput!, playlistId: Base64ID!): CleanArchPlaylistSorting!
   updatePlaylistTracksPositions(input: UpdatePlaylistPositionsInput!, playlistId: Base64ID!): Boolean!
-  updatePreferences(input: UpdatePreferencesInput!): UserPreferencesGraphQL!
   updateQueuePositions(input: UpdateQueuePositionsInput!): [QueueItem!]!
   updateSavedFilter(id: Base64ID!, input: SavedFilterInput!): FilterCriteriaResult!
 }
 
 interface Node {
   id: Base64ID!
-}
-
-type OrganizationPreferences {
-  autoOrganize: Boolean!
-  createPlaylists: Boolean!
-  exportToDJSoftware: Boolean!
-  organizationMethod: String!
-}
-
-input OrganizationPreferencesInput {
-  autoOrganize: Boolean
-  createPlaylists: Boolean
-  exportToDJSoftware: Boolean
-  organizationMethod: String
-}
-
-type PlaybackSession {
-  currentTime: Float!
-  duration: Float!
-  id: ID!
-  isActive: Boolean!
-  startTime: DateTime!
-  trackId: ID!
 }
 
 type PlaybackState {
@@ -463,15 +383,7 @@ type PlaylistsResult {
 
 type Query {
   favoritePlaylist: CleanArchPlaylist!
-  getActiveSessions: [PlaybackSession!]!
-  getAudioAnalysis(trackId: String!): AudioAnalysisResult!
-  getAudioInfo(trackId: String!): AudioInfo!
-  getAudioStreamUrl(trackId: String!): String!
-  getBeatData(trackId: String!): [BeatData!]!
-  getDetailedWaveformData(trackId: String!): WaveformData!
-  getEnergyData(trackId: String!): [EnergyData!]!
   getPlaybackState(trackId: String!): PlaybackState
-  getRealTimeAnalysis(currentTime: Float!, trackId: String!): RealTimeAnalysis!
   getSpotifyAuthUrl: SpotifyAuthUrl!
   getTidalAuthUrl: TidalAuthUrl!
   getWaveformData(trackId: String!): [Float!]!
@@ -486,8 +398,6 @@ type Query {
   """
   node(id: Base64ID!): Node
   playlistRecommendations(excludeTrackIds: [String!], limit: Int, playlistId: Base64ID!): [TrackRecommendation!]!
-  preferences: UserPreferencesGraphQL!
-  queueStats: String!
   randomTrack(filterLiked: Boolean, id: String): SimpleMusicTrack!
   randomTrackWithStats: RandomTrackWithStats!
   recentlyPlayed(limit: Float! = 20): [SimpleMusicTrack!]!
@@ -521,14 +431,6 @@ type Range {
 input RangeInput {
   max: Float
   min: Float
-}
-
-type RealTimeAnalysis {
-  beatConfidence: Float!
-  currentBeat: BeatData!
-  currentEnergy: Float!
-  energyTrend: String!
-  nextBeatEstimate: Float!
 }
 
 type RecentActivity {
@@ -724,18 +626,6 @@ type TrackTechnicalInfo {
   format: String!
 }
 
-type UIPreferences {
-  defaultView: String!
-  language: String!
-  theme: String!
-}
-
-input UIPreferencesInput {
-  defaultView: String
-  language: String
-  theme: String
-}
-
 input UpdateLibraryInput {
   autoScan: Boolean
   includeSubdirectories: Boolean
@@ -760,13 +650,6 @@ input UpdatePlaylistSortingInput {
   sortingKey: String!
 }
 
-input UpdatePreferencesInput {
-  analysisPreferences: AnalysisPreferencesInput
-  editorPreferences: EditorPreferencesInput
-  organizationPreferences: OrganizationPreferencesInput
-  uiPreferences: UIPreferencesInput
-}
-
 input UpdateQueuePositionInput {
   position: Int!
   trackId: Base64ID!
@@ -786,25 +669,6 @@ type User implements Node {
   playlists: PlaylistsResult!
   queue: [QueueItem!]!
   staticFilterOptions: StaticFilterOptions!
-}
-
-type UserPreferencesGraphQL {
-  analysisPreferences: AnalysisPreferences!
-  createdAt: DateTime!
-  editorPreferences: EditorPreferences!
-  id: ID!
-  organizationPreferences: OrganizationPreferences!
-  uiPreferences: UIPreferences!
-  updatedAt: DateTime!
-  userId: ID
-}
-
-type WaveformData {
-  bitDepth: Int!
-  channels: Int!
-  duration: Float!
-  peaks: [Float!]!
-  sampleRate: Int!
 }
 
 type YearDistribution {

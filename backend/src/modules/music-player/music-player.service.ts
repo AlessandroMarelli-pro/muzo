@@ -6,7 +6,6 @@ import {
 import * as fs from 'fs';
 import { PrismaService } from '../../shared/services/prisma.service';
 import { MusicTrackService } from '../music-track/music-track.service';
-import { AudioAnalysisService } from './audio-analysis.service';
 import { WaveformService } from './waveform.service';
 
 export interface PlaybackState {
@@ -41,7 +40,6 @@ export class MusicPlayerService {
   constructor(
     private readonly musicTrackService: MusicTrackService,
     private readonly waveformService: WaveformService,
-    private readonly audioAnalysisService: AudioAnalysisService,
     private readonly prisma: PrismaService,
   ) {}
 
@@ -203,27 +201,6 @@ export class MusicPlayerService {
     return state;
   }
 
-  async setPlaybackRate(trackId: string, rate: number): Promise<PlaybackState> {
-    const state = this.playbackStates.get(trackId);
-
-    if (!state) {
-      throw new NotFoundException(
-        `No active playback session for track ${trackId}`,
-      );
-    }
-
-    if (rate < 0.25 || rate > 4.0) {
-      throw new BadRequestException(
-        'Playback rate must be between 0.25 and 4.0',
-      );
-    }
-
-    state.playbackRate = rate;
-    this.playbackStates.set(trackId, state);
-
-    return state;
-  }
-
   async getAudioStreamUrl(trackId: string): Promise<string> {
     const track = await this.musicTrackService.findOne(trackId);
 
@@ -252,10 +229,6 @@ export class MusicPlayerService {
     return this.waveformService.generateWaveform(track.filePath);
   }
 
-  async getAudioAnalysis(trackId: string): Promise<any> {
-    return this.audioAnalysisService.analyzeAudio(trackId);
-  }
-
   private async recordPlaybackSession(
     trackId: string,
     startTime: number,
@@ -276,19 +249,5 @@ export class MusicPlayerService {
       console.error('Failed to record playback session:', error);
       // Don't throw error as this is not critical for playback functionality
     }
-  }
-
-  async cleanupInactiveSessions(): Promise<void> {
-    const now = new Date();
-    const inactiveThreshold = 30 * 60 * 1000; // 30 minutes
-
-    this.activeSessions.forEach((session, sessionId) => {
-      const timeSinceStart = now.getTime() - session.startTime.getTime();
-
-      if (timeSinceStart > inactiveThreshold || !session.isActive) {
-        this.activeSessions.delete(sessionId);
-        this.playbackStates.delete(session.trackId);
-      }
-    });
   }
 }

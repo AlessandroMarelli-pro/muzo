@@ -1,27 +1,10 @@
 import { Args, Float, Mutation, Query, Resolver } from '@nestjs/graphql';
-import { MusicTrackService } from '../music-track/music-track.service';
-import { AudioAnalysisService } from './audio-analysis.service';
 import { MusicPlayerService, SeekRequest } from './music-player.service';
-import {
-  AudioAnalysisResult,
-  AudioInfo,
-  BeatData,
-  EnergyData,
-  PlaybackSession,
-  PlaybackState,
-  RealTimeAnalysis,
-  WaveformData,
-} from './music-player.types';
-import { WaveformService } from './waveform.service';
+import { PlaybackState } from './music-player.types';
 
 @Resolver()
 export class MusicPlayerResolver {
-  constructor(
-    private readonly musicPlayerService: MusicPlayerService,
-    private readonly waveformService: WaveformService,
-    private readonly audioAnalysisService: AudioAnalysisService,
-    private readonly musicTrackService: MusicTrackService,
-  ) {}
+  constructor(private readonly musicPlayerService: MusicPlayerService) {}
 
   @Query(() => PlaybackState, { nullable: true })
   async getPlaybackState(
@@ -30,70 +13,9 @@ export class MusicPlayerResolver {
     return this.musicPlayerService.getPlaybackState(trackId);
   }
 
-  @Query(() => [PlaybackSession])
-  async getActiveSessions(): Promise<PlaybackSession[]> {
-    return this.musicPlayerService.getAllActiveSessions();
-  }
-
   @Query(() => [Float])
   async getWaveformData(@Args('trackId') trackId: string): Promise<number[]> {
     return this.musicPlayerService.getWaveformData(trackId);
-  }
-
-  @Query(() => WaveformData)
-  async getDetailedWaveformData(
-    @Args('trackId') trackId: string,
-  ): Promise<WaveformData> {
-    const track = await this.musicTrackService.findOne(trackId);
-    return this.waveformService.getDetailedWaveformData(track.filePath);
-  }
-
-  @Query(() => AudioAnalysisResult)
-  async getAudioAnalysis(
-    @Args('trackId') trackId: string,
-  ): Promise<AudioAnalysisResult> {
-    return this.musicPlayerService.getAudioAnalysis(trackId);
-  }
-
-  @Query(() => RealTimeAnalysis)
-  async getRealTimeAnalysis(
-    @Args('trackId') trackId: string,
-    @Args('currentTime') currentTime: number,
-  ): Promise<RealTimeAnalysis> {
-    return this.audioAnalysisService.getRealTimeAnalysis(trackId, currentTime);
-  }
-
-  @Query(() => String)
-  async getAudioStreamUrl(@Args('trackId') trackId: string): Promise<string> {
-    return this.musicPlayerService.getAudioStreamUrl(trackId);
-  }
-
-  @Query(() => AudioInfo)
-  async getAudioInfo(@Args('trackId') trackId: string): Promise<AudioInfo> {
-    const track = await this.musicTrackService.findOne(trackId);
-    const fileExtension = track.filePath.split('.').pop()?.toLowerCase();
-    const contentType = this.getContentType(fileExtension || '');
-
-    return {
-      trackId: track.id,
-      fileName: track.fileName,
-      fileSize: track.fileSize,
-      duration: track.duration,
-      format: track.format,
-      bitrate: track.bitrate,
-      sampleRate: track.sampleRate,
-      contentType,
-    };
-  }
-
-  @Query(() => [BeatData])
-  async getBeatData(@Args('trackId') trackId: string): Promise<BeatData[]> {
-    return this.audioAnalysisService.getBeatData(trackId);
-  }
-
-  @Query(() => [EnergyData])
-  async getEnergyData(@Args('trackId') trackId: string): Promise<EnergyData[]> {
-    return this.audioAnalysisService.getEnergyData(trackId);
   }
 
   @Mutation(() => PlaybackState)
@@ -147,34 +69,5 @@ export class MusicPlayerResolver {
     const result = await this.musicPlayerService.setVolume(trackId, volume);
 
     return result;
-  }
-
-  @Mutation(() => PlaybackState)
-  async setPlaybackRate(
-    @Args('trackId') trackId: string,
-    @Args('rate') rate: number,
-  ): Promise<PlaybackState> {
-    const result = await this.musicPlayerService.setPlaybackRate(trackId, rate);
-
-    return result;
-  }
-
-  // Note: GraphQL subscriptions replaced with WebSocket implementation
-
-  private getContentType(fileExtension: string): string {
-    const contentTypes: Record<string, string> = {
-      mp3: 'audio/mpeg',
-      wav: 'audio/wav',
-      flac: 'audio/flac',
-      m4a: 'audio/mp4',
-      aac: 'audio/aac',
-      ogg: 'audio/ogg',
-      wma: 'audio/x-ms-wma',
-      aiff: 'audio/aiff',
-      au: 'audio/basic',
-      opus: 'audio/opus',
-    };
-
-    return contentTypes[fileExtension] || 'audio/mpeg';
   }
 }

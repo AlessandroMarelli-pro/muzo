@@ -8,7 +8,7 @@ import {
   ObjectType,
   Query,
   ResolveField,
-  Resolver
+  Resolver,
 } from '@nestjs/graphql';
 import { ScanStatus } from '@prisma/client';
 import {
@@ -17,9 +17,7 @@ import {
   UpdateMusicLibraryDto,
 } from '../../models/music-library.model';
 import { FileScanningService } from '../../shared/services/file-scanning.service';
-import {
-  ProgressTrackingService
-} from '../queue/progress-tracking.service';
+import { ProgressTrackingService } from '../queue/progress-tracking.service';
 import { QueueService } from '../queue/queue.service';
 import { MusicLibraryService } from './music-library.service';
 
@@ -198,7 +196,7 @@ export class MusicLibraryResolver {
     private readonly fileScanningService: FileScanningService,
     private readonly queueService: QueueService,
     private readonly progressTrackingService: ProgressTrackingService,
-  ) { }
+  ) {}
 
   @Query(() => [MusicLibrary])
   async libraries(
@@ -376,16 +374,6 @@ export class MusicLibraryResolver {
     }
   }
 
-  @Query(() => String)
-  async queueStats(): Promise<string> {
-    try {
-      const stats = await this.queueService.getQueueStats();
-      return JSON.stringify(stats);
-    } catch (error) {
-      throw new Error(`Failed to get queue stats: ${error.message}`);
-    }
-  }
-
   @ResolveField(() => LibrarySettings)
   async settings(library: MusicLibrary): Promise<LibrarySettings> {
     return {
@@ -398,6 +386,4 @@ export class MusicLibraryResolver {
       maxFileSize: library.maxFileSize,
     };
   }
-
-
 }
