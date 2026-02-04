@@ -11,7 +11,6 @@ import {
   AIMetadataResponse,
   SimpleAudioAnalysisResponse,
 } from 'src/modules/ai-integration/ai-service-simple.types';
-import { ElasticsearchSyncService } from 'src/modules/recommendation/services/elasticsearch-sync.service';
 import { AiIntegrationService } from '../../../modules/ai-integration/ai-integration.service';
 import { PrismaService } from '../../../shared/services/prisma.service';
 import { ProgressTrackingService } from '../progress-tracking.service';
@@ -42,7 +41,6 @@ export class AudioScanProcessor extends WorkerHost {
       AudioScanJobData | EndScanLibraryJobData
     >,
     private readonly addImageSearchRecordUseCase: AddImageSearchRecordUseCase,
-    private readonly elasticsearchSyncService: ElasticsearchSyncService,
     private readonly pubSubService: ScanProgressPubSubService,
     private readonly scanSessionService: ScanSessionService,
   ) {
@@ -432,7 +430,7 @@ export class AudioScanProcessor extends WorkerHost {
     });
 
     // Sync with Elasticsearch
-    await this.elasticsearchSyncService.syncTrackOnUpdate(trackId);
+    //await this.elasticsearchSyncService.syncTrackOnUpdate(trackId);
 
     // Search for image if available
     if (

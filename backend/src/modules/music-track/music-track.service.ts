@@ -20,18 +20,12 @@ import {
 import { ElasticsearchService } from '../../shared/services/elasticsearch.service';
 import { PrismaService } from '../../shared/services/prisma.service';
 import { FilterService } from '../filter/filter.service';
-import {
-  DEFAULT_RECOMMENDATION_WEIGHTS,
-  RecommendationService,
-  ZERO_RECOMMENDATION_WEIGHTS,
-} from '../recommendation/services/recommendation.service';
 
 @Injectable()
 export class MusicTrackService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly filterService: FilterService,
-    private readonly recommendationService: RecommendationService,
     private readonly elasticsearchService: ElasticsearchService,
   ) {}
 
@@ -817,49 +811,6 @@ export class MusicTrackService {
         pendingTracks,
         failedTracks,
       },
-    });
-  }
-
-  async getTrackRecommendations(id: string, criteria?: string) {
-    const track = await this.prisma.musicTrack.findUnique({
-      where: { id },
-      include: {
-        library: true,
-        audioFingerprint: true,
-        aiAnalysisResult: true,
-        editorSessions: true,
-        playbackSessions: true,
-        imageSearches: true,
-        trackGenres: {
-          include: {
-            genre: true,
-          },
-        },
-        trackSubgenres: {
-          include: {
-            subgenre: true,
-          },
-        },
-      },
-    });
-
-    if (!track) {
-      throw new NotFoundException(`Music track with ID ${id} not found`);
-    }
-    const boost = 1.5;
-    const weights = DEFAULT_RECOMMENDATION_WEIGHTS;
-    const boostedKeys = criteria?.split(',') || [];
-    let boostedWeights = { ...weights };
-    if (criteria) {
-      boostedWeights = { ...ZERO_RECOMMENDATION_WEIGHTS };
-      boostedKeys.forEach((key) => {
-        boostedWeights[key] = weights[key] + boost;
-      });
-    }
-    return this.recommendationService.getRecommendations([{ track }], {
-      weights: boostedWeights,
-      limit: 25,
-      excludeTrackIds: [track.id],
     });
   }
 

@@ -5,24 +5,6 @@ import { AdminMethodsService } from './admin-methods.service';
 export class AdminMethodsController {
   constructor(private readonly adminMethodsService: AdminMethodsService) {}
 
-  /**
-   * Updates the fileCreatedAt field for all tracks by reading the actual file modification time
-   * from the filesystem. This is an admin method used to correct schema updates and populate
-   * the fileCreatedAt field with real file creation timestamps.
-   *
-   * @returns Object containing statistics about the update operation
-   */
-  @Get('update-track-file-created-at')
-  @HttpCode(HttpStatus.OK)
-  async updateTrackFileCreatedAt() {
-    return this.adminMethodsService.updateTrackFileCreatedAt();
-  }
-
-  @Get('sync-elasticsearch')
-  @HttpCode(HttpStatus.OK)
-  async syncElasticsearch() {
-    return this.adminMethodsService.syncElasticsearch();
-  }
   @Get('set-created-by-id-anonymous')
   @HttpCode(HttpStatus.OK)
   async setCreatedByIdToUserId() {

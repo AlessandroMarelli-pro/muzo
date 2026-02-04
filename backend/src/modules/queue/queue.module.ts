@@ -6,7 +6,6 @@ import { FileScanningService } from 'src/shared/services/file-scanning.service';
 import { UseCasesModule } from '../../clean-arch/application/use-cases/use-cases.module';
 import { SharedModule } from '../../shared/shared.module';
 import { AiIntegrationModule } from '../ai-integration/ai-integration.module';
-import { RecommendationModule } from '../recommendation/recommendation.module';
 import { AudioScanProcessor } from './processors/audio-scan.processor';
 import { LibraryScanProcessor } from './processors/library-scan.processor';
 import { ProgressTrackingService } from './progress-tracking.service';
@@ -21,7 +20,6 @@ import { ScanSessionService } from './scan-session.service';
     SharedModule,
     AiIntegrationModule,
     UseCasesModule,
-    RecommendationModule,
     BullModule.forRootAsync({
       useFactory: (configService: ConfigService) => {
         const queueConfig = configService.get<QueueConfig>('queue');
