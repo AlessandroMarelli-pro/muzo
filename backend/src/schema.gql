@@ -40,6 +40,7 @@ type CleanArchPlaylist implements Node {
   id: Base64ID!
   isPublic: Boolean!
   name: String!
+  recommendations(limit: Int): [TrackRecommendation!]
   sorting: CleanArchPlaylistSorting
   stats: CleanArchPlaylistStats
   tracks: [CleanArchPlaylistTrack!]
@@ -322,22 +323,6 @@ input PlaylistFilterInput {
   tempo: RangeInput
 }
 
-type PlaylistSorting {
-  createdAt: DateTime!
-  id: ID!
-  playlistId: ID!
-  sortingDirection: String!
-  sortingKey: String!
-  updatedAt: DateTime!
-}
-
-type PlaylistTrack {
-  addedAt: String!
-  id: ID!
-  position: Int!
-  track: SimpleMusicTrack!
-}
-
 type PlaylistsResult {
   items: [CleanArchPlaylist!]!
 }
@@ -355,11 +340,9 @@ type Query {
   Fetch any node by global ID. Use inline fragments (... on CleanArchPlaylist { ... }) to request fields.
   """
   node(id: Base64ID!): Node
-  playlistRecommendations(excludeTrackIds: [String!], limit: Int, playlistId: Base64ID!): [TrackRecommendation!]!
   randomTrack(filterLiked: Boolean, id: String): SimpleMusicTrack!
   randomTrackWithStats: RandomTrackWithStats!
   recentlyPlayed(limit: Float! = 20): [SimpleMusicTrack!]!
-  trackRecommendations(criteria: String, id: String!): [TrackRecommendation!]!
   tracks(options: TrackQueryOptions): [SimpleMusicTrack!]!
   tracksList(options: TrackQueryOptions): MusicTrackListPaginated!
 }
@@ -494,7 +477,7 @@ type TopGenre {
   trackCount: Int!
 }
 
-type Track {
+type Track implements Node {
   aiMetadata: TrackAIMetadata!
   artist: String
   createdAt: DateTime
@@ -505,6 +488,7 @@ type Track {
   libraryId: String
   metadata: TrackMetadata!
   musicalFeatures: TrackMusicalFeatures!
+  recommendations(limit: Int): [TrackRecommendation!]!
   stats: TrackStats!
   technicalInfo: TrackTechnicalInfo!
   title: String
@@ -560,7 +544,7 @@ input TrackQueryOptions {
 type TrackRecommendation {
   reasons: [String!]!
   similarity: Float!
-  track: SimpleMusicTrack!
+  track: Track!
 }
 
 type TrackStats {
@@ -621,6 +605,7 @@ type User implements Node {
   playlists: PlaylistsResult!
   queue: [QueueItem!]!
   staticFilterOptions: StaticFilterOptions!
+  tracks(id: Base64ID): [Track!]!
 }
 
 type YouTubeAuthResult {

@@ -1,6 +1,7 @@
 import { Field, Float, ObjectType } from '@nestjs/graphql';
 import { MusicTrackId } from 'src/clean-arch/kernel/ids';
 import { Base64ID } from '../scalars/base64-id.scalar';
+import { Node } from './common.schema';
 
 @ObjectType()
 export class TrackStats {
@@ -100,7 +101,7 @@ export class TrackMusicalFeatures {
   speechiness?: number;
 }
 
-@ObjectType()
+@ObjectType({ implements: () => [Node] })
 export class Track {
   @Field(() => Base64ID)
   id: MusicTrackId;

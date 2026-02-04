@@ -5,6 +5,7 @@ import { Node } from './common.schema';
 import { CleanArchPlaylistSorting } from './playlist-sorting.schema';
 import { CleanArchPlaylistStats as PlaylistStats } from './playlist-stats.schema';
 import { CleanArchPlaylistTrack as PlaylistTrack } from './playlist-track.schema';
+import { TrackRecommendation } from './recommendation.schema';
 
 @ObjectType({ implements: () => [Node] })
 export class CleanArchPlaylist {
@@ -46,4 +47,7 @@ export class CleanArchPlaylist {
 
   @Field(() => CleanArchPlaylistSorting, { nullable: true })
   sorting?: CleanArchPlaylistSorting;
+
+  @Field(() => [TrackRecommendation], { nullable: true })
+  recommendations?: TrackRecommendation[];
 }

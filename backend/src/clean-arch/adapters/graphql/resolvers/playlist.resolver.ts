@@ -2,6 +2,7 @@ import { UseGuards } from '@nestjs/common';
 import {
   Args,
   Context,
+  Int,
   Mutation,
   Parent,
   Query,
@@ -14,11 +15,13 @@ import {
   DeletePlaylistUseCase,
   ExportPlaylistToM3UUseCase,
   GetFavoriteUseCase,
+  GetPlaylistRecommendationsUseCase,
   GetPlaylistSortingByPlaylistIdUseCase,
   UpdatePlaylistUseCase,
 } from 'src/clean-arch/application/use-cases';
 import { UpdatePlaylistSortingUseCase } from 'src/clean-arch/application/use-cases/playlist-sorting/UpdatePlaylistSorting';
 import { Maybe } from 'src/clean-arch/kernel/common';
+
 import {
   parseMusicTrackId,
   parsePlaylistId,
@@ -37,6 +40,7 @@ import {
   CreatePlaylistInput,
 } from '../schema/playlist.input';
 import { CleanArchPlaylist } from '../schema/playlist.schema';
+import { TrackRecommendation } from '../schema/recommendation.schema';
 
 @Resolver(() => CleanArchPlaylist)
 @UseGuards(AuthGuard)
@@ -49,6 +53,7 @@ export class CleanArchPlaylistResolver {
     private readonly getPlaylistSortingByPlaylistIdUseCase: GetPlaylistSortingByPlaylistIdUseCase,
     private readonly exportPlaylistToM3UUseCase: ExportPlaylistToM3UUseCase,
     private readonly updatePlaylistSortingUseCase: UpdatePlaylistSortingUseCase,
+    private readonly getPlaylistRecommendationsUseCase: GetPlaylistRecommendationsUseCase,
   ) {}
 
   @Query(() => CleanArchPlaylist)
@@ -174,5 +179,30 @@ export class CleanArchPlaylistResolver {
         sortingDirection: input.sortingDirection,
       },
     );
+  }
+
+  @ResolveField(() => [TrackRecommendation])
+  async recommendations(
+    @Parent() parent: CleanArchPlaylist,
+    @Args('limit', { type: () => Int, nullable: true }) limit?: number,
+  ) {
+    if (parent.recommendations != null) {
+      return parent.recommendations;
+    }
+    if (parent.id == null) {
+      return [];
+    }
+    const recommendations =
+      await this.getPlaylistRecommendationsUseCase.execute(
+        parsePlaylistId(parent.id),
+        limit,
+      );
+
+    console.log('recommendations', recommendations.length);
+    return recommendations.map((recommendation) => ({
+      track: toTrack(recommendation.track),
+      similarity: recommendation.similarity,
+      reasons: recommendation.reasons,
+    }));
   }
 }

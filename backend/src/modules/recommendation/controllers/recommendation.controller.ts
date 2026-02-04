@@ -17,7 +17,7 @@ import {
   RecommendationService,
 } from '../services/recommendation.service';
 
-@Controller('recommendations')
+@Controller('_recommendations')
 export class RecommendationController {
   constructor(private readonly recommendationService: RecommendationService) {}
 
@@ -55,31 +55,6 @@ export class RecommendationController {
   async syncTrackToElasticsearch(@Param('trackId') trackId: string) {
     await this.recommendationService.syncTrackToElasticsearch(trackId);
     return { message: 'Track synced to Elasticsearch successfully' };
-  }
-
-  @Post('test-genre-scoring/:playlistId')
-  @HttpCode(HttpStatus.OK)
-  async testGenreScoring(@Param('playlistId') playlistId: string) {
-    return this.recommendationService.testGenreScoring(playlistId);
-  }
-
-  @Post('debug/:playlistId')
-  @HttpCode(HttpStatus.OK)
-  async debugRecommendationScores(
-    @Param('playlistId') playlistId: string,
-    @Query('includeUserBehavior') includeUserBehavior?: boolean,
-    @Query('includeMetadata') includeMetadata?: boolean,
-  ) {
-    const criteria: RecommendationCriteria = {
-      weights: DEFAULT_RECOMMENDATION_WEIGHTS,
-      limit: 5,
-      excludeTrackIds: [],
-    };
-
-    return this.recommendationService.debugRecommendationScores(
-      playlistId,
-      criteria,
-    );
   }
 
   @Get('recreate-index')

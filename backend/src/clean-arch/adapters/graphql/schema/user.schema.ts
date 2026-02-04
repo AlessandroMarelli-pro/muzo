@@ -5,6 +5,7 @@ import { Node } from './common.schema';
 import { CleanArchPlaylist } from './playlist.schema';
 import { CleanArchQueueItem } from './queue-item.schema';
 import { StaticFilterOptions } from './saved-filter.schema';
+import { Track } from './track.schema';
 
 @ObjectType()
 export class PlaylistsResult {
@@ -34,4 +35,7 @@ export class User {
 
   @Field(() => [CleanArchQueueItem])
   queue: CleanArchQueueItem[];
+
+  @Field(() => [Track])
+  tracks: Track[];
 }

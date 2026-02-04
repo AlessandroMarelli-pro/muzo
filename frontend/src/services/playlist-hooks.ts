@@ -16,7 +16,7 @@ import {
 	useQueryClient,
 } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { playlistFragment } from './fragments';
+import { playlistFragment, trackFragment } from './fragments';
 import { toPlaylistItem } from './playlist.mapper';
 
 export const simpleMusicTrackFragment = gql`
@@ -267,22 +267,21 @@ const REMOVE_TRACK_FROM_PLAYLIST = gql`
 `;
 
 const GET_PLAYLIST_RECOMMENDATIONS = gql`
-	${simpleMusicTrackFragment}
+	${trackFragment}
 	query GetPlaylistRecommendations(
 		$playlistId: Base64ID!
-		$limit: Int
-		$excludeTrackIds: [String!]
+		$recommendationsLimit: Int
 	) {
-		playlistRecommendations(
-			playlistId: $playlistId
-			limit: $limit
-			excludeTrackIds: $excludeTrackIds
-		) {
-			track {
-				...SimpleMusicTrackFragment
+		node(id: $playlistId) {
+			... on CleanArchPlaylist {
+				recommendations(limit: $recommendationsLimit) {
+					track {
+						...TrackFragment
+					}
+					similarity
+					reasons
+				}
 			}
-			similarity
-			reasons
 		}
 	}
 `;
@@ -561,22 +560,25 @@ export const fetchPlaylistRecommendations = async (
 	excludeTrackIds?: string[]
 ): Promise<TrackRecommendation[]> => {
 	const data = await graffleClient.request<{
-		playlistRecommendations: TrackRecommendation[];
+		node: {
+			recommendations: TrackRecommendation[];
+		};
 	}>(GET_PLAYLIST_RECOMMENDATIONS, {
 		playlistId,
 		limit,
 		excludeTrackIds,
 	});
-	return data.playlistRecommendations;
+	return data.node.recommendations.map((recommendation) => ({
+		__typename: 'TrackRecommendation',
+		track: recommendation.track,
+		similarity: recommendation.similarity,
+		reasons: recommendation.reasons,
+	}));
 };
 
 interface UpdatePlaylistPositionInput {
 	id: string;
 	position: number;
-}
-
-interface UpdatePlaylistPositionsInput {
-	positions: UpdatePlaylistPositionInput[];
 }
 
 const updatePlaylistPositions = async (

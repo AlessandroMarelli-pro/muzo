@@ -1,10 +1,16 @@
 import { UseGuards } from '@nestjs/common';
 import { Args, Query, Resolver } from '@nestjs/graphql';
-import { GetPlaylistUseCase } from 'src/clean-arch/application/use-cases';
+import {
+  GetPlaylistUseCase,
+  GetTrackUseCase,
+} from 'src/clean-arch/application/use-cases';
 import { extractModelId } from 'src/clean-arch/kernel/ids/factory';
 import { createNotFoundError } from 'src/clean-arch/kernel/types/errors';
 import type { Model } from 'src/clean-arch/kernel/types/model-types';
-import { parsePlaylistId } from '../../common/utils/parse-id';
+import {
+  parseMusicTrackId,
+  parsePlaylistId,
+} from '../../common/utils/parse-id';
 import { AuthGuard } from '../context/auth.guard';
 import { toTrack } from '../mappers/track.mapper';
 import { Base64ID } from '../scalars/base64-id.scalar';
@@ -20,7 +26,10 @@ import { Node } from '../schema/common.schema';
 @Resolver(() => Node)
 @UseGuards(AuthGuard)
 export class NodeResolver {
-  constructor(private readonly getPlaylistUseCase: GetPlaylistUseCase) {}
+  constructor(
+    private readonly getPlaylistUseCase: GetPlaylistUseCase,
+    private readonly getTrackUseCase: GetTrackUseCase,
+  ) {}
 
   @Query(() => Node, {
     nullable: true,
@@ -43,7 +52,14 @@ export class NodeResolver {
           })),
         }));
     }
-
+    if (modelName === 'Track') {
+      return this.getTrackUseCase
+        .execute(parseMusicTrackId(id))
+        .then((track) => ({
+          ...track,
+          track: toTrack(track),
+        }));
+    }
     if (modelName === 'User') {
       // Optional: add GetUserByIdUseCase and resolve here
       throw createNotFoundError(`User not found: ${id}`);

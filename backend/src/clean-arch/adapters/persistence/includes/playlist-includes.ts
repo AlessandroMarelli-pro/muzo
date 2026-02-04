@@ -1,5 +1,5 @@
 // playlist-includes.ts
-import type { Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import type {
   PlaylistSortingDirection,
   PlaylistSortingKey,
@@ -25,7 +25,7 @@ export function playlistWithTracksInclude(
       ? ({ position: sortingOpts.sortingDirection } as const)
       : ({ addedAt: sortingOpts.sortingDirection } as const);
 
-  return {
+  return Prisma.validator<Prisma.PlaylistInclude>()({
     sorting: true,
     tracks: {
       include: {
@@ -35,5 +35,5 @@ export function playlistWithTracksInclude(
       },
       orderBy,
     },
-  } satisfies Prisma.PlaylistInclude;
+  });
 }

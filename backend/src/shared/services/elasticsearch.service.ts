@@ -1,11 +1,11 @@
 import { Client } from '@elastic/elasticsearch';
 import { MappingTypeMapping } from '@elastic/elasticsearch/lib/api/types';
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ElasticsearchMusicTrackDocument } from 'src/models/music-track.model';
 
 @Injectable()
-export class ElasticsearchService implements OnModuleInit {
+export class ElasticsearchService {
   private readonly logger = new Logger(ElasticsearchService.name);
   public readonly client: Client;
 
@@ -349,19 +349,9 @@ export class ElasticsearchService implements OnModuleInit {
     });
   }
 
-  async onModuleInit() {
-    try {
-      await this.client.ping();
-      this.logger.log('Successfully connected to Elasticsearch');
-      await this.ensureIndexExists();
-    } catch (error) {
-      this.logger.error('Failed to connect to Elasticsearch:', error);
-    }
-  }
-
   async ensureIndexExists() {
     const indexName = 'music_tracks';
-
+    if (true) return;
     try {
       const exists = await this.client.indices.exists({ index: indexName });
 
@@ -383,6 +373,8 @@ export class ElasticsearchService implements OnModuleInit {
    */
   async updateIndexMappingIfNeeded(indexName: string) {
     try {
+      if (true) return;
+
       // Get current mapping
       const currentMapping = await this.client.indices.getMapping({
         index: indexName,
@@ -451,27 +443,8 @@ export class ElasticsearchService implements OnModuleInit {
       // Create new index with updated mapping
       await this.createMusicTracksIndex();
       this.logger.log('Created new index with updated mapping');
-
-      // Re-index all tracks
-      await this.reindexAllTracks();
-      this.logger.log('Re-indexed all tracks');
     } catch (error) {
       this.logger.error('Error recreating index:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Re-index all tracks from the database
-   */
-  async reindexAllTracks(): Promise<void> {
-    try {
-      // This would need to be implemented to fetch all tracks from your database
-      // and re-index them. You might want to call this from your sync service.
-      this.logger.log('Re-indexing all tracks...');
-      // Implementation depends on your data source
-    } catch (error) {
-      this.logger.error('Error re-indexing tracks:', error);
       throw error;
     }
   }
@@ -539,19 +512,6 @@ export class ElasticsearchService implements OnModuleInit {
       });
     } catch (error) {
       this.logger.error('Error deleting track from index:', error);
-      throw error;
-    }
-  }
-
-  async getTrack(trackId: string) {
-    try {
-      const response = await this.client.get({
-        index: 'music_tracks',
-        id: trackId,
-      });
-      return response;
-    } catch (error) {
-      this.logger.error('Error getting track from index:', error);
       throw error;
     }
   }

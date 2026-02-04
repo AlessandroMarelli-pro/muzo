@@ -128,10 +128,64 @@ export type AudioFileMetadata = {
   subgenres: string[];
 };
 
-export type AudioFileFeatures = {
-  musicalFeatures: AudioFileMusicalFeatures;
+export type AggregationStatistics = {
+  mean: number;
+  std: number;
+  median: number;
+  min: number;
+  max: number;
+  p25: number;
+  p75: number;
+};
+export type AudioFileSpectralFeatures = {
+  spectralCentroid: AggregationStatistics;
+  spectralRolloff: AggregationStatistics;
+  zeroCrossingRate: AggregationStatistics;
+  mfcc: number[];
+  spectralSpread: AggregationStatistics;
+  spectralBandwith: AggregationStatistics;
+  spectralFlatness: AggregationStatistics;
 };
 
+export type MelodicFeatures = {
+  mean: number[];
+  std: number[];
+  max: number[];
+  overallMean: number;
+  overallStd: number;
+};
+export type AudioFileMelodicFeatures = {
+  chroma: MelodicFeatures & {
+    dominant_pitch: number;
+  };
+  tonnetz: MelodicFeatures;
+};
+export type AudioFileFeatures = {
+  musicalFeatures: AudioFileMusicalFeatures;
+  spectralFeatures: AudioFileSpectralFeatures;
+  melodicFeatures: AudioFileMelodicFeatures;
+  fingerprint: AudioFileFingerprint;
+};
+export type AudioFileFingerprint = {
+  fileHash: string;
+  audioHash: string;
+};
+type CalculationFeatures = {
+  modeFactor: number;
+  modeConfidence: number;
+  modeWeight: number;
+  tempoFactor: number;
+  energyFactor: number;
+  brightnessFactor: number;
+  harmonicFactor: number;
+  spectralBalance: number;
+  beatStrength: number;
+  syncopation: number;
+  rhythmStability: number;
+  bassPresence: number;
+  tempoRegularity: number;
+  tempoAppropriateness: number;
+};
 export type AudioFileMusicalFeatures = {
   tempo: number;
   key: string;
@@ -139,6 +193,7 @@ export type AudioFileMusicalFeatures = {
   energy: number;
   valence: number;
   valenceMood: string;
+  calculationFeatures: CalculationFeatures;
   danceability: number;
   danceabilityFeeling: string;
   arousal: number;

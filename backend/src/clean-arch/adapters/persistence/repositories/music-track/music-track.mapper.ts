@@ -9,20 +9,22 @@ import {
 } from '@prisma/client';
 
 import { extractModelId } from 'src/clean-arch/kernel/ids/factory';
-
 import {
+  AggregationStatistics,
   AudioFileAIMetadata,
   AudioFileAnalysis,
   AudioFileFeatures,
   AudioFileInfo,
   AudioFileMetadata,
   AudioTechnical,
+  MelodicFeatures,
   MusicTrack,
   MusicTrackStats,
 } from 'src/clean-arch/kernel/types/model-types';
 import { models } from 'src/clean-arch/kernel/types/models';
 import { toDbModel } from '../db';
 import { toDomainModel } from '../domain';
+
 export type PrismaMusicTrackWithRelations = PrismaMusicTrack & {
   audioFingerprint: PrismaAudioFingerprint;
   trackGenres?: (PrismaTrackGenre & { genre: PrismaGenre })[];
@@ -74,10 +76,58 @@ export const toAudioTechnical: ToAudioTechnical = (row) => {
     sampleRate: row.sampleRate,
   };
 };
+
+export const toAggregationStatistics = (row: string): AggregationStatistics => {
+  if (!row) return null;
+  return JSON.parse(row) as AggregationStatistics;
+};
+
 export const toAudioFileFeatures: ToAudioFileFeatures = (row) => {
   if (!row) return null;
   return {
+    spectralFeatures: {
+      spectralCentroid: toAggregationStatistics(row.spectralCentroid),
+      spectralRolloff: toAggregationStatistics(row.spectralRolloff),
+      spectralSpread: toAggregationStatistics(row.spectralSpread),
+      spectralBandwith: toAggregationStatistics(row.spectralBandwith),
+      spectralFlatness: toAggregationStatistics(row.spectralFlatness),
+      spectralContrast: toAggregationStatistics(row.spectralContrast),
+      chroma: toAggregationStatistics(row.chroma),
+      tonnetz: toAggregationStatistics(row.tonnetz),
+      zeroCrossingRate: toAggregationStatistics(row.zeroCrossingRate),
+      rms: toAggregationStatistics(row.rms),
+      mfcc: JSON.parse(row.mfcc) as number[],
+    },
+    melodicFeatures: {
+      chroma: JSON.parse(row.chroma) as MelodicFeatures & {
+        dominant_pitch: number;
+      },
+      tonnetz: JSON.parse(row.tonnetz) as MelodicFeatures,
+    },
+    fingerprint: {
+      audioHash: row.audioHash,
+      fileHash: row.fileHash,
+    },
     musicalFeatures: {
+      calculationFeatures: {
+        rhythmStability: row.rhythmStability,
+        bassPresence: row.bassPresence,
+        tempoRegularity: row.tempoRegularity,
+        tempoAppropriateness: row.tempoAppropriateness,
+        energyFactor: row.energyFactor,
+        syncopation: row.syncopation,
+        modeFactor: row.modeFactor,
+        modeConfidence: row.modeConfidence,
+        modeWeight: row.modeWeight,
+        tempoFactor: row.tempoFactor,
+        brightnessFactor: row.brightnessFactor,
+        harmonicFactor: row.harmonicFactor,
+        spectralBalance: row.spectralBalance,
+        beatStrength: row.beatStrength,
+        energyComment: row.energyComment,
+        energyKeywords: row.energyKeywords.split(','),
+        energyByBand: JSON.parse(row.energyByBand),
+      },
       camelotKey: row.camelotKey,
       energy: row.energyFactor,
       energyComment: row.energyComment,

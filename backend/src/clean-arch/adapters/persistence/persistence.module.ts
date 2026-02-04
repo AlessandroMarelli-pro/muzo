@@ -5,6 +5,7 @@ import { AUDIO_WAVEFORM_GENERATOR } from 'src/clean-arch/application/ports/infra
 import { IMAGE_FILE_READER } from 'src/clean-arch/application/ports/infrastructure/IImageFileReader';
 import { METRICS_QUERY } from 'src/clean-arch/application/ports/queries/IMetricsQuery';
 import { PLAYLIST_STATS_QUERY } from 'src/clean-arch/application/ports/queries/IPlaylistStatsQuery';
+import { RECOMMENDATION_DATA_PORT } from 'src/clean-arch/application/ports/queries/IRecommendationDataPort';
 import { SAVED_FILTER_QUERY } from 'src/clean-arch/application/ports/queries/ISavedFilterQuery';
 import { IMAGE_SEARCH_REPOSITORY } from 'src/clean-arch/application/ports/repositories/IImageSearchRepository';
 import { MUSIC_TRACK_REPOSITORY } from 'src/clean-arch/application/ports/repositories/IMusicTrackRepository';
@@ -14,18 +15,19 @@ import { PLAYLIST_TRACK_REPOSITORY } from 'src/clean-arch/application/ports/repo
 import { QUEUE_REPOSITORY } from 'src/clean-arch/application/ports/repositories/IQueueRepository';
 import { SAVED_FILTER_REPOSITORY } from 'src/clean-arch/application/ports/repositories/ISavedFilterRepository';
 import { WaveformGenerator } from 'src/clean-arch/infrastructure/audio/waveform-generator';
-import { PrismaService } from '../../../infrastructure/database/prisma.service';
-import { FileSystemImageReader } from '../../../infrastructure/filesystem/image-file.reader';
-import { MetricsQuery } from '../queries/metrics/metrics.query';
-import { PlaylistStatsQuery } from '../queries/playlist/playlist-stats.query';
-import { SavedFilterQuery } from '../queries/saved-filter/saved-filter.query';
-import { ImageSearchRepository } from './image-search/image-search.repository';
-import { MusicTrackRepository } from './music-track/music-track.repository';
-import { PlaylistSortingRepository } from './playlist-sorting/playlist-sorting.repository';
-import { PlaylistTrackRepository } from './playlist-track/playlist-track.repository';
-import { PlaylistRepository } from './playlist/playlist.repository';
-import { QueueRepository } from './queue/queue.repository';
-import { SavedFilterRepository } from './saved-filter/saved-filter.repository';
+import { PrismaService } from '../../infrastructure/database/prisma.service';
+import { FileSystemImageReader } from '../../infrastructure/filesystem/image-file.reader';
+import { MetricsQuery } from './queries/metrics/metrics.query';
+import { PlaylistStatsQuery } from './queries/playlist/playlist-stats.query';
+import { SavedFilterQuery } from './queries/saved-filter/saved-filter.query';
+import { RecommendationDataPort } from './recommendation/recommendation-data.port';
+import { ImageSearchRepository } from './repositories/image-search/image-search.repository';
+import { MusicTrackRepository } from './repositories/music-track/music-track.repository';
+import { PlaylistSortingRepository } from './repositories/playlist-sorting/playlist-sorting.repository';
+import { PlaylistTrackRepository } from './repositories/playlist-track/playlist-track.repository';
+import { PlaylistRepository } from './repositories/playlist/playlist.repository';
+import { QueueRepository } from './repositories/queue/queue.repository';
+import { SavedFilterRepository } from './repositories/saved-filter/saved-filter.repository';
 
 @Global()
 @Module({
@@ -47,6 +49,7 @@ import { SavedFilterRepository } from './saved-filter/saved-filter.repository';
     { provide: IMAGE_FILE_READER, useClass: FileSystemImageReader },
     { provide: METRICS_QUERY, useClass: MetricsQuery },
     { provide: AUDIO_WAVEFORM_GENERATOR, useClass: WaveformGenerator },
+    { provide: RECOMMENDATION_DATA_PORT, useClass: RecommendationDataPort },
   ],
   exports: [
     PLAYLIST_REPOSITORY,
@@ -61,6 +64,7 @@ import { SavedFilterRepository } from './saved-filter/saved-filter.repository';
     IMAGE_FILE_READER,
     METRICS_QUERY,
     AUDIO_WAVEFORM_GENERATOR,
+    RECOMMENDATION_DATA_PORT,
   ],
 })
-export class RepositoriesModule {}
+export class AdaptersPersistenceModule {}

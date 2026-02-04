@@ -6,11 +6,11 @@ import { join } from 'path';
 import { ActionContextMiddleware } from './clean-arch/adapters/common/middlewares/action-context.middleware';
 import { CleanArchGraphQLModule } from './clean-arch/adapters/graphql/graphql.module';
 import { HttpModule } from './clean-arch/adapters/http/http.module';
+import { AdaptersPersistenceModule } from './clean-arch/adapters/persistence/persistence.module';
 import { createPlaylistStatsLoader } from './clean-arch/adapters/persistence/queries/playlist/playlist-stats.loader';
 import { createPlaylistContainsTrackLoader } from './clean-arch/adapters/persistence/repositories/playlist-track/playlist-contains-track.loader';
 import { createPlaylistTracksWithTrackLoader } from './clean-arch/adapters/persistence/repositories/playlist-track/playlist-track-with-track.loader';
 import { createPlaylistTracksLoader } from './clean-arch/adapters/persistence/repositories/playlist-track/playlist-track.loader';
-import { RepositoriesModule } from './clean-arch/adapters/persistence/repositories/repositories.module';
 import {
   IPlaylistStatsQuery,
   PLAYLIST_STATS_QUERY,
@@ -20,6 +20,7 @@ import {
   PLAYLIST_TRACK_REPOSITORY,
 } from './clean-arch/application/ports/repositories/IPlaylistTrackRepository';
 import { UseCasesModule } from './clean-arch/application/use-cases/use-cases.module';
+import { ElasticsearchModule } from './clean-arch/infrastructure/external-services/elasticsearch/elasticsearch.module';
 import { ConfigModuleSetup } from './config';
 import { GraphiQLModule } from './graphiql/graphiql.module';
 import { AdminMethodsModule } from './modules/admin-methods/admin-methods.module';
@@ -28,9 +29,7 @@ import { FilterModule } from './modules/filter/filter.module';
 import { HealthModule } from './modules/health/health.module';
 import { MusicLibraryModule } from './modules/music-library/music-library.module';
 import { MusicTrackModule } from './modules/music-track/music-track.module';
-import { PlaylistModule } from './modules/playlist/playlist.module';
 import { QueueModule } from './modules/queue/queue.module';
-import { RecommendationModule } from './modules/recommendation/recommendation.module';
 import { ThirdPartySyncModule } from './modules/third-party-sync/third-party-sync.module';
 import { SharedModule } from './shared/shared.module';
 
@@ -43,13 +42,13 @@ import { SharedModule } from './shared/shared.module';
     GraphiQLModule,
 
     // Clean architecture modules
-    RepositoriesModule,
+    AdaptersPersistenceModule,
     UseCasesModule,
 
     // GraphQL module
     GraphQLModule.forRootAsync<ApolloDriverConfig>({
       driver: ApolloDriver,
-      imports: [RepositoriesModule],
+      imports: [AdaptersPersistenceModule],
       useFactory: (
         configService: ConfigService,
         statsQuery: IPlaylistStatsQuery,
@@ -103,12 +102,11 @@ import { SharedModule } from './shared/shared.module';
     HttpModule,
     MusicLibraryModule,
     MusicTrackModule,
-    PlaylistModule,
-    RecommendationModule,
     ThirdPartySyncModule,
     AiIntegrationModule,
     FilterModule,
     AdminMethodsModule,
+    ElasticsearchModule,
   ],
 })
 export class AppModule {

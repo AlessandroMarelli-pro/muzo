@@ -9,7 +9,6 @@ import { MusicTrackService } from './music-track.service';
 
 import { MusicTrack as MusicTrackModel } from '@prisma/client';
 
-import { TrackRecommendation } from '../playlist/playlist.model';
 import {
   MusicTrack,
   MusicTrackListPaginated,
@@ -145,14 +144,6 @@ export class MusicTrackResolver {
       dislikedCount: result.dislikedCount,
       remainingCount: result.remainingCount,
     };
-  }
-
-  @Query(() => [TrackRecommendation])
-  async trackRecommendations(
-    @Args('id') id: string,
-    @Args('criteria', { nullable: true }) criteria?: string,
-  ): Promise<TrackRecommendation[]> {
-    return this.musicTrackService.getTrackRecommendations(id, criteria);
   }
 
   @Query(() => [SimpleMusicTrack])

@@ -4,10 +4,15 @@ import { UseCasesModule } from 'src/clean-arch/application/use-cases/use-cases.m
 import { HttpAuthGuard } from './context/http-auth.guard';
 import { AudioStreamingController } from './controllers/audio-streaming.controller';
 import { ImageController } from './controllers/image.controller';
+import { RecommendationController } from './controllers/recommendation.controller';
 
 @Module({
   imports: [ConfigModule, UseCasesModule],
-  controllers: [ImageController, AudioStreamingController],
+  controllers: [
+    ImageController,
+    AudioStreamingController,
+    RecommendationController,
+  ],
   providers: [HttpAuthGuard],
 })
 export class HttpModule {}

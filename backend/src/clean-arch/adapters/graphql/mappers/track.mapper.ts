@@ -73,6 +73,9 @@ function toTrackAIMetadata(aiMetadata: AudioFileAIMetadata): TrackAIMetadata {
 function toTrackMusicalFeatures(
   features: AudioFileFeatures,
 ): TrackMusicalFeatures {
+  if (!features) {
+    return null;
+  }
   const m = features.musicalFeatures;
   return {
     tempo: m.tempo,
@@ -91,6 +94,7 @@ function toTrackMusicalFeatures(
  * Keeps the adapter as a pure translation layer: schema never imports domain entities.
  */
 export function toTrack(domain: MusicTrack): Track {
+  console.log('domain', domain);
   return {
     id: domain.id,
     artist: domain.artist,

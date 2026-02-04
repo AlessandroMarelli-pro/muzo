@@ -1,9 +1,11 @@
 // user.resolver.ts
 import { UseGuards } from '@nestjs/common';
-import { Query, ResolveField, Resolver } from '@nestjs/graphql';
+import { Args, Query, ResolveField, Resolver } from '@nestjs/graphql';
 import {
   GetPlaylistsUseCase,
   GetQueueUseCase,
+  GetTrackUseCase,
+  GetTracksUseCase,
 } from 'src/clean-arch/application/use-cases';
 import {
   GetCurrentFilterUseCase,
@@ -15,7 +17,9 @@ import { AuthGuard } from '../context/auth.guard';
 import { toFilter } from '../mappers/saved-filter.mapper';
 
 import { GetHomeMetricsUseCase } from 'src/clean-arch/application/use-cases/metrics/GetHomeMetrics';
+import { parseMusicTrackId } from '../../common/utils/parse-id';
 import { toTrack } from '../mappers/track.mapper';
+import { Base64ID } from '../scalars/base64-id.scalar';
 import { HomeMetrics } from '../schema/metrics.schema';
 import { MusicPlayer } from '../schema/music-player.schema';
 import { CleanArchQueueItem } from '../schema/queue-item.schema';
@@ -23,6 +27,7 @@ import {
   FilterCriteriaResult,
   StaticFilterOptions,
 } from '../schema/saved-filter.schema';
+import { Track } from '../schema/track.schema';
 import { PlaylistsResult, User } from '../schema/user.schema';
 
 @Resolver(() => User)
@@ -35,6 +40,8 @@ export class UserResolver {
     private readonly getActiveFiltersUseCase: GetActiveFiltersUseCase,
     private readonly getCurrentFilterUseCase: GetCurrentFilterUseCase,
     private readonly getHomeMetricsUseCase: GetHomeMetricsUseCase,
+    private readonly getTrackUseCase: GetTrackUseCase,
+    private readonly getTracksUseCase: GetTracksUseCase,
   ) {}
 
   @Query(() => User)
@@ -88,5 +95,17 @@ export class UserResolver {
     return {
       currentWaveformData: [],
     };
+  }
+
+  @ResolveField(() => [Track])
+  async tracks(
+    @Args('id', { type: () => Base64ID, nullable: true }) id?: string,
+  ): Promise<Track[]> {
+    if (id != null) {
+      const track = await this.getTrackUseCase.execute(parseMusicTrackId(id));
+      return track ? [toTrack(track)] : [];
+    }
+    const tracks = await this.getTracksUseCase.execute(); // or getTracksForCurrentUser, etc.
+    return tracks.map(toTrack);
   }
 }

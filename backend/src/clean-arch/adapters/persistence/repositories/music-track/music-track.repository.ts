@@ -9,6 +9,7 @@ import {
 } from 'src/clean-arch/kernel/types/model-types';
 import { PrismaService } from '../../../../infrastructure/database/prisma.service';
 import { buildMusicTrackFilterWhereClause } from '../../builders/music-track-filter.where';
+import { musicTracksIncludes } from '../../includes/music-tracks-includes';
 import { handlePrismaNotFound } from '../prisma-errors';
 import { toDomain } from './music-track.mapper';
 
@@ -20,13 +21,33 @@ export class MusicTrackRepository implements IMusicTrackRepository {
     return this.prisma.musicTrack
       .findUniqueOrThrow({
         where: { id: extractModelId(id).dbId, createdById: getCurrentUserId() },
+        include: musicTracksIncludes,
       })
       .catch((e: unknown) =>
         handlePrismaNotFound(e, `Music track with ID ${id} not found`),
       )
       .then(toDomain);
   }
+  async getAll(): Promise<MusicTrack[]> {
+    return this.prisma.musicTrack
+      .findMany({
+        where: { createdById: getCurrentUserId() },
+        include: musicTracksIncludes,
+      })
+      .then((rows) => rows.map(toDomain));
+  }
 
+  async getManyByIds(ids: MusicTrackId[]): Promise<MusicTrack[]> {
+    return this.prisma.musicTrack
+      .findMany({
+        where: {
+          id: { in: ids.map((id) => extractModelId(id).dbId) },
+          createdById: getCurrentUserId(),
+        },
+        include: musicTracksIncludes,
+      })
+      .then((rows) => rows.map(toDomain));
+  }
   verifyExistence(id: MusicTrackId): Promise<boolean> {
     return this.prisma.musicTrack
       .findUnique({
@@ -57,7 +78,7 @@ export class MusicTrackRepository implements IMusicTrackRepository {
   ): Promise<MusicTrack[]> {
     return this.prisma.musicTrack
       .findMany({
-        where: await buildMusicTrackFilterWhereClause(
+        where: buildMusicTrackFilterWhereClause(
           criteria,
           skipGenres,
           skipSubgenres,

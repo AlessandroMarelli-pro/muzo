@@ -3,6 +3,7 @@ import {
 	Playlist,
 	PlaylistTrack,
 } from '@/__generated__/types';
+import { toTrack } from './track.mapper';
 
 /** Map CleanArchPlaylist (me.playlists.items) to legacy PlaylistItem shape */
 export function toPlaylistItem(item: CleanArchPlaylist): Playlist {
@@ -14,34 +15,7 @@ export function toPlaylistItem(item: CleanArchPlaylist): Playlist {
 		addedAt: track.addedAt,
 		playlistId: track.playlistId,
 		trackId: track.trackId,
-		track: {
-			__typename: 'SimpleMusicTrack',
-			id: track.track.id,
-			artist: track.track.artist,
-			title: track.track.title,
-			duration: track.track.technicalInfo.duration,
-			date: track.track.metadata.date,
-			isFavorite: track.track.stats.isFavorite,
-			isLiked: track.track.stats.isLiked,
-			isBanger: track.track.stats.isBanger,
-			createdAt: track.track.createdAt,
-			updatedAt: track.track.updatedAt,
-			tempo: track.track.musicalFeatures.tempo,
-			key: track.track.musicalFeatures.key,
-			valenceMood: track.track.musicalFeatures.valenceMood,
-			arousalMood: track.track.musicalFeatures.arousalMood,
-			imagePath: track.track.imagePath,
-			lastScannedAt: track.track.lastScannedAt,
-			libraryId: track.track.libraryId,
-			genres: track.track.metadata.genres,
-			subgenres: track.track.metadata.subgenres,
-			description: track.track.aiMetadata.description,
-			tags: track.track.aiMetadata.tags,
-			vocalsDescriptions: track.track.aiMetadata.vocalsDescriptions,
-			atmosphereKeywords: track.track.aiMetadata.atmosphereKeywords,
-			contextBackgrounds: track.track.aiMetadata.contextBackgrounds,
-			contextImpacts: track.track.aiMetadata.contextImpacts,
-		},
+		track: track?.track ? toTrack(track.track) : undefined,
 	}));
 	return {
 		__typename: 'Playlist',

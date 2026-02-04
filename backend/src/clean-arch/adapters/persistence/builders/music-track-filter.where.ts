@@ -1,7 +1,7 @@
 import { extractModelId } from 'src/clean-arch/kernel/ids/factory';
 import { FilterCriteria } from 'src/clean-arch/kernel/types/model-types';
 
-export const buildMusicTrackFilterWhereClause = async (
+export const buildMusicTrackFilterWhereClause = (
   criteria: FilterCriteria,
   skipGenres: boolean = false,
   skipSubgenres: boolean = false,

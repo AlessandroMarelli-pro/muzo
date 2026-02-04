@@ -17,6 +17,7 @@ import type {
 	TrackRecommendation,
 	UpdateLibraryInput,
 } from '../__generated__/types';
+import { trackFragment } from './fragments';
 import { gql, graffleClient } from './graffle-client';
 import { simpleMusicTrackFragment } from './playlist-hooks';
 
@@ -300,18 +301,25 @@ export const fetchTrackRecommendations = async (
 		trackRecommendations: TrackRecommendation[];
 	}>(
 		gql`
-			${simpleMusicTrackFragment}
-			query GetTrackRecommendations($id: String!, $criteria: String) {
-				trackRecommendations(id: $id, criteria: $criteria) {
-					track {
-						...SimpleMusicTrackFragment
+			${trackFragment}
+			query GetTrackRecommendations(
+				$trackId: Base64ID!
+				$recommendationsLimit: Int
+			) {
+				node(id: $trackId) {
+					... on Track {
+						recommendations(limit: $recommendationsLimit) {
+							track {
+								...TrackFragment
+							}
+							similarity
+							reasons
+						}
 					}
-					similarity
-					reasons
 				}
 			}
 		`,
-		{ id, criteria }
+		{ trackId: id, recommendationsLimit: 20 }
 	);
 	return response.trackRecommendations;
 };

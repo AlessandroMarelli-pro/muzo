@@ -9,6 +9,8 @@ export const MUSIC_TRACK_REPOSITORY = Symbol('IMusicTrackRepository');
 
 export interface IMusicTrackRepository {
   getOneById(id: MusicTrackId): Promise<MusicTrack>;
+  getManyByIds(ids: MusicTrackId[]): Promise<MusicTrack[]>;
+  getAll(): Promise<MusicTrack[]>;
   verifyExistence(id: MusicTrackId): Promise<boolean>;
   getManyByCriteria(
     criteria: FilterCriteria,
