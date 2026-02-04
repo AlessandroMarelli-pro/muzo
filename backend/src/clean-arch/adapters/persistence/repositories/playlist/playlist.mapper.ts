@@ -3,7 +3,7 @@ import {
   PlaylistSorting as PrismaPlaylistSorting,
   PlaylistTrack as PrismaPlaylistTrack,
 } from '@prisma/client';
-import { PlaylistTrackWithTrackDetailAndSorting } from 'src/clean-arch/application/dtos/PlaylistWithTrackDetailsAndSorting';
+import { PlaylistTrackWithTrackDetailAndSorting } from 'src/clean-arch/application/ports/dtos/PlaylistWithTrackDetailsAndSorting';
 import { PlaylistUpdateData } from 'src/clean-arch/application/ports/repositories/IPlaylistRepository';
 import { extractModelId } from 'src/clean-arch/kernel/ids/factory';
 import { now, user } from 'src/clean-arch/kernel/types/context';

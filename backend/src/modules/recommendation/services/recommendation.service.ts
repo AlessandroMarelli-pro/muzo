@@ -40,7 +40,7 @@ export class RecommendationService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly elasticsearchService: ElasticsearchService,
-  ) { }
+  ) {}
 
   async getPlaylistRecommendations(
     dto: PlaylistRecommendationDto,
@@ -143,478 +143,484 @@ export class RecommendationService {
 
     const shouldMfcc =
       weights.audioSimilarity > 0 &&
-        playlistFeatures.mfcc &&
-        playlistFeatures.mfcc.length > 0
+      playlistFeatures.mfcc &&
+      playlistFeatures.mfcc.length > 0
         ? {
-          knn: {
-            field: 'audio_fingerprint.mfcc',
-            query_vector: playlistFeatures.mfcc,
-            k: Math.min(criteria.limit || 20, 50),
-            num_candidates: Math.min((criteria.limit || 20) * 10, 1000),
-            boost: weights.audioSimilarity * 1.6,
-          },
-        }
+            knn: {
+              field: 'audio_fingerprint.mfcc',
+              query_vector: playlistFeatures.mfcc,
+              k: Math.min(criteria.limit || 20, 50),
+              num_candidates: Math.min((criteria.limit || 20) * 10, 1000),
+              boost: weights.audioSimilarity * 1.6,
+            },
+          }
         : null;
     const shouldChroma =
       weights.audioSimilarity > 0 &&
-        playlistFeatures.chromaMean &&
-        playlistFeatures.chromaMean.length === 12
+      playlistFeatures.chromaMean &&
+      playlistFeatures.chromaMean.length === 12
         ? {
-          knn: {
-            field: 'audio_fingerprint.chroma.mean',
-            query_vector: playlistFeatures.chromaMean,
-            k: Math.min(criteria.limit || 20, 50),
-            num_candidates: Math.min((criteria.limit || 20) * 10, 1000),
-            boost: weights.audioSimilarity * 1.5,
-          },
-        }
+            knn: {
+              field: 'audio_fingerprint.chroma.mean',
+              query_vector: playlistFeatures.chromaMean,
+              k: Math.min(criteria.limit || 20, 50),
+              num_candidates: Math.min((criteria.limit || 20) * 10, 1000),
+              boost: weights.audioSimilarity * 1.5,
+            },
+          }
         : null;
 
     const shouldTonnetz =
       weights.audioSimilarity > 0 &&
-        playlistFeatures.tonnetzMean &&
-        playlistFeatures.tonnetzMean.length === 6
+      playlistFeatures.tonnetzMean &&
+      playlistFeatures.tonnetzMean.length === 6
         ? {
-          knn: {
-            field: 'audio_fingerprint.tonnetz.mean',
-            query_vector: playlistFeatures.tonnetzMean,
-            k: Math.min(criteria.limit || 20, 50),
-            num_candidates: Math.min((criteria.limit || 20) * 10, 1000),
-            boost: weights.audioSimilarity * 1.3,
-          },
-        }
+            knn: {
+              field: 'audio_fingerprint.tonnetz.mean',
+              query_vector: playlistFeatures.tonnetzMean,
+              k: Math.min(criteria.limit || 20, 50),
+              num_candidates: Math.min((criteria.limit || 20) * 10, 1000),
+              boost: weights.audioSimilarity * 1.3,
+            },
+          }
         : null;
     const shouldGenre =
       weights.genreSimilarity > 0 &&
-        playlistFeatures.genres &&
-        playlistFeatures.genres.length > 0
+      playlistFeatures.genres &&
+      playlistFeatures.genres.length > 0
         ? {
-          bool: {
-            should: playlistFeatures.genres.map((genre) => ({
-              term: {
-                genres: {
-                  value: genre,
-                  boost: weights.genreSimilarity * 3.0,
+            bool: {
+              should: playlistFeatures.genres.map((genre) => ({
+                term: {
+                  genres: {
+                    value: genre,
+                    boost: weights.genreSimilarity * 3.0,
+                  },
                 },
-              },
-            })),
-            minimum_should_match: Math.max(playlistFeatures.genres.length - 1, 1),
-          },
-        }
+              })),
+              minimum_should_match: Math.max(
+                playlistFeatures.genres.length - 1,
+                1,
+              ),
+            },
+          }
         : null;
     const shouldSubgenre =
       weights.genreSimilarity > 0 &&
-        playlistFeatures.subgenres &&
-        playlistFeatures.subgenres.length >= 0
+      playlistFeatures.subgenres &&
+      playlistFeatures.subgenres.length >= 0
         ? {
-          bool: {
-            should: playlistFeatures.subgenres.map((subgenre) => ({
-              term: {
-                subgenres: {
-                  value: subgenre,
-                  boost: weights.genreSimilarity * 4.0,
+            bool: {
+              should: playlistFeatures.subgenres.map((subgenre) => ({
+                term: {
+                  subgenres: {
+                    value: subgenre,
+                    boost: weights.genreSimilarity * 4.0,
+                  },
                 },
-              },
-            })),
-            minimum_should_match: Math.max(playlistFeatures.subgenres.length - 1, 1), // Require at least 2 subgenres to match
-          },
-        }
+              })),
+              minimum_should_match: Math.max(
+                playlistFeatures.subgenres.length - 1,
+                1,
+              ), // Require at least 2 subgenres to match
+            },
+          }
         : null;
     const shouldCamelotKey =
       weights.audioFeatures > 0 && playlistFeatures.camelotKey
         ? {
-          term: {
-            'audio_fingerprint.camelot_key': {
-              value: playlistFeatures.camelotKey,
-              boost: Math.max(weights.audioFeatures * 2.5, 1.0), // High boost for harmonic key matching
+            term: {
+              'audio_fingerprint.camelot_key': {
+                value: playlistFeatures.camelotKey,
+                boost: Math.max(weights.audioFeatures * 2.5, 1.0), // High boost for harmonic key matching
+              },
             },
-          },
-        }
+          }
         : null;
 
     const shouldEnergyKeywords =
       weights.audioFeatures > 0 &&
-        playlistFeatures.energyKeywords &&
-        playlistFeatures.energyKeywords.length > 0
+      playlistFeatures.energyKeywords &&
+      playlistFeatures.energyKeywords.length > 0
         ? {
-          terms: {
-            'audio_fingerprint.energy_keywords':
-              playlistFeatures.energyKeywords,
-            boost: Math.max(weights.audioFeatures * 1.5, 0.5),
-          },
-        }
+            terms: {
+              'audio_fingerprint.energy_keywords':
+                playlistFeatures.energyKeywords,
+              boost: Math.max(weights.audioFeatures * 1.5, 0.5),
+            },
+          }
         : null;
 
     const shouldTempo =
       weights.audioFeatures > 0 && playlistFeatures.tempo
         ? {
-          function_score: {
-            query: { match_all: {} },
-            functions: [
-              {
-                gauss: {
-                  'audio_fingerprint.tempo': {
-                    origin: playlistFeatures.tempo || 120,
-                    scale: 10,
-                    decay: 0.5,
-                    offset: 0,
+            function_score: {
+              query: { match_all: {} },
+              functions: [
+                {
+                  gauss: {
+                    'audio_fingerprint.tempo': {
+                      origin: playlistFeatures.tempo || 120,
+                      scale: 10,
+                      decay: 0.5,
+                      offset: 0,
+                    },
                   },
+                  weight: 3,
                 },
-                weight: 3,
-              },
-            ],
-            score_mode: 'sum',
-            boost_mode: 'multiply',
-          },
-        }
+              ],
+              score_mode: 'sum',
+              boost_mode: 'multiply',
+            },
+          }
         : null;
 
     const shouldAudioFeatures =
       weights.audioFeatures > 0
         ? {
-          function_score: {
-            query: { match_all: {} },
-            functions: [
-              // Core rhythmic features (highest priority)
-              {
-                gauss: {
-                  'audio_fingerprint.energy_factor': {
-                    origin: playlistFeatures.energy || 0.5,
-                    scale: 0.15,
-                    decay: 0.3,
-                    offset: 0.05,
+            function_score: {
+              query: { match_all: {} },
+              functions: [
+                // Core rhythmic features (highest priority)
+                {
+                  gauss: {
+                    'audio_fingerprint.energy_factor': {
+                      origin: playlistFeatures.energy || 0.5,
+                      scale: 0.15,
+                      decay: 0.3,
+                      offset: 0.05,
+                    },
                   },
+                  weight: Math.max(weights.audioFeatures * 0.2, 0.4),
                 },
-                weight: Math.max(weights.audioFeatures * 0.2, 0.4),
-              },
-              {
-                gauss: {
-                  'audio_fingerprint.danceability': {
-                    origin: playlistFeatures.danceability || 0.5,
-                    scale: 0.15,
-                    decay: 0.3,
-                    offset: 0.05,
+                {
+                  gauss: {
+                    'audio_fingerprint.danceability': {
+                      origin: playlistFeatures.danceability || 0.5,
+                      scale: 0.15,
+                      decay: 0.3,
+                      offset: 0.05,
+                    },
                   },
+                  weight: Math.max(weights.audioFeatures * 0.2, 0.4),
                 },
-                weight: Math.max(weights.audioFeatures * 0.2, 0.4),
-              },
-              // Emotional features (2D emotional space)
-              {
-                gauss: {
-                  'audio_fingerprint.valence': {
-                    origin: playlistFeatures.valence || 0.5,
-                    scale: 0.15,
-                    decay: 0.3,
-                    offset: 0.05,
+                // Emotional features (2D emotional space)
+                {
+                  gauss: {
+                    'audio_fingerprint.valence': {
+                      origin: playlistFeatures.valence || 0.5,
+                      scale: 0.15,
+                      decay: 0.3,
+                      offset: 0.05,
+                    },
                   },
+                  weight: Math.max(weights.audioFeatures * 0.2, 0.4),
                 },
-                weight: Math.max(weights.audioFeatures * 0.2, 0.4),
-              },
-              {
-                gauss: {
-                  'audio_fingerprint.arousal': {
-                    origin: playlistFeatures.arousal || 0.5,
-                    scale: 0.15,
-                    decay: 0.3,
-                    offset: 0.05,
+                {
+                  gauss: {
+                    'audio_fingerprint.arousal': {
+                      origin: playlistFeatures.arousal || 0.5,
+                      scale: 0.15,
+                      decay: 0.3,
+                      offset: 0.05,
+                    },
                   },
+                  weight: Math.max(weights.audioFeatures * 0.2, 0.4),
                 },
-                weight: Math.max(weights.audioFeatures * 0.2, 0.4),
-              },
-              // Rhythm coherence features
-              {
-                gauss: {
-                  'audio_fingerprint.rhythm_stability': {
-                    origin: playlistFeatures.rhythmStability || 0.5,
-                    scale: 0.2,
-                    decay: 0.3,
-                    offset: 0.05,
+                // Rhythm coherence features
+                {
+                  gauss: {
+                    'audio_fingerprint.rhythm_stability': {
+                      origin: playlistFeatures.rhythmStability || 0.5,
+                      scale: 0.2,
+                      decay: 0.3,
+                      offset: 0.05,
+                    },
                   },
+                  weight: Math.max(weights.audioFeatures * 0.15, 0.3),
                 },
-                weight: Math.max(weights.audioFeatures * 0.15, 0.3),
-              },
-              {
-                gauss: {
-                  'audio_fingerprint.beat_strength': {
-                    origin: playlistFeatures.beatStrength || 0.5,
-                    scale: 0.2,
-                    decay: 0.3,
-                    offset: 0.05,
+                {
+                  gauss: {
+                    'audio_fingerprint.beat_strength': {
+                      origin: playlistFeatures.beatStrength || 0.5,
+                      scale: 0.2,
+                      decay: 0.3,
+                      offset: 0.05,
+                    },
                   },
+                  weight: Math.max(weights.audioFeatures * 0.15, 0.3),
                 },
-                weight: Math.max(weights.audioFeatures * 0.15, 0.3),
-              },
-              {
-                gauss: {
-                  'audio_fingerprint.syncopation': {
-                    origin: playlistFeatures.syncopation || 0.5,
-                    scale: 0.2,
-                    decay: 0.3,
-                    offset: 0.05,
+                {
+                  gauss: {
+                    'audio_fingerprint.syncopation': {
+                      origin: playlistFeatures.syncopation || 0.5,
+                      scale: 0.2,
+                      decay: 0.3,
+                      offset: 0.05,
+                    },
                   },
+                  weight: Math.max(weights.audioFeatures * 0.1, 0.2),
                 },
-                weight: Math.max(weights.audioFeatures * 0.1, 0.2),
-              },
-              {
-                gauss: {
-                  'audio_fingerprint.tempo_regularity': {
-                    origin: playlistFeatures.tempoRegularity || 0.5,
-                    scale: 0.2,
-                    decay: 0.3,
-                    offset: 0.05,
+                {
+                  gauss: {
+                    'audio_fingerprint.tempo_regularity': {
+                      origin: playlistFeatures.tempoRegularity || 0.5,
+                      scale: 0.2,
+                      decay: 0.3,
+                      offset: 0.05,
+                    },
                   },
+                  weight: Math.max(weights.audioFeatures * 0.1, 0.2),
                 },
-                weight: Math.max(weights.audioFeatures * 0.1, 0.2),
-              },
-              // Tonal characteristics
-              {
-                gauss: {
-                  'audio_fingerprint.bass_presence': {
-                    origin: playlistFeatures.bassPresence || 0.5,
-                    scale: 0.2,
-                    decay: 0.3,
-                    offset: 0.05,
+                // Tonal characteristics
+                {
+                  gauss: {
+                    'audio_fingerprint.bass_presence': {
+                      origin: playlistFeatures.bassPresence || 0.5,
+                      scale: 0.2,
+                      decay: 0.3,
+                      offset: 0.05,
+                    },
                   },
+                  weight: Math.max(weights.audioFeatures * 0.15, 0.3),
                 },
-                weight: Math.max(weights.audioFeatures * 0.15, 0.3),
-              },
-              {
-                gauss: {
-                  'audio_fingerprint.brightness_factor': {
-                    origin: playlistFeatures.brightnessFactor || 0.5,
-                    scale: 0.2,
-                    decay: 0.3,
-                    offset: 0.05,
+                {
+                  gauss: {
+                    'audio_fingerprint.brightness_factor': {
+                      origin: playlistFeatures.brightnessFactor || 0.5,
+                      scale: 0.2,
+                      decay: 0.3,
+                      offset: 0.05,
+                    },
                   },
+                  weight: Math.max(weights.audioFeatures * 0.1, 0.2),
                 },
-                weight: Math.max(weights.audioFeatures * 0.1, 0.2),
-              },
-              {
-                gauss: {
-                  'audio_fingerprint.harmonic_factor': {
-                    origin: playlistFeatures.harmonicFactor || 0.5,
-                    scale: 0.2,
-                    decay: 0.3,
-                    offset: 0.05,
+                {
+                  gauss: {
+                    'audio_fingerprint.harmonic_factor': {
+                      origin: playlistFeatures.harmonicFactor || 0.5,
+                      scale: 0.2,
+                      decay: 0.3,
+                      offset: 0.05,
+                    },
                   },
+                  weight: Math.max(weights.audioFeatures * 0.1, 0.2),
                 },
-                weight: Math.max(weights.audioFeatures * 0.1, 0.2),
-              },
-              {
-                gauss: {
-                  'audio_fingerprint.spectral_balance': {
-                    origin: playlistFeatures.spectralBalance || 0.5,
-                    scale: 0.2,
-                    decay: 0.3,
-                    offset: 0.05,
+                {
+                  gauss: {
+                    'audio_fingerprint.spectral_balance': {
+                      origin: playlistFeatures.spectralBalance || 0.5,
+                      scale: 0.2,
+                      decay: 0.3,
+                      offset: 0.05,
+                    },
                   },
+                  weight: Math.max(weights.audioFeatures * 0.08, 0.15),
                 },
-                weight: Math.max(weights.audioFeatures * 0.08, 0.15),
-              },
-              // Content type features
-              {
-                gauss: {
-                  'audio_fingerprint.instrumentalness': {
-                    origin: playlistFeatures.instrumentalness || 0.5,
-                    scale: 0.25,
-                    decay: 0.3,
-                    offset: 0.05,
+                // Content type features
+                {
+                  gauss: {
+                    'audio_fingerprint.instrumentalness': {
+                      origin: playlistFeatures.instrumentalness || 0.5,
+                      scale: 0.25,
+                      decay: 0.3,
+                      offset: 0.05,
+                    },
                   },
+                  weight: Math.max(weights.audioFeatures * 0.15, 0.3),
                 },
-                weight: Math.max(weights.audioFeatures * 0.15, 0.3),
-              },
-              {
-                gauss: {
-                  'audio_fingerprint.speechiness': {
-                    origin: playlistFeatures.speechiness || 0.1,
-                    scale: 0.15,
-                    decay: 0.5,
-                    offset: 0.05,
+                {
+                  gauss: {
+                    'audio_fingerprint.speechiness': {
+                      origin: playlistFeatures.speechiness || 0.1,
+                      scale: 0.15,
+                      decay: 0.5,
+                      offset: 0.05,
+                    },
                   },
+                  weight: Math.max(weights.audioFeatures * 0.12, 0.25),
                 },
-                weight: Math.max(weights.audioFeatures * 0.12, 0.25),
-              },
-              {
-                gauss: {
-                  'audio_fingerprint.acousticness': {
-                    origin: playlistFeatures.acousticness || 0.5,
-                    scale: 0.2,
-                    decay: 0.3,
-                    offset: 0.05,
+                {
+                  gauss: {
+                    'audio_fingerprint.acousticness': {
+                      origin: playlistFeatures.acousticness || 0.5,
+                      scale: 0.2,
+                      decay: 0.3,
+                      offset: 0.05,
+                    },
                   },
+                  weight: Math.max(weights.audioFeatures * 0.1, 0.2),
                 },
-                weight: Math.max(weights.audioFeatures * 0.1, 0.2),
-              },
-              {
-                gauss: {
-                  'audio_fingerprint.liveness': {
-                    origin: playlistFeatures.liveness || 0.2,
-                    scale: 0.2,
-                    decay: 0.3,
-                    offset: 0.05,
+                {
+                  gauss: {
+                    'audio_fingerprint.liveness': {
+                      origin: playlistFeatures.liveness || 0.2,
+                      scale: 0.2,
+                      decay: 0.3,
+                      offset: 0.05,
+                    },
                   },
+                  weight: Math.max(weights.audioFeatures * 0.08, 0.15),
                 },
-                weight: Math.max(weights.audioFeatures * 0.08, 0.15),
-              },
-              // Musical mode (major/minor)
-              {
-                gauss: {
-                  'audio_fingerprint.mode_factor': {
-                    origin: playlistFeatures.modeFactor || 0.5,
-                    scale: 0.3,
-                    decay: 0.3,
-                    offset: 0.1,
+                // Musical mode (major/minor)
+                {
+                  gauss: {
+                    'audio_fingerprint.mode_factor': {
+                      origin: playlistFeatures.modeFactor || 0.5,
+                      scale: 0.3,
+                      decay: 0.3,
+                      offset: 0.1,
+                    },
                   },
+                  weight: Math.max(weights.audioFeatures * 0.12, 0.25),
                 },
-                weight: Math.max(weights.audioFeatures * 0.12, 0.25),
-              },
-              // Spectral features (lower priority)
-              {
-                gauss: {
-                  'audio_fingerprint.spectral_centroid.mean': {
-                    origin: playlistFeatures.spectralCentroid || 2000,
-                    scale: 500,
-                    decay: 0.3,
-                    offset: 100,
+                // Spectral features (lower priority)
+                {
+                  gauss: {
+                    'audio_fingerprint.spectral_centroid.mean': {
+                      origin: playlistFeatures.spectralCentroid || 2000,
+                      scale: 500,
+                      decay: 0.3,
+                      offset: 100,
+                    },
                   },
+                  weight: Math.max(weights.audioFeatures * 0.05, 0.1),
                 },
-                weight: Math.max(weights.audioFeatures * 0.05, 0.1),
-              },
-              {
-                gauss: {
-                  'audio_fingerprint.spectral_rolloff.mean': {
-                    origin: playlistFeatures.spectralRolloff || 3000,
-                    scale: 800,
-                    decay: 0.3,
-                    offset: 200,
+                {
+                  gauss: {
+                    'audio_fingerprint.spectral_rolloff.mean': {
+                      origin: playlistFeatures.spectralRolloff || 3000,
+                      scale: 800,
+                      decay: 0.3,
+                      offset: 200,
+                    },
                   },
+                  weight: Math.max(weights.audioFeatures * 0.03, 0.05),
                 },
-                weight: Math.max(weights.audioFeatures * 0.03, 0.05),
-              },
-              {
-                gauss: {
-                  'audio_fingerprint.zero_crossing_rate.mean': {
-                    origin: playlistFeatures.zeroCrossingRate || 0.1,
-                    scale: 0.05,
-                    decay: 0.3,
-                    offset: 0.01,
+                {
+                  gauss: {
+                    'audio_fingerprint.zero_crossing_rate.mean': {
+                      origin: playlistFeatures.zeroCrossingRate || 0.1,
+                      scale: 0.05,
+                      decay: 0.3,
+                      offset: 0.01,
+                    },
                   },
+                  weight: Math.max(weights.audioFeatures * 0.03, 0.05),
                 },
-                weight: Math.max(weights.audioFeatures * 0.03, 0.05),
-              },
-            ],
-            score_mode: 'sum',
-            boost_mode: 'multiply',
-          },
-        }
+              ],
+              score_mode: 'sum',
+              boost_mode: 'multiply',
+            },
+          }
         : null;
 
     const shouldMetadataSimilarity =
       weights.metadataSimilarity > 0
         ? {
-          multi_match: {
-            query: playlistFeatures.artist || '',
-            fields: ['artist^3', 'album^2'], // Increased artist boost
-            type: 'best_fields',
-            fuzziness: 'AUTO',
-            boost: Math.max(weights.metadataSimilarity * 2.0, 0.8),
-            minimum_should_match: '75%',
-          },
-        }
+            multi_match: {
+              query: playlistFeatures.artist || '',
+              fields: ['artist^3', 'album^2'], // Increased artist boost
+              type: 'best_fields',
+              fuzziness: 'AUTO',
+              boost: Math.max(weights.metadataSimilarity * 2.0, 0.8),
+              minimum_should_match: '75%',
+            },
+          }
         : null;
 
     // AI metadata similarity queries
     const shouldAiTags =
       weights.aiMetadataSimilarity > 0 &&
-        playlistFeatures.aiTags &&
-        playlistFeatures.aiTags.length > 0
+      playlistFeatures.aiTags &&
+      playlistFeatures.aiTags.length > 0
         ? {
-          terms: {
-            ai_tags: playlistFeatures.aiTags,
-            boost: Math.max(weights.aiMetadataSimilarity * 2.5, 1.0),
-          },
-        }
+            terms: {
+              ai_tags: playlistFeatures.aiTags,
+              boost: Math.max(weights.aiMetadataSimilarity * 2.5, 1.0),
+            },
+          }
         : null;
 
     const shouldAtmosphereKeywords =
       weights.aiMetadataSimilarity > 0 &&
-        playlistFeatures.atmosphereKeywords &&
-        playlistFeatures.atmosphereKeywords.length > 0
+      playlistFeatures.atmosphereKeywords &&
+      playlistFeatures.atmosphereKeywords.length > 0
         ? {
-          terms: {
-            atmosphere_desc: playlistFeatures.atmosphereKeywords,
-            boost: Math.max(weights.aiMetadataSimilarity * 4.0, 4.0),
-          },
-        }
+            terms: {
+              atmosphere_desc: playlistFeatures.atmosphereKeywords,
+              boost: Math.max(weights.aiMetadataSimilarity * 4.0, 4.0),
+            },
+          }
         : null;
 
     const shouldAiDescription =
       weights.aiMetadataSimilarity > 0 &&
-        playlistFeatures.aiDescriptions &&
-        playlistFeatures.aiDescriptions.length > 0
+      playlistFeatures.aiDescriptions &&
+      playlistFeatures.aiDescriptions.length > 0
         ? {
-          bool: {
-            should: playlistFeatures.aiDescriptions.map((description) => ({
-              match: {
-                ai_description: {
-                  query: description,
-                  boost: Math.max(weights.aiMetadataSimilarity * 1.5, 0.8),
-                  fuzziness: 'AUTO',
-                  minimum_should_match: '50%',
+            bool: {
+              should: playlistFeatures.aiDescriptions.map((description) => ({
+                match: {
+                  ai_description: {
+                    query: description,
+                    boost: Math.max(weights.aiMetadataSimilarity * 1.5, 0.8),
+                    fuzziness: 'AUTO',
+                    minimum_should_match: '50%',
+                  },
                 },
-              },
-            })),
-            minimum_should_match: 1,
-          },
-        }
+              })),
+              minimum_should_match: 1,
+            },
+          }
         : null;
 
     const shouldVocalsDesc =
       weights.aiMetadataSimilarity > 0 &&
-        playlistFeatures.vocalsDescriptions &&
-        playlistFeatures.vocalsDescriptions.trim().length > 0
+      playlistFeatures.vocalsDescriptions &&
+      playlistFeatures.vocalsDescriptions.trim().length > 0
         ? {
-          match: {
-            vocals_desc: {
-              query: playlistFeatures.vocalsDescriptions,
-              boost: Math.max(weights.aiMetadataSimilarity * 1.8, 0.9),
-              fuzziness: 'AUTO',
-              minimum_should_match: '60%',
+            match: {
+              vocals_desc: {
+                query: playlistFeatures.vocalsDescriptions,
+                boost: Math.max(weights.aiMetadataSimilarity * 1.8, 0.9),
+                fuzziness: 'AUTO',
+                minimum_should_match: '60%',
+              },
             },
-          },
-        }
+          }
         : null;
 
     const shouldContextBackground =
       weights.aiMetadataSimilarity > 0 &&
-        playlistFeatures.contextBackgrounds &&
-        playlistFeatures.contextBackgrounds.trim().length > 0
+      playlistFeatures.contextBackgrounds &&
+      playlistFeatures.contextBackgrounds.trim().length > 0
         ? {
-          match: {
-            context_background: {
-              query: playlistFeatures.contextBackgrounds,
-              boost: Math.max(weights.aiMetadataSimilarity * 1.6, 0.8),
-              fuzziness: 'AUTO',
-              minimum_should_match: '50%',
+            match: {
+              context_background: {
+                query: playlistFeatures.contextBackgrounds,
+                boost: Math.max(weights.aiMetadataSimilarity * 1.6, 0.8),
+                fuzziness: 'AUTO',
+                minimum_should_match: '50%',
+              },
             },
-          },
-        }
+          }
         : null;
 
     const shouldContextImpact =
       weights.aiMetadataSimilarity > 0 &&
-        playlistFeatures.contextImpacts &&
-        playlistFeatures.contextImpacts.trim().length > 0
+      playlistFeatures.contextImpacts &&
+      playlistFeatures.contextImpacts.trim().length > 0
         ? {
-          match: {
-            context_impact: {
-              query: playlistFeatures.contextImpacts,
-              boost: Math.max(weights.aiMetadataSimilarity * 1.6, 0.8),
-              fuzziness: 'AUTO',
-              minimum_should_match: '50%',
+            match: {
+              context_impact: {
+                query: playlistFeatures.contextImpacts,
+                boost: Math.max(weights.aiMetadataSimilarity * 1.6, 0.8),
+                fuzziness: 'AUTO',
+                minimum_should_match: '50%',
+              },
             },
-          },
-        }
+          }
         : null;
     const should = [
       // k-NN search for MFCC similarity (timbre)
@@ -724,205 +730,6 @@ export class RecommendationService {
         ],
       },
     };
-  }
-
-  /**
-   * Test genre-only scoring to verify expected behavior
-   */
-  async testGenreScoring(playlistId: string): Promise<any> {
-    const playlistTracks = await this.prisma.playlistTrack.findMany({
-      where: { playlistId },
-      include: {
-        track: {
-          include: {
-            audioFingerprint: true,
-            aiAnalysisResult: true,
-            imageSearches: true,
-            library: true,
-            trackGenres: {
-              include: {
-                genre: true,
-              },
-            },
-            trackSubgenres: {
-              include: {
-                subgenre: true,
-              },
-            },
-          },
-        },
-      },
-    });
-
-    if (playlistTracks.length === 0) {
-      return { message: 'No tracks found in playlist' };
-    }
-
-    const playlistFeatures = this.calculatePlaylistFeatures(playlistTracks);
-    const excludeTrackIds = playlistTracks.map((pt) => pt.trackId);
-
-    // Genre-only query (your current simplified setup)
-    const genreOnlyQuery = {
-      size: 20,
-      query: {
-        bool: {
-          must_not: [{ terms: { id: excludeTrackIds } }],
-          should: [
-            ...(playlistFeatures.genres && playlistFeatures.genres.length > 0
-              ? [
-                {
-                  terms: {
-                    genres: playlistFeatures.genres,
-                    boost: 3.0, // weights.genreSimilarity * 3.0 = 1 * 3.0
-                  },
-                },
-              ]
-              : []),
-            ...(playlistFeatures.subgenres &&
-              playlistFeatures.subgenres.length > 0
-              ? [
-                {
-                  terms: {
-                    subgenres: playlistFeatures.subgenres,
-                    boost: 2.0, // weights.genreSimilarity * 2.0 = 1 * 2.0
-                  },
-                },
-              ]
-              : []),
-          ],
-          minimum_should_match: 1,
-        },
-      },
-    };
-
-    try {
-      const response =
-        await this.elasticsearchService.searchTracks(genreOnlyQuery);
-      const hits = response.hits.hits;
-
-      // Calculate max possible score for your current weights
-      const weights = {
-        genreSimilarity: 1,
-        audioSimilarity: 0,
-        audioFeatures: 0,
-        userBehavior: 0,
-        metadataSimilarity: 0,
-        aiMetadataSimilarity: 0,
-      };
-      return {
-        playlistFeatures: {
-          genres: playlistFeatures.genres || [],
-          subgenres: playlistFeatures.subgenres || [],
-        },
-        results: hits.map((hit: any) => {
-          const trackGenres = hit._source.genres || [];
-          const trackSubgenres = hit._source.subgenres || [];
-          const playlistGenres = playlistFeatures.genres || [];
-          const playlistSubgenres = playlistFeatures.subgenres || [];
-
-          const genreMatch =
-            playlistGenres.length > 0 &&
-            trackGenres.some((g: string) => playlistGenres.includes(g));
-          const subgenreMatch =
-            playlistSubgenres.length > 0 &&
-            trackSubgenres.some((s: string) => playlistSubgenres.includes(s));
-
-          return {
-            id: hit._source.id,
-            title: hit._source.title,
-            artist: hit._source.artist,
-            genres: trackGenres,
-            subgenres: trackSubgenres,
-            score: hit._score, // Raw Elasticsearch score
-            matches: {
-              genre: genreMatch,
-              subgenre: subgenreMatch,
-              both: genreMatch && subgenreMatch,
-            },
-          };
-        }),
-        note: 'Scores are raw Elasticsearch values - higher scores indicate better matches',
-      };
-    } catch (error) {
-      this.logger.error('Error testing genre scoring:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Debug method to analyze recommendation scores
-   */
-  async debugRecommendationScores(
-    playlistId: string,
-    criteria: RecommendationCriteria,
-  ): Promise<any> {
-    // Get playlist tracks with their audio features
-    const playlistTracks = await this.prisma.playlistTrack.findMany({
-      where: { playlistId },
-      include: {
-        track: {
-          include: {
-            audioFingerprint: true,
-            aiAnalysisResult: true,
-            imageSearches: true,
-            library: true,
-            trackGenres: {
-              include: {
-                genre: true,
-              },
-            },
-            trackSubgenres: {
-              include: {
-                subgenre: true,
-              },
-            },
-          },
-        },
-      },
-    });
-
-    if (playlistTracks.length === 0) {
-      return { message: 'No tracks found in playlist' };
-    }
-
-    const playlistFeatures = this.calculatePlaylistFeatures(playlistTracks);
-    const excludeTrackIds = [
-      ...playlistTracks.map((pt) => pt.trackId),
-      ...(criteria.excludeTrackIds || []),
-    ];
-
-    const query = this.buildElasticsearchRecommendationQuery(
-      playlistFeatures,
-      criteria,
-      excludeTrackIds,
-    );
-
-    // Add explain parameter to get detailed scoring information
-    (query as any).explain = true;
-    query.size = 5; // Limit to 5 results for debugging
-
-    try {
-      const response = await this.elasticsearchService.searchTracks(query);
-      const hits = response.hits.hits;
-      return {
-        playlistFeatures,
-        query,
-        results: hits.map((hit: any) => ({
-          track: {
-            id: hit._source.id,
-            title: hit._source.title,
-            artist: hit._source.artist,
-            genres: hit._source.genres || [],
-            subgenres: hit._source.subgenres || [],
-          },
-          score: hit._score,
-          explanation: hit._explanation,
-        })),
-      };
-    } catch (error) {
-      this.logger.error('Debug recommendation error:', error);
-      throw error;
-    }
   }
 
   private mapElasticsearchHitToTrack(
@@ -1161,7 +968,7 @@ export class RecommendationService {
     ) {
       const danceabilityDiff = Math.abs(
         trackSource.audio_fingerprint.danceability -
-        playlistFeatures.danceability,
+          playlistFeatures.danceability,
       );
       if (danceabilityDiff <= 0.1) {
         reasons.push(
@@ -1177,7 +984,7 @@ export class RecommendationService {
     ) {
       const rhythmDiff = Math.abs(
         trackSource.audio_fingerprint.rhythm_stability -
-        playlistFeatures.rhythmStability,
+          playlistFeatures.rhythmStability,
       );
       if (rhythmDiff <= 0.1) {
         reasons.push('Similar rhythm pattern');
@@ -1191,7 +998,7 @@ export class RecommendationService {
     ) {
       const tonnetzDiff = Math.abs(
         trackSource.audio_fingerprint.tonnetz.overall_mean -
-        playlistFeatures.tonnetzOverallMean,
+          playlistFeatures.tonnetzOverallMean,
       );
       if (tonnetzDiff <= 0.15) {
         reasons.push('Similar harmonic progression');
@@ -1205,7 +1012,7 @@ export class RecommendationService {
     ) {
       const pitchDiff = Math.abs(
         trackSource.audio_fingerprint.chroma.dominant_pitch -
-        playlistFeatures.chromaDominantPitch,
+          playlistFeatures.chromaDominantPitch,
       );
       if (pitchDiff <= 2) {
         reasons.push(
@@ -1770,7 +1577,7 @@ export class RecommendationService {
       // Use mode (most common) for dominant pitch instead of average
       features.chromaDominantPitch = Math.round(
         chromaDominantPitches.reduce((a, b) => a + b, 0) /
-        chromaDominantPitches.length,
+          chromaDominantPitches.length,
       );
     }
     if (tonnetzMeanArrays.length > 0) {
@@ -2136,82 +1943,82 @@ export class RecommendationService {
       // AudioFingerprint fields - nested structure
       audio_fingerprint: fingerprint
         ? {
-          // MFCC as dense vector
-          mfcc: mfcc,
+            // MFCC as dense vector
+            mfcc: mfcc,
 
-          // Spectral Features with statistics
-          spectral_centroid: spectralCentroid,
-          spectral_rolloff: spectralRolloff,
-          spectral_spread: spectralSpread,
-          spectral_bandwidth: spectralBandwidth,
-          spectral_flatness: spectralFlatness,
-          spectral_contrast: spectralContrast,
+            // Spectral Features with statistics
+            spectral_centroid: spectralCentroid,
+            spectral_rolloff: spectralRolloff,
+            spectral_spread: spectralSpread,
+            spectral_bandwidth: spectralBandwidth,
+            spectral_flatness: spectralFlatness,
+            spectral_contrast: spectralContrast,
 
-          // Chroma features
-          chroma: chroma,
+            // Chroma features
+            chroma: chroma,
 
-          // Tonnetz features
-          tonnetz: tonnetz,
+            // Tonnetz features
+            tonnetz: tonnetz,
 
-          // Zero Crossing Rate
-          zero_crossing_rate: zeroCrossingRate,
+            // Zero Crossing Rate
+            zero_crossing_rate: zeroCrossingRate,
 
-          // RMS
-          rms: rms,
+            // RMS
+            rms: rms,
 
-          // Musical Features
-          tempo: fingerprint.tempo,
-          key: fingerprint.key,
-          camelot_key: fingerprint.camelotKey,
-          valence: fingerprint.valence,
-          valence_mood: fingerprint.valenceMood,
-          arousal: fingerprint.arousal,
-          arousal_mood: fingerprint.arousalMood,
-          danceability: fingerprint.danceability,
-          danceability_feeling: fingerprint.danceabilityFeeling,
-          rhythm_stability: fingerprint.rhythmStability,
-          bass_presence: fingerprint.bassPresence,
-          tempo_regularity: fingerprint.tempoRegularity,
-          tempo_appropriateness: fingerprint.tempoAppropriateness,
-          energy_factor: fingerprint.energyFactor,
-          syncopation: fingerprint.syncopation,
-          acousticness: fingerprint.acousticness,
-          instrumentalness: fingerprint.instrumentalness,
-          speechiness: fingerprint.speechiness,
-          liveness: fingerprint.liveness,
-          mode_factor: fingerprint.modeFactor,
-          mode_confidence: fingerprint.modeConfidence,
-          mode_weight: fingerprint.modeWeight,
-          tempo_factor: fingerprint.tempoFactor,
-          brightness_factor: fingerprint.brightnessFactor,
-          harmonic_factor: fingerprint.harmonicFactor,
-          spectral_balance: fingerprint.spectralBalance,
-          beat_strength: fingerprint.beatStrength,
+            // Musical Features
+            tempo: fingerprint.tempo,
+            key: fingerprint.key,
+            camelot_key: fingerprint.camelotKey,
+            valence: fingerprint.valence,
+            valence_mood: fingerprint.valenceMood,
+            arousal: fingerprint.arousal,
+            arousal_mood: fingerprint.arousalMood,
+            danceability: fingerprint.danceability,
+            danceability_feeling: fingerprint.danceabilityFeeling,
+            rhythm_stability: fingerprint.rhythmStability,
+            bass_presence: fingerprint.bassPresence,
+            tempo_regularity: fingerprint.tempoRegularity,
+            tempo_appropriateness: fingerprint.tempoAppropriateness,
+            energy_factor: fingerprint.energyFactor,
+            syncopation: fingerprint.syncopation,
+            acousticness: fingerprint.acousticness,
+            instrumentalness: fingerprint.instrumentalness,
+            speechiness: fingerprint.speechiness,
+            liveness: fingerprint.liveness,
+            mode_factor: fingerprint.modeFactor,
+            mode_confidence: fingerprint.modeConfidence,
+            mode_weight: fingerprint.modeWeight,
+            tempo_factor: fingerprint.tempoFactor,
+            brightness_factor: fingerprint.brightnessFactor,
+            harmonic_factor: fingerprint.harmonicFactor,
+            spectral_balance: fingerprint.spectralBalance,
+            beat_strength: fingerprint.beatStrength,
 
-          // Hashes
-          audio_hash: fingerprint.audioHash,
-          file_hash: fingerprint.fileHash,
+            // Hashes
+            audio_hash: fingerprint.audioHash,
+            file_hash: fingerprint.fileHash,
 
-          // Energy
-          energy_comment: fingerprint.energyComment,
-          energy_keywords: energyKeywords,
-          energy_by_band: energyByBand,
-        }
+            // Energy
+            energy_comment: fingerprint.energyComment,
+            energy_keywords: energyKeywords,
+            energy_by_band: energyByBand,
+          }
         : null,
 
       // AIAnalysisResult fields - nested structure
       ai_analysis: aiAnalysis
         ? {
-          model_version: aiAnalysis.modelVersion,
-          genre_classification: safeJsonParse(
-            aiAnalysis.genreClassification,
-            {},
-          ),
-          artist_suggestion: safeJsonParse(aiAnalysis.artistSuggestion, null),
-          album_suggestion: safeJsonParse(aiAnalysis.albumSuggestion, null),
-          processing_time: aiAnalysis.processingTime,
-          error_message: aiAnalysis.errorMessage,
-        }
+            model_version: aiAnalysis.modelVersion,
+            genre_classification: safeJsonParse(
+              aiAnalysis.genreClassification,
+              {},
+            ),
+            artist_suggestion: safeJsonParse(aiAnalysis.artistSuggestion, null),
+            album_suggestion: safeJsonParse(aiAnalysis.albumSuggestion, null),
+            processing_time: aiAnalysis.processingTime,
+            error_message: aiAnalysis.errorMessage,
+          }
         : null,
 
       // Genres and Subgenres (from normalized relations)

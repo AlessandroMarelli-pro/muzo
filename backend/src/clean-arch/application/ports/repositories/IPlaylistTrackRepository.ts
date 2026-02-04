@@ -8,7 +8,7 @@ import {
   PlaylistSortingKey,
   PlaylistTrack,
 } from '../../../kernel/types/model-types';
-import { PlaylistTrackWithTrackDetail } from '../../dtos/PlaylistTrackWithDetail';
+import { PlaylistTrackWithTrackDetail } from '../dtos/PlaylistTrackWithDetail';
 
 export const PLAYLIST_TRACK_REPOSITORY = Symbol('IPlaylistTrackRepository');
 

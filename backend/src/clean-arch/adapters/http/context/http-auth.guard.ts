@@ -1,6 +1,6 @@
 import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import { Observable } from 'rxjs';
-import { getAnonymousUser } from '../../../kernel/types/default-user';
+import { getAnonymousUser } from '../../../kernel/types/defaults';
 
 @Injectable()
 export class HttpAuthGuard implements CanActivate {

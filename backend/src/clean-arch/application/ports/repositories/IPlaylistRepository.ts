@@ -1,8 +1,8 @@
 import { Maybe } from 'src/clean-arch/kernel/common';
 import { PlaylistId } from 'src/clean-arch/kernel/ids';
 import { Playlist, PlaylistSorting } from '../../../kernel/types/model-types';
-import { PlaylistTrackWithTrackDetail } from '../../dtos/PlaylistTrackWithDetail';
-import { PlaylistTrackWithTrackDetailAndSorting } from '../../dtos/PlaylistWithTrackDetailsAndSorting';
+import { PlaylistTrackWithTrackDetail } from '../dtos/PlaylistTrackWithDetail';
+import { PlaylistTrackWithTrackDetailAndSorting } from '../dtos/PlaylistWithTrackDetailsAndSorting';
 import { PlaylistSortingOptions } from './IPlaylistTrackRepository';
 
 export type PlaylistUpdateData = {

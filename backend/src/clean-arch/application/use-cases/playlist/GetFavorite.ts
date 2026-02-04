@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { PlaylistTrackWithTrackDetailAndSorting } from '../../dtos/PlaylistWithTrackDetailsAndSorting';
+import { PlaylistTrackWithTrackDetailAndSorting } from '../../ports/dtos/PlaylistWithTrackDetailsAndSorting';
 import {
   IPlaylistRepository,
   PLAYLIST_REPOSITORY,

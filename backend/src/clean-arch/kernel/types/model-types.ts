@@ -235,3 +235,24 @@ export type QueueItem = Readonly<ModelBase<QueueItemId>> & {
   trackId: MusicTrackId;
   position: number;
 };
+
+export type RecommendationWeights = {
+  audioSimilarity: number; // MFCC, chroma, spectral features
+  genreSimilarity: number; // AI genre + subgenre classification
+  metadataSimilarity: number; // Artist, album, year patterns
+  userBehavior: number; // Listening history, favorites
+  audioFeatures: number; // Tempo, key, energy, valence
+  aiMetadataSimilarity: number; // AI description, tags, vocals, atmosphere, context
+};
+
+export type RecommendationCriteria = {
+  weights: RecommendationWeights;
+  limit?: number;
+  excludeTrackIds?: MusicTrackId[];
+};
+
+export type TrackSimilarity = {
+  track: MusicTrack;
+  similarity: number;
+  reasons: string[];
+};

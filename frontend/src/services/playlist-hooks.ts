@@ -583,7 +583,12 @@ const updatePlaylistPositions = async (
 	playlistId: string,
 	positions: UpdatePlaylistPositionInput[]
 ): Promise<boolean> => {
-	const input: UpdatePlaylistPositionsInput = { positions };
+	const input = {
+		positions: positions.map((position) => ({
+			id: position.id,
+			position: position.position,
+		})),
+	};
 	const data = await graffleClient.request<{
 		updatePlaylistPositions: boolean;
 	}>(UPDATE_PLAYLIST_POSITIONS, {
@@ -638,9 +643,12 @@ export function usePlaylists(search?: string, verifyTrackId?: string) {
 	const deletePlaylistMutation = useMutation({
 		mutationFn: ({ id, name }: { id: string; name: string }) =>
 			deletePlaylist(id, name),
-		onSuccess: () => {
+		onSuccess: (_, { name }) => {
 			queryClient.invalidateQueries({
 				queryKey: queryKeys.playlists(search, verifyTrackId),
+			});
+			toast.success(`Playlist deleted successfully`, {
+				description: capitalizeEveryWord(name),
 			});
 		},
 	});
@@ -991,9 +999,10 @@ export function useUpdatePlaylistPositions() {
 			playlistId: string;
 			positions: UpdatePlaylistPositionInput[];
 		}) => updatePlaylistPositions(playlistId, positions),
-		onSuccess: (_, { playlistId }) => {
+		onSuccess: (_, { playlistId, positions }) => {
 			queryClient.invalidateQueries({ queryKey: ['playlists'] });
 			queryClient.invalidateQueries({ queryKey: ['playlist', playlistId] });
+			toast.success('Playlist positions updated successfully');
 		},
 		onError: (error: any) => {
 			const errorMessage =

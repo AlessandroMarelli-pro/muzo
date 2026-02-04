@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { PlaylistId } from 'src/clean-arch/kernel/ids';
-import { PlaylistTrackWithTrackDetail } from '../../dtos/PlaylistTrackWithDetail';
+import { PlaylistTrackWithTrackDetail } from '../../ports/dtos/PlaylistTrackWithDetail';
 import {
   IPlaylistTrackRepository,
   PLAYLIST_TRACK_REPOSITORY,

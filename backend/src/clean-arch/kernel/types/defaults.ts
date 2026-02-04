@@ -1,0 +1,36 @@
+import type {
+  ActionContext,
+  RecommendationWeights,
+} from 'src/clean-arch/kernel/types/model-types';
+import { models } from 'src/clean-arch/kernel/types/models';
+
+export function getAnonymousUser(): ActionContext['user'] {
+  return {
+    id: models.user.id('anonymous'),
+    createdAt: new Date(0),
+    createdById: models.user.id('anonymous'),
+    updatedAt: new Date(0),
+    updatedById: null,
+    email: '' as ActionContext['user']['email'],
+    firstName: null,
+    lastName: null,
+  } as ActionContext['user'];
+}
+
+export const DEFAULT_RECOMMENDATION_WEIGHTS: RecommendationWeights = {
+  audioSimilarity: 0.3,
+  genreSimilarity: 1.0,
+  metadataSimilarity: 0.2,
+  userBehavior: 0.1,
+  audioFeatures: 2.0,
+  aiMetadataSimilarity: 0.7,
+};
+
+export const ZERO_RECOMMENDATION_WEIGHTS: RecommendationWeights = {
+  audioSimilarity: 0,
+  genreSimilarity: 0,
+  metadataSimilarity: 0,
+  userBehavior: 0,
+  audioFeatures: 0,
+  aiMetadataSimilarity: 0,
+};

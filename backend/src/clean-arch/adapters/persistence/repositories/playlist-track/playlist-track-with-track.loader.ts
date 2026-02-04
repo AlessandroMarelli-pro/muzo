@@ -1,5 +1,5 @@
 import DataLoader from 'dataloader';
-import { PlaylistTrackWithTrackDetail } from 'src/clean-arch/application/dtos/PlaylistTrackWithDetail';
+import { PlaylistTrackWithTrackDetail } from 'src/clean-arch/application/ports/dtos/PlaylistTrackWithDetail';
 import { IPlaylistTrackRepository } from 'src/clean-arch/application/ports/repositories/IPlaylistTrackRepository';
 import { extractModelId } from 'src/clean-arch/kernel/ids';
 import { PlaylistId } from 'src/clean-arch/kernel/ids/scalars';
