@@ -121,17 +121,6 @@ export class MusicTrackResolver {
     };
   }
 
-  @Query(() => SimpleMusicTrack)
-  async randomTrack(
-    @Args('id', { nullable: true }) id: string,
-    @Args('filterLiked', { nullable: true }) filterLiked: boolean,
-  ): Promise<SimpleMusicTrack> {
-    const track = !id
-      ? await this.musicTrackService.getRandomTrack(filterLiked)
-      : await this.musicTrackService.findOne(id);
-    return mapToSimpleMusicTrack(track as MusicTrackWithRelations);
-  }
-
   @Query(() => RandomTrackWithStats)
   async randomTrackWithStats(): Promise<RandomTrackWithStats> {
     const result = await this.musicTrackService.getRandomTrackWithStats();

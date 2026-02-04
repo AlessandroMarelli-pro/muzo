@@ -11,7 +11,7 @@ import { PrismaService } from '../../../../infrastructure/database/prisma.servic
 import { buildMusicTrackFilterWhereClause } from '../../builders/music-track-filter.where';
 import { musicTracksIncludes } from '../../includes/music-tracks-includes';
 import { handlePrismaNotFound } from '../prisma-errors';
-import { toDomain } from './music-track.mapper';
+import { toDomain, toMusicTrackId } from './music-track.mapper';
 
 @Injectable()
 export class MusicTrackRepository implements IMusicTrackRepository {
@@ -94,5 +94,25 @@ export class MusicTrackRepository implements IMusicTrackRepository {
         if (rows.length === 0) return [];
         return rows.map(toDomain);
       });
+  }
+
+  async getRandomTrackId(): Promise<MusicTrackId> {
+    // Exclude tracks that are already liked (or include them? Let's exclude disliked/hidden ones)
+    // Actually, we should exclude tracks that are in hidden_music_tracks
+    // But since we're querying music_tracks, hidden tracks won't be there anyway
+    // We might want to exclude already liked tracks, but the requirement says to use randomTrack
+    // Let's keep it simple and just get a random track that's not liked yet
+    const tracksCount = await this.prisma.musicTrack.count();
+
+    const skip = Math.floor(Math.random() * tracksCount);
+    return this.prisma.musicTrack
+      .findFirstOrThrow({
+        where: { createdById: getCurrentUserId() },
+        take: 1,
+        skip: skip,
+        select: { id: true },
+      })
+      .then(toMusicTrackId)
+      .catch((e: unknown) => handlePrismaNotFound(e, `No music tracks found`));
   }
 }

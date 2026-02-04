@@ -24,4 +24,5 @@ export interface IMusicTrackRepository {
       orderDirection?: Maybe<'asc' | 'desc'>;
     },
   ): Promise<MusicTrack[]>;
+  getRandomTrackId(): Promise<MusicTrackId>;
 }

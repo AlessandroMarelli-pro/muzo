@@ -877,6 +877,7 @@ export type User = Node & {
   musicPlayer: MusicPlayer;
   playlists: PlaylistsResult;
   queue: Array<QueueItem>;
+  randomTrackId: Scalars['Base64ID']['output'];
   staticFilterOptions: StaticFilterOptions;
   tracks: Array<Track>;
 };
@@ -1232,3 +1233,8 @@ export type ResetQueueMutationVariables = Exact<{ [key: string]: never; }>;
 
 
 export type ResetQueueMutation = { __typename?: 'Mutation', resetQueue: boolean };
+
+export type UserQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type UserQuery = { __typename?: 'Query', me: { __typename?: 'User', firstName?: string | null, lastName?: string | null, email?: string | null, randomTrackId: any } };

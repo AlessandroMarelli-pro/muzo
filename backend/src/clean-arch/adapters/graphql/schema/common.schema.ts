@@ -9,7 +9,7 @@ import { Base64ID } from '../scalars/base64-id.scalar';
     const { modelName } = extractModelId(value.id as Model['id']);
     if (modelName === 'Playlist') return 'CleanArchPlaylist';
     if (modelName === 'User') return 'User';
-    if (modelName === 'Track') return 'Track';
+    if (modelName === 'MusicTrack') return 'Track';
     return null;
   },
 })

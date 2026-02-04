@@ -23,6 +23,7 @@ import {
   GetPlaylistTracksWithDetailUseCase,
   GetPlaylistUseCase,
   GetQueueUseCase,
+  GetRandomTrackIdUseCase,
   GetSavedFilterUseCase,
   GetStaticFilterOptionsUseCase,
   GetTrackRecommendationsUseCase,
@@ -84,6 +85,7 @@ const useCasesProviders = [
   SyncTrackToElasticSearchUseCase,
   GetPlaylistRecommendationsUseCase,
   GetTrackRecommendationsUseCase,
+  GetRandomTrackIdUseCase,
 ];
 @Module({
   imports: [ConfigModule],

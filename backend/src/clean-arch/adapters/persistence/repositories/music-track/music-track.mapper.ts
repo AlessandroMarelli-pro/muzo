@@ -8,6 +8,7 @@ import {
   TrackSubgenre as PrismaTrackSubgenre,
 } from '@prisma/client';
 
+import { MusicTrackId } from 'src/clean-arch/kernel/ids';
 import { extractModelId } from 'src/clean-arch/kernel/ids/factory';
 import {
   AggregationStatistics,
@@ -181,13 +182,17 @@ export const toAudioFileAnalysis: ToAudioFileAnalysis = (row) => {
     error: row.analysisError,
   };
 };
+
+export const toMusicTrackId = (row: PrismaMusicTrack): MusicTrackId => {
+  return models.musicTrack.id(row.id);
+};
 export const toImagePath: ToImagePath = (row) => {
   if (!row) return null;
   return row.imageSearches?.[0]?.imagePath || '';
 };
 export const toDomain: ToDomain = (row) => {
   return {
-    id: models.musicTrack.id(row.id),
+    id: toMusicTrackId(row),
     ...toDomainModel({
       createdAt: row.createdAt,
       createdById: row.createdById,

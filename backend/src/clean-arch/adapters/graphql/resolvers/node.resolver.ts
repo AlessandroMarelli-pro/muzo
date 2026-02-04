@@ -52,13 +52,8 @@ export class NodeResolver {
           })),
         }));
     }
-    if (modelName === 'Track') {
-      return this.getTrackUseCase
-        .execute(parseMusicTrackId(id))
-        .then((track) => ({
-          ...track,
-          track: toTrack(track),
-        }));
+    if (modelName === 'MusicTrack') {
+      return this.getTrackUseCase.execute(parseMusicTrackId(id)).then(toTrack);
     }
     if (modelName === 'User') {
       // Optional: add GetUserByIdUseCase and resolve here

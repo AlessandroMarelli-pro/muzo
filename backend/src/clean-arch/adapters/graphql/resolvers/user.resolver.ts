@@ -4,6 +4,7 @@ import { Args, Query, ResolveField, Resolver } from '@nestjs/graphql';
 import {
   GetPlaylistsUseCase,
   GetQueueUseCase,
+  GetRandomTrackIdUseCase,
   GetTrackUseCase,
   GetTracksUseCase,
 } from 'src/clean-arch/application/use-cases';
@@ -42,6 +43,7 @@ export class UserResolver {
     private readonly getHomeMetricsUseCase: GetHomeMetricsUseCase,
     private readonly getTrackUseCase: GetTrackUseCase,
     private readonly getTracksUseCase: GetTracksUseCase,
+    private readonly getRandomTrackIdUseCase: GetRandomTrackIdUseCase,
   ) {}
 
   @Query(() => User)
@@ -107,5 +109,10 @@ export class UserResolver {
     }
     const tracks = await this.getTracksUseCase.execute(); // or getTracksForCurrentUser, etc.
     return tracks.map(toTrack);
+  }
+
+  @ResolveField(() => Base64ID)
+  async randomTrackId(): Promise<string> {
+    return this.getRandomTrackIdUseCase.execute();
   }
 }

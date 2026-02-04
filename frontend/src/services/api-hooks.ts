@@ -14,12 +14,14 @@ import type {
 	RandomTrackWithStats,
 	SimpleMusicTrack,
 	StaticFilterOptions,
+	Track,
 	TrackRecommendation,
 	UpdateLibraryInput,
 } from '../__generated__/types';
 import { trackFragment } from './fragments';
 import { gql, graffleClient } from './graffle-client';
 import { simpleMusicTrackFragment } from './playlist-hooks';
+import { toTrack } from './track.mapper';
 
 // Define AnalysisStatus enum locally since it's not in the generated types
 export type AnalysisStatus = 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED';
@@ -245,19 +247,21 @@ export const useTracks = ({
 
 export const fetchRandomTrack = async (id?: string, filterLiked?: boolean) => {
 	const response = await graffleClient.request<{
-		randomTrack: SimpleMusicTrack;
+		node: Track;
 	}>(
 		gql`
-			${simpleMusicTrackFragment}
-			query GetRandomTrack($id: String, $filterLiked: Boolean) {
-				randomTrack(id: $id, filterLiked: $filterLiked) {
-					...SimpleMusicTrackFragment
+			${trackFragment}
+			query GetRandomTrack($id: Base64ID!) {
+				node(id: $id) {
+					... on Track {
+						...TrackFragment
+					}
 				}
 			}
 		`,
 		{ id, filterLiked }
 	);
-	return response.randomTrack;
+	return toTrack(response.node);
 };
 
 export const useRandomTrack = (id?: string, filterLiked?: boolean) => {
@@ -298,7 +302,7 @@ export const fetchTrackRecommendations = async (
 	criteria?: string
 ) => {
 	const response = await graffleClient.request<{
-		trackRecommendations: TrackRecommendation[];
+		node: { recommendations: TrackRecommendation[] };
 	}>(
 		gql`
 			${trackFragment}
@@ -321,7 +325,12 @@ export const fetchTrackRecommendations = async (
 		`,
 		{ trackId: id, recommendationsLimit: 20 }
 	);
-	return response.trackRecommendations;
+	return response.node.recommendations.map((recommendation) => ({
+		__typename: 'TrackRecommendation',
+		track: toTrack(recommendation.track),
+		similarity: recommendation.similarity,
+		reasons: recommendation.reasons,
+	}));
 };
 export const useTrackRecommendations = (id?: string, criteria?: string) => {
 	return useQuery({

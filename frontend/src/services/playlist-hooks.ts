@@ -334,18 +334,11 @@ export const favoritePlaylistQueryOptions = () =>
 
 export const playlistRecommendationsQueryOptions = (
 	playlistId: string,
-	limit = 20,
-	excludeTrackIds?: string[]
+	limit = 20
 ) =>
 	queryOptions({
-		queryKey: [
-			'playlistRecommendations',
-			playlistId,
-			limit,
-			excludeTrackIds,
-		] as const,
-		queryFn: () =>
-			fetchPlaylistRecommendations(playlistId, limit, excludeTrackIds),
+		queryKey: ['playlistRecommendations', playlistId, limit] as const,
+		queryFn: () => fetchPlaylistRecommendations(playlistId, limit),
 	});
 
 // API functions
@@ -673,7 +666,7 @@ export function usePlaylists(search?: string, verifyTrackId?: string) {
 			});
 			queryClient.invalidateQueries({ queryKey: ['playlist', playlistId] });
 			queryClient.invalidateQueries({
-				queryKey: ['playlistRecommendations', playlistId],
+				queryKey: ['playlistRecommendations', playlistId, 20],
 			});
 			const trackName = ` ${data.track.title} by ${data.track.artist}`;
 			toast.success(`Track added to playlist`, {
@@ -928,7 +921,7 @@ export function useAddTrackToPlaylist(userId: string = 'default') {
 				queryKey: ['playlist', playlistId, userId],
 			});
 			queryClient.invalidateQueries({
-				queryKey: ['playlistRecommendations', playlistId],
+				queryKey: ['playlistRecommendations', playlistId, 20],
 			});
 			const trackName = ` ${data.track.title} by ${data.track.artist}`;
 			toast.success(`Track added to playlist`, {
@@ -976,7 +969,7 @@ export function usePlaylistRecommendations(
 	excludeTrackIds?: string[]
 ) {
 	const { data, isLoading, error, refetch } = useQuery({
-		queryKey: ['playlistRecommendations', playlistId, limit, excludeTrackIds],
+		queryKey: ['playlistRecommendations', playlistId, limit],
 		queryFn: () =>
 			fetchPlaylistRecommendations(playlistId, limit, excludeTrackIds),
 		enabled: !!playlistId,
