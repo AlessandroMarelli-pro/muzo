@@ -10,7 +10,6 @@ import type {
 	CreateLibraryInput,
 	CursorPaginatedTracks,
 	CursorPaginationArgs,
-	GetRecentlyPlayedQuery,
 	Library,
 	PaginatedTracks,
 	RandomTrackWithStats,
@@ -20,7 +19,6 @@ import type {
 } from '../__generated__/types';
 import { libraryFragment, trackFragment } from './fragments';
 import { gql, graffleClient } from './graffle-client';
-import { simpleMusicTrackFragment } from './playlist-hooks';
 import { toTrack } from './track.mapper';
 
 // Define AnalysisStatus enum locally since it's not in the generated types
@@ -69,10 +67,10 @@ export const queryKeys = {
 };
 
 /** Query options for loaders (ensureQueryData dedupes preload + load). */
-export const recentlyPlayedQueryOptions = (limit = 20) =>
+export const recentlyPlayedQueryOptions = () =>
 	queryOptions({
-		queryKey: queryKeys.recentlyPlayed(limit),
-		queryFn: () => fetchRecentlyPlayed(limit),
+		queryKey: queryKeys.recentlyPlayed(),
+		queryFn: () => fetchRecentlyPlayed(),
 	});
 
 export const librariesQueryOptions = () =>
@@ -436,26 +434,27 @@ export const useStaticFilters = () => {
 		staleTime: 10 * 60 * 1000, // 10 minutes - static data doesn't change often
 	});
 };
-export const fetchRecentlyPlayed = async (limit = 20) => {
-	const response = await graffleClient.request<GetRecentlyPlayedQuery>(
-		gql`
-			${simpleMusicTrackFragment}
-			query GetRecentlyPlayed($limit: Float) {
-				recentlyPlayed(limit: $limit) {
-					...SimpleMusicTrackFragment
+export const fetchRecentlyPlayed = async () => {
+	const response = await graffleClient.request<{
+		me: { recentlyPlayed: Track[] };
+	}>(gql`
+		${trackFragment}
+		query GetRecentlyPlayed {
+			me {
+				recentlyPlayed {
+					...TrackFragment
 				}
 			}
-		`,
-		{ limit }
-	);
-	return response.recentlyPlayed;
+		}
+	`);
+	return response.me.recentlyPlayed.map(toTrack);
 };
 
 // Playback Queries
-export const useRecentlyPlayed = (limit = 20) => {
+export const useRecentlyPlayed = () => {
 	return useQuery({
-		queryKey: queryKeys.recentlyPlayed(limit),
-		queryFn: () => fetchRecentlyPlayed(limit),
+		queryKey: queryKeys.recentlyPlayed(),
+		queryFn: () => fetchRecentlyPlayed(),
 	});
 };
 

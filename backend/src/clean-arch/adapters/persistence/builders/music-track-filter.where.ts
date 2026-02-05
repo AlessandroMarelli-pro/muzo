@@ -3,16 +3,14 @@ import { FilterCriteria } from 'src/clean-arch/kernel/types/model-types';
 
 export const buildMusicTrackFilterWhereClause = (
   criteria: FilterCriteria,
-  skipGenres: boolean = false,
-  skipSubgenres: boolean = false,
-  subgenreSelectionMode: 'exact' | 'contain' = 'exact',
+  subgenreSelectionMode: 'exact' | 'contain' = 'contain',
 ) => {
   const where: any = {};
   if (!criteria) {
     return where;
   }
 
-  if (criteria.genreIds?.length > 0 && !skipGenres) {
+  if (criteria.genreIds?.length > 0) {
     // Find genre IDs from genre names
     where.trackGenres = {
       some: {
@@ -21,7 +19,7 @@ export const buildMusicTrackFilterWhereClause = (
     };
   }
 
-  if (criteria.subgenreIds?.length > 0 && !skipSubgenres) {
+  if (criteria.subgenreIds?.length > 0) {
     const subgenreIds = criteria.subgenreIds;
     // Find subgenre IDs from subgenre names
 

@@ -1,4 +1,3 @@
-import { Maybe } from 'src/clean-arch/kernel/common';
 import { MusicTrackId } from 'src/clean-arch/kernel/ids';
 import {
   FilterCriteria,
@@ -6,6 +5,7 @@ import {
 } from 'src/clean-arch/kernel/types/model-types';
 import {
   CursorPaginationResult,
+  PaginationAndSortingOptions,
   PaginationResult,
   WithCursorPagination,
   WithPagination,
@@ -28,15 +28,9 @@ export interface IMusicTrackRepository {
   verifyExistence(id: MusicTrackId): Promise<boolean>;
   getManyByCriteria(
     criteria: FilterCriteria,
-    skipGenres: boolean,
-    skipSubgenres: boolean,
     subgenreSelectionMode: 'exact' | 'contain',
-    options: {
-      limit?: Maybe<number>;
-      offset?: Maybe<number>;
-      orderBy?: Maybe<string>;
-      orderDirection?: Maybe<'asc' | 'desc'>;
-    },
+    options: PaginationAndSortingOptions,
+    withIncludes?: boolean,
   ): Promise<MusicTrack[]>;
   getManyByCriteriaWithPagination(
     criteria: FilterCriteria,
@@ -52,4 +46,5 @@ export interface IMusicTrackRepository {
     data: MusicTrackUpdateData,
   ): Promise<MusicTrack>;
   removeOneById(id: MusicTrackId): Promise<boolean>;
+  incrementListeningCount(id: MusicTrackId): Promise<MusicTrack>;
 }

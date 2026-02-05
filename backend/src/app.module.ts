@@ -28,7 +28,6 @@ import { AiIntegrationModule } from './modules/ai-integration/ai-integration.mod
 import { FilterModule } from './modules/filter/filter.module';
 import { HealthModule } from './modules/health/health.module';
 import { MusicLibraryModule } from './modules/music-library/music-library.module';
-import { MusicTrackModule } from './modules/music-track/music-track.module';
 import { QueueModule } from './modules/queue/queue.module';
 import { ThirdPartySyncModule } from './modules/third-party-sync/third-party-sync.module';
 import { SharedModule } from './shared/shared.module';
@@ -101,7 +100,6 @@ import { SharedModule } from './shared/shared.module';
     HealthModule,
     HttpModule,
     MusicLibraryModule,
-    MusicTrackModule,
     ThirdPartySyncModule,
     AiIntegrationModule,
     FilterModule,

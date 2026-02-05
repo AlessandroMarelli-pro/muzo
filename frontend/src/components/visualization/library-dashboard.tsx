@@ -297,21 +297,21 @@ export const LibraryDashboard: React.FC<LibraryDashboardProps> = ({
 				{tracks?.map((track) => (
 					<MusicCard key={track.id} track={track} />
 				))}
-				<div>
-					<button
-						ref={ref}
-						onClick={() => fetchNextPage()}
-						disabled={!hasNextPage || isFetchingNextPage}
-					>
-						{isFetchingNextPage
-							? 'Loading more...'
-							: hasNextPage
-								? 'Load Newer'
-								: 'Nothing more to load'}
-					</button>
-				</div>
 			</div>
-
+			<div className="flex justify-center" ref={ref}>
+				<Button
+					className="w-1/2 bg-primary"
+					size="lg"
+					onClick={() => fetchNextPage()}
+					disabled={!hasNextPage || isFetchingNextPage}
+				>
+					{isFetchingNextPage
+						? 'Loading more...'
+						: hasNextPage
+							? 'Load More'
+							: null}
+				</Button>
+			</div>
 			{/* Footer Actions */}
 			<Card>
 				<CardContent className="p-6">

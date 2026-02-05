@@ -1,3 +1,3 @@
-export { QueueList } from './queue-list';
 export { QueueItemCard } from './queue-item-card';
-export { QueueSidebar } from './queue-sidebar';
+export { QueueList } from './queue-list';
+export { QueueDrawer } from './queue-sidebar';

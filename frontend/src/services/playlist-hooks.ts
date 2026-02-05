@@ -106,8 +106,10 @@ const GET_PLAYLIST = gql`
 const GET_FAVORITE_PLAYLIST = gql`
 	${playlistFragment}
 	query GetFavoritePlaylist {
-		favoritePlaylist {
-			...PlaylistFragment
+		me {
+			favorites {
+				...PlaylistFragment
+			}
 		}
 	}
 `;
@@ -374,9 +376,9 @@ export const fetchPlaylist = async (
 
 export const fetchFavoritePlaylist = async (): Promise<CleanArchPlaylist> => {
 	const data = await graffleClient.request<{
-		favoritePlaylist: CleanArchPlaylist;
+		me: { favorites: CleanArchPlaylist };
 	}>(GET_FAVORITE_PLAYLIST);
-	return toPlaylistItem(data.favoritePlaylist);
+	return toPlaylistItem(data.me.favorites);
 };
 
 const createPlaylist = async (

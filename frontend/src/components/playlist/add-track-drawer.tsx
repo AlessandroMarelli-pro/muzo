@@ -80,33 +80,36 @@ export function AddTrackDrawer({
 					{shouldDisplayFilter && (
 						<FilterComponent className="w-full min-w-[300px]" />
 					)}
-
-					<div
-						className={
-							'flex flex-wrap  justify-center gap-5  overflow-y-scroll py-4 max-h-screen min-w-[600px]'
-						}
-					>
-						{tracks?.map((track) => (
-							<MusicCard
-								key={track.id}
-								track={track}
-								onAdd={addTrackToPlaylist}
-								width="235"
-								height="200"
-							/>
-						))}
-						<div>
-							<button
+					<div className="max-h-[80vh] overflow-y-scroll">
+						<div
+							className={
+								'flex flex-wrap  justify-center gap-5    py-4 min-w-[600px]'
+							}
+						>
+							{tracks?.map((track) => (
+								<MusicCard
+									key={track.id}
+									track={track as SimpleMusicTrack}
+									onAdd={addTrackToPlaylist}
+									width="235"
+									height="200"
+								/>
+							))}
+						</div>
+						<div className="flex justify-center">
+							<Button
 								ref={ref}
+								className="w-1/2 bg-primary"
+								size="lg"
 								onClick={() => fetchNextPage()}
 								disabled={!hasNextPage || isFetchingNextPage}
 							>
 								{isFetchingNextPage
 									? 'Loading more...'
 									: hasNextPage
-										? 'Load Newer'
-										: 'Nothing more to load'}
-							</button>
+										? 'Load More'
+										: null}
+							</Button>
 						</div>
 					</div>
 				</div>

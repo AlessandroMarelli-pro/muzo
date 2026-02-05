@@ -3,7 +3,6 @@ import {
   IMusicTrackRepository,
   MusicTrackUpdateData,
 } from 'src/clean-arch/application/ports/repositories/IMusicTrackRepository';
-import { Maybe } from 'src/clean-arch/kernel/common';
 import { extractModelId, MusicTrackId } from 'src/clean-arch/kernel/ids';
 import { getCurrentUserId } from 'src/clean-arch/kernel/types/context';
 import {
@@ -12,6 +11,7 @@ import {
 } from 'src/clean-arch/kernel/types/model-types';
 import {
   CursorPaginationResult,
+  PaginationAndSortingOptions,
   PaginationResult,
   WithCursorPagination,
   WithPagination,
@@ -58,7 +58,7 @@ export class MusicTrackRepository implements IMusicTrackRepository {
       })
       .then((rows) => rows.map(toDomain));
   }
-  verifyExistence(id: MusicTrackId): Promise<boolean> {
+  async verifyExistence(id: MusicTrackId): Promise<boolean> {
     return this.prisma.musicTrack
       .findUnique({
         where: { id: extractModelId(id).dbId, createdById: getCurrentUserId() },
@@ -71,32 +71,20 @@ export class MusicTrackRepository implements IMusicTrackRepository {
 
   async getManyByCriteria(
     criteria: FilterCriteria,
-    skipGenres: boolean,
-    skipSubgenres: boolean,
     subgenreSelectionMode: 'exact' | 'contain',
-    options: {
-      limit?: Maybe<number>;
-      offset?: Maybe<number>;
-      orderBy?: Maybe<string>;
-      orderDirection?: Maybe<'asc' | 'desc'>;
-    } = {
-      limit: 100,
-      offset: 0,
-      orderBy: 'fileCreatedAt',
-      orderDirection: 'desc',
-    },
+    options: PaginationAndSortingOptions,
+    withIncludes: boolean = true,
   ): Promise<MusicTrack[]> {
     return this.prisma.musicTrack
       .findMany({
         where: buildMusicTrackFilterWhereClause(
           criteria,
-          skipGenres,
-          skipSubgenres,
           subgenreSelectionMode,
         ),
         take: options.limit ?? undefined,
         skip: options.offset ?? undefined,
         orderBy: buildMusicTrackSortingOrderClause(options),
+        include: withIncludes ? musicTracksIncludes : undefined,
       })
       .then((rows) => {
         if (rows.length === 0) return [];
@@ -212,5 +200,15 @@ export class MusicTrackRepository implements IMusicTrackRepository {
         where: { id: extractModelId(id).dbId, createdById: getCurrentUserId() },
       })
       .then(() => true);
+  }
+
+  async incrementListeningCount(id: MusicTrackId): Promise<MusicTrack> {
+    return this.prisma.musicTrack
+      .update({
+        where: { id: extractModelId(id).dbId, createdById: getCurrentUserId() },
+        data: { listeningCount: { increment: 1 } },
+        include: musicTracksIncludes,
+      })
+      .then(toDomain);
   }
 }

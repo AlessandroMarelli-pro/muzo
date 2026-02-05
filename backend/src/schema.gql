@@ -7,27 +7,6 @@ input AddTrackToPlaylistInput {
   trackId: Base64ID!
 }
 
-type AudioFingerprint {
-  acousticness: Float
-  chroma: [Float!]
-  createdAt: DateTime!
-  danceability: Float
-  energy: Float
-  id: ID!
-  instrumentalness: Float
-  key: String
-  mfcc: [Float!]
-  spectralCentroid: Float
-  spectralContrast: [Float!]
-  spectralRolloff: Float
-  speechiness: Float
-  tempo: Float
-  trackId: ID!
-  updatedAt: DateTime!
-  valence: Float
-  zeroCrossingRate: Float
-}
-
 """ID encoded as base64 for transport"""
 scalar Base64ID
 
@@ -177,13 +156,6 @@ type HomeMetrics {
   totalTracks: Int!
 }
 
-type ImageSearch {
-  id: ID!
-  imagePath: String!
-  imageUrl: String!
-  source: String!
-}
-
 type Library implements Node {
   analyzedTracks: Float!
   createdAt: DateTime!
@@ -296,7 +268,6 @@ type PlaylistsResult {
 }
 
 type Query {
-  favoritePlaylist: CleanArchPlaylist!
   getSpotifyAuthUrl: SpotifyAuthUrl!
   getTidalAuthUrl: TidalAuthUrl!
   getYouTubeAuthUrl: YouTubeAuthUrl!
@@ -306,8 +277,6 @@ type Query {
   Fetch any node by global ID. Use inline fragments (... on CleanArchPlaylist { ... }) to request fields.
   """
   node(id: Base64ID!): Node
-  recentlyPlayed(limit: Float! = 20): [SimpleMusicTrack!]!
-  tracks(options: TrackQueryOptions): [SimpleMusicTrack!]!
 }
 
 type QueueItem {
@@ -354,42 +323,6 @@ input SavedFilterInput {
   criteria: FilterCriteriaInput!
   isCurrent: Boolean
   name: String!
-}
-
-type SimpleMusicTrack {
-  acousticness: Float
-  arousalMood: String
-  artist: String
-  atmosphereKeywords: [String!]
-  contextBackgrounds: String
-  contextImpacts: String
-  createdAt: DateTime
-  danceabilityFeeling: String
-  date: DateTime
-  description: String
-  duration: Float!
-  fileCreatedAt: DateTime
-  format: String
-  genres: [String!]
-  id: ID!
-  imagePath: String
-  instrumentalness: Float
-  isBanger: Boolean
-  isFavorite: Boolean
-  isLiked: Boolean
-  key: String
-  lastPlayedAt: DateTime
-  lastScannedAt: DateTime
-  libraryId: String
-  listeningCount: Float
-  speechiness: Float
-  subgenres: [String!]
-  tags: [String!]
-  tempo: Float
-  title: String
-  updatedAt: DateTime
-  valenceMood: String
-  vocalsDescriptions: String
 }
 
 type SpotifyAuthResult {
@@ -493,17 +426,6 @@ type TrackMusicalFeatures {
   valenceMood: String
 }
 
-input TrackQueryOptions {
-  analysisStatus: String
-  format: String
-  isFavorite: Boolean
-  libraryId: ID
-  limit: Float
-  offset: Float
-  orderBy: String
-  orderDirection: String
-}
-
 type TrackRecommendation {
   reasons: [String!]!
   similarity: Float!
@@ -550,6 +472,7 @@ type User implements Node {
   activeFilters: [FilterCriteriaResult!]!
   currentFilter: FilterCriteriaResult
   email: String
+  favorites: CleanArchPlaylist!
   firstName: String
   homeMetrics: HomeMetrics!
   id: Base64ID!
@@ -561,6 +484,7 @@ type User implements Node {
   queue: [QueueItem!]!
   randomTrackId: Base64ID!
   randomTrackWithStats: RandomTrackWithStats!
+  recentlyPlayed: [Track!]!
   staticFilterOptions: StaticFilterOptions!
   tracks(pagination: CursorPaginationArgs): CursorPaginatedTracks!
 }

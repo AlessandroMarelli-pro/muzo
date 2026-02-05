@@ -76,8 +76,6 @@ export class CreatePlaylistUseCase {
       };
       const tracks = await this.musicTrackRepository.getManyByCriteria(
         filterCriteria,
-        false,
-        false,
         subgenreSelectionMode || 'exact',
         {
           limit: maxTracks || 100,
@@ -85,6 +83,7 @@ export class CreatePlaylistUseCase {
           orderBy: 'fileCreatedAt',
           orderDirection: 'desc',
         },
+        false,
       );
 
       // Add tracks to playlist

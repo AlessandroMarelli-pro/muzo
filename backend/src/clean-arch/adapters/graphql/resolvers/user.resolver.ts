@@ -6,11 +6,11 @@ import {
 import { UseGuards } from '@nestjs/common';
 import { Args, Query, ResolveField, Resolver } from '@nestjs/graphql';
 import {
+  GetFavoriteUseCase,
   GetPlaylistsUseCase,
   GetQueueUseCase,
   GetRandomTrackIdUseCase,
-  GetTrackUseCase,
-  GetTracksUseCase,
+  GetRecentlyPlayedUseCase,
   GetTracksWithCursorPaginationUseCase,
   GetTracksWithPaginationUseCase,
 } from 'src/clean-arch/application/use-cases';
@@ -37,6 +37,7 @@ import {
   ICursorPaginatedType,
   IPaginatedType,
 } from '../schema/pagination.schema';
+import { CleanArchPlaylist } from '../schema/playlist.schema';
 import { CleanArchQueueItem } from '../schema/queue-item.schema';
 import {
   FilterCriteriaResult,
@@ -60,13 +61,13 @@ export class UserResolver {
     private readonly getActiveFiltersUseCase: GetActiveFiltersUseCase,
     private readonly getCurrentFilterUseCase: GetCurrentFilterUseCase,
     private readonly getHomeMetricsUseCase: GetHomeMetricsUseCase,
-    private readonly getTrackUseCase: GetTrackUseCase,
-    private readonly getTracksUseCase: GetTracksUseCase,
     private readonly getRandomTrackIdUseCase: GetRandomTrackIdUseCase,
     private readonly getLibrariesUseCase: GetLibrariesUseCase,
     private readonly getTracksPaginatedUseCase: GetTracksWithPaginationUseCase,
     private readonly getRandomTrackWithStatsUseCase: GetRandomTrackWithStatsUseCase,
     private readonly getTracksWithCursorPaginationUseCase: GetTracksWithCursorPaginationUseCase,
+    private readonly getFavoriteUseCase: GetFavoriteUseCase,
+    private readonly getRecentlyPlayedUseCase: GetRecentlyPlayedUseCase,
   ) {}
 
   @Query(() => User)
@@ -113,6 +114,13 @@ export class UserResolver {
   @ResolveField(() => HomeMetrics)
   async homeMetrics(): Promise<HomeMetrics> {
     return this.getHomeMetricsUseCase.execute();
+  }
+
+  @ResolveField(() => [Track])
+  async recentlyPlayed(): Promise<Track[]> {
+    return this.getRecentlyPlayedUseCase
+      .execute()
+      .then((tracks) => tracks.map(toTrack));
   }
 
   @ResolveField(() => MusicPlayer)
@@ -177,5 +185,16 @@ export class UserResolver {
     return this.getLibrariesUseCase
       .execute()
       .then((libraries) => libraries.map(toMusicLibrary));
+  }
+
+  @ResolveField(() => CleanArchPlaylist)
+  async favorites(): Promise<CleanArchPlaylist> {
+    return this.getFavoriteUseCase.execute().then((playlist) => ({
+      ...playlist,
+      tracks: playlist.tracks.map((track) => ({
+        ...track,
+        track: toTrack(track.track),
+      })),
+    }));
   }
 }

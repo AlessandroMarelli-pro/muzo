@@ -5,7 +5,6 @@ import {
   Int,
   Mutation,
   Parent,
-  Query,
   ResolveField,
   Resolver,
 } from '@nestjs/graphql';
@@ -14,7 +13,6 @@ import {
   CreatePlaylistUseCase,
   DeletePlaylistUseCase,
   ExportPlaylistToM3UUseCase,
-  GetFavoriteUseCase,
   GetPlaylistRecommendationsUseCase,
   GetPlaylistSortingByPlaylistIdUseCase,
   UpdatePlaylistUseCase,
@@ -49,23 +47,11 @@ export class CleanArchPlaylistResolver {
     private readonly createPlaylistUseCase: CreatePlaylistUseCase,
     private readonly updatePlaylistUseCase: UpdatePlaylistUseCase,
     private readonly deletePlaylistUseCase: DeletePlaylistUseCase,
-    private readonly getFavoriteUseCase: GetFavoriteUseCase,
     private readonly getPlaylistSortingByPlaylistIdUseCase: GetPlaylistSortingByPlaylistIdUseCase,
     private readonly exportPlaylistToM3UUseCase: ExportPlaylistToM3UUseCase,
     private readonly updatePlaylistSortingUseCase: UpdatePlaylistSortingUseCase,
     private readonly getPlaylistRecommendationsUseCase: GetPlaylistRecommendationsUseCase,
   ) {}
-
-  @Query(() => CleanArchPlaylist)
-  async favoritePlaylist(): Promise<CleanArchPlaylist> {
-    return this.getFavoriteUseCase.execute().then((playlist) => ({
-      ...playlist,
-      tracks: playlist.tracks.map((track) => ({
-        ...track,
-        track: toTrack(track.track),
-      })),
-    }));
-  }
 
   @ResolveField(() => PlaylistStats)
   async stats(

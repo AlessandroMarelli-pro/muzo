@@ -13,6 +13,8 @@ export type PaginationOptions = {
   offset?: number;
 };
 
+export type PaginationAndSortingOptions = PaginationOptions & SortingOptions;
+
 export type PaginationResult<T extends Model> = {
   items: T[];
   total: number;

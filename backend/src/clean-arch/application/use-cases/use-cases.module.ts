@@ -29,6 +29,7 @@ import {
   GetQueueUseCase,
   GetRandomTrackIdUseCase,
   GetRandomTrackWithStatsUseCase,
+  GetRecentlyPlayedUseCase,
   GetSavedFilterUseCase,
   GetStaticFilterOptionsUseCase,
   GetTrackRecommendationsUseCase,
@@ -108,7 +109,9 @@ const useCasesProviders = [
   ToggleDislikeUseCase,
   ToggleBangerUseCase,
   GetRandomTrackWithStatsUseCase,
+  GetRecentlyPlayedUseCase,
 ];
+
 @Module({
   imports: [ConfigModule],
   providers: useCasesProviders,
