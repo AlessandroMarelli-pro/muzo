@@ -1,4 +1,7 @@
-import { PaginationArgs } from './../schema/pagination.args';
+import {
+  CursorPaginationArgs,
+  PaginationArgs,
+} from './../schema/pagination.args';
 // user.resolver.ts
 import { UseGuards } from '@nestjs/common';
 import { Args, Query, ResolveField, Resolver } from '@nestjs/graphql';
@@ -7,8 +10,9 @@ import {
   GetQueueUseCase,
   GetRandomTrackIdUseCase,
   GetTrackUseCase,
-  GetTracksPaginatedUseCase,
   GetTracksUseCase,
+  GetTracksWithCursorPaginationUseCase,
+  GetTracksWithPaginationUseCase,
 } from 'src/clean-arch/application/use-cases';
 import {
   GetCurrentFilterUseCase,
@@ -22,20 +26,24 @@ import { toFilter } from '../mappers/saved-filter.mapper';
 import { GetHomeMetricsUseCase } from 'src/clean-arch/application/use-cases/metrics/GetHomeMetrics';
 import { GetLibrariesUseCase } from 'src/clean-arch/application/use-cases/music-library/GetLibraries';
 import { GetRandomTrackWithStatsUseCase } from 'src/clean-arch/application/use-cases/music-track/GetRandomTrackWithStats';
-import { parseMusicTrackId } from '../../common/utils/parse-id';
+import { MusicTrack } from 'src/clean-arch/kernel/types';
 import { toMusicLibrary } from '../mappers/music-library.mapper';
 import { toTrack } from '../mappers/track.mapper';
 import { Base64ID } from '../scalars/base64-id.scalar';
 import { Library } from '../schema/library.schema';
 import { HomeMetrics } from '../schema/metrics.schema';
 import { MusicPlayer } from '../schema/music-player.schema';
-import { IPaginatedType } from '../schema/pagination.schema';
+import {
+  ICursorPaginatedType,
+  IPaginatedType,
+} from '../schema/pagination.schema';
 import { CleanArchQueueItem } from '../schema/queue-item.schema';
 import {
   FilterCriteriaResult,
   StaticFilterOptions,
 } from '../schema/saved-filter.schema';
 import {
+  CursorPaginatedTracks,
   PaginatedTracks,
   RandomTrackWithStats,
   Track,
@@ -56,8 +64,9 @@ export class UserResolver {
     private readonly getTracksUseCase: GetTracksUseCase,
     private readonly getRandomTrackIdUseCase: GetRandomTrackIdUseCase,
     private readonly getLibrariesUseCase: GetLibrariesUseCase,
-    private readonly getTracksPaginatedUseCase: GetTracksPaginatedUseCase,
+    private readonly getTracksPaginatedUseCase: GetTracksWithPaginationUseCase,
     private readonly getRandomTrackWithStatsUseCase: GetRandomTrackWithStatsUseCase,
+    private readonly getTracksWithCursorPaginationUseCase: GetTracksWithCursorPaginationUseCase,
   ) {}
 
   @Query(() => User)
@@ -113,16 +122,26 @@ export class UserResolver {
     };
   }
 
-  @ResolveField(() => [Track])
+  @ResolveField(() => CursorPaginatedTracks)
   async tracks(
-    @Args('id', { type: () => Base64ID, nullable: true }) id?: string,
-  ): Promise<Track[]> {
-    if (id != null) {
-      const track = await this.getTrackUseCase.execute(parseMusicTrackId(id));
-      return track ? [toTrack(track)] : [];
-    }
-    const tracks = await this.getTracksUseCase.execute(); // or getTracksForCurrentUser, etc.
-    return tracks.map(toTrack);
+    @Args('pagination', {
+      type: () => CursorPaginationArgs<MusicTrack>,
+      nullable: true,
+    })
+    pagination?: CursorPaginationArgs<MusicTrack>,
+  ): Promise<ICursorPaginatedType<Track>> {
+    return this.getTracksWithCursorPaginationUseCase
+      .execute({
+        cursor: {
+          id: pagination?.cursor,
+          direction: pagination?.direction,
+        },
+        size: pagination?.size,
+      })
+      .then((tracks) => ({
+        ...tracks,
+        items: tracks.items.map(toTrack),
+      }));
   }
 
   @ResolveField(() => PaginatedTracks)

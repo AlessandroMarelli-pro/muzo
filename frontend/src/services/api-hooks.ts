@@ -1,5 +1,6 @@
 import {
 	queryOptions,
+	useInfiniteQuery,
 	useMutation,
 	useQuery,
 	useQueryClient,
@@ -7,13 +8,12 @@ import {
 import { parse } from 'graphql';
 import type {
 	CreateLibraryInput,
+	CursorPaginatedTracks,
+	CursorPaginationArgs,
 	GetRecentlyPlayedQuery,
 	Library,
-	MusicLibrary,
-	MusicTrack,
 	PaginatedTracks,
 	RandomTrackWithStats,
-	SimpleMusicTrack,
 	StaticFilterOptions,
 	Track,
 	TrackRecommendation,
@@ -34,37 +34,12 @@ export type LibraryScanStatus =
 	| 'PAUSED'
 	| 'ERROR';
 
-// Define PlaybackSession locally since it's not in the generated types
-export type PlaybackSession = {
-	id: string;
-	trackId: string;
-	status: string;
-	currentPosition: number;
-	duration: number;
-	volume: number;
-	isShuffled: boolean;
-	repeatMode: string;
-	currentIndex: number;
-	startedAt?: string;
-	pausedAt?: string;
-	track: MusicTrack;
-};
-
 // Query Keys
 export const queryKeys = {
 	libraries: ['libraries'] as const,
 	library: (id: string) => ['libraries', id] as const,
-	tracks: (
-		libraryId?: string,
-		status?: AnalysisStatus,
-		isFavorite?: boolean,
-		orderBy?: string,
-		orderDirection?: 'asc' | 'desc'
-	) =>
-		[
-			'tracks',
-			{ libraryId, status, isFavorite, orderBy, orderDirection },
-		] as const,
+	tracks: (pagination: CursorPaginationArgs) =>
+		['tracks', { pagination }] as const,
 	tracksList: (
 		libraryId?: string,
 		status?: AnalysisStatus,
@@ -170,50 +145,42 @@ export const useLibrary = (id: string) => {
 
 // Track Queries
 export const useTracks = ({
-	libraryId,
-	status,
-	isFavorite,
-	orderBy = 'fileCreatedAt',
-	orderDirection = 'asc',
+	pagination,
 }: {
-	libraryId?: string;
-	status?: AnalysisStatus;
-	isFavorite?: boolean;
-	orderBy?: string;
-	orderDirection?: 'asc' | 'desc';
+	pagination: CursorPaginationArgs;
 }) => {
-	return useQuery({
-		queryKey: queryKeys.tracks(
-			libraryId,
-			status,
-			isFavorite,
-			orderBy,
-			orderDirection
-		),
+	return useInfiniteQuery({
+		queryKey: queryKeys.tracks(pagination),
 		queryFn: async () => {
 			const response = await graffleClient.request<{
-				tracks: SimpleMusicTrack[];
+				me: { tracks: CursorPaginatedTracks };
 			}>(
 				gql`
-					${simpleMusicTrackFragment}
-					query GetTracks($options: TrackQueryOptions) {
-						tracks(options: $options) {
-							...SimpleMusicTrackFragment
+					${trackFragment}
+					query GetTracks($pagination: CursorPaginationArgs!) {
+						me {
+							tracks(pagination: $pagination) {
+								hasMore
+								nextCursor
+								items {
+									...TrackFragment
+								}
+							}
 						}
 					}
 				`,
 				{
-					options: {
-						libraryId,
-						analysisStatus: status,
-						isFavorite,
-						orderBy,
-						orderDirection,
-					},
+					pagination,
 				}
 			);
-			return response.tracks;
+			return {
+				...response.me.tracks,
+				tracks: response.me.tracks.items?.map(toTrack),
+			};
 		},
+		initialPageParam: 0,
+		getPreviousPageParam: (firstPage) => firstPage.nextCursor,
+		getNextPageParam: (lastPage) => lastPage.nextCursor,
 	});
 };
 
@@ -455,7 +422,7 @@ export const useCreateLibrary = () => {
 	return useMutation({
 		mutationFn: async (input: CreateLibraryInput) => {
 			const response = await graffleClient.request<{
-				createLibrary: MusicLibrary;
+				createLibrary: Library;
 			}>(
 				parse(
 					` ${libraryFragment}
@@ -534,7 +501,6 @@ export const useLikeTrack = () => {
 			return toTrack(response.toggleLike);
 		},
 		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: queryKeys.tracks() });
 			queryClient.invalidateQueries({
 				queryKey: queryKeys.randomTrackWithStats(),
 			});
@@ -563,7 +529,6 @@ export const useBangerTrack = () => {
 			return toTrack(response.toggleBanger);
 		},
 		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: queryKeys.tracks() });
 			queryClient.invalidateQueries({
 				queryKey: queryKeys.randomTrackWithStats(),
 			});
@@ -589,7 +554,6 @@ export const useDislikeTrack = () => {
 			return response.toggleDislike;
 		},
 		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: queryKeys.tracks() });
 			queryClient.invalidateQueries({
 				queryKey: queryKeys.randomTrackWithStats(),
 			});

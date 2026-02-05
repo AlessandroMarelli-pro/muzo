@@ -1,5 +1,6 @@
 import { Type } from '@nestjs/common';
 import { Field, Int, ObjectType } from '@nestjs/graphql';
+import { Base64ID } from '../scalars/base64-id.scalar';
 
 export interface IPaginatedType<T> {
   items: T[];
@@ -28,4 +29,27 @@ export function Paginated<T>(classRef: Type<T>): Type<IPaginatedType<T>> {
     pages: number;
   }
   return PaginatedType as Type<IPaginatedType<T>>;
+}
+
+export type ICursorPaginatedType<T> = {
+  items: T[];
+  nextCursor: string;
+  hasMore: boolean;
+};
+
+export function CursorPaginated<T>(
+  classRef: Type<T>,
+): Type<ICursorPaginatedType<T>> {
+  @ObjectType({ isAbstract: true })
+  abstract class CursorPaginatedType implements ICursorPaginatedType<T> {
+    @Field(() => Boolean)
+    hasMore: boolean;
+
+    @Field(() => [classRef], { nullable: true })
+    items: T[];
+
+    @Field(() => Base64ID)
+    nextCursor: string;
+  }
+  return CursorPaginatedType as Type<ICursorPaginatedType<T>>;
 }

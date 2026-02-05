@@ -6,7 +6,8 @@ import {
 } from '@/components/ui/sheet';
 import { useTracks } from '@/services/api-hooks';
 import { ListFilter } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useInView } from 'react-intersection-observer';
 import { FilterComponent } from '../filters/filter-component';
 import MusicCard from '../track/music-card';
 import { Button } from '../ui/button';
@@ -23,10 +24,24 @@ export function AddTrackDrawer({
 	onOpenChange,
 	addTrackToPlaylist,
 }: AddTrackDrawer) {
-	const { data: tracks = [], isLoading } = useTracks({
-		orderBy: 'lastScannedAt',
-		orderDirection: 'asc',
+	const { ref, inView } = useInView();
+
+	const {
+		data,
+		isLoading,
+		isFetching,
+		isFetchingNextPage,
+		hasNextPage,
+		fetchNextPage,
+	} = useTracks({
+		pagination: {
+			direction: 'AFTER',
+			size: 50,
+		},
 	});
+	console.log(data);
+	const pages = data?.pages;
+	const tracks = pages?.flatMap((page) => page.tracks);
 	const [shouldDisplayFilter, setShouldDisplayFilter] = useState(false);
 	const [divMaxWidth, setDivMaxWidth] = useState<number>(800);
 
@@ -37,6 +52,12 @@ export function AddTrackDrawer({
 		setDivMaxWidth(1200);
 		setShouldDisplayFilter(true);
 	};
+
+	useEffect(() => {
+		if (inView && hasNextPage && !isFetchingNextPage) {
+			fetchNextPage();
+		}
+	}, [inView, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
 	return (
 		<Sheet open={open} onOpenChange={handleOpenChange}>
@@ -75,6 +96,19 @@ export function AddTrackDrawer({
 								height="200"
 							/>
 						))}
+						<div>
+							<button
+								ref={ref}
+								onClick={() => fetchNextPage()}
+								disabled={!hasNextPage || isFetchingNextPage}
+							>
+								{isFetchingNextPage
+									? 'Loading more...'
+									: hasNextPage
+										? 'Load Newer'
+										: 'Nothing more to load'}
+							</button>
+						</div>
 					</div>
 				</div>
 			</SheetContent>

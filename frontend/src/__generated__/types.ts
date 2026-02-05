@@ -129,6 +129,19 @@ export type CreatePlaylistInput = {
   subgenreSelectionMode?: InputMaybe<Scalars['String']['input']>;
 };
 
+export type CursorPaginatedTracks = {
+  __typename?: 'CursorPaginatedTracks';
+  hasMore: Scalars['Boolean']['output'];
+  items?: Maybe<Array<Track>>;
+  nextCursor: Scalars['Base64ID']['output'];
+};
+
+export type CursorPaginationArgs = {
+  cursor?: InputMaybe<Scalars['Base64ID']['input']>;
+  direction?: InputMaybe<Scalars['String']['input']>;
+  size?: InputMaybe<Scalars['Int']['input']>;
+};
+
 export type FilterCriteriaInput = {
   acousticness?: InputMaybe<RangeInput>;
   arousalMood?: InputMaybe<Array<Scalars['String']['input']>>;
@@ -789,7 +802,7 @@ export type User = Node & {
   randomTrackId: Scalars['Base64ID']['output'];
   randomTrackWithStats: RandomTrackWithStats;
   staticFilterOptions: StaticFilterOptions;
-  tracks: Array<Track>;
+  tracks: CursorPaginatedTracks;
 };
 
 
@@ -799,7 +812,7 @@ export type UserPaginatedTracksArgs = {
 
 
 export type UserTracksArgs = {
-  id?: InputMaybe<Scalars['Base64ID']['input']>;
+  pagination?: InputMaybe<CursorPaginationArgs>;
 };
 
 export type YouTubeAuthResult = {
@@ -831,11 +844,11 @@ export type GetLibraryQuery = { __typename?: 'Query', node?:
    | null };
 
 export type GetTracksQueryVariables = Exact<{
-  options?: InputMaybe<TrackQueryOptions>;
+  pagination: CursorPaginationArgs;
 }>;
 
 
-export type GetTracksQuery = { __typename?: 'Query', tracks: Array<{ __typename?: 'SimpleMusicTrack', id: string, artist?: string | null, format?: string | null, title?: string | null, duration: number, genres?: Array<string> | null, subgenres?: Array<string> | null, date?: any | null, listeningCount?: number | null, lastPlayedAt?: any | null, isFavorite?: boolean | null, isLiked?: boolean | null, isBanger?: boolean | null, createdAt?: any | null, updatedAt?: any | null, tempo?: number | null, key?: string | null, valenceMood?: string | null, arousalMood?: string | null, danceabilityFeeling?: string | null, imagePath?: string | null, lastScannedAt?: any | null, fileCreatedAt?: any | null, description?: string | null, tags?: Array<string> | null, vocalsDescriptions?: string | null, atmosphereKeywords?: Array<string> | null, contextBackgrounds?: string | null, contextImpacts?: string | null, libraryId?: string | null }> };
+export type GetTracksQuery = { __typename?: 'Query', me: { __typename?: 'User', tracks: { __typename?: 'CursorPaginatedTracks', hasMore: boolean, nextCursor: any, items?: Array<{ __typename?: 'Track', id: any }> | null } } };
 
 export type GetRandomTrackQueryVariables = Exact<{
   id: Scalars['Base64ID']['input'];
@@ -952,7 +965,7 @@ export type LibraryFragmentFragment = { __typename?: 'Library', id: any, name: s
 export type HomeMetricsQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type HomeMetricsQuery = { __typename?: 'Query', me: { __typename?: 'User', homeMetrics: { __typename?: 'HomeMetrics', totalTracks: number, totalListeningTime: number, artistCount: number, listeningStats: { __typename?: 'ListeningStats', totalPlays: number, totalPlayTime: number }, topArtists: Array<{ __typename?: 'TopArtist', artist: string, trackCount: number, totalDuration: number }>, topGenres: Array<{ __typename?: 'TopGenre', genre: string, trackCount: number }>, recentActivity: Array<{ __typename?: 'RecentActivity', date: string, tracksAdded: number, tracksAnalyzed: number }> } } };
+export type HomeMetricsQuery = { __typename?: 'Query', me: { __typename?: 'User', homeMetrics: { __typename?: 'HomeMetrics', totalTracks: number, totalListeningTime: number, artistCount: number, listeningStats: { __typename?: 'ListeningStats', totalPlays: number, totalPlayTime: number, favoriteCount: number }, topArtists: Array<{ __typename?: 'TopArtist', artist: string, trackCount: number, totalDuration: number }>, topGenres: Array<{ __typename?: 'TopGenre', genre: string, trackCount: number }>, recentActivity: Array<{ __typename?: 'RecentActivity', date: string, tracksAdded: number, tracksAnalyzed: number }> } } };
 
 export type GetWaveformDataQueryVariables = Exact<{
   trackId: Scalars['Base64ID']['input'];

@@ -2,7 +2,7 @@ import { Field, Float, ObjectType } from '@nestjs/graphql';
 import { MusicLibraryId, MusicTrackId } from 'src/clean-arch/kernel/ids';
 import { Base64ID } from '../scalars/base64-id.scalar';
 import { Node } from './common.schema';
-import { Paginated } from './pagination.schema';
+import { CursorPaginated, Paginated } from './pagination.schema';
 
 @ObjectType()
 export class TrackStats {
@@ -149,6 +149,9 @@ export class Track {
 
 @ObjectType()
 export class PaginatedTracks extends Paginated(Track) {}
+
+@ObjectType()
+export class CursorPaginatedTracks extends CursorPaginated(Track) {}
 
 @ObjectType()
 export class RandomTrackWithStats {

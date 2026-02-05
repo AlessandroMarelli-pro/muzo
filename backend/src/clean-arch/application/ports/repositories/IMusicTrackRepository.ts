@@ -5,7 +5,9 @@ import {
   MusicTrack,
 } from 'src/clean-arch/kernel/types/model-types';
 import {
+  CursorPaginationResult,
   PaginationResult,
+  WithCursorPagination,
   WithPagination,
 } from 'src/clean-arch/kernel/types/pagination';
 
@@ -40,6 +42,10 @@ export interface IMusicTrackRepository {
     criteria: FilterCriteria,
     pagination: WithPagination,
   ): Promise<PaginationResult<MusicTrack>>;
+  getManyByCriteriaWithCursorPagination(
+    criteria: FilterCriteria,
+    pagination: WithCursorPagination<MusicTrack>,
+  ): Promise<CursorPaginationResult<MusicTrack>>;
   getRandomTrackId(): Promise<MusicTrackId>;
   updateOneById(
     id: MusicTrackId,

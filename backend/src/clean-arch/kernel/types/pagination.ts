@@ -1,3 +1,4 @@
+import { Maybe } from 'graphql/jsutils/Maybe';
 import { Model } from './model-types';
 
 export const SORTING_DIRECTIONS = ['asc', 'desc'] as const;
@@ -22,4 +23,18 @@ export type PaginationResult<T extends Model> = {
 
 export type WithPagination = {
   pagination: PaginationOptions & SortingOptions;
+};
+
+export type WithCursorPagination<T extends Model> = {
+  size: Maybe<number>;
+  cursor: Maybe<{
+    id: T['id'];
+    direction: 'BEFORE' | 'AFTER';
+  }>;
+};
+
+export type CursorPaginationResult<T extends Model> = {
+  items: T[];
+  nextCursor: Maybe<string>;
+  hasMore: boolean;
 };

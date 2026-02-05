@@ -103,6 +103,18 @@ input CreatePlaylistInput {
   subgenreSelectionMode: String
 }
 
+type CursorPaginatedTracks {
+  hasMore: Boolean!
+  items: [Track!]
+  nextCursor: Base64ID!
+}
+
+input CursorPaginationArgs {
+  cursor: Base64ID
+  direction: String
+  size: Int
+}
+
 """
 A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
 """
@@ -549,7 +561,7 @@ type User implements Node {
   randomTrackId: Base64ID!
   randomTrackWithStats: RandomTrackWithStats!
   staticFilterOptions: StaticFilterOptions!
-  tracks(id: Base64ID): [Track!]!
+  tracks(pagination: CursorPaginationArgs): CursorPaginatedTracks!
 }
 
 type YouTubeAuthResult {

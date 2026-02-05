@@ -11,7 +11,9 @@ import {
   MusicTrack,
 } from 'src/clean-arch/kernel/types/model-types';
 import {
+  CursorPaginationResult,
   PaginationResult,
+  WithCursorPagination,
   WithPagination,
 } from 'src/clean-arch/kernel/types/pagination';
 import { PrismaService } from '../../../../infrastructure/database/prisma.service';
@@ -133,6 +135,39 @@ export class MusicTrackRepository implements IMusicTrackRepository {
       .catch((e: unknown) => {
         console.error('Error in getManyByCriteriaWithPagination', e);
         throw e;
+      });
+  }
+
+  async getManyByCriteriaWithCursorPagination(
+    criteria: FilterCriteria,
+    pagination: WithCursorPagination<MusicTrack>,
+  ): Promise<CursorPaginationResult<MusicTrack>> {
+    const { size = 50, cursor } = pagination;
+    const where = buildMusicTrackFilterWhereClause(criteria);
+
+    return this.prisma.musicTrack
+      .findMany({
+        cursor: cursor?.id ? { id: extractModelId(cursor.id).dbId } : undefined,
+        where,
+        include: musicTracksIncludes,
+        take: size + 1,
+        skip: where?.cursor ? 1 : undefined,
+        orderBy:
+          cursor?.direction === 'BEFORE' ? { id: 'desc' } : { id: 'asc' },
+      })
+      .then((rows) => {
+        if (rows.length === 0) {
+          return { items: [], nextCursor: null, hasMore: false };
+        }
+        const nextCursor =
+          rows.length > size ? toMusicTrackId(rows[rows.length - 1]) : null;
+        const hasMore = rows.length > size;
+        const items = rows.slice(0, size);
+        return {
+          items: items.map(toDomain),
+          nextCursor,
+          hasMore,
+        };
       });
   }
 

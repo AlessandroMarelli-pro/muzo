@@ -89,6 +89,7 @@ export const fetchLibraryMetrics = async (): Promise<HomeMetrics> => {
 					listeningStats {
 						totalPlays
 						totalPlayTime
+						favoriteCount
 					}
 					topArtists {
 						artist
