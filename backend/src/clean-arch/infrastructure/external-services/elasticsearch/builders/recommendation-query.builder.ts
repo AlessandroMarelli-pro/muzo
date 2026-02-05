@@ -81,7 +81,7 @@ export const buildElasticsearchRecommendationQuery = (
     size: criteria.limit || 20,
     query: {
       bool: {
-        must_not: [{ terms: { id: excludeTrackIds } }],
+        must_not: [{ terms: { trackId: excludeTrackIds } }],
         should,
         // Control scoring behavior to prevent scores exceeding calculated maximum
         minimum_should_match: 1,

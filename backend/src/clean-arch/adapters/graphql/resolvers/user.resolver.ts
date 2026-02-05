@@ -18,9 +18,12 @@ import { AuthGuard } from '../context/auth.guard';
 import { toFilter } from '../mappers/saved-filter.mapper';
 
 import { GetHomeMetricsUseCase } from 'src/clean-arch/application/use-cases/metrics/GetHomeMetrics';
+import { GetLibrariesUseCase } from 'src/clean-arch/application/use-cases/music-library/GetLibraries';
 import { parseMusicTrackId } from '../../common/utils/parse-id';
+import { toMusicLibrary } from '../mappers/music-library.mapper';
 import { toTrack } from '../mappers/track.mapper';
 import { Base64ID } from '../scalars/base64-id.scalar';
+import { Library } from '../schema/library.schema';
 import { HomeMetrics } from '../schema/metrics.schema';
 import { MusicPlayer } from '../schema/music-player.schema';
 import { CleanArchQueueItem } from '../schema/queue-item.schema';
@@ -44,6 +47,7 @@ export class UserResolver {
     private readonly getTrackUseCase: GetTrackUseCase,
     private readonly getTracksUseCase: GetTracksUseCase,
     private readonly getRandomTrackIdUseCase: GetRandomTrackIdUseCase,
+    private readonly getLibrariesUseCase: GetLibrariesUseCase,
   ) {}
 
   @Query(() => User)
@@ -114,5 +118,12 @@ export class UserResolver {
   @ResolveField(() => Base64ID)
   async randomTrackId(): Promise<string> {
     return this.getRandomTrackIdUseCase.execute();
+  }
+
+  @ResolveField(() => [Library])
+  async libraries(): Promise<Library[]> {
+    return this.getLibrariesUseCase
+      .execute()
+      .then((libraries) => libraries.map(toMusicLibrary));
   }
 }

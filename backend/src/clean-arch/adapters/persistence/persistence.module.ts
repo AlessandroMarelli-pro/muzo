@@ -8,6 +8,7 @@ import { PLAYLIST_STATS_QUERY } from 'src/clean-arch/application/ports/queries/I
 import { RECOMMENDATION_DATA_PORT } from 'src/clean-arch/application/ports/queries/IRecommendationDataPort';
 import { SAVED_FILTER_QUERY } from 'src/clean-arch/application/ports/queries/ISavedFilterQuery';
 import { IMAGE_SEARCH_REPOSITORY } from 'src/clean-arch/application/ports/repositories/IImageSearchRepository';
+import { MUSIC_LIBRARY_REPOSITORY } from 'src/clean-arch/application/ports/repositories/IMusicLibraryRepository';
 import { MUSIC_TRACK_REPOSITORY } from 'src/clean-arch/application/ports/repositories/IMusicTrackRepository';
 import { PLAYLIST_REPOSITORY } from 'src/clean-arch/application/ports/repositories/IPlaylistRepository';
 import { PLAYLIST_SORTING_REPOSITORY } from 'src/clean-arch/application/ports/repositories/IPlaylistSortingRepository';
@@ -22,6 +23,7 @@ import { PlaylistStatsQuery } from './queries/playlist/playlist-stats.query';
 import { SavedFilterQuery } from './queries/saved-filter/saved-filter.query';
 import { RecommendationDataPort } from './recommendation/recommendation-data.port';
 import { ImageSearchRepository } from './repositories/image-search/image-search.repository';
+import { MusicLibraryRepository } from './repositories/music-library/music-library.repository';
 import { MusicTrackRepository } from './repositories/music-track/music-track.repository';
 import { PlaylistSortingRepository } from './repositories/playlist-sorting/playlist-sorting.repository';
 import { PlaylistTrackRepository } from './repositories/playlist-track/playlist-track.repository';
@@ -50,6 +52,7 @@ import { SavedFilterRepository } from './repositories/saved-filter/saved-filter.
     { provide: METRICS_QUERY, useClass: MetricsQuery },
     { provide: AUDIO_WAVEFORM_GENERATOR, useClass: WaveformGenerator },
     { provide: RECOMMENDATION_DATA_PORT, useClass: RecommendationDataPort },
+    { provide: MUSIC_LIBRARY_REPOSITORY, useClass: MusicLibraryRepository },
   ],
   exports: [
     PLAYLIST_REPOSITORY,
@@ -65,6 +68,7 @@ import { SavedFilterRepository } from './repositories/saved-filter/saved-filter.
     METRICS_QUERY,
     AUDIO_WAVEFORM_GENERATOR,
     RECOMMENDATION_DATA_PORT,
+    MUSIC_LIBRARY_REPOSITORY,
   ],
 })
 export class AdaptersPersistenceModule {}

@@ -1,6 +1,7 @@
 // adapters/graphql/utils/parse-id.ts
 import { BadRequestException } from '@nestjs/common';
 import type {
+  MusicLibraryId,
   MusicTrackId,
   PlaylistId,
   PlaylistTrackId,
@@ -38,3 +39,6 @@ export const parseSavedFilterId = (value: string): SavedFilterId =>
 
 export const parseQueueItemId = (value: string): QueueItemId =>
   parseId(value, models.queueItem.isId, 'QueueItem');
+
+export const parseMusicLibraryId = (value: string): MusicLibraryId =>
+  parseId(value, models.musicLibrary.isId, 'MusicLibrary');

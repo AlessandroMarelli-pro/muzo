@@ -1,5 +1,6 @@
 export * from './image';
 export * from './metrics';
+export * from './music-library';
 export * from './music-track';
 export * from './playback-queue';
 export * from './playlist';

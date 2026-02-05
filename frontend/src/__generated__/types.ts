@@ -198,11 +198,21 @@ export type ImageSearch = {
   source: Scalars['String']['output'];
 };
 
-export type LibraryQueryOptions = {
-  limit?: InputMaybe<Scalars['Float']['input']>;
-  offset?: InputMaybe<Scalars['Float']['input']>;
-  orderBy?: InputMaybe<Scalars['String']['input']>;
-  orderDirection?: InputMaybe<Scalars['String']['input']>;
+export type Library = Node & {
+  __typename?: 'Library';
+  analyzedTracks: Scalars['Float']['output'];
+  createdAt: Scalars['DateTime']['output'];
+  failedTracks: Scalars['Float']['output'];
+  id: Scalars['Base64ID']['output'];
+  lastIncrementalScanAt?: Maybe<Scalars['DateTime']['output']>;
+  lastScanAt?: Maybe<Scalars['DateTime']['output']>;
+  name: Scalars['String']['output'];
+  pendingTracks: Scalars['Float']['output'];
+  rootPath: Scalars['String']['output'];
+  scanStatus: Scalars['String']['output'];
+  settings: LibrarySettings;
+  totalTracks: Scalars['Float']['output'];
+  updatedAt: Scalars['DateTime']['output'];
 };
 
 export type LibraryScanResult = {
@@ -224,7 +234,7 @@ export type LibrarySettings = {
   includeSubdirectories: Scalars['Boolean']['output'];
   maxFileSize?: Maybe<Scalars['Float']['output']>;
   scanInterval?: Maybe<Scalars['Float']['output']>;
-  supportedFormats: Array<Scalars['String']['output']>;
+  supportedFormats: Scalars['String']['output'];
 };
 
 export type ListeningStats = {
@@ -232,28 +242,6 @@ export type ListeningStats = {
   favoriteCount: Scalars['Int']['output'];
   totalPlayTime: Scalars['Float']['output'];
   totalPlays: Scalars['Int']['output'];
-};
-
-export type MusicLibrary = {
-  __typename?: 'MusicLibrary';
-  analyzedTracks: Scalars['Float']['output'];
-  autoScan: Scalars['Boolean']['output'];
-  createdAt: Scalars['DateTime']['output'];
-  failedTracks: Scalars['Float']['output'];
-  id: Scalars['ID']['output'];
-  includeSubdirectories: Scalars['Boolean']['output'];
-  lastIncrementalScanAt?: Maybe<Scalars['DateTime']['output']>;
-  lastScanAt?: Maybe<Scalars['DateTime']['output']>;
-  maxFileSize?: Maybe<Scalars['Float']['output']>;
-  name: Scalars['String']['output'];
-  pendingTracks: Scalars['Float']['output'];
-  rootPath: Scalars['String']['output'];
-  scanInterval?: Maybe<Scalars['Float']['output']>;
-  scanStatus: Scalars['String']['output'];
-  settings: LibrarySettings;
-  supportedFormats: Scalars['String']['output'];
-  totalTracks: Scalars['Float']['output'];
-  updatedAt: Scalars['DateTime']['output'];
 };
 
 export type MusicPlayer = {
@@ -324,7 +312,7 @@ export type Mutation = {
   authenticateYouTube: YouTubeAuthResult;
   bangerTrack: SimpleMusicTrack;
   caUpdatePlaylist: CleanArchPlaylist;
-  createLibrary: MusicLibrary;
+  createLibrary: Library;
   createPlaylist: CleanArchPlaylist;
   createSavedFilter: FilterCriteriaResult;
   deleteLibrary: Scalars['Boolean']['output'];
@@ -336,14 +324,12 @@ export type Mutation = {
   removeTrackFromPlaylist: Scalars['Boolean']['output'];
   removeTrackFromQueue: RemoveTrackFromQueueResponse;
   resetQueue: Scalars['Boolean']['output'];
-  scheduleLibraryScan: LibraryScanResult;
   startLibraryScan: LibraryScanResult;
   stopLibraryScan: Scalars['Boolean']['output'];
   syncPlaylistToSpotify: SyncResult;
   syncPlaylistToTidal: SyncResult;
   syncPlaylistToYouTube: SyncResult;
   toggleFavorite: MusicTrack;
-  updateLibrary: MusicLibrary;
   updatePlaylistSorting: CleanArchPlaylistSorting;
   updatePlaylistTracksPositions: Scalars['Boolean']['output'];
   updateQueuePositions: Array<QueueItem>;
@@ -414,7 +400,7 @@ export type MutationCreateSavedFilterArgs = {
 
 
 export type MutationDeleteLibraryArgs = {
-  id: Scalars['ID']['input'];
+  id: Scalars['Base64ID']['input'];
 };
 
 
@@ -454,11 +440,6 @@ export type MutationRemoveTrackFromQueueArgs = {
 };
 
 
-export type MutationScheduleLibraryScanArgs = {
-  libraryId: Scalars['ID']['input'];
-};
-
-
 export type MutationStartLibraryScanArgs = {
   incremental?: InputMaybe<Scalars['Boolean']['input']>;
   libraryId: Scalars['ID']['input'];
@@ -490,12 +471,6 @@ export type MutationSyncPlaylistToYouTubeArgs = {
 
 export type MutationToggleFavoriteArgs = {
   trackId: Scalars['String']['input'];
-};
-
-
-export type MutationUpdateLibraryArgs = {
-  id: Scalars['ID']['input'];
-  input: UpdateLibraryInput;
 };
 
 
@@ -544,12 +519,9 @@ export type Query = {
   getSpotifyAuthUrl: SpotifyAuthUrl;
   getTidalAuthUrl: TidalAuthUrl;
   getYouTubeAuthUrl: YouTubeAuthUrl;
-  libraries: Array<MusicLibrary>;
-  library?: Maybe<MusicLibrary>;
   me: User;
   /** Fetch any node by global ID. Use inline fragments (... on CleanArchPlaylist { ... }) to request fields. */
   node?: Maybe<Node>;
-  randomTrack: SimpleMusicTrack;
   randomTrackWithStats: RandomTrackWithStats;
   recentlyPlayed: Array<SimpleMusicTrack>;
   tracks: Array<SimpleMusicTrack>;
@@ -557,24 +529,8 @@ export type Query = {
 };
 
 
-export type QueryLibrariesArgs = {
-  options?: InputMaybe<LibraryQueryOptions>;
-};
-
-
-export type QueryLibraryArgs = {
-  id: Scalars['ID']['input'];
-};
-
-
 export type QueryNodeArgs = {
   id: Scalars['Base64ID']['input'];
-};
-
-
-export type QueryRandomTrackArgs = {
-  filterLiked?: InputMaybe<Scalars['Boolean']['input']>;
-  id?: InputMaybe<Scalars['String']['input']>;
 };
 
 
@@ -832,16 +788,6 @@ export type TrackTechnicalInfo = {
   format: Scalars['String']['output'];
 };
 
-export type UpdateLibraryInput = {
-  autoScan?: InputMaybe<Scalars['Boolean']['input']>;
-  includeSubdirectories?: InputMaybe<Scalars['Boolean']['input']>;
-  maxFileSize?: InputMaybe<Scalars['Int']['input']>;
-  name?: InputMaybe<Scalars['String']['input']>;
-  rootPath?: InputMaybe<Scalars['String']['input']>;
-  scanInterval?: InputMaybe<Scalars['Int']['input']>;
-  supportedFormats?: InputMaybe<Array<Scalars['String']['input']>>;
-};
-
 export type UpdatePlaylistPositionInput = {
   id: Scalars['Base64ID']['input'];
   position: Scalars['Int']['input'];
@@ -874,6 +820,7 @@ export type User = Node & {
   homeMetrics: HomeMetrics;
   id: Scalars['Base64ID']['output'];
   lastName?: Maybe<Scalars['String']['output']>;
+  libraries: Array<Library>;
   musicPlayer: MusicPlayer;
   playlists: PlaylistsResult;
   queue: Array<QueueItem>;
@@ -901,14 +848,19 @@ export type YouTubeAuthUrl = {
 export type GetLibrariesQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type GetLibrariesQuery = { __typename?: 'Query', libraries: Array<{ __typename?: 'MusicLibrary', id: string, name: string, rootPath: string, totalTracks: number, analyzedTracks: number, pendingTracks: number, failedTracks: number, lastScanAt?: any | null, lastIncrementalScanAt?: any | null, scanStatus: string, createdAt: any, updatedAt: any, settings: { __typename?: 'LibrarySettings', autoScan: boolean, scanInterval?: number | null, includeSubdirectories: boolean, supportedFormats: Array<string>, maxFileSize?: number | null } }> };
+export type GetLibrariesQuery = { __typename?: 'Query', me: { __typename?: 'User', libraries: Array<{ __typename?: 'Library', id: any, name: string, rootPath: string, totalTracks: number, analyzedTracks: number, pendingTracks: number, failedTracks: number, lastScanAt?: any | null, lastIncrementalScanAt?: any | null, scanStatus: string, createdAt: any, updatedAt: any, settings: { __typename?: 'LibrarySettings', autoScan: boolean, includeSubdirectories: boolean, supportedFormats: string, maxFileSize?: number | null, scanInterval?: number | null } }> } };
 
 export type GetLibraryQueryVariables = Exact<{
-  id: Scalars['ID']['input'];
+  id: Scalars['Base64ID']['input'];
 }>;
 
 
-export type GetLibraryQuery = { __typename?: 'Query', library?: { __typename?: 'MusicLibrary', id: string, name: string, rootPath: string, totalTracks: number, analyzedTracks: number, pendingTracks: number, failedTracks: number, lastScanAt?: any | null, lastIncrementalScanAt?: any | null, scanStatus: string, createdAt: any, updatedAt: any, settings: { __typename?: 'LibrarySettings', autoScan: boolean, scanInterval?: number | null, includeSubdirectories: boolean, supportedFormats: Array<string>, maxFileSize?: number | null } } | null };
+export type GetLibraryQuery = { __typename?: 'Query', node?:
+    | { __typename?: 'CleanArchPlaylist' }
+    | { __typename?: 'Library', id: any, name: string, rootPath: string, totalTracks: number, analyzedTracks: number, pendingTracks: number, failedTracks: number, lastScanAt?: any | null, lastIncrementalScanAt?: any | null, scanStatus: string, createdAt: any, updatedAt: any, settings: { __typename?: 'LibrarySettings', autoScan: boolean, includeSubdirectories: boolean, supportedFormats: string, maxFileSize?: number | null, scanInterval?: number | null } }
+    | { __typename?: 'Track' }
+    | { __typename?: 'User' }
+   | null };
 
 export type GetTracksQueryVariables = Exact<{
   options?: InputMaybe<TrackQueryOptions>;
@@ -918,12 +870,16 @@ export type GetTracksQueryVariables = Exact<{
 export type GetTracksQuery = { __typename?: 'Query', tracks: Array<{ __typename?: 'SimpleMusicTrack', id: string, artist?: string | null, format?: string | null, title?: string | null, duration: number, genres?: Array<string> | null, subgenres?: Array<string> | null, date?: any | null, listeningCount?: number | null, lastPlayedAt?: any | null, isFavorite?: boolean | null, isLiked?: boolean | null, isBanger?: boolean | null, createdAt?: any | null, updatedAt?: any | null, tempo?: number | null, key?: string | null, valenceMood?: string | null, arousalMood?: string | null, danceabilityFeeling?: string | null, imagePath?: string | null, lastScannedAt?: any | null, fileCreatedAt?: any | null, description?: string | null, tags?: Array<string> | null, vocalsDescriptions?: string | null, atmosphereKeywords?: Array<string> | null, contextBackgrounds?: string | null, contextImpacts?: string | null, libraryId?: string | null }> };
 
 export type GetRandomTrackQueryVariables = Exact<{
-  id?: InputMaybe<Scalars['String']['input']>;
-  filterLiked?: InputMaybe<Scalars['Boolean']['input']>;
+  id: Scalars['Base64ID']['input'];
 }>;
 
 
-export type GetRandomTrackQuery = { __typename?: 'Query', randomTrack: { __typename?: 'SimpleMusicTrack', id: string, artist?: string | null, format?: string | null, title?: string | null, duration: number, genres?: Array<string> | null, subgenres?: Array<string> | null, date?: any | null, listeningCount?: number | null, lastPlayedAt?: any | null, isFavorite?: boolean | null, isLiked?: boolean | null, isBanger?: boolean | null, createdAt?: any | null, updatedAt?: any | null, tempo?: number | null, key?: string | null, valenceMood?: string | null, arousalMood?: string | null, danceabilityFeeling?: string | null, imagePath?: string | null, lastScannedAt?: any | null, fileCreatedAt?: any | null, description?: string | null, tags?: Array<string> | null, vocalsDescriptions?: string | null, atmosphereKeywords?: Array<string> | null, contextBackgrounds?: string | null, contextImpacts?: string | null, libraryId?: string | null } };
+export type GetRandomTrackQuery = { __typename?: 'Query', node?:
+    | { __typename?: 'CleanArchPlaylist' }
+    | { __typename?: 'Library' }
+    | { __typename?: 'Track', id: any, artist?: string | null, title?: string | null, createdAt?: any | null, updatedAt?: any | null, imagePath?: string | null, lastScannedAt?: any | null, libraryId?: string | null, stats: { __typename?: 'TrackStats', listeningCount: number, lastPlayedAt?: any | null, isFavorite: boolean, isLiked: boolean, isBanger: boolean }, fileInfo: { __typename?: 'TrackFileInfo', filePath: string, fileName: string, fileSize: number, fileCreatedAt: any }, technicalInfo: { __typename?: 'TrackTechnicalInfo', duration: number, format: string }, metadata: { __typename?: 'TrackMetadata', album?: string | null, date?: any | null, genres?: Array<string> | null, subgenres?: Array<string> | null }, aiMetadata: { __typename?: 'TrackAIMetadata', tags?: Array<string> | null, vocalsDesc?: string | null, description?: string | null, vocalsDescriptions?: string | null, atmosphereKeywords?: Array<string> | null, contextBackgrounds?: string | null, contextImpacts?: string | null }, musicalFeatures: { __typename?: 'TrackMusicalFeatures', tempo?: number | null, key?: string | null, valenceMood?: string | null, arousalMood?: string | null, danceabilityFeeling?: string | null, acousticness?: number | null, instrumentalness?: number | null, speechiness?: number | null } }
+    | { __typename?: 'User' }
+   | null };
 
 export type GetRandomTrackWithStatsQueryVariables = Exact<{ [key: string]: never; }>;
 
@@ -938,6 +894,7 @@ export type GetTrackRecommendationsQueryVariables = Exact<{
 
 export type GetTrackRecommendationsQuery = { __typename?: 'Query', node?:
     | { __typename?: 'CleanArchPlaylist' }
+    | { __typename?: 'Library' }
     | { __typename?: 'Track', recommendations: Array<{ __typename?: 'TrackRecommendation', similarity: number, reasons: Array<string>, track: { __typename?: 'Track', id: any, artist?: string | null, title?: string | null, createdAt?: any | null, updatedAt?: any | null, imagePath?: string | null, lastScannedAt?: any | null, libraryId?: string | null, stats: { __typename?: 'TrackStats', listeningCount: number, lastPlayedAt?: any | null, isFavorite: boolean, isLiked: boolean, isBanger: boolean }, fileInfo: { __typename?: 'TrackFileInfo', filePath: string, fileName: string, fileSize: number, fileCreatedAt: any }, technicalInfo: { __typename?: 'TrackTechnicalInfo', duration: number, format: string }, metadata: { __typename?: 'TrackMetadata', album?: string | null, date?: any | null, genres?: Array<string> | null, subgenres?: Array<string> | null }, aiMetadata: { __typename?: 'TrackAIMetadata', tags?: Array<string> | null, vocalsDesc?: string | null, description?: string | null, vocalsDescriptions?: string | null, atmosphereKeywords?: Array<string> | null, contextBackgrounds?: string | null, contextImpacts?: string | null }, musicalFeatures: { __typename?: 'TrackMusicalFeatures', tempo?: number | null, key?: string | null, valenceMood?: string | null, arousalMood?: string | null, danceabilityFeeling?: string | null, acousticness?: number | null, instrumentalness?: number | null, speechiness?: number | null } } }> }
     | { __typename?: 'User' }
    | null };
@@ -1022,6 +979,8 @@ export type PlaylistFragmentFragment = { __typename?: 'CleanArchPlaylist', id: a
 
 export type FilterFragmentFragment = { __typename?: 'FilterCriteriaResult', id: any, name: string, criteria: { __typename?: 'FilterCriteriaType', valenceMood?: Array<string> | null, arousalMood?: Array<string> | null, danceabilityFeeling?: Array<string> | null, genreIds?: Array<any> | null, keyIds?: Array<string> | null, subgenreIds?: Array<any> | null, artist?: string | null, title?: string | null, libraryIds?: Array<any> | null, atmosphereIds?: Array<string> | null, tempo?: { __typename?: 'Range', max: number, min: number } | null, speechiness?: { __typename?: 'Range', max: number, min: number } | null, instrumentalness?: { __typename?: 'Range', max: number, min: number } | null, liveness?: { __typename?: 'Range', max: number, min: number } | null, acousticness?: { __typename?: 'Range', max: number, min: number } | null } };
 
+export type LibraryFragmentFragment = { __typename?: 'Library', id: any, name: string, rootPath: string, totalTracks: number, analyzedTracks: number, pendingTracks: number, failedTracks: number, lastScanAt?: any | null, lastIncrementalScanAt?: any | null, scanStatus: string, createdAt: any, updatedAt: any, settings: { __typename?: 'LibrarySettings', autoScan: boolean, includeSubdirectories: boolean, supportedFormats: string, maxFileSize?: number | null, scanInterval?: number | null } };
+
 export type HomeMetricsQueryVariables = Exact<{ [key: string]: never; }>;
 
 
@@ -1057,6 +1016,7 @@ export type GetPlaylistQueryVariables = Exact<{
 
 export type GetPlaylistQuery = { __typename?: 'Query', node?:
     | { __typename?: 'CleanArchPlaylist', id: any, name: string, description?: string | null, isPublic: boolean, createdAt: any, updatedAt: any, createdById: any, updatedById?: any | null, stats?: { __typename?: 'CleanArchPlaylistStats', genresCount: number, numberOfTracks: number, subgenresCount: number, topGenres: Array<string>, topSubgenres: Array<string>, totalDuration: number, images: Array<string>, bpmRange: { __typename?: 'Range', min: number, max: number }, energyRange: { __typename?: 'Range', min: number, max: number } } | null, sorting?: { __typename?: 'CleanArchPlaylistSorting', id: any, playlistId: any, sortingKey: string, sortingDirection: string, createdAt: any, updatedAt: any } | null, tracks?: Array<{ __typename?: 'CleanArchPlaylistTrack', id: any, position: number, addedAt: any, track?: { __typename?: 'Track', id: any, artist?: string | null, title?: string | null, createdAt?: any | null, updatedAt?: any | null, imagePath?: string | null, lastScannedAt?: any | null, libraryId?: string | null, stats: { __typename?: 'TrackStats', listeningCount: number, lastPlayedAt?: any | null, isFavorite: boolean, isLiked: boolean, isBanger: boolean }, fileInfo: { __typename?: 'TrackFileInfo', filePath: string, fileName: string, fileSize: number, fileCreatedAt: any }, technicalInfo: { __typename?: 'TrackTechnicalInfo', duration: number, format: string }, metadata: { __typename?: 'TrackMetadata', album?: string | null, date?: any | null, genres?: Array<string> | null, subgenres?: Array<string> | null }, aiMetadata: { __typename?: 'TrackAIMetadata', tags?: Array<string> | null, vocalsDesc?: string | null, description?: string | null, vocalsDescriptions?: string | null, atmosphereKeywords?: Array<string> | null, contextBackgrounds?: string | null, contextImpacts?: string | null }, musicalFeatures: { __typename?: 'TrackMusicalFeatures', tempo?: number | null, key?: string | null, valenceMood?: string | null, arousalMood?: string | null, danceabilityFeeling?: string | null, acousticness?: number | null, instrumentalness?: number | null, speechiness?: number | null } } | null }> | null }
+    | { __typename?: 'Library' }
     | { __typename?: 'Track' }
     | { __typename?: 'User' }
    | null };
@@ -1176,6 +1136,7 @@ export type GetPlaylistRecommendationsQueryVariables = Exact<{
 
 export type GetPlaylistRecommendationsQuery = { __typename?: 'Query', node?:
     | { __typename?: 'CleanArchPlaylist', recommendations?: Array<{ __typename?: 'TrackRecommendation', similarity: number, reasons: Array<string>, track: { __typename?: 'Track', id: any, artist?: string | null, title?: string | null, createdAt?: any | null, updatedAt?: any | null, imagePath?: string | null, lastScannedAt?: any | null, libraryId?: string | null, stats: { __typename?: 'TrackStats', listeningCount: number, lastPlayedAt?: any | null, isFavorite: boolean, isLiked: boolean, isBanger: boolean }, fileInfo: { __typename?: 'TrackFileInfo', filePath: string, fileName: string, fileSize: number, fileCreatedAt: any }, technicalInfo: { __typename?: 'TrackTechnicalInfo', duration: number, format: string }, metadata: { __typename?: 'TrackMetadata', album?: string | null, date?: any | null, genres?: Array<string> | null, subgenres?: Array<string> | null }, aiMetadata: { __typename?: 'TrackAIMetadata', tags?: Array<string> | null, vocalsDesc?: string | null, description?: string | null, vocalsDescriptions?: string | null, atmosphereKeywords?: Array<string> | null, contextBackgrounds?: string | null, contextImpacts?: string | null }, musicalFeatures: { __typename?: 'TrackMusicalFeatures', tempo?: number | null, key?: string | null, valenceMood?: string | null, arousalMood?: string | null, danceabilityFeeling?: string | null, acousticness?: number | null, instrumentalness?: number | null, speechiness?: number | null } } }> | null }
+    | { __typename?: 'Library' }
     | { __typename?: 'Track' }
     | { __typename?: 'User' }
    | null };

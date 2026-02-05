@@ -32,8 +32,10 @@ model MusicLibrary {
   maxFileSize           Int?     // in MB
   
   // Timestamps
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
+  createdAt   DateTime @default(now())
+  createdById   String @default("userId")
+  updatedAt   DateTime? @updatedAt
+  updatedById  String?
   
   // Relations
   tracks                MusicTrack[]
@@ -396,21 +398,6 @@ model SavedFilter {
   @@map("saved_filters")
 }
 
-model UserRecommendationPreferences {
-  id        String   @id @default(uuid())
-  userId    String
-  weights   String   // JSON string containing recommendation weights
-  isDefault Boolean  @default(false)
-  
-  // Timestamps
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  
-  // Indexes for query performance
-  @@index([userId])
-  @@index([isDefault])
-  @@map("user_recommendation_preferences")
-}
 
 // Genre and Subgenre Models
 

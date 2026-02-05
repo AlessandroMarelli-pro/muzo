@@ -172,11 +172,20 @@ type ImageSearch {
   source: String!
 }
 
-input LibraryQueryOptions {
-  limit: Float
-  offset: Float
-  orderBy: String
-  orderDirection: String
+type Library implements Node {
+  analyzedTracks: Float!
+  createdAt: DateTime!
+  failedTracks: Float!
+  id: Base64ID!
+  lastIncrementalScanAt: DateTime
+  lastScanAt: DateTime
+  name: String!
+  pendingTracks: Float!
+  rootPath: String!
+  scanStatus: String!
+  settings: LibrarySettings!
+  totalTracks: Float!
+  updatedAt: DateTime!
 }
 
 type LibraryScanResult {
@@ -196,34 +205,13 @@ type LibrarySettings {
   includeSubdirectories: Boolean!
   maxFileSize: Float
   scanInterval: Float
-  supportedFormats: [String!]!
+  supportedFormats: String!
 }
 
 type ListeningStats {
   favoriteCount: Int!
   totalPlayTime: Float!
   totalPlays: Int!
-}
-
-type MusicLibrary {
-  analyzedTracks: Float!
-  autoScan: Boolean!
-  createdAt: DateTime!
-  failedTracks: Float!
-  id: ID!
-  includeSubdirectories: Boolean!
-  lastIncrementalScanAt: DateTime
-  lastScanAt: DateTime
-  maxFileSize: Float
-  name: String!
-  pendingTracks: Float!
-  rootPath: String!
-  scanInterval: Float
-  scanStatus: String!
-  settings: LibrarySettings!
-  supportedFormats: String!
-  totalTracks: Float!
-  updatedAt: DateTime!
 }
 
 type MusicPlayer {
@@ -285,10 +273,10 @@ type Mutation {
   authenticateYouTube(code: String!, userId: String!): YouTubeAuthResult!
   bangerTrack(trackId: ID!): SimpleMusicTrack!
   caUpdatePlaylist(id: Base64ID!, input: CleanArchUpdatePlaylistInput!): CleanArchPlaylist!
-  createLibrary(input: CreateLibraryInput!): MusicLibrary!
+  createLibrary(input: CreateLibraryInput!): Library!
   createPlaylist(input: CreatePlaylistInput!): CleanArchPlaylist!
   createSavedFilter(input: SavedFilterInput!): FilterCriteriaResult!
-  deleteLibrary(id: ID!): Boolean!
+  deleteLibrary(id: Base64ID!): Boolean!
   deletePlaylist(id: Base64ID!): Boolean!
   deleteSavedFilter(id: Base64ID!): Boolean!
   dislikeTrack(trackId: ID!): Boolean!
@@ -297,14 +285,12 @@ type Mutation {
   removeTrackFromPlaylist(playlistId: Base64ID!, trackId: Base64ID!): Boolean!
   removeTrackFromQueue(trackId: Base64ID!): RemoveTrackFromQueueResponse!
   resetQueue: Boolean!
-  scheduleLibraryScan(libraryId: ID!): LibraryScanResult!
   startLibraryScan(incremental: Boolean, libraryId: ID!): LibraryScanResult!
   stopLibraryScan(libraryId: ID!): Boolean!
   syncPlaylistToSpotify(playlistId: ID!, userId: String!): SyncResult!
   syncPlaylistToTidal(playlistId: ID!, userId: String!): SyncResult!
   syncPlaylistToYouTube(playlistId: ID!, userId: String!): SyncResult!
   toggleFavorite(trackId: String!): MusicTrack!
-  updateLibrary(id: ID!, input: UpdateLibraryInput!): MusicLibrary!
   updatePlaylistSorting(input: UpdatePlaylistSortingInput!, playlistId: Base64ID!): CleanArchPlaylistSorting!
   updatePlaylistTracksPositions(input: UpdatePlaylistPositionsInput!, playlistId: Base64ID!): Boolean!
   updateQueuePositions(input: UpdateQueuePositionsInput!): [QueueItem!]!
@@ -332,8 +318,6 @@ type Query {
   getSpotifyAuthUrl: SpotifyAuthUrl!
   getTidalAuthUrl: TidalAuthUrl!
   getYouTubeAuthUrl: YouTubeAuthUrl!
-  libraries(options: LibraryQueryOptions): [MusicLibrary!]!
-  library(id: ID!): MusicLibrary
   me: User!
 
   """
@@ -559,16 +543,6 @@ type TrackTechnicalInfo {
   format: String!
 }
 
-input UpdateLibraryInput {
-  autoScan: Boolean
-  includeSubdirectories: Boolean
-  maxFileSize: Int
-  name: String
-  rootPath: String
-  scanInterval: Int
-  supportedFormats: [String!]
-}
-
 input UpdatePlaylistPositionInput {
   id: Base64ID!
   position: Int!
@@ -600,6 +574,7 @@ type User implements Node {
   homeMetrics: HomeMetrics!
   id: Base64ID!
   lastName: String
+  libraries: [Library!]!
   musicPlayer: MusicPlayer!
   playlists: PlaylistsResult!
   queue: [QueueItem!]!

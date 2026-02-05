@@ -10,6 +10,7 @@ import { Base64ID } from '../scalars/base64-id.scalar';
     if (modelName === 'Playlist') return 'CleanArchPlaylist';
     if (modelName === 'User') return 'User';
     if (modelName === 'MusicTrack') return 'Track';
+    if (modelName === 'MusicLibrary') return 'Library';
     return null;
   },
 })

@@ -8,6 +8,7 @@ import { parse } from 'graphql';
 import type {
 	CreateLibraryInput,
 	GetRecentlyPlayedQuery,
+	Library,
 	MusicLibrary,
 	MusicTrack,
 	MusicTrackListPaginated,
@@ -16,9 +17,8 @@ import type {
 	StaticFilterOptions,
 	Track,
 	TrackRecommendation,
-	UpdateLibraryInput,
 } from '../__generated__/types';
-import { trackFragment } from './fragments';
+import { libraryFragment, trackFragment } from './fragments';
 import { gql, graffleClient } from './graffle-client';
 import { simpleMusicTrackFragment } from './playlist-hooks';
 import { toTrack } from './track.mapper';
@@ -121,33 +121,18 @@ export const trackRecommendationsQueryOptions = (
 
 export const fetchLibraries = async () => {
 	const response = await graffleClient.request<{
-		libraries: MusicLibrary[];
+		me: { libraries: Library[] };
 	}>(gql`
+		${libraryFragment}
 		query GetLibraries {
-			libraries {
-				id
-				name
-				rootPath
-				totalTracks
-				analyzedTracks
-				pendingTracks
-				failedTracks
-				lastScanAt
-				lastIncrementalScanAt
-				scanStatus
-				settings {
-					autoScan
-					scanInterval
-					includeSubdirectories
-					supportedFormats
-					maxFileSize
+			me {
+				libraries {
+					...LibraryFragment
 				}
-				createdAt
-				updatedAt
 			}
 		}
 	`);
-	return response.libraries;
+	return response.me.libraries;
 };
 
 // Library Queries
@@ -162,35 +147,22 @@ export const useLibrary = (id: string) => {
 	return useQuery({
 		queryKey: queryKeys.library(id),
 		queryFn: async () => {
-			const response = await graffleClient.request<{ library: MusicLibrary }>({
+			const response = await graffleClient.request<{
+				node: Library;
+			}>({
 				document: parse(gql`
-					query GetLibrary($id: ID!) {
-						library(id: $id) {
-							id
-							name
-							rootPath
-							totalTracks
-							analyzedTracks
-							pendingTracks
-							failedTracks
-							lastScanAt
-							lastIncrementalScanAt
-							scanStatus
-							settings {
-								autoScan
-								scanInterval
-								includeSubdirectories
-								supportedFormats
-								maxFileSize
+					${libraryFragment}
+					query GetLibrary($id: Base64ID!) {
+						node(id: $id) {
+							... on Library {
+								...LibraryFragment
 							}
-							createdAt
-							updatedAt
 						}
 					}
 				`),
 				variables: { id },
 			});
-			return response.library;
+			return response.node;
 		},
 		enabled: !!id,
 	});
@@ -477,26 +449,10 @@ export const useCreateLibrary = () => {
 				createLibrary: MusicLibrary;
 			}>(
 				parse(
-					`
+					` ${libraryFragment}
           mutation CreateLibrary($input: CreateLibraryInput!) {
             createLibrary(input: $input) {
-              id
-              name
-              rootPath
-              totalTracks
-              analyzedTracks
-              pendingTracks
-              failedTracks
-              scanStatus
-              settings {
-                autoScan
-                scanInterval
-                includeSubdirectories
-                supportedFormats
-                maxFileSize
-              }
-              createdAt
-              updatedAt
+              ...LibraryFragment
             }
           }
         `
@@ -505,58 +461,14 @@ export const useCreateLibrary = () => {
 			);
 			return response.createLibrary;
 		},
-		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: queryKeys.libraries });
-		},
-	});
-};
-
-export const useUpdateLibrary = () => {
-	const queryClient = useQueryClient();
-
-	return useMutation({
-		mutationFn: async ({
-			id,
-			input,
-		}: {
-			id: string;
-			input: UpdateLibraryInput;
-		}) => {
-			const response = await graffleClient.request<{
-				updateLibrary: MusicLibrary;
-			}>(
-				gql(
-					`
-          mutation UpdateLibrary($id: ID!, $input: UpdateLibraryInput!) {
-            updateLibrary(id: $id, input: $input) {
-              id
-              name
-              rootPath
-              totalTracks
-              analyzedTracks
-              pendingTracks
-              failedTracks
-              scanStatus
-              settings {
-                autoScan
-                scanInterval
-                includeSubdirectories
-                supportedFormats
-                maxFileSize
-              }
-              createdAt
-              updatedAt
-            }
-          }
-        ` as any
-				),
-				{ id, input }
-			);
-			return response.updateLibrary;
-		},
-		onSuccess: (data) => {
-			queryClient.invalidateQueries({ queryKey: queryKeys.libraries });
-			queryClient.invalidateQueries({ queryKey: queryKeys.library(data.id) });
+		onSuccess: async () => {
+			await queryClient.invalidateQueries({
+				queryKey: librariesQueryOptions().queryKey,
+			});
+			// Ensure the playlists query has refetched and cache is updated
+			await queryClient.refetchQueries({
+				queryKey: librariesQueryOptions().queryKey,
+			});
 		},
 	});
 };
@@ -569,7 +481,7 @@ export const useDeleteLibrary = () => {
 			const response = await graffleClient.request<{ deleteLibrary: boolean }>(
 				parse(
 					`
-          mutation DeleteLibrary($id: ID!) {
+          mutation DeleteLibrary($id: Base64ID!) {
             deleteLibrary(id: $id)
           }
         ` as any
@@ -578,8 +490,13 @@ export const useDeleteLibrary = () => {
 			);
 			return response.deleteLibrary;
 		},
-		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: queryKeys.libraries });
+		onSuccess: async () => {
+			await queryClient.invalidateQueries({
+				queryKey: librariesQueryOptions().queryKey,
+			});
+			await queryClient.refetchQueries({
+				queryKey: librariesQueryOptions().queryKey,
+			});
 		},
 		onError: (error) => {
 			console.error('Failed to delete library:', error);

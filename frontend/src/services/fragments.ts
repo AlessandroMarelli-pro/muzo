@@ -147,3 +147,27 @@ export const filterFragment = gql`
 		}
 	}
 `;
+
+export const libraryFragment = gql`
+	fragment LibraryFragment on Library {
+		id
+		name
+		rootPath
+		totalTracks
+		analyzedTracks
+		pendingTracks
+		failedTracks
+		lastScanAt
+		lastIncrementalScanAt
+		scanStatus
+		settings {
+			autoScan
+			includeSubdirectories
+			supportedFormats
+			maxFileSize
+			scanInterval
+		}
+		createdAt
+		updatedAt
+	}
+`;

@@ -230,8 +230,34 @@ export type AudioFileAnalysis = {
   completedAt: Date;
   error: Maybe<string>;
 };
+const scanStatusKeys = ['IDLE', 'SCANNING', 'ANALYZING', 'ERROR'] as const;
+export type ScanStatus = (typeof scanStatusKeys)[number];
 
-export type MusicLibrary = Readonly<ModelBase<MusicLibraryId>> & {};
+type MusicLibraryTracksInfo = {
+  totalTracks: number;
+  analyzedTracks: number;
+  pendingTracks: number;
+  failedTracks: number;
+};
+type MusicLibraryScanInfo = {
+  lastScanAt: Date;
+  lastIncrementalScanAt: Date;
+  scanStatus: ScanStatus;
+};
+type MusicLibrarySettings = {
+  scanInterval: number;
+  autoScan: boolean;
+  includeSubdirectories: boolean;
+  supportedFormats: string[];
+  maxFileSize: number;
+};
+export type MusicLibrary = Readonly<ModelBase<MusicLibraryId>> & {
+  name: string;
+  rootPath: string;
+  tracksInfo: MusicLibraryTracksInfo;
+  scanInfo: MusicLibraryScanInfo;
+  settings: MusicLibrarySettings;
+};
 
 export type ImageSearch = Readonly<ModelBase<ImageSearchId>> & {
   trackId: MusicTrackId;

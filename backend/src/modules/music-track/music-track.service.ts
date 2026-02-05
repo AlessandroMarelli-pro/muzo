@@ -17,7 +17,7 @@ import {
   MusicTrackQueryOptions,
   UpdateMusicTrackDto,
 } from '../../models/music-track.model';
-import { ElasticsearchService } from '../../shared/services/elasticsearch.service';
+
 import { PrismaService } from '../../shared/services/prisma.service';
 import { FilterService } from '../filter/filter.service';
 
@@ -26,7 +26,6 @@ export class MusicTrackService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly filterService: FilterService,
-    private readonly elasticsearchService: ElasticsearchService,
   ) {}
 
   async create(createDto: CreateMusicTrackDto): Promise<MusicTrack> {
@@ -898,7 +897,7 @@ export class MusicTrackService {
 
     // Delete from Elasticsearch
     try {
-      await this.elasticsearchService.deleteTrack(trackId);
+      //await this.elasticsearchService.deleteTrack(trackId);
     } catch (error) {
       // Log error but continue - Elasticsearch deletion failure shouldn't block the operation
       console.error(

@@ -4,14 +4,17 @@ import {
   GetPlaylistUseCase,
   GetTrackUseCase,
 } from 'src/clean-arch/application/use-cases';
+import { GetLibraryUseCase } from 'src/clean-arch/application/use-cases/music-library/GetLibrary';
 import { extractModelId } from 'src/clean-arch/kernel/ids/factory';
 import { createNotFoundError } from 'src/clean-arch/kernel/types/errors';
 import type { Model } from 'src/clean-arch/kernel/types/model-types';
 import {
+  parseMusicLibraryId,
   parseMusicTrackId,
   parsePlaylistId,
 } from '../../common/utils/parse-id';
 import { AuthGuard } from '../context/auth.guard';
+import { toMusicLibrary } from '../mappers/music-library.mapper';
 import { toTrack } from '../mappers/track.mapper';
 import { Base64ID } from '../scalars/base64-id.scalar';
 import { Node } from '../schema/common.schema';
@@ -29,6 +32,7 @@ export class NodeResolver {
   constructor(
     private readonly getPlaylistUseCase: GetPlaylistUseCase,
     private readonly getTrackUseCase: GetTrackUseCase,
+    private readonly getLibraryUseCase: GetLibraryUseCase,
   ) {}
 
   @Query(() => Node, {
@@ -54,6 +58,11 @@ export class NodeResolver {
     }
     if (modelName === 'MusicTrack') {
       return this.getTrackUseCase.execute(parseMusicTrackId(id)).then(toTrack);
+    }
+    if (modelName === 'MusicLibrary') {
+      return this.getLibraryUseCase
+        .execute(parseMusicLibraryId(id))
+        .then(toMusicLibrary);
     }
     if (modelName === 'User') {
       // Optional: add GetUserByIdUseCase and resolve here
