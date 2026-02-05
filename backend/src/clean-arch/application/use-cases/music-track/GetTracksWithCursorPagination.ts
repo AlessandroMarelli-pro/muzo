@@ -1,4 +1,3 @@
-import { Inject } from '@nestjs/common';
 import { MusicLibraryId } from 'src/clean-arch/kernel/ids';
 import {
   FilterCriteria,
@@ -8,21 +7,13 @@ import {
   CursorPaginationResult,
   WithCursorPagination,
 } from 'src/clean-arch/kernel/types/pagination';
-import {
-  IMusicTrackRepository,
-  MUSIC_TRACK_REPOSITORY,
-} from '../../ports/repositories/IMusicTrackRepository';
-import {
-  ISavedFilterRepository,
-  SAVED_FILTER_REPOSITORY,
-} from '../../ports/repositories/ISavedFilterRepository';
+import { IMusicTrackRepository } from '../../ports/repositories/IMusicTrackRepository';
+import { ISavedFilterRepository } from '../../ports/repositories/ISavedFilterRepository';
 
 export class GetTracksWithCursorPaginationUseCase {
   constructor(
-    @Inject(MUSIC_TRACK_REPOSITORY)
     private readonly musicTrackRepository: IMusicTrackRepository,
 
-    @Inject(SAVED_FILTER_REPOSITORY)
     private readonly savedFilterRepository: ISavedFilterRepository,
   ) {}
 

@@ -1,29 +1,18 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { MusicTrackId } from 'src/clean-arch/kernel/ids';
 import { TrackSimilarity } from 'src/clean-arch/kernel/types';
 import { DEFAULT_RECOMMENDATION_WEIGHTS } from 'src/clean-arch/kernel/types/defaults';
-import {
-  IRecommendationDataPort,
-  RECOMMENDATION_DATA_PORT,
-} from '../../ports/queries/IRecommendationDataPort';
-import {
-  IRecommendationSearchPort,
-  RECOMMENDATION_SEARCH_PORT,
-} from '../../ports/queries/IRecommendationSearchPort';
-import {
-  IMusicTrackRepository,
-  MUSIC_TRACK_REPOSITORY,
-} from '../../ports/repositories/IMusicTrackRepository';
+import { IRecommendationDataPort } from '../../ports/queries/IRecommendationDataPort';
+import { IRecommendationSearchPort } from '../../ports/queries/IRecommendationSearchPort';
+import { IMusicTrackRepository } from '../../ports/repositories/IMusicTrackRepository';
 
 @Injectable()
 export class GetTrackRecommendationsUseCase {
   constructor(
-    @Inject(RECOMMENDATION_SEARCH_PORT)
     private readonly recommendationSearchPort: IRecommendationSearchPort,
-    @Inject(MUSIC_TRACK_REPOSITORY)
+
     private readonly musicTrackRepository: IMusicTrackRepository,
 
-    @Inject(RECOMMENDATION_DATA_PORT)
     private readonly recommendationDataPort: IRecommendationDataPort,
   ) {}
 

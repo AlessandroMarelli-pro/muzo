@@ -1,21 +1,16 @@
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PlaylistId } from 'src/clean-arch/kernel/ids';
-import {
-  IPlaylistRepository,
-  PLAYLIST_REPOSITORY,
-} from '../../ports/repositories/IPlaylistRepository';
+import { IPlaylistRepository } from '../../ports/repositories/IPlaylistRepository';
 import {
   IPlaylistTrackRepository,
-  PLAYLIST_TRACK_REPOSITORY,
   UpdatePositionsData,
 } from '../../ports/repositories/IPlaylistTrackRepository';
 
 @Injectable()
 export class UpdatePlaylistTracksPositionsUseCase {
   constructor(
-    @Inject(PLAYLIST_TRACK_REPOSITORY)
     private readonly playlistTrackRepository: IPlaylistTrackRepository,
-    @Inject(PLAYLIST_REPOSITORY)
+
     private readonly playlistRepository: IPlaylistRepository,
   ) {}
 

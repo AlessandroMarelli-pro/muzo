@@ -1,21 +1,14 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { MusicTrackId } from 'src/clean-arch/kernel/ids';
 import { models } from 'src/clean-arch/kernel/types/models';
-import {
-  HIDDEN_MUSIC_TRACK_REPOSITORY,
-  IHiddenMusicTrackRepository,
-} from '../../ports/repositories/IHiddenMusicTrackRepository';
-import {
-  IMusicTrackRepository,
-  MUSIC_TRACK_REPOSITORY,
-} from '../../ports/repositories/IMusicTrackRepository';
+import { IHiddenMusicTrackRepository } from '../../ports/repositories/IHiddenMusicTrackRepository';
+import { IMusicTrackRepository } from '../../ports/repositories/IMusicTrackRepository';
 
 @Injectable()
 export class ToggleDislikeUseCase {
   constructor(
-    @Inject(MUSIC_TRACK_REPOSITORY)
     private readonly musicTrackRepository: IMusicTrackRepository,
-    @Inject(HIDDEN_MUSIC_TRACK_REPOSITORY)
+
     private readonly hiddenMusicTrackRepository: IHiddenMusicTrackRepository,
   ) {}
 

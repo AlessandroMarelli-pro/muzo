@@ -1,28 +1,18 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { MusicTrackId } from 'src/clean-arch/kernel/ids';
 import { createNotFoundError, models } from 'src/clean-arch/kernel/types';
 import { MusicTrack } from 'src/clean-arch/kernel/types/model-types';
-import {
-  IMusicTrackRepository,
-  MUSIC_TRACK_REPOSITORY,
-} from '../../ports/repositories/IMusicTrackRepository';
-import {
-  IPlaylistRepository,
-  PLAYLIST_REPOSITORY,
-} from '../../ports/repositories/IPlaylistRepository';
-import {
-  IPlaylistTrackRepository,
-  PLAYLIST_TRACK_REPOSITORY,
-} from '../../ports/repositories/IPlaylistTrackRepository';
+import { IMusicTrackRepository } from '../../ports/repositories/IMusicTrackRepository';
+import { IPlaylistRepository } from '../../ports/repositories/IPlaylistRepository';
+import { IPlaylistTrackRepository } from '../../ports/repositories/IPlaylistTrackRepository';
 
 @Injectable()
 export class ToggleFavoriteUseCase {
   constructor(
-    @Inject(MUSIC_TRACK_REPOSITORY)
     private readonly musicTrackRepository: IMusicTrackRepository,
-    @Inject(PLAYLIST_REPOSITORY)
+
     private readonly playlistRepository: IPlaylistRepository,
-    @Inject(PLAYLIST_TRACK_REPOSITORY)
+
     private readonly playlistTrackRepository: IPlaylistTrackRepository,
   ) {}
 

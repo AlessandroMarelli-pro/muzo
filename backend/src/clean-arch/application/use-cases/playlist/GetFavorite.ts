@@ -1,16 +1,10 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PlaylistTrackWithTrackDetailAndSorting } from '../../ports/dtos/PlaylistWithTrackDetailsAndSorting';
-import {
-  IPlaylistRepository,
-  PLAYLIST_REPOSITORY,
-} from '../../ports/repositories/IPlaylistRepository';
+import { IPlaylistRepository } from '../../ports/repositories/IPlaylistRepository';
 
 @Injectable()
 export class GetFavoriteUseCase {
-  constructor(
-    @Inject(PLAYLIST_REPOSITORY)
-    private readonly playlistRepository: IPlaylistRepository,
-  ) {}
+  constructor(private readonly playlistRepository: IPlaylistRepository) {}
 
   async execute(): Promise<PlaylistTrackWithTrackDetailAndSorting> {
     return this.playlistRepository.getFavorite();

@@ -1,16 +1,14 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PlaylistId } from 'src/clean-arch/kernel/ids';
 import { models, PlaylistSorting } from 'src/clean-arch/kernel/types';
 import {
   IPlaylistSortingRepository,
-  PLAYLIST_SORTING_REPOSITORY,
   PlaylistSortingUpsertData,
 } from '../../ports/repositories/IPlaylistSortingRepository';
 
 @Injectable()
 export class UpdatePlaylistSortingUseCase {
   constructor(
-    @Inject(PLAYLIST_SORTING_REPOSITORY)
     private readonly playlistSortingRepository: IPlaylistSortingRepository,
   ) {}
 

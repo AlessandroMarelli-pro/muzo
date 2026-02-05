@@ -1,15 +1,13 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { models, MusicLibrary } from 'src/clean-arch/kernel/types';
 import {
   IMusicLibraryRepository,
-  MUSIC_LIBRARY_REPOSITORY,
   MusicLibraryCreateData,
 } from '../../ports/repositories/IMusicLibraryRepository';
 
 @Injectable()
 export class CreateLibraryUseCase {
   constructor(
-    @Inject(MUSIC_LIBRARY_REPOSITORY)
     private readonly musicLibraryRepository: IMusicLibraryRepository,
   ) {}
 

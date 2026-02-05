@@ -1,15 +1,11 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PlaylistId } from 'src/clean-arch/kernel/ids';
 import { PlaylistTrack } from 'src/clean-arch/kernel/types/model-types';
-import {
-  IPlaylistTrackRepository,
-  PLAYLIST_TRACK_REPOSITORY,
-} from '../../ports/repositories/IPlaylistTrackRepository';
+import { IPlaylistTrackRepository } from '../../ports/repositories/IPlaylistTrackRepository';
 
 @Injectable()
 export class GetPlaylistTracksUseCase {
   constructor(
-    @Inject(PLAYLIST_TRACK_REPOSITORY)
     private readonly playlistTrackRepository: IPlaylistTrackRepository,
   ) {}
 

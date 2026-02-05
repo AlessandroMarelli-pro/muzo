@@ -1,30 +1,22 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PlaylistId } from 'src/clean-arch/kernel/ids';
 import { createConflictError } from 'src/clean-arch/kernel/types/errors';
 import { PlaylistTrack } from 'src/clean-arch/kernel/types/model-types';
 import { models } from 'src/clean-arch/kernel/types/models';
-import {
-  IMusicTrackRepository,
-  MUSIC_TRACK_REPOSITORY,
-} from '../../ports/repositories/IMusicTrackRepository';
-import {
-  IPlaylistRepository,
-  PLAYLIST_REPOSITORY,
-} from '../../ports/repositories/IPlaylistRepository';
+import { IMusicTrackRepository } from '../../ports/repositories/IMusicTrackRepository';
+import { IPlaylistRepository } from '../../ports/repositories/IPlaylistRepository';
 import {
   AddTrackToPlaylistData,
   IPlaylistTrackRepository,
-  PLAYLIST_TRACK_REPOSITORY,
 } from '../../ports/repositories/IPlaylistTrackRepository';
 
 @Injectable()
 export class AddTrackToPlaylistUseCase {
   constructor(
-    @Inject(PLAYLIST_TRACK_REPOSITORY)
     private readonly playlistTrackRepository: IPlaylistTrackRepository,
-    @Inject(PLAYLIST_REPOSITORY)
+
     private readonly playlistRepository: IPlaylistRepository,
-    @Inject(MUSIC_TRACK_REPOSITORY)
+
     private readonly musicTrackRepository: IMusicTrackRepository,
   ) {}
 

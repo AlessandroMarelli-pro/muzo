@@ -1,39 +1,24 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import {
   FilterCriteria,
   Playlist,
 } from 'src/clean-arch/kernel/types/model-types';
 import { models } from 'src/clean-arch/kernel/types/models';
-import {
-  IMusicTrackRepository,
-  MUSIC_TRACK_REPOSITORY,
-} from '../../ports/repositories/IMusicTrackRepository';
-import {
-  IPlaylistRepository,
-  PLAYLIST_REPOSITORY,
-} from '../../ports/repositories/IPlaylistRepository';
-import {
-  IPlaylistSortingRepository,
-  PLAYLIST_SORTING_REPOSITORY,
-} from '../../ports/repositories/IPlaylistSortingRepository';
-import {
-  IPlaylistTrackRepository,
-  PLAYLIST_TRACK_REPOSITORY,
-} from '../../ports/repositories/IPlaylistTrackRepository';
+import { IMusicTrackRepository } from '../../ports/repositories/IMusicTrackRepository';
+import { IPlaylistRepository } from '../../ports/repositories/IPlaylistRepository';
+import { IPlaylistSortingRepository } from '../../ports/repositories/IPlaylistSortingRepository';
+import { IPlaylistTrackRepository } from '../../ports/repositories/IPlaylistTrackRepository';
 import { CreatePlaylistInput } from './CreatePlaylist.input';
 
 @Injectable()
 export class CreatePlaylistUseCase {
   constructor(
-    @Inject(PLAYLIST_REPOSITORY)
     private readonly playlistRepository: IPlaylistRepository,
-    @Inject(MUSIC_TRACK_REPOSITORY)
+
     private readonly musicTrackRepository: IMusicTrackRepository,
 
-    @Inject(PLAYLIST_TRACK_REPOSITORY)
     private readonly playlistTrackRepository: IPlaylistTrackRepository,
 
-    @Inject(PLAYLIST_SORTING_REPOSITORY)
     private readonly playlistSortingRepository: IPlaylistSortingRepository,
   ) {}
 

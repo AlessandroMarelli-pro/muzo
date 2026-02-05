@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as path from 'path';
 import { MusicTrackId } from 'src/clean-arch/kernel/ids';
@@ -6,7 +6,6 @@ import { ImageSearch } from 'src/clean-arch/kernel/types/model-types';
 import {
   CreateImageSearchData,
   IImageSearchRepository,
-  IMAGE_SEARCH_REPOSITORY,
 } from '../../ports/repositories/IImageSearchRepository';
 
 export type AddImageSearchRecordData = {
@@ -21,7 +20,6 @@ const DEFAULT_IMAGES_RELATIVE = '../muzo/images';
 @Injectable()
 export class AddImageSearchRecordUseCase {
   constructor(
-    @Inject(IMAGE_SEARCH_REPOSITORY)
     private readonly imageSearchRepository: IImageSearchRepository,
     private readonly configService: ConfigService,
   ) {}

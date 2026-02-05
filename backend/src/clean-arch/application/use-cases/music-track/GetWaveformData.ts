@@ -1,20 +1,13 @@
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { MusicTrackId } from 'src/clean-arch/kernel/ids';
-import {
-  AUDIO_WAVEFORM_GENERATOR,
-  IAudioWaveformGenerator,
-} from '../../ports/infrastructure/IAudioWaveformGenerator';
-import {
-  IMusicTrackRepository,
-  MUSIC_TRACK_REPOSITORY,
-} from '../../ports/repositories/IMusicTrackRepository';
+import { IAudioWaveformGenerator } from '../../ports/infrastructure/IAudioWaveformGenerator';
+import { IMusicTrackRepository } from '../../ports/repositories/IMusicTrackRepository';
 
 @Injectable()
 export class GetWaveformDataUseCase {
   constructor(
-    @Inject(AUDIO_WAVEFORM_GENERATOR)
     private readonly audioWaveformGenerator: IAudioWaveformGenerator,
-    @Inject(MUSIC_TRACK_REPOSITORY)
+
     private readonly musicTrackRepository: IMusicTrackRepository,
   ) {}
 

@@ -1,20 +1,13 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PlaylistId } from 'src/clean-arch/kernel/ids';
-import {
-  IPlaylistRepository,
-  PLAYLIST_REPOSITORY,
-} from '../../ports/repositories/IPlaylistRepository';
-import {
-  IPlaylistSortingRepository,
-  PLAYLIST_SORTING_REPOSITORY,
-} from '../../ports/repositories/IPlaylistSortingRepository';
+import { IPlaylistRepository } from '../../ports/repositories/IPlaylistRepository';
+import { IPlaylistSortingRepository } from '../../ports/repositories/IPlaylistSortingRepository';
 
 @Injectable()
 export class ExportPlaylistToM3UUseCase {
   constructor(
-    @Inject(PLAYLIST_REPOSITORY)
     private readonly playlistRepository: IPlaylistRepository,
-    @Inject(PLAYLIST_SORTING_REPOSITORY)
+
     private readonly playlistSortingRepository: IPlaylistSortingRepository,
   ) {}
 

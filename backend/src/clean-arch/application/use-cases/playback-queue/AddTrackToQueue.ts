@@ -1,22 +1,17 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { MusicTrackId } from 'src/clean-arch/kernel/ids';
 import { createConflictError } from 'src/clean-arch/kernel/types/errors';
-import {
-  IMusicTrackRepository,
-  MUSIC_TRACK_REPOSITORY,
-} from '../../ports/repositories/IMusicTrackRepository';
+import { IMusicTrackRepository } from '../../ports/repositories/IMusicTrackRepository';
 import {
   IQueueRepository,
-  QUEUE_REPOSITORY,
   QueueItemWithTrack,
 } from '../../ports/repositories/IQueueRepository';
 
 @Injectable()
 export class AddTrackToQueueUseCase {
   constructor(
-    @Inject(QUEUE_REPOSITORY)
     private readonly queueRepository: IQueueRepository,
-    @Inject(MUSIC_TRACK_REPOSITORY)
+
     private readonly musicTrackRepository: IMusicTrackRepository,
   ) {}
 

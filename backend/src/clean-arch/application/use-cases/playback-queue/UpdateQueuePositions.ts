@@ -1,18 +1,14 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { createNotFoundError } from 'src/clean-arch/kernel/types/errors';
 import {
   IQueueRepository,
-  QUEUE_REPOSITORY,
   QueueItemWithTrack,
   UpdateQueuePositionInput,
 } from '../../ports/repositories/IQueueRepository';
 
 @Injectable()
 export class UpdateQueuePositionsUseCase {
-  constructor(
-    @Inject(QUEUE_REPOSITORY)
-    private readonly queueRepository: IQueueRepository,
-  ) {}
+  constructor(private readonly queueRepository: IQueueRepository) {}
 
   async execute(
     positions: UpdateQueuePositionInput[],

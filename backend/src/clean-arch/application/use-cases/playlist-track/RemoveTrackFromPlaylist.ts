@@ -1,20 +1,13 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { MusicTrackId, PlaylistId } from 'src/clean-arch/kernel/ids';
-import {
-  IPlaylistRepository,
-  PLAYLIST_REPOSITORY,
-} from '../../ports/repositories/IPlaylistRepository';
-import {
-  IPlaylistTrackRepository,
-  PLAYLIST_TRACK_REPOSITORY,
-} from '../../ports/repositories/IPlaylistTrackRepository';
+import { IPlaylistRepository } from '../../ports/repositories/IPlaylistRepository';
+import { IPlaylistTrackRepository } from '../../ports/repositories/IPlaylistTrackRepository';
 
 @Injectable()
 export class RemoveTrackFromPlaylistUseCase {
   constructor(
-    @Inject(PLAYLIST_TRACK_REPOSITORY)
     private readonly playlistTrackRepository: IPlaylistTrackRepository,
-    @Inject(PLAYLIST_REPOSITORY)
+
     private readonly playlistRepository: IPlaylistRepository,
   ) {}
 
