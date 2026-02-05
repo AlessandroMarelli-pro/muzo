@@ -3,3 +3,7 @@ export * from './GetTrack';
 export * from './GetTracks';
 export * from './GetTracksPaginated';
 export * from './GetWaveformData';
+export * from './ToggleBangerTrack';
+export * from './ToggleDislikeTrack';
+export * from './ToggleFavorite';
+export * from './ToggleLikeTrack';

@@ -1,4 +1,4 @@
-import { Args, ID, Mutation, Query, Resolver } from '@nestjs/graphql';
+import { Args, Query, Resolver } from '@nestjs/graphql';
 import { AnalysisStatus } from '@prisma/client';
 import {
   MusicTrackWithRelations,
@@ -11,7 +11,6 @@ import { MusicTrack as MusicTrackModel } from '@prisma/client';
 
 import {
   MusicTrack,
-  MusicTrackListPaginated,
   RandomTrackWithStats,
   SimpleMusicTrack,
   TrackQueryOptions,
@@ -98,29 +97,6 @@ export class MusicTrackResolver {
     return this.mapToGraphQLTracksList(tracks as MusicTrackWithRelations[]);
   }
 
-  @Query(() => MusicTrackListPaginated)
-  async tracksList(
-    @Args('options', { nullable: true }) options?: TrackQueryOptions,
-  ): Promise<MusicTrackListPaginated> {
-    const queryOptions: MusicTrackQueryOptions = {
-      isFavorite: options?.isFavorite,
-      libraryId: options?.libraryId,
-      analysisStatus: options?.analysisStatus as AnalysisStatus,
-      format: options?.format,
-      limit: options?.limit,
-      offset: options?.offset,
-      orderBy: options?.orderBy as any,
-      orderDirection: options?.orderDirection as any,
-    };
-    const tracks = await this.musicTrackService.findAllPaginated(queryOptions);
-    return {
-      tracks: this.mapToGraphQLTracksList(tracks.tracks),
-      total: tracks.total,
-      page: tracks.page,
-      limit: tracks.limit,
-    };
-  }
-
   @Query(() => RandomTrackWithStats)
   async randomTrackWithStats(): Promise<RandomTrackWithStats> {
     const result = await this.musicTrackService.getRandomTrackWithStats();
@@ -150,37 +126,5 @@ export class MusicTrackResolver {
       (track) => track.lastPlayedAt !== null,
     );
     return this.mapToGraphQLTracksList(filteredTracks);
-  }
-
-  @Mutation(() => MusicTrack)
-  async toggleFavorite(@Args('trackId') trackId: string): Promise<MusicTrack> {
-    const track = await this.musicTrackService.toggleFavorite(trackId);
-    return this.mapToGraphQLTrack(track);
-  }
-
-  @Mutation(() => SimpleMusicTrack)
-  async likeTrack(
-    @Args('trackId', { type: () => ID }) trackId: string,
-  ): Promise<SimpleMusicTrack> {
-    const track = await this.musicTrackService.likeTrack(trackId);
-    const trackWithRelations = await this.musicTrackService.findOne(trackId);
-    return mapToSimpleMusicTrack(trackWithRelations as MusicTrackWithRelations);
-  }
-
-  @Mutation(() => SimpleMusicTrack)
-  async bangerTrack(
-    @Args('trackId', { type: () => ID }) trackId: string,
-  ): Promise<SimpleMusicTrack> {
-    const track = await this.musicTrackService.bangerTrack(trackId);
-    const trackWithRelations = await this.musicTrackService.findOne(trackId);
-    return mapToSimpleMusicTrack(trackWithRelations as MusicTrackWithRelations);
-  }
-
-  @Mutation(() => Boolean)
-  async dislikeTrack(
-    @Args('trackId', { type: () => ID }) trackId: string,
-  ): Promise<boolean> {
-    await this.musicTrackService.dislikeTrack(trackId);
-    return true;
   }
 }

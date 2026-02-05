@@ -2,6 +2,7 @@ import { Maybe } from '../common';
 import type {
   Brand,
   GenreId,
+  HiddenMusicTrackId,
   ImageSearchId,
   MusicLibraryId,
   MusicTrackId,
@@ -35,7 +36,8 @@ export type Model =
   | TrackSubgenre
   | Subgenre
   | SavedFilter
-  | QueueItem;
+  | QueueItem
+  | HiddenMusicTrack;
 
 export type ModelBase<
   Id extends string | Brand<T, string> = string,
@@ -83,6 +85,15 @@ export type PlaylistSorting = Readonly<ModelBase<PlaylistSortingId>> & {
   playlistId: PlaylistId;
   sortingKey: PlaylistSortingKey;
   sortingDirection: PlaylistSortingDirection;
+};
+export type HiddenMusicTrack = Readonly<ModelBase<HiddenMusicTrackId>> & {
+  artist: string;
+  title: string;
+  imagePath: string;
+  libraryId: MusicLibraryId;
+  fileInfo: AudioFileInfo;
+  technicalInfo: AudioTechnical;
+  aiMetadata: AudioFileAIMetadata;
 };
 
 export type MusicTrack = Readonly<ModelBase<MusicTrackId>> & {

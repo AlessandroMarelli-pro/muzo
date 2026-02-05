@@ -42,6 +42,10 @@ import {
   ServeImageUseCase,
   SyncAllTracksToElasticsearchUseCase,
   SyncTrackToElasticSearchUseCase,
+  ToggleBangerUseCase,
+  ToggleDislikeUseCase,
+  ToggleFavoriteUseCase,
+  ToggleLikeUseCase,
   UpdatePlaylistTracksPositionsUseCase,
   UpdatePlaylistUseCase,
   UpdateQueuePositionsUseCase,
@@ -96,6 +100,10 @@ const useCasesProviders = [
   GetLibrariesUseCase,
   DeleteLibraryUseCase,
   GetTracksPaginatedUseCase,
+  ToggleFavoriteUseCase,
+  ToggleLikeUseCase,
+  ToggleDislikeUseCase,
+  ToggleBangerUseCase,
 ];
 @Module({
   imports: [ConfigModule],

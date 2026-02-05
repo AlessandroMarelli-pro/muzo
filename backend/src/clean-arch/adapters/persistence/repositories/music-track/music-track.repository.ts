@@ -1,5 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { IMusicTrackRepository } from 'src/clean-arch/application/ports/repositories/IMusicTrackRepository';
+import {
+  IMusicTrackRepository,
+  MusicTrackUpdateData,
+} from 'src/clean-arch/application/ports/repositories/IMusicTrackRepository';
 import { Maybe } from 'src/clean-arch/kernel/common';
 import { extractModelId, MusicTrackId } from 'src/clean-arch/kernel/ids';
 import { getCurrentUserId } from 'src/clean-arch/kernel/types/context';
@@ -16,7 +19,7 @@ import { buildMusicTrackFilterWhereClause } from '../../builders/music-track-fil
 import { buildMusicTrackSortingOrderClause } from '../../builders/music-track-sorting.order';
 import { musicTracksIncludes } from '../../includes/music-tracks-includes';
 import { handlePrismaNotFound } from '../prisma-errors';
-import { toDomain, toMusicTrackId } from './music-track.mapper';
+import { toDomain, toMusicTrackId, toPrismaUpdate } from './music-track.mapper';
 
 @Injectable()
 export class MusicTrackRepository implements IMusicTrackRepository {
@@ -151,5 +154,28 @@ export class MusicTrackRepository implements IMusicTrackRepository {
       })
       .then(toMusicTrackId)
       .catch((e: unknown) => handlePrismaNotFound(e, `No music tracks found`));
+  }
+
+  async updateOneById(
+    id: MusicTrackId,
+    data: MusicTrackUpdateData,
+  ): Promise<MusicTrack> {
+    return this.prisma.musicTrack
+      .update({
+        where: { id: extractModelId(id).dbId, createdById: getCurrentUserId() },
+        data: toPrismaUpdate(data),
+        include: musicTracksIncludes,
+      })
+      .then(toDomain);
+  }
+  /**
+   * Cascade remove the track and all related data
+   */
+  async removeOneById(id: MusicTrackId): Promise<boolean> {
+    return this.prisma.musicTrack
+      .delete({
+        where: { id: extractModelId(id).dbId, createdById: getCurrentUserId() },
+      })
+      .then(() => true);
   }
 }

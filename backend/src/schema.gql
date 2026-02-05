@@ -218,52 +218,6 @@ type MusicPlayer {
   currentWaveformData(trackId: Base64ID!): [Float!]
 }
 
-type MusicTrack {
-  aiAlbum: String
-  aiArtist: String
-  aiConfidence: Float
-  aiDescription: String
-  aiSubgenreConfidence: Float
-  aiTags: [String!]
-  aiTitle: String
-  albumArtPath: String
-  analysisCompletedAt: DateTime
-  analysisError: String
-  analysisStartedAt: DateTime
-  analysisStatus: String!
-  audioFingerprint: AudioFingerprint
-  bitrate: Float
-  createdAt: DateTime!
-  duration: Float!
-  fileName: String!
-  filePath: String!
-  fileSize: Float!
-  format: String!
-  id: ID!
-  imageSearches: [ImageSearch!]
-  isFavorite: Boolean!
-  lastPlayedAt: DateTime
-  libraryId: ID!
-  listeningCount: Float!
-  originalAlbum: String
-  originalArtist: String
-  originalTitle: String
-  originalYear: Float
-  sampleRate: Float
-  updatedAt: DateTime!
-  userAlbum: String
-  userArtist: String
-  userTags: [String!]
-  userTitle: String
-}
-
-type MusicTrackListPaginated {
-  limit: Float!
-  page: Float!
-  total: Float!
-  tracks: [SimpleMusicTrack!]!
-}
-
 type Mutation {
   addTrackToPlaylist(input: AddTrackToPlaylistInput!, playlistId: Base64ID!): CleanArchPlaylistTrack!
   addTrackToQueue(trackId: Base64ID!): QueueItem!
@@ -271,7 +225,6 @@ type Mutation {
   authenticateSpotify(code: String!, codeVerifier: String!, userId: String!): SpotifyAuthResult!
   authenticateTidal(code: String!, codeVerifier: String!, userId: String!): TidalAuthResult!
   authenticateYouTube(code: String!, userId: String!): YouTubeAuthResult!
-  bangerTrack(trackId: ID!): SimpleMusicTrack!
   caUpdatePlaylist(id: Base64ID!, input: CleanArchUpdatePlaylistInput!): CleanArchPlaylist!
   createLibrary(input: CreateLibraryInput!): Library!
   createPlaylist(input: CreatePlaylistInput!): CleanArchPlaylist!
@@ -279,9 +232,7 @@ type Mutation {
   deleteLibrary(id: Base64ID!): Boolean!
   deletePlaylist(id: Base64ID!): Boolean!
   deleteSavedFilter(id: Base64ID!): Boolean!
-  dislikeTrack(trackId: ID!): Boolean!
   exportPlaylistToM3U(playlistId: Base64ID!): String!
-  likeTrack(trackId: ID!): SimpleMusicTrack!
   removeTrackFromPlaylist(playlistId: Base64ID!, trackId: Base64ID!): Boolean!
   removeTrackFromQueue(trackId: Base64ID!): RemoveTrackFromQueueResponse!
   resetQueue: Boolean!
@@ -290,7 +241,10 @@ type Mutation {
   syncPlaylistToSpotify(playlistId: ID!, userId: String!): SyncResult!
   syncPlaylistToTidal(playlistId: ID!, userId: String!): SyncResult!
   syncPlaylistToYouTube(playlistId: ID!, userId: String!): SyncResult!
-  toggleFavorite(trackId: String!): MusicTrack!
+  toggleBanger(trackId: Base64ID!): Track!
+  toggleDislike(trackId: Base64ID!): Boolean!
+  toggleFavorite(trackId: Base64ID!): Track!
+  toggleLike(trackId: Base64ID!): Track!
   updatePlaylistSorting(input: UpdatePlaylistSortingInput!, playlistId: Base64ID!): CleanArchPlaylistSorting!
   updatePlaylistTracksPositions(input: UpdatePlaylistPositionsInput!, playlistId: Base64ID!): Boolean!
   updateQueuePositions(input: UpdateQueuePositionsInput!): [QueueItem!]!
@@ -342,7 +296,6 @@ type Query {
   randomTrackWithStats: RandomTrackWithStats!
   recentlyPlayed(limit: Float! = 20): [SimpleMusicTrack!]!
   tracks(options: TrackQueryOptions): [SimpleMusicTrack!]!
-  tracksList(options: TrackQueryOptions): MusicTrackListPaginated!
 }
 
 type QueueItem {

@@ -29,3 +29,5 @@ export type SubgenreId = Brand<string, 'SubgenreId'>;
 export type SavedFilterId = Brand<string, 'SavedFilterId'>;
 
 export type QueueItemId = Brand<string, 'QueueItemId'>;
+
+export type HiddenMusicTrackId = Brand<string, 'HiddenMusicTrackId'>;

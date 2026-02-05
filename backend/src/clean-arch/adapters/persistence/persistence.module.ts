@@ -31,6 +31,10 @@ import { PlaylistRepository } from './repositories/playlist/playlist.repository'
 import { QueueRepository } from './repositories/queue/queue.repository';
 import { SavedFilterRepository } from './repositories/saved-filter/saved-filter.repository';
 
+import { HiddenMusicTrackRepository } from './repositories/hidden-music-track/hidden-music-track.repository';
+
+import { HIDDEN_MUSIC_TRACK_REPOSITORY } from 'src/clean-arch/application/ports/repositories/IHiddenMusicTrackRepository';
+
 @Global()
 @Module({
   imports: [ConfigModule],
@@ -53,6 +57,10 @@ import { SavedFilterRepository } from './repositories/saved-filter/saved-filter.
     { provide: AUDIO_WAVEFORM_GENERATOR, useClass: WaveformGenerator },
     { provide: RECOMMENDATION_DATA_PORT, useClass: RecommendationDataPort },
     { provide: MUSIC_LIBRARY_REPOSITORY, useClass: MusicLibraryRepository },
+    {
+      provide: HIDDEN_MUSIC_TRACK_REPOSITORY,
+      useClass: HiddenMusicTrackRepository,
+    },
   ],
   exports: [
     PLAYLIST_REPOSITORY,
@@ -69,6 +77,7 @@ import { SavedFilterRepository } from './repositories/saved-filter/saved-filter.
     AUDIO_WAVEFORM_GENERATOR,
     RECOMMENDATION_DATA_PORT,
     MUSIC_LIBRARY_REPOSITORY,
+    HIDDEN_MUSIC_TRACK_REPOSITORY,
   ],
 })
 export class AdaptersPersistenceModule {}

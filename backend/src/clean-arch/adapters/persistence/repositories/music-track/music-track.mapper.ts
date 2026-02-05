@@ -8,6 +8,7 @@ import {
   TrackSubgenre as PrismaTrackSubgenre,
 } from '@prisma/client';
 
+import { MusicTrackUpdateData } from 'src/clean-arch/application/ports/repositories/IMusicTrackRepository';
 import { MusicTrackId } from 'src/clean-arch/kernel/ids';
 import { extractModelId } from 'src/clean-arch/kernel/ids/factory';
 import {
@@ -267,5 +268,16 @@ export const toPrisma: ToPrisma = (domainModel) => {
     listeningCount: domainModel.stats.listeningCount,
     lastPlayedAt: domainModel.stats.lastPlayedAt,
     imagePath: domainModel.imagePath,
+  };
+};
+
+export type ToPrismaUpdate = (
+  data: MusicTrackUpdateData,
+) => Partial<PrismaMusicTrack>;
+export const toPrismaUpdate: ToPrismaUpdate = (domainModel) => {
+  return {
+    isLiked: domainModel.stats.isLiked,
+    isBanger: domainModel.stats.isBanger,
+    isFavorite: domainModel.stats.isFavorite,
   };
 };

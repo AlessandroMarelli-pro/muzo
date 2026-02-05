@@ -534,8 +534,10 @@ model HiddenMusicTrack {
   hasDiscogs            Boolean?
 
   // Timestamps
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
+  createdAt   DateTime @default(now())
+  createdById   String @default("userId")
+  updatedAt   DateTime? @updatedAt
+  updatedById  String?
   
   // Relations
   libraryId             String

@@ -510,19 +510,19 @@ export const useLikeTrack = () => {
 	return useMutation({
 		mutationFn: async (trackId: string) => {
 			const response = await graffleClient.request<{
-				likeTrack: SimpleMusicTrack;
+				toggleLike: Track;
 			}>(
 				gql`
-					${simpleMusicTrackFragment}
-					mutation LikeTrack($trackId: ID!) {
-						likeTrack(trackId: $trackId) {
-							...SimpleMusicTrackFragment
+					${trackFragment}
+					mutation LikeTrack($trackId: Base64ID!) {
+						toggleLike(trackId: $trackId) {
+							...TrackFragment
 						}
 					}
 				`,
 				{ trackId }
 			);
-			return response.likeTrack;
+			return toTrack(response.toggleLike);
 		},
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: queryKeys.tracks() });
@@ -539,19 +539,19 @@ export const useBangerTrack = () => {
 	return useMutation({
 		mutationFn: async (trackId: string) => {
 			const response = await graffleClient.request<{
-				bangerTrack: SimpleMusicTrack;
+				toggleBanger: Track;
 			}>(
 				gql`
-					${simpleMusicTrackFragment}
-					mutation BangerTrack($trackId: ID!) {
-						bangerTrack(trackId: $trackId) {
-							...SimpleMusicTrackFragment
+					${trackFragment}
+					mutation BangerTrack($trackId: Base64ID!) {
+						toggleBanger(trackId: $trackId) {
+							...TrackFragment
 						}
 					}
 				`,
 				{ trackId }
 			);
-			return response.bangerTrack;
+			return toTrack(response.toggleBanger);
 		},
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: queryKeys.tracks() });
@@ -568,16 +568,16 @@ export const useDislikeTrack = () => {
 	return useMutation({
 		mutationFn: async (trackId: string) => {
 			const response = await graffleClient.request<{
-				dislikeTrack: boolean;
+				toggleDislike: boolean;
 			}>(
 				gql`
-					mutation DislikeTrack($trackId: ID!) {
-						dislikeTrack(trackId: $trackId)
+					mutation ToggleDislike($trackId: Base64ID!) {
+						toggleDislike(trackId: $trackId)
 					}
 				`,
 				{ trackId }
 			);
-			return response.dislikeTrack;
+			return response.toggleDislike;
 		},
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: queryKeys.tracks() });

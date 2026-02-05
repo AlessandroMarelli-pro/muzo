@@ -11,6 +11,14 @@ import {
 
 export const MUSIC_TRACK_REPOSITORY = Symbol('IMusicTrackRepository');
 
+export type MusicTrackUpdateData = {
+  stats?: {
+    isFavorite?: boolean;
+    isBanger?: boolean;
+    isLiked?: boolean;
+  };
+};
+
 export interface IMusicTrackRepository {
   getOneById(id: MusicTrackId): Promise<MusicTrack>;
   getManyByIds(ids: MusicTrackId[]): Promise<MusicTrack[]>;
@@ -33,4 +41,9 @@ export interface IMusicTrackRepository {
     pagination: WithPagination,
   ): Promise<PaginationResult<MusicTrack>>;
   getRandomTrackId(): Promise<MusicTrackId>;
+  updateOneById(
+    id: MusicTrackId,
+    data: MusicTrackUpdateData,
+  ): Promise<MusicTrack>;
+  removeOneById(id: MusicTrackId): Promise<boolean>;
 }
