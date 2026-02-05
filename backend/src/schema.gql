@@ -293,7 +293,6 @@ type Query {
   Fetch any node by global ID. Use inline fragments (... on CleanArchPlaylist { ... }) to request fields.
   """
   node(id: Base64ID!): Node
-  randomTrackWithStats: RandomTrackWithStats!
   recentlyPlayed(limit: Float! = 20): [SimpleMusicTrack!]!
   tracks(options: TrackQueryOptions): [SimpleMusicTrack!]!
 }
@@ -312,7 +311,7 @@ type RandomTrackWithStats {
   dislikedCount: Float!
   likedCount: Float!
   remainingCount: Float!
-  track: SimpleMusicTrack
+  track: Track
 }
 
 type Range {
@@ -548,6 +547,7 @@ type User implements Node {
   playlists: PlaylistsResult!
   queue: [QueueItem!]!
   randomTrackId: Base64ID!
+  randomTrackWithStats: RandomTrackWithStats!
   staticFilterOptions: StaticFilterOptions!
   tracks(id: Base64ID): [Track!]!
 }

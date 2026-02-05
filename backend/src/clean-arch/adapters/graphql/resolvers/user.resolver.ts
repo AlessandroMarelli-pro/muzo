@@ -21,6 +21,7 @@ import { toFilter } from '../mappers/saved-filter.mapper';
 
 import { GetHomeMetricsUseCase } from 'src/clean-arch/application/use-cases/metrics/GetHomeMetrics';
 import { GetLibrariesUseCase } from 'src/clean-arch/application/use-cases/music-library/GetLibraries';
+import { GetRandomTrackWithStatsUseCase } from 'src/clean-arch/application/use-cases/music-track/GetRandomTrackWithStats';
 import { parseMusicTrackId } from '../../common/utils/parse-id';
 import { toMusicLibrary } from '../mappers/music-library.mapper';
 import { toTrack } from '../mappers/track.mapper';
@@ -34,7 +35,11 @@ import {
   FilterCriteriaResult,
   StaticFilterOptions,
 } from '../schema/saved-filter.schema';
-import { PaginatedTracks, Track } from '../schema/track.schema';
+import {
+  PaginatedTracks,
+  RandomTrackWithStats,
+  Track,
+} from '../schema/track.schema';
 import { PlaylistsResult, User } from '../schema/user.schema';
 
 @Resolver(() => User)
@@ -52,6 +57,7 @@ export class UserResolver {
     private readonly getRandomTrackIdUseCase: GetRandomTrackIdUseCase,
     private readonly getLibrariesUseCase: GetLibrariesUseCase,
     private readonly getTracksPaginatedUseCase: GetTracksPaginatedUseCase,
+    private readonly getRandomTrackWithStatsUseCase: GetRandomTrackWithStatsUseCase,
   ) {}
 
   @Query(() => User)
@@ -134,6 +140,17 @@ export class UserResolver {
   @ResolveField(() => Base64ID)
   async randomTrackId(): Promise<string> {
     return this.getRandomTrackIdUseCase.execute();
+  }
+
+  @ResolveField(() => RandomTrackWithStats)
+  async randomTrackWithStats(): Promise<RandomTrackWithStats> {
+    return this.getRandomTrackWithStatsUseCase.execute().then((result) => ({
+      track: result.track ? toTrack(result.track) : null,
+      likedCount: result.likedCount,
+      bangerCount: result.bangerCount,
+      dislikedCount: result.dislikedCount,
+      remainingCount: result.remainingCount,
+    }));
   }
 
   @ResolveField(() => [Library])

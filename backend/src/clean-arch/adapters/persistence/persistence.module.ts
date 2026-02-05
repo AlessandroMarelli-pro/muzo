@@ -31,8 +31,10 @@ import { PlaylistRepository } from './repositories/playlist/playlist.repository'
 import { QueueRepository } from './repositories/queue/queue.repository';
 import { SavedFilterRepository } from './repositories/saved-filter/saved-filter.repository';
 
+import { MusicTrackQuery } from './queries/music-track/music-track.query';
 import { HiddenMusicTrackRepository } from './repositories/hidden-music-track/hidden-music-track.repository';
 
+import { MUSIC_TRACK_QUERIES } from 'src/clean-arch/application/ports/queries/IMusicTrackQueries';
 import { HIDDEN_MUSIC_TRACK_REPOSITORY } from 'src/clean-arch/application/ports/repositories/IHiddenMusicTrackRepository';
 
 @Global()
@@ -61,6 +63,7 @@ import { HIDDEN_MUSIC_TRACK_REPOSITORY } from 'src/clean-arch/application/ports/
       provide: HIDDEN_MUSIC_TRACK_REPOSITORY,
       useClass: HiddenMusicTrackRepository,
     },
+    { provide: MUSIC_TRACK_QUERIES, useClass: MusicTrackQuery },
   ],
   exports: [
     PLAYLIST_REPOSITORY,
@@ -78,6 +81,7 @@ import { HIDDEN_MUSIC_TRACK_REPOSITORY } from 'src/clean-arch/application/ports/
     RECOMMENDATION_DATA_PORT,
     MUSIC_LIBRARY_REPOSITORY,
     HIDDEN_MUSIC_TRACK_REPOSITORY,
+    MUSIC_TRACK_QUERIES,
   ],
 })
 export class AdaptersPersistenceModule {}

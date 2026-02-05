@@ -7,11 +7,8 @@ import {
 import { MusicTrackQueryOptions } from '../../models/music-track.model';
 import { MusicTrackService } from './music-track.service';
 
-import { MusicTrack as MusicTrackModel } from '@prisma/client';
-
 import {
   MusicTrack,
-  RandomTrackWithStats,
   SimpleMusicTrack,
   TrackQueryOptions,
 } from './music-track.model';
@@ -62,17 +59,6 @@ export function mapToSimpleMusicTrack(
 export class MusicTrackResolver {
   constructor(private readonly musicTrackService: MusicTrackService) {}
 
-  // Helper function to convert Prisma MusicTrack to GraphQL MusicTrack
-  private mapToGraphQLTrack(track: MusicTrackModel): MusicTrack {
-    return {
-      ...track,
-      aiTags: track.aiTags ? JSON.parse(track.aiTags) : null,
-      aiDescription: track.aiDescription,
-      userTags: [],
-      albumArtPath: '',
-    };
-  }
-
   private mapToGraphQLTracksList(
     tracks: (MusicTrackWithRelations | SimpleMusicTrackInterface)[],
   ): SimpleMusicTrack[] {
@@ -95,20 +81,6 @@ export class MusicTrackResolver {
     };
     const tracks = await this.musicTrackService.findAll(queryOptions);
     return this.mapToGraphQLTracksList(tracks as MusicTrackWithRelations[]);
-  }
-
-  @Query(() => RandomTrackWithStats)
-  async randomTrackWithStats(): Promise<RandomTrackWithStats> {
-    const result = await this.musicTrackService.getRandomTrackWithStats();
-    return {
-      track: result.track
-        ? mapToSimpleMusicTrack(result.track as MusicTrackWithRelations)
-        : null,
-      likedCount: result.likedCount,
-      bangerCount: result.bangerCount,
-      dislikedCount: result.dislikedCount,
-      remainingCount: result.remainingCount,
-    };
   }
 
   @Query(() => [SimpleMusicTrack])

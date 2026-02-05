@@ -373,7 +373,6 @@ model ImageSearch {
   updatedById  String?
     
 
-  
   // Relations
   track      MusicTrack @relation(fields: [trackId], references: [id], onDelete: Cascade)
   

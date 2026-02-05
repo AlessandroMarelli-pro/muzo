@@ -1,4 +1,5 @@
 export * from './GetRandomTrackId';
+export * from './GetRandomTrackWithStats';
 export * from './GetTrack';
 export * from './GetTracks';
 export * from './GetTracksPaginated';

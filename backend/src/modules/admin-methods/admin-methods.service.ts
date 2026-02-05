@@ -51,6 +51,7 @@ export class AdminMethodsService {
       'trackSubgenre',
       'queue',
       'musicLibrary',
+      'hiddenMusicTrack',
     ];
     for (const table of tables) {
       await this.prisma[table].updateMany({

@@ -149,3 +149,21 @@ export class Track {
 
 @ObjectType()
 export class PaginatedTracks extends Paginated(Track) {}
+
+@ObjectType()
+export class RandomTrackWithStats {
+  @Field(() => Track, { nullable: true })
+  track: Track | null;
+
+  @Field(() => Float)
+  likedCount: number;
+
+  @Field(() => Float)
+  bangerCount: number;
+
+  @Field(() => Float)
+  dislikedCount: number;
+
+  @Field(() => Float)
+  remainingCount: number;
+}

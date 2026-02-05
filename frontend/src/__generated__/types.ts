@@ -262,7 +262,6 @@ export type Mutation = {
   authenticateSpotify: SpotifyAuthResult;
   authenticateTidal: TidalAuthResult;
   authenticateYouTube: YouTubeAuthResult;
-  bangerTrack: SimpleMusicTrack;
   caUpdatePlaylist: CleanArchPlaylist;
   createLibrary: Library;
   createPlaylist: CleanArchPlaylist;
@@ -270,9 +269,7 @@ export type Mutation = {
   deleteLibrary: Scalars['Boolean']['output'];
   deletePlaylist: Scalars['Boolean']['output'];
   deleteSavedFilter: Scalars['Boolean']['output'];
-  dislikeTrack: Scalars['Boolean']['output'];
   exportPlaylistToM3U: Scalars['String']['output'];
-  likeTrack: SimpleMusicTrack;
   removeTrackFromPlaylist: Scalars['Boolean']['output'];
   removeTrackFromQueue: RemoveTrackFromQueueResponse;
   resetQueue: Scalars['Boolean']['output'];
@@ -328,11 +325,6 @@ export type MutationAuthenticateYouTubeArgs = {
 };
 
 
-export type MutationBangerTrackArgs = {
-  trackId: Scalars['ID']['input'];
-};
-
-
 export type MutationCaUpdatePlaylistArgs = {
   id: Scalars['Base64ID']['input'];
   input: CleanArchUpdatePlaylistInput;
@@ -369,18 +361,8 @@ export type MutationDeleteSavedFilterArgs = {
 };
 
 
-export type MutationDislikeTrackArgs = {
-  trackId: Scalars['ID']['input'];
-};
-
-
 export type MutationExportPlaylistToM3UArgs = {
   playlistId: Scalars['Base64ID']['input'];
-};
-
-
-export type MutationLikeTrackArgs = {
-  trackId: Scalars['ID']['input'];
 };
 
 
@@ -508,7 +490,6 @@ export type Query = {
   me: User;
   /** Fetch any node by global ID. Use inline fragments (... on CleanArchPlaylist { ... }) to request fields. */
   node?: Maybe<Node>;
-  randomTrackWithStats: RandomTrackWithStats;
   recentlyPlayed: Array<SimpleMusicTrack>;
   tracks: Array<SimpleMusicTrack>;
 };
@@ -544,7 +525,7 @@ export type RandomTrackWithStats = {
   dislikedCount: Scalars['Float']['output'];
   likedCount: Scalars['Float']['output'];
   remainingCount: Scalars['Float']['output'];
-  track?: Maybe<SimpleMusicTrack>;
+  track?: Maybe<Track>;
 };
 
 export type Range = {
@@ -806,6 +787,7 @@ export type User = Node & {
   playlists: PlaylistsResult;
   queue: Array<QueueItem>;
   randomTrackId: Scalars['Base64ID']['output'];
+  randomTrackWithStats: RandomTrackWithStats;
   staticFilterOptions: StaticFilterOptions;
   tracks: Array<Track>;
 };
@@ -870,7 +852,7 @@ export type GetRandomTrackQuery = { __typename?: 'Query', node?:
 export type GetRandomTrackWithStatsQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type GetRandomTrackWithStatsQuery = { __typename?: 'Query', randomTrackWithStats: { __typename?: 'RandomTrackWithStats', likedCount: number, bangerCount: number, dislikedCount: number, remainingCount: number, track?: { __typename?: 'SimpleMusicTrack', id: string, artist?: string | null, format?: string | null, title?: string | null, duration: number, genres?: Array<string> | null, subgenres?: Array<string> | null, date?: any | null, listeningCount?: number | null, lastPlayedAt?: any | null, isFavorite?: boolean | null, isLiked?: boolean | null, isBanger?: boolean | null, createdAt?: any | null, updatedAt?: any | null, tempo?: number | null, key?: string | null, valenceMood?: string | null, arousalMood?: string | null, danceabilityFeeling?: string | null, imagePath?: string | null, lastScannedAt?: any | null, fileCreatedAt?: any | null, description?: string | null, tags?: Array<string> | null, vocalsDescriptions?: string | null, atmosphereKeywords?: Array<string> | null, contextBackgrounds?: string | null, contextImpacts?: string | null, libraryId?: string | null } | null } };
+export type GetRandomTrackWithStatsQuery = { __typename?: 'Query', me: { __typename?: 'User', randomTrackWithStats: { __typename?: 'RandomTrackWithStats', likedCount: number, bangerCount: number, dislikedCount: number, remainingCount: number, track?: { __typename?: 'Track', id: any, artist?: string | null, title?: string | null, createdAt?: any | null, updatedAt?: any | null, imagePath?: string | null, lastScannedAt?: any | null, libraryId?: any | null, stats: { __typename?: 'TrackStats', listeningCount: number, lastPlayedAt?: any | null, isFavorite: boolean, isLiked: boolean, isBanger: boolean }, fileInfo: { __typename?: 'TrackFileInfo', filePath: string, fileName: string, fileSize: number, fileCreatedAt: any }, technicalInfo: { __typename?: 'TrackTechnicalInfo', duration: number, format: string }, metadata: { __typename?: 'TrackMetadata', album?: string | null, date?: any | null, genres?: Array<string> | null, subgenres?: Array<string> | null }, aiMetadata: { __typename?: 'TrackAIMetadata', tags?: Array<string> | null, vocalsDesc?: string | null, description?: string | null, vocalsDescriptions?: string | null, atmosphereKeywords?: Array<string> | null, contextBackgrounds?: string | null, contextImpacts?: string | null }, musicalFeatures: { __typename?: 'TrackMusicalFeatures', tempo?: number | null, key?: string | null, valenceMood?: string | null, arousalMood?: string | null, danceabilityFeeling?: string | null, acousticness?: number | null, instrumentalness?: number | null, speechiness?: number | null } } | null } } };
 
 export type GetTrackRecommendationsQueryVariables = Exact<{
   trackId: Scalars['Base64ID']['input'];

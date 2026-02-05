@@ -28,6 +28,7 @@ import {
   GetPlaylistUseCase,
   GetQueueUseCase,
   GetRandomTrackIdUseCase,
+  GetRandomTrackWithStatsUseCase,
   GetSavedFilterUseCase,
   GetStaticFilterOptionsUseCase,
   GetTrackRecommendationsUseCase,
@@ -104,6 +105,7 @@ const useCasesProviders = [
   ToggleLikeUseCase,
   ToggleDislikeUseCase,
   ToggleBangerUseCase,
+  GetRandomTrackWithStatsUseCase,
 ];
 @Module({
   imports: [ConfigModule],

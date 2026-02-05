@@ -245,22 +245,31 @@ export const useRandomTrack = (id?: string, filterLiked?: boolean) => {
 
 export const fetchRandomTrackWithStats = async () => {
 	const response = await graffleClient.request<{
-		randomTrackWithStats: RandomTrackWithStats;
+		me: { randomTrackWithStats: RandomTrackWithStats };
 	}>(gql`
-		${simpleMusicTrackFragment}
+		${trackFragment}
 		query GetRandomTrackWithStats {
-			randomTrackWithStats {
-				track {
-					...SimpleMusicTrackFragment
+			me {
+				randomTrackWithStats {
+					track {
+						...TrackFragment
+					}
+					likedCount
+					bangerCount
+					dislikedCount
+					remainingCount
 				}
-				likedCount
-				bangerCount
-				dislikedCount
-				remainingCount
 			}
 		}
 	`);
-	return response.randomTrackWithStats;
+	const randomTrackWithStats = response.me.randomTrackWithStats;
+	const track = randomTrackWithStats.track
+		? toTrack(randomTrackWithStats.track)
+		: null;
+	return {
+		...randomTrackWithStats,
+		track,
+	};
 };
 export const useRandomTrackWithStats = () => {
 	return useQuery({
