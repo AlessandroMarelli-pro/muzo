@@ -1,5 +1,6 @@
 import { MusicLibraryId } from 'src/clean-arch/kernel/ids';
 import { MusicLibrary } from 'src/clean-arch/kernel/types';
+import { createToken } from '../../utils/create-token';
 
 export type MusicLibraryUpdateData = {
   name?: string;
@@ -20,7 +21,9 @@ export type MusicLibraryCreateData = {
   maxFileSize?: number;
 };
 
-export const MUSIC_LIBRARY_REPOSITORY = Symbol('IMusicLibraryRepository');
+export const MUSIC_LIBRARY_REPOSITORY = createToken<IMusicLibraryRepository>(
+  'MUSIC_LIBRARY_REPOSITORY',
+);
 
 export interface IMusicLibraryRepository {
   save(library: MusicLibraryCreateData): Promise<MusicLibrary>;

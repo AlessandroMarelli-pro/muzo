@@ -3,9 +3,12 @@ import {
   SavedFilter,
 } from 'src/clean-arch/kernel/types/model-types';
 
+import { createToken } from 'src/clean-arch/application/utils/create-token';
 import { SavedFilterId } from 'src/clean-arch/kernel/ids';
 
-export const SAVED_FILTER_REPOSITORY = Symbol('SAVED_FILTER_REPOSITORY');
+export const SAVED_FILTER_REPOSITORY = createToken<ISavedFilterRepository>(
+  'SAVED_FILTER_REPOSITORY',
+);
 
 export type SavedFilterData = {
   name: string;

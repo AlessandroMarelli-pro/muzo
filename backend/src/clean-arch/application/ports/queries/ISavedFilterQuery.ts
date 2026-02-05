@@ -1,6 +1,8 @@
 import { GenreId, MusicLibraryId, SubgenreId } from 'src/clean-arch/kernel/ids';
+import { createToken } from '../../utils/create-token';
 
-export const SAVED_FILTER_QUERY = Symbol('SAVED_FILTER_QUERY');
+export const SAVED_FILTER_QUERY =
+  createToken<ISavedFilterQuery>('SAVED_FILTER_QUERY');
 
 export type FilterWithID<T> = {
   id: T;

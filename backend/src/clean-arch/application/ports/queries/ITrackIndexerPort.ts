@@ -1,7 +1,8 @@
 import { MusicTrackId } from 'src/clean-arch/kernel/ids';
 import { MusicTrack } from 'src/clean-arch/kernel/types';
-
-export const TRACK_INDEXER_PORT = Symbol('ITrackIndexerPort');
+import { createToken } from '../../utils/create-token';
+export const TRACK_INDEXER_PORT =
+  createToken<ITrackIndexerPort>('TRACK_INDEXER_PORT');
 
 export interface ITrackIndexerPort {
   createIndex(): Promise<void>;

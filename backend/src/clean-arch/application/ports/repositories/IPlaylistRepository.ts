@@ -1,6 +1,7 @@
 import { Maybe } from 'src/clean-arch/kernel/common';
 import { PlaylistId } from 'src/clean-arch/kernel/ids';
 import { Playlist, PlaylistSorting } from '../../../kernel/types/model-types';
+import { createToken } from '../../utils/create-token';
 import { PlaylistTrackWithTrackDetail } from '../dtos/PlaylistTrackWithDetail';
 import { PlaylistTrackWithTrackDetailAndSorting } from '../dtos/PlaylistWithTrackDetailsAndSorting';
 import { PlaylistSortingOptions } from './IPlaylistTrackRepository';
@@ -11,7 +12,9 @@ export type PlaylistUpdateData = {
   isPublic?: boolean;
 };
 
-export const PLAYLIST_REPOSITORY = Symbol('IPlaylistRepository');
+export const PLAYLIST_REPOSITORY = createToken<IPlaylistRepository>(
+  'PLAYLIST_REPOSITORY',
+);
 
 export type PlaylistWithSorting = Playlist & {
   sorting: Maybe<PlaylistSorting>;

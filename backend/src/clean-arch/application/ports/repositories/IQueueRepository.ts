@@ -1,3 +1,4 @@
+import { createToken } from 'src/clean-arch/application/utils/create-token';
 import { Maybe } from 'src/clean-arch/kernel/common';
 import { MusicTrackId } from 'src/clean-arch/kernel/ids';
 import { MusicTrack, QueueItem } from 'src/clean-arch/kernel/types/model-types';
@@ -18,7 +19,8 @@ export type UpdateQueuePositionInput = {
   position: number;
 };
 
-export const QUEUE_REPOSITORY = Symbol('IQueueRepository');
+export const QUEUE_REPOSITORY =
+  createToken<IQueueRepository>('QUEUE_REPOSITORY');
 
 export interface IQueueRepository {
   getQueue(): Promise<QueueItemWithTrack[]>;

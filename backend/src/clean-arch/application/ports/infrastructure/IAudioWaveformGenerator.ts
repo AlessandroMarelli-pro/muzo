@@ -1,4 +1,8 @@
-export const AUDIO_WAVEFORM_GENERATOR = Symbol('IAudioWaveformGenerator');
+import { createToken } from '../../utils/create-token';
+
+export const AUDIO_WAVEFORM_GENERATOR = createToken<IAudioWaveformGenerator>(
+  'AUDIO_WAVEFORM_GENERATOR',
+);
 
 export interface WaveformOptions {
   width?: number;

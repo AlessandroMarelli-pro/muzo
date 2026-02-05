@@ -1,3 +1,4 @@
+import { createToken } from 'src/clean-arch/application/utils/create-token';
 import {
   MusicTrackId,
   PlaylistId,
@@ -10,7 +11,9 @@ import {
 } from '../../../kernel/types/model-types';
 import { PlaylistTrackWithTrackDetail } from '../dtos/PlaylistTrackWithDetail';
 
-export const PLAYLIST_TRACK_REPOSITORY = Symbol('IPlaylistTrackRepository');
+export const PLAYLIST_TRACK_REPOSITORY = createToken<IPlaylistTrackRepository>(
+  'PLAYLIST_TRACK_REPOSITORY',
+);
 
 export type PlaylistTrackPresence = {
   playlistId: PlaylistId;

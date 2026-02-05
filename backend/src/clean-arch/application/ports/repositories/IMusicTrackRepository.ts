@@ -10,8 +10,11 @@ import {
   WithCursorPagination,
   WithPagination,
 } from 'src/clean-arch/kernel/types/pagination';
+import { createToken } from '../../utils/create-token';
 
-export const MUSIC_TRACK_REPOSITORY = Symbol('IMusicTrackRepository');
+export const MUSIC_TRACK_REPOSITORY = createToken<IMusicTrackRepository>(
+  'MUSIC_TRACK_REPOSITORY',
+);
 
 export type MusicTrackUpdateData = {
   stats?: {

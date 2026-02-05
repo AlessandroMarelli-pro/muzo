@@ -5,12 +5,14 @@ import {
   PlaylistSortingDirection,
   PlaylistSortingKey,
 } from 'src/clean-arch/kernel/types';
+import { createToken } from '../../utils/create-token';
 
 export type PlaylistSortingUpdateData = {
   sortingKey?: PlaylistSortingKey;
   sortingDirection?: PlaylistSortingDirection;
 };
-export const PLAYLIST_SORTING_REPOSITORY = Symbol('IPlaylistSortingRepository');
+export const PLAYLIST_SORTING_REPOSITORY =
+  createToken<IPlaylistSortingRepository>('PLAYLIST_SORTING_REPOSITORY');
 
 export type PlaylistSortingUpsertData = {
   sortingKey: PlaylistSortingKey;

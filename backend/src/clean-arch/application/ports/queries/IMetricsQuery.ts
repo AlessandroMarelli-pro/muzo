@@ -1,4 +1,6 @@
-export const METRICS_QUERY = Symbol('IMetricsQuery');
+import { createToken } from '../../utils/create-token';
+
+export const METRICS_QUERY = createToken<IMetricsQuery>('METRICS_QUERY');
 
 export interface MetricsDto {
   totalTracks: number;
