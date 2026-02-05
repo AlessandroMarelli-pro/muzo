@@ -51,8 +51,6 @@ export interface AIMetadataJobData {
   totalFiles?: number;
 }
 
-
-
 export interface EndScanLibraryJobData {
   libraryId: string;
   libraryName: string;
@@ -70,7 +68,10 @@ export class QueueService {
     private readonly libraryScanQueue: Queue<LibraryScanJobData>,
     @InjectQueue('audio-scan')
     private readonly audioScanQueue: Queue<
-      AudioScanJobData | EndScanLibraryJobData | AIMetadataJobData | AudioScanBatchJobData
+      | AudioScanJobData
+      | EndScanLibraryJobData
+      | AIMetadataJobData
+      | AudioScanBatchJobData
     >,
     private readonly configService: ConfigService,
     private readonly scanSessionService: ScanSessionService,
@@ -89,9 +90,9 @@ export class QueueService {
     libraryName: string,
   ): Promise<string> {
     try {
-
       // Create scan session
-      const { sessionId } = await this.scanSessionService.createSession(libraryId);
+      const { sessionId } =
+        await this.scanSessionService.createSession(libraryId);
 
       const jobData: LibraryScanJobData = {
         libraryId,
@@ -123,7 +124,6 @@ export class QueueService {
       throw error;
     }
   }
-
 
   /**
    * Schedule multiple audio file scans in batches of 10 files using audio-scan-batch
@@ -190,7 +190,7 @@ export class QueueService {
           totalFiles: audioFiles.length,
           totalBatches,
           batchIndex,
-          libraryId
+          libraryId,
         };
 
         batchJobs.push({
@@ -263,11 +263,6 @@ export class QueueService {
     }
   }
 
-
-
-
-
-
   /**
    * Get queue statistics
    */
@@ -284,14 +279,12 @@ export class QueueService {
       completed: number;
       failed: number;
     };
-
   }> {
     try {
-      const [libraryScanStats, audioScanStats,] =
-        await Promise.all([
-          this.libraryScanQueue.getJobCounts(),
-          this.audioScanQueue.getJobCounts(),
-        ]);
+      const [libraryScanStats, audioScanStats] = await Promise.all([
+        this.libraryScanQueue.getJobCounts(),
+        this.audioScanQueue.getJobCounts(),
+      ]);
 
       return {
         libraryScan: {
@@ -306,7 +299,6 @@ export class QueueService {
           completed: audioScanStats.completed,
           failed: audioScanStats.failed,
         },
-
       };
     } catch (error) {
       this.logger.error('Failed to get queue stats:', error);
@@ -366,90 +358,6 @@ export class QueueService {
   }
 
   /**
-   * Schedule AI metadata extraction job for a single track
-   */
-  async scheduleAIMetadataExtraction(
-    trackId: string,
-    filePath: string,
-    fileName: string,
-    libraryId: string,
-  ): Promise<void> {
-    try {
-      const jobData: AIMetadataJobData = {
-        trackId,
-        filePath,
-        fileName,
-        libraryId,
-      };
-
-      await this.audioScanQueue.add('extract-ai-metadata', jobData, {
-        attempts: this.queueConfig.queues.audioScan.attempts,
-        backoff: {
-          type: this.queueConfig.queues.audioScan.backoff.type as any,
-          delay: this.queueConfig.queues.audioScan.backoff.delay,
-        },
-        removeOnComplete: false,
-        removeOnFail: false,
-      });
-
-      this.logger.log(`Scheduled AI metadata extraction for: ${fileName}`);
-    } catch (error) {
-      this.logger.error(
-        `Failed to schedule AI metadata extraction for ${fileName}:`,
-        error,
-      );
-      throw error;
-    }
-  }
-
-  /**
-   * Schedule AI metadata extraction for multiple tracks in batch
-   */
-  async scheduleBatchAIMetadataExtraction(
-    tracks: Array<{
-      trackId: string;
-      filePath: string;
-      fileName: string;
-      libraryId: string;
-    }>,
-  ): Promise<void> {
-    try {
-      const jobs = tracks.map((track, index) => ({
-        name: 'extract-ai-metadata',
-        data: {
-          trackId: track.trackId,
-          filePath: track.filePath,
-          fileName: track.fileName,
-          libraryId: track.libraryId,
-          index,
-          totalFiles: tracks.length,
-        } as AIMetadataJobData,
-        opts: {
-          attempts: this.queueConfig.queues.audioScan.attempts,
-          backoff: {
-            type: this.queueConfig.queues.audioScan.backoff.type as any,
-            delay: this.queueConfig.queues.audioScan.backoff.delay,
-          },
-          removeOnComplete: false,
-          removeOnFail: false,
-        },
-      }));
-
-      await this.audioScanQueue.addBulk(jobs);
-
-      this.logger.log(
-        `Scheduled batch AI metadata extraction for ${tracks.length} tracks`,
-      );
-    } catch (error) {
-      this.logger.error(
-        `Failed to schedule batch AI metadata extraction:`,
-        error,
-      );
-      throw error;
-    }
-  }
-
-  /**
    * Schedule audio scans for tracks with null originalArtist
    */
   async scheduleScanForMissingData(
@@ -502,5 +410,4 @@ export class QueueService {
       throw error;
     }
   }
-
 }

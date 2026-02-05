@@ -1,16 +1,12 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { ScanStatus } from '@prisma/client';
-import {
-  MusicLibrary,
-  MusicLibraryWithTracks,
-} from '../../models/music-library.model';
 import { PrismaService } from '../../shared/services/prisma.service';
 
 @Injectable()
 export class MusicLibraryService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findOne(id: string): Promise<MusicLibraryWithTracks> {
+  async findOne(id: string) {
     const library = await this.prisma.musicLibrary.findUnique({
       where: { id },
       include: {
@@ -33,10 +29,7 @@ export class MusicLibraryService {
     return library;
   }
 
-  async updateScanStatus(
-    id: string,
-    status: ScanStatus,
-  ): Promise<MusicLibrary> {
+  async updateScanStatus(id: string, status: ScanStatus) {
     const library = await this.prisma.musicLibrary.findUnique({
       where: { id },
     });

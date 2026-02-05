@@ -57,8 +57,6 @@ export class AudioScanProcessor extends WorkerHost {
   ): Promise<void> {
     if (job.name === 'end-scan-library') {
       await this.processEndScanLibrary(job as Job<EndScanLibraryJobData>);
-    } else if (job.name === 'extract-ai-metadata') {
-      await this.processAIMetadataExtraction(job as Job<AIMetadataJobData>);
     } else if (job.name === 'audio-scan-batch') {
       await this.processAudioScanBatch(
         job as unknown as Job<AudioScanBatchJobData>,
@@ -818,72 +816,6 @@ export class AudioScanProcessor extends WorkerHost {
     }
 
     return updatedTrack;
-  }
-
-  /**
-   * Process AI metadata extraction job
-   */
-  private async processAIMetadataExtraction(
-    job: Job<AIMetadataJobData>,
-  ): Promise<void> {
-    const { trackId, filePath, fileName, libraryId, index, totalFiles } =
-      job.data;
-
-    this.logger.log(
-      `Starting AI metadata extraction for: ${fileName} (${index !== undefined ? `${index + 1}/${totalFiles}` : 'single'})`,
-    );
-
-    try {
-      // Get track from database
-      const track = await this.prismaService.musicTrack.findUnique({
-        where: { id: trackId },
-      });
-
-      if (!track) {
-        throw new Error(`Track not found: ${trackId}`);
-      }
-
-      // Extract metadata using AI (pass both filename and file_path for ID3 tag extraction)
-      const aiMetadata = await this.aiIntegrationService.extractMetadataWithAI(
-        fileName,
-        filePath,
-      );
-      // Update track with AI metadata
-      await this.updateTrackWithAIMetadata(track.id, aiMetadata.metadata);
-
-      this.logger.log(`Successfully extracted AI metadata for: ${fileName}`);
-
-      // Update job progress
-      await job.updateProgress(100);
-    } catch (error) {
-      this.logger.error(
-        `AI metadata extraction failed for ${fileName}:`,
-        error.message,
-      );
-
-      // Update track with error status if it exists
-      try {
-        const track = await this.prismaService.musicTrack.findUnique({
-          where: { id: trackId },
-        });
-
-        if (track) {
-          await this.prismaService.musicTrack.update({
-            where: { id: track.id },
-            data: {
-              analysisError: `AI metadata extraction failed: ${error.message}`,
-            },
-          });
-        }
-      } catch (updateError) {
-        this.logger.error(
-          'Failed to update track error status:',
-          updateError.message,
-        );
-      }
-
-      throw error;
-    }
   }
 
   /**

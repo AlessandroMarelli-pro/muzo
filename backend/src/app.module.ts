@@ -25,7 +25,6 @@ import { ConfigModuleSetup } from './config';
 import { GraphiQLModule } from './graphiql/graphiql.module';
 import { AdminMethodsModule } from './modules/admin-methods/admin-methods.module';
 import { AiIntegrationModule } from './modules/ai-integration/ai-integration.module';
-import { FilterModule } from './modules/filter/filter.module';
 import { HealthModule } from './modules/health/health.module';
 import { MusicLibraryModule } from './modules/music-library/music-library.module';
 import { QueueModule } from './modules/queue/queue.module';
@@ -102,7 +101,6 @@ import { SharedModule } from './shared/shared.module';
     MusicLibraryModule,
     ThirdPartySyncModule,
     AiIntegrationModule,
-    FilterModule,
     AdminMethodsModule,
     ElasticsearchModule,
   ],
