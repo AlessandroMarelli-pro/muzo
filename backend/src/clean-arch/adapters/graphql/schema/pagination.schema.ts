@@ -48,7 +48,7 @@ export function CursorPaginated<T>(
     @Field(() => [classRef], { nullable: true })
     items: T[];
 
-    @Field(() => Base64ID)
+    @Field(() => Base64ID, { nullable: true })
     nextCursor: string;
   }
   return CursorPaginatedType as Type<ICursorPaginatedType<T>>;

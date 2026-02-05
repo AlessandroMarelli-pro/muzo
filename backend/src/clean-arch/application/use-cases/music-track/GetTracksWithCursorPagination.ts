@@ -1,5 +1,9 @@
 import { Inject } from '@nestjs/common';
-import { MusicTrack } from 'src/clean-arch/kernel/types/model-types';
+import { MusicLibraryId } from 'src/clean-arch/kernel/ids';
+import {
+  FilterCriteria,
+  MusicTrack,
+} from 'src/clean-arch/kernel/types/model-types';
 import {
   CursorPaginationResult,
   WithCursorPagination,
@@ -24,10 +28,17 @@ export class GetTracksWithCursorPaginationUseCase {
 
   async execute(
     pagination: WithCursorPagination<MusicTrack>,
+    libraryId?: MusicLibraryId,
   ): Promise<CursorPaginationResult<MusicTrack>> {
-    const criteria = await this.savedFilterRepository.getCurrentFilter();
+    const filter = await this.savedFilterRepository.getCurrentFilter();
+    let criteria = filter?.criteria;
+    if (libraryId && criteria) {
+      criteria.libraryIds = [libraryId];
+    } else if (libraryId) {
+      criteria = { libraryIds: [libraryId] } as FilterCriteria;
+    }
     return this.musicTrackRepository.getManyByCriteriaWithCursorPagination(
-      criteria?.criteria,
+      criteria,
       pagination,
     );
   }

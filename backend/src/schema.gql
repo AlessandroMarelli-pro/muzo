@@ -106,7 +106,7 @@ input CreatePlaylistInput {
 type CursorPaginatedTracks {
   hasMore: Boolean!
   items: [Track!]
-  nextCursor: Base64ID!
+  nextCursor: Base64ID
 }
 
 input CursorPaginationArgs {
@@ -197,6 +197,7 @@ type Library implements Node {
   scanStatus: String!
   settings: LibrarySettings!
   totalTracks: Float!
+  tracks(pagination: CursorPaginationArgs): CursorPaginatedTracks!
   updatedAt: DateTime!
 }
 

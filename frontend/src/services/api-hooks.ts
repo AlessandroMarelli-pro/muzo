@@ -38,6 +38,8 @@ export type LibraryScanStatus =
 export const queryKeys = {
 	libraries: ['libraries'] as const,
 	library: (id: string) => ['libraries', id] as const,
+	libraryTracks: (id: string, pagination: CursorPaginationArgs) =>
+		['libraries', id, 'tracks', { pagination }] as const,
 	tracks: (pagination: CursorPaginationArgs) =>
 		['tracks', { pagination }] as const,
 	tracksList: (
@@ -143,6 +145,51 @@ export const useLibrary = (id: string) => {
 	});
 };
 
+export const useLibraryTracks = (
+	id: string,
+	pagination: CursorPaginationArgs
+) => {
+	return useInfiniteQuery({
+		queryKey: queryKeys.libraryTracks(id, pagination),
+		queryFn: async (d) => {
+			console.log(d.pageParam);
+			const response = await graffleClient.request<{
+				node: {
+					tracks: CursorPaginatedTracks;
+				};
+			}>(
+				parse(gql`
+					${trackFragment}
+					query GetLibraryTracks(
+						$id: Base64ID!
+						$pagination: CursorPaginationArgs!
+					) {
+						node(id: $id) {
+							... on Library {
+								tracks(pagination: $pagination) {
+									hasMore
+									nextCursor
+									items {
+										...TrackFragment
+									}
+								}
+							}
+						}
+					}
+				`),
+				{ id, pagination: { ...pagination, cursor: d.pageParam } }
+			);
+			return {
+				...response.node.tracks,
+				tracks: response.node.tracks.items?.map(toTrack),
+			};
+		},
+		initialPageParam: null,
+		getPreviousPageParam: (firstPage) => firstPage.nextCursor,
+		getNextPageParam: (lastPage) =>
+			lastPage.hasMore ? lastPage.nextCursor : null,
+	});
+};
 // Track Queries
 export const useTracks = ({
 	pagination,
@@ -151,7 +198,7 @@ export const useTracks = ({
 }) => {
 	return useInfiniteQuery({
 		queryKey: queryKeys.tracks(pagination),
-		queryFn: async () => {
+		queryFn: async ({ pageParam }) => {
 			const response = await graffleClient.request<{
 				me: { tracks: CursorPaginatedTracks };
 			}>(
@@ -170,7 +217,7 @@ export const useTracks = ({
 					}
 				`,
 				{
-					pagination,
+					pagination: { ...pagination, cursor: pageParam },
 				}
 			);
 			return {
@@ -178,7 +225,7 @@ export const useTracks = ({
 				tracks: response.me.tracks.items?.map(toTrack),
 			};
 		},
-		initialPageParam: 0,
+		initialPageParam: null,
 		getPreviousPageParam: (firstPage) => firstPage.nextCursor,
 		getNextPageParam: (lastPage) => lastPage.nextCursor,
 	});

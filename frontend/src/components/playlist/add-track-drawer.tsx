@@ -39,7 +39,6 @@ export function AddTrackDrawer({
 			size: 50,
 		},
 	});
-	console.log(data);
 	const pages = data?.pages;
 	const tracks = pages?.flatMap((page) => page.tracks);
 	const [shouldDisplayFilter, setShouldDisplayFilter] = useState(false);

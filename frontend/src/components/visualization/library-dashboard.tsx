@@ -7,7 +7,7 @@ import {
 	CardHeader,
 	CardTitle,
 } from '@/components/ui/card';
-import { useLibrary, useTracks } from '@/services/api-hooks';
+import { useLibrary, useLibraryTracks } from '@/services/api-hooks';
 import {
 	BarChart3,
 	Download,
@@ -18,7 +18,8 @@ import {
 	Share2,
 	TrendingUp,
 } from 'lucide-react';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { useInView } from 'react-intersection-observer';
 import MusicCard from '../track/music-card';
 import { LibraryChart } from './library-chart';
 import { LibraryInsights } from './library-insights';
@@ -39,7 +40,24 @@ export const LibraryDashboard: React.FC<LibraryDashboardProps> = ({
 	onExportData,
 	onShareLibrary,
 }) => {
-	const { data: tracks = [], isLoading } = useTracks({ libraryId });
+	const { ref, inView } = useInView();
+
+	const {
+		data,
+		isLoading,
+		isFetching,
+		isFetchingNextPage,
+		hasNextPage,
+		fetchNextPage,
+	} = useLibraryTracks(libraryId, {
+		direction: 'AFTER',
+		size: 40,
+		cursor: null,
+	});
+
+	const pages = data?.pages ?? [];
+	const tracks = pages?.flatMap((page) => page.tracks);
+
 	const { data: library, isLoading: isLibraryLoading } = useLibrary(libraryId);
 
 	const [activeView, setActiveView] = useState<DashboardView>('overview');
@@ -100,6 +118,11 @@ export const LibraryDashboard: React.FC<LibraryDashboardProps> = ({
 				return null;
 		}
 	};
+	useEffect(() => {
+		if (inView && hasNextPage && !isFetchingNextPage) {
+			fetchNextPage();
+		}
+	}, [inView, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
 	if (isLoading || isLibraryLoading) {
 		return (
@@ -274,6 +297,19 @@ export const LibraryDashboard: React.FC<LibraryDashboardProps> = ({
 				{tracks?.map((track) => (
 					<MusicCard key={track.id} track={track} />
 				))}
+				<div>
+					<button
+						ref={ref}
+						onClick={() => fetchNextPage()}
+						disabled={!hasNextPage || isFetchingNextPage}
+					>
+						{isFetchingNextPage
+							? 'Loading more...'
+							: hasNextPage
+								? 'Load Newer'
+								: 'Nothing more to load'}
+					</button>
+				</div>
 			</div>
 
 			{/* Footer Actions */}
