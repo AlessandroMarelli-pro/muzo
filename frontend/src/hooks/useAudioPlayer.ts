@@ -1,5 +1,8 @@
 import { SimpleMusicTrack } from '@/__generated__/types';
-import { useToggleFavorite } from '@/services/music-player-hooks';
+import {
+	useRegisterPlayedTrack,
+	useToggleFavorite,
+} from '@/services/music-player-hooks';
 import { useQueue } from '@/services/queue-hooks';
 import { useCallback, useMemo, useState } from 'react';
 
@@ -25,10 +28,10 @@ export interface UseAudioPlayerOptions {
 
 export function useAudioPlayer(options: UseAudioPlayerOptions = {}) {
 	const { currentTrack, setCurrentTrack } = options;
-
+	let timeout: NodeJS.Timeout | null = null;
 	// Get queue for next/previous functionality
 	const { data: queueItems = [] } = useQueue();
-
+	const registerPlayedTrackMutation = useRegisterPlayedTrack();
 	// Local state - synced from server state
 	const [localState, setLocalState] = useState<AudioPlayerState>({
 		trackId: null,
@@ -38,11 +41,17 @@ export function useAudioPlayer(options: UseAudioPlayerOptions = {}) {
 
 	// Mutations
 	const toggleFavoriteMutation = useToggleFavorite();
-
 	// Sync local state from server state, but don't overwrite recent manual updates
 
 	// Play action - always calls playTrack mutation
 	const play = useCallback(async (trackId: string) => {
+		if (timeout) {
+			clearTimeout(timeout);
+		}
+		timeout = setTimeout(async () => {
+			await registerPlayedTrackMutation.mutateAsync(trackId);
+		}, 10000);
+
 		setLocalState((prev) => ({
 			...prev,
 			isPlaying: true,
@@ -52,6 +61,9 @@ export function useAudioPlayer(options: UseAudioPlayerOptions = {}) {
 
 	// Pause action
 	const pause = useCallback(async () => {
+		if (timeout) {
+			clearTimeout(timeout);
+		}
 		setLocalState((prev) => ({
 			...prev,
 			isPlaying: false,

@@ -218,6 +218,7 @@ type Mutation {
   deletePlaylist(id: Base64ID!): Boolean!
   deleteSavedFilter(id: Base64ID!): Boolean!
   exportPlaylistToM3U(playlistId: Base64ID!): String!
+  registerPlayedTrack(trackId: Base64ID!): Boolean!
   removeTrackFromPlaylist(playlistId: Base64ID!, trackId: Base64ID!): Boolean!
   removeTrackFromQueue(trackId: Base64ID!): RemoveTrackFromQueueResponse!
   resetQueue: Boolean!

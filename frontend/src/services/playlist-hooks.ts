@@ -19,41 +19,6 @@ import { toast } from 'sonner';
 import { playlistFragment, trackFragment } from './fragments';
 import { toPlaylistItem } from './playlist.mapper';
 
-export const simpleMusicTrackFragment = gql`
-	fragment SimpleMusicTrackFragment on SimpleMusicTrack {
-		id
-		artist
-		format
-		title
-		duration
-		genres
-		subgenres
-		date
-		listeningCount
-		lastPlayedAt
-		isFavorite
-		isLiked
-		isBanger
-		createdAt
-		updatedAt
-		tempo
-		key
-		valenceMood
-		arousalMood
-		danceabilityFeeling
-		imagePath
-		lastScannedAt
-		fileCreatedAt
-		description
-		tags
-		vocalsDescriptions
-		atmosphereKeywords
-		contextBackgrounds
-		contextImpacts
-		libraryId
-	}
-`;
-
 // GraphQL Queries and Mutations
 const GET_PLAYLISTS = gql`
 	query GetPlaylists($verifyTrackId: Base64ID) {

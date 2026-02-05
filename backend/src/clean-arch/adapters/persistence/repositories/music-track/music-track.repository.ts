@@ -38,6 +38,15 @@ export class MusicTrackRepository implements IMusicTrackRepository {
       )
       .then(toDomain);
   }
+
+  async getLastPlayedTrack(): Promise<MusicTrack> {
+    return this.prisma.musicTrack
+      .findFirst({
+        where: { createdById: getCurrentUserId() },
+        orderBy: { lastPlayedAt: 'desc' },
+      })
+      .then(toDomain);
+  }
   async getAll(): Promise<MusicTrack[]> {
     return this.prisma.musicTrack
       .findMany({
@@ -206,7 +215,7 @@ export class MusicTrackRepository implements IMusicTrackRepository {
     return this.prisma.musicTrack
       .update({
         where: { id: extractModelId(id).dbId, createdById: getCurrentUserId() },
-        data: { listeningCount: { increment: 1 } },
+        data: { listeningCount: { increment: 1 }, lastPlayedAt: new Date() },
         include: musicTracksIncludes,
       })
       .then(toDomain);

@@ -6,6 +6,7 @@ export * from './GetTracks';
 export * from './GetTracksWithCursorPagination';
 export * from './GetTracksWithPagination';
 export * from './GetWaveformData';
+export * from './RegisterPlayedTrack';
 export * from './ToggleBangerTrack';
 export * from './ToggleDislikeTrack';
 export * from './ToggleFavorite';

@@ -39,6 +39,7 @@ import {
   GetTrackUseCase,
   GetWaveformDataUseCase,
   RecreateElasticsearchIndexUseCase,
+  RegisterPlayedTrackUseCase,
   RemoveTrackFromPlaylistUseCase,
   RemoveTrackFromQueueUseCase,
   ResetQueueUseCase,
@@ -110,6 +111,7 @@ const useCasesProviders = [
   ToggleBangerUseCase,
   GetRandomTrackWithStatsUseCase,
   GetRecentlyPlayedUseCase,
+  RegisterPlayedTrackUseCase,
 ];
 
 @Module({

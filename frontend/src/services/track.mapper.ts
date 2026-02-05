@@ -29,5 +29,7 @@ export function toTrack(track: Track): SimpleMusicTrack {
 		contextBackgrounds: track.aiMetadata.contextBackgrounds,
 		contextImpacts: track.aiMetadata.contextImpacts,
 		fileCreatedAt: track.fileInfo.fileCreatedAt,
+		listeningCount: track.stats.listeningCount,
+		lastPlayedAt: track.stats.lastPlayedAt,
 	};
 }

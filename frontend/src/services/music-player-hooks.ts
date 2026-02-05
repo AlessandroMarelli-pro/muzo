@@ -1,4 +1,8 @@
-import { ToggleFavoriteMutation, Track } from '@/__generated__/types';
+import {
+	RegisterPlayedTrackMutation,
+	ToggleFavoriteMutation,
+	Track,
+} from '@/__generated__/types';
 import { capitalizeEveryWord } from '@/lib/utils';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -102,6 +106,22 @@ export const useWaveformData = (trackId: string) => {
 			return response.me.musicPlayer.currentWaveformData;
 		},
 		enabled: !!trackId,
+	});
+};
+
+export const useRegisterPlayedTrack = () => {
+	return useMutation({
+		mutationFn: async (trackId: string) => {
+			const response = await graffleClient.request<RegisterPlayedTrackMutation>(
+				gql`
+					mutation RegisterPlayedTrack($trackId: Base64ID!) {
+						registerPlayedTrack(trackId: $trackId)
+					}
+				`,
+				{ trackId }
+			);
+			return response.registerPlayedTrack;
+		},
 	});
 };
 
