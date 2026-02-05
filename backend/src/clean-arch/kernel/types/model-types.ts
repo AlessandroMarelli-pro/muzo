@@ -34,7 +34,8 @@ export type Model =
   | Genre
   | TrackSubgenre
   | Subgenre
-  | SavedFilter;
+  | SavedFilter
+  | QueueItem;
 
 export type ModelBase<
   Id extends string | Brand<T, string> = string,

@@ -1,3 +1,4 @@
+import { PaginationArgs } from './../schema/pagination.args';
 // user.resolver.ts
 import { UseGuards } from '@nestjs/common';
 import { Args, Query, ResolveField, Resolver } from '@nestjs/graphql';
@@ -6,6 +7,7 @@ import {
   GetQueueUseCase,
   GetRandomTrackIdUseCase,
   GetTrackUseCase,
+  GetTracksPaginatedUseCase,
   GetTracksUseCase,
 } from 'src/clean-arch/application/use-cases';
 import {
@@ -26,12 +28,13 @@ import { Base64ID } from '../scalars/base64-id.scalar';
 import { Library } from '../schema/library.schema';
 import { HomeMetrics } from '../schema/metrics.schema';
 import { MusicPlayer } from '../schema/music-player.schema';
+import { IPaginatedType } from '../schema/pagination.schema';
 import { CleanArchQueueItem } from '../schema/queue-item.schema';
 import {
   FilterCriteriaResult,
   StaticFilterOptions,
 } from '../schema/saved-filter.schema';
-import { Track } from '../schema/track.schema';
+import { PaginatedTracks, Track } from '../schema/track.schema';
 import { PlaylistsResult, User } from '../schema/user.schema';
 
 @Resolver(() => User)
@@ -48,6 +51,7 @@ export class UserResolver {
     private readonly getTracksUseCase: GetTracksUseCase,
     private readonly getRandomTrackIdUseCase: GetRandomTrackIdUseCase,
     private readonly getLibrariesUseCase: GetLibrariesUseCase,
+    private readonly getTracksPaginatedUseCase: GetTracksPaginatedUseCase,
   ) {}
 
   @Query(() => User)
@@ -115,6 +119,18 @@ export class UserResolver {
     return tracks.map(toTrack);
   }
 
+  @ResolveField(() => PaginatedTracks)
+  async paginatedTracks(
+    @Args('pagination', { type: () => PaginationArgs, nullable: true })
+    pagination?: PaginationArgs,
+  ): Promise<IPaginatedType<Track>> {
+    return this.getTracksPaginatedUseCase
+      .execute({ pagination: pagination })
+      .then((tracks) => ({
+        ...tracks,
+        items: tracks.items.map(toTrack),
+      }));
+  }
   @ResolveField(() => Base64ID)
   async randomTrackId(): Promise<string> {
     return this.getRandomTrackIdUseCase.execute();

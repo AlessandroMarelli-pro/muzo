@@ -11,7 +11,7 @@ import type {
 	Library,
 	MusicLibrary,
 	MusicTrack,
-	MusicTrackListPaginated,
+	PaginatedTracks,
 	RandomTrackWithStats,
 	SimpleMusicTrack,
 	StaticFilterOptions,
@@ -341,26 +341,26 @@ export const useTracksList = ({
 		),
 		queryFn: async () => {
 			const response = await graffleClient.request<{
-				tracksList: MusicTrackListPaginated;
+				me: { paginatedTracks: PaginatedTracks };
 			}>(
 				gql`
-					${simpleMusicTrackFragment}
-					query GetTracksList($options: TrackQueryOptions) {
-						tracksList(options: $options) {
-							tracks {
-								...SimpleMusicTrackFragment
+					${trackFragment}
+					query GetTracksList($pagination: PaginationArgs) {
+						me {
+							paginatedTracks(pagination: $pagination) {
+								items {
+									...TrackFragment
+								}
+								total
+								page
+								limit
+								pages
 							}
-							total
-							page
-							limit
 						}
 					}
 				`,
 				{
-					options: {
-						libraryId,
-						analysisStatus: status,
-						isFavorite,
+					pagination: {
 						limit,
 						offset,
 						orderBy,
@@ -368,7 +368,7 @@ export const useTracksList = ({
 					},
 				}
 			);
-			return response.tracksList;
+			return response.me.paginatedTracks;
 		},
 	});
 };

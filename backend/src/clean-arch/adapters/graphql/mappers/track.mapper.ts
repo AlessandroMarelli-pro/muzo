@@ -94,7 +94,6 @@ function toTrackMusicalFeatures(
  * Keeps the adapter as a pure translation layer: schema never imports domain entities.
  */
 export function toTrack(domain: MusicTrack): Track {
-  console.log('domain', domain);
   return {
     id: domain.id,
     artist: domain.artist,

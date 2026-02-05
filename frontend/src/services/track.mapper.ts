@@ -28,5 +28,6 @@ export function toTrack(track: Track): SimpleMusicTrack {
 		atmosphereKeywords: track.aiMetadata.atmosphereKeywords,
 		contextBackgrounds: track.aiMetadata.contextBackgrounds,
 		contextImpacts: track.aiMetadata.contextImpacts,
+		fileCreatedAt: track.fileInfo.fileCreatedAt,
 	};
 }

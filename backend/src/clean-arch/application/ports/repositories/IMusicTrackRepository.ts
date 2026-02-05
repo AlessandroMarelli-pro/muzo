@@ -4,6 +4,10 @@ import {
   FilterCriteria,
   MusicTrack,
 } from 'src/clean-arch/kernel/types/model-types';
+import {
+  PaginationResult,
+  WithPagination,
+} from 'src/clean-arch/kernel/types/pagination';
 
 export const MUSIC_TRACK_REPOSITORY = Symbol('IMusicTrackRepository');
 
@@ -24,5 +28,9 @@ export interface IMusicTrackRepository {
       orderDirection?: Maybe<'asc' | 'desc'>;
     },
   ): Promise<MusicTrack[]>;
+  getManyByCriteriaWithPagination(
+    criteria: FilterCriteria,
+    pagination: WithPagination,
+  ): Promise<PaginationResult<MusicTrack>>;
   getRandomTrackId(): Promise<MusicTrackId>;
 }

@@ -198,7 +198,6 @@ export class CleanArchPlaylistResolver {
         limit,
       );
 
-    console.log('recommendations', recommendations.length);
     return recommendations.map((recommendation) => ({
       track: toTrack(recommendation.track),
       similarity: recommendation.similarity,

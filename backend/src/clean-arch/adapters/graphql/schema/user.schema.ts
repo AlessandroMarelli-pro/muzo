@@ -3,10 +3,11 @@ import { Field, ObjectType } from '@nestjs/graphql';
 import { Base64ID } from '../scalars/base64-id.scalar';
 import { Node } from './common.schema';
 import { Library } from './library.schema';
+import { IPaginatedType } from './pagination.schema';
 import { CleanArchPlaylist } from './playlist.schema';
 import { CleanArchQueueItem } from './queue-item.schema';
 import { StaticFilterOptions } from './saved-filter.schema';
-import { Track } from './track.schema';
+import { PaginatedTracks, Track } from './track.schema';
 
 @ObjectType()
 export class PlaylistsResult {
@@ -42,4 +43,7 @@ export class User {
 
   @Field(() => [Library])
   libraries: Library[];
+
+  @Field(() => PaginatedTracks)
+  paginatedTracks: IPaginatedType<Track>;
 }

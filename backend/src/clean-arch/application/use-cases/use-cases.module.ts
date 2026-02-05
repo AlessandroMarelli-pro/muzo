@@ -31,6 +31,7 @@ import {
   GetSavedFilterUseCase,
   GetStaticFilterOptionsUseCase,
   GetTrackRecommendationsUseCase,
+  GetTracksPaginatedUseCase,
   GetTracksUseCase,
   GetTrackUseCase,
   GetWaveformDataUseCase,
@@ -94,6 +95,7 @@ const useCasesProviders = [
   GetLibraryUseCase,
   GetLibrariesUseCase,
   DeleteLibraryUseCase,
+  GetTracksPaginatedUseCase,
 ];
 @Module({
   imports: [ConfigModule],

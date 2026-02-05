@@ -41,11 +41,9 @@ export class GetPlaylistRecommendationsUseCase {
       await this.playlistTrackRepository.getTracksByPlaylistIdWithTrack(
         playlistId,
       );
-    console.log('playlistTracks', playlistTracks.length);
     const features = this.recommendationDataPort.getAudioFeatures(
       playlistTracks.map((track) => track.track),
     );
-    console.log('features', features);
 
     const recommendations =
       await this.recommendationSearchPort.searchByFeatures([features], {
@@ -53,11 +51,9 @@ export class GetPlaylistRecommendationsUseCase {
         limit,
         excludeTrackIds: playlistTracks.map((track) => track.track.id),
       });
-    console.log('recommendations', recommendations.length);
     const findTracks = await this.musicTrackRepository.getManyByIds(
       recommendations.map((recommendation) => recommendation.track.trackId),
     );
-    console.log('findTracks', findTracks[0]);
     return recommendations.map((recommendation) => ({
       track: findTracks.find(
         (track) => track.id === recommendation.track.trackId,

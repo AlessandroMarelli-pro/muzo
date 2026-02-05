@@ -1,7 +1,8 @@
 import { Field, Float, ObjectType } from '@nestjs/graphql';
-import { MusicTrackId } from 'src/clean-arch/kernel/ids';
+import { MusicLibraryId, MusicTrackId } from 'src/clean-arch/kernel/ids';
 import { Base64ID } from '../scalars/base64-id.scalar';
 import { Node } from './common.schema';
+import { Paginated } from './pagination.schema';
 
 @ObjectType()
 export class TrackStats {
@@ -142,6 +143,9 @@ export class Track {
   @Field(() => Date, { nullable: true })
   lastScannedAt?: Date;
 
-  @Field(() => String, { nullable: true })
-  libraryId?: string;
+  @Field(() => Base64ID, { nullable: true })
+  libraryId?: MusicLibraryId;
 }
+
+@ObjectType()
+export class PaginatedTracks extends Paginated(Track) {}

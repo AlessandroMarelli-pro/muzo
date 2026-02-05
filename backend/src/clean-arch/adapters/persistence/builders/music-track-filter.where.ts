@@ -8,6 +8,9 @@ export const buildMusicTrackFilterWhereClause = (
   subgenreSelectionMode: 'exact' | 'contain' = 'exact',
 ) => {
   const where: any = {};
+  if (!criteria) {
+    return where;
+  }
 
   if (criteria.genreIds?.length > 0 && !skipGenres) {
     // Find genre IDs from genre names
