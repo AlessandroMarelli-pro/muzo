@@ -1,4 +1,4 @@
-import { Maybe } from 'graphql/jsutils/Maybe';
+import { Maybe } from '../common';
 import { Model } from './model-types';
 
 export const SORTING_DIRECTIONS = ['asc', 'desc'] as const;

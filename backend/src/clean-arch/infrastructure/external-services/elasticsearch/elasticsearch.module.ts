@@ -3,7 +3,7 @@ import { RECOMMENDATION_SEARCH_PORT } from 'src/clean-arch/application/ports/que
 import { TRACK_INDEXER_PORT } from 'src/clean-arch/application/ports/queries/ITrackIndexerPort';
 import { ElasticsearchTrackIndexerAdapter } from './elasticsearch-track-indexer.adapter';
 import { ElasticsearchClient } from './elasticsearch.client';
-import { RecommendationSearchPort } from './recommendation-search.port';
+import { RecommendationSearchAdapter } from './recommendation-search.adapter';
 
 @Global()
 @Module({
@@ -15,7 +15,7 @@ import { RecommendationSearchPort } from './recommendation-search.port';
     },
     {
       provide: RECOMMENDATION_SEARCH_PORT,
-      useClass: RecommendationSearchPort,
+      useClass: RecommendationSearchAdapter,
     },
   ],
   exports: [

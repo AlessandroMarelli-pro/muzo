@@ -27,8 +27,6 @@ export class SyncAllTracksToElasticsearchUseCase {
     await this.trackIndexerPort.recreateIndex();
     const tracks = await this.musicTrackRepository.getAll();
     await this.trackIndexerPort.deleteTracks(tracks.map((track) => track.id));
-    return this.trackIndexerPort.indexTracks(
-      tracks.map(this.recommendationDataPort.getTrackIndexDocument),
-    );
+    return this.trackIndexerPort.indexTracks(tracks);
   }
 }

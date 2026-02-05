@@ -26,8 +26,6 @@ export class SyncTrackToElasticSearchUseCase {
 
   async execute(trackId: MusicTrackId): Promise<void> {
     const track = await this.musicTrackRepository.getOneById(trackId);
-    return this.trackIndexerPort.indexTrack(
-      this.recommendationDataPort.getTrackIndexDocument(track),
-    );
+    return this.trackIndexerPort.indexTrack(track);
   }
 }

@@ -202,20 +202,20 @@ export type AudioFileMusicalFeatures = {
   tempo: number;
   key: string;
   camelotKey: string;
-  energy: number;
-  valence: number;
+  energy?: number;
+  valence?: number;
   valenceMood: string;
-  calculationFeatures: CalculationFeatures;
-  danceability: number;
+  calculationFeatures?: CalculationFeatures;
+  danceability?: number;
   danceabilityFeeling: string;
-  arousal: number;
+  arousal?: number;
   arousalMood: string;
-  acousticness: number;
-  instrumentalness: number;
-  speechiness: number;
-  liveness: number;
-  energyComment: string;
-  energyKeywords: string[];
+  acousticness?: number;
+  instrumentalness?: number;
+  speechiness?: number;
+  liveness?: number;
+  energyComment?: string;
+  energyKeywords?: string[];
 };
 
 export type AudioFileAIMetadata = {

@@ -21,7 +21,7 @@ import { FileSystemImageReader } from '../../infrastructure/filesystem/image-fil
 import { MetricsQuery } from './queries/metrics/metrics.query';
 import { PlaylistStatsQuery } from './queries/playlist/playlist-stats.query';
 import { SavedFilterQuery } from './queries/saved-filter/saved-filter.query';
-import { RecommendationDataPort } from './recommendation/recommendation-data.port';
+import { RecommendationDataAdapter } from './recommendation/recommendation-data.adapter';
 import { ImageSearchRepository } from './repositories/image-search/image-search.repository';
 import { MusicLibraryRepository } from './repositories/music-library/music-library.repository';
 import { MusicTrackRepository } from './repositories/music-track/music-track.repository';
@@ -57,7 +57,7 @@ import { HIDDEN_MUSIC_TRACK_REPOSITORY } from 'src/clean-arch/application/ports/
     { provide: IMAGE_FILE_READER, useClass: FileSystemImageReader },
     { provide: METRICS_QUERY, useClass: MetricsQuery },
     { provide: AUDIO_WAVEFORM_GENERATOR, useClass: WaveformGenerator },
-    { provide: RECOMMENDATION_DATA_PORT, useClass: RecommendationDataPort },
+    { provide: RECOMMENDATION_DATA_PORT, useClass: RecommendationDataAdapter },
     { provide: MUSIC_LIBRARY_REPOSITORY, useClass: MusicLibraryRepository },
     {
       provide: HIDDEN_MUSIC_TRACK_REPOSITORY,

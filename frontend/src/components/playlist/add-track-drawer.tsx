@@ -89,7 +89,7 @@ export function AddTrackDrawer({
 							{tracks?.map((track) => (
 								<MusicCard
 									key={track.id}
-									track={track as SimpleMusicTrack}
+									track={track}
 									onAdd={addTrackToPlaylist}
 									width="235"
 									height="200"

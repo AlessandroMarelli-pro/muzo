@@ -1,5 +1,5 @@
 import { Field, InputType } from '@nestjs/graphql';
-import { Maybe } from 'graphql/jsutils/Maybe';
+import { Maybe } from 'src/clean-arch/kernel/common';
 import { GenreId, MusicLibraryId, SubgenreId } from 'src/clean-arch/kernel/ids';
 import { Base64ID } from '../scalars/base64-id.scalar';
 import { RangeInput } from './common.input';

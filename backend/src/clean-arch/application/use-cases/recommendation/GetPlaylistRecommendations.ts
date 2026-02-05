@@ -52,12 +52,10 @@ export class GetPlaylistRecommendationsUseCase {
         excludeTrackIds: playlistTracks.map((track) => track.track.id),
       });
     const findTracks = await this.musicTrackRepository.getManyByIds(
-      recommendations.map((recommendation) => recommendation.track.trackId),
+      recommendations.map((recommendation) => recommendation.track.id),
     );
     return recommendations.map((recommendation) => ({
-      track: findTracks.find(
-        (track) => track.id === recommendation.track.trackId,
-      ),
+      track: findTracks.find((track) => track.id === recommendation.track.id),
       similarity: recommendation.similarity,
       reasons: recommendation.reasons,
     }));
