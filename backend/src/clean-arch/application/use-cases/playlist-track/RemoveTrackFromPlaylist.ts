@@ -1,9 +1,7 @@
-import { Injectable } from '@nestjs/common';
 import { MusicTrackId, PlaylistId } from 'src/clean-arch/kernel/ids';
 import { IPlaylistRepository } from '../../ports/repositories/IPlaylistRepository';
 import { IPlaylistTrackRepository } from '../../ports/repositories/IPlaylistTrackRepository';
 
-@Injectable()
 export class RemoveTrackFromPlaylistUseCase {
   constructor(
     private readonly playlistTrackRepository: IPlaylistTrackRepository,

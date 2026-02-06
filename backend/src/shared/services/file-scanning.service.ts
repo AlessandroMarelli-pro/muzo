@@ -32,7 +32,7 @@ export interface FileInfo {
 
 @Injectable()
 export class FileScanningService {
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(private readonly prisma: PrismaService) {}
 
   async scanLibrary(
     libraryId: string,
@@ -244,38 +244,5 @@ export class FileScanningService {
     }
 
     return files;
-  }
-
-  private async extractMetadata(filePath: string): Promise<{
-    duration?: number;
-    bitrate?: number;
-    sampleRate?: number;
-    title?: string;
-    artist?: string;
-    album?: string;
-    genre?: string;
-    year?: number;
-  }> {
-    // Simplified metadata extraction
-    // In a real implementation, you would use a library like music-metadata
-    // For now, return basic info extracted from filename
-
-    const fileName = path.basename(filePath, path.extname(filePath));
-
-    // Try to extract artist and title from filename (e.g., "Artist - Title.mp3")
-    const parts = fileName.split(' - ');
-    const artist = parts.length > 1 ? parts[0].trim() : undefined;
-    const title = parts.length > 1 ? parts[1].trim() : fileName;
-
-    return {
-      title,
-      artist,
-      duration: 0, // Would be extracted from actual audio file
-      bitrate: undefined,
-      sampleRate: undefined,
-      album: undefined,
-      genre: undefined,
-      year: undefined,
-    };
   }
 }

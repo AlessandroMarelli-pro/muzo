@@ -1,4 +1,3 @@
-import { Injectable } from '@nestjs/common';
 import { SavedFilterId } from 'src/clean-arch/kernel/ids';
 import { SavedFilter } from 'src/clean-arch/kernel/types';
 import {
@@ -6,7 +5,6 @@ import {
   SavedFilterData,
 } from '../../ports/repositories/ISavedFilterRepository';
 
-@Injectable()
 export class UpdateSavedFilterUseCase {
   constructor(private readonly savedFilterRepository: ISavedFilterRepository) {}
 

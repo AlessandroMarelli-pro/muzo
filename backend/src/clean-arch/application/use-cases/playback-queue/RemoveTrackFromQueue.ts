@@ -1,4 +1,3 @@
-import { Injectable } from '@nestjs/common';
 import { MusicTrackId } from 'src/clean-arch/kernel/ids';
 import { createNotFoundError } from 'src/clean-arch/kernel/types/errors';
 import {
@@ -6,7 +5,6 @@ import {
   RemoveTrackFromQueueResult,
 } from '../../ports/repositories/IQueueRepository';
 
-@Injectable()
 export class RemoveTrackFromQueueUseCase {
   constructor(private readonly queueRepository: IQueueRepository) {}
 

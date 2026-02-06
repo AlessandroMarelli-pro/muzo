@@ -1,4 +1,3 @@
-import { Injectable } from '@nestjs/common';
 import { PlaylistId } from 'src/clean-arch/kernel/ids';
 import { createConflictError } from 'src/clean-arch/kernel/types/errors';
 import { PlaylistTrack } from 'src/clean-arch/kernel/types/model-types';
@@ -10,7 +9,6 @@ import {
   IPlaylistTrackRepository,
 } from '../../ports/repositories/IPlaylistTrackRepository';
 
-@Injectable()
 export class AddTrackToPlaylistUseCase {
   constructor(
     private readonly playlistTrackRepository: IPlaylistTrackRepository,

@@ -1,4 +1,3 @@
-import { Injectable } from '@nestjs/common';
 import { createNotFoundError } from 'src/clean-arch/kernel/types/errors';
 import {
   IQueueRepository,
@@ -6,7 +5,6 @@ import {
   UpdateQueuePositionInput,
 } from '../../ports/repositories/IQueueRepository';
 
-@Injectable()
 export class UpdateQueuePositionsUseCase {
   constructor(private readonly queueRepository: IQueueRepository) {}
 

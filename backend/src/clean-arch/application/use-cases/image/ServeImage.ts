@@ -1,7 +1,5 @@
-import { Injectable } from '@nestjs/common';
 import { IImageFileReader } from '../../ports/infrastructure/IImageFileReader';
 
-@Injectable()
 export class ServeImageUseCase {
   constructor(private readonly imageFileReader: IImageFileReader) {}
 

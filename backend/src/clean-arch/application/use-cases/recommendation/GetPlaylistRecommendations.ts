@@ -1,4 +1,3 @@
-import { Injectable } from '@nestjs/common';
 import { PlaylistId } from 'src/clean-arch/kernel/ids';
 import { TrackSimilarity } from 'src/clean-arch/kernel/types';
 import { DEFAULT_RECOMMENDATION_WEIGHTS } from 'src/clean-arch/kernel/types/defaults';
@@ -7,7 +6,6 @@ import { IRecommendationSearchPort } from '../../ports/queries/IRecommendationSe
 import { IMusicTrackRepository } from '../../ports/repositories/IMusicTrackRepository';
 import { IPlaylistTrackRepository } from '../../ports/repositories/IPlaylistTrackRepository';
 
-@Injectable()
 export class GetPlaylistRecommendationsUseCase {
   constructor(
     private readonly recommendationSearchPort: IRecommendationSearchPort,

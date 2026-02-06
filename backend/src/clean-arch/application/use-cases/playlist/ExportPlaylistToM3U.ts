@@ -1,9 +1,7 @@
-import { Injectable } from '@nestjs/common';
 import { PlaylistId } from 'src/clean-arch/kernel/ids';
 import { IPlaylistRepository } from '../../ports/repositories/IPlaylistRepository';
 import { IPlaylistSortingRepository } from '../../ports/repositories/IPlaylistSortingRepository';
 
-@Injectable()
 export class ExportPlaylistToM3UUseCase {
   constructor(
     private readonly playlistRepository: IPlaylistRepository,

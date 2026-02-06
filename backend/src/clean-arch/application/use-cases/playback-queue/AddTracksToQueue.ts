@@ -1,4 +1,3 @@
-import { Injectable } from '@nestjs/common';
 import { MusicTrackId } from 'src/clean-arch/kernel/ids';
 import { createNotFoundError } from 'src/clean-arch/kernel/types/errors';
 import { IMusicTrackRepository } from '../../ports/repositories/IMusicTrackRepository';
@@ -7,7 +6,6 @@ import {
   QueueItemWithTrack,
 } from '../../ports/repositories/IQueueRepository';
 
-@Injectable()
 export class AddTracksToQueueUseCase {
   constructor(
     private readonly queueRepository: IQueueRepository,

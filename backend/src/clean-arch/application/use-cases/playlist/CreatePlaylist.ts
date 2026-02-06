@@ -1,4 +1,3 @@
-import { Injectable } from '@nestjs/common';
 import {
   FilterCriteria,
   Playlist,
@@ -10,7 +9,6 @@ import { IPlaylistSortingRepository } from '../../ports/repositories/IPlaylistSo
 import { IPlaylistTrackRepository } from '../../ports/repositories/IPlaylistTrackRepository';
 import { CreatePlaylistInput } from './CreatePlaylist.input';
 
-@Injectable()
 export class CreatePlaylistUseCase {
   constructor(
     private readonly playlistRepository: IPlaylistRepository,

@@ -1,5 +1,4 @@
 // GetPlaylist.ts
-import { Injectable } from '@nestjs/common';
 import { PlaylistId } from 'src/clean-arch/kernel/ids';
 
 import {
@@ -8,7 +7,6 @@ import {
 } from '../../ports/repositories/IPlaylistRepository';
 import { IPlaylistSortingRepository } from '../../ports/repositories/IPlaylistSortingRepository';
 
-@Injectable()
 export class GetPlaylistUseCase {
   constructor(
     private readonly playlistRepository: IPlaylistRepository,

@@ -1,11 +1,8 @@
-import { Injectable } from '@nestjs/common';
-
 import { PlaylistId } from 'src/clean-arch/kernel/ids';
 import { Playlist } from 'src/clean-arch/kernel/types/model-types';
 import { IPlaylistRepository } from '../../ports/repositories/IPlaylistRepository';
 import { UpdatePlaylistInput } from './UpdatePlaylist.input';
 
-@Injectable()
 export class UpdatePlaylistUseCase {
   constructor(private readonly playlistRepository: IPlaylistRepository) {}
 

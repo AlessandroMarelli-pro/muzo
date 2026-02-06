@@ -1,7 +1,5 @@
-import { Injectable } from '@nestjs/common';
 import { IQueueRepository } from '../../ports/repositories/IQueueRepository';
 
-@Injectable()
 export class ResetQueueUseCase {
   constructor(private readonly queueRepository: IQueueRepository) {}
 

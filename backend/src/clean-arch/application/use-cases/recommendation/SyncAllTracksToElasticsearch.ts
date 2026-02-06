@@ -1,9 +1,7 @@
-import { Injectable } from '@nestjs/common';
 import { IRecommendationDataPort } from '../../ports/queries/IRecommendationDataPort';
 import { ITrackIndexerPort } from '../../ports/queries/ITrackIndexerPort';
 import { IMusicTrackRepository } from '../../ports/repositories/IMusicTrackRepository';
 
-@Injectable()
 export class SyncAllTracksToElasticsearchUseCase {
   constructor(
     private readonly musicTrackRepository: IMusicTrackRepository,

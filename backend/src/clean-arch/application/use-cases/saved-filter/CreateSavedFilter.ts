@@ -1,11 +1,9 @@
-import { Injectable } from '@nestjs/common';
 import { models, SavedFilter } from 'src/clean-arch/kernel/types';
 import {
   ISavedFilterRepository,
   SavedFilterData,
 } from '../../ports/repositories/ISavedFilterRepository';
 
-@Injectable()
 export class CreateSavedFilterUseCase {
   constructor(private readonly savedFilterRepository: ISavedFilterRepository) {}
 

@@ -1,4 +1,3 @@
-import { Injectable } from '@nestjs/common';
 import { PlaylistId } from 'src/clean-arch/kernel/ids/scalars';
 
 import {
@@ -6,7 +5,6 @@ import {
   PlaylistStatsDto,
 } from '../../ports/queries/IPlaylistStatsQuery';
 
-@Injectable()
 export class GetPlaylistStatsUseCase {
   constructor(private readonly playlistStatsQuery: IPlaylistStatsQuery) {}
 

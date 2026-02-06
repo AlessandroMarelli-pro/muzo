@@ -1,4 +1,3 @@
-import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as path from 'path';
 import { MusicTrackId } from 'src/clean-arch/kernel/ids';
@@ -17,7 +16,6 @@ export type AddImageSearchRecordData = {
 const IMAGES_DIR_KEY = 'images.dir';
 const DEFAULT_IMAGES_RELATIVE = '../muzo/images';
 
-@Injectable()
 export class AddImageSearchRecordUseCase {
   constructor(
     private readonly imageSearchRepository: IImageSearchRepository,
