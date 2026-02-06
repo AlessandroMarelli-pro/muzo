@@ -1,5 +1,4 @@
 import {
-  FileInfo,
   IFileManager,
   ScanOptions,
 } from 'src/clean-arch/application/ports/infrastructure/IFileManager';
@@ -7,6 +6,7 @@ import {
 import { Injectable } from '@nestjs/common';
 import * as fs from 'fs/promises';
 import * as path from 'path';
+import { FileInfo } from 'src/clean-arch/application/ports/dtos/FileInfo';
 
 @Injectable()
 export class FileManager implements IFileManager {

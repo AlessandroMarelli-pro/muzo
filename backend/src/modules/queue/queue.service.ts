@@ -81,51 +81,6 @@ export class QueueService {
   }
 
   /**
-   * Schedule a library scan job
-   * Returns the sessionId for progress tracking
-   */
-  async scheduleLibraryScan(
-    libraryId: string,
-    rootPath: string,
-    libraryName: string,
-  ): Promise<string> {
-    try {
-      // Create scan session
-      const { sessionId } =
-        await this.scanSessionService.createSession(libraryId);
-
-      const jobData: LibraryScanJobData = {
-        libraryId,
-        rootPath,
-        libraryName,
-        sessionId,
-      };
-
-      await this.libraryScanQueue.add('scan-library', jobData, {
-        attempts: this.queueConfig.queues.libraryScan.attempts,
-        backoff: {
-          type: this.queueConfig.queues.libraryScan.backoff.type as any,
-          delay: this.queueConfig.queues.libraryScan.backoff.delay,
-        },
-        removeOnComplete: false,
-        removeOnFail: false,
-      });
-
-      this.logger.log(
-        `Scheduled library scan for: ${libraryName} (${rootPath}) with session: ${sessionId}`,
-      );
-
-      return sessionId;
-    } catch (error) {
-      this.logger.error(
-        `Failed to schedule library scan for ${libraryName}:`,
-        error,
-      );
-      throw error;
-    }
-  }
-
-  /**
    * Schedule multiple audio file scans in batches of 10 files using audio-scan-batch
    * @param audioFiles - Array of audio files to scan
    * @param sessionId - Optional session ID (if not provided, will be created)

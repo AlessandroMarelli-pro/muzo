@@ -9,7 +9,6 @@ import { AiIntegrationModule } from '../ai-integration/ai-integration.module';
 import { AudioScanProcessor } from './processors/audio-scan.processor';
 import { LibraryScanProcessor } from './processors/library-scan.processor';
 import { ProgressTrackingService } from './progress-tracking.service';
-import { QueueController } from './queue.controller';
 import { QueueService } from './queue.service';
 import { ScanProgressPubSubService } from './scan-progress-pubsub.service';
 import { ScanProgressController } from './scan-progress.controller';
@@ -46,7 +45,7 @@ import { ScanSessionService } from './scan-session.service';
       },
     ),
   ],
-  controllers: [QueueController, ScanProgressController],
+  controllers: [ScanProgressController],
   providers: [
     QueueService,
     LibraryScanProcessor,

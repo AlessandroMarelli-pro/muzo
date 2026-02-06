@@ -173,18 +173,6 @@ type Library implements Node {
   updatedAt: DateTime!
 }
 
-type LibraryScanResult {
-  errors: Float!
-  estimatedCompletion: DateTime
-  libraryId: ID!
-  newTracks: Float!
-  processedFiles: Float!
-  scanId: ID!
-  status: String!
-  totalFiles: Float!
-  updatedTracks: Float!
-}
-
 type LibrarySettings {
   autoScan: Boolean!
   includeSubdirectories: Boolean!
@@ -204,7 +192,6 @@ type MusicPlayer {
 }
 
 type Mutation {
-  _startLibraryScan(incremental: Boolean, libraryId: ID!): LibraryScanResult!
   addTrackToPlaylist(input: AddTrackToPlaylistInput!, playlistId: Base64ID!): CleanArchPlaylistTrack!
   addTrackToQueue(trackId: Base64ID!): QueueItem!
   addTracksToQueue(trackIds: [Base64ID!]!): [QueueItem!]!

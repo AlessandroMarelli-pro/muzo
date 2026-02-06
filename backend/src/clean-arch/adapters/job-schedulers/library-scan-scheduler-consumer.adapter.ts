@@ -3,7 +3,8 @@ import { Job } from 'bullmq';
 import { LibraryScanJobData } from 'src/clean-arch/application/ports/dtos/JobSchedulersData';
 import { ILibraryScanSchedulerConsumer } from 'src/clean-arch/application/ports/infrastructure/ILibraryScanSchedulerConsumer';
 import { ProcessStartLibraryScanUseCase } from 'src/clean-arch/application/use-cases/job-scheduler/ProcessStartLibraryScan';
-import { MusicLibraryId } from 'src/clean-arch/kernel/ids';
+import { ScheduleBatchAudioScanUseCase } from 'src/clean-arch/application/use-cases/job-scheduler/ScheduleBatchAudioScan';
+import { MusicLibraryId, SessionId } from 'src/clean-arch/kernel/ids';
 import { als } from 'src/clean-arch/kernel/types/context';
 
 @Processor('library-scan')
@@ -13,13 +14,14 @@ export class LibraryScanSchedulerConsumerAdapter
 {
   constructor(
     private readonly processStartLibraryScanUseCase: ProcessStartLibraryScanUseCase,
+    private readonly scheduleBatchAudioScanUseCase: ScheduleBatchAudioScanUseCase,
   ) {
     super();
   }
 
   async process(job: Job<LibraryScanJobData>): Promise<void> {
     const { libraryId, sessionId, incremental, contextUser } = job.data;
-    als.run({ now: new Date(), user: contextUser }, async () => {
+    return als.run({ now: new Date(), user: contextUser }, async () => {
       switch (job.name) {
         case 'start-library-scan':
           await job.updateProgress(0);
@@ -34,7 +36,7 @@ export class LibraryScanSchedulerConsumerAdapter
 
   async consumeLibraryScan(
     libraryId: MusicLibraryId,
-    sessionId: string,
+    sessionId: SessionId,
     incremental: boolean,
   ): Promise<void> {
     const audioFiles = await this.processStartLibraryScanUseCase.execute(
@@ -42,6 +44,10 @@ export class LibraryScanSchedulerConsumerAdapter
       sessionId,
       incremental,
     );
-    console.log('audioFiles', audioFiles);
+    await this.scheduleBatchAudioScanUseCase.execute(
+      audioFiles,
+      libraryId,
+      sessionId,
+    );
   }
 }

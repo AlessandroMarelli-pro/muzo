@@ -164,47 +164,6 @@ export class MusicLibraryResolver {
     private readonly queueService: QueueService,
   ) {}
 
-  @Mutation(() => LibraryScanResult)
-  async _startLibraryScan(
-    @Args('libraryId', { type: () => ID }) libraryId: string,
-    @Args('incremental', { nullable: true }) incremental?: boolean,
-  ): Promise<LibraryScanResult> {
-    try {
-      // Get library information
-      const library = await this.musicLibraryService.findOne(libraryId);
-      if (!library) {
-        throw new Error(`Library not found: ${libraryId}`);
-      }
-
-      // Schedule library scan using the queue system
-      await this.queueService.scheduleLibraryScan(
-        library.id,
-        library.rootPath,
-        library.name,
-      );
-
-      // Update library scan status
-      await this.musicLibraryService.updateScanStatus(
-        libraryId,
-        ScanStatus.SCANNING,
-      );
-
-      return {
-        libraryId,
-        scanId: `scan-${Date.now()}`, // Generate a simple scan ID
-        status: 'SCHEDULED',
-        totalFiles: 0, // Will be updated as scan progresses
-        processedFiles: 0,
-        newTracks: 0,
-        updatedTracks: 0,
-        errors: 0,
-        estimatedCompletion: new Date(Date.now() + 30 * 60 * 1000), // Estimate 30 minutes
-      };
-    } catch (error) {
-      throw new Error(`Failed to start library scan: ${error.message}`);
-    }
-  }
-
   @Mutation(() => Boolean)
   async stopLibraryScan(
     @Args('libraryId', { type: () => ID }) libraryId: string,

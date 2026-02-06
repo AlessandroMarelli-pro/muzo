@@ -3,8 +3,8 @@ import { Injectable } from '@nestjs/common';
 import { Queue } from 'bullmq';
 import { LibraryScanJobData } from 'src/clean-arch/application/ports/dtos/JobSchedulersData';
 import { ILibraryScanSchedulerProducer } from 'src/clean-arch/application/ports/infrastructure/ILibraryScanSchedulerProducer';
-import { MusicLibraryId } from 'src/clean-arch/kernel/ids';
-import { ActionContext } from 'src/clean-arch/kernel/types';
+import { MusicLibraryId, SessionId } from 'src/clean-arch/kernel/ids';
+import { ActionContext, models } from 'src/clean-arch/kernel/types';
 
 @Injectable()
 export class LibraryScanSchedulerProducerAdapter
@@ -19,9 +19,9 @@ export class LibraryScanSchedulerProducerAdapter
     libraryId: MusicLibraryId,
     incremental: boolean,
     contextUser: ActionContext['user'],
-  ): Promise<{ sessionId: string }> {
+  ): Promise<{ sessionId: SessionId }> {
     //TOOD: update later
-    const sessionId = '';
+    const sessionId = models.session.id('SESSION');
     await this.libraryScanQueue.add('start-library-scan', {
       libraryId,
       sessionId,

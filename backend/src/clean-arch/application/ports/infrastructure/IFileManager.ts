@@ -1,12 +1,5 @@
 import { createToken } from '../../utils/create-token';
-
-export interface FileInfo {
-  path: string;
-  name: string;
-  size: number;
-  extension: string;
-  modified: Date;
-}
+import { FileInfo } from '../dtos/FileInfo';
 
 export interface ScanOptions {
   recursive: boolean;

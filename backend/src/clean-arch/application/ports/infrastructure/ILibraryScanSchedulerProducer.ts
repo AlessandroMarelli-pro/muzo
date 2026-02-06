@@ -1,4 +1,4 @@
-import { MusicLibraryId } from 'src/clean-arch/kernel/ids';
+import { MusicLibraryId, SessionId } from 'src/clean-arch/kernel/ids';
 import { ActionContext } from 'src/clean-arch/kernel/types';
 import { createToken } from '../../utils/create-token';
 
@@ -10,5 +10,5 @@ export interface ILibraryScanSchedulerProducer {
     libraryId: MusicLibraryId,
     incremental: boolean,
     contextUser: ActionContext['user'],
-  ): Promise<{ sessionId: string }>;
+  ): Promise<{ sessionId: SessionId }>;
 }

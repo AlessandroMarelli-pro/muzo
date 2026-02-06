@@ -11,6 +11,7 @@ import type {
   PlaylistTrackId,
   QueueItemId,
   SavedFilterId,
+  SessionId,
   SubgenreId,
   TrackGenreId,
   TrackSubgenreId,
@@ -349,3 +350,5 @@ export type TrackSimilarity = {
   similarity: number;
   reasons: string[];
 };
+
+export type Session = Readonly<ModelBase<SessionId>> & {};

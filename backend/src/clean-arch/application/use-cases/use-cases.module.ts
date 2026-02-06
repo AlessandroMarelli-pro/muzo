@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { AUDIO_SCAN_SCHEDULER_PRODUCER } from '../ports/infrastructure/IAudioScanSchedulerProducer';
 import { AUDIO_WAVEFORM_GENERATOR } from '../ports/infrastructure/IAudioWaveformGenerator';
 import { FILE_MANAGER } from '../ports/infrastructure/IFileManager';
 import { IMAGE_FILE_READER } from '../ports/infrastructure/IImageFileReader';
@@ -67,6 +68,7 @@ import {
   RemoveTrackFromPlaylistUseCase,
   RemoveTrackFromQueueUseCase,
   ResetQueueUseCase,
+  ScheduleBatchAudioScanUseCase,
   ScheduleLibraryScanUseCase,
   ServeImageUseCase,
   SyncAllTracksToElasticsearchUseCase,
@@ -216,6 +218,9 @@ const useCasesProviders = [
   createUseCaseProvider(ProcessStartLibraryScanUseCase, [
     FILE_MANAGER,
     MUSIC_LIBRARY_REPOSITORY,
+  ]),
+  createUseCaseProvider(ScheduleBatchAudioScanUseCase, [
+    AUDIO_SCAN_SCHEDULER_PRODUCER,
   ]),
 ];
 

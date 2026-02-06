@@ -1,4 +1,4 @@
-import { HealthInfo } from '../../ports/dtos/IHealthInfoDto';
+import { HealthInfo } from '../../ports/dtos/HealthInfo';
 import { IHealthQuery } from '../../ports/queries/IHealthQuery';
 
 export class HealthCheckUseCase {

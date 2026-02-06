@@ -31,3 +31,5 @@ export type SavedFilterId = Brand<string, 'SavedFilterId'>;
 export type QueueItemId = Brand<string, 'QueueItemId'>;
 
 export type HiddenMusicTrackId = Brand<string, 'HiddenMusicTrackId'>;
+
+export type SessionId = Brand<string, 'SessionId'>;

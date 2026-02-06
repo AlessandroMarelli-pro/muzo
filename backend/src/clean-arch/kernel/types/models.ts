@@ -9,6 +9,7 @@ import {
   PlaylistTrackId,
   QueueItemId,
   SavedFilterId,
+  SessionId,
   SubgenreId,
   UserId,
 } from '../ids';
@@ -25,6 +26,7 @@ import {
   PlaylistTrack,
   QueueItem,
   SavedFilter,
+  Session,
   Subgenre,
   User,
 } from './model-types';
@@ -59,4 +61,5 @@ export const models = {
   hiddenMusicTrack: modelFactory<HiddenMusicTrack, HiddenMusicTrackId>(
     modelIdFactory('HiddenMusicTrack'),
   ),
+  session: modelFactory<Session, SessionId>(modelIdFactory('Session')),
 };

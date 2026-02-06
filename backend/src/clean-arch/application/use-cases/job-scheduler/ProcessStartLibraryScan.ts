@@ -1,8 +1,6 @@
 import { MusicLibraryId } from 'src/clean-arch/kernel/ids';
-import {
-  FileInfo,
-  IFileManager,
-} from '../../ports/infrastructure/IFileManager';
+import { FileInfo } from '../../ports/dtos/FileInfo';
+import { IFileManager } from '../../ports/infrastructure/IFileManager';
 import { IMusicLibraryRepository } from '../../ports/repositories/IMusicLibraryRepository';
 
 export class ProcessStartLibraryScanUseCase {

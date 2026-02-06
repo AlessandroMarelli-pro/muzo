@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import {
   HEALTH_STATUS,
   HealthInfo,
-} from 'src/clean-arch/application/ports/dtos/IHealthInfoDto';
+} from 'src/clean-arch/application/ports/dtos/HealthInfo';
 import { IHealthQuery } from 'src/clean-arch/application/ports/queries/IHealthQuery';
 import { PrismaService } from 'src/clean-arch/infrastructure/database/prisma.service';
 

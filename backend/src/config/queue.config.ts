@@ -18,13 +18,14 @@ export interface QueueConfig {
       };
     };
     audioScan: {
-      name: string;
       concurrency: number;
       attempts: number;
       backoff: {
         type: string;
         delay: number;
       };
+      removeOnComplete: boolean;
+      removeOnFail: boolean;
     };
   };
 }
@@ -49,13 +50,14 @@ export default registerAs(
         },
       },
       audioScan: {
-        name: 'audio-scan',
         concurrency: parseInt(process.env.AUDIO_SCAN_CONCURRENCY || '5', 10),
         attempts: parseInt(process.env.AUDIO_SCAN_ATTEMPTS || '1', 10),
         backoff: {
           type: 'exponential',
           delay: parseInt(process.env.AUDIO_SCAN_BACKOFF_DELAY || '1000', 10),
         },
+        removeOnComplete: false,
+        removeOnFail: false,
       },
     },
   }),

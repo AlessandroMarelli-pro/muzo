@@ -28,7 +28,7 @@ import {
 } from '../scan-progress.types';
 import { ScanSessionService } from '../scan-session.service';
 
-@Processor('audio-scan')
+@Processor('_audio-scan')
 export class AudioScanProcessor extends WorkerHost {
   private readonly logger = new Logger(AudioScanProcessor.name);
 
