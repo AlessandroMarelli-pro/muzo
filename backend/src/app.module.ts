@@ -8,6 +8,7 @@ import { AdminMethodsModule } from './admin-methods/admin-methods.module';
 import { ActionContextMiddleware } from './clean-arch/adapters/common/middlewares/action-context.middleware';
 import { CleanArchGraphQLModule } from './clean-arch/adapters/graphql/graphql.module';
 import { HttpModule } from './clean-arch/adapters/http/http.module';
+import { JobSchedulersModule } from './clean-arch/adapters/job-schedulers/job-schedulers.module';
 import { AdaptersPersistenceModule } from './clean-arch/adapters/persistence/persistence.module';
 import { createPlaylistStatsLoader } from './clean-arch/adapters/persistence/queries/playlist/playlist-stats.loader';
 import { createPlaylistContainsTrackLoader } from './clean-arch/adapters/persistence/repositories/playlist-track/playlist-contains-track.loader';
@@ -117,6 +118,7 @@ import { SharedModule } from './shared/shared.module';
       },
       inject: [ConfigService],
     }),
+    JobSchedulersModule,
   ],
 })
 export class AppModule {

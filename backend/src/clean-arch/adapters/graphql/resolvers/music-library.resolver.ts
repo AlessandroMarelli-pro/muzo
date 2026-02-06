@@ -82,7 +82,6 @@ export class MusicLibraryResolver {
     @Args('libraryId', { type: () => Base64ID }) libraryId: string,
     @Args('incremental', { nullable: true }) incremental?: boolean,
   ): Promise<string> {
-    console.log('startLibraryScan', libraryId, incremental);
     return this.scheduleLibraryScanUseCase
       .execute(parseMusicLibraryId(libraryId), incremental)
       .then(({ sessionId }) => sessionId);

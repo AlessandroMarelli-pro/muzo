@@ -1,4 +1,5 @@
 import { MusicLibraryId } from 'src/clean-arch/kernel/ids';
+import { getCurrentUser } from 'src/clean-arch/kernel/types';
 import { ILibraryScanSchedulerProducer } from '../../ports/infrastructure/ILibraryScanSchedulerProducer';
 import { IMusicLibraryRepository } from '../../ports/repositories/IMusicLibraryRepository';
 
@@ -12,14 +13,11 @@ export class ScheduleLibraryScanUseCase {
     libraryId: MusicLibraryId,
     incremental: boolean,
   ): Promise<{ sessionId: string }> {
-    const library = await this.musicLibraryRepository.getOneById(libraryId);
-
     const { sessionId } =
       await this.libraryScanSchedulerProducer.scheduleLibraryScan(
         libraryId,
-        library.rootPath,
-        library.name,
         incremental,
+        getCurrentUser(),
       );
 
     await this.musicLibraryRepository.updateScanStatus(

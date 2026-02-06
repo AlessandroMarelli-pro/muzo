@@ -1,0 +1,47 @@
+import { Processor, WorkerHost } from '@nestjs/bullmq';
+import { Job } from 'bullmq';
+import { LibraryScanJobData } from 'src/clean-arch/application/ports/dtos/JobSchedulersData';
+import { ILibraryScanSchedulerConsumer } from 'src/clean-arch/application/ports/infrastructure/ILibraryScanSchedulerConsumer';
+import { ProcessStartLibraryScanUseCase } from 'src/clean-arch/application/use-cases/job-scheduler/ProcessStartLibraryScan';
+import { MusicLibraryId } from 'src/clean-arch/kernel/ids';
+import { als } from 'src/clean-arch/kernel/types/context';
+
+@Processor('library-scan')
+export class LibraryScanSchedulerConsumerAdapter
+  extends WorkerHost
+  implements ILibraryScanSchedulerConsumer
+{
+  constructor(
+    private readonly processStartLibraryScanUseCase: ProcessStartLibraryScanUseCase,
+  ) {
+    super();
+  }
+
+  async process(job: Job<LibraryScanJobData>): Promise<void> {
+    const { libraryId, sessionId, incremental, contextUser } = job.data;
+    als.run({ now: new Date(), user: contextUser }, async () => {
+      switch (job.name) {
+        case 'start-library-scan':
+          await job.updateProgress(0);
+          await this.consumeLibraryScan(libraryId, sessionId, incremental);
+          await job.updateProgress(100);
+          break;
+        default:
+          throw new Error(`Unknown job name: ${job.name}`);
+      }
+    });
+  }
+
+  async consumeLibraryScan(
+    libraryId: MusicLibraryId,
+    sessionId: string,
+    incremental: boolean,
+  ): Promise<void> {
+    const audioFiles = await this.processStartLibraryScanUseCase.execute(
+      libraryId,
+      sessionId,
+      incremental,
+    );
+    console.log('audioFiles', audioFiles);
+  }
+}

@@ -1,4 +1,5 @@
 export * from './image';
+export * from './job-scheduler';
 export * from './metrics';
 export * from './music-library';
 export * from './music-track';

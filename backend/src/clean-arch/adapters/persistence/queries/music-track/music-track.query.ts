@@ -31,7 +31,6 @@ export class MusicTrackQuery implements IMusicTrackQueries {
       FROM music_tracks WHERE createdById = ${currentUserId}
     `.then(async (rows) => {
       const row = rows[0];
-      console.log(row);
       const track = await this.prisma.musicTrack.findUnique({
         where: { id: row.trackId },
         include: musicTracksIncludes,

@@ -11,4 +11,5 @@ export const now = () => als.getStore()?.now ?? fail('missing action context');
 export const user = () =>
   als.getStore()?.user ?? fail('missing action context');
 
+export const getCurrentUser = () => user();
 export const getCurrentUserId = () => extractModelId(user().id).dbId;

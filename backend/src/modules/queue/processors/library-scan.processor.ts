@@ -17,7 +17,7 @@ export interface AudioFile {
   lastModified: Date;
 }
 
-@Processor('library-scan', {
+@Processor('library-scansqsd', {
   concurrency: parseInt(process.env.LIBRARY_SCAN_CONCURRENCY || '1', 10),
 })
 export class LibraryScanProcessor extends WorkerHost {

@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AUDIO_WAVEFORM_GENERATOR } from '../ports/infrastructure/IAudioWaveformGenerator';
+import { FILE_MANAGER } from '../ports/infrastructure/IFileManager';
 import { IMAGE_FILE_READER } from '../ports/infrastructure/IImageFileReader';
 import { LIBRARY_SCAN_SCHEDULER_PRODUCER } from '../ports/infrastructure/ILibraryScanSchedulerProducer';
 import { HEALTH_QUERY } from '../ports/queries/IHealthQuery';
@@ -20,6 +21,8 @@ import { PLAYLIST_SORTING_REPOSITORY } from '../ports/repositories/IPlaylistSort
 import { PLAYLIST_TRACK_REPOSITORY } from '../ports/repositories/IPlaylistTrackRepository';
 import { QUEUE_REPOSITORY } from '../ports/repositories/IQueueRepository';
 import { SAVED_FILTER_REPOSITORY } from '../ports/repositories/ISavedFilterRepository';
+import { createUseCaseProvider } from './create-use-case.provider';
+import { HealthCheckUseCase } from './health/HealthCheck';
 import {
   AddImageSearchRecordUseCase,
   AddTracksToQueueUseCase,
@@ -58,6 +61,7 @@ import {
   GetTracksWithPaginationUseCase,
   GetTrackUseCase,
   GetWaveformDataUseCase,
+  ProcessStartLibraryScanUseCase,
   RecreateElasticsearchIndexUseCase,
   RegisterPlayedTrackUseCase,
   RemoveTrackFromPlaylistUseCase,
@@ -75,9 +79,7 @@ import {
   UpdatePlaylistUseCase,
   UpdateQueuePositionsUseCase,
   UpdateSavedFilterUseCase,
-} from './';
-import { createUseCaseProvider } from './create-use-case.provider';
-import { HealthCheckUseCase } from './health/HealthCheck';
+} from './index';
 import { UpdatePlaylistSortingUseCase } from './playlist-sorting/UpdatePlaylistSorting';
 
 const useCasesProviders = [
@@ -209,6 +211,10 @@ const useCasesProviders = [
   createUseCaseProvider(HealthCheckUseCase, [HEALTH_QUERY]),
   createUseCaseProvider(ScheduleLibraryScanUseCase, [
     LIBRARY_SCAN_SCHEDULER_PRODUCER,
+    MUSIC_LIBRARY_REPOSITORY,
+  ]),
+  createUseCaseProvider(ProcessStartLibraryScanUseCase, [
+    FILE_MANAGER,
     MUSIC_LIBRARY_REPOSITORY,
   ]),
 ];

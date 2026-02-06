@@ -25,8 +25,12 @@ export class FileManager implements IFileManager {
     }
 
     try {
-      const entries = await fs.readdir(rootPath, { withFileTypes: true });
+      const isDirectory = (await fs.stat(rootPath)).isDirectory();
+      if (!isDirectory) {
+        throw new Error(`Directory ${rootPath} does not exist`);
+      }
 
+      const entries = await fs.readdir(rootPath, { withFileTypes: true });
       for (const entry of entries) {
         const fullPath = path.join(rootPath, entry.name);
 
@@ -45,10 +49,11 @@ export class FileManager implements IFileManager {
           files.push(...subFiles);
         } else if (entry.isFile()) {
           const extension = path.extname(entry.name).toLowerCase().slice(1);
-
-          if (supportedFormats.includes(extension)) {
+          const isSupported = supportedFormats
+            .map((f) => f.toLowerCase())
+            .includes(extension);
+          if (isSupported) {
             const stats = await fs.stat(fullPath);
-
             // Filter by modification time if newerThan is specified
             if (options.newerThan && stats.mtime <= options.newerThan) {
               continue;

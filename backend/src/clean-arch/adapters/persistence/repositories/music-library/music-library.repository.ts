@@ -31,7 +31,6 @@ export class MusicLibraryRepository implements IMusicLibraryRepository {
   }
 
   async getOneById(id: MusicLibraryId): Promise<MusicLibrary> {
-    console.log('getOneById', id, extractModelId(id).dbId, getCurrentUserId());
     return this.prisma.musicLibrary
       .findUniqueOrThrow({
         where: { id: extractModelId(id).dbId, createdById: getCurrentUserId() },
