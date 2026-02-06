@@ -2,7 +2,7 @@ import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Job } from 'bullmq';
 import { AudioScanBatchJobData } from 'src/clean-arch/application/ports/dtos/JobSchedulersData';
 import { IAudioScanSchedulerConsumer } from 'src/clean-arch/application/ports/infrastructure/IAudioScanSchedulerConsumer';
-import { SessionId } from 'src/clean-arch/kernel/ids';
+import { ProcessBatchAudioScanUseCase } from 'src/clean-arch/application/use-cases/job-scheduler/ProcessBatchAudioScan';
 import { als } from 'src/clean-arch/kernel/types/context';
 
 @Processor('audio-scan')
@@ -10,7 +10,9 @@ export class AudioScanSchedulerConsumerAdapter
   extends WorkerHost
   implements IAudioScanSchedulerConsumer
 {
-  constructor() {
+  constructor(
+    private readonly processBatchAudioScanUseCase: ProcessBatchAudioScanUseCase,
+  ) {
     super();
   }
 
@@ -21,7 +23,7 @@ export class AudioScanSchedulerConsumerAdapter
       switch (job.name) {
         case 'audio-scan-batch':
           await job.updateProgress(0);
-          await this.consumeBatchAudioScan(sessionId);
+          await this.consumeBatchAudioScan(job.data);
           await job.updateProgress(100);
           break;
         default:
@@ -29,8 +31,13 @@ export class AudioScanSchedulerConsumerAdapter
       }
     });
   }
-  consumeBatchAudioScan(sessionId: SessionId): Promise<void> {
-    console.log('consumeBatchAudioScan', sessionId);
-    throw new Error('Method not implemented.');
+  async consumeBatchAudioScan(data: AudioScanBatchJobData): Promise<void> {
+    const { audioFiles, sessionId, batchIndex, contextUser } = data;
+    await this.processBatchAudioScanUseCase.execute(
+      audioFiles.map(({ path }) => path),
+      sessionId,
+      batchIndex,
+      false,
+    );
   }
 }

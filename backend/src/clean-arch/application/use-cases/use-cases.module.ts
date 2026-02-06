@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { AUDIO_ANALYSIS_STRUCTURE } from '../ports/infrastructure/IAudioAnalysisStructure';
 import { AUDIO_SCAN_SCHEDULER_PRODUCER } from '../ports/infrastructure/IAudioScanSchedulerProducer';
 import { AUDIO_WAVEFORM_GENERATOR } from '../ports/infrastructure/IAudioWaveformGenerator';
 import { FILE_MANAGER } from '../ports/infrastructure/IFileManager';
@@ -62,6 +63,7 @@ import {
   GetTracksWithPaginationUseCase,
   GetTrackUseCase,
   GetWaveformDataUseCase,
+  ProcessBatchAudioScanUseCase,
   ProcessStartLibraryScanUseCase,
   RecreateElasticsearchIndexUseCase,
   RegisterPlayedTrackUseCase,
@@ -221,6 +223,9 @@ const useCasesProviders = [
   ]),
   createUseCaseProvider(ScheduleBatchAudioScanUseCase, [
     AUDIO_SCAN_SCHEDULER_PRODUCER,
+  ]),
+  createUseCaseProvider(ProcessBatchAudioScanUseCase, [
+    AUDIO_ANALYSIS_STRUCTURE,
   ]),
 ];
 

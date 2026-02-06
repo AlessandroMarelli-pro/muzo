@@ -6,7 +6,6 @@ import { Queue } from 'bullmq';
 import FormData from 'form-data';
 import * as fs from 'fs';
 import * as path from 'path';
-import { PrismaService } from 'src/shared/services/prisma.service';
 import { AiServiceConfig } from '../../config';
 import { SimpleAudioAnalysisResponse } from './ai-service-simple.types';
 
@@ -49,9 +48,7 @@ export class AiIntegrationService {
     simple: null,
     hierarchical: null,
   };
-  private readonly connectionPoolKey = 'ai-service:connection-pool';
   private readonly assignmentKey = 'ai-service:assignments';
-  private readonly heartbeatKey = 'ai-service:heartbeat';
   private readonly serviceId =
     process.env.HOSTNAME || `muzo-backend-${Date.now()}`;
   private healthCheckInterval: NodeJS.Timeout | null = null;
@@ -60,7 +57,6 @@ export class AiIntegrationService {
   constructor(
     private readonly configService: ConfigService,
     @InjectQueue('library-scan') private readonly libraryScanQueue: Queue,
-    private readonly prisma: PrismaService,
   ) {
     // Get AI service configuration from centralized config
     this.aiServiceConfig = this.configService.get<AiServiceConfig>('aiService');

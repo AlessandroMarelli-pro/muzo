@@ -246,6 +246,16 @@ export interface SimpleAudioAnalysisResponse {
   ai_metadata: AIMetadataResponse['metadata'];
 }
 
+export interface SimpleAudioAnalysisBatchResponse {
+  status: string;
+  total_files: number;
+  successful: number;
+  failed: number;
+  results: SimpleAudioAnalysisResponse[];
+  processing_time: number;
+  processing_mode: string;
+}
+
 // Error Response
 export interface SimpleAiErrorResponse {
   status: 'error';

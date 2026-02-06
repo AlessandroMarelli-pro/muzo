@@ -23,6 +23,7 @@ import {
   PLAYLIST_TRACK_REPOSITORY,
 } from './clean-arch/application/ports/repositories/IPlaylistTrackRepository';
 import { UseCasesModule } from './clean-arch/application/use-cases/use-cases.module';
+import { AiModule } from './clean-arch/infrastructure/external-services/ai/ai.module';
 import { ElasticsearchModule } from './clean-arch/infrastructure/external-services/elasticsearch/elasticsearch.module';
 import { ConfigModuleSetup, QueueConfig } from './config';
 import { GraphiQLModule } from './graphiql/graphiql.module';
@@ -34,6 +35,7 @@ import { SharedModule } from './shared/shared.module';
 
 @Module({
   imports: [
+    AiModule,
     // Configuration module
     ConfigModuleSetup,
 
