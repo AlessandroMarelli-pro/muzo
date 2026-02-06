@@ -1,7 +1,7 @@
-import { createToken } from 'src/clean-arch/application/utils/create-token';
 import { Maybe } from 'src/clean-arch/kernel/common';
 import { MusicTrackId } from 'src/clean-arch/kernel/ids';
 import { MusicTrack, QueueItem } from 'src/clean-arch/kernel/types/model-types';
+import { createToken } from '../../utils/create-token';
 
 export type QueueItemWithTrack = QueueItem & {
   track: Maybe<MusicTrack>;

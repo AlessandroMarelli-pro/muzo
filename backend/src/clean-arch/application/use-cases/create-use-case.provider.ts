@@ -1,7 +1,5 @@
-import { FactoryProvider, Type } from '@nestjs/common';
-
-/** Token that provides T when injected. Use createToken<T>() for symbols. */
-export type InjectionToken<T = unknown> = symbol | Type<T> | string;
+import { FactoryProvider } from '@nestjs/common';
+import { InjectionToken } from '../utils/create-token';
 
 export function createUseCaseProvider<T, A extends any[]>(
   UseCaseClass: new (...args: A) => T,
