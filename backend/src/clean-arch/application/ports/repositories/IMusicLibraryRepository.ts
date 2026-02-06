@@ -1,5 +1,5 @@
 import { MusicLibraryId } from 'src/clean-arch/kernel/ids';
-import { MusicLibrary } from 'src/clean-arch/kernel/types';
+import { MusicLibrary, ScanStatus } from 'src/clean-arch/kernel/types';
 import { createToken } from '../../utils/create-token';
 
 export type MusicLibraryUpdateData = {
@@ -9,6 +9,7 @@ export type MusicLibraryUpdateData = {
   includeSubdirectories?: boolean;
   supportedFormats?: string[];
   maxFileSize?: number;
+  scanStatus?: ScanStatus;
 };
 
 export type MusicLibraryCreateData = {
@@ -34,4 +35,9 @@ export interface IMusicLibraryRepository {
     data: MusicLibraryUpdateData,
   ): Promise<MusicLibrary>;
   deleteOneById(id: MusicLibraryId): Promise<boolean>;
+  updateScanStatus(
+    id: MusicLibraryId,
+    status: ScanStatus,
+    incremental: boolean,
+  ): Promise<MusicLibrary>;
 }

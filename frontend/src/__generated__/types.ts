@@ -245,6 +245,7 @@ export type MusicPlayerCurrentWaveformDataArgs = {
 
 export type Mutation = {
   __typename?: 'Mutation';
+  _startLibraryScan: LibraryScanResult;
   addTrackToPlaylist: CleanArchPlaylistTrack;
   addTrackToQueue: QueueItem;
   addTracksToQueue: Array<QueueItem>;
@@ -263,7 +264,7 @@ export type Mutation = {
   removeTrackFromPlaylist: Scalars['Boolean']['output'];
   removeTrackFromQueue: RemoveTrackFromQueueResponse;
   resetQueue: Scalars['Boolean']['output'];
-  startLibraryScan: LibraryScanResult;
+  startLibraryScan: Scalars['Boolean']['output'];
   stopLibraryScan: Scalars['Boolean']['output'];
   syncPlaylistToSpotify: SyncResult;
   syncPlaylistToTidal: SyncResult;
@@ -276,6 +277,12 @@ export type Mutation = {
   updatePlaylistTracksPositions: Scalars['Boolean']['output'];
   updateQueuePositions: Array<QueueItem>;
   updateSavedFilter: FilterCriteriaResult;
+};
+
+
+export type Mutation_StartLibraryScanArgs = {
+  incremental?: InputMaybe<Scalars['Boolean']['input']>;
+  libraryId: Scalars['ID']['input'];
 };
 
 
@@ -374,7 +381,7 @@ export type MutationRemoveTrackFromQueueArgs = {
 
 export type MutationStartLibraryScanArgs = {
   incremental?: InputMaybe<Scalars['Boolean']['input']>;
-  libraryId: Scalars['ID']['input'];
+  libraryId: Scalars['Base64ID']['input'];
 };
 
 

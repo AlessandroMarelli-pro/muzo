@@ -5,7 +5,11 @@ import {
 } from 'src/clean-arch/application/ports/repositories/IMusicLibraryRepository';
 import { PrismaService } from 'src/clean-arch/infrastructure/database/prisma.service';
 import { extractModelId, MusicLibraryId } from 'src/clean-arch/kernel/ids';
-import { getCurrentUserId, MusicLibrary } from 'src/clean-arch/kernel/types';
+import {
+  getCurrentUserId,
+  MusicLibrary,
+  ScanStatus,
+} from 'src/clean-arch/kernel/types';
 import { handlePrismaNotFound } from '../prisma-errors';
 import {
   toDomain,
@@ -27,6 +31,7 @@ export class MusicLibraryRepository implements IMusicLibraryRepository {
   }
 
   async getOneById(id: MusicLibraryId): Promise<MusicLibrary> {
+    console.log('getOneById', id, extractModelId(id).dbId, getCurrentUserId());
     return this.prisma.musicLibrary
       .findUniqueOrThrow({
         where: { id: extractModelId(id).dbId, createdById: getCurrentUserId() },
@@ -47,7 +52,7 @@ export class MusicLibraryRepository implements IMusicLibraryRepository {
 
   async updateOneById(
     id: MusicLibraryId,
-    data: MusicLibraryUpdateData,
+    data: Partial<MusicLibraryUpdateData>,
   ): Promise<MusicLibrary> {
     return this.prisma.musicLibrary
       .update({
@@ -63,5 +68,24 @@ export class MusicLibraryRepository implements IMusicLibraryRepository {
         where: { id: extractModelId(id).dbId, createdById: getCurrentUserId() },
       })
       .then(() => true);
+  }
+
+  async updateScanStatus(
+    id: MusicLibraryId,
+    status: ScanStatus,
+    incremental: boolean,
+  ): Promise<MusicLibrary> {
+    return this.prisma.musicLibrary
+      .update({
+        where: { id: extractModelId(id).dbId, createdById: getCurrentUserId() },
+        data: toPrismaUpdate({
+          scanInfo: {
+            scanStatus: status,
+            lastScanAt: incremental ? new Date() : undefined,
+            lastIncrementalScanAt: incremental ? new Date() : undefined,
+          },
+        }),
+      })
+      .then(toDomain);
   }
 }

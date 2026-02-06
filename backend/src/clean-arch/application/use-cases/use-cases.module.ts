@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AUDIO_WAVEFORM_GENERATOR } from '../ports/infrastructure/IAudioWaveformGenerator';
 import { IMAGE_FILE_READER } from '../ports/infrastructure/IImageFileReader';
+import { LIBRARY_SCAN_SCHEDULER_PRODUCER } from '../ports/infrastructure/ILibraryScanSchedulerProducer';
 import { HEALTH_QUERY } from '../ports/queries/IHealthQuery';
 import { METRICS_QUERY } from '../ports/queries/IMetricsQuery';
 import { MUSIC_TRACK_QUERIES } from '../ports/queries/IMusicTrackQueries';
@@ -62,6 +63,7 @@ import {
   RemoveTrackFromPlaylistUseCase,
   RemoveTrackFromQueueUseCase,
   ResetQueueUseCase,
+  ScheduleLibraryScanUseCase,
   ServeImageUseCase,
   SyncAllTracksToElasticsearchUseCase,
   SyncTrackToElasticSearchUseCase,
@@ -205,6 +207,10 @@ const useCasesProviders = [
   createUseCaseProvider(GetRecentlyPlayedUseCase, [MUSIC_TRACK_REPOSITORY]),
   createUseCaseProvider(RegisterPlayedTrackUseCase, [MUSIC_TRACK_REPOSITORY]),
   createUseCaseProvider(HealthCheckUseCase, [HEALTH_QUERY]),
+  createUseCaseProvider(ScheduleLibraryScanUseCase, [
+    LIBRARY_SCAN_SCHEDULER_PRODUCER,
+    MUSIC_LIBRARY_REPOSITORY,
+  ]),
 ];
 
 @Module({

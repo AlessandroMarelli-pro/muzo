@@ -10,10 +10,13 @@ import {
   CreateLibraryUseCase,
   DeleteLibraryUseCase,
   GetTracksWithCursorPaginationUseCase,
+  ScheduleLibraryScanUseCase,
 } from 'src/clean-arch/application/use-cases';
 
+import { UseGuards } from '@nestjs/common';
 import { MusicTrack } from 'src/clean-arch/kernel/types';
 import { parseMusicLibraryId } from '../../common/utils/parse-id';
+import { AuthGuard } from '../context/auth.guard';
 import { toMusicLibrary } from '../mappers/music-library.mapper';
 import { toTrack } from '../mappers/track.mapper';
 import { Base64ID } from '../scalars/base64-id.scalar';
@@ -23,11 +26,13 @@ import { ICursorPaginatedType } from '../schema/pagination.schema';
 import { CursorPaginatedTracks, Track } from '../schema/track.schema';
 
 @Resolver(() => Library)
+@UseGuards(AuthGuard)
 export class MusicLibraryResolver {
   constructor(
     private readonly createLibraryUseCase: CreateLibraryUseCase,
     private readonly deleteLibraryUseCase: DeleteLibraryUseCase,
     private readonly getTracksWithCursorPaginationUseCase: GetTracksWithCursorPaginationUseCase,
+    private readonly scheduleLibraryScanUseCase: ScheduleLibraryScanUseCase,
   ) {}
 
   @ResolveField(() => CursorPaginatedTracks)
@@ -70,5 +75,16 @@ export class MusicLibraryResolver {
     @Args('id', { type: () => Base64ID }) id: string,
   ): Promise<boolean> {
     return this.deleteLibraryUseCase.execute(parseMusicLibraryId(id));
+  }
+
+  @Mutation(() => String)
+  async startLibraryScan(
+    @Args('libraryId', { type: () => Base64ID }) libraryId: string,
+    @Args('incremental', { nullable: true }) incremental?: boolean,
+  ): Promise<string> {
+    console.log('startLibraryScan', libraryId, incremental);
+    return this.scheduleLibraryScanUseCase
+      .execute(parseMusicLibraryId(libraryId), incremental)
+      .then(({ sessionId }) => sessionId);
   }
 }

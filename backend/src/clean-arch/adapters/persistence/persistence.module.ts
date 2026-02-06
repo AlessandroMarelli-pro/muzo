@@ -31,12 +31,17 @@ import { PlaylistRepository } from './repositories/playlist/playlist.repository'
 import { QueueRepository } from './repositories/queue/queue.repository';
 import { SavedFilterRepository } from './repositories/saved-filter/saved-filter.repository';
 
+import { LIBRARY_SCAN_SCHEDULER_PRODUCER } from 'src/clean-arch/application/ports/infrastructure/ILibraryScanSchedulerProducer';
 import { MusicTrackQuery } from './queries/music-track/music-track.query';
 import { HiddenMusicTrackRepository } from './repositories/hidden-music-track/hidden-music-track.repository';
 
+import { BullModule } from '@nestjs/bullmq';
+import { FILE_MANAGER } from 'src/clean-arch/application/ports/infrastructure/IFileManager';
 import { HEALTH_QUERY } from 'src/clean-arch/application/ports/queries/IHealthQuery';
 import { MUSIC_TRACK_QUERIES } from 'src/clean-arch/application/ports/queries/IMusicTrackQueries';
 import { HIDDEN_MUSIC_TRACK_REPOSITORY } from 'src/clean-arch/application/ports/repositories/IHiddenMusicTrackRepository';
+import { FileManager } from 'src/clean-arch/infrastructure/filesystem/file.manager';
+import { LibraryScanSchedulerProducerAdapter } from 'src/clean-arch/infrastructure/job-scheduler/producers/library-scan-scheduler-producer.adapter';
 import { HealthQuery } from './queries/health/health.query';
 
 const queriesProviders = [
@@ -63,10 +68,15 @@ const queriesProviders = [
   },
   { provide: MUSIC_TRACK_QUERIES, useClass: MusicTrackQuery },
   { provide: HEALTH_QUERY, useClass: HealthQuery },
+  { provide: FILE_MANAGER, useClass: FileManager },
+  {
+    provide: LIBRARY_SCAN_SCHEDULER_PRODUCER,
+    useClass: LibraryScanSchedulerProducerAdapter,
+  },
 ];
 @Global()
 @Module({
-  imports: [ConfigModule],
+  imports: [ConfigModule, BullModule.registerQueue({ name: 'library-scan' })],
   providers: [PrismaService, ...queriesProviders],
   exports: queriesProviders.map((provider) => provider.provide),
 })

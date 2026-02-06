@@ -1,4 +1,5 @@
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
+import { BullModule } from '@nestjs/bullmq';
 import { MiddlewareConsumer, Module, RequestMethod } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { GraphQLModule } from '@nestjs/graphql';
@@ -22,7 +23,7 @@ import {
 } from './clean-arch/application/ports/repositories/IPlaylistTrackRepository';
 import { UseCasesModule } from './clean-arch/application/use-cases/use-cases.module';
 import { ElasticsearchModule } from './clean-arch/infrastructure/external-services/elasticsearch/elasticsearch.module';
-import { ConfigModuleSetup } from './config';
+import { ConfigModuleSetup, QueueConfig } from './config';
 import { GraphiQLModule } from './graphiql/graphiql.module';
 import { AiIntegrationModule } from './modules/ai-integration/ai-integration.module';
 import { MusicLibraryModule } from './modules/music-library/music-library.module';
@@ -102,6 +103,20 @@ import { SharedModule } from './shared/shared.module';
     AiIntegrationModule,
     AdminMethodsModule,
     ElasticsearchModule,
+    BullModule.forRootAsync({
+      useFactory: (configService: ConfigService) => {
+        const queueConfig = configService.get<QueueConfig>('queue');
+        return {
+          connection: {
+            host: queueConfig.redis.host,
+            port: queueConfig.redis.port,
+            password: queueConfig.redis.password,
+            db: queueConfig.redis.db,
+          },
+        };
+      },
+      inject: [ConfigService],
+    }),
   ],
 })
 export class AppModule {

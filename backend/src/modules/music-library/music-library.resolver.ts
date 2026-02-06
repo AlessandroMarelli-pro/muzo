@@ -165,7 +165,7 @@ export class MusicLibraryResolver {
   ) {}
 
   @Mutation(() => LibraryScanResult)
-  async startLibraryScan(
+  async _startLibraryScan(
     @Args('libraryId', { type: () => ID }) libraryId: string,
     @Args('incremental', { nullable: true }) incremental?: boolean,
   ): Promise<LibraryScanResult> {

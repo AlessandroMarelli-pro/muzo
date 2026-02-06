@@ -1,7 +1,7 @@
 import { BullModule } from '@nestjs/bullmq';
 import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { QueueConfig } from '../../config';
+import { QueueConfig } from 'src/config';
 import { SharedModule } from '../../shared/shared.module';
 import { AiIntegrationService } from './ai-integration.service';
 
@@ -22,9 +22,7 @@ import { AiIntegrationService } from './ai-integration.service';
       },
       inject: [ConfigService],
     }),
-    BullModule.registerQueue({
-      name: 'library-scan',
-    }),
+    BullModule.registerQueue({ name: 'library-scan' }),
   ],
   providers: [AiIntegrationService],
   exports: [AiIntegrationService],

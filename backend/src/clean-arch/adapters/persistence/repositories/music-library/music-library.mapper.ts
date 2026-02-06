@@ -1,8 +1,7 @@
 import { MusicLibrary as PrismaMusicLibrary } from '@prisma/client';
-import { MusicLibraryUpdateData } from 'src/clean-arch/application/ports/repositories/IMusicLibraryRepository';
 import { extractModelId } from 'src/clean-arch/kernel/ids';
 import { models, MusicLibrary } from 'src/clean-arch/kernel/types';
-import { toDbModel } from '../db';
+import { toDbModel, toDbModelUpdate } from '../db';
 import { toDomainModel } from '../domain';
 type ToDomain = (row: PrismaMusicLibrary) => MusicLibrary;
 type ToDomainArray = (rows: PrismaMusicLibrary[]) => MusicLibrary[];
@@ -67,9 +66,12 @@ export const toPrisma: ToPrisma = (domainModel) => {
 };
 
 export const toPrismaUpdate = (
-  domainModel: MusicLibraryUpdateData,
+  domainModel: Partial<MusicLibrary>,
 ): Partial<PrismaMusicLibrary> => {
+  const updatedModel = models.musicLibrary.update(domainModel);
   return {
+    ...toDbModelUpdate(updatedModel),
     name: domainModel.name,
+    scanStatus: domainModel.scanInfo?.scanStatus,
   };
 };

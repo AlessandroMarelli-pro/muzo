@@ -1,13 +1,16 @@
+import { UseGuards } from '@nestjs/common';
 import { Args, Float, Mutation, ResolveField, Resolver } from '@nestjs/graphql';
 import {
   GetWaveformDataUseCase,
   RegisterPlayedTrackUseCase,
 } from 'src/clean-arch/application/use-cases';
 import { parseMusicTrackId } from '../../common/utils/parse-id';
+import { AuthGuard } from '../context/auth.guard';
 import { Base64ID } from '../scalars/base64-id.scalar';
 import { MusicPlayer } from '../schema/music-player.schema';
 
 @Resolver(() => MusicPlayer)
+@UseGuards(AuthGuard)
 export class MusicPlayerResolver {
   constructor(
     private readonly getWaveformDataUseCase: GetWaveformDataUseCase,

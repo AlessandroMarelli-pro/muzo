@@ -11,3 +11,12 @@ export function toDbModel(domainModel: ModelBase) {
       : null,
   };
 }
+
+export function toDbModelUpdate(domainModel: Partial<ModelBase>) {
+  return {
+    updatedAt: domainModel.updatedAt,
+    updatedById: domainModel.updatedById
+      ? extractModelId(domainModel.updatedById).dbId
+      : null,
+  };
+}

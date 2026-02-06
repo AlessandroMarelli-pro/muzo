@@ -204,6 +204,7 @@ type MusicPlayer {
 }
 
 type Mutation {
+  _startLibraryScan(incremental: Boolean, libraryId: ID!): LibraryScanResult!
   addTrackToPlaylist(input: AddTrackToPlaylistInput!, playlistId: Base64ID!): CleanArchPlaylistTrack!
   addTrackToQueue(trackId: Base64ID!): QueueItem!
   addTracksToQueue(trackIds: [Base64ID!]!): [QueueItem!]!
@@ -222,7 +223,7 @@ type Mutation {
   removeTrackFromPlaylist(playlistId: Base64ID!, trackId: Base64ID!): Boolean!
   removeTrackFromQueue(trackId: Base64ID!): RemoveTrackFromQueueResponse!
   resetQueue: Boolean!
-  startLibraryScan(incremental: Boolean, libraryId: ID!): LibraryScanResult!
+  startLibraryScan(incremental: Boolean, libraryId: Base64ID!): String!
   stopLibraryScan(libraryId: ID!): Boolean!
   syncPlaylistToSpotify(playlistId: ID!, userId: String!): SyncResult!
   syncPlaylistToTidal(playlistId: ID!, userId: String!): SyncResult!

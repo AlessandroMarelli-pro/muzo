@@ -1,3 +1,4 @@
+export * from '../job-scheduler/ScheduleLibraryScan';
 export * from './CreateLibrary';
 export * from './DeleteLibrary';
 export * from './GetLibraries';

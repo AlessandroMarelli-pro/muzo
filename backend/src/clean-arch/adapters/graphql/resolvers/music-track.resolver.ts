@@ -1,3 +1,4 @@
+import { UseGuards } from '@nestjs/common';
 import {
   Args,
   Int,
@@ -14,12 +15,14 @@ import {
   ToggleLikeUseCase,
 } from 'src/clean-arch/application/use-cases/music-track/';
 import { parseMusicTrackId } from '../../common/utils/parse-id';
+import { AuthGuard } from '../context/auth.guard';
 import { toTrack } from '../mappers/track.mapper';
 import { Base64ID } from '../scalars/base64-id.scalar';
 import { TrackRecommendation } from '../schema/recommendation.schema';
 import { Track } from '../schema/track.schema';
 
 @Resolver(() => Track)
+@UseGuards(AuthGuard)
 export class MusicTrackResolver {
   constructor(
     private readonly getTrackRecommendationsUseCase: GetTrackRecommendationsUseCase,
