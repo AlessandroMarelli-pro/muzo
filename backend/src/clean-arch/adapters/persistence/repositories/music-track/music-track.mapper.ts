@@ -166,9 +166,9 @@ export const toAudioFileAIMetadata: ToAudioFileAIMetadata = (row) => {
   if (!row) return null;
   return {
     description: row.aiDescription,
-    tags: row.aiTags.split(','),
+    tags: JSON.parse(row.aiTags),
     vocalsDesc: row.vocalsDesc,
-    atmosphereDesc: row.atmosphereDesc.split(','),
+    atmosphereDesc: row.atmosphereDesc && JSON.parse(row.atmosphereDesc),
     contextBackground: row.contextBackground,
     contextImpact: row.contextImpact,
   };

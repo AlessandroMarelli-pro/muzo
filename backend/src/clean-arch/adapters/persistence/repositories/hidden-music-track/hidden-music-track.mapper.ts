@@ -36,9 +36,9 @@ export const toDomain: ToDomain = (row) => {
     },
     aiMetadata: {
       description: row.aiDescription,
-      tags: row.aiTags.split(','),
+      tags: row.aiTags && JSON.parse(row.aiTags),
       vocalsDesc: row.vocalsDesc,
-      atmosphereDesc: row.atmosphereDesc.split(','),
+      atmosphereDesc: row.atmosphereDesc && JSON.parse(row.atmosphereDesc),
       contextBackground: row.contextBackground,
       contextImpact: row.contextImpact,
     },

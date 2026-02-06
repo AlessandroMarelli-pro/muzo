@@ -1,7 +1,7 @@
-import { InjectQueue, Processor, WorkerHost } from '@nestjs/bullmq';
+import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Logger } from '@nestjs/common';
 import { AnalysisStatus, ScanStatus } from '@prisma/client';
-import { Job, Queue } from 'bullmq';
+import { Job } from 'bullmq';
 import { isDate } from 'class-validator';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -36,10 +36,6 @@ export class AudioScanProcessor extends WorkerHost {
     private readonly prismaService: PrismaService,
     private readonly aiIntegrationService: AiIntegrationService,
     private readonly progressTrackingService: ProgressTrackingService,
-    @InjectQueue('audio-scan')
-    private readonly audioScanQueue: Queue<
-      AudioScanJobData | EndScanLibraryJobData
-    >,
     private readonly addImageSearchRecordUseCase: AddImageSearchRecordUseCase,
     private readonly pubSubService: ScanProgressPubSubService,
     private readonly scanSessionService: ScanSessionService,

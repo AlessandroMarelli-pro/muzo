@@ -7,7 +7,6 @@ import * as fs from 'fs';
 import { QueueConfig } from 'src/config/queue.config';
 import { FileScanningService } from 'src/shared/services/file-scanning.service';
 import { PrismaService } from '../../../shared/services/prisma.service';
-import { ProgressTrackingService } from '../progress-tracking.service';
 import { LibraryScanJobData, QueueService } from '../queue.service';
 
 export interface AudioFile {
@@ -40,7 +39,6 @@ export class LibraryScanProcessor extends WorkerHost {
   constructor(
     private readonly queueService: QueueService,
     private readonly prismaService: PrismaService,
-    private readonly progressTrackingService: ProgressTrackingService,
     private readonly fileScanningService: FileScanningService,
     private readonly configService: ConfigService,
   ) {
@@ -82,12 +80,6 @@ export class LibraryScanProcessor extends WorkerHost {
         return;
       }
 
-      // Set the total files for progress tracking
-      this.progressTrackingService.setLibraryScanTotal(
-        libraryId,
-        audioFiles.length,
-      );
-
       // Schedule audio scan jobs for all found files (pass sessionId if available)
       await this.queueService.scheduleBulkBatchAudioScans(
         audioFiles,
@@ -109,12 +101,6 @@ export class LibraryScanProcessor extends WorkerHost {
         `[JOB ${job.id}] Library scan failed for ${libraryName}:`,
         error.message,
         error.stack,
-      );
-
-      // Mark scan as failed in progress tracking
-      this.progressTrackingService.markLibraryScanFailed(
-        libraryId,
-        libraryName,
       );
 
       // Re-throw to ensure job is marked as failed
@@ -170,7 +156,4 @@ export class LibraryScanProcessor extends WorkerHost {
       );
     }
   }
-
-
-
 }

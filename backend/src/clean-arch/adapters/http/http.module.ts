@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { UseCasesModule } from 'src/clean-arch/application/use-cases/use-cases.module';
 import { HttpAuthGuard } from './context/http-auth.guard';
 import { AudioStreamingController } from './controllers/audio-streaming.controller';
+import { HealthController } from './controllers/health.controller';
 import { ImageController } from './controllers/image.controller';
 import { RecommendationController } from './controllers/recommendation.controller';
 
@@ -12,6 +13,7 @@ import { RecommendationController } from './controllers/recommendation.controlle
     ImageController,
     AudioStreamingController,
     RecommendationController,
+    HealthController,
   ],
   providers: [HttpAuthGuard],
 })

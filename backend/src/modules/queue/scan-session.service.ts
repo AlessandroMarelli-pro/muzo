@@ -21,7 +21,7 @@ export interface UpdateScanSessionInput {
 export class ScanSessionService {
   private readonly logger = new Logger(ScanSessionService.name);
 
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(private readonly prisma: PrismaService) {}
 
   /**
    * Create a new scan session
@@ -30,7 +30,9 @@ export class ScanSessionService {
     sessionId: string,
   ): Promise<{ id: string; sessionId: string }> {
     try {
-      const existingSession = await this.prisma.scanSession.findUnique({ where: { sessionId } });
+      const existingSession = await this.prisma.scanSession.findUnique({
+        where: { sessionId },
+      });
       if (existingSession?.status === ScanStatus.SCANNING) {
         return { id: existingSession.id, sessionId: existingSession.sessionId };
       }
@@ -94,7 +96,10 @@ export class ScanSessionService {
     updates: UpdateScanSessionInput,
   ): Promise<ScanSession> {
     try {
-      this.logger.log(`Updating session progress for session ${sessionId}:`, updates);
+      this.logger.log(
+        `Updating session progress for session ${sessionId}:`,
+        updates,
+      );
 
       // Extract progressPercentage before modifying updates object
       const progressPercentage = updates.progressPercentage;
@@ -116,11 +121,13 @@ export class ScanSessionService {
         if (incrementValue !== 0) {
           updateData.overallProgress = {
             increment: incrementValue,
-
           };
         }
       }
-      if (updates.completedBatches !== undefined && updates.completedBatches !== null) {
+      if (
+        updates.completedBatches !== undefined &&
+        updates.completedBatches !== null
+      ) {
         updateData.completedBatches = {
           increment: updates.completedBatches,
         };
@@ -148,10 +155,7 @@ export class ScanSessionService {
         });
       });
     } catch (error) {
-      this.logger.error(
-        `Failed to update scan session ${sessionId}:`,
-        error,
-      );
+      this.logger.error(`Failed to update scan session ${sessionId}:`, error);
       // Don't throw - progress updates shouldn't break the scan
     }
   }
@@ -178,10 +182,7 @@ export class ScanSessionService {
         `Scan session ${sessionId} marked as ${success ? 'completed' : 'failed'}`,
       );
     } catch (error) {
-      this.logger.error(
-        `Failed to complete scan session ${sessionId}:`,
-        error,
-      );
+      this.logger.error(`Failed to complete scan session ${sessionId}:`, error);
     }
   }
 
@@ -199,9 +200,14 @@ export class ScanSessionService {
         },
       });
 
-      this.logger.log(`Scan session ${sessionId} marked as failed: ${errorMessage}`);
+      this.logger.log(
+        `Scan session ${sessionId} marked as failed: ${errorMessage}`,
+      );
     } catch (error) {
-      this.logger.error(`Failed to mark session ${sessionId} as failed:`, error);
+      this.logger.error(
+        `Failed to mark session ${sessionId} as failed:`,
+        error,
+      );
     }
   }
 
@@ -244,17 +250,5 @@ export class ScanSessionService {
       this.logger.error('Failed to get completed scan sessions:', error);
       throw error;
     }
-  }
-
-  /**
-   * Generate a unique session ID (UUID v4)
-   */
-  private generateSessionId(): string {
-    // Generate UUID v4
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
-      const r = (Math.random() * 16) | 0;
-      const v = c === 'x' ? r : (r & 0x3) | 0x8;
-      return v.toString(16);
-    });
   }
 }

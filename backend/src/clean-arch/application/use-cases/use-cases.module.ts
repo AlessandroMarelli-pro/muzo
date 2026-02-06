@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AUDIO_WAVEFORM_GENERATOR } from '../ports/infrastructure/IAudioWaveformGenerator';
 import { IMAGE_FILE_READER } from '../ports/infrastructure/IImageFileReader';
+import { HEALTH_QUERY } from '../ports/queries/IHealthQuery';
 import { METRICS_QUERY } from '../ports/queries/IMetricsQuery';
 import { MUSIC_TRACK_QUERIES } from '../ports/queries/IMusicTrackQueries';
 import { PLAYLIST_STATS_QUERY } from '../ports/queries/IPlaylistStatsQuery';
@@ -74,6 +75,7 @@ import {
   UpdateSavedFilterUseCase,
 } from './';
 import { createUseCaseProvider } from './create-use-case.provider';
+import { HealthCheckUseCase } from './health/HealthCheck';
 import { UpdatePlaylistSortingUseCase } from './playlist-sorting/UpdatePlaylistSorting';
 
 const useCasesProviders = [
@@ -202,6 +204,7 @@ const useCasesProviders = [
   createUseCaseProvider(GetRandomTrackWithStatsUseCase, [MUSIC_TRACK_QUERIES]),
   createUseCaseProvider(GetRecentlyPlayedUseCase, [MUSIC_TRACK_REPOSITORY]),
   createUseCaseProvider(RegisterPlayedTrackUseCase, [MUSIC_TRACK_REPOSITORY]),
+  createUseCaseProvider(HealthCheckUseCase, [HEALTH_QUERY]),
 ];
 
 @Module({

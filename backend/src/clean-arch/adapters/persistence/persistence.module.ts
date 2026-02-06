@@ -34,54 +34,40 @@ import { SavedFilterRepository } from './repositories/saved-filter/saved-filter.
 import { MusicTrackQuery } from './queries/music-track/music-track.query';
 import { HiddenMusicTrackRepository } from './repositories/hidden-music-track/hidden-music-track.repository';
 
+import { HEALTH_QUERY } from 'src/clean-arch/application/ports/queries/IHealthQuery';
 import { MUSIC_TRACK_QUERIES } from 'src/clean-arch/application/ports/queries/IMusicTrackQueries';
 import { HIDDEN_MUSIC_TRACK_REPOSITORY } from 'src/clean-arch/application/ports/repositories/IHiddenMusicTrackRepository';
+import { HealthQuery } from './queries/health/health.query';
 
+const queriesProviders = [
+  { provide: PLAYLIST_REPOSITORY, useClass: PlaylistRepository },
+  { provide: PLAYLIST_TRACK_REPOSITORY, useClass: PlaylistTrackRepository },
+  { provide: PLAYLIST_STATS_QUERY, useClass: PlaylistStatsQuery },
+  {
+    provide: PLAYLIST_SORTING_REPOSITORY,
+    useClass: PlaylistSortingRepository,
+  },
+  { provide: MUSIC_TRACK_REPOSITORY, useClass: MusicTrackRepository },
+  { provide: QUEUE_REPOSITORY, useClass: QueueRepository },
+  { provide: SAVED_FILTER_QUERY, useClass: SavedFilterQuery },
+  { provide: SAVED_FILTER_REPOSITORY, useClass: SavedFilterRepository },
+  { provide: IMAGE_SEARCH_REPOSITORY, useClass: ImageSearchRepository },
+  { provide: IMAGE_FILE_READER, useClass: FileSystemImageReader },
+  { provide: METRICS_QUERY, useClass: MetricsQuery },
+  { provide: AUDIO_WAVEFORM_GENERATOR, useClass: WaveformGenerator },
+  { provide: RECOMMENDATION_DATA_PORT, useClass: RecommendationDataAdapter },
+  { provide: MUSIC_LIBRARY_REPOSITORY, useClass: MusicLibraryRepository },
+  {
+    provide: HIDDEN_MUSIC_TRACK_REPOSITORY,
+    useClass: HiddenMusicTrackRepository,
+  },
+  { provide: MUSIC_TRACK_QUERIES, useClass: MusicTrackQuery },
+  { provide: HEALTH_QUERY, useClass: HealthQuery },
+];
 @Global()
 @Module({
   imports: [ConfigModule],
-  providers: [
-    PrismaService,
-    { provide: PLAYLIST_REPOSITORY, useClass: PlaylistRepository },
-    { provide: PLAYLIST_TRACK_REPOSITORY, useClass: PlaylistTrackRepository },
-    { provide: PLAYLIST_STATS_QUERY, useClass: PlaylistStatsQuery },
-    {
-      provide: PLAYLIST_SORTING_REPOSITORY,
-      useClass: PlaylistSortingRepository,
-    },
-    { provide: MUSIC_TRACK_REPOSITORY, useClass: MusicTrackRepository },
-    { provide: QUEUE_REPOSITORY, useClass: QueueRepository },
-    { provide: SAVED_FILTER_QUERY, useClass: SavedFilterQuery },
-    { provide: SAVED_FILTER_REPOSITORY, useClass: SavedFilterRepository },
-    { provide: IMAGE_SEARCH_REPOSITORY, useClass: ImageSearchRepository },
-    { provide: IMAGE_FILE_READER, useClass: FileSystemImageReader },
-    { provide: METRICS_QUERY, useClass: MetricsQuery },
-    { provide: AUDIO_WAVEFORM_GENERATOR, useClass: WaveformGenerator },
-    { provide: RECOMMENDATION_DATA_PORT, useClass: RecommendationDataAdapter },
-    { provide: MUSIC_LIBRARY_REPOSITORY, useClass: MusicLibraryRepository },
-    {
-      provide: HIDDEN_MUSIC_TRACK_REPOSITORY,
-      useClass: HiddenMusicTrackRepository,
-    },
-    { provide: MUSIC_TRACK_QUERIES, useClass: MusicTrackQuery },
-  ],
-  exports: [
-    PLAYLIST_REPOSITORY,
-    PLAYLIST_TRACK_REPOSITORY,
-    PLAYLIST_STATS_QUERY,
-    PLAYLIST_SORTING_REPOSITORY,
-    MUSIC_TRACK_REPOSITORY,
-    QUEUE_REPOSITORY,
-    SAVED_FILTER_QUERY,
-    SAVED_FILTER_REPOSITORY,
-    IMAGE_SEARCH_REPOSITORY,
-    IMAGE_FILE_READER,
-    METRICS_QUERY,
-    AUDIO_WAVEFORM_GENERATOR,
-    RECOMMENDATION_DATA_PORT,
-    MUSIC_LIBRARY_REPOSITORY,
-    HIDDEN_MUSIC_TRACK_REPOSITORY,
-    MUSIC_TRACK_QUERIES,
-  ],
+  providers: [PrismaService, ...queriesProviders],
+  exports: queriesProviders.map((provider) => provider.provide),
 })
 export class AdaptersPersistenceModule {}
