@@ -47,26 +47,4 @@ export class PrismaService
       return false;
     }
   }
-
-  async runMigrations(): Promise<void> {
-    try {
-      // Prisma migrations are handled by the CLI
-      console.log(
-        'ℹ️ Prisma migrations should be run using: npx prisma migrate dev',
-      );
-    } catch (error) {
-      console.error('❌ Migration info failed:', error);
-      throw error;
-    }
-  }
-
-  async resetDatabase(): Promise<void> {
-    try {
-      await this.$executeRaw`DELETE FROM sqlite_sequence`;
-      console.log('✅ Database reset completed');
-    } catch (error) {
-      console.error('❌ Database reset failed:', error);
-      throw error;
-    }
-  }
 }

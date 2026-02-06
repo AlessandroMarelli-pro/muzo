@@ -1,12 +1,12 @@
 import { Module } from '@nestjs/common';
-import { SharedModule } from '../../shared/shared.module';
+import { PrismaService } from '../clean-arch/infrastructure/database/prisma.service';
 import { AdminMethodsController } from './admin-methods.controller';
 import { AdminMethodsService } from './admin-methods.service';
 
 @Module({
-  imports: [SharedModule],
+  imports: [],
   controllers: [AdminMethodsController],
-  providers: [AdminMethodsService],
+  providers: [AdminMethodsService, PrismaService],
   exports: [AdminMethodsService],
 })
 export class AdminMethodsModule {}

@@ -3,6 +3,7 @@ import { MiddlewareConsumer, Module, RequestMethod } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { GraphQLModule } from '@nestjs/graphql';
 import { join } from 'path';
+import { AdminMethodsModule } from './admin-methods/admin-methods.module';
 import { ActionContextMiddleware } from './clean-arch/adapters/common/middlewares/action-context.middleware';
 import { CleanArchGraphQLModule } from './clean-arch/adapters/graphql/graphql.module';
 import { HttpModule } from './clean-arch/adapters/http/http.module';
@@ -23,7 +24,6 @@ import { UseCasesModule } from './clean-arch/application/use-cases/use-cases.mod
 import { ElasticsearchModule } from './clean-arch/infrastructure/external-services/elasticsearch/elasticsearch.module';
 import { ConfigModuleSetup } from './config';
 import { GraphiQLModule } from './graphiql/graphiql.module';
-import { AdminMethodsModule } from './modules/admin-methods/admin-methods.module';
 import { AiIntegrationModule } from './modules/ai-integration/ai-integration.module';
 import { MusicLibraryModule } from './modules/music-library/music-library.module';
 import { QueueModule } from './modules/queue/queue.module';
