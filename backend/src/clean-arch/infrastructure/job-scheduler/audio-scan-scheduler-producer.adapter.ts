@@ -2,13 +2,12 @@ import { InjectQueue } from '@nestjs/bullmq';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Queue } from 'bullmq';
+import { FileInfo } from 'src/clean-arch/application/ports/dtos/FileInfo';
 import { AudioScanBatchJobData } from 'src/clean-arch/application/ports/dtos/JobSchedulersData';
 import { IAudioScanSchedulerProducer } from 'src/clean-arch/application/ports/infrastructure/IAudioScanSchedulerProducer';
 import { MusicLibraryId, SessionId } from 'src/clean-arch/kernel/ids';
 import { ActionContext } from 'src/clean-arch/kernel/types';
 import { QueueConfig } from 'src/config';
-
-import { FileInfo } from 'src/shared/services/file-scanning.service';
 
 @Injectable()
 export class AudioScanSchedulerProducerAdapter

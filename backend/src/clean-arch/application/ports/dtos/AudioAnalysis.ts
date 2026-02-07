@@ -1,5 +1,5 @@
 // Simplified File Information
-export interface FileInfo {
+interface FileInfo {
   filename: string;
   filepath: string;
   file_extension: string;
@@ -12,7 +12,7 @@ export interface FileInfo {
 }
 
 // Simplified Audio Technical Information
-export interface AudioTechnical {
+interface AudioTechnical {
   sample_rate: number;
   duration_seconds: number;
   format: string;
@@ -24,7 +24,7 @@ export interface AudioTechnical {
 }
 
 // Simplified ID3 Tags
-export interface Id3Tags {
+interface Id3Tags {
   title?: string;
   artist?: string;
   album?: string;
@@ -41,7 +41,7 @@ export interface Id3Tags {
   bitrate?: number;
   filename_parsed?: boolean;
 }
-export interface AggregationStatistics {
+interface AggregationStatistics {
   mean: number;
   std: number;
   median: number;
@@ -51,7 +51,7 @@ export interface AggregationStatistics {
   p75: number;
 }
 // Simplified Audio Features
-export interface AudioFeatures {
+interface AudioFeatures {
   musical_features: {
     valence: number;
     mood_calculation: {
@@ -126,14 +126,14 @@ export interface AudioFeatures {
 }
 
 // Simplified Audio Fingerprint
-export interface AudioFingerprint {
+interface AudioFingerprint {
   file_hash: string;
   audio_hash: string;
   method: string;
 }
 
 // Simplified Genre Classification Details
-export interface GenreDetails {
+interface GenreDetails {
   file_path: string;
   predicted_genre: string;
   confidence: number;
@@ -142,7 +142,7 @@ export interface GenreDetails {
 }
 
 // Simplified Classification Details
-export interface ClassificationDetails {
+interface ClassificationDetails {
   genre_details: GenreDetails;
   subgenre_details: GenreDetails;
   specialist_used: string;
@@ -206,7 +206,7 @@ export interface HierarchicalClassification {
 }
 
 // Simplified Album Art
-export interface AlbumArt {
+interface AlbumArt {
   source: string;
   imagePath: string;
   imageUrl: string;

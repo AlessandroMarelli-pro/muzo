@@ -14,6 +14,7 @@ This folder documents the NestJS backend's **Clean Architecture** implementation
 | [06-infrastructure.md](./06-infrastructure.md) | Infrastructure: Prisma, audio, filesystem, Elasticsearch |
 | [07-http-adapters.md](./07-http-adapters.md) | HTTP adapters: controllers, auth |
 | [08-app-wiring.md](./08-app-wiring.md) | App wiring: AdaptersPersistenceModule, UseCasesModule, GraphQL context, DataLoaders |
+| [09-deferred-improvements.md](./09-deferred-improvements.md) | Deferred improvements: layer isolation fixes, optional NestJS decoupling |
 
 ## Folder map
 

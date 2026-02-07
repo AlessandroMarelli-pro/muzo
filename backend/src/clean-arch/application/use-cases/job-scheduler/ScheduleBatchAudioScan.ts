@@ -1,7 +1,7 @@
+import { FileInfo } from 'src/clean-arch/application/ports/dtos/FileInfo';
 import { IAudioScanSchedulerProducer } from 'src/clean-arch/application/ports/infrastructure/IAudioScanSchedulerProducer';
 import { MusicLibraryId, SessionId } from 'src/clean-arch/kernel/ids';
 import { getCurrentUser } from 'src/clean-arch/kernel/types';
-import { FileInfo } from 'src/shared/services/file-scanning.service';
 
 export class ScheduleBatchAudioScanUseCase {
   constructor(
