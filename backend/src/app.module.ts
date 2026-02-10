@@ -27,9 +27,6 @@ import { AiModule } from './clean-arch/infrastructure/external-services/ai/ai.mo
 import { ElasticsearchModule } from './clean-arch/infrastructure/external-services/elasticsearch/elasticsearch.module';
 import { ConfigModuleSetup, QueueConfig } from './config';
 import { GraphiQLModule } from './graphiql/graphiql.module';
-import { AiIntegrationModule } from './modules/ai-integration/ai-integration.module';
-import { MusicLibraryModule } from './modules/music-library/music-library.module';
-import { QueueModule } from './modules/queue/queue.module';
 import { ThirdPartySyncModule } from './modules/third-party-sync/third-party-sync.module';
 import { SharedModule } from './shared/shared.module';
 
@@ -95,15 +92,10 @@ import { SharedModule } from './shared/shared.module';
     // Shared module for common services
     SharedModule,
 
-    // Queue module for background processing
-    QueueModule,
-
     // Feature modules
 
     HttpModule,
-    MusicLibraryModule,
     ThirdPartySyncModule,
-    AiIntegrationModule,
     AdminMethodsModule,
     ElasticsearchModule,
     BullModule.forRootAsync({

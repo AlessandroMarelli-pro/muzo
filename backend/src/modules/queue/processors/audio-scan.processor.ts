@@ -54,9 +54,7 @@ export class AudioScanProcessor extends WorkerHost {
     if (job.name === 'end-scan-library') {
       await this.processEndScanLibrary(job as Job<EndScanLibraryJobData>);
     } else if (job.name === 'audio-scan-batch') {
-      await this.processAudioScanBatch(
-        job as unknown as Job<AudioScanBatchJobData>,
-      );
+      return;
     }
   }
 
@@ -164,19 +162,8 @@ export class AudioScanProcessor extends WorkerHost {
             fileName: jobData.fileName,
             fileSize: jobData.fileSize,
             lastModified: jobData.lastModified,
-          }),
-        ),
-      );
-
-      // Update all tracks to PROCESSING status
-      await Promise.all(
-        tracks.map((track) =>
-          this.prismaService.musicTrack.update({
-            where: { id: track.id },
-            data: {
-              analysisStatus: AnalysisStatus.PROCESSING,
-              analysisStartedAt: new Date(),
-            },
+            analysisStatus: AnalysisStatus.PROCESSING,
+            analysisStartedAt: new Date(),
           }),
         ),
       );
@@ -543,8 +530,18 @@ export class AudioScanProcessor extends WorkerHost {
     fileName: string;
     fileSize: number;
     lastModified: Date;
+    analysisStatus: AnalysisStatus;
+    analysisStartedAt: Date;
   }) {
-    const { filePath, libraryId, fileName, fileSize, lastModified } = data;
+    const {
+      filePath,
+      libraryId,
+      fileName,
+      fileSize,
+      lastModified,
+      analysisStatus,
+      analysisStartedAt,
+    } = data;
 
     return await this.prismaService.musicTrack.upsert({
       where: { filePath },
@@ -552,7 +549,8 @@ export class AudioScanProcessor extends WorkerHost {
         fileName,
         fileSize,
         libraryId,
-        analysisStatus: AnalysisStatus.PENDING,
+        analysisStatus,
+        analysisStartedAt,
       },
       create: {
         filePath,
@@ -561,7 +559,8 @@ export class AudioScanProcessor extends WorkerHost {
         libraryId,
         duration: 0, // Will be updated after analysis
         format: path.extname(fileName).toLowerCase().substring(1),
-        analysisStatus: AnalysisStatus.PENDING,
+        analysisStatus,
+        analysisStartedAt,
         fileCreatedAt: lastModified,
       },
     });

@@ -6,6 +6,7 @@ import { AudioStreamingController } from './controllers/audio-streaming.controll
 import { HealthController } from './controllers/health.controller';
 import { ImageController } from './controllers/image.controller';
 import { RecommendationController } from './controllers/recommendation.controller';
+import { ScanProgressController } from './controllers/scan-progress.controller';
 
 @Module({
   imports: [ConfigModule, UseCasesModule],
@@ -14,6 +15,7 @@ import { RecommendationController } from './controllers/recommendation.controlle
     AudioStreamingController,
     RecommendationController,
     HealthController,
+    ScanProgressController,
   ],
   providers: [HttpAuthGuard],
 })

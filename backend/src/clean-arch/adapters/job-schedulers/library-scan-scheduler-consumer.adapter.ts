@@ -1,7 +1,11 @@
 import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Job } from 'bullmq';
-import { LibraryScanJobData } from 'src/clean-arch/application/ports/dtos/JobSchedulersData';
+import {
+  EndLibraryScanJobData,
+  LibraryScanJobData,
+} from 'src/clean-arch/application/ports/dtos/JobSchedulersData';
 import { ILibraryScanSchedulerConsumer } from 'src/clean-arch/application/ports/infrastructure/ILibraryScanSchedulerConsumer';
+import { ProcessEndLibraryScanUseCase } from 'src/clean-arch/application/use-cases/job-scheduler/ProcessEndLibraryScan';
 import { ProcessStartLibraryScanUseCase } from 'src/clean-arch/application/use-cases/job-scheduler/ProcessStartLibraryScan';
 import { ScheduleBatchAudioScanUseCase } from 'src/clean-arch/application/use-cases/job-scheduler/ScheduleBatchAudioScan';
 import { MusicLibraryId, SessionId } from 'src/clean-arch/kernel/ids';
@@ -15,17 +19,25 @@ export class LibraryScanSchedulerConsumerAdapter
   constructor(
     private readonly processStartLibraryScanUseCase: ProcessStartLibraryScanUseCase,
     private readonly scheduleBatchAudioScanUseCase: ScheduleBatchAudioScanUseCase,
+    private readonly processEndLibraryScanUseCase: ProcessEndLibraryScanUseCase,
   ) {
     super();
   }
 
-  async process(job: Job<LibraryScanJobData>): Promise<void> {
+  async process(
+    job: Job<LibraryScanJobData | EndLibraryScanJobData>,
+  ): Promise<void> {
     const { libraryId, sessionId, incremental, contextUser } = job.data;
     return als.run({ now: new Date(), user: contextUser }, async () => {
       switch (job.name) {
         case 'start-library-scan':
           await job.updateProgress(0);
           await this.consumeLibraryScan(libraryId, sessionId, incremental);
+          await job.updateProgress(100);
+          break;
+        case 'end-scan-library':
+          await job.updateProgress(0);
+          await this.consumeEndLibraryScan(job.data as EndLibraryScanJobData);
           await job.updateProgress(100);
           break;
         default:
@@ -48,6 +60,17 @@ export class LibraryScanSchedulerConsumerAdapter
       audioFiles,
       libraryId,
       sessionId,
+      incremental,
+    );
+  }
+
+  async consumeEndLibraryScan(data: EndLibraryScanJobData): Promise<void> {
+    const { libraryId, sessionId, incremental, totalTracks } = data;
+    await this.processEndLibraryScanUseCase.execute(
+      libraryId,
+      sessionId,
+      incremental,
+      totalTracks,
     );
   }
 }

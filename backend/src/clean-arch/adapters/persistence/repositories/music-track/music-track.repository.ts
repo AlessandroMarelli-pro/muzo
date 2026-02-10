@@ -1,11 +1,19 @@
 import { Injectable } from '@nestjs/common';
+import { isDate } from 'class-validator';
+import { AudioAnalysisResponse } from 'src/clean-arch/application/ports/dtos/AudioAnalysis';
 import {
   IMusicTrackRepository,
   MusicTrackUpdateData,
 } from 'src/clean-arch/application/ports/repositories/IMusicTrackRepository';
-import { extractModelId, MusicTrackId } from 'src/clean-arch/kernel/ids';
+import {
+  extractModelId,
+  MusicLibraryId,
+  MusicTrackId,
+} from 'src/clean-arch/kernel/ids';
+import { models } from 'src/clean-arch/kernel/types';
 import { getCurrentUserId } from 'src/clean-arch/kernel/types/context';
 import {
+  AudioFileAnalysisStatusEnum,
   FilterCriteria,
   MusicTrack,
 } from 'src/clean-arch/kernel/types/model-types';
@@ -21,11 +29,60 @@ import { buildMusicTrackFilterWhereClause } from '../../builders/music-track-fil
 import { buildMusicTrackSortingOrderClause } from '../../builders/music-track-sorting.order';
 import { musicTracksIncludes } from '../../includes/music-tracks-includes';
 import { handlePrismaNotFound } from '../prisma-errors';
-import { toDomain, toMusicTrackId, toPrismaUpdate } from './music-track.mapper';
+import {
+  toDomain,
+  toMusicTrackId,
+  toPrisma,
+  toPrismaUpdate,
+} from './music-track.mapper';
 
 @Injectable()
 export class MusicTrackRepository implements IMusicTrackRepository {
   constructor(private readonly prisma: PrismaService) {}
+
+  async getManyByLibraryId(libraryId: MusicLibraryId): Promise<MusicTrack[]> {
+    return this.prisma.musicTrack
+      .findMany({
+        where: { libraryId, createdById: getCurrentUserId() },
+        include: musicTracksIncludes,
+      })
+      .then((rows) => rows.map(toDomain));
+  }
+
+  async upsertOne(trackData: MusicTrackUpdateData): Promise<MusicTrack> {
+    return this.prisma.musicTrack
+      .upsert({
+        where: {
+          filePath: trackData.filePath,
+          createdById: getCurrentUserId(),
+        },
+        update: toPrismaUpdate(trackData),
+        create: toPrisma(
+          models.musicTrack.instantiateNew({
+            libraryId: trackData.libraryId,
+            analysisInfo: {
+              status: trackData.analysisStatus,
+              startedAt: trackData.analysisStartedAt,
+              completedAt: null,
+              error: null,
+            },
+            fileInfo: {
+              filePath: trackData.filePath,
+              fileName: trackData.fileName,
+              fileSize: trackData.fileSize,
+              fileCreatedAt: trackData.fileCreatedAt,
+            },
+            technicalInfo: {
+              duration: trackData.duration,
+              format: trackData.format,
+              bitrate: null,
+              sampleRate: null,
+            },
+          }),
+        ),
+      })
+      .then(toDomain);
+  }
 
   async getOneById(id: MusicTrackId): Promise<MusicTrack> {
     return this.prisma.musicTrack
@@ -39,6 +96,21 @@ export class MusicTrackRepository implements IMusicTrackRepository {
       .then(toDomain);
   }
 
+  async getOneByFilePath(filePath: string): Promise<MusicTrack> {
+    console.log('filePath', filePath, getCurrentUserId());
+    return this.prisma.musicTrack
+      .findUnique({
+        where: { filePath, createdById: getCurrentUserId() },
+        include: musicTracksIncludes,
+      })
+      .catch((e: unknown) =>
+        handlePrismaNotFound(
+          e,
+          `Music track with file path ${filePath} not found`,
+        ),
+      )
+      .then(toDomain);
+  }
   async getLastPlayedTrack(): Promise<MusicTrack> {
     return this.prisma.musicTrack
       .findFirst({
@@ -219,5 +291,192 @@ export class MusicTrackRepository implements IMusicTrackRepository {
         include: musicTracksIncludes,
       })
       .then(toDomain);
+  }
+
+  async updateTrackWithAnalysis(
+    trackId: MusicTrackId,
+    analysisResult: AudioAnalysisResponse,
+  ): Promise<void> {
+    const updateData: any = {};
+
+    // Update duration if available
+    if (analysisResult.audio_technical.duration_seconds) {
+      updateData.duration = Math.round(
+        analysisResult.audio_technical.duration_seconds,
+      );
+    }
+
+    // Update audio format details
+    if (analysisResult.audio_technical.format) {
+      updateData.format = analysisResult.audio_technical.format;
+    }
+    if (analysisResult.audio_technical.bitrate) {
+      updateData.bitrate = analysisResult.audio_technical.bitrate;
+    }
+    if (analysisResult.audio_technical.sample_rate) {
+      updateData.sampleRate = analysisResult.audio_technical.sample_rate;
+    }
+
+    // Update AI-generated metadata
+    let genreNames: string[] = [];
+    let subgenreNames: string[] = [];
+
+    if (analysisResult.hierarchical_classification?.classification) {
+      if (analysisResult.hierarchical_classification.classification.genre) {
+        genreNames.push(
+          analysisResult.hierarchical_classification.classification.genre,
+        );
+      }
+      if (analysisResult.hierarchical_classification.classification.subgenre) {
+        subgenreNames.push(
+          analysisResult.hierarchical_classification.classification.subgenre,
+        );
+      }
+    }
+
+    if (
+      analysisResult.hierarchical_classification?.classification?.confidence
+    ) {
+      updateData.aiConfidence =
+        analysisResult.hierarchical_classification.classification.confidence.genre;
+      updateData.aiSubgenreConfidence =
+        analysisResult.hierarchical_classification.classification.confidence.subgenre;
+    }
+
+    // Update original metadata if available
+    if (analysisResult.id3_tags) {
+      if (analysisResult.id3_tags.title) {
+        updateData.originalTitle = analysisResult.id3_tags.title;
+      }
+      if (analysisResult.id3_tags.artist) {
+        updateData.originalArtist = analysisResult.id3_tags.artist;
+      }
+      if (analysisResult.id3_tags.album) {
+        updateData.originalAlbum = analysisResult.id3_tags.album;
+      }
+      if (analysisResult.id3_tags.genre) {
+        // Add original genre to the list
+        genreNames.push(analysisResult.id3_tags.genre);
+      }
+      if (analysisResult.id3_tags.albumartist) {
+        updateData.originalAlbumartist = analysisResult.id3_tags.albumartist;
+      }
+      if (
+        analysisResult.id3_tags.date &&
+        isDate(new Date(analysisResult.id3_tags.date))
+      ) {
+        updateData.originalDate = new Date(analysisResult.id3_tags.date);
+      }
+
+      if (analysisResult.id3_tags.bpm) {
+        updateData.originalBpm = parseInt(analysisResult.id3_tags.bpm, 10);
+      }
+      if (analysisResult.id3_tags.track_number) {
+        updateData.originalTrack_number = parseInt(
+          analysisResult.id3_tags.track_number,
+          10,
+        );
+      }
+      if (analysisResult.id3_tags.disc_number) {
+        updateData.originalDisc_number = analysisResult.id3_tags.disc_number;
+      }
+
+      if (analysisResult.id3_tags.year) {
+        // Parse originalYear to support both YYYY and YYYYMMDD formats
+        let parsedOriginalYear: number | null = null;
+
+        const year = analysisResult.id3_tags.year;
+        if (/^\d{8}$/.test(year)) {
+          // Format: YYYYMMDD
+          parsedOriginalYear = parseInt(year.substring(0, 4), 10);
+        } else if (/^\d{4}$/.test(year)) {
+          // Format: YYYY
+          parsedOriginalYear = parseInt(year, 10);
+        } else {
+          // Fallback: try to parse as number
+          parsedOriginalYear = parseInt(year, 10) || null;
+        }
+
+        updateData.originalYear = parsedOriginalYear;
+      }
+
+      if (analysisResult.id3_tags.comment) {
+        updateData.originalComment = analysisResult.id3_tags.comment;
+      }
+      if (analysisResult.id3_tags.composer) {
+        updateData.originalComposer = analysisResult.id3_tags.composer;
+      }
+      if (analysisResult.id3_tags.copyright) {
+        updateData.originalCopyright = analysisResult.id3_tags.copyright;
+      }
+    }
+    const metadata = analysisResult.ai_metadata;
+
+    // Update AI-generated metadata fields
+    if (metadata.artist) {
+      updateData.aiArtist = metadata.artist;
+      updateData.originalArtist = metadata.artist;
+    }
+    if (metadata.title) {
+      updateData.aiTitle = metadata.title;
+      updateData.originalTitle = metadata.title;
+      if (metadata.mix) {
+        updateData.originalTitle += ` (${metadata.mix})`;
+        updateData.aiTitle += ` (${metadata.mix})`;
+      }
+    }
+    if (metadata.description) {
+      updateData.aiDescription = metadata.description;
+    }
+
+    // Parse year if available
+    if (metadata.year) {
+      const yearStr = String(metadata.year);
+      const yearMatch = yearStr.match(/^\d{4}/);
+      if (yearMatch) {
+        updateData.originalYear = parseInt(yearMatch[0], 10);
+      }
+    }
+
+    // Store additional metadata in userTags as JSON (if tags exist)
+    if (metadata.tags && metadata.tags.length > 0) {
+      updateData.aiTags = JSON.stringify(metadata.tags);
+    }
+
+    // Store audioFeatures data
+    if (metadata.audioFeatures) {
+      if (metadata.audioFeatures.vocals) {
+        updateData.vocalsDesc = metadata.audioFeatures.vocals;
+      }
+      if (
+        metadata.audioFeatures.atmosphere &&
+        metadata.audioFeatures.atmosphere.length > 0
+      ) {
+        updateData.atmosphereDesc = JSON.stringify(
+          metadata.audioFeatures.atmosphere,
+        );
+      }
+    }
+
+    // Store context data
+    if (metadata.context) {
+      if (metadata.context.background) {
+        updateData.contextBackground = metadata.context.background;
+      }
+      if (metadata.context.impact) {
+        updateData.contextImpact = metadata.context.impact;
+      }
+    }
+    const updatedTrack = await this.prisma.musicTrack.update({
+      where: { id: trackId },
+      data: {
+        updatedAt: new Date(),
+        updatedById: getCurrentUserId(),
+        ...updateData,
+        analysisStatus: AudioFileAnalysisStatusEnum.COMPLETED,
+        analysisCompletedAt: new Date(),
+        analysisError: null,
+      },
+    });
   }
 }

@@ -10,5 +10,13 @@ export interface ILibraryScanSchedulerProducer {
     libraryId: MusicLibraryId,
     incremental: boolean,
     contextUser: ActionContext['user'],
+    sessionId: SessionId,
+  ): Promise<{ sessionId: SessionId }>;
+  scheduleEndLibraryScan(
+    libraryId: MusicLibraryId,
+    sessionId: SessionId,
+    contextUser: ActionContext['user'],
+    totalTracks: number,
+    incremental: boolean,
   ): Promise<{ sessionId: SessionId }>;
 }

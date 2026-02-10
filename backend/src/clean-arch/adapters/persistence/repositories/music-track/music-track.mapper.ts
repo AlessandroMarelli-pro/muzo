@@ -15,6 +15,7 @@ import {
   AggregationStatistics,
   AudioFileAIMetadata,
   AudioFileAnalysis,
+  AudioFileAnalysisStatusEnum,
   AudioFileFeatures,
   AudioFileInfo,
   AudioFileMetadata,
@@ -177,7 +178,7 @@ export const toAudioFileAIMetadata: ToAudioFileAIMetadata = (row) => {
 export const toAudioFileAnalysis: ToAudioFileAnalysis = (row) => {
   if (!row) return null;
   return {
-    status: row.analysisStatus,
+    status: row.analysisStatus as AudioFileAnalysisStatusEnum,
     startedAt: row.analysisStartedAt,
     completedAt: row.analysisCompletedAt,
     error: row.analysisError,
@@ -274,10 +275,20 @@ export const toPrisma: ToPrisma = (domainModel) => {
 export type ToPrismaUpdate = (
   data: MusicTrackUpdateData,
 ) => Partial<PrismaMusicTrack>;
-export const toPrismaUpdate: ToPrismaUpdate = (domainModel) => {
+
+export const toPrismaUpdate: ToPrismaUpdate = (data) => {
   return {
-    isLiked: domainModel.stats.isLiked,
-    isBanger: domainModel.stats.isBanger,
-    isFavorite: domainModel.stats.isFavorite,
+    isLiked: data.stats.isLiked ?? undefined,
+    isBanger: data.stats.isBanger ?? undefined,
+    isFavorite: data.stats.isFavorite ?? undefined,
+    analysisStatus: data.analysisStatus ?? undefined,
+    analysisStartedAt: data.analysisStartedAt ?? undefined,
+    duration: data.duration ?? undefined,
+    format: data.format ?? undefined,
+    fileCreatedAt: data.fileCreatedAt ?? undefined,
+    filePath: data.filePath ?? undefined,
+    libraryId: data.libraryId ?? undefined,
+    fileName: data.fileName ?? undefined,
+    fileSize: data.fileSize ?? undefined,
   };
 };

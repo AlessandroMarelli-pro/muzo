@@ -9,10 +9,19 @@ export interface LibraryScanJobData {
   contextUser: ActionContext['user'];
 }
 
-type AudioFile = FileInfo & {
+export interface EndLibraryScanJobData {
+  libraryId: MusicLibraryId;
+  totalTracks: number;
+  incremental: boolean;
+  sessionId: SessionId;
+  contextUser: ActionContext['user'];
+}
+
+export type AudioFile = FileInfo & {
   trackIndex: number;
   libraryId: MusicLibraryId;
 };
+
 export interface AudioScanBatchJobData {
   audioFiles: AudioFile[];
   sessionId: SessionId;
@@ -21,4 +30,6 @@ export interface AudioScanBatchJobData {
   totalFiles: number;
   totalBatches: number;
   batchIndex: number;
+  libraryId: MusicLibraryId;
+  incremental: boolean;
 }

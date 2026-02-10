@@ -11,7 +11,6 @@ import { LibraryScanProcessor } from './processors/library-scan.processor';
 import { ProgressTrackingService } from './progress-tracking.service';
 import { QueueService } from './queue.service';
 import { ScanProgressPubSubService } from './scan-progress-pubsub.service';
-import { ScanProgressController } from './scan-progress.controller';
 import { ScanSessionService } from './scan-session.service';
 
 @Module({
@@ -45,7 +44,7 @@ import { ScanSessionService } from './scan-session.service';
       },
     ),
   ],
-  controllers: [ScanProgressController],
+  controllers: [],
   providers: [
     QueueService,
     LibraryScanProcessor,

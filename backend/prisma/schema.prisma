@@ -680,8 +680,10 @@ model ScanSession {
   errorMessage      String?
   
   // Timestamps
-  createdAt         DateTime      @default(now())
-  updatedAt         DateTime      @updatedAt
+  createdAt   DateTime @default(now())
+  createdById   String @default("userId")
+  updatedAt   DateTime? @updatedAt
+  updatedById  String?
   
   @@index([sessionId])
   @@index([status])

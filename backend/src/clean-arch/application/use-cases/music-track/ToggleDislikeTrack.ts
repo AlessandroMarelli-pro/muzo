@@ -13,7 +13,16 @@ export class ToggleDislikeUseCase {
   async execute(id: MusicTrackId): Promise<boolean> {
     const track = await this.musicTrackRepository.getOneById(id);
     await this.hiddenMusicTrackRepository.save(
-      models.hiddenMusicTrack.instantiateNew(track),
+      models.hiddenMusicTrack.instantiateNew({
+        ...track,
+        artist: track.artist,
+        title: track.title,
+        imagePath: track.imagePath,
+        libraryId: track.libraryId,
+        fileInfo: track.fileInfo,
+        technicalInfo: track.technicalInfo,
+        aiMetadata: track.aiMetadata,
+      }),
     );
     return this.musicTrackRepository.removeOneById(id);
   }

@@ -3,20 +3,23 @@ import { ConfigService } from '@nestjs/config';
 import Redis from 'ioredis';
 import { Observable, Subject } from 'rxjs';
 import { QueueConfig } from '../../config';
-import {
-  ScanErrorEvent,
-  ScanProgressEvent,
-} from './scan-progress.types';
+import { ScanErrorEvent, ScanProgressEvent } from './scan-progress.types';
 
 @Injectable()
 export class ScanProgressPubSubService implements OnModuleDestroy {
   private readonly logger = new Logger(ScanProgressPubSubService.name);
   private readonly subscribers = new Map<string, Subject<ScanProgressEvent>>();
-  private readonly errorSubscribers = new Map<string, Subject<ScanErrorEvent>>();
-  private readonly redisSubscribers = new Map<string, {
-    events: Redis;
-    errors: Redis;
-  }>();
+  private readonly errorSubscribers = new Map<
+    string,
+    Subject<ScanErrorEvent>
+  >();
+  private readonly redisSubscribers = new Map<
+    string,
+    {
+      events: Redis;
+      errors: Redis;
+    }
+  >();
   private readonly channelPrefix: string;
   private redisPublisher: Redis;
   private redisState: Redis;
@@ -118,10 +121,7 @@ export class ScanProgressPubSubService implements OnModuleDestroy {
 
       this.logger.log(`Subscribed to scan progress for session: ${sessionId}`);
     } catch (error) {
-      this.logger.error(
-        `Failed to subscribe to session ${sessionId}:`,
-        error,
-      );
+      this.logger.error(`Failed to subscribe to session ${sessionId}:`, error);
       // Clean up on error
       this.subscribers.delete(sessionId);
       this.errorSubscribers.delete(sessionId);
@@ -155,7 +155,9 @@ export class ScanProgressPubSubService implements OnModuleDestroy {
         this.errorSubscribers.delete(sessionId);
       }
 
-      this.logger.log(`Unsubscribed from scan progress for session: ${sessionId}`);
+      this.logger.log(
+        `Unsubscribed from scan progress for session: ${sessionId}`,
+      );
     } catch (error) {
       this.logger.error(
         `Failed to unsubscribe from session ${sessionId}:`,
@@ -172,15 +174,13 @@ export class ScanProgressPubSubService implements OnModuleDestroy {
     event: ScanProgressEvent,
   ): Promise<void> {
     try {
-
       const channel = `${this.channelPrefix}:${sessionId}:events`;
       // Use setImmediate to avoid blocking the event loop
       this.logger.debug(`Publishing ${event.type} event to channel ${channel}`);
 
       const eventJson = JSON.stringify(event);
       await this.redisPublisher.publish(channel, eventJson);
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
+      await new Promise((resolve) => setTimeout(resolve, 1000));
     } catch (error) {
       this.logger.error(
         `Failed to publish event for session ${sessionId}:`,
@@ -260,23 +260,6 @@ export class ScanProgressPubSubService implements OnModuleDestroy {
         error,
       );
       return null;
-    }
-  }
-
-  /**
-   * Store current state in Redis
-   */
-  async setCurrentState(sessionId: string, state: any): Promise<void> {
-    try {
-      const stateKey = `${this.channelPrefix}:${sessionId}:state`;
-      const ttl = this.configService.get<number>('SCAN_SESSION_TTL') || 86400; // 24h default
-      await this.redisState.setex(stateKey, ttl, JSON.stringify(state));
-    } catch (error) {
-      this.logger.error(
-        `Failed to set current state for session ${sessionId}:`,
-        error,
-      );
-      // Don't throw - state storage shouldn't break the scan
     }
   }
 

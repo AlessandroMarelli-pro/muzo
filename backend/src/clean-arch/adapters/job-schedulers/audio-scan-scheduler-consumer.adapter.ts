@@ -2,7 +2,10 @@ import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Job } from 'bullmq';
 import { AudioScanBatchJobData } from 'src/clean-arch/application/ports/dtos/JobSchedulersData';
 import { IAudioScanSchedulerConsumer } from 'src/clean-arch/application/ports/infrastructure/IAudioScanSchedulerConsumer';
+import { AddImageSearchRecordUseCase } from 'src/clean-arch/application/use-cases/image/AddImageSearchRecord';
 import { ProcessBatchAudioScanUseCase } from 'src/clean-arch/application/use-cases/job-scheduler/ProcessBatchAudioScan';
+import { ProcessEndBatchAudioScanUseCase } from 'src/clean-arch/application/use-cases/job-scheduler/ProcessEndBatchAudioScan';
+import { ProcessSingleTrackAnalysisUseCase } from 'src/clean-arch/application/use-cases/job-scheduler/ProcessSingleTrackAnalysis';
 import { als } from 'src/clean-arch/kernel/types/context';
 
 @Processor('audio-scan')
@@ -12,6 +15,9 @@ export class AudioScanSchedulerConsumerAdapter
 {
   constructor(
     private readonly processBatchAudioScanUseCase: ProcessBatchAudioScanUseCase,
+    private readonly processSingleTrackAnalysisUseCase: ProcessSingleTrackAnalysisUseCase,
+    private readonly addImageSearchRecordUseCase: AddImageSearchRecordUseCase,
+    private readonly processEndBatchAudioScanUseCase: ProcessEndBatchAudioScanUseCase,
   ) {
     super();
   }
@@ -32,12 +38,46 @@ export class AudioScanSchedulerConsumerAdapter
     });
   }
   async consumeBatchAudioScan(data: AudioScanBatchJobData): Promise<void> {
-    const { audioFiles, sessionId, batchIndex, contextUser } = data;
-    await this.processBatchAudioScanUseCase.execute(
-      audioFiles.map(({ path }) => path),
-      sessionId,
-      batchIndex,
+    const { isBatchComplete, analysisResults, files, createdTracks } =
+      await this.processBatchAudioScanUseCase.execute(data);
+    if (!isBatchComplete) {
+      for (const [index, track] of createdTracks.entries()) {
+        const analysisResult = analysisResults.find(
+          (result) => result.file_info.filename === track.fileInfo.fileName,
+        );
+        if (!analysisResult) {
+          continue;
+        }
+        await this.processSingleTrackAnalysisUseCase.execute(
+          track,
+          analysisResult,
+          {
+            trackIndex: index,
+            sessionId: data.sessionId,
+            batchIndex: data.batchIndex,
+            totalTracks: data.totalFiles,
+            libraryId: track.libraryId,
+          },
+        );
+        // Search for image if available
+        if (
+          analysisResult.album_art?.imageUrl ||
+          analysisResult.album_art?.imagePath
+        ) {
+          await this.addImageSearchRecordUseCase.execute(track.id, {
+            imagePath: analysisResult.album_art.imagePath,
+            imageUrl: analysisResult.album_art.imageUrl,
+            source: analysisResult.album_art.source,
+          });
+        }
+      }
+    }
+    await this.processEndBatchAudioScanUseCase.execute(
+      data,
+      data.libraryId,
       false,
+      data.contextUser,
+      data.totalFiles,
     );
   }
 }

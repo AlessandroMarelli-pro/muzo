@@ -187,31 +187,6 @@ export class ScanSessionService {
   }
 
   /**
-   * Mark session as failed with error message
-   */
-  async failSession(sessionId: string, errorMessage: string): Promise<void> {
-    try {
-      await this.prisma.scanSession.update({
-        where: { sessionId },
-        data: {
-          status: ScanStatus.ERROR,
-          errorMessage,
-          completedAt: new Date(),
-        },
-      });
-
-      this.logger.log(
-        `Scan session ${sessionId} marked as failed: ${errorMessage}`,
-      );
-    } catch (error) {
-      this.logger.error(
-        `Failed to mark session ${sessionId} as failed:`,
-        error,
-      );
-    }
-  }
-
-  /**
    * Get all active scan sessions (SCANNING or ANALYZING)
    */
   async getActiveSessions() {

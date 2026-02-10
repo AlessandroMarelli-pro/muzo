@@ -38,7 +38,8 @@ export type Model =
   | Subgenre
   | SavedFilter
   | QueueItem
-  | HiddenMusicTrack;
+  | HiddenMusicTrack
+  | Session;
 
 export type ModelBase<
   Id extends string | Brand<T, string> = string,
@@ -98,17 +99,17 @@ export type HiddenMusicTrack = Readonly<ModelBase<HiddenMusicTrackId>> & {
 };
 
 export type MusicTrack = Readonly<ModelBase<MusicTrackId>> & {
-  artist: string;
-  title: string;
-  imagePath: string;
+  artist?: string;
+  title?: string;
+  imagePath?: string;
   libraryId: MusicLibraryId;
-  stats: MusicTrackStats;
+  stats?: MusicTrackStats;
   fileInfo: AudioFileInfo;
-  technicalInfo: AudioTechnical;
-  features: AudioFileFeatures;
-  metadata: AudioFileMetadata;
-  aiMetadata: AudioFileAIMetadata;
-  analysisInfo: AudioFileAnalysis;
+  technicalInfo?: AudioTechnical;
+  features?: AudioFileFeatures;
+  metadata?: AudioFileMetadata;
+  aiMetadata?: AudioFileAIMetadata;
+  analysisInfo?: AudioFileAnalysis;
 };
 
 export type MusicTrackStats = {
@@ -227,24 +228,35 @@ export type AudioFileAIMetadata = {
   contextBackground: string;
   contextImpact: string;
 };
+export enum AudioFileAnalysisStatusEnum {
+  PENDING = 'PENDING',
+  PROCESSING = 'PROCESSING',
+  COMPLETED = 'COMPLETED',
+  FAILED = 'FAILED',
+}
+
 export const audioFileAnalysisStatusKeys = [
-  'PENDING',
-  'PROCESSING',
-  'COMPLETED',
-  'FAILED',
+  AudioFileAnalysisStatusEnum.PENDING,
+  AudioFileAnalysisStatusEnum.PROCESSING,
+  AudioFileAnalysisStatusEnum.COMPLETED,
+  AudioFileAnalysisStatusEnum.FAILED,
 ] as const;
 
-export type AudioFileAnalysisStatus =
-  (typeof audioFileAnalysisStatusKeys)[number];
-
 export type AudioFileAnalysis = {
-  status: AudioFileAnalysisStatus;
+  status: AudioFileAnalysisStatusEnum;
   startedAt: Date;
   completedAt: Date;
   error: Maybe<string>;
 };
 const scanStatusKeys = ['IDLE', 'SCANNING', 'ANALYZING', 'ERROR'] as const;
 export type ScanStatus = (typeof scanStatusKeys)[number];
+
+export enum ScanStatusEnum {
+  IDLE = 'IDLE',
+  SCANNING = 'SCANNING',
+  ANALYZING = 'ANALYZING',
+  ERROR = 'ERROR',
+}
 
 type MusicLibraryTracksInfo = {
   totalTracks: number;
@@ -351,4 +363,15 @@ export type TrackSimilarity = {
   reasons: string[];
 };
 
-export type Session = Readonly<ModelBase<SessionId>> & {};
+export type Session = Readonly<ModelBase<SessionId>> & {
+  status: ScanStatus;
+  totalBatches: number;
+  completedBatches: number;
+  totalTracks: number;
+  completedTracks: number;
+  failedTracks: number;
+  overallProgress: number;
+  startedAt: Date;
+  completedAt: Date;
+  errorMessage: Maybe<string>;
+};

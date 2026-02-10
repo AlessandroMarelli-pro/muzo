@@ -32,13 +32,20 @@ import { QueueRepository } from './repositories/queue/queue.repository';
 import { SavedFilterRepository } from './repositories/saved-filter/saved-filter.repository';
 
 import { FILE_MANAGER } from 'src/clean-arch/application/ports/infrastructure/IFileManager';
+import { SCAN_PROGRESS_PUBLISHER } from 'src/clean-arch/application/ports/infrastructure/IScanProgressPublisher';
+import { SCAN_PROGRESS_SUBSCRIBER } from 'src/clean-arch/application/ports/infrastructure/IScanProgressSubscriber';
 import { HEALTH_QUERY } from 'src/clean-arch/application/ports/queries/IHealthQuery';
 import { MUSIC_TRACK_QUERIES } from 'src/clean-arch/application/ports/queries/IMusicTrackQueries';
+import { AUDIO_ANALYSIS_REPOSITORY } from 'src/clean-arch/application/ports/repositories/IAudioAnalysisRepository';
 import { HIDDEN_MUSIC_TRACK_REPOSITORY } from 'src/clean-arch/application/ports/repositories/IHiddenMusicTrackRepository';
+import { SCAN_SESSION_REPOSITORY } from 'src/clean-arch/application/ports/repositories/IScanSessionRepository';
 import { FileManager } from 'src/clean-arch/infrastructure/filesystem/file.manager';
+import { ScanProgressPubSubAdapter } from 'src/clean-arch/infrastructure/pubsub/scan-progress-pubsub.adapter';
 import { HealthQuery } from './queries/health/health.query';
 import { MusicTrackQuery } from './queries/music-track/music-track.query';
+import { AudioAnalysisRepository } from './repositories/audio-analysis/audio-analysis.repository';
 import { HiddenMusicTrackRepository } from './repositories/hidden-music-track/hidden-music-track.repository';
+import { ScanSessionRepository } from './repositories/scan-session/scan-session.repository';
 
 const queriesProviders = [
   { provide: PLAYLIST_REPOSITORY, useClass: PlaylistRepository },
@@ -65,6 +72,10 @@ const queriesProviders = [
   { provide: MUSIC_TRACK_QUERIES, useClass: MusicTrackQuery },
   { provide: HEALTH_QUERY, useClass: HealthQuery },
   { provide: FILE_MANAGER, useClass: FileManager },
+  { provide: AUDIO_ANALYSIS_REPOSITORY, useClass: AudioAnalysisRepository },
+  { provide: SCAN_SESSION_REPOSITORY, useClass: ScanSessionRepository },
+  { provide: SCAN_PROGRESS_PUBLISHER, useClass: ScanProgressPubSubAdapter },
+  { provide: SCAN_PROGRESS_SUBSCRIBER, useClass: ScanProgressPubSubAdapter },
 ];
 @Global()
 @Module({

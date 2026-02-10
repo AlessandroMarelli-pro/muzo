@@ -211,7 +211,6 @@ type Mutation {
   removeTrackFromQueue(trackId: Base64ID!): RemoveTrackFromQueueResponse!
   resetQueue: Boolean!
   startLibraryScan(incremental: Boolean, libraryId: Base64ID!): String!
-  stopLibraryScan(libraryId: ID!): Boolean!
   syncPlaylistToSpotify(playlistId: ID!, userId: String!): SyncResult!
   syncPlaylistToTidal(playlistId: ID!, userId: String!): SyncResult!
   syncPlaylistToYouTube(playlistId: ID!, userId: String!): SyncResult!

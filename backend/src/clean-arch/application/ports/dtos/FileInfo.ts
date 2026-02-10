@@ -1,7 +1,7 @@
 export interface FileInfo {
-  path: string;
-  name: string;
-  size: number;
+  filePath: string;
+  fileName: string;
+  fileSize: number;
   extension: string;
-  modified: Date;
+  lastModified: Date;
 }

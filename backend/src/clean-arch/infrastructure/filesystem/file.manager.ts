@@ -60,11 +60,11 @@ export class FileManager implements IFileManager {
             }
 
             files.push({
-              path: fullPath,
-              name: entry.name,
-              size: stats.size,
+              filePath: fullPath,
+              fileName: entry.name,
+              fileSize: stats.size,
               extension,
-              modified: stats.mtime,
+              lastModified: stats.mtime,
             });
           }
         }

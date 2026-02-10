@@ -12,12 +12,14 @@ export class ScheduleBatchAudioScanUseCase {
     audioFiles: FileInfo[],
     libraryId: MusicLibraryId,
     sessionId: SessionId,
+    incremental: boolean,
   ): Promise<{ sessionId: string }> {
     await this.audioScanSchedulerProducer.scheduleBatchAudioScan(
       audioFiles,
       libraryId,
       sessionId,
       getCurrentUser(),
+      incremental,
     );
     return { sessionId };
   }

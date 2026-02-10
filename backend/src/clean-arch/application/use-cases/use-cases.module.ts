@@ -6,6 +6,8 @@ import { AUDIO_WAVEFORM_GENERATOR } from '../ports/infrastructure/IAudioWaveform
 import { FILE_MANAGER } from '../ports/infrastructure/IFileManager';
 import { IMAGE_FILE_READER } from '../ports/infrastructure/IImageFileReader';
 import { LIBRARY_SCAN_SCHEDULER_PRODUCER } from '../ports/infrastructure/ILibraryScanSchedulerProducer';
+import { SCAN_PROGRESS_PUBLISHER } from '../ports/infrastructure/IScanProgressPublisher';
+import { SCAN_PROGRESS_SUBSCRIBER } from '../ports/infrastructure/IScanProgressSubscriber';
 import { HEALTH_QUERY } from '../ports/queries/IHealthQuery';
 import { METRICS_QUERY } from '../ports/queries/IMetricsQuery';
 import { MUSIC_TRACK_QUERIES } from '../ports/queries/IMusicTrackQueries';
@@ -14,6 +16,7 @@ import { RECOMMENDATION_DATA_PORT } from '../ports/queries/IRecommendationDataPo
 import { RECOMMENDATION_SEARCH_PORT } from '../ports/queries/IRecommendationSearchPort';
 import { SAVED_FILTER_QUERY } from '../ports/queries/ISavedFilterQuery';
 import { TRACK_INDEXER_PORT } from '../ports/queries/ITrackIndexerPort';
+import { AUDIO_ANALYSIS_REPOSITORY } from '../ports/repositories/IAudioAnalysisRepository';
 import { HIDDEN_MUSIC_TRACK_REPOSITORY } from '../ports/repositories/IHiddenMusicTrackRepository';
 import { IMAGE_SEARCH_REPOSITORY } from '../ports/repositories/IImageSearchRepository';
 import { MUSIC_LIBRARY_REPOSITORY } from '../ports/repositories/IMusicLibraryRepository';
@@ -23,6 +26,7 @@ import { PLAYLIST_SORTING_REPOSITORY } from '../ports/repositories/IPlaylistSort
 import { PLAYLIST_TRACK_REPOSITORY } from '../ports/repositories/IPlaylistTrackRepository';
 import { QUEUE_REPOSITORY } from '../ports/repositories/IQueueRepository';
 import { SAVED_FILTER_REPOSITORY } from '../ports/repositories/ISavedFilterRepository';
+import { SCAN_SESSION_REPOSITORY } from '../ports/repositories/IScanSessionRepository';
 import { createUseCaseProvider } from './create-use-case.provider';
 import { HealthCheckUseCase } from './health/HealthCheck';
 import {
@@ -64,6 +68,9 @@ import {
   GetTrackUseCase,
   GetWaveformDataUseCase,
   ProcessBatchAudioScanUseCase,
+  ProcessEndBatchAudioScanUseCase,
+  ProcessEndLibraryScanUseCase,
+  ProcessSingleTrackAnalysisUseCase,
   ProcessStartLibraryScanUseCase,
   RecreateElasticsearchIndexUseCase,
   RegisterPlayedTrackUseCase,
@@ -79,12 +86,15 @@ import {
   ToggleDislikeUseCase,
   ToggleFavoriteUseCase,
   ToggleLikeUseCase,
+  UpdatePlaylistSortingUseCase,
   UpdatePlaylistTracksPositionsUseCase,
   UpdatePlaylistUseCase,
   UpdateQueuePositionsUseCase,
   UpdateSavedFilterUseCase,
 } from './index';
-import { UpdatePlaylistSortingUseCase } from './playlist-sorting/UpdatePlaylistSorting';
+import { GetActiveSessionsUseCase } from './scan-session/GetActiveSessions';
+import { GetCompleteSessionsUseCase } from './scan-session/GetCompleteSessions';
+import { StreamSessionUseCase } from './scan-session/StreamSession';
 
 const useCasesProviders = [
   createUseCaseProvider(GetTrackUseCase, [MUSIC_TRACK_REPOSITORY]),
@@ -216,6 +226,7 @@ const useCasesProviders = [
   createUseCaseProvider(ScheduleLibraryScanUseCase, [
     LIBRARY_SCAN_SCHEDULER_PRODUCER,
     MUSIC_LIBRARY_REPOSITORY,
+    SCAN_SESSION_REPOSITORY,
   ]),
   createUseCaseProvider(ProcessStartLibraryScanUseCase, [
     FILE_MANAGER,
@@ -226,6 +237,32 @@ const useCasesProviders = [
   ]),
   createUseCaseProvider(ProcessBatchAudioScanUseCase, [
     AUDIO_ANALYSIS_STRUCTURE,
+    MUSIC_TRACK_REPOSITORY,
+    SCAN_PROGRESS_PUBLISHER,
+  ]),
+  createUseCaseProvider(ProcessEndLibraryScanUseCase, [
+    LIBRARY_SCAN_SCHEDULER_PRODUCER,
+    SCAN_SESSION_REPOSITORY,
+    SCAN_PROGRESS_PUBLISHER,
+    MUSIC_LIBRARY_REPOSITORY,
+    MUSIC_TRACK_REPOSITORY,
+  ]),
+  createUseCaseProvider(ProcessEndBatchAudioScanUseCase, [
+    SCAN_SESSION_REPOSITORY,
+    SCAN_PROGRESS_PUBLISHER,
+    LIBRARY_SCAN_SCHEDULER_PRODUCER,
+  ]),
+  createUseCaseProvider(ProcessSingleTrackAnalysisUseCase, [
+    MUSIC_TRACK_REPOSITORY,
+    SCAN_PROGRESS_PUBLISHER,
+    AUDIO_ANALYSIS_REPOSITORY,
+  ]),
+  createUseCaseProvider(GetActiveSessionsUseCase, [SCAN_SESSION_REPOSITORY]),
+  createUseCaseProvider(GetCompleteSessionsUseCase, [SCAN_SESSION_REPOSITORY]),
+  createUseCaseProvider(StreamSessionUseCase, [
+    SCAN_SESSION_REPOSITORY,
+    SCAN_PROGRESS_SUBSCRIBER,
+    SCAN_PROGRESS_PUBLISHER,
   ]),
 ];
 

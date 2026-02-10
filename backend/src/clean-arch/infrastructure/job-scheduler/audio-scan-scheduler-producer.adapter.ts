@@ -28,6 +28,7 @@ export class AudioScanSchedulerProducerAdapter
     libraryId: MusicLibraryId,
     sessionId: SessionId,
     contextUser: ActionContext['user'],
+    incremental: boolean,
   ): Promise<{ sessionId: SessionId }> {
     const batchJobs = [];
     const BATCH_SIZE = 10;
@@ -49,6 +50,8 @@ export class AudioScanSchedulerProducerAdapter
         batchIndex,
         sessionId,
         contextUser,
+        libraryId,
+        incremental,
       };
 
       batchJobs.push({

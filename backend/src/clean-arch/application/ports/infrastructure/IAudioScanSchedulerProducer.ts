@@ -12,5 +12,6 @@ export interface IAudioScanSchedulerProducer {
     libraryId: MusicLibraryId,
     sessionId: SessionId,
     contextUser: ActionContext['user'],
+    incremental: boolean,
   ): Promise<{ sessionId: SessionId }>;
 }
