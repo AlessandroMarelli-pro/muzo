@@ -1,3 +1,4 @@
+import { ILogger } from 'src/clean-arch/application/ports/infrastructure/ILogger';
 import {
   FilterCriteria,
   Playlist,
@@ -12,15 +13,14 @@ import { CreatePlaylistInput } from './CreatePlaylist.input';
 export class CreatePlaylistUseCase {
   constructor(
     private readonly playlistRepository: IPlaylistRepository,
-
     private readonly musicTrackRepository: IMusicTrackRepository,
-
     private readonly playlistTrackRepository: IPlaylistTrackRepository,
-
     private readonly playlistSortingRepository: IPlaylistSortingRepository,
+    private readonly logger: ILogger,
   ) {}
 
   async execute(createPlaylistInput: CreatePlaylistInput): Promise<Playlist> {
+    this.logger.info('Creating playlist', { createPlaylistInput });
     const { filters, maxTracks, subgenreSelectionMode } = createPlaylistInput;
 
     const playlistData = models.playlist.instantiateNew({
@@ -68,7 +68,7 @@ export class CreatePlaylistUseCase {
         },
         false,
       );
-
+      this.logger.info('Found tracks', { tracks: tracks.length });
       // Add tracks to playlist
       if (tracks.length > 0) {
         await this.playlistTrackRepository.saveMany(
@@ -82,8 +82,9 @@ export class CreatePlaylistUseCase {
           ),
         );
       }
+      this.logger.info('Saved playlist tracks', { playlistId: playlist.id });
     }
-
+    this.logger.info('Saving playlist sorting', { playlistId: playlist.id });
     await this.playlistSortingRepository.save(
       models.playlistSorting.instantiateNew({
         playlistId: playlist.id,
@@ -91,6 +92,7 @@ export class CreatePlaylistUseCase {
         sortingDirection: 'asc',
       }),
     );
+    this.logger.info('Saved playlist sorting', { playlistId: playlist.id });
     return playlist;
   }
 }

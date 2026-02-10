@@ -3,6 +3,7 @@ import { BullModule } from '@nestjs/bullmq';
 import { MiddlewareConsumer, Module, RequestMethod } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { GraphQLModule } from '@nestjs/graphql';
+import { LoggerModule } from 'nestjs-pino';
 import { join } from 'path';
 import { AdminMethodsModule } from './admin-methods/admin-methods.module';
 import { ActionContextMiddleware } from './clean-arch/adapters/common/middlewares/action-context.middleware';
@@ -25,6 +26,7 @@ import {
 import { UseCasesModule } from './clean-arch/application/use-cases/use-cases.module';
 import { AiModule } from './clean-arch/infrastructure/external-services/ai/ai.module';
 import { ElasticsearchModule } from './clean-arch/infrastructure/external-services/elasticsearch/elasticsearch.module';
+import { NestjsLoggerModule } from './clean-arch/infrastructure/logging/nestjs-logger.module';
 import { ConfigModuleSetup, QueueConfig } from './config';
 import { GraphiQLModule } from './graphiql/graphiql.module';
 import { ThirdPartySyncModule } from './modules/third-party-sync/third-party-sync.module';
@@ -113,6 +115,8 @@ import { SharedModule } from './shared/shared.module';
       inject: [ConfigService],
     }),
     JobSchedulersModule,
+    NestjsLoggerModule,
+    LoggerModule.forRoot(),
   ],
 })
 export class AppModule {

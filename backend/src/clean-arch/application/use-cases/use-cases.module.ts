@@ -6,6 +6,7 @@ import { AUDIO_WAVEFORM_GENERATOR } from '../ports/infrastructure/IAudioWaveform
 import { FILE_MANAGER } from '../ports/infrastructure/IFileManager';
 import { IMAGE_FILE_READER } from '../ports/infrastructure/IImageFileReader';
 import { LIBRARY_SCAN_SCHEDULER_PRODUCER } from '../ports/infrastructure/ILibraryScanSchedulerProducer';
+import { LOGGER } from '../ports/infrastructure/ILogger';
 import { SCAN_PROGRESS_PUBLISHER } from '../ports/infrastructure/IScanProgressPublisher';
 import { SCAN_PROGRESS_SUBSCRIBER } from '../ports/infrastructure/IScanProgressSubscriber';
 import { HEALTH_QUERY } from '../ports/queries/IHealthQuery';
@@ -109,6 +110,7 @@ const useCasesProviders = [
     MUSIC_TRACK_REPOSITORY,
     PLAYLIST_TRACK_REPOSITORY,
     PLAYLIST_SORTING_REPOSITORY,
+    LOGGER,
   ]),
   createUseCaseProvider(GetPlaylistsUseCase, [PLAYLIST_REPOSITORY]),
   createUseCaseProvider(GetPlaylistUseCase, [
@@ -116,7 +118,7 @@ const useCasesProviders = [
     PLAYLIST_SORTING_REPOSITORY,
   ]),
   createUseCaseProvider(UpdatePlaylistUseCase, [PLAYLIST_REPOSITORY]),
-  createUseCaseProvider(DeletePlaylistUseCase, [PLAYLIST_REPOSITORY]),
+  createUseCaseProvider(DeletePlaylistUseCase, [PLAYLIST_REPOSITORY, LOGGER]),
   createUseCaseProvider(GetPlaylistStatsUseCase, [PLAYLIST_STATS_QUERY]),
   createUseCaseProvider(GetPlaylistTracksUseCase, [PLAYLIST_TRACK_REPOSITORY]),
   createUseCaseProvider(GetPlaylistsStatsUseCase, [PLAYLIST_STATS_QUERY]),
@@ -239,6 +241,7 @@ const useCasesProviders = [
     AUDIO_ANALYSIS_STRUCTURE,
     MUSIC_TRACK_REPOSITORY,
     SCAN_PROGRESS_PUBLISHER,
+    LOGGER,
   ]),
   createUseCaseProvider(ProcessEndLibraryScanUseCase, [
     LIBRARY_SCAN_SCHEDULER_PRODUCER,

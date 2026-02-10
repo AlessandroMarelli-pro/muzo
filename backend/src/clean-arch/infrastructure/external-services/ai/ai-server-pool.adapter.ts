@@ -1,5 +1,5 @@
 import { InjectQueue } from '@nestjs/bullmq';
-import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
+import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import axios from 'axios';
 import { Queue } from 'bullmq';
@@ -7,13 +7,16 @@ import {
   IAiServicePool,
   ServiceInstance,
 } from 'src/clean-arch/application/ports/infrastructure/IAiServicePool';
+import {
+  ILogger,
+  LOGGER,
+} from 'src/clean-arch/application/ports/infrastructure/ILogger';
+import { LOGGER_FACTORY } from 'src/clean-arch/application/ports/infrastructure/ILoggerFactory';
 import { AiServiceConfig } from 'src/config';
 import { AssignedServers, ServerAssignment } from './ai-server-pool.types';
 
 @Injectable()
 export class AiServerPoolAdapter implements IAiServicePool {
-  private readonly logger = new Logger(AiServerPoolAdapter.name);
-
   private readonly aiServiceConfig: AiServiceConfig;
   private readonly simpleInstances: ServiceInstance[] = [];
   private readonly hierarchicalInstances: ServiceInstance[] = [];
@@ -28,9 +31,14 @@ export class AiServerPoolAdapter implements IAiServicePool {
   private heartbeatInterval: NodeJS.Timeout | null = null;
 
   constructor(
+    @Inject(LOGGER_FACTORY)
+    loggerFactory: { createLogger: (name: string) => ILogger },
+    @Inject(LOGGER)
+    private readonly logger: ILogger,
     private readonly configService: ConfigService,
     @InjectQueue('library-scan') private readonly queue: Queue,
   ) {
+    this.logger = loggerFactory.createLogger('AiServerPoolAdapter');
     // Get AI service configuration from centralized config
     this.aiServiceConfig = this.configService.get<AiServiceConfig>('aiService');
 
@@ -46,7 +54,7 @@ export class AiServerPoolAdapter implements IAiServicePool {
     // Start heartbeat for assigned servers
     this.startHeartbeat();
 
-    this.logger.log(
+    this.logger.info(
       `AI Integration Service initialized with ${this.simpleInstances.length} simple instances and ${this.hierarchicalInstances.length} hierarchical instances`,
     );
   }
@@ -111,7 +119,7 @@ export class AiServerPoolAdapter implements IAiServicePool {
    * Assign servers at startup using Redis-based coordination
    */
   private async assignServersAtStartup(): Promise<void> {
-    this.logger.log(
+    this.logger.info(
       `Assigning servers at startup for service: ${this.serviceId}`,
     );
 
@@ -124,7 +132,7 @@ export class AiServerPoolAdapter implements IAiServicePool {
     // Try to assign hierarchical server
     await this.tryAssignServer('hierarchical');
 
-    this.logger.log(
+    this.logger.info(
       `Server assignment completed - Simple: ${this.assignedServers.simple?.url || 'none'}, Hierarchical: ${this.assignedServers.hierarchical?.url || 'none'}`,
     );
   }
@@ -149,7 +157,7 @@ export class AiServerPoolAdapter implements IAiServicePool {
     for (const instance of healthyInstances) {
       if (await this.reserveServer(instance.url, type)) {
         this.assignedServers[type] = instance;
-        this.logger.log(
+        this.logger.info(
           `Successfully assigned ${type} server: ${instance.url}`,
         );
         return;
@@ -161,7 +169,7 @@ export class AiServerPoolAdapter implements IAiServicePool {
 
     if (serverByPort) {
       this.assignedServers[type] = serverByPort;
-      this.logger.log(
+      this.logger.info(
         `Successfully assigned ${type} server: ${serverByPort.url}`,
       );
       return;
@@ -217,7 +225,7 @@ export class AiServerPoolAdapter implements IAiServicePool {
       const redis = await this.queue.client;
       const lockKey = `${this.assignmentKey}:${type}:${url}`;
       await redis.del(lockKey);
-      this.logger.log(`Released ${type} server: ${url}`);
+      this.logger.info(`Released ${type} server: ${url}`);
     } catch (error) {
       this.logger.error(`Failed to release server ${url}:`, error);
     }
@@ -287,7 +295,7 @@ export class AiServerPoolAdapter implements IAiServicePool {
 
         if (!assignment) {
           // Assignment expired, try to reassign
-          this.logger.log(
+          this.logger.info(
             `Simple server assignment expired, attempting reassignment`,
           );
           this.assignedServers.simple = null;
@@ -302,7 +310,7 @@ export class AiServerPoolAdapter implements IAiServicePool {
 
         if (!assignment) {
           // Assignment expired, try to reassign
-          this.logger.log(
+          this.logger.info(
             `Hierarchical server assignment expired, attempting reassignment`,
           );
           this.assignedServers.hierarchical = null;
@@ -320,7 +328,7 @@ export class AiServerPoolAdapter implements IAiServicePool {
   private async reassignServersIfNeeded(): Promise<void> {
     // Check if simple server needs reassignment
     if (this.assignedServers.simple && !this.assignedServers.simple.isHealthy) {
-      this.logger.log(
+      this.logger.info(
         `Simple server ${this.assignedServers.simple.url} became unhealthy, releasing assignment`,
       );
       await this.releaseServer(this.assignedServers.simple.url, 'simple');
@@ -333,7 +341,7 @@ export class AiServerPoolAdapter implements IAiServicePool {
       this.assignedServers.hierarchical &&
       !this.assignedServers.hierarchical.isHealthy
     ) {
-      this.logger.log(
+      this.logger.info(
         `Hierarchical server ${this.assignedServers.hierarchical.url} became unhealthy, releasing assignment`,
       );
       await this.releaseServer(
@@ -402,7 +410,7 @@ export class AiServerPoolAdapter implements IAiServicePool {
       instance.lastChecked = new Date();
 
       if (wasHealthy !== instance.isHealthy) {
-        this.logger.log(
+        this.logger.info(
           `${type} service instance ${instance.url} health changed: ${instance.isHealthy ? 'healthy' : 'unhealthy'}`,
         );
       }
@@ -499,7 +507,7 @@ export class AiServerPoolAdapter implements IAiServicePool {
       );
     }
 
-    this.logger.log('AI Integration Service destroyed');
+    this.logger.info('AI Integration Service destroyed');
   }
 
   /**

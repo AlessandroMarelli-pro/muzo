@@ -1,4 +1,5 @@
 import fs from 'fs';
+import { ILogger } from 'src/clean-arch/application/ports/infrastructure/ILogger';
 import { IMusicTrackRepository } from 'src/clean-arch/application/ports/repositories/IMusicTrackRepository';
 import {
   AudioFileAnalysisStatusEnum,
@@ -18,6 +19,7 @@ export class ProcessBatchAudioScanUseCase {
     private readonly audioAnalysisStructure: IAudioAnalysisStructure,
     private readonly musicTrackRepository: IMusicTrackRepository,
     private readonly scanProgressPublisher: IScanProgressPublisher,
+    private readonly logger: ILogger,
   ) {}
 
   async execute(data: AudioScanBatchJobData): Promise<{
@@ -26,6 +28,7 @@ export class ProcessBatchAudioScanUseCase {
     files: AudioFile[];
     createdTracks: MusicTrack[];
   }> {
+    this.logger.info('Processing batch audio scan', { data });
     const { audioFiles, sessionId, batchIndex, totalFiles } = data;
     // Validate all files exist
     const validJobs: AudioFile[] = [];
@@ -34,7 +37,7 @@ export class ProcessBatchAudioScanUseCase {
       const { filePath, fileName, trackIndex, libraryId } = audioFile;
 
       if (!fs.existsSync(filePath)) {
-        console.warn(`Skipping missing file: ${filePath} (${fileName})`);
+        this.logger.warn(`Skipping missing file: ${filePath} (${fileName})`);
         continue;
       }
 
@@ -50,7 +53,7 @@ export class ProcessBatchAudioScanUseCase {
           existingTrack.metadata?.genres?.length !== 0 &&
           existingTrack.metadata?.subgenres?.length !== 0
         ) {
-          console.log(`Track already analyzed: ${fileName}`);
+          this.logger.info(`Track already analyzed: ${fileName}`);
           if (sessionId) {
             const trackCompleteEvent: TrackCompleteEvent = {
               type: 'track.complete',
@@ -78,7 +81,7 @@ export class ProcessBatchAudioScanUseCase {
     }
 
     if (validJobs.length === 0) {
-      console.log('No files to process in batch');
+      this.logger.info('No files to process in batch');
 
       return {
         isBatchComplete: true,
@@ -88,7 +91,7 @@ export class ProcessBatchAudioScanUseCase {
       };
     }
 
-    console.log(
+    this.logger.info(
       `Processing ${validJobs.length} files in batch (${audioFiles.length - validJobs.length} skipped)`,
     );
 
