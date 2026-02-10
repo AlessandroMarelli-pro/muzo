@@ -291,12 +291,12 @@ const columns = (
 					options: staticFilterOptions.atmospheres,
 					hidden: true,
 				},
-				enableColumnFilter: true,
+				enableColumnFilter: false,
 				hidden: true,
 				enableHiding: true,
 			},
 			{
-				id: 'genres',
+				id: 'genreIds',
 				accessorKey: 'genres',
 				header: ({ column }) => (
 					<DataTableColumnHeader column={column} title="Genre" />
@@ -327,7 +327,7 @@ const columns = (
 				enableColumnFilter: true,
 			},
 			{
-				id: 'subgenres',
+				id: 'subgenreIds',
 				accessorKey: 'subgenres',
 				header: ({ column }) => (
 					<DataTableColumnHeader column={column} title="Subgenre" />
@@ -381,7 +381,7 @@ const columns = (
 				enableColumnFilter: true,
 			},
 			{
-				id: 'keys',
+				id: 'keyIds',
 				accessorKey: 'key',
 				header: ({ column }) => (
 					<DataTableColumnHeader column={column} title="Key" />

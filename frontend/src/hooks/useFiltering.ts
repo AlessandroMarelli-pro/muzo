@@ -4,7 +4,9 @@ import {
 	useDeleteActiveFilter,
 	useUpdateActiveFilter,
 } from '@/services/filter-hooks';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+
+const SAVE_DEBOUNCE_MS = 400;
 
 export interface Range {
 	min: number;
@@ -84,6 +86,7 @@ export const useFiltering = (options: UseFilteringOptions = {}) => {
 	const deleteActiveFilter = useDeleteActiveFilter();
 	const [filters, setFilters] = useState<FilterState>(defaultFilterState);
 	const [isDirty, setIsDirty] = useState(false);
+	const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
 	const resetFilters = () => {
 		console.log('resetFilters', filters.id);
@@ -108,6 +111,7 @@ export const useFiltering = (options: UseFilteringOptions = {}) => {
 
 	const updateFilters = useCallback(
 		(values: Record<string, any>) => {
+			console.log('updateFilters', values);
 			for (const [key, value] of Object.entries(values)) {
 				const isString = typeof value === 'string';
 				const isStringArray =
@@ -139,6 +143,7 @@ export const useFiltering = (options: UseFilteringOptions = {}) => {
 
 	useEffect(() => {
 		if (currentFilter.data) {
+			console.log('currentFilter', currentFilter.data);
 			setFilters({
 				...currentFilter.data.criteria,
 				id: currentFilter.data.id,
@@ -147,14 +152,10 @@ export const useFiltering = (options: UseFilteringOptions = {}) => {
 	}, [currentFilter.data]);
 
 	useEffect(() => {
-		console.log(
-			'autoSave',
-			autoSave,
-			!currentFilter.isLoading,
-			isDirty,
-			filters
-		);
-		if (autoSave && !currentFilter.isLoading && isDirty) {
+		if (!autoSave || currentFilter.isLoading || !isDirty) {
+			return;
+		}
+		saveTimeoutRef.current = setTimeout(() => {
 			const { id, ...criteria } = filters;
 			if (id) {
 				updateActiveFilter.mutate({
@@ -164,8 +165,23 @@ export const useFiltering = (options: UseFilteringOptions = {}) => {
 			} else {
 				createActiveFilter.mutate(criteria);
 			}
-		}
-	}, [isDirty]);
+			setIsDirty(false);
+			saveTimeoutRef.current = null;
+		}, SAVE_DEBOUNCE_MS);
+		return () => {
+			if (saveTimeoutRef.current) {
+				clearTimeout(saveTimeoutRef.current);
+				saveTimeoutRef.current = null;
+			}
+		};
+	}, [
+		autoSave,
+		currentFilter.isLoading,
+		isDirty,
+		filters,
+		updateActiveFilter,
+		createActiveFilter,
+	]);
 
 	// Computed values
 	const hasActiveFilters = useMemo(() => {
