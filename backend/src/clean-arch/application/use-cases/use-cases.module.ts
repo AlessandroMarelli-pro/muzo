@@ -4,7 +4,11 @@ import { AUDIO_ANALYSIS_STRUCTURE } from '../ports/infrastructure/IAudioAnalysis
 import { AUDIO_SCAN_SCHEDULER_PRODUCER } from '../ports/infrastructure/IAudioScanSchedulerProducer';
 import { AUDIO_WAVEFORM_GENERATOR } from '../ports/infrastructure/IAudioWaveformGenerator';
 import { FILE_MANAGER } from '../ports/infrastructure/IFileManager';
+import { ID3_READER } from '../ports/infrastructure/IId3Reader';
 import { IMAGE_FILE_READER } from '../ports/infrastructure/IImageFileReader';
+import { SPOTIFY_SYNC_PROVIDER } from '../ports/infrastructure/ISpotifySyncProvider';
+import { TIDAL_SYNC_PROVIDER } from '../ports/infrastructure/ITidalSyncProvider';
+import { YOUTUBE_SYNC_PROVIDER } from '../ports/infrastructure/IYouTubeSyncProvider';
 import { LIBRARY_SCAN_SCHEDULER_PRODUCER } from '../ports/infrastructure/ILibraryScanSchedulerProducer';
 import { LOGGER } from '../ports/infrastructure/ILogger';
 import { LOGGER_FACTORY } from '../ports/infrastructure/ILoggerFactory';
@@ -95,9 +99,21 @@ import {
   UpdateQueuePositionsUseCase,
   UpdateSavedFilterUseCase,
 } from './index';
+import {
+  ExchangeSpotifyCodeUseCase,
+  ExchangeTidalCodeUseCase,
+  ExchangeYouTubeCodeUseCase,
+  GetSpotifyAuthUrlUseCase,
+  GetTidalAuthUrlUseCase,
+  GetYouTubeAuthUrlUseCase,
+  SyncPlaylistToSpotifyUseCase,
+  SyncPlaylistToTidalUseCase,
+  SyncPlaylistToYouTubeUseCase,
+} from './third-party-sync';
 import { GetActiveSessionsUseCase } from './scan-session/GetActiveSessions';
 import { GetCompleteSessionsUseCase } from './scan-session/GetCompleteSessions';
 import { StreamSessionUseCase } from './scan-session/StreamSession';
+import { ThirdPartySyncInfrastructureModule } from 'src/clean-arch/infrastructure/external-services/third-party-sync/third-party-sync.module';
 
 const useCasesProviders = [
   createUseCaseProvider(GetTrackUseCase, [MUSIC_TRACK_REPOSITORY]),
@@ -298,10 +314,31 @@ const useCasesProviders = [
     LOGGER_FACTORY,
     LOGGER,
   ]),
+  createUseCaseProvider(SyncPlaylistToYouTubeUseCase, [
+    GetPlaylistUseCase,
+    YOUTUBE_SYNC_PROVIDER,
+    ID3_READER,
+  ]),
+  createUseCaseProvider(SyncPlaylistToTidalUseCase, [
+    GetPlaylistUseCase,
+    TIDAL_SYNC_PROVIDER,
+    ID3_READER,
+  ]),
+  createUseCaseProvider(SyncPlaylistToSpotifyUseCase, [
+    GetPlaylistUseCase,
+    SPOTIFY_SYNC_PROVIDER,
+    ID3_READER,
+  ]),
+  createUseCaseProvider(GetYouTubeAuthUrlUseCase, [YOUTUBE_SYNC_PROVIDER]),
+  createUseCaseProvider(ExchangeYouTubeCodeUseCase, [YOUTUBE_SYNC_PROVIDER]),
+  createUseCaseProvider(GetTidalAuthUrlUseCase, [TIDAL_SYNC_PROVIDER]),
+  createUseCaseProvider(ExchangeTidalCodeUseCase, [TIDAL_SYNC_PROVIDER]),
+  createUseCaseProvider(GetSpotifyAuthUrlUseCase, [SPOTIFY_SYNC_PROVIDER]),
+  createUseCaseProvider(ExchangeSpotifyCodeUseCase, [SPOTIFY_SYNC_PROVIDER]),
 ];
 
 @Module({
-  imports: [ConfigModule],
+  imports: [ConfigModule, ThirdPartySyncInfrastructureModule],
   providers: useCasesProviders,
   exports: useCasesProviders.map((provider) => provider.provide),
 })

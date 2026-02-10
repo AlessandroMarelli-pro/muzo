@@ -28,7 +28,6 @@ import { ElasticsearchModule } from './clean-arch/infrastructure/external-servic
 import { NestjsLoggerModule } from './clean-arch/infrastructure/logging/nestjs-logger.module';
 import { ConfigModuleSetup, QueueConfig } from './config';
 import { GraphiQLModule } from './graphiql/graphiql.module';
-import { ThirdPartySyncModule } from './modules/third-party-sync/third-party-sync.module';
 import { SharedModule } from './shared/shared.module';
 
 @Module({
@@ -96,7 +95,6 @@ import { SharedModule } from './shared/shared.module';
     // Feature modules
 
     HttpModule,
-    ThirdPartySyncModule,
     AdminMethodsModule,
     ElasticsearchModule,
     BullModule.forRootAsync({

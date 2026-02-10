@@ -9,3 +9,4 @@ export * from './playlist-sorting';
 export * from './playlist-track';
 export * from './recommendation';
 export * from './saved-filter';
+export * from './third-party-sync';

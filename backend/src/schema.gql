@@ -212,9 +212,9 @@ type Mutation {
   resetQueue: Boolean!
   startLibraryScan(incremental: Boolean, libraryId: Base64ID!): Base64ID!
   stopLibraryScan(libraryId: Base64ID!, sessionId: Base64ID!): Boolean!
-  syncPlaylistToSpotify(playlistId: ID!, userId: String!): SyncResult!
-  syncPlaylistToTidal(playlistId: ID!, userId: String!): SyncResult!
-  syncPlaylistToYouTube(playlistId: ID!, userId: String!): SyncResult!
+  syncPlaylistToSpotify(playlistId: ID!, userId: String!): ThirdPartySyncResult!
+  syncPlaylistToTidal(playlistId: ID!, userId: String!): ThirdPartySyncResult!
+  syncPlaylistToYouTube(playlistId: ID!, userId: String!): ThirdPartySyncResult!
   toggleBanger(trackId: Base64ID!): Track!
   toggleDislike(trackId: Base64ID!): Boolean!
   toggleFavorite(trackId: Base64ID!): Track!
@@ -332,7 +332,7 @@ type StaticFilterOptions {
   subgenres: [FilterWithID!]!
 }
 
-type SyncResult {
+type ThirdPartySyncResult {
   errors: [String!]!
   playlistId: String
   playlistUrl: String

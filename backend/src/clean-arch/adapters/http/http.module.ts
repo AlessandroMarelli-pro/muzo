@@ -5,6 +5,7 @@ import { HttpAuthGuard } from './context/http-auth.guard';
 import { AudioStreamingController } from './controllers/audio-streaming.controller';
 import { HealthController } from './controllers/health.controller';
 import { ImageController } from './controllers/image.controller';
+import { OAuthRedirectController } from './controllers/oauth-redirect.controller';
 import { RecommendationController } from './controllers/recommendation.controller';
 import { ScanProgressController } from './controllers/scan-progress.controller';
 
@@ -16,6 +17,7 @@ import { ScanProgressController } from './controllers/scan-progress.controller';
     RecommendationController,
     HealthController,
     ScanProgressController,
+    OAuthRedirectController,
   ],
   providers: [HttpAuthGuard],
 })

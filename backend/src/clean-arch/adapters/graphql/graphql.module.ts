@@ -11,6 +11,7 @@ import { PlaybackQueueResolver } from './resolvers/playback-queue.resolver';
 import { PlaylistTrackResolver } from './resolvers/playlist-track.resolver';
 import { CleanArchPlaylistResolver } from './resolvers/playlist.resolver';
 import { SavedFilterResolver } from './resolvers/saved-filter.resolver';
+import { ThirdPartySyncResolver } from './resolvers/third-party-sync.resolver';
 import { UserResolver } from './resolvers/user.resolver';
 import { Base64ID } from './scalars/base64-id.scalar';
 
@@ -28,6 +29,7 @@ import { Base64ID } from './scalars/base64-id.scalar';
     MusicPlayerResolver,
     MusicTrackResolver,
     MusicLibraryResolver,
+    ThirdPartySyncResolver,
     {
       provide: APP_FILTER,
       useClass: DomainErrorExceptionFilter,

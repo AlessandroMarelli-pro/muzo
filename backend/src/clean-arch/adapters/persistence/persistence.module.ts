@@ -2,6 +2,7 @@ import { Global, Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 
 import { AUDIO_WAVEFORM_GENERATOR } from 'src/clean-arch/application/ports/infrastructure/IAudioWaveformGenerator';
+import { ID3_READER } from 'src/clean-arch/application/ports/infrastructure/IId3Reader';
 import { IMAGE_FILE_READER } from 'src/clean-arch/application/ports/infrastructure/IImageFileReader';
 import { METRICS_QUERY } from 'src/clean-arch/application/ports/queries/IMetricsQuery';
 import { PLAYLIST_STATS_QUERY } from 'src/clean-arch/application/ports/queries/IPlaylistStatsQuery';
@@ -10,6 +11,7 @@ import { SAVED_FILTER_QUERY } from 'src/clean-arch/application/ports/queries/ISa
 import { IMAGE_SEARCH_REPOSITORY } from 'src/clean-arch/application/ports/repositories/IImageSearchRepository';
 import { MUSIC_LIBRARY_REPOSITORY } from 'src/clean-arch/application/ports/repositories/IMusicLibraryRepository';
 import { MUSIC_TRACK_REPOSITORY } from 'src/clean-arch/application/ports/repositories/IMusicTrackRepository';
+import { OAUTH_TOKEN_REPOSITORY } from 'src/clean-arch/application/ports/repositories/IOAuthTokenRepository';
 import { PLAYLIST_REPOSITORY } from 'src/clean-arch/application/ports/repositories/IPlaylistRepository';
 import { PLAYLIST_SORTING_REPOSITORY } from 'src/clean-arch/application/ports/repositories/IPlaylistSortingRepository';
 import { PLAYLIST_TRACK_REPOSITORY } from 'src/clean-arch/application/ports/repositories/IPlaylistTrackRepository';
@@ -18,6 +20,7 @@ import { SAVED_FILTER_REPOSITORY } from 'src/clean-arch/application/ports/reposi
 import { WaveformGenerator } from 'src/clean-arch/infrastructure/audio/waveform-generator';
 import { PrismaService } from '../../infrastructure/database/prisma.service';
 import { FileSystemImageReader } from '../../infrastructure/filesystem/image-file.reader';
+import { Id3ReaderAdapter } from '../../infrastructure/filesystem/id3-reader.adapter';
 import { MetricsQuery } from './queries/metrics/metrics.query';
 import { PlaylistStatsQuery } from './queries/playlist/playlist-stats.query';
 import { SavedFilterQuery } from './queries/saved-filter/saved-filter.query';
@@ -27,6 +30,7 @@ import { MusicLibraryRepository } from './repositories/music-library/music-libra
 import { MusicTrackRepository } from './repositories/music-track/music-track.repository';
 import { PlaylistSortingRepository } from './repositories/playlist-sorting/playlist-sorting.repository';
 import { PlaylistTrackRepository } from './repositories/playlist-track/playlist-track.repository';
+import { OAuthTokenRepository } from './repositories/oauth-token/oauth-token.repository';
 import { PlaylistRepository } from './repositories/playlist/playlist.repository';
 import { QueueRepository } from './repositories/queue/queue.repository';
 import { SavedFilterRepository } from './repositories/saved-filter/saved-filter.repository';
@@ -61,7 +65,9 @@ const queriesProviders = [
   { provide: SAVED_FILTER_REPOSITORY, useClass: SavedFilterRepository },
   { provide: IMAGE_SEARCH_REPOSITORY, useClass: ImageSearchRepository },
   { provide: IMAGE_FILE_READER, useClass: FileSystemImageReader },
+  { provide: ID3_READER, useClass: Id3ReaderAdapter },
   { provide: METRICS_QUERY, useClass: MetricsQuery },
+  { provide: OAUTH_TOKEN_REPOSITORY, useClass: OAuthTokenRepository },
   { provide: AUDIO_WAVEFORM_GENERATOR, useClass: WaveformGenerator },
   { provide: RECOMMENDATION_DATA_PORT, useClass: RecommendationDataAdapter },
   { provide: MUSIC_LIBRARY_REPOSITORY, useClass: MusicLibraryRepository },
