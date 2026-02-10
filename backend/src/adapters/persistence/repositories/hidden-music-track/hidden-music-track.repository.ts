@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/infrastructure/database/prisma.service';
+import { getCurrentUser } from 'src/kernel/types/context';
 import { HiddenMusicTrack } from 'src/kernel/types/model-types';
 import { toDomain, toPrisma } from './hidden-music-track.mapper';
 
@@ -10,7 +11,10 @@ export class HiddenMusicTrackRepository {
   async save(hiddenMusicTrack: HiddenMusicTrack): Promise<HiddenMusicTrack> {
     return this.prisma.hiddenMusicTrack
       .create({
-        data: toPrisma(hiddenMusicTrack),
+        data: toPrisma({
+          ...hiddenMusicTrack,
+          createdById: getCurrentUser().id,
+        }),
       })
       .then(toDomain);
   }

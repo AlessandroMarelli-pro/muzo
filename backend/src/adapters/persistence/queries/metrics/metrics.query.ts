@@ -4,6 +4,7 @@ import {
   MetricsDto,
 } from 'src/application/ports/queries/IMetricsQuery';
 import { PrismaService } from 'src/infrastructure/database/prisma.service';
+import { getCurrentUserId } from 'src/kernel/types/context';
 
 @Injectable()
 export class MetricsQuery implements IMetricsQuery {
@@ -40,14 +41,14 @@ export class MetricsQuery implements IMetricsQuery {
   }
   private async getTotalTracks() {
     const result = await this.prisma.$queryRaw<[{ count: bigint }]>`
-      SELECT COUNT(*) as count FROM music_tracks
+      SELECT COUNT(*) as count FROM music_tracks WHERE createdById = ${getCurrentUserId()}
     `;
     return Number(result[0].count);
   }
 
   private async getTotalListeningTime() {
     const result = await this.prisma.$queryRaw<[{ total_seconds: bigint }]>`
-      SELECT COALESCE(SUM(duration), 0) as total_seconds FROM music_tracks
+      SELECT COALESCE(SUM(duration), 0) as total_seconds FROM music_tracks WHERE createdById = ${getCurrentUserId()}
     `;
     return Number(result[0].total_seconds);
   }
@@ -56,7 +57,7 @@ export class MetricsQuery implements IMetricsQuery {
     const result = await this.prisma.$queryRaw<[{ count: bigint }]>`
       SELECT COUNT(DISTINCT COALESCE(aiArtist, originalArtist)) as count 
       FROM music_tracks 
-      WHERE aiArtist IS NOT NULL OR originalArtist IS NOT NULL
+      WHERE createdById = ${getCurrentUserId()} AND (aiArtist IS NOT NULL OR originalArtist IS NOT NULL)  
     `;
     return Number(result[0].count);
   }
@@ -75,7 +76,7 @@ export class MetricsQuery implements IMetricsQuery {
         SUM(listeningCount * duration) as total_play_time,
         AVG(aiConfidence) as avg_confidence,
         COUNT(CASE WHEN isFavorite = true THEN 1 END) as favorite_count
-      FROM music_tracks
+      FROM music_tracks WHERE createdById = ${getCurrentUserId()}
     `;
 
     const stats = result[0];
@@ -100,7 +101,7 @@ export class MetricsQuery implements IMetricsQuery {
         SUM(duration) as total_duration,
         AVG(aiConfidence) as avg_confidence
       FROM music_tracks 
-      WHERE aiArtist IS NOT NULL OR originalArtist IS NOT NULL
+      WHERE createdById = ${getCurrentUserId()} AND (aiArtist IS NOT NULL OR originalArtist IS NOT NULL)
       GROUP BY COALESCE(aiArtist, originalArtist)
       ORDER BY track_count DESC, total_duration DESC
       LIMIT 20
@@ -116,7 +117,7 @@ export class MetricsQuery implements IMetricsQuery {
     return this.prisma.$queryRaw<
       Array<{ genreId: string; count: bigint; name: string }>
     >`
-      SELECT genreId, genres.name, COUNT(*) as count FROM track_genres JOIN genres ON track_genres.genreId = genres.id GROUP BY genreId ORDER BY count DESC LIMIT 10
+      SELECT genreId, genres.name, COUNT(*) as count FROM track_genres JOIN genres ON track_genres.genreId = genres.id WHERE track_genres.createdById = ${getCurrentUserId()} GROUP BY genreId ORDER BY count DESC LIMIT 10
     `.then((rows) =>
       rows.map((row) => ({
         genre: row.name,
@@ -138,7 +139,7 @@ export class MetricsQuery implements IMetricsQuery {
         COUNT(*) as tracks_added,
         COUNT(CASE WHEN analysisStatus = 'COMPLETED' THEN 1 END) as tracks_analyzed
       FROM music_tracks 
-      WHERE createdAt >= datetime('now', '-30 days')
+      WHERE createdById = ${getCurrentUserId()} AND createdAt >= datetime('now', '-30 days')
       GROUP BY DATE(createdAt)
       ORDER BY date DESC
       LIMIT 30

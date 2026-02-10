@@ -24,6 +24,15 @@ export class ProcessEndLibraryScanUseCase {
     incremental: boolean,
     totalTracks: number,
   ): Promise<void> {
+    this.logger.info(
+      `Ending library scan for library ${libraryId} with session ${sessionId}`,
+      {
+        libraryId,
+        sessionId,
+        incremental,
+        totalTracks,
+      },
+    );
     // Get current library statistics
     const library = await this.musicLibraryRepository.getOneById(libraryId);
     const startDateTS = (

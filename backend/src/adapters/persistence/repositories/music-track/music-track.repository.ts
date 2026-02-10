@@ -153,10 +153,10 @@ export class MusicTrackRepository implements IMusicTrackRepository {
   ): Promise<MusicTrack[]> {
     return this.prisma.musicTrack
       .findMany({
-        where: buildMusicTrackFilterWhereClause(
-          criteria,
-          subgenreSelectionMode,
-        ),
+        where: {
+          ...buildMusicTrackFilterWhereClause(criteria, subgenreSelectionMode),
+          createdById: getCurrentUserId(),
+        },
         take: options.limit ?? undefined,
         skip: options.offset ?? undefined,
         orderBy: buildMusicTrackSortingOrderClause(options),
@@ -177,7 +177,10 @@ export class MusicTrackRepository implements IMusicTrackRepository {
     const count = await this.prisma.musicTrack.count({ where });
     return this.prisma.musicTrack
       .findMany({
-        where,
+        where: {
+          ...where,
+          createdById: getCurrentUserId(),
+        },
         take: limit ?? undefined,
         skip: offset ?? undefined,
         orderBy: buildMusicTrackSortingOrderClause({ orderBy, orderDirection }),
@@ -212,7 +215,10 @@ export class MusicTrackRepository implements IMusicTrackRepository {
     return this.prisma.musicTrack
       .findMany({
         cursor: cursor?.id ? { id: extractModelId(cursor.id).dbId } : undefined,
-        where,
+        where: {
+          ...where,
+          createdById: getCurrentUserId(),
+        },
         include: musicTracksIncludes,
         take: size + 1,
         skip: where?.cursor ? 1 : undefined,
@@ -241,7 +247,9 @@ export class MusicTrackRepository implements IMusicTrackRepository {
     // But since we're querying music_tracks, hidden tracks won't be there anyway
     // We might want to exclude already liked tracks, but the requirement says to use randomTrack
     // Let's keep it simple and just get a random track that's not liked yet
-    const tracksCount = await this.prisma.musicTrack.count();
+    const tracksCount = await this.prisma.musicTrack.count({
+      where: { createdById: getCurrentUserId() },
+    });
 
     const skip = Math.floor(Math.random() * tracksCount);
     return this.prisma.musicTrack
@@ -463,7 +471,10 @@ export class MusicTrackRepository implements IMusicTrackRepository {
       }
     }
     await this.prisma.musicTrack.update({
-      where: { id: extractModelId(trackId).dbId },
+      where: {
+        id: extractModelId(trackId).dbId,
+        createdById: getCurrentUserId(),
+      },
       data: {
         updatedAt: new Date(),
         updatedById: getCurrentUserId(),

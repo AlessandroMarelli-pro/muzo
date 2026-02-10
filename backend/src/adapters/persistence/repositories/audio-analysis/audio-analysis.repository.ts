@@ -3,10 +3,11 @@ import { AudioAnalysisResponse } from 'src/application/ports/dtos/AudioAnalysis'
 import { IAudioAnalysisRepository } from 'src/application/ports/repositories/IAudioAnalysisRepository';
 import { PrismaService } from 'src/infrastructure/database/prisma.service';
 import { extractModelId, MusicTrackId } from 'src/kernel/ids';
+import { getCurrentUserId, models } from 'src/kernel/types';
 
 @Injectable()
 export class AudioAnalysisRepository implements IAudioAnalysisRepository {
-  constructor(private readonly prismaService: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   async upsertAudioFingerprint(
     trackId: MusicTrackId,
@@ -73,8 +74,11 @@ export class AudioAnalysisRepository implements IAudioAnalysisRepository {
         musicalFeatures?.mood_calculation?.brightness_factor || 0,
       trackId: extractModelId(trackId).dbId,
     };
-    await this.prismaService.audioFingerprint.upsert({
-      where: { trackId: fingerprintData.trackId },
+    await this.prisma.audioFingerprint.upsert({
+      where: {
+        trackId: fingerprintData.trackId,
+        createdById: getCurrentUserId(),
+      },
       update: fingerprintData,
       create: fingerprintData,
     });
@@ -85,8 +89,11 @@ export class AudioAnalysisRepository implements IAudioAnalysisRepository {
     genres: string[],
   ): Promise<void> {
     // Remove existing genre associations
-    await this.prismaService.trackGenre.deleteMany({
-      where: { trackId: extractModelId(trackId).dbId },
+    await this.prisma.trackGenre.deleteMany({
+      where: {
+        trackId: extractModelId(trackId).dbId,
+        createdById: getCurrentUserId(),
+      },
     });
 
     // Create or find genres and associate them
@@ -96,20 +103,23 @@ export class AudioAnalysisRepository implements IAudioAnalysisRepository {
       // Lowercase the genre name to ensure uniqueness
       const normalizedName = genreName.trim().toLowerCase();
 
-      let genre = await this.prismaService.genre.findUnique({
-        where: { name: normalizedName },
+      let genre = await this.prisma.genre.findUnique({
+        where: { name: normalizedName, createdById: getCurrentUserId() },
       });
 
       if (!genre) {
-        genre = await this.prismaService.genre.create({
-          data: { name: normalizedName },
+        genre = await this.prisma.genre.create({
+          data: models.genre.instantiateNew({
+            name: normalizedName,
+            description: null,
+          }),
         });
       }
-      await this.prismaService.trackGenre.create({
-        data: {
-          trackId: extractModelId(trackId).dbId,
-          genreId: genre.id,
-        },
+      await this.prisma.trackGenre.create({
+        data: models.trackGenre.instantiateNew({
+          trackId,
+          genreId: models.genre.id(genre.id),
+        }),
       });
     }
   }
@@ -119,8 +129,11 @@ export class AudioAnalysisRepository implements IAudioAnalysisRepository {
     subgenres: string[],
   ): Promise<void> {
     // Remove existing genre associations
-    await this.prismaService.trackSubgenre.deleteMany({
-      where: { trackId: extractModelId(trackId).dbId },
+    await this.prisma.trackSubgenre.deleteMany({
+      where: {
+        trackId: extractModelId(trackId).dbId,
+        createdById: getCurrentUserId(),
+      },
     });
 
     // Create or find genres and associate them
@@ -130,20 +143,24 @@ export class AudioAnalysisRepository implements IAudioAnalysisRepository {
       // Lowercase the genre name to ensure uniqueness
       const normalizedName = subgenreName.trim().toLowerCase();
 
-      let subgenre = await this.prismaService.subgenre.findUnique({
-        where: { name: normalizedName },
+      let subgenre = await this.prisma.subgenre.findUnique({
+        where: { name: normalizedName, createdById: getCurrentUserId() },
       });
 
       if (!subgenre) {
-        subgenre = await this.prismaService.subgenre.create({
-          data: { name: normalizedName },
+        subgenre = await this.prisma.subgenre.create({
+          data: models.subgenre.instantiateNew({
+            name: normalizedName,
+            description: null,
+            genreId: null,
+          }),
         });
       }
-      await this.prismaService.trackSubgenre.create({
-        data: {
-          trackId: extractModelId(trackId).dbId,
-          subgenreId: subgenre.id,
-        },
+      await this.prisma.trackSubgenre.create({
+        data: models.trackSubgenre.instantiateNew({
+          trackId,
+          subgenreId: models.subgenre.id(subgenre.id),
+        }),
       });
     }
   }

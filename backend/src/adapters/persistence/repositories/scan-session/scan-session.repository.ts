@@ -6,7 +6,7 @@ import {
 } from 'src/application/ports/repositories/IScanSessionRepository';
 import { PrismaService } from 'src/infrastructure/database/prisma.service';
 import { extractModelId, SessionId } from 'src/kernel/ids';
-import { models } from 'src/kernel/types';
+import { getCurrentUser, getCurrentUserId, models } from 'src/kernel/types';
 import { ScanStatusEnum, Session } from 'src/kernel/types/model-types';
 import { toDomain, toPrisma } from './scan-session.mapper';
 
@@ -19,8 +19,8 @@ export class ScanSessionRepository implements IScanSessionRepository {
    */
   async createSession(sessionId: SessionId): Promise<Session> {
     const session = await this.prisma.scanSession.create({
-      data: toPrisma(
-        models.session.instantiateNew({
+      data: toPrisma({
+        ...models.session.instantiateNew({
           status: ScanStatusEnum.SCANNING,
           totalBatches: 0,
           completedBatches: 0,
@@ -32,7 +32,8 @@ export class ScanSessionRepository implements IScanSessionRepository {
           completedAt: null,
           errorMessage: null,
         }),
-      ),
+        createdById: getCurrentUser().id,
+      }),
     });
 
     return toDomain(session);
@@ -44,7 +45,10 @@ export class ScanSessionRepository implements IScanSessionRepository {
   async getSession(sessionId: SessionId): Promise<Session> {
     return this.prisma.scanSession
       .findFirst({
-        where: { sessionId: extractModelId(sessionId).dbId },
+        where: {
+          sessionId: extractModelId(sessionId).dbId,
+          createdById: getCurrentUserId(),
+        },
       })
       .then(toDomain);
   }
@@ -95,7 +99,10 @@ export class ScanSessionRepository implements IScanSessionRepository {
         .$transaction(async (tx) => {
           // First, verify the session exists and is in SCANNING status
           const activeSession = await tx.scanSession.findUnique({
-            where: { sessionId: extractModelId(sessionId).dbId },
+            where: {
+              sessionId: extractModelId(sessionId).dbId,
+              createdById: getCurrentUserId(),
+            },
             select: { status: true },
           });
 
@@ -111,7 +118,10 @@ export class ScanSessionRepository implements IScanSessionRepository {
 
           // Perform atomic update with increment
           return await tx.scanSession.update({
-            where: { sessionId: extractModelId(sessionId).dbId },
+            where: {
+              sessionId: extractModelId(sessionId).dbId,
+              createdById: getCurrentUserId(),
+            },
             data: updateData,
           });
         })
@@ -130,7 +140,10 @@ export class ScanSessionRepository implements IScanSessionRepository {
     success: boolean = true,
   ): Promise<void> {
     await this.prisma.scanSession.update({
-      where: { sessionId: extractModelId(sessionId).dbId },
+      where: {
+        sessionId: extractModelId(sessionId).dbId,
+        createdById: getCurrentUserId(),
+      },
       data: {
         status: success ? ScanStatusEnum.IDLE : ScanStatusEnum.ERROR,
         completedAt: new Date(),
@@ -149,6 +162,7 @@ export class ScanSessionRepository implements IScanSessionRepository {
           status: {
             in: [ScanStatusEnum.SCANNING, ScanStatusEnum.ANALYZING],
           },
+          createdById: getCurrentUserId(),
         },
         orderBy: {
           startedAt: 'desc',
@@ -162,6 +176,7 @@ export class ScanSessionRepository implements IScanSessionRepository {
       .findMany({
         where: {
           status: ScanStatusEnum.IDLE,
+          createdById: getCurrentUserId(),
         },
         orderBy: {
           startedAt: 'desc',
@@ -172,7 +187,10 @@ export class ScanSessionRepository implements IScanSessionRepository {
 
   async deleteSession(sessionId: SessionId): Promise<void> {
     await this.prisma.scanSession.delete({
-      where: { sessionId: extractModelId(sessionId).dbId },
+      where: {
+        sessionId: extractModelId(sessionId).dbId,
+        createdById: getCurrentUserId(),
+      },
     });
   }
 }

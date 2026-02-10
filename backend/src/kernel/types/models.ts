@@ -11,6 +11,8 @@ import {
   SavedFilterId,
   SessionId,
   SubgenreId,
+  TrackGenreId,
+  TrackSubgenreId,
   UserId,
 } from '../ids';
 import { modelIdFactory } from '../ids/factory';
@@ -28,6 +30,8 @@ import {
   SavedFilter,
   Session,
   Subgenre,
+  TrackGenre,
+  TrackSubgenre,
   User,
 } from './model-types';
 
@@ -62,4 +66,10 @@ export const models = {
     modelIdFactory('HiddenMusicTrack'),
   ),
   session: modelFactory<Session, SessionId>(modelIdFactory('Session')),
+  trackGenre: modelFactory<TrackGenre, TrackGenreId>(
+    modelIdFactory('TrackGenre'),
+  ),
+  trackSubgenre: modelFactory<TrackSubgenre, TrackSubgenreId>(
+    modelIdFactory('TrackSubgenre'),
+  ),
 };

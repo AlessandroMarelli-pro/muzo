@@ -5,7 +5,7 @@ import {
   StaticFilterOptions,
 } from 'src/application/ports/queries/ISavedFilterQuery';
 import { PrismaService } from 'src/infrastructure/database/prisma.service';
-import { models } from 'src/kernel/types';
+import { getCurrentUserId, models } from 'src/kernel/types';
 
 @Injectable()
 export class SavedFilterQuery implements ISavedFilterQuery {
@@ -43,15 +43,15 @@ export class SavedFilterQuery implements ISavedFilterQuery {
         type: keyof StaticFilterOptions;
       }[]
     >`
-        SELECT id, name, 'genres' as type FROM genres as genres
+        SELECT id, name, 'genres' as type FROM genres as genres WHERE createdById = ${getCurrentUserId()}
         UNION ALL
-        SELECT id, name, 'subgenres' as type FROM subgenres as subgenres    
+        SELECT id, name, 'subgenres' as type FROM subgenres as subgenres WHERE createdById = ${getCurrentUserId()}
         UNION ALL
-        SELECT DISTINCT key as id, key as name, 'keys' as type FROM audio_fingerprints as keys
+        SELECT DISTINCT key as id, key as name, 'keys' as type FROM audio_fingerprints as keys WHERE createdById = ${getCurrentUserId()}
         UNION ALL
-        SELECT id, name, 'libraries' as type FROM music_libraries as libraries
+        SELECT id, name, 'libraries' as type FROM music_libraries as libraries WHERE createdById = ${getCurrentUserId()}
         UNION ALL
-        SELECT atmosphereDesc as id, atmosphereDesc as name, 'atmospheres' as type FROM music_tracks as atmospheres
+        SELECT atmosphereDesc as id, atmosphereDesc as name, 'atmospheres' as type FROM music_tracks as atmospheres WHERE createdById = ${getCurrentUserId()}
     `.then((result) => {
       const groups = groupBy(result, 'type') as {
         [key in keyof StaticFilterOptions]: {
