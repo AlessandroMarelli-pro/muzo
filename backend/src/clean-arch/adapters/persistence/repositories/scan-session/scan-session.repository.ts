@@ -5,7 +5,7 @@ import {
   UpdateScanSessionInput,
 } from 'src/clean-arch/application/ports/repositories/IScanSessionRepository';
 import { PrismaService } from 'src/clean-arch/infrastructure/database/prisma.service';
-import { SessionId } from 'src/clean-arch/kernel/ids';
+import { extractModelId, SessionId } from 'src/clean-arch/kernel/ids';
 import { models } from 'src/clean-arch/kernel/types';
 import {
   ScanStatusEnum,
@@ -38,7 +38,6 @@ export class ScanSessionRepository implements IScanSessionRepository {
       ),
     });
 
-    console.log(`Created scan session: ${session.sessionId}`);
     return toDomain(session);
   }
 
@@ -48,7 +47,7 @@ export class ScanSessionRepository implements IScanSessionRepository {
   async getSession(sessionId: SessionId): Promise<Session> {
     return this.prisma.scanSession
       .findFirst({
-        where: { sessionId },
+        where: { sessionId: extractModelId(sessionId).dbId },
       })
       .then(toDomain);
   }
@@ -58,15 +57,10 @@ export class ScanSessionRepository implements IScanSessionRepository {
    * Uses atomic increment for overallProgress to prevent race conditions
    */
   async updateSessionProgress(
-    sessionId: string,
+    sessionId: SessionId,
     updates: UpdateScanSessionInput,
   ): Promise<Session> {
     try {
-      console.log(
-        `Updating session progress for session ${sessionId}:`,
-        updates,
-      );
-
       // Extract progressPercentage before modifying updates object
       const progressPercentage = updates.progressPercentage;
       delete updates.progressPercentage;
@@ -104,7 +98,7 @@ export class ScanSessionRepository implements IScanSessionRepository {
         .$transaction(async (tx) => {
           // First, verify the session exists and is in SCANNING status
           const activeSession = await tx.scanSession.findUnique({
-            where: { sessionId },
+            where: { sessionId: extractModelId(sessionId).dbId },
             select: { status: true },
           });
 
@@ -120,7 +114,7 @@ export class ScanSessionRepository implements IScanSessionRepository {
 
           // Perform atomic update with increment
           return await tx.scanSession.update({
-            where: { sessionId },
+            where: { sessionId: extractModelId(sessionId).dbId },
             data: updateData,
           });
         })
@@ -135,11 +129,11 @@ export class ScanSessionRepository implements IScanSessionRepository {
    * Mark session as completed
    */
   async completeSession(
-    sessionId: string,
+    sessionId: SessionId,
     success: boolean = true,
   ): Promise<void> {
     await this.prisma.scanSession.update({
-      where: { sessionId },
+      where: { sessionId: extractModelId(sessionId).dbId },
       data: {
         status: success ? ScanStatusEnum.IDLE : ScanStatusEnum.ERROR,
         completedAt: new Date(),
@@ -177,5 +171,11 @@ export class ScanSessionRepository implements IScanSessionRepository {
         },
       })
       .then((sessions) => sessions.map(toDomain));
+  }
+
+  async deleteSession(sessionId: SessionId): Promise<void> {
+    await this.prisma.scanSession.delete({
+      where: { sessionId: extractModelId(sessionId).dbId },
+    });
   }
 }

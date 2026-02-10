@@ -74,14 +74,16 @@ export class MusicLibraryRepository implements IMusicLibraryRepository {
     status: ScanStatus,
     incremental: boolean,
   ): Promise<MusicLibrary> {
+    const isScanning = status === 'SCANNING';
     return this.prisma.musicLibrary
       .update({
         where: { id: extractModelId(id).dbId, createdById: getCurrentUserId() },
         data: toPrismaUpdate({
           scanInfo: {
             scanStatus: status,
-            lastScanAt: incremental ? new Date() : undefined,
-            lastIncrementalScanAt: incremental ? new Date() : undefined,
+            lastScanAt: incremental && isScanning ? new Date() : undefined,
+            lastIncrementalScanAt:
+              incremental && isScanning ? new Date() : undefined,
           },
         }),
       })

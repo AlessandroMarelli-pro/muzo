@@ -10,10 +10,10 @@ import { Range } from './common.schema';
 
 @ObjectType()
 export class FilterWithID<T> {
-  @Field(() => Base64ID)
+  @Field(() => Base64ID, { nullable: true })
   id: T;
 
-  @Field(() => String)
+  @Field(() => String, { nullable: true })
   name: string;
 }
 

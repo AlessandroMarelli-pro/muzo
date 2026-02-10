@@ -11,6 +11,7 @@ import { LibraryCard } from './library-card';
 interface LibraryListProps {
 	onCreateLibrary: () => void;
 	onScanLibrary: (libraryId: string) => void;
+	onStopLibraryScan: (libraryId: string, sessionId: string) => void;
 	onViewLibrary: (libraryId: string) => void;
 	onPlayLibrary: (libraryId: string) => void;
 	isScanning?: boolean;
@@ -21,7 +22,7 @@ export const LibraryList: React.FC<LibraryListProps> = ({
 	onScanLibrary,
 	onViewLibrary,
 	onPlayLibrary,
-
+	onStopLibraryScan,
 	isScanning = false,
 }) => {
 	const isLoading = false;
@@ -69,6 +70,15 @@ export const LibraryList: React.FC<LibraryListProps> = ({
 		e.preventDefault();
 		onScanLibrary(libraryId);
 	};
+	const handleStopLibraryScan = (
+		e: React.MouseEvent<HTMLButtonElement>,
+		libraryId: string,
+		sessionId: string
+	) => {
+		e.stopPropagation();
+		e.preventDefault();
+		onStopLibraryScan(libraryId, sessionId);
+	};
 	return (
 		<div className="p-6  flex flex-col z-0 gap-4">
 			<div className="flex items-center justify-between">
@@ -97,6 +107,7 @@ export const LibraryList: React.FC<LibraryListProps> = ({
 						key={library.id}
 						library={library}
 						onScan={handleScanLibrary}
+						onStopScan={handleStopLibraryScan}
 						onView={() => onViewLibrary(library.id)}
 						onPlay={() => onPlayLibrary(library.id)}
 						isScanning={isScanning}

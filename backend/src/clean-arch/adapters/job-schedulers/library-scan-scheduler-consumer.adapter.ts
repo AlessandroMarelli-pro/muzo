@@ -53,7 +53,6 @@ export class LibraryScanSchedulerConsumerAdapter
   ): Promise<void> {
     const audioFiles = await this.processStartLibraryScanUseCase.execute(
       libraryId,
-      sessionId,
       incremental,
     );
     await this.scheduleBatchAudioScanUseCase.execute(

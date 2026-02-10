@@ -3,7 +3,7 @@ import {
   AudioFileAnalysisStatusEnum,
   ScanStatusEnum,
 } from 'src/clean-arch/kernel/types';
-import { ILibraryScanSchedulerProducer } from '../../ports/infrastructure/ILibraryScanSchedulerProducer';
+import { ILogger } from '../../ports/infrastructure/ILogger';
 import { IScanProgressPublisher } from '../../ports/infrastructure/IScanProgressPublisher';
 import { IMusicLibraryRepository } from '../../ports/repositories/IMusicLibraryRepository';
 import { IMusicTrackRepository } from '../../ports/repositories/IMusicTrackRepository';
@@ -11,12 +11,15 @@ import { IScanSessionRepository } from '../../ports/repositories/IScanSessionRep
 
 export class ProcessEndLibraryScanUseCase {
   constructor(
-    private readonly libraryScanSchedulerProducer: ILibraryScanSchedulerProducer,
     private readonly scanSessionRepository: IScanSessionRepository,
     private readonly scanProgressPublisher: IScanProgressPublisher,
     private readonly musicLibraryRepository: IMusicLibraryRepository,
     private readonly musicTrackRepository: IMusicTrackRepository,
-  ) {}
+    loggerFactory: { createLogger: (name: string) => ILogger },
+    private readonly logger: ILogger,
+  ) {
+    this.logger = loggerFactory.createLogger('ProcessEndLibraryScanUseCase');
+  }
 
   async execute(
     libraryId: MusicLibraryId,
@@ -30,6 +33,7 @@ export class ProcessEndLibraryScanUseCase {
       await this.scanSessionRepository.getSession(sessionId)
     ).createdAt.getTime();
     if (!library) {
+      this.logger.error(`Library not found: ${libraryId}`);
       throw new Error(`Library not found: ${libraryId}`);
     }
     await this.scanSessionRepository.completeSession(sessionId, true);
@@ -81,6 +85,9 @@ export class ProcessEndLibraryScanUseCase {
       updateData.lastIncrementalScanAt = new Date();
     }
 
+    this.logger.info(
+      `Updating library ${libraryId} with data: ${JSON.stringify(updateData)}`,
+    );
     await this.musicLibraryRepository.updateOneById(libraryId, {
       ...updateData,
     });

@@ -80,8 +80,8 @@ export const useActiveScanSessions = () => {
 	return useQuery({
 		queryKey: ['scan-sessions', 'active'],
 		queryFn: async () => {
-			const response = await restClient.get<
-				Array<{
+			const response = await restClient.get<{
+				data: Array<{
 					sessionId: string;
 					status: string;
 					totalBatches: number;
@@ -93,9 +93,9 @@ export const useActiveScanSessions = () => {
 					updatedAt: string;
 					completedAt: string;
 					overallProgress: number;
-				}>
-			>('/scan-progress/active');
-			return response;
+				}>;
+			}>('/scan-progress/active');
+			return response.data;
 		},
 		refetchInterval: 10000, // Refetch every 10 seconds to catch new sessions
 	});
@@ -105,8 +105,8 @@ export const useCompletedScanSessions = () => {
 	return useQuery({
 		queryKey: ['scan-sessions', 'completed'],
 		queryFn: async () => {
-			const response = await restClient.get<
-				Array<{
+			const response = await restClient.get<{
+				data: Array<{
 					sessionId: string;
 					status: string;
 					totalBatches: number;
@@ -118,9 +118,9 @@ export const useCompletedScanSessions = () => {
 					updatedAt: string;
 					completedAt: string;
 					overallProgress: number;
-				}>
-			>('/scan-progress/completed');
-			return response;
+				}>;
+			}>('/scan-progress/completed');
+			return response.data;
 		},
 	});
 };

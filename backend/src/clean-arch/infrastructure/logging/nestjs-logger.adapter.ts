@@ -1,27 +1,28 @@
-import type { Logger as PinoLogger } from 'pino';
+import { Logger } from '@nestjs/common';
 import { ILogger } from 'src/clean-arch/application/ports/infrastructure/ILogger';
 import { als } from 'src/clean-arch/kernel/types/context';
 
 export class NestjsLoggerAdapter implements ILogger {
-  constructor(
-    private readonly pino: PinoLogger,
-    readonly name: string,
-  ) {}
+  private readonly logger: Logger;
+
+  constructor(readonly name: string) {
+    this.logger = new Logger(this.name);
+  }
 
   debug(message: string, data?: Record<string, unknown>): void {
-    this.pino.debug(this.mergePayload(data), message);
+    this.logger.debug(message, this.formatPayload(data));
   }
 
   info(message: string, data?: Record<string, unknown>): void {
-    this.pino.info(this.mergePayload(data), message);
+    this.logger.log(message, this.formatPayload(data));
   }
 
   warn(message: string, data?: Record<string, unknown>): void {
-    this.pino.warn(this.mergePayload(data), message);
+    this.logger.warn(message, this.formatPayload(data));
   }
 
   error(message: string, data?: Record<string, unknown>): void {
-    this.pino.error(this.mergePayload(data), message);
+    this.logger.error(message, this.formatPayload(data));
   }
 
   private getCurrentUserForLog(): string {
@@ -33,13 +34,12 @@ export class NestjsLoggerAdapter implements ILogger {
     }
   }
 
-  private mergePayload(
-    data?: Record<string, unknown>,
-  ): Record<string, unknown> {
-    return {
+  private formatPayload(data?: Record<string, unknown>): string {
+    const payload = {
       className: this.name,
       user: this.getCurrentUserForLog(),
       ...data,
     };
+    return JSON.stringify(payload);
   }
 }

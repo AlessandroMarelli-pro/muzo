@@ -7,7 +7,9 @@ import {
 import { GetActiveSessionsUseCase } from 'src/clean-arch/application/use-cases/scan-session/GetActiveSessions';
 import { GetCompleteSessionsUseCase } from 'src/clean-arch/application/use-cases/scan-session/GetCompleteSessions';
 import { StreamSessionUseCase } from 'src/clean-arch/application/use-cases/scan-session/StreamSession';
-import { SessionId } from 'src/clean-arch/kernel/ids';
+import { fromBase64Id } from '../../common/utils/id-encoding';
+import { parseSessionId } from '../../common/utils/parse-id';
+import { toHttpSession } from './scan-progress.mapper';
 
 @Controller('scan-progress')
 export class ScanProgressController {
@@ -25,7 +27,9 @@ export class ScanProgressController {
    */
   @Get('active')
   async getActiveSessions() {
-    return this.getActiveSessionsUseCase.execute();
+    return this.getActiveSessionsUseCase
+      .execute()
+      .then((sessions) => ({ data: sessions.map(toHttpSession) }));
   }
 
   /**
@@ -34,7 +38,9 @@ export class ScanProgressController {
    */
   @Get('completed')
   async getCompletedSessions() {
-    return this.getCompleteSessionsUseCase.execute();
+    return this.getCompleteSessionsUseCase
+      .execute()
+      .then((sessions) => ({ data: sessions.map(toHttpSession) }));
   }
   /**
    * SSE endpoint for scan progress updates
@@ -44,6 +50,9 @@ export class ScanProgressController {
   async streamProgress(
     @Param('sessionId') sessionId: string,
   ): Promise<Observable<{ data: ScanProgressEvent | ScanErrorEvent }>> {
-    return this.streamSessionUseCase.execute(sessionId as SessionId);
+    console.log('streamProgress', sessionId);
+    return this.streamSessionUseCase.execute(
+      parseSessionId(fromBase64Id(sessionId)),
+    );
   }
 }

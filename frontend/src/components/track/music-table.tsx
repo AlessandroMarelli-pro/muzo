@@ -306,7 +306,7 @@ const columns = (
 
 					return (
 						<div className="flex  gap-1">
-							{genres.map((genre, index) => (
+							{genres?.map((genre, index) => (
 								<Badge
 									key={`genre-${index}-${genre}`}
 									variant="secondary"
@@ -337,7 +337,7 @@ const columns = (
 
 					return (
 						<div className="flex  gap-1">
-							{subgenres.map((subgenre, index) => (
+							{subgenres?.map((subgenre, index) => (
 								<Badge
 									key={`subgenre-${index}-${subgenre}`}
 									variant="default"
@@ -395,12 +395,12 @@ const columns = (
 							size="xs"
 							style={{
 								backgroundColor: CamelotKeyOptions.find(
-									(option) => option.label.toLowerCase() === key.toLowerCase()
+									(option) => option.label?.toLowerCase() === key?.toLowerCase()
 								)?.color,
 							}}
 						>
 							{CamelotKeyOptions.find(
-								(option) => option.label.toLowerCase() === key.toLowerCase()
+								(option) => option.label?.toLowerCase() === key?.toLowerCase()
 							)?.label || 'N/A'}
 						</Badge>
 					);

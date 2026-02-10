@@ -24,7 +24,6 @@ export class AudioScanSchedulerConsumerAdapter
 
   async process(job: Job<AudioScanBatchJobData>): Promise<void> {
     const { sessionId, contextUser } = job.data;
-    console.log('consumeBatchAudioScan', sessionId);
     return als.run({ now: new Date(), user: contextUser }, async () => {
       switch (job.name) {
         case 'audio-scan-batch':

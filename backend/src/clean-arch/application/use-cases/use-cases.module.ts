@@ -7,6 +7,7 @@ import { FILE_MANAGER } from '../ports/infrastructure/IFileManager';
 import { IMAGE_FILE_READER } from '../ports/infrastructure/IImageFileReader';
 import { LIBRARY_SCAN_SCHEDULER_PRODUCER } from '../ports/infrastructure/ILibraryScanSchedulerProducer';
 import { LOGGER } from '../ports/infrastructure/ILogger';
+import { LOGGER_FACTORY } from '../ports/infrastructure/ILoggerFactory';
 import { SCAN_PROGRESS_PUBLISHER } from '../ports/infrastructure/IScanProgressPublisher';
 import { SCAN_PROGRESS_SUBSCRIBER } from '../ports/infrastructure/IScanProgressSubscriber';
 import { HEALTH_QUERY } from '../ports/queries/IHealthQuery';
@@ -81,6 +82,7 @@ import {
   ScheduleBatchAudioScanUseCase,
   ScheduleLibraryScanUseCase,
   ServeImageUseCase,
+  StopLibraryScanUseCase,
   SyncAllTracksToElasticsearchUseCase,
   SyncTrackToElasticSearchUseCase,
   ToggleBangerUseCase,
@@ -229,43 +231,72 @@ const useCasesProviders = [
     LIBRARY_SCAN_SCHEDULER_PRODUCER,
     MUSIC_LIBRARY_REPOSITORY,
     SCAN_SESSION_REPOSITORY,
+    LOGGER_FACTORY,
+    LOGGER,
   ]),
   createUseCaseProvider(ProcessStartLibraryScanUseCase, [
     FILE_MANAGER,
     MUSIC_LIBRARY_REPOSITORY,
+    LOGGER_FACTORY,
+    LOGGER,
   ]),
   createUseCaseProvider(ScheduleBatchAudioScanUseCase, [
     AUDIO_SCAN_SCHEDULER_PRODUCER,
+    LOGGER_FACTORY,
+    LOGGER,
   ]),
   createUseCaseProvider(ProcessBatchAudioScanUseCase, [
     AUDIO_ANALYSIS_STRUCTURE,
     MUSIC_TRACK_REPOSITORY,
     SCAN_PROGRESS_PUBLISHER,
+    LOGGER_FACTORY,
     LOGGER,
+    SCAN_SESSION_REPOSITORY,
+    MUSIC_LIBRARY_REPOSITORY,
   ]),
   createUseCaseProvider(ProcessEndLibraryScanUseCase, [
-    LIBRARY_SCAN_SCHEDULER_PRODUCER,
     SCAN_SESSION_REPOSITORY,
     SCAN_PROGRESS_PUBLISHER,
     MUSIC_LIBRARY_REPOSITORY,
     MUSIC_TRACK_REPOSITORY,
+    LOGGER_FACTORY,
+    LOGGER,
   ]),
   createUseCaseProvider(ProcessEndBatchAudioScanUseCase, [
     SCAN_SESSION_REPOSITORY,
     SCAN_PROGRESS_PUBLISHER,
     LIBRARY_SCAN_SCHEDULER_PRODUCER,
+    LOGGER_FACTORY,
+    LOGGER,
   ]),
   createUseCaseProvider(ProcessSingleTrackAnalysisUseCase, [
     MUSIC_TRACK_REPOSITORY,
     SCAN_PROGRESS_PUBLISHER,
     AUDIO_ANALYSIS_REPOSITORY,
+    LOGGER_FACTORY,
+    LOGGER,
   ]),
-  createUseCaseProvider(GetActiveSessionsUseCase, [SCAN_SESSION_REPOSITORY]),
-  createUseCaseProvider(GetCompleteSessionsUseCase, [SCAN_SESSION_REPOSITORY]),
+  createUseCaseProvider(GetActiveSessionsUseCase, [
+    SCAN_SESSION_REPOSITORY,
+    LOGGER_FACTORY,
+    LOGGER,
+  ]),
+  createUseCaseProvider(GetCompleteSessionsUseCase, [
+    SCAN_SESSION_REPOSITORY,
+    LOGGER_FACTORY,
+    LOGGER,
+  ]),
   createUseCaseProvider(StreamSessionUseCase, [
     SCAN_SESSION_REPOSITORY,
     SCAN_PROGRESS_SUBSCRIBER,
-    SCAN_PROGRESS_PUBLISHER,
+    LOGGER_FACTORY,
+    LOGGER,
+  ]),
+  createUseCaseProvider(StopLibraryScanUseCase, [
+    MUSIC_LIBRARY_REPOSITORY,
+    SCAN_SESSION_REPOSITORY,
+    LOGGER_FACTORY,
+    LOGGER,
   ]),
 ];
 

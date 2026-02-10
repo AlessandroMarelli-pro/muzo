@@ -3,6 +3,7 @@ import { ActionContext } from 'src/clean-arch/kernel/types';
 import { AudioScanBatchJobData } from '../../ports/dtos/JobSchedulersData';
 import { BatchCompleteEvent } from '../../ports/dtos/ScanProgress.types';
 import { ILibraryScanSchedulerProducer } from '../../ports/infrastructure/ILibraryScanSchedulerProducer';
+import { ILogger } from '../../ports/infrastructure/ILogger';
 import { IScanProgressPublisher } from '../../ports/infrastructure/IScanProgressPublisher';
 import { IScanSessionRepository } from '../../ports/repositories/IScanSessionRepository';
 
@@ -11,7 +12,11 @@ export class ProcessEndBatchAudioScanUseCase {
     private readonly scanSessionRepository: IScanSessionRepository,
     private readonly scanProgressPublisher: IScanProgressPublisher,
     private readonly libraryScanSchedulerProducer: ILibraryScanSchedulerProducer,
-  ) {}
+    loggerFactory: { createLogger: (name: string) => ILogger },
+    private readonly logger: ILogger,
+  ) {
+    this.logger = loggerFactory.createLogger('ProcessEndBatchAudioScanUseCase');
+  }
 
   async execute(
     data: AudioScanBatchJobData,
@@ -32,6 +37,9 @@ export class ProcessEndBatchAudioScanUseCase {
       },
     );
     if (!session) {
+      this.logger.error(
+        `Failed to update session progress for session ${sessionId}`,
+      );
       return;
     }
     const isComplete = session.completedBatches === session.totalBatches;
@@ -49,7 +57,7 @@ export class ProcessEndBatchAudioScanUseCase {
       overallProgress: isComplete ? 10000 : session.overallProgress,
     };
 
-    console.debug(
+    this.logger.debug(
       `Progress update for ${libraryId}: ${session.completedBatches}/${session.totalBatches} (${session.overallProgress.toFixed(1)}%)`,
     );
     await this.scanProgressPublisher.publishEvent(
@@ -59,6 +67,7 @@ export class ProcessEndBatchAudioScanUseCase {
 
     // Update progress tracking
     if (isComplete) {
+      this.logger.info(`Scheduling end library scan for library ${libraryId}`);
       await this.libraryScanSchedulerProducer.scheduleEndLibraryScan(
         libraryId,
         sessionId,

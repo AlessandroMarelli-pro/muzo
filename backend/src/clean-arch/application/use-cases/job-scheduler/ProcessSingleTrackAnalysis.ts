@@ -8,6 +8,7 @@ import {
   ScanErrorEvent,
   TrackCompleteEvent,
 } from '../../ports/dtos/ScanProgress.types';
+import { ILogger } from '../../ports/infrastructure/ILogger';
 import { IScanProgressPublisher } from '../../ports/infrastructure/IScanProgressPublisher';
 import { IAudioAnalysisRepository } from '../../ports/repositories/IAudioAnalysisRepository';
 import { IMusicTrackRepository } from '../../ports/repositories/IMusicTrackRepository';
@@ -17,7 +18,13 @@ export class ProcessSingleTrackAnalysisUseCase {
     private readonly musicTrackRepository: IMusicTrackRepository,
     private readonly scanProgressPublisher: IScanProgressPublisher,
     private readonly audioAnalysisRepository: IAudioAnalysisRepository,
-  ) {}
+    loggerFactory: { createLogger: (name: string) => ILogger },
+    private readonly logger: ILogger,
+  ) {
+    this.logger = loggerFactory.createLogger(
+      'ProcessSingleTrackAnalysisUseCase',
+    );
+  }
 
   async execute(
     track: MusicTrack,
@@ -36,6 +43,9 @@ export class ProcessSingleTrackAnalysisUseCase {
     try {
       // Check if analysis was successful
       if (!analysisStatus || analysisStatus === 'error') {
+        this.logger.error(
+          `Failed to analyze track ${fileName}: ${analysisStatus}`,
+        );
         return { isSuccess: false };
       }
 
@@ -46,8 +56,9 @@ export class ProcessSingleTrackAnalysisUseCase {
         !analysisResult?.ai_metadata?.artist &&
         !analysisResult?.ai_metadata?.title
       ) {
-        console.log(
+        this.logger.error(
           `Skipping audio scan for ${fileName} because it has no artist or title. Music track deleted.`,
+          { analysisResult },
         );
         await this.musicTrackRepository.removeOneById(track.id);
 
@@ -57,26 +68,30 @@ export class ProcessSingleTrackAnalysisUseCase {
         return { isSuccess: false };
       }
 
+      this.logger.info(
+        `Creating AudioFingerprint record for track ${fileName}`,
+      );
       // Create AudioFingerprint record
       await this.audioAnalysisRepository.upsertAudioFingerprint(
         track.id,
         analysisResult,
       );
 
+      this.logger.info(`Updating track ${fileName} with analysis results`);
       // Update track with AI metadata if available
       await this.musicTrackRepository.updateTrackWithAnalysis(
         track.id,
         analysisResult,
       );
 
-      console.log(`Successfully analyzed audio file: ${fileName}`);
+      this.logger.info(`Successfully analyzed audio file: ${fileName}`);
 
       // Publish track complete event
       await this.sendTrackCompleteEvent(fileName, batchInfo);
 
       return { isSuccess: true };
     } catch (error) {
-      console.error(`Failed to process track ${fileName}:`, error.message);
+      this.logger.error(`Failed to process track ${fileName}:`, error.message);
       // Publish error event
       if (sessionId) {
         const errorEvent: ScanErrorEvent = {
@@ -97,6 +112,7 @@ export class ProcessSingleTrackAnalysisUseCase {
         await this.scanProgressPublisher.publishError(sessionId, errorEvent);
       }
 
+      this.logger.info(`Updating track ${fileName} with error status`);
       await this.musicTrackRepository.updateOneById(track.id, {
         analysisStatus: AudioFileAnalysisStatusEnum.FAILED,
         analysisError: error.message,
@@ -117,7 +133,11 @@ export class ProcessSingleTrackAnalysisUseCase {
   ) => {
     const { trackIndex, sessionId, batchIndex, totalTracks, libraryId } =
       batchInfo;
-    if (!sessionId) return;
+    if (!sessionId) {
+      this.logger.warn(`No session ID found for track ${fileName}`);
+      return;
+    }
+    this.logger.info(`Publishing track complete event for track ${fileName}`);
     const trackCompleteEvent: TrackCompleteEvent = {
       type: 'track.complete',
       sessionId,

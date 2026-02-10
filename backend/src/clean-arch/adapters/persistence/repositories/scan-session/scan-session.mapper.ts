@@ -8,9 +8,11 @@ import { toDbModel } from '../db';
 export type ToDomain = (row: PrismaScanSession) => Session;
 
 export const toDomain: ToDomain = (row) => {
-  console.log('row', row);
+  if (!row) return;
+
   return {
     id: models.session.id(row.id),
+    sessionId: models.session.id(row.sessionId),
     ...toDomainModel({
       createdAt: row.createdAt,
       createdById: row.createdById,
@@ -33,11 +35,11 @@ export const toDomain: ToDomain = (row) => {
 export type ToPrisma = (domainModel: Session) => PrismaScanSession;
 
 export const toPrisma: ToPrisma = (domainModel) => {
-  console.log('domainModel', domainModel);
+  const dbId = extractModelId(domainModel.id).dbId;
   return {
     ...toDbModel(domainModel),
-    id: extractModelId(domainModel.id).dbId,
-    sessionId: domainModel.id,
+    id: dbId,
+    sessionId: dbId,
     status: domainModel.status,
     totalBatches: domainModel.totalBatches,
     completedBatches: domainModel.completedBatches,

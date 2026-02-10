@@ -142,8 +142,8 @@ type FilterCriteriaType {
 }
 
 type FilterWithID {
-  id: Base64ID!
-  name: String!
+  id: Base64ID
+  name: String
 }
 
 type HomeMetrics {
@@ -210,7 +210,8 @@ type Mutation {
   removeTrackFromPlaylist(playlistId: Base64ID!, trackId: Base64ID!): Boolean!
   removeTrackFromQueue(trackId: Base64ID!): RemoveTrackFromQueueResponse!
   resetQueue: Boolean!
-  startLibraryScan(incremental: Boolean, libraryId: Base64ID!): String!
+  startLibraryScan(incremental: Boolean, libraryId: Base64ID!): Base64ID!
+  stopLibraryScan(libraryId: Base64ID!, sessionId: Base64ID!): Boolean!
   syncPlaylistToSpotify(playlistId: ID!, userId: String!): SyncResult!
   syncPlaylistToTidal(playlistId: ID!, userId: String!): SyncResult!
   syncPlaylistToYouTube(playlistId: ID!, userId: String!): SyncResult!
@@ -371,7 +372,7 @@ type Track implements Node {
   lastScannedAt: DateTime
   libraryId: Base64ID
   metadata: TrackMetadata!
-  musicalFeatures: TrackMusicalFeatures!
+  musicalFeatures: TrackMusicalFeatures
   recommendations(limit: Int): [TrackRecommendation!]!
   stats: TrackStats!
   technicalInfo: TrackTechnicalInfo!

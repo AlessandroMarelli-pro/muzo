@@ -134,7 +134,7 @@ export class Track {
   @Field({ nullable: true })
   updatedAt?: Date;
 
-  @Field(() => TrackMusicalFeatures)
+  @Field(() => TrackMusicalFeatures, { nullable: true })
   musicalFeatures: TrackMusicalFeatures;
 
   @Field({ nullable: true })

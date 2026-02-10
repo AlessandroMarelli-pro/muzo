@@ -5,7 +5,7 @@ import {
   ScanErrorEvent,
   ScanProgressEvent,
 } from '../../ports/dtos/ScanProgress.types';
-import { IScanProgressPublisher } from '../../ports/infrastructure/IScanProgressPublisher';
+import { ILogger } from '../../ports/infrastructure/ILogger';
 import { IScanProgressSubscriber } from '../../ports/infrastructure/IScanProgressSubscriber';
 import { IScanSessionRepository } from '../../ports/repositories/IScanSessionRepository';
 
@@ -13,8 +13,11 @@ export class StreamSessionUseCase {
   constructor(
     private readonly scanSessionRepository: IScanSessionRepository,
     private readonly scanProgressSubscriber: IScanProgressSubscriber,
-    private readonly scanProgressPublisher: IScanProgressPublisher,
-  ) {}
+    loggerFactory: { createLogger: (name: string) => ILogger },
+    private readonly logger: ILogger,
+  ) {
+    this.logger = loggerFactory.createLogger('StreamSessionUseCase');
+  }
 
   async execute(
     sessionId: SessionId,
@@ -23,15 +26,19 @@ export class StreamSessionUseCase {
       // Verify session exists
       const session = await this.scanSessionRepository.getSession(sessionId);
       if (!session) {
+        this.logger.debug(`Session ${sessionId} not found`);
         return EMPTY;
       }
 
       // Subscribe to events (non-blocking)
+      this.logger.info(`Subscribing to events for session ${sessionId}`);
       await this.scanProgressSubscriber.subscribeToSession(sessionId);
+      this.logger.info(`Subscribed to events for session ${sessionId}`);
 
       // Get initial state
       const currentState =
         await this.scanProgressSubscriber.getCurrentState(sessionId);
+      this.logger.info(`Got initial state for session ${sessionId}`);
       const initialState: ScanProgressEvent = currentState
         ? {
             type: 'state',
@@ -58,12 +65,13 @@ export class StreamSessionUseCase {
           };
 
       // Create event stream
+      this.logger.info(`Creating event stream for session ${sessionId}`);
       const eventsStream: Observable<{
         data: ScanProgressEvent | ScanErrorEvent;
       }> = this.scanProgressSubscriber.getEventStream(sessionId).pipe(
         map((event) => ({ data: event })),
         catchError((error) => {
-          console.error(
+          this.logger.error(
             `Error in event stream for session ${sessionId}:`,
             error,
           );
@@ -86,11 +94,12 @@ export class StreamSessionUseCase {
       );
 
       // Create error stream
+      this.logger.info(`Creating error stream for session ${sessionId}`);
       const errorsStream: Observable<{ data: ScanErrorEvent }> =
         this.scanProgressSubscriber.getErrorStream(sessionId).pipe(
           map((error) => ({ data: error })),
           catchError((error) => {
-            console.error(
+            this.logger.error(
               `Error in error stream for session ${sessionId}:`,
               error,
             );
@@ -106,6 +115,7 @@ export class StreamSessionUseCase {
           subscriber.complete();
         });
 
+      this.logger.info(`Merging streams for session ${sessionId}`);
       const mergedStream: Observable<{
         data: ScanProgressEvent | ScanErrorEvent;
       }> = merge(initialStateStream, eventsStream, errorsStream) as Observable<{
@@ -114,7 +124,7 @@ export class StreamSessionUseCase {
 
       return mergedStream.pipe(
         catchError((error): Observable<{ data: ScanErrorEvent }> => {
-          console.error(
+          this.logger.error(
             `Fatal error in SSE stream for session ${sessionId}:`,
             error,
           );
@@ -136,10 +146,11 @@ export class StreamSessionUseCase {
         }),
       );
     } catch (error) {
-      console.error(
+      this.logger.error(
         `Failed to create SSE stream for session ${sessionId}:`,
-        error,
+        { errorMessage: error.message, error },
       );
+      console.error(error.stack);
       const errorEvent: ScanErrorEvent = {
         type: 'error',
         sessionId,

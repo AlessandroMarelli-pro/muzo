@@ -97,7 +97,6 @@ export class MusicTrackRepository implements IMusicTrackRepository {
   }
 
   async getOneByFilePath(filePath: string): Promise<MusicTrack> {
-    console.log('filePath', filePath, getCurrentUserId());
     return this.prisma.musicTrack
       .findUnique({
         where: { filePath, createdById: getCurrentUserId() },

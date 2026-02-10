@@ -27,3 +27,29 @@ export const useStartLibraryScan = () => {
 		},
 	});
 };
+
+export const useStopLibraryScan = () => {
+	return useMutation({
+		mutationFn: async ({
+			libraryId,
+			sessionId,
+		}: {
+			libraryId: string;
+			sessionId: string;
+		}) => {
+			const response = await graffleClient.request<{
+				stopLibraryScan: boolean;
+			}>(
+				parse(
+					`
+						mutation StopLibraryScan($libraryId: Base64ID!, $sessionId: Base64ID!) {
+							stopLibraryScan(libraryId: $libraryId, sessionId: $sessionId)
+						}
+					` as any
+				),
+				{ libraryId, sessionId }
+			);
+			return response.stopLibraryScan;
+		},
+	});
+};
