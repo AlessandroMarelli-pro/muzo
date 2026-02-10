@@ -70,9 +70,7 @@ export function PlaylistCard({
 				id: playlist.id,
 				name: playlist.name,
 			});
-			console.log('before router invalidate');
 			await refetch();
-			console.log('after router invalidate');
 		} catch (error) {
 			console.error('Failed to delete playlist:', error);
 		}
@@ -128,7 +126,7 @@ export function PlaylistCard({
 				onMouseLeave={() => {
 					setIsHovered(false);
 				}}
-				className="  flex justify-center items-center flex-wrap gap-0 p-0 max-w-60 max-h-60 min-w-60 min-h-60 shadow-md rounded-t-md hover:scale-105 transition-all duration-300"
+				className="  flex justify-center items-center flex-wrap gap-0 p-0 max-w-65 max-h-60 min-w-60 min-h-60 shadow-md rounded-t-md hover:scale-105 transition-all duration-300"
 			>
 				<AnimatePresence initial={false}>
 					{isHovered && (

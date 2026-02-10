@@ -50,7 +50,6 @@ export class ScanProgressController {
   async streamProgress(
     @Param('sessionId') sessionId: string,
   ): Promise<Observable<{ data: ScanProgressEvent | ScanErrorEvent }>> {
-    console.log('streamProgress', sessionId);
     return this.streamSessionUseCase.execute(
       parseSessionId(fromBase64Id(sessionId)),
     );

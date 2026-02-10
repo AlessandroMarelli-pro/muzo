@@ -24,9 +24,14 @@ export class GetPlaylistRecommendationsUseCase {
     const playlistTracks =
       await this.playlistTrackRepository.getTracksByPlaylistIdWithTrack(
         playlistId,
+        {
+          sortingKey: 'addedAt',
+          sortingDirection: 'desc',
+        },
       );
+
     const features = this.recommendationDataPort.getAudioFeatures(
-      playlistTracks.map((track) => track.track),
+      playlistTracks.map((track) => track.track).slice(0, 10),
     );
 
     const recommendations =

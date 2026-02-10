@@ -148,12 +148,15 @@ export function calculateFeatures(tracks: MusicTrack[]): AudioFeatures {
   }
 
   // Get all genres and subgenres (as arrays)
-  features.genres = Object.keys(genreCounts).filter(
-    (genre) => genreCounts[genre] > 0,
-  );
-  features.subgenres = Object.keys(subgenreCounts).filter(
-    (subgenre) => subgenreCounts[subgenre] > 0,
-  );
+  // Sort genres and subgenres by count
+  features.genres = Object.keys(genreCounts)
+    .filter((genre) => genreCounts[genre] > 0)
+    .sort((a, b) => genreCounts[b] - genreCounts[a])
+    .slice(0, 5);
+  features.subgenres = Object.keys(subgenreCounts)
+    .filter((subgenre) => subgenreCounts[subgenre] > 0)
+    .sort((a, b) => subgenreCounts[b] - subgenreCounts[a])
+    .slice(0, 5);
   features.key = findMostCommon(keyCounts);
   features.camelotKey = findMostCommon(camelotKeyCounts);
   features.artist = findMostCommon(artistCounts);

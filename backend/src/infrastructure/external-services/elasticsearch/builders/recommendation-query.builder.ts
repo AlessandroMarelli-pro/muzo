@@ -21,10 +21,7 @@ export const buildElasticsearchRecommendationQuery = (
                 },
               },
             })),
-            minimum_should_match: Math.max(
-              playlistFeatures.genres.length - 1,
-              1,
-            ),
+            minimum_should_match: 1,
           },
         }
       : null;
@@ -42,10 +39,7 @@ export const buildElasticsearchRecommendationQuery = (
                 },
               },
             })),
-            minimum_should_match: Math.max(
-              playlistFeatures.subgenres.length - 1,
-              1,
-            ), // Require at least 2 subgenres to match
+            minimum_should_match: 1,
           },
         }
       : null;

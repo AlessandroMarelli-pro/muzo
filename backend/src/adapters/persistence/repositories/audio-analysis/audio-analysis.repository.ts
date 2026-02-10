@@ -73,7 +73,6 @@ export class AudioAnalysisRepository implements IAudioAnalysisRepository {
         musicalFeatures?.mood_calculation?.brightness_factor || 0,
       trackId: extractModelId(trackId).dbId,
     };
-    console.log('fingerprintData', fingerprintData, trackId);
     await this.prismaService.audioFingerprint.upsert({
       where: { trackId: fingerprintData.trackId },
       update: fingerprintData,

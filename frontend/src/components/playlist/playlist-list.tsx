@@ -29,7 +29,7 @@ export const PlaylistListComponent = ({
 	onCardClick?: (playlistId: string) => void;
 }) => {
 	return (
-		<div className="flex flex-row flex-wrap gap-4 justify-start ">
+		<div className="flex flex-row flex-wrap gap-5 justify-start ">
 			{loading ? (
 				<>
 					{Array.from({ length: 10 }).map((_, index) => (
