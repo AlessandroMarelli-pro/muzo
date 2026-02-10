@@ -2,14 +2,14 @@ import { Injectable } from '@nestjs/common';
 import { AudioAnalysisResponse } from 'src/clean-arch/application/ports/dtos/AudioAnalysis';
 import { IAudioAnalysisRepository } from 'src/clean-arch/application/ports/repositories/IAudioAnalysisRepository';
 import { PrismaService } from 'src/clean-arch/infrastructure/database/prisma.service';
-import { MusicTrackId } from 'src/clean-arch/kernel/ids';
+import { extractModelId, MusicTrackId } from 'src/clean-arch/kernel/ids';
 
 @Injectable()
 export class AudioAnalysisRepository implements IAudioAnalysisRepository {
   constructor(private readonly prismaService: PrismaService) {}
 
   async upsertAudioFingerprint(
-    trackId: string,
+    trackId: MusicTrackId,
     analysisResult: AudioAnalysisResponse,
   ): Promise<void> {
     const features = analysisResult.features;
@@ -18,7 +18,6 @@ export class AudioAnalysisRepository implements IAudioAnalysisRepository {
     const musicalFeatures = features?.musical_features;
     const fingerprint = analysisResult.fingerprint;
     const fingerprintData = {
-      trackId,
       mfcc: JSON.stringify(spectralFeatures?.mfcc_mean || []),
       spectralCentroid: JSON.stringify(
         spectralFeatures?.spectral_centroids || {},
@@ -72,10 +71,11 @@ export class AudioAnalysisRepository implements IAudioAnalysisRepository {
       tempoFactor: musicalFeatures?.mood_calculation?.tempo_factor || 0,
       brightnessFactor:
         musicalFeatures?.mood_calculation?.brightness_factor || 0,
+      trackId: extractModelId(trackId).dbId,
     };
-
+    console.log('fingerprintData', fingerprintData, trackId);
     await this.prismaService.audioFingerprint.upsert({
-      where: { trackId },
+      where: { trackId: fingerprintData.trackId },
       update: fingerprintData,
       create: fingerprintData,
     });
@@ -87,7 +87,7 @@ export class AudioAnalysisRepository implements IAudioAnalysisRepository {
   ): Promise<void> {
     // Remove existing genre associations
     await this.prismaService.trackGenre.deleteMany({
-      where: { trackId },
+      where: { trackId: extractModelId(trackId).dbId },
     });
 
     // Create or find genres and associate them
@@ -108,7 +108,7 @@ export class AudioAnalysisRepository implements IAudioAnalysisRepository {
       }
       await this.prismaService.trackGenre.create({
         data: {
-          trackId,
+          trackId: extractModelId(trackId).dbId,
           genreId: genre.id,
         },
       });
@@ -116,12 +116,12 @@ export class AudioAnalysisRepository implements IAudioAnalysisRepository {
   }
 
   async upsertTrackSubgenres(
-    trackId: string,
+    trackId: MusicTrackId,
     subgenres: string[],
   ): Promise<void> {
     // Remove existing genre associations
     await this.prismaService.trackSubgenre.deleteMany({
-      where: { trackId },
+      where: { trackId: extractModelId(trackId).dbId },
     });
 
     // Create or find genres and associate them
@@ -142,7 +142,7 @@ export class AudioAnalysisRepository implements IAudioAnalysisRepository {
       }
       await this.prismaService.trackSubgenre.create({
         data: {
-          trackId,
+          trackId: extractModelId(trackId).dbId,
           subgenreId: subgenre.id,
         },
       });

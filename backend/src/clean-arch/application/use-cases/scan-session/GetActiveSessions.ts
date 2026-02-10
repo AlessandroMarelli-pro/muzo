@@ -12,9 +12,6 @@ export class GetActiveSessionsUseCase {
   }
 
   async execute(): Promise<Session[]> {
-    this.logger.info('Getting active sessions');
-    const sessions = await this.scanSessionRepository.getActiveSessions();
-    this.logger.info(`Found ${sessions.length} active sessions`);
-    return sessions;
+    return this.scanSessionRepository.getActiveSessions();
   }
 }

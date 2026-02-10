@@ -127,6 +127,9 @@ export class ProcessBatchAudioScanUseCase {
         sessionId,
         batchIndex,
       );
+      this.logger.debug(`Analyzed ${result.results.length} files in batch`, {
+        result,
+      });
       return {
         isBatchComplete: false,
         files: validJobs,

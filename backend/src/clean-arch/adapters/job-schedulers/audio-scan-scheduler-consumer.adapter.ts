@@ -1,7 +1,13 @@
 import { Processor, WorkerHost } from '@nestjs/bullmq';
+import { Inject } from '@nestjs/common';
 import { Job } from 'bullmq';
 import { AudioScanBatchJobData } from 'src/clean-arch/application/ports/dtos/JobSchedulersData';
 import { IAudioScanSchedulerConsumer } from 'src/clean-arch/application/ports/infrastructure/IAudioScanSchedulerConsumer';
+import {
+  ILogger,
+  LOGGER,
+} from 'src/clean-arch/application/ports/infrastructure/ILogger';
+import { LOGGER_FACTORY } from 'src/clean-arch/application/ports/infrastructure/ILoggerFactory';
 import { AddImageSearchRecordUseCase } from 'src/clean-arch/application/use-cases/image/AddImageSearchRecord';
 import { ProcessBatchAudioScanUseCase } from 'src/clean-arch/application/use-cases/job-scheduler/ProcessBatchAudioScan';
 import { ProcessEndBatchAudioScanUseCase } from 'src/clean-arch/application/use-cases/job-scheduler/ProcessEndBatchAudioScan';
@@ -18,12 +24,24 @@ export class AudioScanSchedulerConsumerAdapter
     private readonly processSingleTrackAnalysisUseCase: ProcessSingleTrackAnalysisUseCase,
     private readonly addImageSearchRecordUseCase: AddImageSearchRecordUseCase,
     private readonly processEndBatchAudioScanUseCase: ProcessEndBatchAudioScanUseCase,
+    @Inject(LOGGER_FACTORY)
+    loggerFactory: { createLogger: (name: string) => ILogger },
+    @Inject(LOGGER)
+    private readonly logger: ILogger,
   ) {
     super();
+    this.logger = loggerFactory.createLogger(
+      'AudioScanSchedulerConsumerAdapter',
+    );
   }
 
   async process(job: Job<AudioScanBatchJobData>): Promise<void> {
     const { sessionId, contextUser } = job.data;
+    this.logger.info(`Processing audio scan batch for session ${sessionId}`, {
+      sessionId,
+      contextUser,
+      jobData: job.data,
+    });
     return als.run({ now: new Date(), user: contextUser }, async () => {
       switch (job.name) {
         case 'audio-scan-batch':
@@ -36,18 +54,44 @@ export class AudioScanSchedulerConsumerAdapter
       }
     });
   }
+
   async consumeBatchAudioScan(data: AudioScanBatchJobData): Promise<void> {
+    this.logger.info(
+      `Consuming audio scan batch for session ${data.sessionId}`,
+      {
+        sessionId: data.sessionId,
+        contextUser: data.contextUser,
+        jobData: data,
+      },
+    );
     const { isBatchComplete, analysisResults, files, createdTracks } =
       await this.processBatchAudioScanUseCase.execute(data);
+    this.logger.info(
+      `Processed audio scan batch for session ${data.sessionId}`,
+      {
+        sessionId: data.sessionId,
+        contextUser: data.contextUser,
+        jobData: data,
+        isBatchComplete,
+        analysisResults: analysisResults.length,
+        files: files.length,
+        createdTracks: createdTracks.length,
+      },
+    );
+    let successCount = 0;
+    let failedCount = 0;
     if (!isBatchComplete) {
       for (const [index, track] of createdTracks.entries()) {
         const analysisResult = analysisResults.find(
           (result) => result.file_info.filename === track.fileInfo.fileName,
         );
         if (!analysisResult) {
+          this.logger.warn(`Analysis result not found for track ${track.id}`, {
+            track,
+          });
           continue;
         }
-        await this.processSingleTrackAnalysisUseCase.execute(
+        const result = await this.processSingleTrackAnalysisUseCase.execute(
           track,
           analysisResult,
           {
@@ -58,6 +102,11 @@ export class AudioScanSchedulerConsumerAdapter
             libraryId: track.libraryId,
           },
         );
+        if (result.isSuccess) {
+          successCount++;
+        } else {
+          failedCount++;
+        }
         // Search for image if available
         if (
           analysisResult.album_art?.imageUrl ||
@@ -71,6 +120,20 @@ export class AudioScanSchedulerConsumerAdapter
         }
       }
     }
+    this.logger.info(
+      `Processing end batch audio scan for session ${data.sessionId}`,
+      {
+        sessionId: data.sessionId,
+        contextUser: data.contextUser,
+        jobData: data,
+        isBatchComplete,
+        analysisResults: analysisResults.length,
+        files: files.length,
+        createdTracks: createdTracks.length,
+        successCount,
+        failedCount,
+      },
+    );
     await this.processEndBatchAudioScanUseCase.execute(
       data,
       data.libraryId,

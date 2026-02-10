@@ -69,7 +69,7 @@ import { SharedModule } from './shared/shared.module';
           }
           return formattedError;
         },
-        context: ({ req, res }) => ({
+        context: ({ req, res }: { req: Request; res: Response }) => ({
           req,
           res,
           loaders: {
@@ -104,10 +104,10 @@ import { SharedModule } from './shared/shared.module';
         const queueConfig = configService.get<QueueConfig>('queue');
         return {
           connection: {
-            host: queueConfig.redis.host,
-            port: queueConfig.redis.port,
-            password: queueConfig.redis.password,
-            db: queueConfig.redis.db,
+            host: queueConfig?.redis.host,
+            port: queueConfig?.redis.port,
+            password: queueConfig?.redis.password,
+            db: queueConfig?.redis.db,
           },
         };
       },

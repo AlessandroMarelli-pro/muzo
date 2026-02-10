@@ -466,8 +466,8 @@ export class MusicTrackRepository implements IMusicTrackRepository {
         updateData.contextImpact = metadata.context.impact;
       }
     }
-    const updatedTrack = await this.prisma.musicTrack.update({
-      where: { id: trackId },
+    await this.prisma.musicTrack.update({
+      where: { id: extractModelId(trackId).dbId },
       data: {
         updatedAt: new Date(),
         updatedById: getCurrentUserId(),

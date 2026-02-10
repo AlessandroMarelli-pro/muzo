@@ -115,7 +115,7 @@ model MusicTrack {
   libraryId             String
   library               MusicLibrary @relation(fields: [libraryId], references: [id], onDelete: Cascade)
   audioFingerprint      AudioFingerprint?
-  aiAnalysisResult      AIAnalysisResult?
+
   editorSessions        IntelligentEditorSession[]
   playbackSessions      PlaybackSession[]
   playlistTracks        PlaylistTrack[]
@@ -190,12 +190,14 @@ model AudioFingerprint {
   energyByBand        String @default("[]") //JSON array as string
 
   // Timestamps
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
-  
+  // Timestamps
+  createdAt   DateTime @default(now())
+  createdById   String @default("userId")
+  updatedAt   DateTime? @updatedAt
+  updatedById  String?
+
   // Relations
   track                 MusicTrack @relation(fields: [trackId], references: [id], onDelete: Cascade)
-  aiAnalysisResult      AIAnalysisResult?
   
   // Indexes for query performance (audio features used in filtering and sorting)
   @@index([key])
@@ -209,28 +211,7 @@ model AudioFingerprint {
   @@map("audio_fingerprints")
 }
 
-model AIAnalysisResult {
-  id                    String   @id @default(uuid())
-  trackId               String   @unique
-  fingerprintId         String   @unique
-  
-  modelVersion          String
-  genreClassification   String   // JSON object as string
-  artistSuggestion      String?  // JSON object as string
-  albumSuggestion       String?  // JSON object as string
-  processingTime        Float
-  errorMessage          String?
-  
-  // Timestamps
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
-  
-  // Relations
-  track                 MusicTrack @relation(fields: [trackId], references: [id], onDelete: Cascade)
-  fingerprint           AudioFingerprint @relation(fields: [fingerprintId], references: [id], onDelete: Cascade)
-  
-  @@map("ai_analysis_results")
-}
+
 
 model IntelligentEditorSession {
   id                    String   @id @default(uuid())

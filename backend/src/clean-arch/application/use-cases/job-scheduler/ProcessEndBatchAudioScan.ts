@@ -36,6 +36,10 @@ export class ProcessEndBatchAudioScanUseCase {
         completedTracks: audioFiles.length,
       },
     );
+    this.logger.info(`Updated session progress for session ${sessionId}`, {
+      ...data,
+      progressPercentage,
+    });
     if (!session) {
       this.logger.error(
         `Failed to update session progress for session ${sessionId}`,
