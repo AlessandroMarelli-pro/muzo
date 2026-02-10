@@ -56,7 +56,7 @@ export class AdminMethodsService {
       'audioFingerprint',
     ];
     for (const table of tables) {
-      await this.prisma[table].updateMany({
+      await (this.prisma as any)[table].updateMany({
         data: { createdById: 'anonymous' },
       });
     }

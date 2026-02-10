@@ -53,12 +53,7 @@ export class SavedFilterQuery implements ISavedFilterQuery {
         UNION ALL
         SELECT atmosphereDesc as id, atmosphereDesc as name, 'atmospheres' as type FROM music_tracks as atmospheres WHERE createdById = ${getCurrentUserId()}
     `.then((result) => {
-      const groups = groupBy(result, 'type') as {
-        [key in keyof StaticFilterOptions]: {
-          id: string;
-          name: string;
-        }[];
-      };
+      const groups = groupBy(result, 'type');
 
       return {
         genres: groups.genres.map((group) => ({
