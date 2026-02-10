@@ -10,7 +10,7 @@ export const buildMusicTrackFilterWhereClause = (
     return where;
   }
 
-  if (criteria.genreIds?.length > 0) {
+  if (criteria.genreIds && criteria.genreIds.length > 0) {
     // Find genre IDs from genre names
     where.trackGenres = {
       some: {
@@ -19,7 +19,7 @@ export const buildMusicTrackFilterWhereClause = (
     };
   }
 
-  if (criteria.subgenreIds?.length > 0) {
+  if (criteria.subgenreIds && criteria.subgenreIds.length > 0) {
     const subgenreIds = criteria.subgenreIds;
     // Find subgenre IDs from subgenre names
 

@@ -21,8 +21,8 @@ export class QueueItem {
   @Field(() => Date)
   createdAt: Date;
 
-  @Field(() => Date)
-  updatedAt: Date;
+  @Field(() => Date, { nullable: true })
+  updatedAt?: Date;
 }
 
 @ObjectType('RemoveTrackFromQueueResponse')

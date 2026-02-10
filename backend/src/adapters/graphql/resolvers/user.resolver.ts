@@ -26,7 +26,7 @@ import { toFilter } from '../mappers/saved-filter.mapper';
 import { GetHomeMetricsUseCase } from 'src/application/use-cases/metrics/GetHomeMetrics';
 import { GetLibrariesUseCase } from 'src/application/use-cases/music-library/GetLibraries';
 import { GetRandomTrackWithStatsUseCase } from 'src/application/use-cases/music-track/GetRandomTrackWithStats';
-import { MusicTrack } from 'src/kernel/types';
+import { Maybe, MusicTrack } from 'src/kernel/types';
 import { toMusicLibrary } from '../mappers/music-library.mapper';
 import { toTrack } from '../mappers/track.mapper';
 import { Base64ID } from '../scalars/base64-id.scalar';
@@ -99,8 +99,8 @@ export class UserResolver {
     return this.getStaticFilterOptionsUseCase.execute();
   }
 
-  @ResolveField(() => [FilterCriteriaResult])
-  async activeFilters(): Promise<FilterCriteriaResult[]> {
+  @ResolveField(() => [FilterCriteriaResult], { nullable: true })
+  async activeFilters(): Promise<Maybe<FilterCriteriaResult[]>> {
     return this.getActiveFiltersUseCase
       .execute()
       .then((filters) => filters.map(toFilter));
@@ -140,11 +140,14 @@ export class UserResolver {
   ): Promise<ICursorPaginatedType<Track>> {
     return this.getTracksWithCursorPaginationUseCase
       .execute({
-        cursor: {
-          id: pagination?.cursor,
-          direction: pagination?.direction,
-        },
-        size: pagination?.size,
+        cursor:
+          pagination?.cursor && pagination?.direction
+            ? {
+                id: pagination?.cursor,
+                direction: pagination?.direction,
+              }
+            : null,
+        size: pagination?.size ?? 20,
       })
       .then((tracks) => ({
         ...tracks,
@@ -155,10 +158,17 @@ export class UserResolver {
   @ResolveField(() => PaginatedTracks)
   async paginatedTracks(
     @Args('pagination', { type: () => PaginationArgs, nullable: true })
-    pagination?: PaginationArgs,
+    pagination: PaginationArgs,
   ): Promise<IPaginatedType<Track>> {
     return this.getTracksPaginatedUseCase
-      .execute({ pagination: pagination })
+      .execute({
+        pagination: {
+          limit: pagination.limit,
+          offset: pagination.offset,
+          orderBy: pagination.orderBy ?? 'createdAt',
+          orderDirection: pagination.orderDirection ?? 'desc',
+        },
+      })
       .then((tracks) => ({
         ...tracks,
         items: tracks.items.map(toTrack),

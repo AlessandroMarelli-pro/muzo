@@ -5,26 +5,25 @@ export const toFilterCriteria = (
   criteria: FilterCriteria,
 ): FilterCriteriaType => {
   return {
-    genreIds: criteria.genreIds,
-    subgenreIds: criteria.subgenreIds,
-    keyIds: criteria.keyIds,
-    libraryIds: criteria.libraryIds,
-    atmosphereIds: criteria.atmosphereIds,
-    tempo: criteria.tempo,
-    valenceMood: criteria.valenceMood,
-    arousalMood: criteria.arousalMood,
-    danceabilityFeeling: criteria.danceabilityFeeling,
-    speechiness: criteria.speechiness,
-    instrumentalness: criteria.instrumentalness,
-    liveness: criteria.liveness,
-    acousticness: criteria.acousticness,
-    artist: criteria.artist,
-    title: criteria.title,
+    genreIds: criteria.genreIds ?? [],
+    subgenreIds: criteria.subgenreIds ?? [],
+    keyIds: criteria.keyIds ?? [],
+    libraryIds: criteria.libraryIds ?? [],
+    atmosphereIds: criteria.atmosphereIds ?? [],
+    tempo: criteria.tempo ?? undefined,
+    valenceMood: criteria.valenceMood ?? undefined,
+    arousalMood: criteria.arousalMood ?? undefined,
+    danceabilityFeeling: criteria.danceabilityFeeling ?? undefined,
+    speechiness: criteria.speechiness ?? undefined,
+    instrumentalness: criteria.instrumentalness ?? undefined,
+    liveness: criteria.liveness ?? undefined,
+    acousticness: criteria.acousticness ?? undefined,
+    artist: criteria.artist ?? undefined,
+    title: criteria.title ?? undefined,
   };
 };
 
 export const toFilter = (savedFilter: SavedFilter) => {
-  if (!savedFilter) return null;
   return {
     criteria: toFilterCriteria(savedFilter.criteria),
     name: savedFilter.name,

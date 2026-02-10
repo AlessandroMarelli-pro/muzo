@@ -23,8 +23,8 @@ export type AddTrackToPlaylistData = {
 };
 
 export type PlaylistSortingOptions = {
-  sortingKey?: PlaylistSortingKey;
-  sortingDirection?: PlaylistSortingDirection;
+  sortingKey: PlaylistSortingKey;
+  sortingDirection: PlaylistSortingDirection;
 };
 
 export type PlaylistTrackUpdateData = {

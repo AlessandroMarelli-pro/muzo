@@ -33,7 +33,6 @@ const GET_PLAYLISTS = gql`
 					updatedAt
 					isPublic
 					createdById
-					updatedById
 					stats {
 						bpmRange {
 							min

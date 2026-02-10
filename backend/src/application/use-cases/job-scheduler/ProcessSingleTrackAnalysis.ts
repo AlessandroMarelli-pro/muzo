@@ -116,6 +116,7 @@ export class ProcessSingleTrackAnalysisUseCase {
         analysisCompletedAt: new Date(),
       });
     }
+    return { isSuccess: false };
   }
 
   private readonly sendTrackCompleteEvent = async (

@@ -33,7 +33,7 @@ export class ScanProgressPubSubAdapter
   private redisState: Redis;
 
   constructor(private readonly configService: ConfigService) {
-    const queueConfig = this.configService.get<QueueConfig>('queue');
+    const queueConfig = this.configService.get<QueueConfig>('queue')!;
     this.channelPrefix =
       this.configService.get<string>('REDIS_SCAN_CHANNEL_PREFIX') ||
       'scan:session';
@@ -77,10 +77,10 @@ export class ScanProgressPubSubAdapter
 
       // Subscribe to events channel
       const eventsSubscriber = new Redis({
-        host: queueConfig.redis.host,
-        port: queueConfig.redis.port,
-        password: queueConfig.redis.password,
-        db: queueConfig.redis.db,
+        host: queueConfig?.redis.host,
+        port: queueConfig?.redis.port,
+        password: queueConfig?.redis.password,
+        db: queueConfig?.redis.db,
       });
 
       eventsSubscriber.subscribe(eventsChannel);
@@ -100,10 +100,10 @@ export class ScanProgressPubSubAdapter
 
       // Subscribe to errors channel
       const errorsSubscriber = new Redis({
-        host: queueConfig.redis.host,
-        port: queueConfig.redis.port,
-        password: queueConfig.redis.password,
-        db: queueConfig.redis.db,
+        host: queueConfig?.redis.host,
+        port: queueConfig?.redis.port,
+        password: queueConfig?.redis.password,
+        db: queueConfig?.redis.db,
       });
 
       errorsSubscriber.subscribe(errorsChannel);

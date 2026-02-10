@@ -8,6 +8,7 @@ import type {
   MusicTrackStats,
 } from 'src/kernel/types/model-types';
 
+import { MaybeUndefined } from 'src/kernel/common';
 import type {
   Track,
   TrackAIMetadata,
@@ -18,7 +19,12 @@ import type {
   TrackTechnicalInfo,
 } from '../schema/track.schema';
 
-function toTrackStats(stats: MusicTrackStats): TrackStats {
+function toTrackStats(
+  stats: MaybeUndefined<MusicTrackStats>,
+): MaybeUndefined<TrackStats> {
+  if (!stats) {
+    return undefined;
+  }
   return {
     listeningCount: stats.listeningCount,
     lastPlayedAt: stats.lastPlayedAt,
@@ -28,7 +34,12 @@ function toTrackStats(stats: MusicTrackStats): TrackStats {
   };
 }
 
-function toTrackFileInfo(fileInfo: AudioFileInfo): TrackFileInfo {
+function toTrackFileInfo(
+  fileInfo: MaybeUndefined<AudioFileInfo>,
+): MaybeUndefined<TrackFileInfo> {
+  if (!fileInfo) {
+    return undefined;
+  }
   return {
     filePath: fileInfo.filePath,
     fileName: fileInfo.fileName,
@@ -38,15 +49,23 @@ function toTrackFileInfo(fileInfo: AudioFileInfo): TrackFileInfo {
 }
 
 function toTrackTechnicalInfo(
-  technicalInfo: AudioTechnical,
-): TrackTechnicalInfo {
+  technicalInfo: MaybeUndefined<AudioTechnical>,
+): MaybeUndefined<TrackTechnicalInfo> {
+  if (!technicalInfo) {
+    return undefined;
+  }
   return {
-    duration: technicalInfo.duration,
+    duration: technicalInfo.duration ?? 0,
     format: technicalInfo.format,
   };
 }
 
-function toTrackMetadata(metadata: AudioFileMetadata): TrackMetadata {
+function toTrackMetadata(
+  metadata: MaybeUndefined<AudioFileMetadata>,
+): MaybeUndefined<TrackMetadata> {
+  if (!metadata) {
+    return undefined;
+  }
   return {
     album: metadata.album,
     date: metadata.date,
@@ -55,7 +74,12 @@ function toTrackMetadata(metadata: AudioFileMetadata): TrackMetadata {
   };
 }
 
-function toTrackAIMetadata(aiMetadata: AudioFileAIMetadata): TrackAIMetadata {
+function toTrackAIMetadata(
+  aiMetadata: MaybeUndefined<AudioFileAIMetadata>,
+): MaybeUndefined<TrackAIMetadata> {
+  if (!aiMetadata) {
+    return undefined;
+  }
   return {
     tags: aiMetadata.tags?.length ? aiMetadata.tags : undefined,
     vocalsDesc: aiMetadata.vocalsDesc,
@@ -70,10 +94,10 @@ function toTrackAIMetadata(aiMetadata: AudioFileAIMetadata): TrackAIMetadata {
 }
 
 function toTrackMusicalFeatures(
-  features: AudioFileFeatures,
-): TrackMusicalFeatures {
-  if (!features) {
-    return null;
+  features: MaybeUndefined<AudioFileFeatures>,
+): MaybeUndefined<TrackMusicalFeatures> {
+  if (!features?.musicalFeatures) {
+    return undefined;
   }
   const m = features.musicalFeatures;
   return {
@@ -106,12 +130,12 @@ export function toTrack(domain: MusicTrack): Track {
     updatedAt: domain.updatedAt,
     musicalFeatures: toTrackMusicalFeatures(domain.features),
     imagePath: domain.imagePath,
-    lastScannedAt: domain.analysisInfo.completedAt,
+    lastScannedAt: domain.analysisInfo?.completedAt,
     libraryId: domain.libraryId,
   };
 }
 
 /** Batch variant for list endpoints */
-export function toTracks(domains: MusicTrack[]): Track[] {
+export function toTracks(domains: MusicTrack[]): MaybeUndefined<Track>[] {
   return domains.map((d) => toTrack(d));
 }

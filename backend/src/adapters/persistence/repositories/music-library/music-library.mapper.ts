@@ -16,28 +16,36 @@ export const toDomain: ToDomain = (row) => {
     ...toDomainModel({
       createdAt: row.createdAt,
       createdById: row.createdById,
-      updatedAt: row.updatedAt,
-      updatedById: row.updatedById,
+      updatedAt: row.updatedAt ?? undefined,
+      updatedById: row.updatedById ?? undefined,
     }),
     name: row.name,
     rootPath: row.rootPath,
     tracksInfo: {
-      totalTracks: row.totalTracks,
-      analyzedTracks: row.analyzedTracks,
-      pendingTracks: row.pendingTracks,
-      failedTracks: row.failedTracks,
+      totalTracks: row.totalTracks ?? 0,
+      analyzedTracks: row.analyzedTracks ?? 0,
+      pendingTracks: row.pendingTracks ?? 0,
+      failedTracks: row.failedTracks ?? 0,
     },
     scanInfo: {
-      lastScanAt: row.lastScanAt,
-      lastIncrementalScanAt: row.lastIncrementalScanAt,
-      scanStatus: row.scanStatus,
+      lastScanAt: row.lastScanAt ?? null,
+      lastIncrementalScanAt: row.lastIncrementalScanAt ?? null,
+      scanStatus: row.scanStatus ?? null,
     },
     settings: {
-      autoScan: row.autoScan,
-      scanInterval: row.scanInterval,
-      includeSubdirectories: row.includeSubdirectories,
-      supportedFormats: row.supportedFormats.split(','),
-      maxFileSize: row.maxFileSize,
+      autoScan: row.autoScan ?? true,
+      scanInterval: row.scanInterval ?? 24,
+      includeSubdirectories: row.includeSubdirectories ?? true,
+      supportedFormats: row.supportedFormats.split(',') ?? [
+        'MP3',
+        'FLAC',
+        'WAV',
+        'AAC',
+        'OGG',
+        'OPUS',
+        'M4A',
+      ],
+      maxFileSize: row.maxFileSize ?? 100 * 1024 * 1024,
     },
   };
 };
@@ -56,7 +64,7 @@ export const toPrisma: ToPrisma = (domainModel) => {
     failedTracks: domainModel.tracksInfo.failedTracks,
     lastScanAt: domainModel.scanInfo.lastScanAt,
     lastIncrementalScanAt: domainModel.scanInfo.lastIncrementalScanAt,
-    scanStatus: domainModel.scanInfo.scanStatus,
+    scanStatus: domainModel.scanInfo.scanStatus ?? 'IDLE',
     autoScan: domainModel.settings.autoScan,
     scanInterval: domainModel.settings.scanInterval,
     includeSubdirectories: domainModel.settings.includeSubdirectories,
@@ -72,6 +80,6 @@ export const toPrismaUpdate = (
   return {
     ...toDbModelUpdate(updatedModel),
     name: domainModel.name,
-    scanStatus: domainModel.scanInfo?.scanStatus,
+    scanStatus: domainModel.scanInfo?.scanStatus ?? 'IDLE',
   };
 };

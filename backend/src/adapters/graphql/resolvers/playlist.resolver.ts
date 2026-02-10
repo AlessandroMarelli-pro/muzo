@@ -119,9 +119,9 @@ export class PlaylistResolver {
       name: input.name,
       description: input.description ?? null,
       isPublic: input.isPublic ?? false,
-      filters: input.filters ?? undefined,
-      maxTracks: input.maxTracks ?? undefined,
-      subgenreSelectionMode: input.subgenreSelectionMode ?? undefined,
+      filters: input.filters ?? null,
+      maxTracks: input.maxTracks ?? null,
+      subgenreSelectionMode: input.subgenreSelectionMode ?? null,
     });
   }
 

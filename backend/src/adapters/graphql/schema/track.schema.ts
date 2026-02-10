@@ -1,4 +1,5 @@
 import { Field, Float, ObjectType } from '@nestjs/graphql';
+import { MaybeUndefined } from 'src/kernel/common';
 import { MusicLibraryId, MusicTrackId } from 'src/kernel/ids';
 import { Base64ID } from '../scalars/base64-id.scalar';
 import { Node } from './common.schema';
@@ -107,26 +108,26 @@ export class Track {
   @Field(() => Base64ID)
   id: MusicTrackId;
 
-  @Field({ nullable: true })
-  artist?: string;
+  @Field(() => String, { nullable: true })
+  artist: MaybeUndefined<string>;
 
-  @Field({ nullable: true })
-  title?: string;
+  @Field(() => String, { nullable: true })
+  title: MaybeUndefined<string>;
 
-  @Field(() => TrackStats)
-  stats: TrackStats;
+  @Field(() => TrackStats, { nullable: true })
+  stats: MaybeUndefined<TrackStats>;
 
-  @Field(() => TrackFileInfo)
-  fileInfo: TrackFileInfo;
+  @Field(() => TrackFileInfo, { nullable: true })
+  fileInfo: MaybeUndefined<TrackFileInfo>;
 
-  @Field(() => TrackTechnicalInfo)
-  technicalInfo: TrackTechnicalInfo;
+  @Field(() => TrackTechnicalInfo, { nullable: true })
+  technicalInfo: MaybeUndefined<TrackTechnicalInfo>;
 
-  @Field(() => TrackMetadata)
-  metadata: TrackMetadata;
+  @Field(() => TrackMetadata, { nullable: true })
+  metadata: MaybeUndefined<TrackMetadata>;
 
-  @Field(() => TrackAIMetadata)
-  aiMetadata: TrackAIMetadata;
+  @Field(() => TrackAIMetadata, { nullable: true })
+  aiMetadata: MaybeUndefined<TrackAIMetadata>;
 
   @Field({ nullable: true })
   createdAt?: Date;
@@ -135,7 +136,7 @@ export class Track {
   updatedAt?: Date;
 
   @Field(() => TrackMusicalFeatures, { nullable: true })
-  musicalFeatures: TrackMusicalFeatures;
+  musicalFeatures: MaybeUndefined<TrackMusicalFeatures>;
 
   @Field({ nullable: true })
   imagePath?: string;
@@ -144,7 +145,7 @@ export class Track {
   lastScannedAt?: Date;
 
   @Field(() => Base64ID, { nullable: true })
-  libraryId?: MusicLibraryId;
+  libraryId: MusicLibraryId;
 }
 
 @ObjectType()

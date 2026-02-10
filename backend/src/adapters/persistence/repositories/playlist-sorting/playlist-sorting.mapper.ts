@@ -13,8 +13,8 @@ export const toDomain: ToDomain = (row) => {
     ...toDomainModel({
       createdAt: row.createdAt,
       createdById: row.createdById,
-      updatedAt: row.updatedAt,
-      updatedById: row.updatedById,
+      updatedAt: row.updatedAt ?? undefined,
+      updatedById: row.updatedById ?? undefined,
     }),
     playlistId: models.playlist.id(row.playlistId),
     sortingKey: row.sortingKey,

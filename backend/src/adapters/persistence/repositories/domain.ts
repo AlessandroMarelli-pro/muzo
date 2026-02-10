@@ -1,11 +1,11 @@
-import { fail } from 'src/kernel/common';
+import { fail, MaybeUndefined } from 'src/kernel/common';
 import { models } from 'src/kernel/types/models';
 
 type DbModelBase = {
   createdAt: Date;
   createdById: string;
-  updatedAt: Date;
-  updatedById: string | null;
+  updatedAt: MaybeUndefined<Date>;
+  updatedById: MaybeUndefined<string>;
 };
 
 export function toDomainModel(dbModel: DbModelBase) {
@@ -14,7 +14,7 @@ export function toDomainModel(dbModel: DbModelBase) {
 
   const updatedById = dbModel.updatedById?.trim()
     ? models.user.id(dbModel.updatedById.trim())
-    : null;
+    : undefined;
   return {
     createdAt: dbModel.createdAt,
     createdById,

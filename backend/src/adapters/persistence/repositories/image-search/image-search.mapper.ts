@@ -4,18 +4,14 @@ import { ImageSearch } from 'src/kernel/types/model-types';
 import { models } from 'src/kernel/types/models';
 import { toDomainModel } from '../domain';
 
-function normalizeUpdatedAt(row: PrismaImageSearch): Date {
-  return row.updatedAt ?? row.createdAt;
-}
-
 export function toDomain(row: PrismaImageSearch): ImageSearch {
   return {
     id: models.imageSearch.id(row.id),
     ...toDomainModel({
       createdAt: row.createdAt,
       createdById: row.createdById,
-      updatedAt: normalizeUpdatedAt(row),
-      updatedById: row.updatedById ?? null,
+      updatedAt: row.updatedAt ?? undefined,
+      updatedById: row.updatedById ?? undefined,
     }),
     trackId: models.musicTrack.id(row.trackId),
     searchUrl: row.searchUrl,

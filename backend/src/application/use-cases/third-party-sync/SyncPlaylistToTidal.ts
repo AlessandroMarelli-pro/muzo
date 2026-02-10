@@ -25,7 +25,8 @@ export class SyncPlaylistToTidalUseCase {
     const trackIds: string[] = [];
     const trackErrors: string[] = [];
 
-    for (const playlistTrack of playlist.tracks) {
+    const tracks = playlist.tracks ?? [];
+    for (const playlistTrack of tracks) {
       const track = playlistTrack.track;
       let trackId: string | null = null;
       try {

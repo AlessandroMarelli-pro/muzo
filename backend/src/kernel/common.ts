@@ -1,4 +1,5 @@
 export type Maybe<T> = T | null;
+export type MaybeUndefined<T> = T | undefined;
 
 type Fail = (message: string) => never;
 

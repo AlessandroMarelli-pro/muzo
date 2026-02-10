@@ -15,8 +15,8 @@ export const toDomain: ToDomain = (row) => {
     ...toDomainModel({
       createdAt: row.createdAt,
       createdById: row.createdById,
-      updatedAt: row.updatedAt,
-      updatedById: row.updatedById,
+      updatedAt: row.updatedAt ?? undefined,
+      updatedById: row.updatedById ?? undefined,
     }),
     name: row.name,
     criteria: JSON.parse(row.criteria),

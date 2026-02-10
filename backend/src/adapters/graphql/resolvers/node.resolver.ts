@@ -47,10 +47,11 @@ export class NodeResolver {
         .execute(parsePlaylistId(id))
         .then((playlist) => ({
           ...playlist,
-          tracks: playlist.tracks.map((track) => ({
-            ...track,
-            track: toTrack(track.track),
-          })),
+          tracks:
+            playlist.tracks?.map((track) => ({
+              ...track,
+              track: toTrack(track.track),
+            })) ?? [],
         }));
     }
     if (modelName === 'MusicTrack') {

@@ -38,7 +38,7 @@ export type RawPlaylistStatsRow = {
   subgenresCount: number;
   allGenres: string | null;
   allSubgenres: string | null;
-  allImages?: string | null;
+  allImages: string | null;
   isTrackInPlaylist?: number | null;
 };
 

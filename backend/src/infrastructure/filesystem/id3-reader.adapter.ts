@@ -18,9 +18,9 @@ export class Id3ReaderAdapter implements IId3Reader {
       });
 
       const tags: Id3Tags = {
-        title: this.getTagValue(metadata, ['title', 'TIT2', 'TITLE']),
-        artist: this.getTagValue(metadata, ['artist', 'TPE1', 'ARTIST']),
-        album: this.getTagValue(metadata, ['album', 'TALB', 'ALBUM']),
+        title: this.getTagValue(metadata, ['title', 'TIT2', 'TITLE']) ?? '',
+        artist: this.getTagValue(metadata, ['artist', 'TPE1', 'ARTIST']) ?? '',
+        album: this.getTagValue(metadata, ['album', 'TALB', 'ALBUM']) ?? '',
       };
 
       tags.purl = this.extractPurl(metadata);

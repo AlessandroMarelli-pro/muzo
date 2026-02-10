@@ -1,3 +1,4 @@
+import { Maybe } from 'src/kernel/common';
 import { MusicLibraryId, MusicTrackId } from 'src/kernel/ids';
 import {
   AudioFileAnalysisStatusEnum,
@@ -47,7 +48,7 @@ export interface IMusicTrackRepository {
   getAll(): Promise<MusicTrack[]>;
   verifyExistence(id: MusicTrackId): Promise<boolean>;
   getManyByCriteria(
-    criteria: FilterCriteria,
+    criteria: Maybe<FilterCriteria>,
     subgenreSelectionMode: 'exact' | 'contain',
     options: PaginationAndSortingOptions,
     withIncludes?: boolean,

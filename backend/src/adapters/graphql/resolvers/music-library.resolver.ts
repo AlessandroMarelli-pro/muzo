@@ -50,16 +50,19 @@ export class MusicLibraryResolver {
     })
     pagination?: CursorPaginationArgs<MusicTrack>,
   ): Promise<ICursorPaginatedType<Track>> {
-    if (!parent.id) return;
+    if (!parent.id) return { items: [], nextCursor: null, hasMore: false };
     const libraryId = parseMusicLibraryId(parent.id);
     return this.getTracksWithCursorPaginationUseCase
       .execute(
         {
-          cursor: {
-            id: pagination?.cursor,
-            direction: pagination?.direction,
-          },
-          size: pagination?.size,
+          cursor:
+            pagination?.cursor && pagination?.direction
+              ? {
+                  id: pagination?.cursor,
+                  direction: pagination?.direction,
+                }
+              : null,
+          size: pagination?.size ?? 20,
         },
         libraryId,
       )
@@ -89,7 +92,7 @@ export class MusicLibraryResolver {
     @Args('incremental', { nullable: true }) incremental?: boolean,
   ): Promise<SessionId> {
     return this.scheduleLibraryScanUseCase
-      .execute(parseMusicLibraryId(libraryId), incremental)
+      .execute(parseMusicLibraryId(libraryId), incremental ?? false)
       .then(({ sessionId }) => sessionId);
   }
 

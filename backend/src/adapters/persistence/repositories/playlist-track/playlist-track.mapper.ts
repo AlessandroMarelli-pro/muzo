@@ -18,8 +18,8 @@ export const toDomain: ToDomain = (row) => {
     ...toDomainModel({
       createdAt: row.createdAt,
       createdById: row.createdById,
-      updatedAt: row.updatedAt,
-      updatedById: row.updatedById,
+      updatedAt: row.updatedAt ?? undefined,
+      updatedById: row.updatedById ?? undefined,
     }),
     trackId: models.musicTrack.id(row.trackId),
     playlistId: models.playlist.id(row.playlistId),

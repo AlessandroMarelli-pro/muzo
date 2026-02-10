@@ -5,6 +5,7 @@ import {
   SavedFilterId,
   SubgenreId,
 } from 'src/kernel/ids';
+import { Maybe } from 'src/kernel/types';
 import { Base64ID } from '../scalars/base64-id.scalar';
 import { Range } from './common.schema';
 
@@ -38,49 +39,49 @@ export class StaticFilterOptions {
 @ObjectType()
 export class FilterCriteriaType {
   @Field(() => [Base64ID], { nullable: true })
-  genreIds: GenreId[];
+  genreIds: Maybe<GenreId[]>;
 
   @Field(() => [Base64ID], { nullable: true })
-  subgenreIds: SubgenreId[];
+  subgenreIds: Maybe<SubgenreId[]>;
 
   @Field(() => [String], { nullable: true })
-  keyIds: string[];
+  keyIds: Maybe<string[]>;
 
   @Field(() => [Base64ID], { nullable: true })
-  libraryIds: MusicLibraryId[];
+  libraryIds: Maybe<MusicLibraryId[]>;
 
   @Field(() => [String], { nullable: true })
-  atmosphereIds: string[];
+  atmosphereIds: Maybe<string[]>;
 
   @Field(() => Range, { nullable: true })
-  tempo?: { min?: number; max?: number };
+  tempo?: Maybe<{ min?: number; max?: number }>;
 
   @Field(() => [String], { nullable: true })
-  valenceMood?: string[];
+  valenceMood?: Maybe<string[]>;
 
   @Field(() => [String], { nullable: true })
-  arousalMood?: string[];
+  arousalMood?: Maybe<string[]>;
 
   @Field(() => [String], { nullable: true })
-  danceabilityFeeling?: string[];
+  danceabilityFeeling?: Maybe<string[]>;
 
   @Field(() => Range, { nullable: true })
-  speechiness?: { min?: number; max?: number };
+  speechiness?: Maybe<{ min?: number; max?: number }>;
 
   @Field(() => Range, { nullable: true })
-  instrumentalness?: { min?: number; max?: number };
+  instrumentalness?: Maybe<{ min?: number; max?: number }>;
 
   @Field(() => Range, { nullable: true })
-  liveness?: { min?: number; max?: number };
+  liveness?: Maybe<{ min?: number; max?: number }>;
 
   @Field(() => Range, { nullable: true })
-  acousticness?: { min?: number; max?: number };
+  acousticness?: Maybe<{ min?: number; max?: number }>;
 
   @Field(() => String, { nullable: true })
-  artist?: string;
+  artist?: Maybe<string>;
 
   @Field(() => String, { nullable: true })
-  title?: string;
+  title?: Maybe<string>;
 }
 
 @ObjectType()

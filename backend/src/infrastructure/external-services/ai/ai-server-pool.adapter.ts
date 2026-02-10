@@ -37,7 +37,8 @@ export class AiServerPoolAdapter implements IAiServicePool {
   ) {
     this.logger = loggerFactory.createLogger('AiServerPoolAdapter');
     // Get AI service configuration from centralized config
-    this.aiServiceConfig = this.configService.get<AiServiceConfig>('aiService');
+    this.aiServiceConfig =
+      this.configService.get<AiServiceConfig>('aiService')!;
 
     // Initialize service instances
     this.initializeServiceInstances();

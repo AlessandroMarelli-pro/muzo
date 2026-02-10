@@ -77,9 +77,9 @@ export class MusicLibraryRepository implements IMusicLibraryRepository {
         data: toPrismaUpdate({
           scanInfo: {
             scanStatus: status,
-            lastScanAt: incremental && isScanning ? new Date() : undefined,
+            lastScanAt: incremental && isScanning ? new Date() : null,
             lastIncrementalScanAt:
-              incremental && isScanning ? new Date() : undefined,
+              incremental && isScanning ? new Date() : null,
           },
         }),
       })

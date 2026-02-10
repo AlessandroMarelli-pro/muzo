@@ -59,8 +59,8 @@ export class MusicTrackRepository implements IMusicTrackRepository {
             analysisInfo: {
               status: trackData.analysisStatus,
               startedAt: trackData.analysisStartedAt,
-              completedAt: null,
-              error: null,
+              completedAt: undefined,
+              error: undefined,
             },
             fileInfo: {
               filePath: trackData.filePath,
@@ -71,9 +71,16 @@ export class MusicTrackRepository implements IMusicTrackRepository {
             technicalInfo: {
               duration: trackData.duration,
               format: trackData.format,
-              bitrate: null,
-              sampleRate: null,
+              bitrate: undefined,
+              sampleRate: undefined,
             },
+            features: undefined,
+            metadata: undefined,
+            aiMetadata: undefined,
+            imagePath: undefined,
+            artist: undefined,
+            title: undefined,
+            stats: undefined,
           }),
         ),
       })
@@ -94,7 +101,7 @@ export class MusicTrackRepository implements IMusicTrackRepository {
 
   async getOneByFilePath(filePath: string): Promise<MusicTrack> {
     return this.prisma.musicTrack
-      .findUnique({
+      .findUniqueOrThrow({
         where: { filePath, createdById: getCurrentUserId() },
         include: musicTracksIncludes,
       })
@@ -172,7 +179,12 @@ export class MusicTrackRepository implements IMusicTrackRepository {
     criteria: FilterCriteria,
     pagination: WithPagination,
   ): Promise<PaginationResult<MusicTrack>> {
-    const { limit, offset, orderBy, orderDirection } = pagination.pagination;
+    const {
+      limit = 50,
+      offset = 0,
+      orderBy,
+      orderDirection,
+    } = pagination.pagination;
     const where = buildMusicTrackFilterWhereClause(criteria, 'exact');
     const count = await this.prisma.musicTrack.count({ where });
     return this.prisma.musicTrack
@@ -481,7 +493,7 @@ export class MusicTrackRepository implements IMusicTrackRepository {
         ...updateData,
         analysisStatus: AudioFileAnalysisStatusEnum.COMPLETED,
         analysisCompletedAt: new Date(),
-        analysisError: null,
+        analysisError: undefined,
       },
     });
   }

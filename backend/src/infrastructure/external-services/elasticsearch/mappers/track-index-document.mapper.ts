@@ -6,43 +6,55 @@ export const toElasticsearchTrackDocument = (
 ): ElasticsearchTrackDocument => {
   return {
     trackId: dto.id,
-    duration: dto.technicalInfo.duration,
-    title: dto.title,
-    artist: dto.artist,
-    album: dto.metadata.album,
-    year: dto.metadata.date?.getFullYear() ?? null,
-    date: dto.metadata.date?.toISOString() ?? null,
-    genres: dto.metadata.genres,
-    subgenres: dto.metadata.subgenres,
-    tags: dto.aiMetadata.tags,
-    vocals_desc: dto.aiMetadata.vocalsDesc,
-    atmosphere_desc: dto.aiMetadata.atmosphereDesc,
-    context_background: dto.aiMetadata.contextBackground,
-    context_impact: dto.aiMetadata.contextImpact,
+    duration: dto.technicalInfo?.duration ?? 0,
+    title: dto.title ?? '',
+    artist: dto.artist ?? '',
+    album: dto.metadata?.album ?? '',
+    year: dto.metadata?.date?.getFullYear() ?? 0,
+    date: dto.metadata?.date?.toISOString() ?? '',
+    genres: dto.metadata?.genres ?? [],
+    subgenres: dto.metadata?.subgenres ?? [],
+    tags: dto.aiMetadata?.tags ?? [],
+    vocals_desc: dto.aiMetadata?.vocalsDesc ?? '',
+    atmosphere_desc: dto.aiMetadata?.atmosphereDesc ?? [],
+    context_background: dto.aiMetadata?.contextBackground ?? '',
+    context_impact: dto.aiMetadata?.contextImpact ?? '',
     musical_audio_features: {
-      tempo: dto.features.musicalFeatures.tempo,
-      key: dto.features.musicalFeatures.key,
-      camelot_key: dto.features.musicalFeatures.camelotKey,
-      valence: dto.features.musicalFeatures.valence,
-      valence_mood: dto.features.musicalFeatures.valenceMood,
-      arousal: dto.features.musicalFeatures.arousal,
-      arousal_mood: dto.features.musicalFeatures.arousalMood,
-      danceability: dto.features.musicalFeatures.danceability,
-      danceability_feeling: dto.features.musicalFeatures.danceabilityFeeling,
+      tempo: dto.features?.musicalFeatures?.tempo ?? 0,
+      key: dto.features?.musicalFeatures?.key ?? '',
+      camelot_key: dto.features?.musicalFeatures?.camelotKey ?? '',
+      valence: dto.features?.musicalFeatures?.valence ?? 0,
+      valence_mood: dto.features?.musicalFeatures?.valenceMood ?? '',
+      arousal: dto.features?.musicalFeatures?.arousal ?? 0,
+      arousal_mood: dto.features?.musicalFeatures?.arousalMood ?? '',
+      danceability: dto.features?.musicalFeatures?.danceability ?? 0,
+      danceability_feeling:
+        dto.features?.musicalFeatures?.danceabilityFeeling ?? '',
     },
   };
 };
 
 export const toMusicTrack = (
   document: ElasticsearchTrackDocument,
-): Partial<MusicTrack> => {
+): Omit<
+  MusicTrack,
+  | 'createdAt'
+  | 'updatedAt'
+  | 'createdById'
+  | 'updatedById'
+  | 'libraryId'
+  | 'stats'
+  | 'fileInfo'
+  | 'technicalInfo'
+  | 'analysisInfo'
+> => {
   return {
     id: document.trackId,
     title: document.title,
     artist: document.artist,
     metadata: {
       album: document.album,
-      date: document.date ? new Date(document.date) : null,
+      date: document.date ? new Date(document.date) : undefined,
       genres: document.genres,
       subgenres: document.subgenres,
       duration: document.duration,
@@ -68,9 +80,9 @@ export const toMusicTrack = (
         danceabilityFeeling:
           document.musical_audio_features.danceability_feeling,
       },
-      spectralFeatures: null,
-      melodicFeatures: null,
-      fingerprint: null,
+      spectralFeatures: undefined,
+      melodicFeatures: undefined,
+      fingerprint: undefined,
     },
   };
 };

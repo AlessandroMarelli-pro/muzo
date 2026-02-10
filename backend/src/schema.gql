@@ -117,7 +117,7 @@ type Library implements Node {
   settings: LibrarySettings!
   totalTracks: Float!
   tracks(pagination: CursorPaginationArgs): CursorPaginatedTracks!
-  updatedAt: DateTime!
+  updatedAt: DateTime
 }
 
 type LibrarySettings {
@@ -204,8 +204,7 @@ type Playlist implements Node {
   sorting: PlaylistSorting
   stats: PlaylistStats
   tracks: [PlaylistTrack!]
-  updatedAt: DateTime!
-  updatedById: Base64ID
+  updatedAt: DateTime
 }
 
 input PlaylistFilterInput {
@@ -222,7 +221,7 @@ type PlaylistSorting {
   playlistId: Base64ID!
   sortingDirection: String!
   sortingKey: String!
-  updatedAt: DateTime!
+  updatedAt: DateTime
 }
 
 type PlaylistStats {
@@ -268,7 +267,7 @@ type QueueItem {
   position: Int!
   track: Track
   trackId: Base64ID!
-  updatedAt: DateTime!
+  updatedAt: DateTime
 }
 
 type RandomTrackWithStats {
@@ -357,19 +356,19 @@ type TopGenre {
 }
 
 type Track implements Node {
-  aiMetadata: TrackAIMetadata!
+  aiMetadata: TrackAIMetadata
   artist: String
   createdAt: DateTime
-  fileInfo: TrackFileInfo!
+  fileInfo: TrackFileInfo
   id: Base64ID!
   imagePath: String
   lastScannedAt: DateTime
   libraryId: Base64ID
-  metadata: TrackMetadata!
+  metadata: TrackMetadata
   musicalFeatures: TrackMusicalFeatures
   recommendations(limit: Int): [TrackRecommendation!]!
-  stats: TrackStats!
-  technicalInfo: TrackTechnicalInfo!
+  stats: TrackStats
+  technicalInfo: TrackTechnicalInfo
   title: String
   updatedAt: DateTime
 }
@@ -458,7 +457,7 @@ input UpdateQueuePositionsInput {
 }
 
 type User implements Node {
-  activeFilters: [FilterCriteriaResult!]!
+  activeFilters: [FilterCriteriaResult!]
   currentFilter: FilterCriteriaResult
   email: String
   favorites: Playlist!

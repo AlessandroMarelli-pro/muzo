@@ -1,3 +1,4 @@
+import { MaybeUndefined } from 'src/kernel/common';
 import { MusicTrackId } from 'src/kernel/ids';
 import { MusicTrack } from 'src/kernel/types/model-types';
 import { IMusicTrackRepository } from '../../ports/repositories/IMusicTrackRepository';
@@ -5,12 +6,13 @@ import { IMusicTrackRepository } from '../../ports/repositories/IMusicTrackRepos
 export class RegisterPlayedTrackUseCase {
   constructor(private readonly musicTrackRepository: IMusicTrackRepository) {}
 
-  async execute(id: MusicTrackId): Promise<MusicTrack> {
+  async execute(id: MusicTrackId): Promise<MaybeUndefined<MusicTrack>> {
     const lastPlayedTrack =
       await this.musicTrackRepository.getLastPlayedTrack();
 
     if (
       lastPlayedTrack.id === id &&
+      lastPlayedTrack.stats?.lastPlayedAt &&
       lastPlayedTrack.stats.lastPlayedAt >
         new Date(Date.now() - 1000 * 60 * 60 * 5)
     ) {

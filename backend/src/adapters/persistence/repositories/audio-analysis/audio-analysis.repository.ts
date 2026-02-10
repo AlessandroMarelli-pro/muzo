@@ -39,7 +39,7 @@ export class AudioAnalysisRepository implements IAudioAnalysisRepository {
         spectralFeatures?.zero_crossing_rate || {},
       ),
       tempo: musicalFeatures?.tempo || 0,
-      key: musicalFeatures?.key || null,
+      key: musicalFeatures?.key || '',
 
       valence: musicalFeatures?.valence || 0,
       danceability: musicalFeatures?.danceability || 0,

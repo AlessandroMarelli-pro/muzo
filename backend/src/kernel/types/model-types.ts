@@ -1,4 +1,4 @@
-import { Maybe } from '../common';
+import { Maybe, MaybeUndefined } from '../common';
 import type {
   Brand,
   GenreId,
@@ -48,8 +48,8 @@ export type ModelBase<
   id: Id;
   createdAt: Date;
   createdById: UserId;
-  updatedAt: Date;
-  updatedById: Maybe<UserId>;
+  updatedAt: MaybeUndefined<Date>;
+  updatedById: MaybeUndefined<UserId>;
 };
 
 export type Playlist = Readonly<ModelBase<PlaylistId>> & {
@@ -94,27 +94,27 @@ export type HiddenMusicTrack = Readonly<ModelBase<HiddenMusicTrackId>> & {
   imagePath: string;
   libraryId: MusicLibraryId;
   fileInfo: AudioFileInfo;
-  technicalInfo: AudioTechnical;
-  aiMetadata: AudioFileAIMetadata;
+  technicalInfo: MaybeUndefined<AudioTechnical>;
+  aiMetadata: MaybeUndefined<AudioFileAIMetadata>;
 };
 
 export type MusicTrack = Readonly<ModelBase<MusicTrackId>> & {
-  artist?: string;
-  title?: string;
+  artist: MaybeUndefined<string>;
+  title: MaybeUndefined<string>;
   imagePath?: string;
   libraryId: MusicLibraryId;
-  stats?: MusicTrackStats;
+  stats: MaybeUndefined<MusicTrackStats>;
   fileInfo: AudioFileInfo;
-  technicalInfo?: AudioTechnical;
-  features?: AudioFileFeatures;
-  metadata?: AudioFileMetadata;
-  aiMetadata?: AudioFileAIMetadata;
-  analysisInfo?: AudioFileAnalysis;
+  technicalInfo: MaybeUndefined<AudioTechnical>;
+  features: MaybeUndefined<AudioFileFeatures>;
+  metadata: MaybeUndefined<AudioFileMetadata>;
+  aiMetadata: MaybeUndefined<AudioFileAIMetadata>;
+  analysisInfo: MaybeUndefined<AudioFileAnalysis>;
 };
 
 export type MusicTrackStats = {
   listeningCount: number;
-  lastPlayedAt: Date;
+  lastPlayedAt: MaybeUndefined<Date>;
   isFavorite: boolean;
   isLiked: boolean;
   isBanger: boolean;
@@ -128,16 +128,16 @@ export type AudioFileInfo = {
 };
 
 export type AudioTechnical = {
-  duration: number;
+  duration: MaybeUndefined<number>;
   format: string;
-  bitrate: number;
-  sampleRate: number;
+  bitrate: MaybeUndefined<number>;
+  sampleRate: MaybeUndefined<number>;
 };
 
 export type AudioFileMetadata = {
-  album: string;
-  duration: number;
-  date: Date;
+  album: MaybeUndefined<string>;
+  duration: MaybeUndefined<number>;
+  date: MaybeUndefined<Date>;
   genres: string[];
   subgenres: string[];
 };
@@ -175,15 +175,16 @@ export type AudioFileMelodicFeatures = {
   tonnetz: MelodicFeatures;
 };
 export type AudioFileFeatures = {
-  musicalFeatures: AudioFileMusicalFeatures;
-  spectralFeatures: AudioFileSpectralFeatures;
-  melodicFeatures: AudioFileMelodicFeatures;
-  fingerprint: AudioFileFingerprint;
+  musicalFeatures: MaybeUndefined<AudioFileMusicalFeatures>;
+  spectralFeatures: MaybeUndefined<AudioFileSpectralFeatures>;
+  melodicFeatures: MaybeUndefined<AudioFileMelodicFeatures>;
+  fingerprint: MaybeUndefined<AudioFileFingerprint>;
 };
 export type AudioFileFingerprint = {
   fileHash: string;
   audioHash: string;
 };
+
 type CalculationFeatures = {
   modeFactor: number;
   modeConfidence: number;
@@ -221,12 +222,12 @@ export type AudioFileMusicalFeatures = {
 };
 
 export type AudioFileAIMetadata = {
-  description: string;
+  description: MaybeUndefined<string>;
   tags: string[];
-  vocalsDesc: string;
+  vocalsDesc: MaybeUndefined<string>;
   atmosphereDesc: string[];
-  contextBackground: string;
-  contextImpact: string;
+  contextBackground: MaybeUndefined<string>;
+  contextImpact: MaybeUndefined<string>;
 };
 export enum AudioFileAnalysisStatusEnum {
   PENDING = 'PENDING',
@@ -243,11 +244,12 @@ export const audioFileAnalysisStatusKeys = [
 ] as const;
 
 export type AudioFileAnalysis = {
-  status: AudioFileAnalysisStatusEnum;
-  startedAt: Date;
-  completedAt: Date;
-  error: Maybe<string>;
+  status: MaybeUndefined<AudioFileAnalysisStatusEnum>;
+  startedAt: MaybeUndefined<Date>;
+  completedAt: MaybeUndefined<Date>;
+  error: MaybeUndefined<string>;
 };
+
 const scanStatusKeys = ['IDLE', 'SCANNING', 'ANALYZING', 'ERROR'] as const;
 export type ScanStatus = (typeof scanStatusKeys)[number];
 
@@ -265,9 +267,9 @@ type MusicLibraryTracksInfo = {
   failedTracks: number;
 };
 type MusicLibraryScanInfo = {
-  lastScanAt: Date;
-  lastIncrementalScanAt: Date;
-  scanStatus: ScanStatus;
+  lastScanAt: Maybe<Date>;
+  lastIncrementalScanAt: Maybe<Date>;
+  scanStatus: Maybe<ScanStatus>;
 };
 type MusicLibrarySettings = {
   scanInterval: number;
@@ -372,6 +374,6 @@ export type Session = Readonly<ModelBase<SessionId>> & {
   failedTracks: number;
   overallProgress: number;
   startedAt: Date;
-  completedAt: Date;
-  errorMessage: Maybe<string>;
+  completedAt: MaybeUndefined<Date>;
+  errorMessage: MaybeUndefined<string>;
 };

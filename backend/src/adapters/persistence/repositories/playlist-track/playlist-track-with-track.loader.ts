@@ -16,7 +16,7 @@ export const batchPlaylistTracksWithTrack = async (
     if (!map.has(playlistId)) {
       map.set(playlistId, []);
     }
-    map.get(playlistId).push(track);
+    map.get(playlistId)?.push(track);
   }
 
   return keys.map((id) => {

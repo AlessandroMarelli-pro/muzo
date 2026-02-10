@@ -60,6 +60,6 @@ export class Library {
   @Field()
   createdAt: Date;
 
-  @Field()
-  updatedAt: Date;
+  @Field({ nullable: true })
+  updatedAt?: Date;
 }

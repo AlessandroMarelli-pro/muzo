@@ -10,7 +10,7 @@ export function getAnonymousUser(): ActionContext['user'] {
     createdAt: new Date(0),
     createdById: models.user.id('anonymous'),
     updatedAt: new Date(0),
-    updatedById: null,
+    updatedById: undefined,
     email: 'anonymous@example.com' as ActionContext['user']['email'],
     firstName: 'anonymous',
     lastName: 'anonymous',

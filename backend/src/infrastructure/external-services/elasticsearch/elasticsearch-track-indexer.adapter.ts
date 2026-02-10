@@ -9,7 +9,8 @@ import { trackIndexMapping } from './mappings/track-index.mapping';
 
 @Injectable()
 export class ElasticsearchTrackIndexerAdapter implements ITrackIndexerPort {
-  private elasticsearchClient: Client | null = null;
+  private elasticsearchClient: Client;
+
   constructor(private readonly client: ElasticsearchClient) {
     this.elasticsearchClient = this.client.getClient();
   }

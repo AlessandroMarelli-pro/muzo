@@ -1,4 +1,4 @@
-import { MusicTrack } from 'src/kernel/types';
+import { Maybe, MusicTrack } from 'src/kernel/types';
 import { createToken } from '../../utils/create-token';
 
 export const MUSIC_TRACK_QUERIES = createToken<IMusicTrackQueries>(
@@ -6,7 +6,7 @@ export const MUSIC_TRACK_QUERIES = createToken<IMusicTrackQueries>(
 );
 
 export type RandomTrackWithStats = {
-  track: MusicTrack;
+  track: Maybe<MusicTrack>;
   likedCount: number;
   bangerCount: number;
   dislikedCount: number;

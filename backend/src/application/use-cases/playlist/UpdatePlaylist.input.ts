@@ -1,7 +1,7 @@
-import { Maybe } from 'src/kernel/common';
+import { MaybeUndefined } from 'src/kernel/common';
 
 export interface UpdatePlaylistInput {
-  name?: string;
-  description?: Maybe<string>;
-  isPublic?: Maybe<boolean>;
+  name: MaybeUndefined<string>;
+  description: MaybeUndefined<string>;
+  isPublic: MaybeUndefined<boolean>;
 }

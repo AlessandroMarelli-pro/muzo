@@ -1,4 +1,5 @@
 import { Field, ObjectType } from '@nestjs/graphql';
+import { Maybe } from 'src/kernel/common';
 import { PlaylistId } from 'src/kernel/ids/scalars';
 import { Base64ID } from '../scalars/base64-id.scalar';
 import { Node } from './common.schema';
@@ -15,8 +16,8 @@ export class Playlist {
   @Field()
   name: string;
 
-  @Field({ nullable: true })
-  description?: string;
+  @Field(() => String, { nullable: true })
+  description: Maybe<string>;
 
   @Field()
   isPublic: boolean;
@@ -24,20 +25,17 @@ export class Playlist {
   @Field()
   createdAt: Date;
 
-  @Field()
-  updatedAt: Date;
+  @Field(() => Date, { nullable: true })
+  updatedAt?: Date;
 
   @Field(() => Base64ID)
   createdById: string;
 
-  @Field(() => Base64ID, { nullable: true })
-  updatedById: string;
-
   @Field(() => [PlaylistTrack], { nullable: true })
-  tracks?: PlaylistTrack[];
+  tracks?: Maybe<PlaylistTrack[]>;
 
   @Field(() => PlaylistStats, { nullable: true })
-  stats?: PlaylistStats;
+  stats?: Maybe<PlaylistStats>;
 
   @Field(() => Boolean, {
     description: 'True if the given track is already in this playlist',

@@ -15,13 +15,13 @@ export class ToggleDislikeUseCase {
     await this.hiddenMusicTrackRepository.save(
       models.hiddenMusicTrack.instantiateNew({
         ...track,
-        artist: track.artist,
-        title: track.title,
-        imagePath: track.imagePath,
+        artist: track.artist ?? '',
+        title: track.title ?? '',
+        imagePath: track.imagePath ?? '',
         libraryId: track.libraryId,
         fileInfo: track.fileInfo,
-        technicalInfo: track.technicalInfo,
-        aiMetadata: track.aiMetadata,
+        technicalInfo: track.technicalInfo ?? undefined,
+        aiMetadata: track.aiMetadata ?? undefined,
       }),
     );
     return this.musicTrackRepository.removeOneById(id);

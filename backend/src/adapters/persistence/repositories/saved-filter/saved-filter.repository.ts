@@ -66,6 +66,6 @@ export class SavedFilterRepository implements ISavedFilterRepository {
       .findFirst({
         where: { createdById: getCurrentUserId(), isCurrent: true },
       })
-      .then((row) => (row ? toDomain(row) : null));
+      .then(toDomain);
   }
 }

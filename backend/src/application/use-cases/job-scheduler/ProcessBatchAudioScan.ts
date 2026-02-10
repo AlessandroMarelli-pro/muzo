@@ -54,9 +54,8 @@ export class ProcessBatchAudioScanUseCase {
         const existingTrack =
           await this.musicTrackRepository.getOneByFilePath(filePath);
         if (
-          existingTrack &&
-          existingTrack.analysisInfo.status ===
-            AudioFileAnalysisStatusEnum.COMPLETED
+          existingTrack?.analysisInfo?.status ===
+          AudioFileAnalysisStatusEnum.COMPLETED
         ) {
           if (
             existingTrack.metadata?.genres?.length !== 0 &&

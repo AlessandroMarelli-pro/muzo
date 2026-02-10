@@ -13,7 +13,8 @@ import { toMusicTrack } from './mappers/track-index-document.mapper';
 
 @Injectable()
 export class RecommendationSearchAdapter implements IRecommendationSearchPort {
-  private elasticsearchClient: Client | null = null;
+  private elasticsearchClient: Client;
+
   constructor(private readonly client: ElasticsearchClient) {
     this.elasticsearchClient = this.client.getClient();
   }

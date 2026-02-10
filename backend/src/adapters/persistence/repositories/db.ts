@@ -5,7 +5,7 @@ export function toDbModel(domainModel: ModelBase) {
   return {
     createdAt: domainModel.createdAt,
     createdById: extractModelId(domainModel.createdById).dbId,
-    updatedAt: domainModel.updatedAt,
+    updatedAt: domainModel.updatedAt ?? null,
     updatedById: domainModel.updatedById
       ? extractModelId(domainModel.updatedById).dbId
       : null,
@@ -14,7 +14,7 @@ export function toDbModel(domainModel: ModelBase) {
 
 export function toDbModelUpdate(domainModel: Partial<ModelBase>) {
   return {
-    updatedAt: domainModel.updatedAt,
+    updatedAt: domainModel.updatedAt ?? null,
     updatedById: domainModel.updatedById
       ? extractModelId(domainModel.updatedById).dbId
       : null,

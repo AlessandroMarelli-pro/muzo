@@ -1,5 +1,6 @@
 import { Type } from '@nestjs/common';
 import { Field, Int, ObjectType } from '@nestjs/graphql';
+import { Maybe } from 'src/kernel/common';
 import { Base64ID } from '../scalars/base64-id.scalar';
 
 export interface IPaginatedType<T> {
@@ -33,7 +34,7 @@ export function Paginated<T>(classRef: Type<T>): Type<IPaginatedType<T>> {
 
 export type ICursorPaginatedType<T> = {
   items: T[];
-  nextCursor: string;
+  nextCursor: Maybe<string>;
   hasMore: boolean;
 };
 

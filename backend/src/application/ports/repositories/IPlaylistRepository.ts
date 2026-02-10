@@ -1,4 +1,4 @@
-import { Maybe } from 'src/kernel/common';
+import { Maybe, MaybeUndefined } from 'src/kernel/common';
 import { PlaylistId } from 'src/kernel/ids';
 import { Playlist, PlaylistSorting } from '../../../kernel/types/model-types';
 import { createToken } from '../../utils/create-token';
@@ -17,10 +17,10 @@ export const PLAYLIST_REPOSITORY = createToken<IPlaylistRepository>(
 );
 
 export type PlaylistWithSorting = Playlist & {
-  sorting: Maybe<PlaylistSorting>;
+  sorting: MaybeUndefined<PlaylistSorting>;
 };
 export type PlaylistWithSortingAndTracks = PlaylistWithSorting & {
-  tracks: PlaylistTrackWithTrackDetail[];
+  tracks: MaybeUndefined<PlaylistTrackWithTrackDetail[]>;
 };
 
 export interface IPlaylistRepository {

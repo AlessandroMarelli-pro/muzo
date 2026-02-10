@@ -6,7 +6,10 @@ import {
 import { PrismaService } from 'src/infrastructure/database/prisma.service';
 import { getCurrentUserId } from 'src/kernel/types';
 import { musicTracksIncludes } from '../../includes/music-tracks-includes';
-import { toDomain } from '../../repositories/music-track/music-track.mapper';
+import {
+  PrismaMusicTrackWithRelations,
+  toDomain,
+} from '../../repositories/music-track/music-track.mapper';
 
 @Injectable()
 export class MusicTrackQuery implements IMusicTrackQueries {
@@ -31,16 +34,16 @@ export class MusicTrackQuery implements IMusicTrackQueries {
       FROM music_tracks WHERE createdById = ${currentUserId}
     `.then(async (rows) => {
       const row = rows[0];
-      const track = await this.prisma.musicTrack.findUnique({
-        where: { id: row.trackId },
+      const track = (await this.prisma.musicTrack.findFirst({
+        where: { id: row.trackId, createdById: currentUserId },
         include: musicTracksIncludes,
-      });
+      })) as PrismaMusicTrackWithRelations;
       return {
         track: track ? toDomain(track) : null,
-        likedCount: Number(row.likedCount),
-        bangerCount: Number(row.bangerCount),
-        dislikedCount: Number(row.dislikedCount),
-        remainingCount: Number(row.remainingCount),
+        likedCount: Number(row.likedCount) ?? 0,
+        bangerCount: Number(row.bangerCount) ?? 0,
+        dislikedCount: Number(row.dislikedCount) ?? 0,
+        remainingCount: Number(row.remainingCount) ?? 0,
       };
     });
   }

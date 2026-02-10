@@ -77,7 +77,6 @@ export const playlistFragment = gql`
 		createdAt
 		updatedAt
 		createdById
-		updatedById
 		stats {
 			bpmRange {
 				min

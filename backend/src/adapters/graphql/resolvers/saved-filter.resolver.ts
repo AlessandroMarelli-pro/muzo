@@ -23,7 +23,11 @@ export class SavedFilterResolver {
   async createSavedFilter(
     @Args('input') input: SavedFilterInput,
   ): Promise<FilterCriteriaResult> {
-    return this.createSavedFilterUseCase.execute(input);
+    return this.createSavedFilterUseCase.execute({
+      name: input.name,
+      criteria: input.criteria,
+      isCurrent: input.isCurrent ?? false,
+    });
   }
 
   @Mutation(() => Boolean)
@@ -38,6 +42,10 @@ export class SavedFilterResolver {
     @Args('id', { type: () => Base64ID }) id: string,
     @Args('input') input: SavedFilterInput,
   ): Promise<FilterCriteriaResult> {
-    return this.updateSavedFilterUseCase.execute(parseSavedFilterId(id), input);
+    return this.updateSavedFilterUseCase.execute(parseSavedFilterId(id), {
+      name: input.name,
+      criteria: input.criteria,
+      isCurrent: input.isCurrent ?? false,
+    });
   }
 }

@@ -19,6 +19,7 @@ import { PlaylistTrack } from 'src/kernel/types/model-types';
 import { toDomain as toDomainMusicTrack } from '../music-track/music-track.mapper';
 import { handlePrismaNotFound } from '../prisma-errors';
 import { toDomain, toPrisma } from './playlist-track.mapper';
+
 @Injectable()
 export class PlaylistTrackRepository implements IPlaylistTrackRepository {
   constructor(private readonly prisma: PrismaService) {}

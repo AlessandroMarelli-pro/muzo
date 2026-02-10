@@ -5,6 +5,7 @@ import {
 } from '@prisma/client';
 import { PlaylistTrackWithTrackDetailAndSorting } from 'src/application/ports/dtos/PlaylistWithTrackDetailsAndSorting';
 import { PlaylistUpdateData } from 'src/application/ports/repositories/IPlaylistRepository';
+import { Maybe, MaybeUndefined } from 'src/kernel/common';
 import { extractModelId } from 'src/kernel/ids/factory';
 import { now, user } from 'src/kernel/types/context';
 import {
@@ -23,28 +24,28 @@ import {
 } from '../playlist-track/playlist-track.mapper';
 
 export type PrismaPlaylistWithSorting = PrismaPlaylist & {
-  sorting: PrismaPlaylistSorting;
+  sorting: Maybe<PrismaPlaylistSorting>;
 };
 export type PrismaPlaylistWithTracksAndSorting = PrismaPlaylistWithSorting & {
-  tracks: PrismaPlaylistTrack[];
+  tracks: Maybe<PrismaPlaylistTrack[]>;
 };
 
 export type PrismaPlaylistWithTracksWithRelationsAndSorting =
   PrismaPlaylistWithSorting & {
-    tracks: PrismaPlaylistTrackWithTrackDetail[];
+    tracks: Maybe<PrismaPlaylistTrackWithTrackDetail[]>;
   };
 
 export type ToDomain = (row: PrismaPlaylist) => Playlist;
 
 export type ToDomainWithSorting = (
   row: PrismaPlaylistWithSorting,
-) => Playlist & { sorting: PlaylistSorting };
+) => Playlist & { sorting: MaybeUndefined<PlaylistSorting> };
 
 export type ToDomainWithTracksAndSorting = (
   row: PrismaPlaylistWithTracksAndSorting,
 ) => Playlist & {
-  sorting: PlaylistSorting;
-  tracks: PlaylistTrack[];
+  sorting: MaybeUndefined<PlaylistSorting>;
+  tracks: MaybeUndefined<PlaylistTrack[]>;
 };
 
 export type ToDomainWithTracksWithRelationsAndSorting = (
@@ -54,7 +55,7 @@ export type ToDomainWithTracksWithRelationsAndSorting = (
 export const toDomainWithSorting: ToDomainWithSorting = (row) => {
   return {
     ...toDomain(row),
-    sorting: row.sorting ? toDomainSorting(row.sorting) : null,
+    sorting: row.sorting ? toDomainSorting(row.sorting) : undefined,
   };
 };
 
@@ -63,18 +64,19 @@ export const toDomainWithTracksAndSorting: ToDomainWithTracksAndSorting = (
 ) => {
   return {
     ...toDomainWithSorting(row),
-    tracks: row.tracks.map((track) => toDomainPlaylistTrack(track)),
+    tracks: row.tracks?.map((track) => toDomainPlaylistTrack(track)) ?? [],
   };
 };
 
 export const toDomainWithTracksWithRelationsAndSorting: ToDomainWithTracksWithRelationsAndSorting =
   (row) => {
     return {
-      ...toDomainWithSorting(row),
-      tracks: row.tracks.map((track) => ({
-        ...toDomainPlaylistTrack(track),
-        track: toDomainMusicTrack(track.track),
-      })),
+      ...(toDomainWithSorting(row) as Playlist & { sorting: PlaylistSorting }),
+      tracks:
+        row.tracks?.map((track) => ({
+          ...toDomainPlaylistTrack(track),
+          track: toDomainMusicTrack(track.track),
+        })) ?? [],
     };
   };
 export const toDomain: ToDomain = (row) => {
@@ -83,8 +85,8 @@ export const toDomain: ToDomain = (row) => {
     ...toDomainModel({
       createdAt: row.createdAt,
       createdById: row.createdById,
-      updatedAt: row.updatedAt,
-      updatedById: row.updatedById,
+      updatedAt: row.updatedAt ?? undefined,
+      updatedById: row.updatedById ?? undefined,
     }),
     name: row.name,
     description: row.description ?? null,

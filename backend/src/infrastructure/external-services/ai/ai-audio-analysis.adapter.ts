@@ -30,7 +30,8 @@ export class AiAudioAnalysisAdapter implements IAudioAnalysisStructure {
     private readonly httpService: HttpService,
     private readonly configService: ConfigService,
   ) {
-    this.aiServiceConfig = this.configService.get<AiServiceConfig>('aiService');
+    this.aiServiceConfig =
+      this.configService.get<AiServiceConfig>('aiService')!;
   }
 
   async analyzeAudioBatch(

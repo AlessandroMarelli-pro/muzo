@@ -16,7 +16,7 @@ export class ToggleFavoriteUseCase {
 
   async execute(id: MusicTrackId): Promise<MusicTrack> {
     const track = await this.musicTrackRepository.getOneById(id);
-    const isFavorite = !track.stats.isFavorite;
+    const isFavorite = !track.stats?.isFavorite;
     if (!track) {
       throw createNotFoundError(`Music track with ID ${id} not found`);
     }

@@ -17,7 +17,7 @@ export function modelFactory<M extends ModelBase<Id>, Id extends string>(id: {
         createdAt: now(),
         createdById: user().id,
         updatedAt: now(),
-        updatedById: null,
+        updatedById: undefined,
         ...x,
       }) as M,
     update: (
@@ -38,6 +38,6 @@ export function createNewInstance<T extends string>(id: T): ModelBase<T> {
     createdAt: now(),
     createdById: user().id,
     updatedAt: now(),
-    updatedById: null,
+    updatedById: undefined,
   };
 }

@@ -5,19 +5,18 @@ import { toDomainModel } from '../domain';
 
 import { extractModelId } from 'src/kernel/ids';
 import { toDbModel } from '../db';
+
 export type ToDomain = (row: PrismaScanSession) => Session;
 
 export const toDomain: ToDomain = (row) => {
-  if (!row) return;
-
   return {
     id: models.session.id(row.id),
     sessionId: models.session.id(row.sessionId),
     ...toDomainModel({
       createdAt: row.createdAt,
       createdById: row.createdById,
-      updatedAt: row.updatedAt,
-      updatedById: row.updatedById,
+      updatedAt: row.updatedAt ?? undefined,
+      updatedById: row.updatedById ?? undefined,
     }),
     status: row.status,
     totalBatches: row.totalBatches,
@@ -27,8 +26,8 @@ export const toDomain: ToDomain = (row) => {
     failedTracks: row.failedTracks,
     overallProgress: row.overallProgress,
     startedAt: row.startedAt,
-    completedAt: row.completedAt,
-    errorMessage: row.errorMessage,
+    completedAt: row.completedAt ?? undefined,
+    errorMessage: row.errorMessage ?? undefined,
   };
 };
 
@@ -48,7 +47,7 @@ export const toPrisma: ToPrisma = (domainModel) => {
     failedTracks: domainModel.failedTracks,
     overallProgress: domainModel.overallProgress,
     startedAt: domainModel.startedAt,
-    completedAt: domainModel.completedAt,
-    errorMessage: domainModel.errorMessage,
+    completedAt: domainModel.completedAt ?? null,
+    errorMessage: domainModel.errorMessage ?? null,
   };
 };

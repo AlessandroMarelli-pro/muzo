@@ -2,6 +2,8 @@
  * Event types and interfaces for scan progress tracking
  */
 
+import { MaybeUndefined } from 'src/kernel/common';
+
 export type ScanProgressEventType =
   | 'state'
   | 'scan.started'
@@ -38,7 +40,7 @@ export interface ScanStateEvent extends BaseScanProgressEvent {
     completedTracks: number;
     failedTracks: number;
     startedAt: Date;
-    updatedAt: Date;
+    updatedAt: MaybeUndefined<Date>;
   };
   overallProgress: number; // percentage
 }

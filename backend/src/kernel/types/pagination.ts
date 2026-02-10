@@ -4,8 +4,8 @@ import { Model } from './model-types';
 export const SORTING_DIRECTIONS = ['asc', 'desc'] as const;
 export type SortingDirection = (typeof SORTING_DIRECTIONS)[number];
 export type SortingOptions = {
-  orderBy?: string;
-  orderDirection?: SortingDirection;
+  orderBy: string;
+  orderDirection: SortingDirection;
 };
 
 export type PaginationOptions = {
@@ -28,7 +28,7 @@ export type WithPagination = {
 };
 
 export type WithCursorPagination<T extends Model> = {
-  size: Maybe<number>;
+  size: number;
   cursor: Maybe<{
     id: T['id'];
     direction: 'BEFORE' | 'AFTER';

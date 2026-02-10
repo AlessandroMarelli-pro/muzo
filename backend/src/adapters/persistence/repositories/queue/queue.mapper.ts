@@ -10,18 +10,14 @@ export type PrismaQueueWithTrack = PrismaQueue & {
   track?: PrismaMusicTrackWithRelations | null;
 };
 
-function normalizeUpdatedAt(row: PrismaQueue): Date {
-  return row.updatedAt ?? row.createdAt;
-}
-
 export function toDomain(row: PrismaQueue): QueueItem {
   return {
     id: models.queueItem.id(row.id),
     ...toDomainModel({
       createdAt: row.createdAt,
       createdById: row.createdById,
-      updatedAt: normalizeUpdatedAt(row),
-      updatedById: row.updatedById ?? null,
+      updatedAt: row.updatedAt ?? undefined,
+      updatedById: row.updatedById ?? undefined,
     }),
     trackId: models.musicTrack.id(row.trackId),
     position: row.position,

@@ -62,17 +62,17 @@ export class ProcessEndLibraryScanUseCase {
     // Calculate current statistics
     const analyzedTracks = tracks.filter(
       (track) =>
-        track.analysisInfo.status === AudioFileAnalysisStatusEnum.COMPLETED,
+        track.analysisInfo?.status === AudioFileAnalysisStatusEnum.COMPLETED,
     ).length;
 
     const pendingTracks = tracks.filter(
       (track) =>
-        track.analysisInfo.status === AudioFileAnalysisStatusEnum.PENDING,
+        track.analysisInfo?.status === AudioFileAnalysisStatusEnum.PENDING,
     ).length;
 
     const failedTracks = tracks.filter(
       (track) =>
-        track.analysisInfo.status === AudioFileAnalysisStatusEnum.FAILED,
+        track.analysisInfo?.status === AudioFileAnalysisStatusEnum.FAILED,
     ).length;
 
     // Update library with final statistics
