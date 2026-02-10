@@ -25,6 +25,12 @@ function MusicPage() {
 	const memoizedStaticFilterOptions = useMemo(() => {
 		return staticFilterOptions;
 	}, [staticFilterOptions]);
+
+	const handleFilterChange = (
+		values: Record<string, string | string[] | null>
+	) => {
+		updateFilters(values);
+	};
 	return (
 		<TrackList
 			page={page}
@@ -32,7 +38,7 @@ function MusicPage() {
 			sort={memoizedSort as ExtendedColumnSort<SimpleMusicTrack>[]}
 			staticFilterOptions={memoizedStaticFilterOptions}
 			filters={memoizedFilters}
-			handleFilterChange={updateFilters}
+			handleFilterChange={handleFilterChange}
 		/>
 	);
 }

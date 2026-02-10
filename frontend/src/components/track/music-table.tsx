@@ -151,7 +151,7 @@ const columns = (
 	React.useMemo<ColumnDef<SimpleMusicTrack>[]>(
 		() => [
 			{
-				id: 'libraryIds',
+				id: 'library',
 				accessorKey: 'libraryId',
 				header: () => null,
 				cell: ({ row }) => {
@@ -296,7 +296,7 @@ const columns = (
 				enableHiding: true,
 			},
 			{
-				id: 'genreIds',
+				id: 'genres',
 				accessorKey: 'genres',
 				header: ({ column }) => (
 					<DataTableColumnHeader column={column} title="Genre" />
@@ -327,7 +327,7 @@ const columns = (
 				enableColumnFilter: true,
 			},
 			{
-				id: 'subgenreIds',
+				id: 'subgenres',
 				accessorKey: 'subgenres',
 				header: ({ column }) => (
 					<DataTableColumnHeader column={column} title="Subgenre" />
@@ -381,7 +381,7 @@ const columns = (
 				enableColumnFilter: true,
 			},
 			{
-				id: 'keyIds',
+				id: 'keys',
 				accessorKey: 'key',
 				header: ({ column }) => (
 					<DataTableColumnHeader column={column} title="Key" />

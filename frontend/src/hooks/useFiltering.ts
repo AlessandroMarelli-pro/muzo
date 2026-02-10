@@ -1,3 +1,4 @@
+import { FilterCriteriaInput } from '@/__generated__/types';
 import {
 	useCreateActiveFilter,
 	useCurrentFilter,
@@ -14,11 +15,11 @@ export interface Range {
 }
 
 export interface FilterState {
-	id: string | null;
-	genreIds: string[];
-	subgenreIds: string[];
+	id?: string | null;
+	genres: string[];
+	subgenres: string[];
 	keyIds: string[];
-	libraryIds: string[];
+	library: string[];
 	atmosphereIds: string[];
 	tempo: Range;
 	speechiness: Range;
@@ -61,8 +62,8 @@ export interface UseFilteringOptions {
 
 const defaultFilterState: FilterState = {
 	id: null,
-	genreIds: [],
-	subgenreIds: [],
+	genres: [],
+	subgenres: [],
 	keyIds: [],
 	tempo: { min: 0, max: 200 },
 	valenceMood: [],
@@ -74,8 +75,28 @@ const defaultFilterState: FilterState = {
 	acousticness: { min: 0, max: 1 },
 	artist: '',
 	title: '',
-	libraryIds: [],
+	library: [],
 	atmosphereIds: [],
+};
+
+const toFilterCriteriaInput = (filters: FilterState): FilterCriteriaInput => {
+	return {
+		genreIds: filters.genres,
+		subgenreIds: filters.subgenres,
+		keyIds: filters.keyIds,
+		libraryIds: filters.library,
+		atmosphereIds: filters.atmosphereIds,
+		tempo: filters.tempo,
+		valenceMood: filters.valenceMood,
+		arousalMood: filters.arousalMood,
+		danceabilityFeeling: filters.danceabilityFeeling,
+		speechiness: filters.speechiness,
+		instrumentalness: filters.instrumentalness,
+		liveness: filters.liveness,
+		acousticness: filters.acousticness,
+		artist: filters.artist,
+		title: filters.title,
+	};
 };
 
 export const useFiltering = (options: UseFilteringOptions = {}) => {
@@ -157,13 +178,14 @@ export const useFiltering = (options: UseFilteringOptions = {}) => {
 		}
 		saveTimeoutRef.current = setTimeout(() => {
 			const { id, ...criteria } = filters;
+
 			if (id) {
 				updateActiveFilter.mutate({
 					id,
-					criteria,
+					criteria: toFilterCriteriaInput(filters),
 				});
 			} else {
-				createActiveFilter.mutate(criteria);
+				createActiveFilter.mutate(toFilterCriteriaInput(criteria));
 			}
 			setIsDirty(false);
 			saveTimeoutRef.current = null;
@@ -186,8 +208,8 @@ export const useFiltering = (options: UseFilteringOptions = {}) => {
 	// Computed values
 	const hasActiveFilters = useMemo(() => {
 		const areFiltersActive =
-			filters.genreIds.length > 0 ||
-			filters.subgenreIds.length > 0 ||
+			filters.genres.length > 0 ||
+			filters.subgenres.length > 0 ||
 			filters.keyIds.length > 0 ||
 			filters.tempo.min !== 0 ||
 			filters.tempo.max !== 200 ||
@@ -204,7 +226,7 @@ export const useFiltering = (options: UseFilteringOptions = {}) => {
 			filters.acousticness.max !== 1 ||
 			filters.artist !== '' ||
 			filters.title !== '' ||
-			filters.libraryIds.length > 0 ||
+			filters.library.length > 0 ||
 			filters.atmosphereIds.length > 0;
 
 		return areFiltersActive;

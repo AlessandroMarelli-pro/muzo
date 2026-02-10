@@ -88,11 +88,11 @@ export const FilterComponent = ({
 	}, [options.isLoading]);
 
 	const handleGenreChange = (selected: string[]) => {
-		updateFilter('genreIds', selected);
+		updateFilter('genres', selected);
 	};
 
 	const handleSubgenreChange = (selected: string[]) => {
-		updateFilter('subgenreIds', selected);
+		updateFilter('subgenres', selected);
 	};
 
 	const handleKeyChange = (selected: string[]) => {
@@ -144,7 +144,7 @@ export const FilterComponent = ({
 				<FieldLabel htmlFor="genres-filter">Genres</FieldLabel>
 				<MultiSelect
 					options={options.genres}
-					value={filters.genreIds}
+					value={filters.genres}
 					onChange={handleGenreChange}
 					placeholder="Select genres..."
 					className="w-full "
@@ -157,7 +157,7 @@ export const FilterComponent = ({
 				<FieldLabel htmlFor="subgenres-filter">Subgenres</FieldLabel>
 				<MultiSelect
 					options={options.subgenres}
-					value={filters.subgenreIds}
+					value={filters.subgenres}
 					onChange={handleSubgenreChange}
 					placeholder="Select subgenres..."
 					className="w-full"

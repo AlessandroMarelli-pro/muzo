@@ -4,10 +4,10 @@ export const toFilterState = (filter: FilterCriteriaResult) => {
 	return {
 		name: filter.name,
 		criteria: {
-			genreIds: filter.criteria.genreIds ?? [],
-			subgenreIds: filter.criteria.subgenreIds ?? [],
+			genres: filter.criteria.genreIds ?? [],
+			subgenres: filter.criteria.subgenreIds ?? [],
 			keyIds: filter.criteria.keyIds ?? [],
-			libraryIds: filter.criteria.libraryIds ?? [],
+			library: filter.criteria.libraryIds ?? [],
 			atmosphereIds: filter.criteria.atmosphereIds ?? [],
 			tempo: filter.criteria.tempo ?? { min: 0, max: 200 },
 			speechiness: filter.criteria.speechiness ?? { min: 0, max: 1 },

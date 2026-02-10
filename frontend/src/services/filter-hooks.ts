@@ -101,7 +101,7 @@ export const useCreateActiveFilter = () => {
 				`,
 				{ input: { criteria, name: 'current', isCurrent: true } }
 			);
-			return response.createSavedFilter;
+			return toFilterState(response.createSavedFilter);
 		},
 		onSuccess: (data) => {
 			queryClient.setQueryData(filterQueryKeys.currentFilter(), data);
@@ -142,7 +142,7 @@ export const useUpdateActiveFilter = () => {
 				`,
 				{ input: { criteria, name: 'current', isCurrent: true }, id }
 			);
-			return response.updateSavedFilter;
+			return toFilterState(response.updateSavedFilter);
 		},
 		onSuccess: (data) => {
 			queryClient.setQueryData(filterQueryKeys.currentFilter(), data);

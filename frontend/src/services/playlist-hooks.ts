@@ -7,7 +7,7 @@ import {
 	PlaylistTrack,
 	TrackRecommendation,
 } from '@/__generated__/types';
-import { capitalizeEveryWord, encodeBase64 } from '@/lib/utils';
+import { capitalizeEveryWord } from '@/lib/utils';
 import { gql, graffleClient } from '@/services/graffle-client';
 import {
 	queryOptions,
@@ -18,6 +18,7 @@ import {
 import { toast } from 'sonner';
 import { playlistFragment, trackFragment } from './fragments';
 import { toPlaylistItem } from './playlist.mapper';
+import { toTrack } from './track.mapper';
 
 // GraphQL Queries and Mutations
 const GET_PLAYLISTS = gql`
@@ -318,9 +319,7 @@ export const fetchPlaylists = async (
 			me: { playlists: PlaylistsResult };
 		}>(GET_PLAYLISTS, {
 			search: search?.trim() || undefined,
-			verifyTrackId: verifyTrackId
-				? encodeBase64('MusicTrack:' + verifyTrackId)
-				: undefined,
+			verifyTrackId,
 		})
 		.then((data) => data.me.playlists.items.map(toPlaylistItem));
 };
@@ -478,7 +477,6 @@ const addTrackToPlaylist = async (
 	artist: string,
 	title: string
 ): Promise<PlaylistTrack> => {
-	input.trackId = encodeBase64('MusicTrack:' + input.trackId);
 	const data = await graffleClient.request<{
 		addTrackToPlaylist: PlaylistTrack;
 	}>(ADD_TRACK_TO_PLAYLIST, { playlistId, input });
@@ -530,7 +528,7 @@ export const fetchPlaylistRecommendations = async (
 	});
 	return data.node.recommendations.map((recommendation) => ({
 		__typename: 'TrackRecommendation',
-		track: recommendation.track,
+		track: toTrack(recommendation.track),
 		similarity: recommendation.similarity,
 		reasons: recommendation.reasons,
 	}));
