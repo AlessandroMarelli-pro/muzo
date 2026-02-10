@@ -7,7 +7,7 @@ import { Base64ID } from '../scalars/base64-id.scalar';
 @InterfaceType({
   resolveType(value: { id: string }) {
     const { modelName } = extractModelId(value.id as Model['id']);
-    if (modelName === 'Playlist') return 'CleanArchPlaylist';
+    if (modelName === 'Playlist') return 'Playlist';
     if (modelName === 'User') return 'User';
     if (modelName === 'MusicTrack') return 'Track';
     if (modelName === 'MusicLibrary') return 'Library';

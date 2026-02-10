@@ -1,7 +1,7 @@
 import {
 	AddTrackToPlaylistInput,
-	CleanArchPlaylist,
 	CreatePlaylistInput,
+	Playlist,
 	PlaylistSorting,
 	PlaylistsResult,
 	PlaylistTrack,
@@ -62,7 +62,7 @@ const GET_PLAYLIST = gql`
 	${playlistFragment}
 	query GetPlaylist($id: Base64ID!) {
 		node(id: $id) {
-			... on CleanArchPlaylist {
+			... on Playlist {
 				...PlaylistFragment
 			}
 		}
@@ -241,7 +241,7 @@ const GET_PLAYLIST_RECOMMENDATIONS = gql`
 		$recommendationsLimit: Int
 	) {
 		node(id: $playlistId) {
-			... on CleanArchPlaylist {
+			... on Playlist {
 				recommendations(limit: $recommendationsLimit) {
 					track {
 						...TrackFragment
@@ -313,7 +313,7 @@ export const playlistRecommendationsQueryOptions = (
 export const fetchPlaylists = async (
 	search?: string,
 	verifyTrackId?: string
-): Promise<CleanArchPlaylist[]> => {
+): Promise<Playlist[]> => {
 	return graffleClient
 		.request<{
 			me: { playlists: PlaylistsResult };
@@ -327,29 +327,26 @@ export const fetchPlaylists = async (
 export const fetchPlaylist = async (
 	id: string,
 	userId: string = 'default'
-): Promise<CleanArchPlaylist> => {
-	const data = await graffleClient.request<{ node: CleanArchPlaylist }>(
-		GET_PLAYLIST,
-		{
-			id,
-			userId,
-		}
-	);
+): Promise<Playlist> => {
+	const data = await graffleClient.request<{ node: Playlist }>(GET_PLAYLIST, {
+		id,
+		userId,
+	});
 	return toPlaylistItem(data.node);
 };
 
-export const fetchFavoritePlaylist = async (): Promise<CleanArchPlaylist> => {
+export const fetchFavoritePlaylist = async (): Promise<Playlist> => {
 	const data = await graffleClient.request<{
-		me: { favorites: CleanArchPlaylist };
+		me: { favorites: Playlist };
 	}>(GET_FAVORITE_PLAYLIST);
 	return toPlaylistItem(data.me.favorites);
 };
 
 const createPlaylist = async (
 	input: CreatePlaylistInput
-): Promise<CleanArchPlaylist> => {
+): Promise<Playlist> => {
 	const data = await graffleClient.request<{
-		createPlaylist: CleanArchPlaylist;
+		createPlaylist: Playlist;
 	}>(CREATE_PLAYLIST, { input });
 	return data.createPlaylist;
 };
@@ -586,7 +583,7 @@ export function usePlaylists(search?: string, verifyTrackId?: string) {
 		error,
 		refetch,
 		isRefetching,
-	} = useQuery<CleanArchPlaylist[]>({
+	} = useQuery<Playlist[]>({
 		queryKey: playlistsQueryOptions(search, verifyTrackId).queryKey,
 		queryFn: () => fetchPlaylists(search, verifyTrackId),
 	});

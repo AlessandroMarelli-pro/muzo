@@ -8,8 +8,8 @@ The composition root wires Clean Architecture modules and configures GraphQL con
 
 1. **Config** — `ConfigModuleSetup`, `GraphiQLModule`.
 2. **Clean-arch persistence and use cases** — `AdaptersPersistenceModule`, `UseCasesModule`. These must be loaded before GraphQL and HTTP so port tokens are available.
-3. **GraphQL** — `GraphQLModule.forRootAsync(...)`, then `CleanArchGraphQLModule`.
-4. **Shared / feature modules** — `SharedModule`, `QueueModule`, `HealthModule`, `HttpModule`, `CleanArchGraphQLModule`, `ElasticsearchModule`, `MusicLibraryModule`, etc.
+3. **GraphQL** — `GraphQLModule.forRootAsync(...)`, then `GraphQLModule`.
+4. **Shared / feature modules** — `SharedModule`, `QueueModule`, `HealthModule`, `HttpModule`, `GraphQLModule`, `ElasticsearchModule`, `MusicLibraryModule`, etc.
 
 `AdaptersPersistenceModule` is `@Global()`, so port bindings (e.g. `PLAYLIST_REPOSITORY` → `PlaylistRepository`) are available to any module that injects those tokens, including use cases declared in `UseCasesModule` and the GraphQL context factory. `ElasticsearchModule` provides `TRACK_INDEXER_PORT` and `RECOMMENDATION_SEARCH_PORT`.
 
@@ -33,15 +33,15 @@ Order: GraphiQL is mounted first so that middleware runs before the GraphQL hand
   - `playlistContainsTrack: createPlaylistContainsTrackLoader(playlistTrackRepository)`
   - `playlistTracksWithTrack: createPlaylistTracksWithTrackLoader(playlistTrackRepository)`
 
-Resolvers receive this context and use `context.loaders.*` for batched fields (e.g. `CleanArchPlaylist.stats`, `CleanArchPlaylist.tracks`).
+Resolvers receive this context and use `context.loaders.*` for batched fields (e.g. `Playlist.stats`, `Playlist.tracks`).
 
 ## Summary
 
-| Concern                        | Where                                                                                       |
-| ------------------------------ | ------------------------------------------------------------------------------------------- |
+| Concern                        | Where                                                                                                   |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------- |
 | Port → implementation bindings | `AdaptersPersistenceModule` (persistence ports), `ElasticsearchModule` (indexer, recommendation search) |
-| Use cases                      | `UseCasesModule` (wired via `createUseCaseProvider`; implementations from global/imported modules) |
-| GraphQL API                    | `CleanArchGraphQLModule` + `GraphQLModule.forRootAsync` (schema, resolvers, loaders)        |
-| HTTP API                       | `HttpModule` (controllers)                                                                  |
-| Request-scoped context (ALS)   | `ActionContextMiddleware` in `app.module.ts`                                                |
-| Domain errors → GraphQL        | `DomainErrorExceptionFilter` in `CleanArchGraphQLModule`                                    |
+| Use cases                      | `UseCasesModule` (wired via `createUseCaseProvider`; implementations from global/imported modules)      |
+| GraphQL API                    | `GraphQLModule` + `GraphQLModule.forRootAsync` (schema, resolvers, loaders)                             |
+| HTTP API                       | `HttpModule` (controllers)                                                                              |
+| Request-scoped context (ALS)   | `ActionContextMiddleware` in `app.module.ts`                                                            |
+| Domain errors → GraphQL        | `DomainErrorExceptionFilter` in `GraphQLModule`                                                         |

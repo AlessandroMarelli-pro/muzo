@@ -23,4 +23,4 @@ Request-scoped action context is still provided by **`ActionContextMiddleware`**
 
 ## Module
 
-**`HttpModule`** — Imports `ConfigModule` and `UseCasesModule`. Registers `ImageController`, `AudioStreamingController`, and `HttpAuthGuard`. Registered in **`AppModule`** alongside `CleanArchGraphQLModule` and other feature modules.
+**`HttpModule`** — Imports `ConfigModule` and `UseCasesModule`. Registers `ImageController`, `AudioStreamingController`, and `HttpAuthGuard`. Registered in **`AppModule`** alongside `GraphQLModule` and other feature modules.

@@ -61,9 +61,9 @@ backend/src/
 │   │   ├── queries/                  # playlist/playlist-stats, metrics, saved-filter, music-track
 │   │   ├── recommendation/           # RecommendationDataAdapter
 │   │   └── persistence.module.ts    # AdaptersPersistenceModule (@Global), port → implementation bindings
-│   ├── graphql/                      # Schema, resolvers, context, auth, filters — CleanArchGraphQLModule
+│   ├── graphql/                      # Schema, resolvers, context, auth, filters — GraphQLModule
 │   │   ├── schema/                   # Types and inputs (code-first)
-│   │   ├── resolvers/                # UserResolver, CleanArchPlaylistResolver, NodeResolver, ...
+│   │   ├── resolvers/                # UserResolver, PlaylistResolver, NodeResolver, ...
 │   │   ├── mappers/                  # GraphQL ↔ kernel/domain DTOs
 │   │   ├── context/                  # AuthGuard
 │   │   ├── filters/                  # DomainErrorExceptionFilter
@@ -91,13 +91,13 @@ backend/src/
 
 **Layers in this repo:**
 
-| Layer                | Path                        | Role                                                                                                                                                                            |
-| -------------------- | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **kernel**           | `kernel/`                   | Types, IDs, errors, context (ALS). No imports from outer layers.                                                                                                                |
-| **application**      | `application/`              | Ports (interfaces + `createToken`), use cases (wired via `createUseCaseProvider`), DTOs. Depends only on kernel + port tokens.                                                  |
-| **adapters**         | `adapters/`                 | Persistence (repos, queries, loaders), GraphQL (resolvers, schema), HTTP (controllers). Implement ports; call use cases.                                                        |
-| **infrastructure**   | `infrastructure/`           | Prisma, waveform, image reader, Elasticsearch. Implements ports used by adapters/use cases.                                                                                     |
-| **composition root** | `backend/src/app.module.ts` | Imports `AdaptersPersistenceModule`, `UseCasesModule`, `CleanArchGraphQLModule`, `HttpModule`, `ElasticsearchModule`; GraphQL context + DataLoaders; `ActionContextMiddleware`. |
+| Layer                | Path                        | Role                                                                                                                                                                   |
+| -------------------- | --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **kernel**           | `kernel/`                   | Types, IDs, errors, context (ALS). No imports from outer layers.                                                                                                       |
+| **application**      | `application/`              | Ports (interfaces + `createToken`), use cases (wired via `createUseCaseProvider`), DTOs. Depends only on kernel + port tokens.                                         |
+| **adapters**         | `adapters/`                 | Persistence (repos, queries, loaders), GraphQL (resolvers, schema), HTTP (controllers). Implement ports; call use cases.                                               |
+| **infrastructure**   | `infrastructure/`           | Prisma, waveform, image reader, Elasticsearch. Implements ports used by adapters/use cases.                                                                            |
+| **composition root** | `backend/src/app.module.ts` | Imports `AdaptersPersistenceModule`, `UseCasesModule`, `GraphQLModule`, `HttpModule`, `ElasticsearchModule`; GraphQL context + DataLoaders; `ActionContextMiddleware`. |
 
 ---
 
@@ -119,13 +119,13 @@ backend/src/
 
 ### 4.1 Modules (this repo)
 
-| Clean layer        | NestJS role                                                                                                                                                                                  |
-| ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **kernel**         | Plain TS; no Nest module. Re-exports only. No injectables.                                                                                                                                   |
-| **application**    | `UseCasesModule`: use cases wired via `createUseCaseProvider(UseCaseClass, inject)`; exports use-case classes. Port tokens from `createToken<IPort>('...')`.                                 |
-| **adapters**       | `AdaptersPersistenceModule` (@Global): port → repository/query/adapter bindings. `CleanArchGraphQLModule`: resolvers, schema, filters. `HttpModule`: controllers.                            |
-| **infrastructure** | `ElasticsearchModule`: `TRACK_INDEXER_PORT`, `RECOMMENDATION_SEARCH_PORT`. Prisma, waveform, image reader used by persistence module.                                                        |
-| **app**            | `AppModule`: imports `AdaptersPersistenceModule`, `UseCasesModule`, `CleanArchGraphQLModule`, `HttpModule`, `ElasticsearchModule`; GraphQL context + DataLoaders; `ActionContextMiddleware`. |
+| Clean layer        | NestJS role                                                                                                                                                                         |
+| ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **kernel**         | Plain TS; no Nest module. Re-exports only. No injectables.                                                                                                                          |
+| **application**    | `UseCasesModule`: use cases wired via `createUseCaseProvider(UseCaseClass, inject)`; exports use-case classes. Port tokens from `createToken<IPort>('...')`.                        |
+| **adapters**       | `AdaptersPersistenceModule` (@Global): port → repository/query/adapter bindings. `GraphQLModule`: resolvers, schema, filters. `HttpModule`: controllers.                            |
+| **infrastructure** | `ElasticsearchModule`: `TRACK_INDEXER_PORT`, `RECOMMENDATION_SEARCH_PORT`. Prisma, waveform, image reader used by persistence module.                                               |
+| **app**            | `AppModule`: imports `AdaptersPersistenceModule`, `UseCasesModule`, `GraphQLModule`, `HttpModule`, `ElasticsearchModule`; GraphQL context + DataLoaders; `ActionContextMiddleware`. |
 
 ### 4.2 Dependency injection (this repo)
 

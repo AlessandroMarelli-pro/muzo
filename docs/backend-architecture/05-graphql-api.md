@@ -6,19 +6,19 @@ This document describes the **Clean Architecture** GraphQL API exposed under the
 
 ## Root queries
 
-| Field                     | Returns                 | Description                                               |
-| ------------------------- | ----------------------- | --------------------------------------------------------- |
-| `me`                      | `User!`                 | Current user (from action context).                       |
-| `playlist(id: Base64ID!)` | `CleanArchPlaylist`     | Single playlist by ID; NOT_FOUND if missing or not owned. |
-| `playlists`               | `[CleanArchPlaylist!]!` | All playlists for the current user.                       |
+| Field                     | Returns        | Description                                               |
+| ------------------------- | -------------- | --------------------------------------------------------- |
+| `me`                      | `User!`        | Current user (from action context).                       |
+| `playlist(id: Base64ID!)` | `Playlist`     | Single playlist by ID; NOT_FOUND if missing or not owned. |
+| `playlists`               | `[Playlist!]!` | All playlists for the current user.                       |
 
 ## Root mutations
 
-| Field              | Arguments                                               | Returns              | Description                                         |
-| ------------------ | ------------------------------------------------------- | -------------------- | --------------------------------------------------- |
-| `caCreatePlaylist` | `input: CleanArchCreatePlaylistInput!`                  | `CleanArchPlaylist!` | Create a playlist (name, description?, isPublic?).  |
-| `caUpdatePlaylist` | `id: Base64ID!`, `input: CleanArchUpdatePlaylistInput!` | `CleanArchPlaylist!` | Update playlist; NOT_FOUND if missing or not owned. |
-| `caDeletePlaylist` | `id: Base64ID!`                                         | `Boolean!`           | Delete playlist; NOT_FOUND if missing or not owned. |
+| Field              | Arguments                                      | Returns     | Description                                         |
+| ------------------ | ---------------------------------------------- | ----------- | --------------------------------------------------- |
+| `caCreatePlaylist` | `input: CreatePlaylistInput!`                  | `Playlist!` | Create a playlist (name, description?, isPublic?).  |
+| `caUpdatePlaylist` | `id: Base64ID!`, `input: UpdatePlaylistInput!` | `Playlist!` | Update playlist; NOT_FOUND if missing or not owned. |
+| `caDeletePlaylist` | `id: Base64ID!`                                | `Boolean!`  | Delete playlist; NOT_FOUND if missing or not owned. |
 
 ## Types
 
@@ -28,9 +28,9 @@ This document describes the **Clean Architecture** GraphQL API exposed under the
 - `email: String`
 - `firstName: String`
 - `lastName: String`
-- `playlists: PlaylistsResult!` — `{ items: [CleanArchPlaylist!]! }`
+- `playlists: PlaylistsResult!` — `{ items: [Playlist!]! }`
 
-### CleanArchPlaylist
+### Playlist
 
 - `id: Base64ID!`
 - `name: String!`
@@ -40,10 +40,10 @@ This document describes the **Clean Architecture** GraphQL API exposed under the
 - `updatedAt: DateTime!`
 - `createdById: Base64ID!`
 - `updatedById: Base64ID`
-- `tracks: [CleanArchPlaylistTrack]` — resolved via DataLoader `context.loaders.playlistTracks` (batched per request).
-- `stats: CleanArchPlaylistStats` — resolved via DataLoader `context.loaders.playlistStats` (batched per request).
+- `tracks: [PlaylistTrack]` — resolved via DataLoader `context.loaders.playlistTracks` (batched per request).
+- `stats: PlaylistStats` — resolved via DataLoader `context.loaders.playlistStats` (batched per request).
 
-### CleanArchPlaylistTrack
+### PlaylistTrack
 
 - `id: Base64ID!`
 - `position: Int!`
@@ -51,7 +51,7 @@ This document describes the **Clean Architecture** GraphQL API exposed under the
 - `trackId: Base64ID!`
 - `playlistId: Base64ID!`
 
-### CleanArchPlaylistStats
+### PlaylistStats
 
 - `bpmRange: Range!` — `{ min, max }`
 - `energyRange: Range!`
@@ -64,8 +64,8 @@ This document describes the **Clean Architecture** GraphQL API exposed under the
 
 ### Inputs
 
-- **CleanArchCreatePlaylistInput**: `name: String!`, `description: String`, `isPublic: Boolean`
-- **CleanArchUpdatePlaylistInput**: `name: String`, `description: String`, `isPublic: Boolean`
+- **CreatePlaylistInput**: `name: String!`, `description: String`, `isPublic: Boolean`
+- **UpdatePlaylistInput**: `name: String`, `description: String`, `isPublic: Boolean`
 
 ### Scalars
 

@@ -30,19 +30,19 @@ import { AuthGuard } from '../context/auth.guard';
 import { toTrack } from '../mappers/track.mapper';
 import { Base64ID } from '../scalars/base64-id.scalar';
 import { UpdatePlaylistSortingInput } from '../schema/playlist-sorting.input';
-import { CleanArchPlaylistSorting } from '../schema/playlist-sorting.schema';
-import { CleanArchPlaylistStats as PlaylistStats } from '../schema/playlist-stats.schema';
-import { CleanArchPlaylistTrack as PlaylistTrack } from '../schema/playlist-track.schema';
+import { PlaylistSorting } from '../schema/playlist-sorting.schema';
+import { PlaylistStats } from '../schema/playlist-stats.schema';
+import { PlaylistTrack } from '../schema/playlist-track.schema';
 import {
-  CleanArchUpdatePlaylistInput,
   CreatePlaylistInput,
+  UpdatePlaylistInput,
 } from '../schema/playlist.input';
-import { CleanArchPlaylist } from '../schema/playlist.schema';
+import { Playlist } from '../schema/playlist.schema';
 import { TrackRecommendation } from '../schema/recommendation.schema';
 
-@Resolver(() => CleanArchPlaylist)
+@Resolver(() => Playlist)
 @UseGuards(AuthGuard)
-export class CleanArchPlaylistResolver {
+export class PlaylistResolver {
   constructor(
     private readonly createPlaylistUseCase: CreatePlaylistUseCase,
     private readonly updatePlaylistUseCase: UpdatePlaylistUseCase,
@@ -55,7 +55,7 @@ export class CleanArchPlaylistResolver {
 
   @ResolveField(() => PlaylistStats)
   async stats(
-    @Parent() parent: CleanArchPlaylist,
+    @Parent() parent: Playlist,
     @Context() context: { loaders: { playlistStats: PlaylistStatsLoader } },
   ): Promise<PlaylistStats> {
     return context.loaders.playlistStats.load(parsePlaylistId(parent.id));
@@ -63,7 +63,7 @@ export class CleanArchPlaylistResolver {
 
   @ResolveField(() => [PlaylistTrack])
   async tracks(
-    @Parent() parent: CleanArchPlaylist,
+    @Parent() parent: Playlist,
     @Context()
     context: {
       loaders: { playlistTracksWithTrack: PlaylistTracksWithTrackLoader };
@@ -82,10 +82,8 @@ export class CleanArchPlaylistResolver {
       );
   }
 
-  @ResolveField(() => CleanArchPlaylistSorting)
-  async sorting(
-    @Parent() parent: CleanArchPlaylist,
-  ): Promise<Maybe<CleanArchPlaylistSorting>> {
+  @ResolveField(() => PlaylistSorting)
+  async sorting(@Parent() parent: Playlist): Promise<Maybe<PlaylistSorting>> {
     if (parent.sorting != null) {
       return parent.sorting;
     }
@@ -96,7 +94,7 @@ export class CleanArchPlaylistResolver {
 
   @ResolveField(() => Boolean)
   async containsTrack(
-    @Parent() parent: CleanArchPlaylist,
+    @Parent() parent: Playlist,
     @Args('trackId', { type: () => Base64ID, nullable: true })
     trackId: string | null,
     @Context()
@@ -113,10 +111,10 @@ export class CleanArchPlaylistResolver {
     });
   }
 
-  @Mutation(() => CleanArchPlaylist)
+  @Mutation(() => Playlist)
   async createPlaylist(
     @Args('input') input: CreatePlaylistInput,
-  ): Promise<CleanArchPlaylist> {
+  ): Promise<Playlist> {
     return this.createPlaylistUseCase.execute({
       name: input.name,
       description: input.description ?? null,
@@ -127,11 +125,11 @@ export class CleanArchPlaylistResolver {
     });
   }
 
-  @Mutation(() => CleanArchPlaylist)
+  @Mutation(() => Playlist)
   async caUpdatePlaylist(
     @Args('id', { type: () => Base64ID }) id: string,
-    @Args('input') input: CleanArchUpdatePlaylistInput,
-  ): Promise<CleanArchPlaylist> {
+    @Args('input') input: UpdatePlaylistInput,
+  ): Promise<Playlist> {
     return this.updatePlaylistUseCase.execute(parsePlaylistId(id), {
       name: input.name ?? undefined,
       description: input.description ?? undefined,
@@ -153,7 +151,7 @@ export class CleanArchPlaylistResolver {
     return this.exportPlaylistToM3UUseCase.execute(parsePlaylistId(playlistId));
   }
 
-  @Mutation(() => CleanArchPlaylistSorting)
+  @Mutation(() => PlaylistSorting)
   async updatePlaylistSorting(
     @Args('playlistId', { type: () => Base64ID }) playlistId: string,
     @Args('input') input: UpdatePlaylistSortingInput,
@@ -169,7 +167,7 @@ export class CleanArchPlaylistResolver {
 
   @ResolveField(() => [TrackRecommendation])
   async recommendations(
-    @Parent() parent: CleanArchPlaylist,
+    @Parent() parent: Playlist,
     @Args('limit', { type: () => Int, nullable: true }) limit?: number,
   ) {
     if (parent.recommendations != null) {

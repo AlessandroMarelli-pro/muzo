@@ -13,9 +13,9 @@ import {
   AddTrackToPlaylistInput,
   UpdatePlaylistPositionsInput,
 } from '../schema/playlist-track.input';
-import { CleanArchPlaylistTrack } from '../schema/playlist-track.schema';
+import { PlaylistTrack } from '../schema/playlist-track.schema';
 
-@Resolver(() => CleanArchPlaylistTrack)
+@Resolver(() => PlaylistTrack)
 @UseGuards(AuthGuard)
 export class PlaylistTrackResolver {
   constructor(
@@ -24,7 +24,7 @@ export class PlaylistTrackResolver {
     private readonly updatePlaylistTracksPositionsUseCase: UpdatePlaylistTracksPositionsUseCase,
   ) {}
 
-  @Mutation(() => CleanArchPlaylistTrack)
+  @Mutation(() => PlaylistTrack)
   async addTrackToPlaylist(
     @Args('playlistId', { type: () => Base64ID }) playlistId: string,
     @Args('input') input: AddTrackToPlaylistInput,

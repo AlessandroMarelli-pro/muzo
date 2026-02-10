@@ -2,10 +2,10 @@ import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { BullModule } from '@nestjs/bullmq';
 import { MiddlewareConsumer, Module, RequestMethod } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { GraphQLModule } from '@nestjs/graphql';
+import { GraphQLModule as NestjsGraphQLModule } from '@nestjs/graphql';
 import { join } from 'path';
 import { ActionContextMiddleware } from './adapters/common/middlewares/action-context.middleware';
-import { CleanArchGraphQLModule } from './adapters/graphql/graphql.module';
+import { GraphQLModule } from './adapters/graphql/graphql.module';
 import { HttpModule } from './adapters/http/http.module';
 import { JobSchedulersModule } from './adapters/job-schedulers/job-schedulers.module';
 import { AdaptersPersistenceModule } from './adapters/persistence/persistence.module';
@@ -43,7 +43,7 @@ import { NestjsLoggerModule } from './infrastructure/logging/nestjs-logger.modul
     UseCasesModule,
 
     // GraphQL module
-    GraphQLModule.forRootAsync<ApolloDriverConfig>({
+    NestjsGraphQLModule.forRootAsync<ApolloDriverConfig>({
       driver: ApolloDriver,
       imports: [AdaptersPersistenceModule],
       useFactory: (
@@ -86,7 +86,7 @@ import { NestjsLoggerModule } from './infrastructure/logging/nestjs-logger.modul
     }),
 
     // Clean architecture graphql module
-    CleanArchGraphQLModule,
+    GraphQLModule,
 
     // Feature modules
 

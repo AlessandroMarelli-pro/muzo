@@ -5,7 +5,7 @@ import { Base64ID } from '../scalars/base64-id.scalar';
 import { Track } from './track.schema';
 
 @ObjectType()
-export class CleanArchPlaylistTrack {
+export class PlaylistTrack {
   @Field(() => Base64ID)
   id: PlaylistTrackId;
 

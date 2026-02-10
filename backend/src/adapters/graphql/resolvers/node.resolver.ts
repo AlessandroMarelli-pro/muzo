@@ -21,7 +21,7 @@ import { Node } from '../schema/common.schema';
  * Use Query.node(id) to fetch any entity by global ID instead of type-specific queries like playlist(id).
  *
  * Example:
- *   query { node(id: "Playlist:abc") { ... on CleanArchPlaylist { id name tracks { track { id title } } } } }
+ *   query { node(id: "Playlist:abc") { ... on Playlist { id name tracks { track { id title } } } } }
  */
 @Resolver(() => Node)
 @UseGuards(AuthGuard)
@@ -35,7 +35,7 @@ export class NodeResolver {
   @Query(() => Node, {
     nullable: true,
     description:
-      'Fetch any node by global ID. Use inline fragments (... on CleanArchPlaylist { ... }) to request fields.',
+      'Fetch any node by global ID. Use inline fragments (... on Playlist { ... }) to request fields.',
   })
   async node(
     @Args('id', { type: () => Base64ID }) id: string,

@@ -84,11 +84,11 @@ DataLoaders batch and cache per-request loads; they live in persistence because 
 
 ### Playlist stats
 
-- **`queries/playlist/playlist-stats.loader.ts`** — `createPlaylistStatsLoader(statsQuery)`. Batch `getPlaylistsStats()`, return map by playlist id. Used by `CleanArchPlaylist.stats` field.
+- **`queries/playlist/playlist-stats.loader.ts`** — `createPlaylistStatsLoader(statsQuery)`. Batch `getPlaylistsStats()`, return map by playlist id. Used by `Playlist.stats` field.
 
 ### Playlist tracks
 
-- **`repositories/playlist-track/playlist-track.loader.ts`** — `createPlaylistTracksLoader(playlistTrackRepository)`. Batch load tracks by playlist id. Used by `CleanArchPlaylist.tracks` field.
+- **`repositories/playlist-track/playlist-track.loader.ts`** — `createPlaylistTracksLoader(playlistTrackRepository)`. Batch load tracks by playlist id. Used by `Playlist.tracks` field.
 - **`playlist-contains-track.loader.ts`** — `createPlaylistContainsTrackLoader(playlistTrackRepository)`. Batch “does playlist contain track?”.
 - **`playlist-track-with-track.loader.ts`** — `createPlaylistTracksWithTrackLoader(playlistTrackRepository)`. Batch playlist tracks with full track detail.
 

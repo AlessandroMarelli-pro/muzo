@@ -9,7 +9,7 @@ import { MusicTrackResolver } from './resolvers/music-track.resolver';
 import { NodeResolver } from './resolvers/node.resolver';
 import { PlaybackQueueResolver } from './resolvers/playback-queue.resolver';
 import { PlaylistTrackResolver } from './resolvers/playlist-track.resolver';
-import { CleanArchPlaylistResolver } from './resolvers/playlist.resolver';
+import { PlaylistResolver } from './resolvers/playlist.resolver';
 import { SavedFilterResolver } from './resolvers/saved-filter.resolver';
 import { ThirdPartySyncResolver } from './resolvers/third-party-sync.resolver';
 import { UserResolver } from './resolvers/user.resolver';
@@ -18,7 +18,7 @@ import { Base64ID } from './scalars/base64-id.scalar';
 @Module({
   imports: [UseCasesModule],
   providers: [
-    CleanArchPlaylistResolver,
+    PlaylistResolver,
     NodeResolver,
     UserResolver,
     Base64ID,
@@ -36,4 +36,4 @@ import { Base64ID } from './scalars/base64-id.scalar';
     },
   ],
 })
-export class CleanArchGraphQLModule {}
+export class GraphQLModule {}

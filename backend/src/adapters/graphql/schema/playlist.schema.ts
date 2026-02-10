@@ -2,13 +2,13 @@ import { Field, ObjectType } from '@nestjs/graphql';
 import { PlaylistId } from 'src/kernel/ids/scalars';
 import { Base64ID } from '../scalars/base64-id.scalar';
 import { Node } from './common.schema';
-import { CleanArchPlaylistSorting } from './playlist-sorting.schema';
-import { CleanArchPlaylistStats as PlaylistStats } from './playlist-stats.schema';
-import { CleanArchPlaylistTrack as PlaylistTrack } from './playlist-track.schema';
+import { PlaylistSorting } from './playlist-sorting.schema';
+import { PlaylistStats } from './playlist-stats.schema';
+import { PlaylistTrack } from './playlist-track.schema';
 import { TrackRecommendation } from './recommendation.schema';
 
 @ObjectType({ implements: () => [Node] })
-export class CleanArchPlaylist {
+export class Playlist {
   @Field(() => Base64ID)
   id: PlaylistId;
 
@@ -45,8 +45,8 @@ export class CleanArchPlaylist {
   })
   containsTrack?: boolean;
 
-  @Field(() => CleanArchPlaylistSorting, { nullable: true })
-  sorting?: CleanArchPlaylistSorting;
+  @Field(() => PlaylistSorting, { nullable: true })
+  sorting?: PlaylistSorting;
 
   @Field(() => [TrackRecommendation], { nullable: true })
   recommendations?: TrackRecommendation[];

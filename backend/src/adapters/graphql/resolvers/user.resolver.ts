@@ -37,8 +37,8 @@ import {
   ICursorPaginatedType,
   IPaginatedType,
 } from '../schema/pagination.schema';
-import { CleanArchPlaylist } from '../schema/playlist.schema';
-import { CleanArchQueueItem } from '../schema/queue-item.schema';
+import { Playlist } from '../schema/playlist.schema';
+import { QueueItem } from '../schema/queue-item.schema';
 import {
   FilterCriteriaResult,
   StaticFilterOptions,
@@ -81,8 +81,8 @@ export class UserResolver {
     return { items };
   }
 
-  @ResolveField(() => [CleanArchQueueItem])
-  async queue(): Promise<CleanArchQueueItem[]> {
+  @ResolveField(() => [QueueItem])
+  async queue(): Promise<QueueItem[]> {
     const items = await this.getQueueUseCase.execute();
     return items.map((item) => ({
       id: item.id,
@@ -187,8 +187,8 @@ export class UserResolver {
       .then((libraries) => libraries.map(toMusicLibrary));
   }
 
-  @ResolveField(() => CleanArchPlaylist)
-  async favorites(): Promise<CleanArchPlaylist> {
+  @ResolveField(() => Playlist)
+  async favorites(): Promise<Playlist> {
     return this.getFavoriteUseCase.execute().then((playlist) => ({
       ...playlist,
       tracks: playlist.tracks.map((track) => ({

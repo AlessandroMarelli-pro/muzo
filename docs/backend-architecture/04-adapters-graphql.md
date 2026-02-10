@@ -11,11 +11,11 @@ IDs are exposed as **`Base64ID`** scalar; resolvers decode with `parsePlaylistId
 ### Core
 
 - **`schema/user.schema.ts`** — `User` (id, email, firstName, lastName, playlists), `PlaylistsResult` (items).
-- **`schema/playlist.schema.ts`** — `CleanArchPlaylist` (id, name, description, isPublic, createdAt, updatedAt, createdById, updatedById, tracks?, stats?).
-- **`schema/playlist-track.schema.ts`** — `CleanArchPlaylistTrack` (id, position, addedAt, trackId, playlistId).
-- **`schema/playlist-stats.schema.ts`** — `CleanArchPlaylistStats` (bpmRange, energyRange, genresCount, subgenresCount, topGenres, topSubgenres, numberOfTracks, totalDuration).
+- **`schema/playlist.schema.ts`** — `Playlist` (id, name, description, isPublic, createdAt, updatedAt, createdById, updatedById, tracks?, stats?).
+- **`schema/playlist-track.schema.ts`** — `PlaylistTrack` (id, position, addedAt, trackId, playlistId).
+- **`schema/playlist-stats.schema.ts`** — `PlaylistStats` (bpmRange, energyRange, genresCount, subgenresCount, topGenres, topSubgenres, numberOfTracks, totalDuration).
 - **`schema/common.schema.ts`** — `Range` (min, max).
-- **`schema/playlist.input.ts`** — `CleanArchCreatePlaylistInput`, `CleanArchUpdatePlaylistInput`.
+- **`schema/playlist.input.ts`** — `CreatePlaylistInput`, `UpdatePlaylistInput`.
 
 ### Other Clean Arch types
 
@@ -33,7 +33,7 @@ IDs are exposed as **`Base64ID`** scalar; resolvers decode with `parsePlaylistId
 Resolvers decode input (e.g. Base64ID → kernel ID), call one use case or a DataLoader from context, then return the result. Domain errors (e.g. `NotFoundError`) bubble to `DomainErrorExceptionFilter`.
 
 - **`UserResolver`** — Root query `me` (current user from `user()`). Field `playlists` → `GetPlaylists` use case, returns `PlaylistsResult`.
-- **`CleanArchPlaylistResolver`** — Root: `playlist(id)`, `playlists()`. Mutations: `caCreatePlaylist`, `caUpdatePlaylist`, `caDeletePlaylist`. Field resolvers `stats` and `tracks` use **DataLoaders** from context (`playlistStats`, `playlistTracks`) to avoid N+1. All ID args use `parsePlaylistId`; guarded by `AuthGuard`.
+- **`PlaylistResolver`** — Root: `playlist(id)`, `playlists()`. Mutations: `caCreatePlaylist`, `caUpdatePlaylist`, `caDeletePlaylist`. Field resolvers `stats` and `tracks` use **DataLoaders** from context (`playlistStats`, `playlistTracks`) to avoid N+1. All ID args use `parsePlaylistId`; guarded by `AuthGuard`.
 - **`PlaylistTrackResolver`** — Mutations/queries for adding/removing/reordering playlist tracks; uses playlist-track use cases and loaders where appropriate.
 - **`PlaybackQueueResolver`** — Queries/mutations for queue (get, add, remove, reorder, reset); uses playback-queue use cases.
 - **`SavedFilterResolver`** — Queries/mutations for saved filters; uses saved-filter use cases.
@@ -44,8 +44,8 @@ Resolvers decode input (e.g. Base64ID → kernel ID), call one use case or a Dat
 
 DataLoaders are **per-request**, created in GraphQL context in `app.module.ts` (see [08-app-wiring.md](08-app-wiring.md)).
 
-- **`playlistStats`** — `createPlaylistStatsLoader(statsQuery)`. Field `CleanArchPlaylist.stats`.
-- **`playlistTracks`** — `createPlaylistTracksLoader(playlistTrackRepository)`. Field `CleanArchPlaylist.tracks`.
+- **`playlistStats`** — `createPlaylistStatsLoader(statsQuery)`. Field `Playlist.stats`.
+- **`playlistTracks`** — `createPlaylistTracksLoader(playlistTrackRepository)`. Field `Playlist.tracks`.
 - **`playlistContainsTrack`** — `createPlaylistContainsTrackLoader(playlistTrackRepository)`.
 - **`playlistTracksWithTrack`** — `createPlaylistTracksWithTrackLoader(playlistTrackRepository)`.
 
@@ -78,4 +78,4 @@ Playlist/playlist-track often use kernel types directly or minimal mapping in th
 
 ## Module
 
-**`CleanArchGraphQLModule`** — Imports `UseCasesModule`. Registers: all resolvers above, `AuthGuard`, `Base64ID`, `DomainErrorExceptionFilter` (APP_FILTER). Does **not** register `ActionContextInterceptor`; request-scoped context is set by **`ActionContextMiddleware`** in `app.module.ts`. GraphQL path receives DataLoaders via `GraphQLModule.forRootAsync` context in `app.module.ts`.
+**`GraphQLModule`** — Imports `UseCasesModule`. Registers: all resolvers above, `AuthGuard`, `Base64ID`, `DomainErrorExceptionFilter` (APP_FILTER). Does **not** register `ActionContextInterceptor`; request-scoped context is set by **`ActionContextMiddleware`** in `app.module.ts`. GraphQL path receives DataLoaders via `GraphQLModule.forRootAsync` context in `app.module.ts`.

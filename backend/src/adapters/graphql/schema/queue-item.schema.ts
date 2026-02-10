@@ -5,7 +5,7 @@ import { Base64ID } from '../scalars/base64-id.scalar';
 import { Track } from './track.schema';
 
 @ObjectType('QueueItem')
-export class CleanArchQueueItem {
+export class QueueItem {
   @Field(() => Base64ID)
   id: QueueItemId;
 

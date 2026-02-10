@@ -4,15 +4,15 @@ import { Base64ID } from '../scalars/base64-id.scalar';
 import { Node } from './common.schema';
 import { Library } from './library.schema';
 import { ICursorPaginatedType, IPaginatedType } from './pagination.schema';
-import { CleanArchPlaylist } from './playlist.schema';
-import { CleanArchQueueItem } from './queue-item.schema';
+import { Playlist } from './playlist.schema';
+import { QueueItem } from './queue-item.schema';
 import { StaticFilterOptions } from './saved-filter.schema';
 import { CursorPaginatedTracks, PaginatedTracks, Track } from './track.schema';
 
 @ObjectType()
 export class PlaylistsResult {
-  @Field(() => [CleanArchPlaylist])
-  items: CleanArchPlaylist[];
+  @Field(() => [Playlist])
+  items: Playlist[];
 }
 
 @ObjectType({ implements: () => [Node] })
@@ -35,8 +35,8 @@ export class User {
   @Field(() => StaticFilterOptions)
   staticFilterOptions: StaticFilterOptions;
 
-  @Field(() => [CleanArchQueueItem])
-  queue: CleanArchQueueItem[];
+  @Field(() => [QueueItem])
+  queue: QueueItem[];
 
   @Field(() => CursorPaginatedTracks)
   tracks: ICursorPaginatedType<Track>;

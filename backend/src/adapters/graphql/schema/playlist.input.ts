@@ -43,7 +43,7 @@ export class CreatePlaylistInput {
 }
 
 @InputType()
-export class CleanArchUpdatePlaylistInput {
+export class UpdatePlaylistInput {
   @Field({ nullable: true })
   name?: string;
 

@@ -13,12 +13,12 @@ import { parseMusicTrackId } from '../../common/utils/parse-id';
 import { toTrack } from '../mappers/track.mapper';
 import { Base64ID } from '../scalars/base64-id.scalar';
 import {
-  CleanArchQueueItem,
+  QueueItem,
   RemoveTrackFromQueueResponse,
 } from '../schema/queue-item.schema';
 import { UpdateQueuePositionsInput } from '../schema/queue.input';
 
-@Resolver(() => CleanArchQueueItem)
+@Resolver(() => QueueItem)
 @UseGuards(AuthGuard)
 export class PlaybackQueueResolver {
   constructor(
@@ -29,10 +29,10 @@ export class PlaybackQueueResolver {
     private readonly updateQueuePositionsUseCase: UpdateQueuePositionsUseCase,
   ) {}
 
-  @Mutation(() => CleanArchQueueItem)
+  @Mutation(() => QueueItem)
   async addTrackToQueue(
     @Args('trackId', { type: () => Base64ID }) trackId: string,
-  ): Promise<CleanArchQueueItem> {
+  ): Promise<QueueItem> {
     const item = await this.addTrackToQueueUseCase.execute(
       parseMusicTrackId(trackId),
     );
@@ -46,10 +46,10 @@ export class PlaybackQueueResolver {
     };
   }
 
-  @Mutation(() => [CleanArchQueueItem])
+  @Mutation(() => [QueueItem])
   async addTracksToQueue(
     @Args('trackIds', { type: () => [Base64ID] }) trackIds: string[],
-  ): Promise<CleanArchQueueItem[]> {
+  ): Promise<QueueItem[]> {
     const items = await this.addTracksToQueueUseCase.execute(
       trackIds.map(parseMusicTrackId),
     );
@@ -75,10 +75,10 @@ export class PlaybackQueueResolver {
     return this.resetQueueUseCase.execute();
   }
 
-  @Mutation(() => [CleanArchQueueItem])
+  @Mutation(() => [QueueItem])
   async updateQueuePositions(
     @Args('input') input: UpdateQueuePositionsInput,
-  ): Promise<CleanArchQueueItem[]> {
+  ): Promise<QueueItem[]> {
     const items = await this.updateQueuePositionsUseCase.execute(
       input.positions.map((p) => ({
         trackId: parseMusicTrackId(p.trackId),

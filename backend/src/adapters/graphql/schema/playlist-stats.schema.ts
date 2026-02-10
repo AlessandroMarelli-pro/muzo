@@ -2,7 +2,7 @@ import { Field, Float, Int, ObjectType } from '@nestjs/graphql';
 import { Range } from './common.schema';
 
 @ObjectType()
-export class CleanArchPlaylistStats {
+export class PlaylistStats {
   @Field(() => Range)
   bpmRange: Range;
 

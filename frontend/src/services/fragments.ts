@@ -57,7 +57,7 @@ export const trackFragment = gql`
 
 export const playlistTrackFragment = gql`
 	${trackFragment}
-	fragment PlaylistTrackFragment on CleanArchPlaylistTrack {
+	fragment PlaylistTrackFragment on PlaylistTrack {
 		id
 		position
 		addedAt
@@ -69,7 +69,7 @@ export const playlistTrackFragment = gql`
 
 export const playlistFragment = gql`
 	${playlistTrackFragment}
-	fragment PlaylistFragment on CleanArchPlaylist {
+	fragment PlaylistFragment on Playlist {
 		id
 		name
 		description

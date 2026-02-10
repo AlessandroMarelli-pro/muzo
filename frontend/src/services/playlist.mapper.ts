@@ -1,12 +1,8 @@
-import {
-	CleanArchPlaylist,
-	Playlist,
-	PlaylistTrack,
-} from '@/__generated__/types';
+import { Playlist, PlaylistTrack } from '@/__generated__/types';
 import { toTrack } from './track.mapper';
 
-/** Map CleanArchPlaylist (me.playlists.items) to legacy PlaylistItem shape */
-export function toPlaylistItem(item: CleanArchPlaylist): Playlist {
+/** Map Playlist (me.playlists.items) to legacy PlaylistItem shape */
+export function toPlaylistItem(item: Playlist): Playlist {
 	const s = item.stats;
 	const tracks = item.tracks?.map((track) => ({
 		__typename: 'PlaylistTrack',
