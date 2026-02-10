@@ -36,6 +36,7 @@ interface MusicTableProps {
 	handleFilterChange: (
 		values: Record<string, string | string[] | null>
 	) => void;
+	isLoading: boolean;
 }
 const danceabilityFeelingOptions = [
 	{ label: 'Highly Danceable', value: 'highly-danceable' },
@@ -574,55 +575,63 @@ const columns = (
 		[staticFilterOptions, navigate, actions, setCurrentTrack]
 	);
 
-export function MusicTable({
-	data,
-	pageCount,
-	staticFilterOptions,
-	initialPageSize = 10,
-	initialFilters,
-	handleFilterChange,
-}: MusicTableProps) {
-	const navigate = useNavigate();
-	const actions = useAudioPlayerActions();
-	const { setCurrentTrack } = useCurrentTrack();
-
-	const { table } = useDataTable({
+export const MusicTable = React.memo<MusicTableProps>(
+	({
 		data,
-		columns: columns(staticFilterOptions, navigate, actions, setCurrentTrack),
-		pageCount: pageCount,
-		initialState: {
-			sorting: [{ id: 'title', desc: false }],
-			columnPinning: { right: ['actions'] },
-			pagination: {
-				pageIndex: 0,
-				pageSize: initialPageSize,
+		pageCount,
+		staticFilterOptions,
+		initialPageSize = 10,
+		initialFilters,
+		handleFilterChange,
+		isLoading,
+	}: MusicTableProps) => {
+		const navigate = useNavigate();
+		const actions = useAudioPlayerActions();
+		const { setCurrentTrack } = useCurrentTrack();
+
+		const { table } = useDataTable({
+			data,
+			columns: columns(staticFilterOptions, navigate, actions, setCurrentTrack),
+			pageCount: pageCount,
+			initialState: {
+				sorting: [{ id: 'title', desc: false }],
+				columnPinning: { right: ['actions'] },
+				pagination: {
+					pageIndex: 0,
+					pageSize: initialPageSize,
+				},
+				columnVisibility: {
+					atmosphereKeywords: false,
+					danceabilityFeeling: false,
+					arousalMood: false,
+					valenceMood: false,
+				},
 			},
-			columnVisibility: {
-				atmosphereKeywords: false,
-				danceabilityFeeling: false,
-				arousalMood: false,
-				valenceMood: false,
-			},
-		},
 
-		filterValues: initialFilters as unknown as Record<
-			string,
-			string | string[] | null
-		>,
-		setFilterValues: handleFilterChange,
+			filterValues: initialFilters as unknown as Record<
+				string,
+				string | string[] | null
+			>,
+			setFilterValues: handleFilterChange,
 
-		getRowId: (row) => row.id,
-		enableAdvancedFilter: false,
-	});
+			getRowId: (row) => row.id,
+			enableAdvancedFilter: false,
+		});
 
-	return (
-		<div className="w-full space-y-4 ">
-			<DataTable table={table}>
-				<DataTableToolbar table={table}>
-					<DataTableSortList table={table} />
-				</DataTableToolbar>
-				<DataTablePagination table={table} />
-			</DataTable>
-		</div>
-	);
-}
+		return (
+			<div className="w-full space-y-4 ">
+				<DataTable table={table} isLoading={isLoading}>
+					<DataTableToolbar table={table}>
+						<DataTableSortList table={table} />
+					</DataTableToolbar>
+					<DataTablePagination table={table} />
+				</DataTable>
+			</div>
+		);
+	},
+	(prevProps, nextProps) => {
+		//Avoid table loading flickering on page change
+		const shouldUpdate = !prevProps.isLoading && nextProps.isLoading;
+		return shouldUpdate;
+	}
+);

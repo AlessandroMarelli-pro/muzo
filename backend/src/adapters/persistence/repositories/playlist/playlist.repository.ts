@@ -33,6 +33,7 @@ export class PlaylistRepository implements IPlaylistRepository {
       })
       .then(toDomain);
   }
+
   async getOneById(id: PlaylistId): Promise<PlaylistWithSorting> {
     return this.prisma.playlist
       .findFirstOrThrow({
@@ -66,6 +67,7 @@ export class PlaylistRepository implements IPlaylistRepository {
         handlePrismaNotFound(e, `Playlist with ID ${id} not found`),
       );
   }
+
   async getFavorite(): Promise<PlaylistTrackWithTrackDetailAndSorting> {
     const sortingOpts = {
       sortingKey: 'position' as const,

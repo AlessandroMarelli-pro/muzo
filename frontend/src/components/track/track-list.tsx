@@ -85,7 +85,7 @@ export const TrackList = React.memo<TrackListProps>(
 
 		const { data, isLoading } = useTracksList(queryParams);
 
-		if (staticFilterOptions.isLoading || isLoading) {
+		if (staticFilterOptions.isLoading) {
 			return (
 				<div className="p-6 flex flex-col " key="loading-track-list">
 					<DataTableSkeleton
@@ -123,6 +123,7 @@ export const TrackList = React.memo<TrackListProps>(
 					initialPageSize={perPage}
 					initialFilters={filters}
 					handleFilterChange={handleFilterChange}
+					isLoading={isLoading}
 				/>
 			</div>
 		);

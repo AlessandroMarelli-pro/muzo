@@ -173,7 +173,7 @@ export class MusicTrackRepository implements IMusicTrackRepository {
     pagination: WithPagination,
   ): Promise<PaginationResult<MusicTrack>> {
     const { limit, offset, orderBy, orderDirection } = pagination.pagination;
-    const where = buildMusicTrackFilterWhereClause(criteria);
+    const where = buildMusicTrackFilterWhereClause(criteria, 'exact');
     const count = await this.prisma.musicTrack.count({ where });
     return this.prisma.musicTrack
       .findMany({

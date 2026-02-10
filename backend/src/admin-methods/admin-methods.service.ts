@@ -52,6 +52,8 @@ export class AdminMethodsService {
       'queue',
       'musicLibrary',
       'hiddenMusicTrack',
+      'scanSession',
+      'audioFingerprint',
     ];
     for (const table of tables) {
       await this.prisma[table].updateMany({
