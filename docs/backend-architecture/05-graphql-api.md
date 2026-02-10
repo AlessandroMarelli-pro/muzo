@@ -1,6 +1,6 @@
 # GraphQL API (Clean Arch)
 
-This document describes the **Clean Architecture** GraphQL API exposed under the same GraphQL endpoint as the rest of the app. Types and operations below are implemented in `backend/src/clean-arch/adapters/graphql/`.
+This document describes the **Clean Architecture** GraphQL API exposed under the same GraphQL endpoint as the rest of the app. Types and operations below are implemented in `backend/src/adapters/graphql/`.
 
 **Scope:** The tables below detail **User** and **Playlist** (and related types). The same endpoint also exposes Clean Arch operations for: **playlist tracks** (add/remove/reorder), **playback queue** (get, add, remove, reorder, reset), **saved filters** (CRUD, active/current filter, static options), **music player** state, and **metrics**. For their exact fields and arguments, see the schema (e.g. `schema.gql`) or the resolver/schema files in `adapters/graphql/`.
 

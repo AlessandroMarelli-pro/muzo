@@ -1,6 +1,6 @@
 # Application layer
 
-**Path:** `backend/src/clean-arch/application/`
+**Path:** `backend/src/application/`
 
 The application layer contains **ports** (interfaces for outbound I/O) and **use cases** (orchestration). It depends only on the kernel and on port interfaces; concrete implementations live in adapters and are wired via Nest DI.
 

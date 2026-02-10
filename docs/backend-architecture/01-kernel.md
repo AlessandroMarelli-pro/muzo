@@ -1,6 +1,6 @@
 # Kernel layer
 
-**Path:** `backend/src/clean-arch/kernel/`
+**Path:** `backend/src/kernel/`
 
 The kernel holds shared **types**, **identities (IDs)**, **errors**, and **action context**. It has no dependencies on application, adapters, or infrastructure. Used by domain, application, and adapters.
 

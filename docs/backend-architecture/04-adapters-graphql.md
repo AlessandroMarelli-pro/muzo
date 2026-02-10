@@ -1,6 +1,6 @@
 # GraphQL adapters
 
-**Path:** `backend/src/clean-arch/adapters/graphql/`
+**Path:** `backend/src/adapters/graphql/`
 
 GraphQL adapters expose the application layer via GraphQL: schema, resolvers, context, auth, and error handling. They depend on kernel and application (use cases); they do not contain business rules.
 

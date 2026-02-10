@@ -4,31 +4,30 @@ import { MiddlewareConsumer, Module, RequestMethod } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { GraphQLModule } from '@nestjs/graphql';
 import { join } from 'path';
+import { ActionContextMiddleware } from './adapters/common/middlewares/action-context.middleware';
+import { CleanArchGraphQLModule } from './adapters/graphql/graphql.module';
+import { HttpModule } from './adapters/http/http.module';
+import { JobSchedulersModule } from './adapters/job-schedulers/job-schedulers.module';
+import { AdaptersPersistenceModule } from './adapters/persistence/persistence.module';
+import { createPlaylistStatsLoader } from './adapters/persistence/queries/playlist/playlist-stats.loader';
+import { createPlaylistContainsTrackLoader } from './adapters/persistence/repositories/playlist-track/playlist-contains-track.loader';
+import { createPlaylistTracksWithTrackLoader } from './adapters/persistence/repositories/playlist-track/playlist-track-with-track.loader';
+import { createPlaylistTracksLoader } from './adapters/persistence/repositories/playlist-track/playlist-track.loader';
 import { AdminMethodsModule } from './admin-methods/admin-methods.module';
-import { ActionContextMiddleware } from './clean-arch/adapters/common/middlewares/action-context.middleware';
-import { CleanArchGraphQLModule } from './clean-arch/adapters/graphql/graphql.module';
-import { HttpModule } from './clean-arch/adapters/http/http.module';
-import { JobSchedulersModule } from './clean-arch/adapters/job-schedulers/job-schedulers.module';
-import { AdaptersPersistenceModule } from './clean-arch/adapters/persistence/persistence.module';
-import { createPlaylistStatsLoader } from './clean-arch/adapters/persistence/queries/playlist/playlist-stats.loader';
-import { createPlaylistContainsTrackLoader } from './clean-arch/adapters/persistence/repositories/playlist-track/playlist-contains-track.loader';
-import { createPlaylistTracksWithTrackLoader } from './clean-arch/adapters/persistence/repositories/playlist-track/playlist-track-with-track.loader';
-import { createPlaylistTracksLoader } from './clean-arch/adapters/persistence/repositories/playlist-track/playlist-track.loader';
 import {
   IPlaylistStatsQuery,
   PLAYLIST_STATS_QUERY,
-} from './clean-arch/application/ports/queries/IPlaylistStatsQuery';
+} from './application/ports/queries/IPlaylistStatsQuery';
 import {
   IPlaylistTrackRepository,
   PLAYLIST_TRACK_REPOSITORY,
-} from './clean-arch/application/ports/repositories/IPlaylistTrackRepository';
-import { UseCasesModule } from './clean-arch/application/use-cases/use-cases.module';
-import { AiModule } from './clean-arch/infrastructure/external-services/ai/ai.module';
-import { ElasticsearchModule } from './clean-arch/infrastructure/external-services/elasticsearch/elasticsearch.module';
-import { NestjsLoggerModule } from './clean-arch/infrastructure/logging/nestjs-logger.module';
+} from './application/ports/repositories/IPlaylistTrackRepository';
+import { UseCasesModule } from './application/use-cases/use-cases.module';
 import { ConfigModuleSetup, QueueConfig } from './config';
 import { GraphiQLModule } from './graphiql/graphiql.module';
-import { SharedModule } from './shared/shared.module';
+import { AiModule } from './infrastructure/external-services/ai/ai.module';
+import { ElasticsearchModule } from './infrastructure/external-services/elasticsearch/elasticsearch.module';
+import { NestjsLoggerModule } from './infrastructure/logging/nestjs-logger.module';
 
 @Module({
   imports: [
@@ -88,9 +87,6 @@ import { SharedModule } from './shared/shared.module';
 
     // Clean architecture graphql module
     CleanArchGraphQLModule,
-
-    // Shared module for common services
-    SharedModule,
 
     // Feature modules
 

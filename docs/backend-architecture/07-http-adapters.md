@@ -1,6 +1,6 @@
 # HTTP adapters
 
-**Path:** `backend/src/clean-arch/adapters/http/`
+**Path:** `backend/src/adapters/http/`
 
 HTTP adapters expose application use cases via REST-style endpoints. They depend on kernel and application (use cases); they do not contain business rules.
 

@@ -1,9 +1,8 @@
 # Clean Architecture with NestJS
 
-This document describes the Clean Architecture used in this backend and how it works. All clean-arch code is under **`backend/src/clean-arch/`**; the structure is **kernel → application → adapters → infrastructure** (no separate `domain/`; entity shapes live in kernel). Composition root: **`backend/src/app.module.ts`**.
+This document describes the Clean Architecture used in this backend and how it works. All clean-arch code is under **`backend/src/`**; the structure is **kernel → application → adapters → infrastructure** (no separate `domain/`; entity shapes live in kernel). Composition root: **`backend/src/app.module.ts`**.
 
-Details: [docs/backend-architecture/](backend-architecture/README.md)
----
+## Details: [docs/backend-architecture/](backend-architecture/README.md)
 
 ## 1. Why this structure
 
@@ -14,12 +13,12 @@ Details: [docs/backend-architecture/](backend-architecture/README.md)
 
 ---
 
-## 2. Folder structure (this repo: `backend/src/clean-arch/`)
+## 2. Folder structure (this repo: `backend/src/`)
 
-Clean-arch code lives under **`backend/src/clean-arch/`**. There is **no separate `domain/`** folder; entity shapes and value types live in **kernel/types** (e.g. `model-types.ts`, `value-object.ts`). The composition root is **`backend/src/app.module.ts`** (no separate `app/` folder).
+Clean-arch code lives under **`backend/src/`**. There is **no separate `domain/`** folder; entity shapes and value types live in **kernel/types** (e.g. `model-types.ts`, `value-object.ts`). The composition root is **`backend/src/app.module.ts`** (no separate `app/` folder).
 
 ```
-backend/src/clean-arch/
+backend/src/
 ├── kernel/                           # Types, IDs, errors, context — no deps on outer layers
 │   ├── types/                        # model-types, context, errors, models, pagination, value-object, defaults, factory
 │   │   ├── model-types.ts            # Playlist, User, MusicTrack, etc.; ModelBase; ActionContext
@@ -92,25 +91,25 @@ backend/src/clean-arch/
 
 **Layers in this repo:**
 
-| Layer           | Path                    | Role                                                                 |
-| --------------- | ----------------------- | -------------------------------------------------------------------- |
-| **kernel**      | `clean-arch/kernel/`    | Types, IDs, errors, context (ALS). No imports from outer layers.     |
-| **application** | `clean-arch/application/` | Ports (interfaces + `createToken`), use cases (wired via `createUseCaseProvider`), DTOs. Depends only on kernel + port tokens. |
-| **adapters**    | `clean-arch/adapters/`  | Persistence (repos, queries, loaders), GraphQL (resolvers, schema), HTTP (controllers). Implement ports; call use cases. |
-| **infrastructure** | `clean-arch/infrastructure/` | Prisma, waveform, image reader, Elasticsearch. Implements ports used by adapters/use cases. |
+| Layer                | Path                        | Role                                                                                                                                                                            |
+| -------------------- | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **kernel**           | `kernel/`                   | Types, IDs, errors, context (ALS). No imports from outer layers.                                                                                                                |
+| **application**      | `application/`              | Ports (interfaces + `createToken`), use cases (wired via `createUseCaseProvider`), DTOs. Depends only on kernel + port tokens.                                                  |
+| **adapters**         | `adapters/`                 | Persistence (repos, queries, loaders), GraphQL (resolvers, schema), HTTP (controllers). Implement ports; call use cases.                                                        |
+| **infrastructure**   | `infrastructure/`           | Prisma, waveform, image reader, Elasticsearch. Implements ports used by adapters/use cases.                                                                                     |
 | **composition root** | `backend/src/app.module.ts` | Imports `AdaptersPersistenceModule`, `UseCasesModule`, `CleanArchGraphQLModule`, `HttpModule`, `ElasticsearchModule`; GraphQL context + DataLoaders; `ActionContextMiddleware`. |
 
 ---
 
 ## 3. Dependency flow
 
-| Layer              | Depends on                              | Must not depend on                                               |
-| ------------------ | --------------------------------------- | ---------------------------------------------------------------- |
-| **kernel**         | Nothing (internal + Node/stdlib only)   | application, adapters, infrastructure (no GraphQL)              |
-| **application**    | kernel, **port interfaces & tokens**     | adapters, infrastructure (only port types; no concrete classes) |
-| **adapters**       | application (ports, use cases), kernel  | — (may use infrastructure)                                      |
-| **infrastructure** | kernel (types/IDs as needed)             | application use cases, adapters                                 |
-| **app**            | adapters, infrastructure, app modules   | — (wires everything)                                            |
+| Layer              | Depends on                             | Must not depend on                                              |
+| ------------------ | -------------------------------------- | --------------------------------------------------------------- |
+| **kernel**         | Nothing (internal + Node/stdlib only)  | application, adapters, infrastructure (no GraphQL)              |
+| **application**    | kernel, **port interfaces & tokens**   | adapters, infrastructure (only port types; no concrete classes) |
+| **adapters**       | application (ports, use cases), kernel | — (may use infrastructure)                                      |
+| **infrastructure** | kernel (types/IDs as needed)           | application use cases, adapters                                 |
+| **app**            | adapters, infrastructure, app modules  | — (wires everything)                                            |
 
 **Rule**: Source code dependencies only point **inward**. Application defines **port** interfaces; adapters and infrastructure **implement** them. Use Nest’s DI to bind implementations at the composition root (`app.module.ts`). In this repo: no separate domain layer (entities in kernel); use cases depend on port tokens via `createToken`; bindings live in `AdaptersPersistenceModule` and `ElasticsearchModule`.
 
@@ -120,12 +119,12 @@ backend/src/clean-arch/
 
 ### 4.1 Modules (this repo)
 
-| Clean layer        | NestJS role                                                                                   |
-| ------------------ | --------------------------------------------------------------------------------------------- |
-| **kernel**         | Plain TS; no Nest module. Re-exports only. No injectables.                                   |
-| **application**    | `UseCasesModule`: use cases wired via `createUseCaseProvider(UseCaseClass, inject)`; exports use-case classes. Port tokens from `createToken<IPort>('...')`. |
-| **adapters**       | `AdaptersPersistenceModule` (@Global): port → repository/query/adapter bindings. `CleanArchGraphQLModule`: resolvers, schema, filters. `HttpModule`: controllers. |
-| **infrastructure** | `ElasticsearchModule`: `TRACK_INDEXER_PORT`, `RECOMMENDATION_SEARCH_PORT`. Prisma, waveform, image reader used by persistence module. |
+| Clean layer        | NestJS role                                                                                                                                                                                  |
+| ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **kernel**         | Plain TS; no Nest module. Re-exports only. No injectables.                                                                                                                                   |
+| **application**    | `UseCasesModule`: use cases wired via `createUseCaseProvider(UseCaseClass, inject)`; exports use-case classes. Port tokens from `createToken<IPort>('...')`.                                 |
+| **adapters**       | `AdaptersPersistenceModule` (@Global): port → repository/query/adapter bindings. `CleanArchGraphQLModule`: resolvers, schema, filters. `HttpModule`: controllers.                            |
+| **infrastructure** | `ElasticsearchModule`: `TRACK_INDEXER_PORT`, `RECOMMENDATION_SEARCH_PORT`. Prisma, waveform, image reader used by persistence module.                                                        |
 | **app**            | `AppModule`: imports `AdaptersPersistenceModule`, `UseCasesModule`, `CleanArchGraphQLModule`, `HttpModule`, `ElasticsearchModule`; GraphQL context + DataLoaders; `ActionContextMiddleware`. |
 
 ### 4.2 Dependency injection (this repo)
@@ -249,22 +248,22 @@ So the point of having an ID factory and checking ID types is: **safer code (no 
 
 ## 8. Related docs
 
-- **docs/backend-architecture/** — Per-layer docs for `backend/src/clean-arch/`: kernel (01), application (02), persistence (03), GraphQL (04), GraphQL API (05), infrastructure (06), HTTP adapters (07), app wiring (08).
+- **docs/backend-architecture/** — Per-layer docs for `backend/src/`: kernel (01), application (02), persistence (03), GraphQL (04), GraphQL API (05), infrastructure (06), HTTP adapters (07), app wiring (08).
 
 ---
 
 ## 9. Quick reference
 
-| Concept                    | Location                                                                 |
-| -------------------------- | ----------------------------------------------------------------------- |
-| Types, errors, IDs, context | `clean-arch/kernel/`                                                    |
-| Entity shapes (no domain/) | `clean-arch/kernel/types/model-types.ts`, `value-object.ts`             |
-| Port interfaces + tokens   | `clean-arch/application/ports/` (use `createToken<IPort>('...')`)      |
-| Use cases + wiring         | `clean-arch/application/use-cases/` + `createUseCaseProvider(..., inject)` in `use-cases.module.ts` |
-| createToken helper         | `clean-arch/application/utils/create-token.ts`                         |
-| Persistence (repos, queries, loaders) | `clean-arch/adapters/persistence/`                             |
-| GraphQL resolvers, schema  | `clean-arch/adapters/graphql/`                                         |
-| HTTP controllers           | `clean-arch/adapters/http/controllers/`                                |
-| DB, Elasticsearch, audio, filesystem | `clean-arch/infrastructure/`                                  |
-| Port → implementation     | `AdaptersPersistenceModule`, `ElasticsearchModule`                     |
-| Composition root          | `backend/src/app.module.ts`                                             |
+| Concept                               | Location                                                                                 |
+| ------------------------------------- | ---------------------------------------------------------------------------------------- |
+| Types, errors, IDs, context           | `kernel/`                                                                                |
+| Entity shapes (no domain/)            | `kernel/types/model-types.ts`, `value-object.ts`                                         |
+| Port interfaces + tokens              | `application/ports/` (use `createToken<IPort>('...')`)                                   |
+| Use cases + wiring                    | `application/use-cases/` + `createUseCaseProvider(..., inject)` in `use-cases.module.ts` |
+| createToken helper                    | `application/utils/create-token.ts`                                                      |
+| Persistence (repos, queries, loaders) | `adapters/persistence/`                                                                  |
+| GraphQL resolvers, schema             | `adapters/graphql/`                                                                      |
+| HTTP controllers                      | `adapters/http/controllers/`                                                             |
+| DB, Elasticsearch, audio, filesystem  | `infrastructure/`                                                                        |
+| Port → implementation                 | `AdaptersPersistenceModule`, `ElasticsearchModule`                                       |
+| Composition root                      | `backend/src/app.module.ts`                                                              |

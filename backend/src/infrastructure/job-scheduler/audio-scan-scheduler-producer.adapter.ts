@@ -1,0 +1,67 @@
+import { InjectQueue } from '@nestjs/bullmq';
+import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { Queue } from 'bullmq';
+import { FileInfo } from 'src/application/ports/dtos/FileInfo';
+import { AudioScanBatchJobData } from 'src/application/ports/dtos/JobSchedulersData';
+import { IAudioScanSchedulerProducer } from 'src/application/ports/infrastructure/IAudioScanSchedulerProducer';
+import { QueueConfig } from 'src/config';
+import { MusicLibraryId, SessionId } from 'src/kernel/ids';
+import { ActionContext } from 'src/kernel/types';
+
+@Injectable()
+export class AudioScanSchedulerProducerAdapter
+  implements IAudioScanSchedulerProducer
+{
+  private readonly queueConfig: QueueConfig;
+
+  constructor(
+    @InjectQueue('audio-scan')
+    private readonly audioScanQueue: Queue<AudioScanBatchJobData>,
+    private readonly configService: ConfigService,
+  ) {
+    this.queueConfig = this.configService.get<QueueConfig>('queue');
+  }
+
+  async scheduleBatchAudioScan(
+    audioFiles: FileInfo[],
+    libraryId: MusicLibraryId,
+    sessionId: SessionId,
+    contextUser: ActionContext['user'],
+    incremental: boolean,
+  ): Promise<{ sessionId: SessionId }> {
+    const batchJobs = [];
+    const BATCH_SIZE = 10;
+    const totalBatches = Math.ceil(audioFiles.length / BATCH_SIZE);
+
+    // Create batches of 10 files
+    for (let i = 0; i < audioFiles.length; i += BATCH_SIZE) {
+      const batch = audioFiles.slice(i, i + BATCH_SIZE);
+      const batchIndex = Math.floor(i / BATCH_SIZE) + 1;
+      const batchData: AudioScanBatchJobData = {
+        startDateTS: Date.now(),
+        audioFiles: batch.map((file, j) => ({
+          ...file,
+          libraryId,
+          trackIndex: j + (batchIndex - 1) * BATCH_SIZE + 1,
+        })),
+        totalFiles: audioFiles.length,
+        totalBatches,
+        batchIndex,
+        sessionId,
+        contextUser,
+        libraryId,
+        incremental,
+      };
+
+      batchJobs.push({
+        name: 'audio-scan-batch',
+        data: batchData,
+        opts: this.queueConfig.queues.audioScan,
+      });
+    }
+
+    await this.audioScanQueue.addBulk(batchJobs);
+    return { sessionId };
+  }
+}

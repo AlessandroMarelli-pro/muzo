@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { PrismaService } from '../clean-arch/infrastructure/database/prisma.service';
+import { PrismaService } from '../infrastructure/database/prisma.service';
 
 @Injectable()
 export class AdminMethodsService {

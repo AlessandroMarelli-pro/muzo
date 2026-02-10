@@ -1,6 +1,6 @@
 # Persistence adapters
 
-**Path:** `backend/src/clean-arch/adapters/persistence/`
+**Path:** `backend/src/adapters/persistence/`
 
 Persistence adapters **implement** application ports: they map between domain/kernel types and the database (Prisma). All user-scoped reads/writes use `getCurrentUserId()` in `where` clauses.
 
@@ -103,7 +103,7 @@ DataLoaders batch and cache per-request loads; they live in persistence because 
 **`AdaptersPersistenceModule`** (`adapters/persistence/persistence.module.ts`) — `@Global()`. Provides:
 
 - **Concrete implementations:** `PlaylistRepository`, `PlaylistTrackRepository`, `PlaylistSortingRepository`, `MusicTrackRepository`, `QueueRepository`, `SavedFilterRepository`, `ImageSearchRepository`, `HiddenMusicTrackRepository`, `MusicLibraryRepository`, `PlaylistStatsQuery`, `MetricsQuery`, `SavedFilterQuery`, `MusicTrackQuery`, `RecommendationDataAdapter`, `WaveformGenerator`, `FileSystemImageReader` (see [06-infrastructure.md](06-infrastructure.md)).
-- **Infrastructure used by adapters:** `PrismaService` (from `clean-arch/infrastructure/database` or root, depending on import path).
+- **Infrastructure used by adapters:** `PrismaService` (from `infrastructure/database` or root, depending on import path).
 - **Port bindings:** Each port token (e.g. `PLAYLIST_REPOSITORY`) is bound to its implementation with `provide` / `useClass`.
 
 Exports all port tokens so that `UseCasesModule` (and GraphQL `forRootAsync` for loaders) can depend on them without importing implementation details.
