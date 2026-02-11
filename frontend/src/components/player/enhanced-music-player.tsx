@@ -19,6 +19,7 @@ import {
 	SkipForward,
 } from 'lucide-react';
 import React, { useEffect, useRef, useState } from 'react';
+import { TrackMoreMenu } from '../track/track-more-menu';
 import { WaveformVisualizer } from './waveform-visualizer';
 
 interface MusicTrack {
@@ -260,6 +261,11 @@ export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
 							>
 								<Brain className="h-4 w-4" />
 							</Button>
+							<TrackMoreMenu
+								trackId={currentTrack?.id || ''}
+								artist={currentTrack?.artist || ''}
+								title={currentTrack?.title || ''}
+							/>
 						</div>
 						{/* Visualizations */}
 						<div className="flex items-center gap-2 w-auto">

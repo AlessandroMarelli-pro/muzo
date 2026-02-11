@@ -139,7 +139,11 @@ const ActionCells = ({
 			>
 				<Brain className="h-4 w-4 " />
 			</Button>
-			<TrackMoreMenu trackId={track.id} />
+			<TrackMoreMenu
+				trackId={track.id}
+				artist={track.artist}
+				title={track.title}
+			/>
 		</div>
 	);
 };

@@ -16,14 +16,20 @@ interface SelectPlaylistDialogProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 	trackId: string;
+	artist: string;
+	title: string;
 }
 
 export const SelectPlaylistTrigger = ({
 	trackId,
 	isDropdownMenuItem = true,
+	artist,
+	title,
 }: {
 	trackId: string;
-	isDropdownMenuItem: boolean;
+	isDropdownMenuItem?: boolean;
+	artist: string;
+	title: string;
 }) => {
 	const [open, setOpen] = useState(false);
 	const handleOpen = React.useCallback(
@@ -55,6 +61,8 @@ export const SelectPlaylistTrigger = ({
 				open={open}
 				onOpenChange={setOpen}
 				trackId={trackId}
+				artist={artist}
+				title={title}
 			/>
 		</>
 	);
@@ -64,6 +72,8 @@ export const SelectPlaylistDialog: React.FC<SelectPlaylistDialogProps> = ({
 	open,
 	onOpenChange,
 	trackId,
+	artist,
+	title,
 }) => {
 	const { playlists, loading, refetch } = usePlaylists(undefined, trackId);
 	console.log('playlists', playlists);
@@ -80,6 +90,8 @@ export const SelectPlaylistDialog: React.FC<SelectPlaylistDialogProps> = ({
 				input: {
 					trackId,
 				},
+				artist,
+				title,
 			});
 			// onOpenChange(false);
 			setSelectedPlaylistId(null);

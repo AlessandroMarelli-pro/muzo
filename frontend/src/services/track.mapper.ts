@@ -17,6 +17,7 @@ export function toTrack(track: Track): SimpleMusicTrack {
 		key: track.musicalFeatures?.key,
 		valenceMood: track.musicalFeatures?.valenceMood,
 		arousalMood: track.musicalFeatures?.arousalMood,
+		danceabilityFeeling: track.musicalFeatures?.danceabilityFeeling,
 		imagePath: track.imagePath,
 		lastScannedAt: track.lastScannedAt,
 		libraryId: track.libraryId,
