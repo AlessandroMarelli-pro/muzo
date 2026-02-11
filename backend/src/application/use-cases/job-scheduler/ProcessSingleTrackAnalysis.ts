@@ -68,6 +68,22 @@ export class ProcessSingleTrackAnalysisUseCase {
         analysisResult,
       );
 
+      if (analysisResult.ai_metadata?.genre) {
+        this.logger.info(`Creating TrackGenre record for track ${fileName}`);
+        await this.audioAnalysisRepository.upsertTrackGenres(
+          track.id,
+          analysisResult.ai_metadata?.genre,
+        );
+      }
+
+      if (analysisResult.ai_metadata?.style) {
+        this.logger.info(`Creating TrackSubgenre record for track ${fileName}`);
+        await this.audioAnalysisRepository.upsertTrackSubgenres(
+          track.id,
+          analysisResult.ai_metadata?.style,
+        );
+      }
+
       this.logger.info(`Updating track ${fileName} with analysis results`);
       // Update track with AI metadata if available
       await this.musicTrackRepository.updateTrackWithAnalysis(

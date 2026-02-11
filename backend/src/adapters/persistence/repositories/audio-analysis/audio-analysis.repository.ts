@@ -4,6 +4,12 @@ import { IAudioAnalysisRepository } from 'src/application/ports/repositories/IAu
 import { PrismaService } from 'src/infrastructure/database/prisma.service';
 import { extractModelId, MusicTrackId } from 'src/kernel/ids';
 import { getCurrentUserId, models } from 'src/kernel/types';
+import {
+  toPrismaGenre,
+  toPrismaSubgenre,
+  toPrismaTrackGenre,
+  toPrismaTrackSubgenre,
+} from './audio-analysis.mapper';
 
 @Injectable()
 export class AudioAnalysisRepository implements IAudioAnalysisRepository {
@@ -106,20 +112,23 @@ export class AudioAnalysisRepository implements IAudioAnalysisRepository {
       let genre = await this.prisma.genre.findUnique({
         where: { name: normalizedName, createdById: getCurrentUserId() },
       });
-
       if (!genre) {
         genre = await this.prisma.genre.create({
-          data: models.genre.instantiateNew({
-            name: normalizedName,
-            description: null,
-          }),
+          data: toPrismaGenre(
+            models.genre.instantiateNew({
+              name: normalizedName,
+              description: null,
+            }),
+          ),
         });
       }
       await this.prisma.trackGenre.create({
-        data: models.trackGenre.instantiateNew({
-          trackId,
-          genreId: models.genre.id(genre.id),
-        }),
+        data: toPrismaTrackGenre(
+          models.trackGenre.instantiateNew({
+            trackId,
+            genreId: models.genre.id(genre.id),
+          }),
+        ),
       });
     }
   }
@@ -149,18 +158,22 @@ export class AudioAnalysisRepository implements IAudioAnalysisRepository {
 
       if (!subgenre) {
         subgenre = await this.prisma.subgenre.create({
-          data: models.subgenre.instantiateNew({
-            name: normalizedName,
-            description: null,
-            genreId: null,
-          }),
+          data: toPrismaSubgenre(
+            models.subgenre.instantiateNew({
+              name: normalizedName,
+              description: null,
+              genreId: null,
+            }),
+          ),
         });
       }
       await this.prisma.trackSubgenre.create({
-        data: models.trackSubgenre.instantiateNew({
-          trackId,
-          subgenreId: models.subgenre.id(subgenre.id),
-        }),
+        data: toPrismaTrackSubgenre(
+          models.trackSubgenre.instantiateNew({
+            trackId,
+            subgenreId: models.subgenre.id(subgenre.id),
+          }),
+        ),
       });
     }
   }
