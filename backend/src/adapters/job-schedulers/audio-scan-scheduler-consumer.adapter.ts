@@ -78,44 +78,46 @@ export class AudioScanSchedulerConsumerAdapter
     let successCount = 0;
     let failedCount = 0;
     if (!isBatchComplete) {
-      for (const [index, track] of createdTracks.entries()) {
-        const analysisResult = analysisResults.find(
-          (result) => result.file_info.filename === track.fileInfo.fileName,
-        );
-        if (!analysisResult) {
-          this.logger.warn(`Analysis result not found for track ${track.id}`, {
+      await Promise.all(
+        createdTracks.map(async (track, index) => {
+          const analysisResult = analysisResults.find(
+            (result) => result.file_info.filename === track.fileInfo.fileName,
+          );
+          if (!analysisResult) {
+            this.logger.warn(
+              `Analysis result not found for track ${track.id} ${track.fileInfo.fileName}`,
+            );
+            return;
+          }
+          const result = await this.processSingleTrackAnalysisUseCase.execute(
             track,
-          });
-          continue;
-        }
-        const result = await this.processSingleTrackAnalysisUseCase.execute(
-          track,
-          analysisResult,
-          {
-            trackIndex: index,
-            sessionId: data.sessionId,
-            batchIndex: data.batchIndex,
-            totalTracks: data.totalFiles,
-            libraryId: track.libraryId,
-          },
-        );
-        if (result.isSuccess) {
-          successCount++;
-        } else {
-          failedCount++;
-        }
-        // Search for image if available
-        if (
-          analysisResult.album_art?.imageUrl ||
-          analysisResult.album_art?.imagePath
-        ) {
-          await this.addImageSearchRecordUseCase.execute(track.id, {
-            imagePath: analysisResult.album_art.imagePath,
-            imageUrl: analysisResult.album_art.imageUrl,
-            source: analysisResult.album_art.source,
-          });
-        }
-      }
+            analysisResult,
+            {
+              trackIndex: index,
+              sessionId: data.sessionId,
+              batchIndex: data.batchIndex,
+              totalTracks: data.totalFiles,
+              libraryId: track.libraryId,
+            },
+          );
+          if (result.isSuccess) {
+            successCount++;
+          } else {
+            failedCount++;
+          }
+          // Search for image if available
+          if (
+            analysisResult.album_art?.imageUrl ||
+            analysisResult.album_art?.imagePath
+          ) {
+            await this.addImageSearchRecordUseCase.execute(track.id, {
+              imagePath: analysisResult.album_art.imagePath,
+              imageUrl: analysisResult.album_art.imageUrl,
+              source: analysisResult.album_art.source,
+            });
+          }
+        }),
+      );
     }
     this.logger.info(
       `Processing end batch audio scan for session ${data.sessionId}`,

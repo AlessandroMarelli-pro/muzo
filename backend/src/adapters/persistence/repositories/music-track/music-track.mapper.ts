@@ -293,7 +293,6 @@ export const toPrisma: ToPrisma = (domainModel) => {
     userTags: domainModel.aiMetadata?.tags?.join(',') ?? null,
     listeningCount: domainModel.stats?.listeningCount ?? 0,
     lastPlayedAt: domainModel.stats?.lastPlayedAt ?? null,
-    imagePath: domainModel?.imagePath ?? null,
   };
 };
 

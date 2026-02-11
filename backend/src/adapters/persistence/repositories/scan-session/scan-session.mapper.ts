@@ -4,7 +4,7 @@ import { models } from 'src/kernel/types/models';
 import { toDomainModel } from '../domain';
 
 import { extractModelId } from 'src/kernel/ids';
-import { toDbModel } from '../db';
+import { toDbModel, toDbModelUpdate } from '../db';
 
 export type ToDomain = (row: PrismaScanSession) => Session;
 
@@ -39,6 +39,29 @@ export const toPrisma: ToPrisma = (domainModel) => {
     ...toDbModel(domainModel),
     id: dbId,
     sessionId: dbId,
+    status: domainModel.status,
+    totalBatches: domainModel.totalBatches,
+    completedBatches: domainModel.completedBatches,
+    totalTracks: domainModel.totalTracks,
+    completedTracks: domainModel.completedTracks,
+    failedTracks: domainModel.failedTracks,
+    overallProgress: domainModel.overallProgress,
+    startedAt: domainModel.startedAt,
+    completedAt: domainModel.completedAt ?? null,
+    errorMessage: domainModel.errorMessage ?? null,
+  };
+};
+
+export type ToPrismaUpdate = (
+  domainModel: Partial<
+    Omit<Session, 'id' | 'sessionId' | 'createdAt' | 'createdById'>
+  >,
+) => Partial<PrismaScanSession>;
+
+export const toPrismaUpdate: ToPrismaUpdate = (domainModel) => {
+  const updatedModel = models.session.update(domainModel);
+  return {
+    ...toDbModelUpdate(updatedModel),
     status: domainModel.status,
     totalBatches: domainModel.totalBatches,
     completedBatches: domainModel.completedBatches,

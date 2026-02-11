@@ -29,7 +29,6 @@ export class FileManager implements IFileManager {
       if (!isDirectory) {
         throw new Error(`Directory ${rootPath} does not exist`);
       }
-
       const entries = await fs.readdir(rootPath, { withFileTypes: true });
       for (const entry of entries) {
         const fullPath = path.join(rootPath, entry.name);
@@ -58,7 +57,6 @@ export class FileManager implements IFileManager {
             if (options.newerThan && stats.mtime <= options.newerThan) {
               continue;
             }
-
             files.push({
               filePath: fullPath,
               fileName: entry.name,

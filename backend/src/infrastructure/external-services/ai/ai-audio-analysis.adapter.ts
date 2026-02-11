@@ -9,7 +9,6 @@ import {
 import { ConfigService } from '@nestjs/config';
 import FormData from 'form-data';
 import fs from 'fs';
-import path from 'path';
 import { firstValueFrom } from 'rxjs';
 import { AudioAnalysisBatchResponse } from 'src/application/ports/dtos/AudioAnalysis';
 import {
@@ -41,34 +40,6 @@ export class AiAudioAnalysisAdapter implements IAudioAnalysisStructure {
     skipImageSearch?: boolean,
   ): Promise<AudioAnalysisBatchResponse> {
     try {
-      // Validate all files exist and are accessible
-      for (const audioFilePath of audioFilePaths) {
-        if (!fs.existsSync(audioFilePath)) {
-          throw new HttpException(
-            `Audio file not found: ${audioFilePath}`,
-            HttpStatus.NOT_FOUND,
-          );
-        }
-
-        // Validate file extension
-        const fileExtension = path.extname(audioFilePath).toLowerCase();
-        const supportedExtensions = [
-          '.wav',
-          '.mp3',
-          '.flac',
-          '.m4a',
-          '.aac',
-          '.ogg',
-          '.opus',
-        ];
-        if (!supportedExtensions.includes(fileExtension)) {
-          throw new HttpException(
-            `Unsupported audio format: ${fileExtension}`,
-            HttpStatus.BAD_REQUEST,
-          );
-        }
-      }
-
       this.logger.log(
         `Analyzing ${audioFilePaths.length} audio files in batch`,
       );

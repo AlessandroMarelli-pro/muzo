@@ -38,23 +38,17 @@ export class ProcessSingleTrackAnalysisUseCase {
     const analysisStatus = analysisResult.status;
     const fileName = track.fileInfo.fileName;
     try {
-      // Check if analysis was successful
-      if (!analysisStatus || analysisStatus === 'error') {
-        this.logger.error(
-          `Failed to analyze track ${fileName}: ${analysisStatus}`,
-        );
-        return { isSuccess: false };
-      }
-
       // Validate required fields
       if (
-        !analysisResult?.id3_tags?.artist &&
-        !analysisResult?.id3_tags?.title &&
-        !analysisResult?.ai_metadata?.artist &&
-        !analysisResult?.ai_metadata?.title
+        !analysisStatus ||
+        analysisStatus === 'error' ||
+        (!analysisResult?.id3_tags?.artist &&
+          !analysisResult?.id3_tags?.title &&
+          !analysisResult?.ai_metadata?.artist &&
+          !analysisResult?.ai_metadata?.title)
       ) {
         this.logger.error(
-          `Skipping audio scan for ${fileName} because it has no artist or title. Music track deleted.`,
+          `Skipping audio scan for ${fileName} because it has no artist, title or it failed. Music track deleted.`,
           { analysisResult },
         );
         await this.musicTrackRepository.removeOneById(track.id);

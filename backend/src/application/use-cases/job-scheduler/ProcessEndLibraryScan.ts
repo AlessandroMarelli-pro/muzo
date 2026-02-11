@@ -57,23 +57,29 @@ export class ProcessEndLibraryScanUseCase {
       },
       overallProgress: 10000,
     });
-    const tracks =
-      await this.musicTrackRepository.getManyByLibraryId(libraryId);
+    const analysisStatusCounts =
+      await this.musicTrackRepository.getAnalysisStatusForManyByLibraryId(
+        libraryId,
+      );
+    console.log(analysisStatusCounts);
     // Calculate current statistics
-    const analyzedTracks = tracks.filter(
-      (track) =>
-        track.analysisInfo?.status === AudioFileAnalysisStatusEnum.COMPLETED,
-    ).length;
+    const analyzedTracks =
+      analysisStatusCounts.find(
+        ({ analysisStatus }) =>
+          analysisStatus === AudioFileAnalysisStatusEnum.COMPLETED,
+      )?.count ?? 0;
 
-    const pendingTracks = tracks.filter(
-      (track) =>
-        track.analysisInfo?.status === AudioFileAnalysisStatusEnum.PENDING,
-    ).length;
+    const pendingTracks =
+      analysisStatusCounts.find(
+        ({ analysisStatus }) =>
+          analysisStatus === AudioFileAnalysisStatusEnum.PENDING,
+      )?.count ?? 0;
 
-    const failedTracks = tracks.filter(
-      (track) =>
-        track.analysisInfo?.status === AudioFileAnalysisStatusEnum.FAILED,
-    ).length;
+    const failedTracks =
+      analysisStatusCounts.find(
+        ({ analysisStatus }) =>
+          analysisStatus === AudioFileAnalysisStatusEnum.FAILED,
+      )?.count ?? 0;
 
     // Update library with final statistics
     const updateData: any = {

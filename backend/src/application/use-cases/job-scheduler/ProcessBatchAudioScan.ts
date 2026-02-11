@@ -1,4 +1,3 @@
-import fs from 'fs';
 import { ILogger } from 'src/application/ports/infrastructure/ILogger';
 import { IMusicTrackRepository } from 'src/application/ports/repositories/IMusicTrackRepository';
 import {
@@ -11,7 +10,7 @@ import {
   AudioFile,
   AudioScanBatchJobData,
 } from '../../ports/dtos/JobSchedulersData';
-import { TrackCompleteEvent } from '../../ports/dtos/ScanProgress.types';
+import { TrackAlreadyAnalyzedEvent } from '../../ports/dtos/ScanProgress.types';
 import { IAudioAnalysisStructure } from '../../ports/infrastructure/IAudioAnalysisStructure';
 import { IScanProgressPublisher } from '../../ports/infrastructure/IScanProgressPublisher';
 import { IMusicLibraryRepository } from '../../ports/repositories/IMusicLibraryRepository';
@@ -37,56 +36,44 @@ export class ProcessBatchAudioScanUseCase {
     createdTracks: MusicTrack[];
   }> {
     this.logger.info('Processing batch audio scan', { data });
-    const { audioFiles, sessionId, batchIndex, totalFiles, libraryId } = data;
+    const { audioFiles, sessionId, batchIndex, libraryId } = data;
+
     try {
-      // Validate all files exist
-      const validJobs: AudioFile[] = [];
+      const areFilesAnalyzed = await this.musicTrackRepository.areFilesAnalyzed(
+        audioFiles.map((audioFile) => audioFile.filePath),
+      );
 
-      for (const audioFile of audioFiles) {
-        const { filePath, fileName, trackIndex, libraryId } = audioFile;
+      const alreadyAnalyzedFiles = areFilesAnalyzed
+        .filter((file) => file.isAnalyzed)
+        .map((file) => file.filePath);
 
-        if (!fs.existsSync(filePath)) {
-          this.logger.warn(`Skipping missing file: ${filePath} (${fileName})`);
-          continue;
+      if (alreadyAnalyzedFiles.length > 0) {
+        this.logger.info(
+          `${alreadyAnalyzedFiles.length} files are already analyzed`,
+          {
+            alreadyAnalyzedFiles,
+          },
+        );
+        const trackAlreadyAnalyzedEvent: TrackAlreadyAnalyzedEvent = {
+          type: 'tracks.already.analyzed',
+          sessionId,
+          timestamp: new Date().toISOString(),
+          batchIndex,
+          data: {
+            fileName: alreadyAnalyzedFiles.join(', '),
+          },
+        };
+        if (sessionId) {
+          await this.scanProgressPublisher.publishEvent(
+            sessionId,
+            trackAlreadyAnalyzedEvent,
+          );
         }
-
-        // Check if track already exists and is completed
-        const existingTrack =
-          await this.musicTrackRepository.getOneByFilePath(filePath);
-        if (
-          existingTrack?.analysisInfo?.status ===
-          AudioFileAnalysisStatusEnum.COMPLETED
-        ) {
-          if (
-            existingTrack.metadata?.genres?.length !== 0 &&
-            existingTrack.metadata?.subgenres?.length !== 0
-          ) {
-            this.logger.info(`Track already analyzed: ${fileName}`);
-            if (sessionId) {
-              const trackCompleteEvent: TrackCompleteEvent = {
-                type: 'track.complete',
-                sessionId,
-                timestamp: new Date().toISOString(),
-                libraryId,
-                batchIndex,
-                data: {
-                  trackIndex,
-                  totalTracks: totalFiles,
-                  fileName,
-                  success: false,
-                },
-              };
-              await this.scanProgressPublisher.publishEvent(
-                sessionId,
-                trackCompleteEvent,
-              );
-            }
-            continue;
-          }
-        }
-
-        validJobs.push(audioFile);
       }
+
+      const validJobs: AudioFile[] = audioFiles.filter(
+        (file) => !alreadyAnalyzedFiles.includes(file.filePath),
+      );
 
       if (validJobs.length === 0) {
         this.logger.info('No files to process in batch');

@@ -19,6 +19,10 @@ export interface UpdateScanSessionInput {
 
 export interface IScanSessionRepository {
   createSession(sessionId: SessionId | null): Promise<Session>;
+  updateSession(
+    sessionId: SessionId,
+    updates: UpdateScanSessionInput,
+  ): Promise<Session>;
   updateSessionProgress(
     sessionId: SessionId,
     updates: UpdateScanSessionInput,

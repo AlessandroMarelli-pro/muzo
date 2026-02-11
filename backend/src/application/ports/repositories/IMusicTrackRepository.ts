@@ -40,9 +40,14 @@ export type MusicTrackUpdateData = {
 
 export interface IMusicTrackRepository {
   getManyByLibraryId(libraryId: MusicLibraryId): Promise<MusicTrack[]>;
+  getAnalysisStatusForManyByLibraryId(
+    libraryId: MusicLibraryId,
+  ): Promise<{ analysisStatus: AudioFileAnalysisStatusEnum; count: number }[]>;
   upsertOne(track: Partial<MusicTrackUpdateData>): Promise<MusicTrack>;
   getOneById(id: MusicTrackId): Promise<MusicTrack>;
-  getOneByFilePath(filePath: string): Promise<MusicTrack>;
+  areFilesAnalyzed(
+    filePaths: string[],
+  ): Promise<{ isAnalyzed: boolean; filePath: string }[]>;
   getLastPlayedTrack(): Promise<MusicTrack>;
   getManyByIds(ids: MusicTrackId[]): Promise<MusicTrack[]>;
   getAll(): Promise<MusicTrack[]>;

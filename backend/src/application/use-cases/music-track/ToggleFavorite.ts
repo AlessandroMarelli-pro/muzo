@@ -26,11 +26,15 @@ export class ToggleFavoriteUseCase {
     }
 
     if (isFavorite) {
+      const lastPosition = await this.playlistTrackRepository.getLastPosition(
+        playlist.id,
+      );
+      const position = (lastPosition ?? 0) + 1;
       await this.playlistTrackRepository.save(
         models.playlistTrack.instantiateNew({
           playlistId: playlist.id,
           trackId: id,
-          position: 0,
+          position,
           addedAt: new Date(),
         }),
       );

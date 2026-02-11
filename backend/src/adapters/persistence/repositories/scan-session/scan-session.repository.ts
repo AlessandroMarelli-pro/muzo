@@ -8,7 +8,7 @@ import { PrismaService } from 'src/infrastructure/database/prisma.service';
 import { extractModelId, SessionId } from 'src/kernel/ids';
 import { getCurrentUser, getCurrentUserId, models } from 'src/kernel/types';
 import { ScanStatusEnum, Session } from 'src/kernel/types/model-types';
-import { toDomain, toPrisma } from './scan-session.mapper';
+import { toDomain, toPrisma, toPrismaUpdate } from './scan-session.mapper';
 
 @Injectable()
 export class ScanSessionRepository implements IScanSessionRepository {
@@ -37,6 +37,21 @@ export class ScanSessionRepository implements IScanSessionRepository {
     });
 
     return toDomain(session);
+  }
+
+  async updateSession(
+    sessionId: SessionId,
+    updates: UpdateScanSessionInput,
+  ): Promise<Session> {
+    return this.prisma.scanSession
+      .update({
+        where: {
+          sessionId: extractModelId(sessionId).dbId,
+          createdById: getCurrentUserId(),
+        },
+        data: toPrismaUpdate(updates),
+      })
+      .then(toDomain);
   }
 
   /**
@@ -112,7 +127,7 @@ export class ScanSessionRepository implements IScanSessionRepository {
           console.debug(
             `Session ${sessionId} is not in SCANNING status, skipping update`,
           );
-          return;
+          return activeSession;
         }
 
         // Perform atomic update with increment

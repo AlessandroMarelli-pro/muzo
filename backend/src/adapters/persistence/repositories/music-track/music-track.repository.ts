@@ -45,6 +45,25 @@ export class MusicTrackRepository implements IMusicTrackRepository {
       .then((rows) => rows.map(toDomain));
   }
 
+  async getAnalysisStatusForManyByLibraryId(
+    libraryId: MusicLibraryId,
+  ): Promise<{ analysisStatus: AudioFileAnalysisStatusEnum; count: number }[]> {
+    return this.prisma.musicTrack
+      .groupBy({
+        by: ['analysisStatus'],
+        where: { libraryId, createdById: getCurrentUserId() },
+        _count: {
+          id: true,
+        },
+      })
+      .then((rows) =>
+        rows.map((row) => ({
+          analysisStatus: row.analysisStatus as AudioFileAnalysisStatusEnum,
+          count: row._count.id ?? 0,
+        })),
+      );
+  }
+
   async upsertOne(trackData: MusicTrackUpdateData): Promise<MusicTrack> {
     return this.prisma.musicTrack
       .upsert({
@@ -99,19 +118,26 @@ export class MusicTrackRepository implements IMusicTrackRepository {
       .then(toDomain);
   }
 
-  async getOneByFilePath(filePath: string): Promise<MusicTrack> {
+  // If analysis completed and no genres it means it has not been fully analyzed
+  async areFilesAnalyzed(
+    filePaths: string[],
+  ): Promise<{ isAnalyzed: boolean; filePath: string }[]> {
     return this.prisma.musicTrack
-      .findUniqueOrThrow({
-        where: { filePath, createdById: getCurrentUserId() },
-        include: musicTracksIncludes,
+      .findMany({
+        where: {
+          filePath: { in: filePaths },
+          createdById: getCurrentUserId(),
+          analysisStatus: AudioFileAnalysisStatusEnum.COMPLETED,
+          trackGenres: { some: {} },
+          trackSubgenres: { some: {} },
+        },
       })
-      .catch((e: unknown) =>
-        handlePrismaNotFound(
-          e,
-          `Music track with file path ${filePath} not found`,
-        ),
-      )
-      .then(toDomain);
+      .then((rows) =>
+        filePaths.map((filePath) => ({
+          isAnalyzed: rows.some((row) => row.filePath === filePath),
+          filePath,
+        })),
+      );
   }
   async getLastPlayedTrack(): Promise<MusicTrack> {
     return this.prisma.musicTrack

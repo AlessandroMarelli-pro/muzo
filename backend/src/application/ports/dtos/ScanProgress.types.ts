@@ -15,6 +15,7 @@ export type ScanProgressEventType =
   | 'audio.analysis'
   | 'saving'
   | 'track.complete'
+  | 'tracks.already.analyzed'
   | 'batch.complete'
   | 'scan.complete';
 
@@ -122,6 +123,14 @@ export interface TrackCompleteEvent extends BaseScanProgressEvent {
   };
 }
 
+export interface TrackAlreadyAnalyzedEvent extends BaseScanProgressEvent {
+  type: 'tracks.already.analyzed';
+  batchIndex: number;
+  data: {
+    fileName: string;
+  };
+}
+
 export interface BatchCompleteEvent extends BaseScanProgressEvent {
   type: 'batch.complete';
   batchIndex: number;
@@ -171,5 +180,6 @@ export type ScanProgressEvent =
   | AudioAnalysisEvent
   | SavingEvent
   | TrackCompleteEvent
+  | TrackAlreadyAnalyzedEvent
   | BatchCompleteEvent
   | ScanCompleteEvent;

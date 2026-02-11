@@ -1,10 +1,14 @@
 import { InjectQueue } from '@nestjs/bullmq';
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { BulkJobOptions, Queue } from 'bullmq';
 import { FileInfo } from 'src/application/ports/dtos/FileInfo';
 import { AudioScanBatchJobData } from 'src/application/ports/dtos/JobSchedulersData';
 import { IAudioScanSchedulerProducer } from 'src/application/ports/infrastructure/IAudioScanSchedulerProducer';
+import {
+  IScanSessionRepository,
+  SCAN_SESSION_REPOSITORY,
+} from 'src/application/ports/repositories/IScanSessionRepository';
 import { QueueConfig } from 'src/config';
 import { MusicLibraryId, SessionId } from 'src/kernel/ids';
 import { ActionContext } from 'src/kernel/types';
@@ -19,6 +23,8 @@ export class AudioScanSchedulerProducerAdapter
     @InjectQueue('audio-scan')
     private readonly audioScanQueue: Queue<AudioScanBatchJobData>,
     private readonly configService: ConfigService,
+    @Inject(SCAN_SESSION_REPOSITORY)
+    private readonly scanSessionRepository: IScanSessionRepository,
   ) {
     this.queueConfig = this.configService.get<QueueConfig>('queue')!;
   }
@@ -37,8 +43,10 @@ export class AudioScanSchedulerProducerAdapter
     }[] = [];
 
     const BATCH_SIZE = 10;
-    const totalBatches = Math.ceil(audioFiles.length / BATCH_SIZE);
-
+    const totalBatches = Math.ceil(audioFiles.length / BATCH_SIZE) + 1;
+    await this.scanSessionRepository.updateSession(sessionId, {
+      totalBatches,
+    });
     // Create batches of 10 files
     for (let i = 0; i < audioFiles.length; i += BATCH_SIZE) {
       const batch = audioFiles.slice(i, i + BATCH_SIZE);
