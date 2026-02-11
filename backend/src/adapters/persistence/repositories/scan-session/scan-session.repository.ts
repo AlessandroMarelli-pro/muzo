@@ -148,18 +148,20 @@ export class ScanSessionRepository implements IScanSessionRepository {
   async completeSession(
     sessionId: SessionId,
     success: boolean = true,
-  ): Promise<void> {
-    await this.prisma.scanSession.update({
-      where: {
-        sessionId: extractModelId(sessionId).dbId,
-        createdById: getCurrentUserId(),
-      },
-      data: {
-        status: success ? ScanStatusEnum.IDLE : ScanStatusEnum.ERROR,
-        completedAt: new Date(),
-        overallProgress: 100,
-      },
-    });
+  ): Promise<Session> {
+    return this.prisma.scanSession
+      .update({
+        where: {
+          sessionId: extractModelId(sessionId).dbId,
+          createdById: getCurrentUserId(),
+        },
+        data: {
+          status: success ? ScanStatusEnum.IDLE : ScanStatusEnum.ERROR,
+          completedAt: new Date(),
+          overallProgress: 10000,
+        },
+      })
+      .then(toDomain);
   }
 
   /**

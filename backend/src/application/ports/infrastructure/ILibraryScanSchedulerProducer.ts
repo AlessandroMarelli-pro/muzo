@@ -16,7 +16,6 @@ export interface ILibraryScanSchedulerProducer {
     libraryId: MusicLibraryId,
     sessionId: SessionId,
     contextUser: ActionContext['user'],
-    totalTracks: number,
     incremental: boolean,
   ): Promise<{ sessionId: SessionId }>;
 }

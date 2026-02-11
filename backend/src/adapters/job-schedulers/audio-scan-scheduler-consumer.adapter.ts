@@ -138,7 +138,6 @@ export class AudioScanSchedulerConsumerAdapter
       data.libraryId,
       false,
       data.contextUser,
-      data.totalFiles,
     );
   }
 }

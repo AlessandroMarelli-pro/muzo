@@ -64,12 +64,11 @@ export class LibraryScanSchedulerConsumerAdapter
   }
 
   async consumeEndLibraryScan(data: EndLibraryScanJobData): Promise<void> {
-    const { libraryId, sessionId, incremental, totalTracks } = data;
+    const { libraryId, sessionId, incremental } = data;
     await this.processEndLibraryScanUseCase.execute(
       libraryId,
       sessionId,
       incremental,
-      totalTracks,
     );
   }
 }

@@ -43,9 +43,10 @@ export class AudioScanSchedulerProducerAdapter
     }[] = [];
 
     const BATCH_SIZE = 10;
-    const totalBatches = Math.ceil(audioFiles.length / BATCH_SIZE) + 1;
+    const totalBatches = Math.ceil(audioFiles.length / BATCH_SIZE);
     await this.scanSessionRepository.updateSession(sessionId, {
       totalBatches,
+      totalTracks: audioFiles.length,
     });
     // Create batches of 10 files
     for (let i = 0; i < audioFiles.length; i += BATCH_SIZE) {

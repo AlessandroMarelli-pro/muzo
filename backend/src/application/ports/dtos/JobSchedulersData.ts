@@ -11,7 +11,6 @@ export interface LibraryScanJobData {
 
 export interface EndLibraryScanJobData {
   libraryId: MusicLibraryId;
-  totalTracks: number;
   incremental: boolean;
   sessionId: SessionId;
   contextUser: ActionContext['user'];

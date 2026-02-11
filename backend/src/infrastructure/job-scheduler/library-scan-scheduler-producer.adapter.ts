@@ -37,12 +37,10 @@ export class LibraryScanSchedulerProducerAdapter
     libraryId: MusicLibraryId,
     sessionId: SessionId,
     contextUser: ActionContext['user'],
-    totalTracks: number,
     incremental: boolean,
   ): Promise<{ sessionId: SessionId }> {
     const jobData: EndLibraryScanJobData = {
       libraryId,
-      totalTracks,
       incremental,
       sessionId,
       contextUser,

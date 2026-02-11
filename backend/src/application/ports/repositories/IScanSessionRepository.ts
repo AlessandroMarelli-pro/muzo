@@ -28,7 +28,7 @@ export interface IScanSessionRepository {
     updates: UpdateScanSessionInput,
   ): Promise<Session>;
   getSession(sessionId: SessionId): Promise<Session>;
-  completeSession(sessionId: SessionId, success: boolean): Promise<void>;
+  completeSession(sessionId: SessionId, success: boolean): Promise<Session>;
   getActiveSessions(): Promise<Session[]>;
   getCompletedSessions(): Promise<Session[]>;
   deleteSession(sessionId: SessionId): Promise<void>;

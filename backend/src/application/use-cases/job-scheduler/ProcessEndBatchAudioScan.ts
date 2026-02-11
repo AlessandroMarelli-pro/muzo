@@ -23,7 +23,6 @@ export class ProcessEndBatchAudioScanUseCase {
     libraryId: MusicLibraryId,
     incremental: boolean,
     contextUser: ActionContext['user'],
-    totalTracks: number,
   ): Promise<void> {
     const { totalFiles, totalBatches, audioFiles, sessionId } = data;
     const progressPercentage = Math.round((1 / totalBatches!) * 10000);
@@ -62,7 +61,7 @@ export class ProcessEndBatchAudioScanUseCase {
     };
 
     this.logger.debug(
-      `Progress update for ${libraryId}: ${session.completedBatches}/${session.totalBatches} (${session.overallProgress.toFixed(1)}%)`,
+      `Progress update for ${libraryId}: ${session.completedBatches}/${session.totalBatches} (${(session.overallProgress / 100).toFixed(1)}%)`,
     );
     await this.scanProgressPublisher.publishEvent(
       sessionId,
@@ -76,7 +75,6 @@ export class ProcessEndBatchAudioScanUseCase {
         libraryId,
         sessionId,
         contextUser,
-        totalTracks,
         incremental,
       );
     }

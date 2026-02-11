@@ -22,7 +22,6 @@ export class ProcessEndLibraryScanUseCase {
     libraryId: MusicLibraryId,
     sessionId: SessionId,
     incremental: boolean,
-    totalTracks: number,
   ): Promise<void> {
     this.logger.info(
       `Ending library scan for library ${libraryId} with session ${sessionId}`,
@@ -30,49 +29,38 @@ export class ProcessEndLibraryScanUseCase {
         libraryId,
         sessionId,
         incremental,
-        totalTracks,
       },
     );
-    // Get current library statistics
-    const library = await this.musicLibraryRepository.getOneById(libraryId);
-    const startDateTS = (
-      await this.scanSessionRepository.getSession(sessionId)
-    ).createdAt.getTime();
-    if (!library) {
-      this.logger.error(`Library not found: ${libraryId}`);
-      throw new Error(`Library not found: ${libraryId}`);
-    }
-    await this.scanSessionRepository.completeSession(sessionId, true);
+
+    const session = await this.scanSessionRepository.completeSession(
+      sessionId,
+      true,
+    );
     await this.scanProgressPublisher.publishEvent(sessionId, {
       type: 'scan.complete',
       sessionId: libraryId,
       timestamp: new Date().toISOString(),
       libraryId,
       data: {
-        totalBatches: 1,
-        totalTracks,
-        successful: totalTracks,
-        failed: 0,
-        duration: Date.now() - startDateTS,
+        totalBatches: session.totalBatches,
+        totalTracks: session.totalTracks,
+        successful: session.completedTracks,
+        failed: session.failedTracks,
+        duration: Date.now() - session.startedAt.getTime(),
       },
       overallProgress: 10000,
     });
+
     const analysisStatusCounts =
       await this.musicTrackRepository.getAnalysisStatusForManyByLibraryId(
         libraryId,
       );
-    console.log(analysisStatusCounts);
+
     // Calculate current statistics
     const analyzedTracks =
       analysisStatusCounts.find(
         ({ analysisStatus }) =>
           analysisStatus === AudioFileAnalysisStatusEnum.COMPLETED,
-      )?.count ?? 0;
-
-    const pendingTracks =
-      analysisStatusCounts.find(
-        ({ analysisStatus }) =>
-          analysisStatus === AudioFileAnalysisStatusEnum.PENDING,
       )?.count ?? 0;
 
     const failedTracks =
@@ -83,9 +71,7 @@ export class ProcessEndLibraryScanUseCase {
 
     // Update library with final statistics
     const updateData: any = {
-      totalTracks,
       analyzedTracks,
-      pendingTracks,
       failedTracks,
       scanStatus: ScanStatusEnum.IDLE,
     };

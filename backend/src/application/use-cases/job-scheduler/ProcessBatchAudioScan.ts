@@ -1,10 +1,6 @@
 import { ILogger } from 'src/application/ports/infrastructure/ILogger';
 import { IMusicTrackRepository } from 'src/application/ports/repositories/IMusicTrackRepository';
-import {
-  AudioFileAnalysisStatusEnum,
-  MusicTrack,
-  ScanStatusEnum,
-} from 'src/kernel/types';
+import { AudioFileAnalysisStatusEnum, MusicTrack } from 'src/kernel/types';
 import { AudioAnalysisResponse } from '../../ports/dtos/AudioAnalysis';
 import {
   AudioFile,
@@ -127,12 +123,7 @@ export class ProcessBatchAudioScanUseCase {
         error: error.message,
         errorStack: error.stack,
       });
-      await this.scanSessionRepository.deleteSession(sessionId);
-      await this.musicLibraryRepository.updateScanStatus(
-        libraryId,
-        ScanStatusEnum.IDLE,
-        false,
-      );
+
       throw error;
     }
   }
