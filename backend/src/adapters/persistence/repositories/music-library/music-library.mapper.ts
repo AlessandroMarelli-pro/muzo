@@ -81,5 +81,10 @@ export const toPrismaUpdate = (
     ...toDbModelUpdate(updatedModel),
     name: domainModel.name,
     scanStatus: domainModel.scanInfo?.scanStatus ?? 'IDLE',
+    lastScanAt: domainModel.scanInfo?.lastScanAt ?? undefined,
+    lastIncrementalScanAt:
+      domainModel.scanInfo?.lastIncrementalScanAt ?? undefined,
+    analyzedTracks: domainModel.tracksInfo?.analyzedTracks ?? undefined,
+    failedTracks: domainModel.tracksInfo?.failedTracks ?? undefined,
   };
 };

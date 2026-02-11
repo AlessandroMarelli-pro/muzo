@@ -75,7 +75,7 @@ export class ScanSessionRepository implements IScanSessionRepository {
   async updateSessionProgress(
     sessionId: SessionId,
     updates: UpdateScanSessionInput,
-  ): Promise<Session> {
+  ): Promise<Session | null> {
     // Extract progressPercentage before modifying updates object
     const progressPercentage = updates.progressPercentage;
     delete updates.progressPercentage;
@@ -127,7 +127,7 @@ export class ScanSessionRepository implements IScanSessionRepository {
           console.debug(
             `Session ${sessionId} is not in SCANNING status, skipping update`,
           );
-          return activeSession;
+          return null;
         }
 
         // Perform atomic update with increment
@@ -139,7 +139,7 @@ export class ScanSessionRepository implements IScanSessionRepository {
           data: updateData,
         });
       })
-      .then(toDomain);
+      .then((result) => (result ? toDomain(result) : null));
   }
 
   /**

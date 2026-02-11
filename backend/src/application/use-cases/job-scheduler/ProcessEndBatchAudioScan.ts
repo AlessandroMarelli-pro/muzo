@@ -24,7 +24,8 @@ export class ProcessEndBatchAudioScanUseCase {
     incremental: boolean,
     contextUser: ActionContext['user'],
   ): Promise<void> {
-    const { totalFiles, totalBatches, audioFiles, sessionId } = data;
+    const { totalFiles, totalBatches, audioFiles, sessionId, batchIndex } =
+      data;
     const progressPercentage = Math.round((1 / totalBatches!) * 10000);
     // Update session progress
     const session = await this.scanSessionRepository.updateSessionProgress(
@@ -51,7 +52,7 @@ export class ProcessEndBatchAudioScanUseCase {
       sessionId,
       timestamp: new Date().toISOString(),
       libraryId,
-      batchIndex: 1,
+      batchIndex,
       data: {
         successful: totalFiles,
         failed: 0,
