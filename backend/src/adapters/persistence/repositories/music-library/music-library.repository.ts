@@ -68,7 +68,6 @@ export class MusicLibraryRepository implements IMusicLibraryRepository {
   async updateScanStatus(
     id: MusicLibraryId,
     status: ScanStatus,
-    incremental: boolean,
   ): Promise<MusicLibrary> {
     const isScanning = status === 'SCANNING';
     return this.prisma.musicLibrary
@@ -77,9 +76,8 @@ export class MusicLibraryRepository implements IMusicLibraryRepository {
         data: toPrismaUpdate({
           scanInfo: {
             scanStatus: status,
-            lastScanAt: incremental && isScanning ? new Date() : null,
-            lastIncrementalScanAt:
-              incremental && isScanning ? new Date() : null,
+            lastScanAt: null,
+            lastIncrementalScanAt: null,
           },
         }),
       })

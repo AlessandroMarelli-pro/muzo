@@ -38,6 +38,5 @@ export interface IMusicLibraryRepository {
   updateScanStatus(
     id: MusicLibraryId,
     status: ScanStatus,
-    incremental: boolean,
   ): Promise<MusicLibrary>;
 }

@@ -20,11 +20,7 @@ export class StopLibraryScanUseCase {
     this.logger.info(
       `Stopping library scan for library ${libraryId} with session ${sessionId}`,
     );
-    await this.musicLibraryRepository.updateScanStatus(
-      libraryId,
-      'IDLE',
-      false,
-    );
+    await this.musicLibraryRepository.updateScanStatus(libraryId, 'IDLE');
     await this.scanSessionRepository.deleteSession(sessionId);
     this.logger.info(
       `Successfully stopped library scan for library ${libraryId} with session ${sessionId}`,

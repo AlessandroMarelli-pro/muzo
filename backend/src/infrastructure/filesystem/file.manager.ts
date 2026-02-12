@@ -3,14 +3,23 @@ import {
   ScanOptions,
 } from 'src/application/ports/infrastructure/IFileManager';
 
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import { FileInfo } from 'src/application/ports/dtos/FileInfo';
+import { ILogger, LOGGER } from 'src/application/ports/infrastructure/ILogger';
+import { LOGGER_FACTORY } from 'src/application/ports/infrastructure/ILoggerFactory';
 
 @Injectable()
 export class FileManager implements IFileManager {
-  constructor() {}
+  constructor(
+    @Inject(LOGGER_FACTORY)
+    loggerFactory: { createLogger: (name: string) => ILogger },
+    @Inject(LOGGER)
+    private readonly logger: ILogger,
+  ) {
+    this.logger = loggerFactory.createLogger('FileManager');
+  }
 
   async scanDirectory(
     rootPath: string,
@@ -19,7 +28,15 @@ export class FileManager implements IFileManager {
     currentDepth: number = 0,
   ): Promise<FileInfo[]> {
     const files: FileInfo[] = [];
-
+    this.logger.info(
+      `Scanning directory ${rootPath} at depth ${currentDepth}`,
+      {
+        rootPath,
+        supportedFormats,
+        options,
+        currentDepth,
+      },
+    );
     if (currentDepth >= options.maxDepth) {
       return files;
     }
@@ -27,7 +44,8 @@ export class FileManager implements IFileManager {
     try {
       const isDirectory = (await fs.stat(rootPath)).isDirectory();
       if (!isDirectory) {
-        throw new Error(`Directory ${rootPath} does not exist`);
+        this.logger.error(`Directory ${rootPath} does not exist`);
+        return [];
       }
       const entries = await fs.readdir(rootPath, { withFileTypes: true });
       for (const entry of entries) {
@@ -69,9 +87,12 @@ export class FileManager implements IFileManager {
       }
     } catch (error) {
       // Directory might not be readable, skip it
-      console.warn(`Cannot read directory ${rootPath}:`, error);
+      this.logger.error(`Cannot read directory ${rootPath}:`, error);
     }
 
+    this.logger.info(
+      `Found ${files.length} audio files in directory ${rootPath}`,
+    );
     return files;
   }
 }

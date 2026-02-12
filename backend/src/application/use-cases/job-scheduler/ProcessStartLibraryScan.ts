@@ -18,7 +18,7 @@ export class ProcessStartLibraryScanUseCase {
   ): Promise<FileInfo[]> {
     const library = await this.musicLibraryRepository.getOneById(libraryId);
 
-    this.logger.info(`Scanning library ${libraryId}`);
+    this.logger.info(`Scanning library ${libraryId}`, { library });
 
     const lastIncrementalScanAt =
       library?.scanInfo?.lastIncrementalScanAt ?? undefined;
@@ -35,11 +35,9 @@ export class ProcessStartLibraryScanUseCase {
       },
       0,
     );
-    this.logger.info(
-      `Found ${audioFiles.length} audio files in library ${libraryId}`,
-    );
 
     if (audioFiles.length === 0) {
+      await this.musicLibraryRepository.updateScanStatus(libraryId, 'IDLE');
       this.logger.warn(`No audio files found in library ${libraryId}`);
       return [];
     }

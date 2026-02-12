@@ -32,11 +32,7 @@ export class ScheduleLibraryScanUseCase {
       this.logger.info(
         `Successfully scheduled library scan for library ${libraryId} with session ${id}`,
       );
-      await this.musicLibraryRepository.updateScanStatus(
-        libraryId,
-        'SCANNING',
-        incremental,
-      );
+      await this.musicLibraryRepository.updateScanStatus(libraryId, 'SCANNING');
       this.logger.info(
         `Successfully updated library ${libraryId} scan status to SCANNING with session ${id}`,
       );
@@ -46,11 +42,7 @@ export class ScheduleLibraryScanUseCase {
         `Failed to schedule library scan for library ${libraryId}:`,
         error,
       );
-      await this.musicLibraryRepository.updateScanStatus(
-        libraryId,
-        'IDLE',
-        incremental,
-      );
+      await this.musicLibraryRepository.updateScanStatus(libraryId, 'IDLE');
       await this.scanSessionRepository.deleteSession(id);
       throw error;
     }
