@@ -19,7 +19,7 @@ export class GetTracksWithCursorPaginationUseCase {
     libraryId?: MusicLibraryId,
   ): Promise<CursorPaginationResult<MusicTrack>> {
     const filter = await this.savedFilterRepository.getCurrentFilter();
-    let criteria = filter?.criteria;
+    let criteria = filter?.criteria ?? null;
     if (libraryId && criteria) {
       criteria.libraryIds = [libraryId];
     } else if (libraryId) {

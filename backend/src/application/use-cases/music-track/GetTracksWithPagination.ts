@@ -15,7 +15,7 @@ export class GetTracksWithPaginationUseCase {
   ): Promise<PaginationResult<MusicTrack>> {
     const criteria = await this.savedFilterRepository.getCurrentFilter();
     return this.musicTrackRepository.getManyByCriteriaWithPagination(
-      criteria?.criteria,
+      criteria?.criteria ?? null,
       pagination,
     );
   }

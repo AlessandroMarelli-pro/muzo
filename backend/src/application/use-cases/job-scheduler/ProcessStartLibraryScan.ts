@@ -10,7 +10,9 @@ export class ProcessStartLibraryScanUseCase {
     private readonly musicLibraryRepository: IMusicLibraryRepository,
     loggerFactory: { createLogger: (name: string) => ILogger },
     private readonly logger: ILogger,
-  ) {}
+  ) {
+    this.logger = loggerFactory.createLogger('ProcessStartLibraryScanUseCase');
+  }
 
   async execute(
     libraryId: MusicLibraryId,

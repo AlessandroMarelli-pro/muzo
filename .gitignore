@@ -7,6 +7,8 @@ backend/dist/*
 .env
 
 backend/generated/prisma
+backend/prisma/expected_from_schema.sql
+backend/prisma/verify_squash.db
 backend/dist/app.module.js
 backend/dist/app.module.js.map
 muzo/images/

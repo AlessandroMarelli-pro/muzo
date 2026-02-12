@@ -1,4 +1,4 @@
-import { Injectable, Inject } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { isDate } from 'class-validator';
 import { AudioAnalysisResponse } from 'src/application/ports/dtos/AudioAnalysis';
 import {
@@ -37,9 +37,7 @@ import {
 
 @Injectable()
 export class MusicTrackRepository implements IMusicTrackRepository {
-  constructor(
-    @Inject(PRISMA_SERVICE) private readonly prisma: PrismaService,
-  ) {}
+  constructor(@Inject(PRISMA_SERVICE) private readonly prisma: PrismaService) {}
 
   async getManyByLibraryId(libraryId: MusicLibraryId): Promise<MusicTrack[]> {
     return this.prisma.musicTrack
@@ -207,7 +205,7 @@ export class MusicTrackRepository implements IMusicTrackRepository {
   }
 
   async getManyByCriteriaWithPagination(
-    criteria: FilterCriteria,
+    criteria: Maybe<FilterCriteria>,
     pagination: WithPagination,
   ): Promise<PaginationResult<MusicTrack>> {
     const {

@@ -1,8 +1,9 @@
+import { Maybe } from 'src/kernel/common';
 import { extractModelId } from 'src/kernel/ids/factory';
 import { FilterCriteria } from 'src/kernel/types/model-types';
 
 export const buildMusicTrackFilterWhereClause = (
-  criteria: FilterCriteria,
+  criteria: Maybe<FilterCriteria>,
   subgenreSelectionMode: 'exact' | 'contain' = 'contain',
 ) => {
   const where: any = {};

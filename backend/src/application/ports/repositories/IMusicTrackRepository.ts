@@ -59,11 +59,11 @@ export interface IMusicTrackRepository {
     withIncludes?: boolean,
   ): Promise<MusicTrack[]>;
   getManyByCriteriaWithPagination(
-    criteria: FilterCriteria,
+    criteria: Maybe<FilterCriteria>,
     pagination: WithPagination,
   ): Promise<PaginationResult<MusicTrack>>;
   getManyByCriteriaWithCursorPagination(
-    criteria: FilterCriteria,
+    criteria: Maybe<FilterCriteria>,
     pagination: WithCursorPagination<MusicTrack>,
   ): Promise<CursorPaginationResult<MusicTrack>>;
   getRandomTrackId(): Promise<MusicTrackId>;
