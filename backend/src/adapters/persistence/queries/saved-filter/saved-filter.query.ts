@@ -11,30 +11,6 @@ import { getCurrentUserId, models } from 'src/kernel/types';
 export class SavedFilterQuery implements ISavedFilterQuery {
   constructor(private readonly prisma: PrismaService) {}
 
-  /**
-   * 
-   * @returns subgenres_options AS (
-        SELECT id, name FROM subgenres
-      ),
-      keys_options AS (
-        SELECT DISTINCT key FROM audio_fingerprints WHERE key IS NOT NULL AND key != ''
-      ),
-      libraries_options AS (
-        SELECT id, name FROM music_libraries
-      ),
-      atmospheres_options AS (
-        SELECT DISTINCT atmosphereDesc FROM music_tracks WHERE atmosphereDesc IS NOT NULL AND atmosphereDesc != ''
-      )
-      SELECT id, name FROM genres_options
-      UNION ALL
-      SELECT id, name FROM subgenres_options
-      UNION ALL
-      SELECT DISTINCT key FROM keys_options
-      UNION ALL
-      SELECT id, name FROM libraries_options
-      UNION ALL
-      SELECT DISTINCT atmosphereDesc FROM atmospheres_options
-   */
   async getStaticFilterOptions(): Promise<StaticFilterOptions> {
     return this.prisma.$queryRaw<
       {

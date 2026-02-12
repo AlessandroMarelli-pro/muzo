@@ -605,10 +605,10 @@ export const MusicTable = React.memo<MusicTableProps>(
 					pageSize: initialPageSize,
 				},
 				columnVisibility: {
-					atmosphereKeywords: false,
-					danceabilityFeeling: false,
-					arousalMood: false,
-					valenceMood: false,
+					aiAtmosphereKeywords: false,
+					mfDanceabilityFeeling: false,
+					mfArousalMood: false,
+					mfValenceMood: false,
 				},
 			},
 
