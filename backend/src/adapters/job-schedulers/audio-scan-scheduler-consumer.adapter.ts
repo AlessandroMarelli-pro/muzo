@@ -9,6 +9,7 @@ import { AddImageSearchRecordUseCase } from 'src/application/use-cases/image/Add
 import { ProcessBatchAudioScanUseCase } from 'src/application/use-cases/job-scheduler/ProcessBatchAudioScan';
 import { ProcessEndBatchAudioScanUseCase } from 'src/application/use-cases/job-scheduler/ProcessEndBatchAudioScan';
 import { ProcessSingleTrackAnalysisUseCase } from 'src/application/use-cases/job-scheduler/ProcessSingleTrackAnalysis';
+import { SyncTrackToElasticSearchUseCase } from 'src/application/use-cases/recommendation/SyncTrackToElasticSearch';
 import { als } from 'src/kernel/types/context';
 
 @Processor('audio-scan')
@@ -21,6 +22,7 @@ export class AudioScanSchedulerConsumerAdapter
     private readonly processSingleTrackAnalysisUseCase: ProcessSingleTrackAnalysisUseCase,
     private readonly addImageSearchRecordUseCase: AddImageSearchRecordUseCase,
     private readonly processEndBatchAudioScanUseCase: ProcessEndBatchAudioScanUseCase,
+    private readonly syncTrackToElasticSearchUseCase: SyncTrackToElasticSearchUseCase,
     @Inject(LOGGER_FACTORY)
     loggerFactory: { createLogger: (name: string) => ILogger },
     @Inject(LOGGER)
@@ -116,6 +118,8 @@ export class AudioScanSchedulerConsumerAdapter
               source: analysisResult.album_art.source,
             });
           }
+
+          await this.syncTrackToElasticSearchUseCase.execute(track.id);
         }),
       );
     }
