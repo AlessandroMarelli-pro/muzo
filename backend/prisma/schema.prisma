@@ -32,8 +32,10 @@ model MusicLibrary {
   maxFileSize           Int?     // in MB
   
   // Timestamps
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
+  createdAt   DateTime @default(now())
+  createdById   String @default("userId")
+  updatedAt   DateTime? @updatedAt
+  updatedById  String?
   
   // Relations
   tracks                MusicTrack[]
@@ -47,11 +49,11 @@ model MusicTrack {
   filePath              String   @unique
   fileName              String
   fileSize              Int
-  duration              Float
   format                String
   bitrate               Int?
   sampleRate            Int?
   fileCreatedAt         DateTime @default(now())
+  duration              Float
 
   // Original Metadata
   originalTitle         String?
@@ -103,15 +105,17 @@ model MusicTrack {
   hasDiscogs            Boolean?
 
   // Timestamps
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
+  createdAt   DateTime @default(now())
+  createdById   String @default("userId")
+  updatedAt   DateTime? @updatedAt
+  updatedById  String?
 
   
   // Relations
   libraryId             String
   library               MusicLibrary @relation(fields: [libraryId], references: [id], onDelete: Cascade)
   audioFingerprint      AudioFingerprint?
-  aiAnalysisResult      AIAnalysisResult?
+
   editorSessions        IntelligentEditorSession[]
   playbackSessions      PlaybackSession[]
   playlistTracks        PlaylistTrack[]
@@ -119,7 +123,8 @@ model MusicTrack {
   trackGenres           TrackGenre[]
   trackSubgenres        TrackSubgenre[]
   queue                 Queue?
-  
+
+
   // Indexes for query performance
   @@index([libraryId])
   @@index([analysisStatus])
@@ -185,12 +190,14 @@ model AudioFingerprint {
   energyByBand        String @default("[]") //JSON array as string
 
   // Timestamps
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
-  
+  // Timestamps
+  createdAt   DateTime @default(now())
+  createdById   String @default("userId")
+  updatedAt   DateTime? @updatedAt
+  updatedById  String?
+
   // Relations
   track                 MusicTrack @relation(fields: [trackId], references: [id], onDelete: Cascade)
-  aiAnalysisResult      AIAnalysisResult?
   
   // Indexes for query performance (audio features used in filtering and sorting)
   @@index([key])
@@ -204,28 +211,7 @@ model AudioFingerprint {
   @@map("audio_fingerprints")
 }
 
-model AIAnalysisResult {
-  id                    String   @id @default(uuid())
-  trackId               String   @unique
-  fingerprintId         String   @unique
-  
-  modelVersion          String
-  genreClassification   String   // JSON object as string
-  artistSuggestion      String?  // JSON object as string
-  albumSuggestion       String?  // JSON object as string
-  processingTime        Float
-  errorMessage          String?
-  
-  // Timestamps
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
-  
-  // Relations
-  track                 MusicTrack @relation(fields: [trackId], references: [id], onDelete: Cascade)
-  fingerprint           AudioFingerprint @relation(fields: [fingerprintId], references: [id], onDelete: Cascade)
-  
-  @@map("ai_analysis_results")
-}
+
 
 model IntelligentEditorSession {
   id                    String   @id @default(uuid())
@@ -318,8 +304,11 @@ model Playlist {
   description String?
   userId      String?  // For future multi-user support
   isPublic    Boolean  @default(false)
+  isFavorite    Boolean  @default(false)
   createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdById   String @default("userId")
+  updatedAt   DateTime? @updatedAt
+  updatedById  String?
   
   // Relations
   tracks      PlaylistTrack[]
@@ -334,7 +323,11 @@ model PlaylistTrack {
   trackId    String
   position   Int
   addedAt    DateTime @default(now())
-  
+  createdAt   DateTime @default(now())
+  createdById   String @default("userId")
+  updatedAt   DateTime? @updatedAt
+  updatedById  String?
+
   // Relations
   playlist   Playlist @relation(fields: [playlistId], references: [id], onDelete: Cascade)
   track      MusicTrack @relation(fields: [trackId], references: [id], onDelete: Cascade)
@@ -355,11 +348,12 @@ model ImageSearch {
   imageUrl   String?
   error      String?
   source     String?
-  
-  // Timestamps
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-  
+  createdAt   DateTime @default(now())
+  createdById   String @default("userId")
+  updatedAt   DateTime? @updatedAt
+  updatedById  String?
+    
+
   // Relations
   track      MusicTrack @relation(fields: [trackId], references: [id], onDelete: Cascade)
   
@@ -372,30 +366,18 @@ model ImageSearch {
 model SavedFilter {
   id        String   @id @default(uuid())
   name      String
+  isCurrent Boolean @default(false)
+
   criteria  String   // JSON string containing filter criteria
-  
-  // Timestamps
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  
+  createdAt   DateTime @default(now())
+  createdById   String @default("userId")
+  updatedAt   DateTime? @updatedAt
+  updatedById  String?
+    
+
   @@map("saved_filters")
 }
 
-model UserRecommendationPreferences {
-  id        String   @id @default(uuid())
-  userId    String
-  weights   String   // JSON string containing recommendation weights
-  isDefault Boolean  @default(false)
-  
-  // Timestamps
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  
-  // Indexes for query performance
-  @@index([userId])
-  @@index([isDefault])
-  @@map("user_recommendation_preferences")
-}
 
 // Genre and Subgenre Models
 
@@ -404,8 +386,10 @@ model Genre {
   name        String   @unique
   description String?
   createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
+  createdById   String @default("userId")
+  updatedAt   DateTime? @updatedAt
+  updatedById  String?
+
   // Relations
   trackGenres TrackGenre[]
   subgenres   Subgenre[]
@@ -420,7 +404,9 @@ model Subgenre {
   description String?
   genreId     String?  // Optional parent genre
   createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdById   String @default("userId")
+  updatedAt   DateTime? @updatedAt
+  updatedById  String?
   
   // Relations
   genre         Genre?         @relation(fields: [genreId], references: [id], onDelete: SetNull)
@@ -435,7 +421,10 @@ model TrackGenre {
   id        String   @id @default(uuid())
   trackId   String
   genreId   String
-  createdAt DateTime @default(now())
+  createdAt   DateTime @default(now())
+  createdById   String @default("userId")
+  updatedAt   DateTime? @updatedAt
+  updatedById  String?
   
   // Relations
   track     MusicTrack @relation(fields: [trackId], references: [id], onDelete: Cascade)
@@ -451,7 +440,10 @@ model TrackSubgenre {
   id        String   @id @default(uuid())
   trackId   String
   subgenreId String
-  createdAt DateTime @default(now())
+  createdAt   DateTime @default(now())
+  createdById   String @default("userId")
+  updatedAt   DateTime? @updatedAt
+  updatedById  String?
   
   // Relations
   track     MusicTrack @relation(fields: [trackId], references: [id], onDelete: Cascade)
@@ -522,8 +514,10 @@ model HiddenMusicTrack {
   hasDiscogs            Boolean?
 
   // Timestamps
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
+  createdAt   DateTime @default(now())
+  createdById   String @default("userId")
+  updatedAt   DateTime? @updatedAt
+  updatedById  String?
   
   // Relations
   libraryId             String
@@ -620,9 +614,13 @@ model PlaylistSorting {
   playlistId      String                  @unique
   sortingKey      PlaylistSortingKey      @default(position)
   sortingDirection PlaylistSortingDirection @default(asc)
-  createdAt       DateTime                @default(now())
-  updatedAt       DateTime                @updatedAt
+  createdAt   DateTime @default(now())
+  createdById   String @default("userId")
+  updatedAt   DateTime? @updatedAt
+  updatedById  String?
   
+
+
   // Relations
   playlist        Playlist                @relation(fields: [playlistId], references: [id], onDelete: Cascade)
   
@@ -633,8 +631,10 @@ model Queue {
   id        String   @id @default(uuid())
   trackId   String
   position  Int
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt   DateTime @default(now())
+  createdById   String @default("userId")
+  updatedAt   DateTime? @updatedAt
+  updatedById  String?
   
   // Relations
   track     MusicTrack @relation(fields: [trackId], references: [id], onDelete: Cascade)
@@ -661,8 +661,10 @@ model ScanSession {
   errorMessage      String?
   
   // Timestamps
-  createdAt         DateTime      @default(now())
-  updatedAt         DateTime      @updatedAt
+  createdAt   DateTime @default(now())
+  createdById   String @default("userId")
+  updatedAt   DateTime? @updatedAt
+  updatedById  String?
   
   @@index([sessionId])
   @@index([status])

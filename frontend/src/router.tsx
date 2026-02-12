@@ -4,23 +4,24 @@ import { routeTree } from './routeTree.gen';
 
 // Create a new router instance
 const router = createRouter({
-  routeTree,
-  scrollRestoration: true,
-  defaultPreload: 'intent',
-  // Route loaders are always invoked on preload and on navigation so React Query
-  // can dedupe via its cache. Use queryClient.ensureQueryData in loaders for
-  // routes that should reuse RQ cache on hover→click.
-  defaultPreloadStaleTime: 0,
-  context: {
-    queryClient,
-  },
+	routeTree,
+	scrollRestoration: true,
+	defaultPreload: 'intent',
+	// Route loaders are always invoked on preload and on navigation so React Query
+	// can dedupe via its cache. Use queryClient.ensureQueryData in loaders for
+	// routes that should reuse RQ cache on hover→click.
+	defaultPreloadStaleTime: 0,
+	context: {
+		queryClient,
+		user: undefined!,
+	},
 });
 
 // Register the router instance for type safety
 declare module '@tanstack/react-router' {
-  interface Register {
-    router: typeof router;
-  }
+	interface Register {
+		router: typeof router;
+	}
 }
 
 export { router, RouterProvider };

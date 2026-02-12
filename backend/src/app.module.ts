@@ -1,68 +1,120 @@
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
-import { Module } from '@nestjs/common';
+import { BullModule } from '@nestjs/bullmq';
+import { MiddlewareConsumer, Module, RequestMethod } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { GraphQLModule } from '@nestjs/graphql';
+import { GraphQLModule as NestjsGraphQLModule } from '@nestjs/graphql';
 import { join } from 'path';
-import { ConfigModuleSetup } from './config';
-import { AdminMethodsModule } from './modules/admin-methods/admin-methods.module';
-import { AiIntegrationModule } from './modules/ai-integration/ai-integration.module';
-import { FilterModule } from './modules/filter/filter.module';
-import { HealthModule } from './modules/health/health.module';
-import { ImageModule } from './modules/image/image.module';
-import { MetricsModule } from './modules/metrics/metrics.module';
-import { MusicLibraryModule } from './modules/music-library/music-library.module';
-import { MusicPlayerModule } from './modules/music-player/music-player.module';
-import { MusicTrackModule } from './modules/music-track/music-track.module';
-import { PlaybackQueueModule } from './modules/playback-queue/playback-queue.module';
-import { PlaylistModule } from './modules/playlist/playlist.module';
-import { QueueModule } from './modules/queue/queue.module';
-import { RecommendationModule } from './modules/recommendation/recommendation.module';
-import { ThirdPartySyncModule } from './modules/third-party-sync/third-party-sync.module';
-import { UserPreferencesModule } from './modules/user-preferences/user-preferences.module';
-import { SharedModule } from './shared/shared.module';
+import { ActionContextMiddleware } from './adapters/common/middlewares/action-context.middleware';
+import { GraphQLModule } from './adapters/graphql/graphql.module';
+import { HttpModule } from './adapters/http/http.module';
+import { JobSchedulersModule } from './adapters/job-schedulers/job-schedulers.module';
+import { AdaptersPersistenceModule } from './adapters/persistence/persistence.module';
+import { createPlaylistStatsLoader } from './adapters/persistence/queries/playlist/playlist-stats.loader';
+import { createPlaylistContainsTrackLoader } from './adapters/persistence/repositories/playlist-track/playlist-contains-track.loader';
+import { createPlaylistTracksWithTrackLoader } from './adapters/persistence/repositories/playlist-track/playlist-track-with-track.loader';
+import { createPlaylistTracksLoader } from './adapters/persistence/repositories/playlist-track/playlist-track.loader';
+import { AdminMethodsModule } from './admin-methods/admin-methods.module';
+import {
+  IPlaylistStatsQuery,
+  PLAYLIST_STATS_QUERY,
+} from './application/ports/queries/IPlaylistStatsQuery';
+import {
+  IPlaylistTrackRepository,
+  PLAYLIST_TRACK_REPOSITORY,
+} from './application/ports/repositories/IPlaylistTrackRepository';
+import { UseCasesModule } from './application/use-cases/use-cases.module';
+import { ConfigModuleSetup, QueueConfig } from './config';
+import { GraphiQLModule } from './graphiql/graphiql.module';
+import { AiModule } from './infrastructure/external-services/ai/ai.module';
+import { ElasticsearchModule } from './infrastructure/external-services/elasticsearch/elasticsearch.module';
+import { NestjsLoggerModule } from './infrastructure/logging/nestjs-logger.module';
 
 @Module({
   imports: [
+    AiModule,
     // Configuration module
     ConfigModuleSetup,
 
+    // GraphiQL IDE at GET /graphql (must be before GraphQL module so middleware runs first)
+    GraphiQLModule,
+
+    // Clean architecture modules
+    AdaptersPersistenceModule,
+    UseCasesModule,
+
     // GraphQL module
-    GraphQLModule.forRootAsync<ApolloDriverConfig>({
+    NestjsGraphQLModule.forRootAsync<ApolloDriverConfig>({
       driver: ApolloDriver,
-      useFactory: (configService: ConfigService) => ({
+      imports: [AdaptersPersistenceModule],
+      useFactory: (
+        configService: ConfigService,
+        statsQuery: IPlaylistStatsQuery,
+        playlistTrackRepository: IPlaylistTrackRepository,
+      ) => ({
         autoSchemaFile: join(process.cwd(), 'src/schema.gql'),
         sortSchema: true,
-        playground: configService.get<boolean>('app.graphqlPlayground'),
+        playground: false,
         introspection: configService.get<boolean>('app.graphqlIntrospection'),
         subscriptions: {
           'graphql-ws': true,
           'subscriptions-transport-ws': true,
         },
+        formatError: (formattedError) => {
+          // Remove stacktrace from response (keep it in server logs if needed)
+          if (formattedError.extensions?.stacktrace) {
+            const { stacktrace, ...rest } = formattedError.extensions;
+            return { ...formattedError, extensions: rest };
+          }
+          return formattedError;
+        },
+        context: ({ req, res }: { req: Request; res: Response }) => ({
+          req,
+          res,
+          loaders: {
+            playlistStats: createPlaylistStatsLoader(statsQuery),
+            playlistTracks: createPlaylistTracksLoader(playlistTrackRepository),
+            playlistContainsTrack: createPlaylistContainsTrackLoader(
+              playlistTrackRepository,
+            ),
+            playlistTracksWithTrack: createPlaylistTracksWithTrackLoader(
+              playlistTrackRepository,
+            ),
+          },
+        }),
       }),
-      inject: [ConfigService],
+      inject: [ConfigService, PLAYLIST_STATS_QUERY, PLAYLIST_TRACK_REPOSITORY],
     }),
 
-    // Shared module for common services
-    SharedModule,
-
-    // Queue module for background processing
-    QueueModule,
+    // Clean architecture graphql module
+    GraphQLModule,
 
     // Feature modules
-    HealthModule,
-    ImageModule,
-    MusicLibraryModule,
-    MusicTrackModule,
-    MusicPlayerModule,
-    PlaybackQueueModule,
-    PlaylistModule,
-    RecommendationModule,
-    ThirdPartySyncModule,
-    UserPreferencesModule,
-    AiIntegrationModule,
-    FilterModule,
-    MetricsModule,
+
+    HttpModule,
     AdminMethodsModule,
+    ElasticsearchModule,
+    BullModule.forRootAsync({
+      useFactory: (configService: ConfigService) => {
+        const queueConfig = configService.get<QueueConfig>('queue');
+        return {
+          connection: {
+            host: queueConfig?.redis.host,
+            port: queueConfig?.redis.port,
+            password: queueConfig?.redis.password,
+            db: queueConfig?.redis.db,
+          },
+        };
+      },
+      inject: [ConfigService],
+    }),
+    JobSchedulersModule,
+    NestjsLoggerModule,
   ],
 })
-export class AppModule {}
+export class AppModule {
+  configure(consumer: MiddlewareConsumer): void {
+    consumer
+      .apply(ActionContextMiddleware)
+      .forRoutes({ path: '*', method: RequestMethod.ALL });
+  }
+}

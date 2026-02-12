@@ -12,7 +12,6 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as MusicRouteImport } from './routes/music'
 import { Route as FavoritesRouteImport } from './routes/favorites'
-import { Route as CategoriesRouteImport } from './routes/categories'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SwipeIndexRouteImport } from './routes/swipe.index'
 import { Route as PlaylistsIndexRouteImport } from './routes/playlists.index'
@@ -34,11 +33,6 @@ const MusicRoute = MusicRouteImport.update({
 const FavoritesRoute = FavoritesRouteImport.update({
   id: '/favorites',
   path: '/favorites',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CategoriesRoute = CategoriesRouteImport.update({
-  id: '/categories',
-  path: '/categories',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -80,7 +74,6 @@ const LibrariesLibraryIdRoute = LibrariesLibraryIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/categories': typeof CategoriesRoute
   '/favorites': typeof FavoritesRoute
   '/music': typeof MusicRoute
   '/settings': typeof SettingsRoute
@@ -93,7 +86,6 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/categories': typeof CategoriesRoute
   '/favorites': typeof FavoritesRoute
   '/music': typeof MusicRoute
   '/settings': typeof SettingsRoute
@@ -107,7 +99,6 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/categories': typeof CategoriesRoute
   '/favorites': typeof FavoritesRoute
   '/music': typeof MusicRoute
   '/settings': typeof SettingsRoute
@@ -122,7 +113,6 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/categories'
     | '/favorites'
     | '/music'
     | '/settings'
@@ -135,7 +125,6 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/categories'
     | '/favorites'
     | '/music'
     | '/settings'
@@ -148,7 +137,6 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
-    | '/categories'
     | '/favorites'
     | '/music'
     | '/settings'
@@ -162,7 +150,6 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  CategoriesRoute: typeof CategoriesRoute
   FavoritesRoute: typeof FavoritesRoute
   MusicRoute: typeof MusicRoute
   SettingsRoute: typeof SettingsRoute
@@ -195,13 +182,6 @@ declare module '@tanstack/react-router' {
       path: '/favorites'
       fullPath: '/favorites'
       preLoaderRoute: typeof FavoritesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/categories': {
-      id: '/categories'
-      path: '/categories'
-      fullPath: '/categories'
-      preLoaderRoute: typeof CategoriesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -258,7 +238,6 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  CategoriesRoute: CategoriesRoute,
   FavoritesRoute: FavoritesRoute,
   MusicRoute: MusicRoute,
   SettingsRoute: SettingsRoute,

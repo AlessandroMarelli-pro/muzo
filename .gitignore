@@ -91,7 +91,6 @@ segment_manifest.csv
 huggingface_cache/
 
 specs/**
-docs/** 
 .specify/**
 **/.cursor/*
 .claude/**

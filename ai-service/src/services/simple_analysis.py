@@ -8,7 +8,7 @@ using soundfile for fast loading and avoiding redundant operations.
 import gc
 import os
 import time
-from typing import Any, Dict, List, Optional, Tuple, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
 from loguru import logger
 
@@ -645,6 +645,8 @@ class SimpleAnalysisService:
 
                     # Extract all information
                     file_metadata = self.extract_file_metadata(file_path)
+                    file_metadata["file_info"]["filename"] = original_filename
+
                     technical_info = self.extract_audio_technical(file_path)
 
                     # Extract AI BPM and key if available

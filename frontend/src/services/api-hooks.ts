@@ -1,538 +1,442 @@
-import { queryOptions, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+	queryOptions,
+	useInfiniteQuery,
+	useMutation,
+	useQuery,
+	useQueryClient,
+} from '@tanstack/react-query';
 import { parse } from 'graphql';
 import type {
-  CreateLibraryInput,
-  GetRecentlyPlayedQuery,
-  MusicLibrary,
-  MusicTrack,
-  MusicTrackByCategoriesGraphQl,
-  MusicTrackListPaginated,
-  RandomTrackWithStats,
-  SimpleMusicTrack,
-  TrackRecommendation,
-  UpdateLibraryInput,
-  UpdatePreferencesInput,
-  UserPreferencesGraphQl as UserPreferences,
+	CreateLibraryInput,
+	CursorPaginatedTracks,
+	CursorPaginationArgs,
+	Library,
+	PaginatedTracks,
+	RandomTrackWithStats,
+	StaticFilterOptions,
+	Track,
+	TrackRecommendation,
 } from '../__generated__/types';
+import { libraryFragment, trackFragment } from './fragments';
 import { gql, graffleClient } from './graffle-client';
-import { simpleMusicTrackFragment } from './playlist-hooks';
 
 // Define AnalysisStatus enum locally since it's not in the generated types
 export type AnalysisStatus = 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED';
 
 // Define LibraryScanStatus enum locally since it's not in the generated types
 export type LibraryScanStatus =
-  | 'IDLE'
-  | 'SCANNING'
-  | 'ANALYZING'
-  | 'PAUSED'
-  | 'ERROR';
-
-// Define PlaybackSession locally since it's not in the generated types
-export type PlaybackSession = {
-  id: string;
-  trackId: string;
-  status: string;
-  currentPosition: number;
-  duration: number;
-  volume: number;
-  isShuffled: boolean;
-  repeatMode: string;
-  currentIndex: number;
-  startedAt?: string;
-  pausedAt?: string;
-  track: MusicTrack;
-};
+	| 'IDLE'
+	| 'SCANNING'
+	| 'ANALYZING'
+	| 'PAUSED'
+	| 'ERROR';
 
 // Query Keys
 export const queryKeys = {
-  libraries: ['libraries'] as const,
-  library: (id: string) => ['libraries', id] as const,
-  tracks: (libraryId?: string, status?: AnalysisStatus, isFavorite?: boolean, orderBy?: string, orderDirection?: 'asc' | 'desc') =>
-    ['tracks', { libraryId, status, isFavorite, orderBy, orderDirection }] as const,
-  tracksList: (libraryId?: string, status?: AnalysisStatus, isFavorite?: boolean, limit?: number, offset?: number, orderBy?: string, orderDirection?: 'asc' | 'desc') =>
-    ['tracksList', { libraryId, status, isFavorite, limit, offset, orderBy, orderDirection }] as const,
+	libraries: ['libraries'] as const,
+	library: (id: string) => ['libraries', id] as const,
+	libraryTracks: (id: string, pagination: CursorPaginationArgs) =>
+		['libraries', id, 'tracks', { pagination }] as const,
+	tracks: (pagination: CursorPaginationArgs) =>
+		['tracks', { pagination }] as const,
+	tracksList: (
+		libraryId?: string,
+		status?: AnalysisStatus,
+		isFavorite?: boolean,
+		limit?: number,
+		offset?: number,
+		orderBy?: string,
+		orderDirection?: 'asc' | 'desc'
+	) =>
+		[
+			'tracksList',
+			{ libraryId, status, isFavorite, limit, offset, orderBy, orderDirection },
+		] as const,
 
-  tracksByCategories: (category?: string, genre?: string) =>
-    ['tracks', 'by-categories', { genre, category }] as const,
-  searchTracks: (query: string, libraryId?: string) =>
-    ['tracks', 'search', { query, libraryId }] as const,
-  preferences: ['preferences'] as const,
-  recentlyPlayed: (limit?: number) =>
-    ['tracks', 'recently-played', { limit }] as const,
+	recentlyPlayed: (limit?: number) =>
+		['tracks', 'recently-played', { limit }] as const,
 
-  currentPlayback: ['playback', 'current'] as const,
-  staticFilters: ['static-filters'] as const,
-  randomTrack: (id?: string, filterLiked?: boolean) =>
-    ['tracks', 'random', { id, filterLiked }] as const,
-  randomTrackWithStats: () => ['tracks', 'random-with-stats'] as const,
-  trackRecommendations: (id?: string, criteria?: string) =>
-    ['tracks', 'recommendations', { id, criteria }] as const,
+	currentPlayback: ['playback', 'current'] as const,
+	staticFilters: ['static-filters'] as const,
+	randomTrack: (id?: string, filterLiked?: boolean) =>
+		['tracks', 'random', { id, filterLiked }] as const,
+	randomTrackWithStats: () => ['tracks', 'random-with-stats'] as const,
+	trackRecommendations: (id?: string, criteria?: string) =>
+		['tracks', 'recommendations', { id, criteria }] as const,
 };
 
 /** Query options for loaders (ensureQueryData dedupes preload + load). */
-export const recentlyPlayedQueryOptions = (limit = 20) =>
-  queryOptions({
-    queryKey: queryKeys.recentlyPlayed(limit),
-    queryFn: () => fetchRecentlyPlayed(limit),
-  });
+export const recentlyPlayedQueryOptions = () =>
+	queryOptions({
+		queryKey: queryKeys.recentlyPlayed(),
+		queryFn: () => fetchRecentlyPlayed(),
+	});
 
 export const librariesQueryOptions = () =>
-  queryOptions({
-    queryKey: queryKeys.libraries,
-    queryFn: fetchLibraries,
-  });
+	queryOptions({
+		queryKey: queryKeys.libraries,
+		queryFn: fetchLibraries,
+	});
 
 export const randomTrackQueryOptions = (id?: string, filterLiked?: boolean) =>
-  queryOptions({
-    queryKey: queryKeys.randomTrack(id, filterLiked),
-    queryFn: () => fetchRandomTrack(id, filterLiked),
-  });
+	queryOptions({
+		queryKey: queryKeys.randomTrack(id, filterLiked),
+		queryFn: () => fetchRandomTrack(id, filterLiked),
+	});
 
-export const trackRecommendationsQueryOptions = (id?: string, criteria?: string) =>
-  queryOptions({
-    queryKey: queryKeys.trackRecommendations(id, criteria),
-    queryFn: () => fetchTrackRecommendations(id, criteria),
-  });
+export const trackRecommendationsQueryOptions = (
+	id?: string,
+	criteria?: string
+) =>
+	queryOptions({
+		queryKey: queryKeys.trackRecommendations(id, criteria),
+		queryFn: () => fetchTrackRecommendations(id, criteria),
+	});
 
 export const fetchLibraries = async () => {
-  const response = await graffleClient.request<{
-    libraries: MusicLibrary[];
-  }>(gql`
-        query GetLibraries {
-          libraries {
-            id
-            name
-            rootPath
-            totalTracks
-            analyzedTracks
-            pendingTracks
-            failedTracks
-            lastScanAt
-            lastIncrementalScanAt
-            scanStatus
-            settings {
-              autoScan
-              scanInterval
-              includeSubdirectories
-              supportedFormats
-              maxFileSize
-            }
-            createdAt
-            updatedAt
-          }
-        }
-      `);
-  return response.libraries;
+	const response = await graffleClient.request<{
+		me: { libraries: Library[] };
+	}>(gql`
+		${libraryFragment}
+		query GetLibraries {
+			me {
+				libraries {
+					...LibraryFragment
+				}
+			}
+		}
+	`);
+	return response.me.libraries;
 };
 
 // Library Queries
 export const useLibraries = () => {
-  return useQuery({
-    queryKey: queryKeys.libraries,
-    queryFn: fetchLibraries,
-  });
+	return useQuery({
+		queryKey: queryKeys.libraries,
+		queryFn: fetchLibraries,
+	});
 };
 
 export const useLibrary = (id: string) => {
-  return useQuery({
-    queryKey: queryKeys.library(id),
-    queryFn: async () => {
-      const response = await graffleClient.request<{ library: MusicLibrary }>({
-        document: parse(gql`
-          query GetLibrary($id: ID!) {
-            library(id: $id) {
-              id
-              name
-              rootPath
-              totalTracks
-              analyzedTracks
-              pendingTracks
-              failedTracks
-              lastScanAt
-              lastIncrementalScanAt
-              scanStatus
-              settings {
-                autoScan
-                scanInterval
-                includeSubdirectories
-                supportedFormats
-                maxFileSize
-              }
-              createdAt
-              updatedAt
-            }
-          }
-        `),
-        variables: { id },
-      });
-      return response.library;
-    },
-    enabled: !!id,
-  });
+	return useQuery({
+		queryKey: queryKeys.library(id),
+		queryFn: async () => {
+			const response = await graffleClient.request<{
+				node: Library;
+			}>({
+				document: parse(gql`
+					${libraryFragment}
+					query GetLibrary($id: Base64ID!) {
+						node(id: $id) {
+							... on Library {
+								...LibraryFragment
+							}
+						}
+					}
+				`),
+				variables: { id },
+			});
+			return response.node;
+		},
+		enabled: !!id,
+	});
 };
 
+export const useLibraryTracks = (
+	id: string,
+	pagination: CursorPaginationArgs
+) => {
+	return useInfiniteQuery({
+		queryKey: queryKeys.libraryTracks(id, pagination),
+		queryFn: async (d) => {
+			console.log(d.pageParam);
+			const response = await graffleClient.request<{
+				node: {
+					tracks: CursorPaginatedTracks;
+				};
+			}>(
+				parse(gql`
+					${trackFragment}
+					query GetLibraryTracks(
+						$id: Base64ID!
+						$pagination: CursorPaginationArgs!
+					) {
+						node(id: $id) {
+							... on Library {
+								tracks(pagination: $pagination) {
+									hasMore
+									nextCursor
+									items {
+										...TrackFragment
+									}
+								}
+							}
+						}
+					}
+				`),
+				{ id, pagination: { ...pagination, cursor: d.pageParam } }
+			);
+			return response.node.tracks;
+		},
+		initialPageParam: null,
+		getPreviousPageParam: (firstPage) => firstPage.nextCursor,
+		getNextPageParam: (lastPage) =>
+			lastPage.hasMore ? lastPage.nextCursor : null,
+	});
+};
 // Track Queries
 export const useTracks = ({
-  libraryId,
-  status,
-  isFavorite,
-  orderBy = 'fileCreatedAt',
-  orderDirection = 'asc',
+	pagination,
 }: {
-  libraryId?: string;
-  status?: AnalysisStatus;
-  isFavorite?: boolean;
-  orderBy?: string;
-  orderDirection?: 'asc' | 'desc';
+	pagination: CursorPaginationArgs;
 }) => {
-  return useQuery({
-    queryKey: queryKeys.tracks(libraryId, status, isFavorite, orderBy, orderDirection),
-    queryFn: async () => {
-      const response = await graffleClient.request<{
-        tracks: SimpleMusicTrack[];
-      }>(
-        gql`
-          ${simpleMusicTrackFragment}
-          query GetTracks($options: TrackQueryOptions) {
-            tracks(options: $options) {
-              ...SimpleMusicTrackFragment
-            }
-          }
-        `,
-        { options: { libraryId, analysisStatus: status, isFavorite, orderBy, orderDirection } },
-      );
-      return response.tracks;
-    },
-  });
+	return useInfiniteQuery({
+		queryKey: queryKeys.tracks(pagination),
+		queryFn: async ({ pageParam }) => {
+			const response = await graffleClient.request<{
+				me: { tracks: CursorPaginatedTracks };
+			}>(
+				gql`
+					${trackFragment}
+					query GetTracks($pagination: CursorPaginationArgs!) {
+						me {
+							tracks(pagination: $pagination) {
+								hasMore
+								nextCursor
+								items {
+									...TrackFragment
+								}
+							}
+						}
+					}
+				`,
+				{
+					pagination: { ...pagination, cursor: pageParam },
+				}
+			);
+			return response.me.tracks;
+		},
+		initialPageParam: null,
+		getPreviousPageParam: (firstPage) => firstPage.nextCursor,
+		getNextPageParam: (lastPage) => lastPage.nextCursor,
+	});
 };
 
 export const fetchRandomTrack = async (id?: string, filterLiked?: boolean) => {
-  const response = await graffleClient.request<{
-    randomTrack: SimpleMusicTrack;
-  }>(
-    gql`
-      ${simpleMusicTrackFragment}
-      query GetRandomTrack($id: String, $filterLiked: Boolean) {
-        randomTrack(id: $id, filterLiked: $filterLiked) {
-          ...SimpleMusicTrackFragment
-        }
-      }
-    `,
-    { id, filterLiked },
-  );
-  return response.randomTrack;
+	const response = await graffleClient.request<{
+		node: Track;
+	}>(
+		gql`
+			${trackFragment}
+			query GetRandomTrack($id: Base64ID!) {
+				node(id: $id) {
+					... on Track {
+						...TrackFragment
+					}
+				}
+			}
+		`,
+		{ id, filterLiked }
+	);
+	return response.node;
 };
 
 export const useRandomTrack = (id?: string, filterLiked?: boolean) => {
-  return useQuery({
-    queryKey: queryKeys.randomTrack(id, filterLiked),
-    queryFn: async () => fetchRandomTrack(id, filterLiked)
-  });
+	return useQuery({
+		queryKey: queryKeys.randomTrack(id, filterLiked),
+		queryFn: async () => fetchRandomTrack(id, filterLiked),
+	});
 };
 
 export const fetchRandomTrackWithStats = async () => {
-  const response = await graffleClient.request<{
-    randomTrackWithStats: RandomTrackWithStats;
-  }>(
-    gql`
-      ${simpleMusicTrackFragment}
-      query GetRandomTrackWithStats {
-        randomTrackWithStats {
-          track {
-            ...SimpleMusicTrackFragment
-          }
-          likedCount
-          bangerCount
-          dislikedCount
-          remainingCount
-        }
-      }
-    `,
-  );
-  return response.randomTrackWithStats;
+	const response = await graffleClient.request<{
+		me: { randomTrackWithStats: RandomTrackWithStats };
+	}>(gql`
+		${trackFragment}
+		query GetRandomTrackWithStats {
+			me {
+				randomTrackWithStats {
+					track {
+						...TrackFragment
+					}
+					likedCount
+					bangerCount
+					dislikedCount
+					remainingCount
+				}
+			}
+		}
+	`);
+	return response.me.randomTrackWithStats;
 };
 export const useRandomTrackWithStats = () => {
-  return useQuery({
-    queryKey: queryKeys.randomTrackWithStats(),
-    queryFn: fetchRandomTrackWithStats,
-  });
+	return useQuery({
+		queryKey: queryKeys.randomTrackWithStats(),
+		queryFn: fetchRandomTrackWithStats,
+	});
 };
 
-export const fetchTrackRecommendations = async (id?: string, criteria?: string) => {
-  const response = await graffleClient.request<{
-    trackRecommendations: TrackRecommendation[];
-  }>(
-    gql`
-      ${simpleMusicTrackFragment}
-      query GetTrackRecommendations($id: String!, $criteria: String) {
-        trackRecommendations(id: $id, criteria: $criteria) {
-          track {
-            ...SimpleMusicTrackFragment
-          }
-          similarity
-          reasons
-        }
-      }
-    `,
-    { id, criteria },
-  );
-  return response.trackRecommendations;
+export const fetchTrackRecommendations = async (
+	id?: string,
+	criteria?: string
+) => {
+	const response = await graffleClient.request<{
+		node: { recommendations: TrackRecommendation[] };
+	}>(
+		gql`
+			${trackFragment}
+			query GetTrackRecommendations(
+				$trackId: Base64ID!
+				$recommendationsLimit: Int
+			) {
+				node(id: $trackId) {
+					... on Track {
+						recommendations(limit: $recommendationsLimit) {
+							track {
+								...TrackFragment
+							}
+							similarity
+							reasons
+						}
+					}
+				}
+			}
+		`,
+		{ trackId: id, recommendationsLimit: 20 }
+	);
+	return response.node.recommendations;
 };
 export const useTrackRecommendations = (id?: string, criteria?: string) => {
-  return useQuery({
-    enabled: !!id,
-    queryKey: queryKeys.trackRecommendations(id, criteria),
-    queryFn: async () => fetchTrackRecommendations(id, criteria),
-  });
+	return useQuery({
+		enabled: !!id,
+		queryKey: queryKeys.trackRecommendations(id, criteria),
+		queryFn: async () => fetchTrackRecommendations(id, criteria),
+	});
 };
 
 export const useTracksList = ({
-  libraryId,
-  status,
-  isFavorite,
-  limit = 50,
-  offset = 0,
-  orderBy = 'createdAt',
-  orderDirection = 'desc',
+	libraryId,
+	status,
+	isFavorite,
+	limit = 50,
+	offset = 0,
+	orderBy = 'createdAt',
+	orderDirection = 'desc',
 }: {
-  libraryId?: string;
-  status?: AnalysisStatus;
-  isFavorite?: boolean;
-  limit?: number;
-  offset?: number;
-  orderBy?: string;
-  orderDirection?: 'asc' | 'desc';
+	libraryId?: string;
+	status?: AnalysisStatus;
+	isFavorite?: boolean;
+	limit?: number;
+	offset?: number;
+	orderBy?: string;
+	orderDirection?: 'asc' | 'desc';
 }) => {
-  return useQuery({
-    queryKey: queryKeys.tracksList(
-      libraryId,
-      status,
-      isFavorite,
-      limit,
-      offset,
-      orderBy,
-      orderDirection,
-    ),
-    queryFn: async () => {
-      const response = await graffleClient.request<{
-        tracksList: MusicTrackListPaginated;
-      }>(
-        gql`
-          ${simpleMusicTrackFragment}
-          query GetTracksList($options: TrackQueryOptions) {
-            tracksList(options: $options) {
-              tracks {
-                ...SimpleMusicTrackFragment
-              }
-              total
-              page
-              limit
-            }
-          }
-        `,
-        {
-          options: {
-            libraryId,
-            analysisStatus: status,
-            isFavorite,
-            limit,
-            offset,
-            orderBy,
-            orderDirection,
-          },
-        },
-      );
-      return response.tracksList;
-    },
-  });
-};
-
-export const useTracksByCategories = (category?: string, genre?: string) => {
-  return useQuery({
-    queryKey: queryKeys.tracksByCategories(category, genre),
-    queryFn: async () => {
-      const response = await graffleClient.request<{
-        tracksByCategories: MusicTrackByCategoriesGraphQl[];
-      }>(
-        gql`
-          ${simpleMusicTrackFragment}
-          query GetTracksByCategories($options: TrackQueryOptionsByCategories) {
-            tracksByCategories(options: $options) {
-              category
-              name
-              trackCount
-              tracks {
-                ...SimpleMusicTrackFragment
-              }
-            }
-          }
-        `,
-        { options: { category, genre } },
-      );
-      return response.tracksByCategories;
-    },
-  });
-};
-
-export const useSearchTracks = (query: string, libraryId?: string) => {
-  return useQuery({
-    queryKey: queryKeys.searchTracks(query, libraryId),
-    queryFn: async () => {
-      const response = await graffleClient.request<{
-        searchTracks: MusicTrack[];
-      }>(
-        gql(
-          `
-          query SearchTracks($query: String!, $libraryId: ID) {
-            searchTracks(query: $query, libraryId: $libraryId) {
-              id
-              filePath
-              fileName
-              fileSize
-              duration
-              format
-              originalTitle
-              originalArtist
-              originalAlbum
-              aiTitle
-              aiArtist
-              aiAlbum
-              aiSubgenreConfidence
-              aiConfidence
-              userTitle
-              userArtist
-              userAlbum
-              listeningCount
-              analysisStatus
-              libraryId
-              audioFingerprint {
-                tempo
-                key
-                energy
-                valence
-                danceability
-              }
-              imageSearches {
-                id
-                imagePath
-                imageUrl
-                source
-              }
-            }
-          }
-        ` as any,
-        ),
-        { query, libraryId },
-      );
-      return response.searchTracks;
-    },
-    enabled: !!query,
-  });
-};
-
-// Preferences Queries
-export const usePreferences = () => {
-  return useQuery({
-    queryKey: queryKeys.preferences,
-    queryFn: async () => {
-      const response = await graffleClient.request<{
-        preferences: UserPreferences;
-      }>(
-        gql(
-          `
-          query GetPreferences {
-            preferences {
-              id
-              userId
-              analysisPreferences {
-                autoAnalyze
-                confidenceThreshold
-                preferredGenres
-                skipLowConfidence
-              }
-              organizationPreferences {
-                autoOrganize
-                organizationMethod
-                createPlaylists
-                exportToDJSoftware
-              }
-              editorPreferences {
-                showConfidenceScores
-                batchMode
-                autoSave
-                undoLevels
-              }
-              uiPreferences {
-                theme
-                language
-                defaultView
-              }
-              createdAt
-              updatedAt
-            }
-          }
-        ` as any,
-        ),
-      );
-      return response.preferences;
-    },
-  });
+	return useQuery({
+		queryKey: queryKeys.tracksList(
+			libraryId,
+			status,
+			isFavorite,
+			limit,
+			offset,
+			orderBy,
+			orderDirection
+		),
+		queryFn: async () => {
+			const response = await graffleClient.request<{
+				me: { paginatedTracks: PaginatedTracks };
+			}>(
+				gql`
+					${trackFragment}
+					query GetTracksList($pagination: PaginationArgs) {
+						me {
+							paginatedTracks(pagination: $pagination) {
+								items {
+									...TrackFragment
+								}
+								total
+								page
+								limit
+								pages
+							}
+						}
+					}
+				`,
+				{
+					pagination: {
+						limit,
+						offset,
+						orderBy,
+						orderDirection,
+					},
+				}
+			);
+			return response.me.paginatedTracks;
+		},
+	});
 };
 
 // Static Filters Query
 export const useStaticFilters = () => {
-  return useQuery({
-    queryKey: queryKeys.staticFilters,
-    queryFn: async () => {
-      const response = await graffleClient.request<{
-        getStaticFilterOptions: {
-          genres: string[];
-          subgenres: string[];
-          keys: string[];
-          libraries: { id: string; name: string }[];
-          atmospheres: string[];
-        };
-      }>(gql`
-        query GetStaticFilters {
-          getStaticFilterOptions {
-            genres
-            subgenres
-            keys
-            libraries {
-              id
-              name
-            }
-            atmospheres
-          }
-        }
-      `);
-      return response.getStaticFilterOptions;
-    },
-    staleTime: 10 * 60 * 1000, // 10 minutes - static data doesn't change often
-  });
+	return useQuery({
+		queryKey: queryKeys.staticFilters,
+		queryFn: async () => {
+			const response = await graffleClient.request<{
+				me: { staticFilterOptions: StaticFilterOptions };
+			}>(gql`
+				query GetStaticFilters {
+					me {
+						staticFilterOptions {
+							genres {
+								id
+								name
+							}
+							subgenres {
+								id
+								name
+							}
+							keys {
+								id
+								name
+							}
+							libraries {
+								id
+								name
+							}
+							atmospheres {
+								id
+								name
+							}
+						}
+					}
+				}
+			`);
+			return response.me.staticFilterOptions;
+		},
+		staleTime: 10 * 60 * 1000, // 10 minutes - static data doesn't change often
+	});
 };
-export const fetchRecentlyPlayed = async (limit = 20) => {
-  const response = await graffleClient.request<GetRecentlyPlayedQuery>(
-    gql`
-      ${simpleMusicTrackFragment}
-      query GetRecentlyPlayed($limit: Float) {
-        recentlyPlayed(limit: $limit) {
-          ...SimpleMusicTrackFragment
-        }
-      }
-    `,
-    { limit },
-  );
-  return response.recentlyPlayed;
+export const fetchRecentlyPlayed = async () => {
+	const response = await graffleClient.request<{
+		me: { recentlyPlayed: Track[] };
+	}>(gql`
+		${trackFragment}
+		query GetRecentlyPlayed {
+			me {
+				recentlyPlayed {
+					...TrackFragment
+				}
+			}
+		}
+	`);
+	return response.me.recentlyPlayed;
 };
 
 // Playback Queries
-export const useRecentlyPlayed = (limit = 20) => {
-  return useQuery({
-    queryKey: queryKeys.recentlyPlayed(limit),
-    queryFn: () => fetchRecentlyPlayed(limit)
-  });
+export const useRecentlyPlayed = () => {
+	return useQuery({
+		queryKey: queryKeys.recentlyPlayed(),
+		queryFn: () => fetchRecentlyPlayed(),
+	});
 };
 
 // Note: currentPlayback query removed as it doesn't exist in the schema
@@ -540,251 +444,148 @@ export const useRecentlyPlayed = (limit = 20) => {
 
 // Mutations
 export const useCreateLibrary = () => {
-  const queryClient = useQueryClient();
+	const queryClient = useQueryClient();
 
-  return useMutation({
-    mutationFn: async (input: CreateLibraryInput) => {
-      const response = await graffleClient.request<{
-        createLibrary: MusicLibrary;
-      }>(
-        parse(
-          `
+	return useMutation({
+		mutationFn: async (input: CreateLibraryInput) => {
+			const response = await graffleClient.request<{
+				createLibrary: Library;
+			}>(
+				parse(
+					` ${libraryFragment}
           mutation CreateLibrary($input: CreateLibraryInput!) {
             createLibrary(input: $input) {
-              id
-              name
-              rootPath
-              totalTracks
-              analyzedTracks
-              pendingTracks
-              failedTracks
-              scanStatus
-              settings {
-                autoScan
-                scanInterval
-                includeSubdirectories
-                supportedFormats
-                maxFileSize
-              }
-              createdAt
-              updatedAt
+              ...LibraryFragment
             }
           }
-        `,
-        ),
-        { input },
-      );
-      return response.createLibrary;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.libraries });
-    },
-  });
-};
-
-export const useUpdateLibrary = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({
-      id,
-      input,
-    }: {
-      id: string;
-      input: UpdateLibraryInput;
-    }) => {
-      const response = await graffleClient.request<{
-        updateLibrary: MusicLibrary;
-      }>(
-        gql(
-          `
-          mutation UpdateLibrary($id: ID!, $input: UpdateLibraryInput!) {
-            updateLibrary(id: $id, input: $input) {
-              id
-              name
-              rootPath
-              totalTracks
-              analyzedTracks
-              pendingTracks
-              failedTracks
-              scanStatus
-              settings {
-                autoScan
-                scanInterval
-                includeSubdirectories
-                supportedFormats
-                maxFileSize
-              }
-              createdAt
-              updatedAt
-            }
-          }
-        ` as any,
-        ),
-        { id, input },
-      );
-      return response.updateLibrary;
-    },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.libraries });
-      queryClient.invalidateQueries({ queryKey: queryKeys.library(data.id) });
-    },
-  });
+        `
+				),
+				{ input }
+			);
+			return response.createLibrary;
+		},
+		onSuccess: async () => {
+			await queryClient.invalidateQueries({
+				queryKey: librariesQueryOptions().queryKey,
+			});
+			// Ensure the playlists query has refetched and cache is updated
+			await queryClient.refetchQueries({
+				queryKey: librariesQueryOptions().queryKey,
+			});
+		},
+	});
 };
 
 export const useDeleteLibrary = () => {
-  const queryClient = useQueryClient();
+	const queryClient = useQueryClient();
 
-  return useMutation({
-    mutationFn: async (id: string) => {
-      const response = await graffleClient.request<{ deleteLibrary: boolean }>(
-        parse(
-          `
-          mutation DeleteLibrary($id: ID!) {
+	return useMutation({
+		mutationFn: async (id: string) => {
+			const response = await graffleClient.request<{ deleteLibrary: boolean }>(
+				parse(
+					`
+          mutation DeleteLibrary($id: Base64ID!) {
             deleteLibrary(id: $id)
           }
-        ` as any,
-        ),
-        { id },
-      );
-      return response.deleteLibrary;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.libraries });
-    },
-    onError: (error) => {
-      console.error('Failed to delete library:', error);
-    },
-  });
+        ` as any
+				),
+				{ id }
+			);
+			return response.deleteLibrary;
+		},
+		onSuccess: async () => {
+			await queryClient.invalidateQueries({
+				queryKey: librariesQueryOptions().queryKey,
+			});
+			await queryClient.refetchQueries({
+				queryKey: librariesQueryOptions().queryKey,
+			});
+		},
+		onError: (error) => {
+			console.error('Failed to delete library:', error);
+		},
+	});
 };
 
 export const useLikeTrack = () => {
-  const queryClient = useQueryClient();
+	const queryClient = useQueryClient();
 
-  return useMutation({
-    mutationFn: async (trackId: string) => {
-      const response = await graffleClient.request<{
-        likeTrack: SimpleMusicTrack;
-      }>(
-        gql`
-          ${simpleMusicTrackFragment}
-          mutation LikeTrack($trackId: ID!) {
-            likeTrack(trackId: $trackId) {
-              ...SimpleMusicTrackFragment
-            }
-          }
-        `,
-        { trackId },
-      );
-      return response.likeTrack;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.tracks() });
-      queryClient.invalidateQueries({ queryKey: queryKeys.randomTrackWithStats() });
-    },
-  });
+	return useMutation({
+		mutationFn: async (trackId: string) => {
+			const response = await graffleClient.request<{
+				toggleLike: Track;
+			}>(
+				gql`
+					${trackFragment}
+					mutation LikeTrack($trackId: Base64ID!) {
+						toggleLike(trackId: $trackId) {
+							...TrackFragment
+						}
+					}
+				`,
+				{ trackId }
+			);
+			return response.toggleLike;
+		},
+		onSuccess: () => {
+			queryClient.invalidateQueries({
+				queryKey: queryKeys.randomTrackWithStats(),
+			});
+		},
+	});
 };
 
 export const useBangerTrack = () => {
-  const queryClient = useQueryClient();
+	const queryClient = useQueryClient();
 
-  return useMutation({
-    mutationFn: async (trackId: string) => {
-      const response = await graffleClient.request<{
-        bangerTrack: SimpleMusicTrack;
-      }>(
-        gql`
-          ${simpleMusicTrackFragment}
-          mutation BangerTrack($trackId: ID!) {
-            bangerTrack(trackId: $trackId) {
-              ...SimpleMusicTrackFragment
-            }
-          }
-        `,
-        { trackId },
-      );
-      return response.bangerTrack;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.tracks() });
-      queryClient.invalidateQueries({ queryKey: queryKeys.randomTrackWithStats() });
-    },
-  });
+	return useMutation({
+		mutationFn: async (trackId: string) => {
+			const response = await graffleClient.request<{
+				toggleBanger: Track;
+			}>(
+				gql`
+					${trackFragment}
+					mutation BangerTrack($trackId: Base64ID!) {
+						toggleBanger(trackId: $trackId) {
+							...TrackFragment
+						}
+					}
+				`,
+				{ trackId }
+			);
+			return response.toggleBanger;
+		},
+		onSuccess: () => {
+			queryClient.invalidateQueries({
+				queryKey: queryKeys.randomTrackWithStats(),
+			});
+		},
+	});
 };
 
 export const useDislikeTrack = () => {
-  const queryClient = useQueryClient();
+	const queryClient = useQueryClient();
 
-  return useMutation({
-    mutationFn: async (trackId: string) => {
-      const response = await graffleClient.request<{
-        dislikeTrack: boolean;
-      }>(
-        gql`
-          mutation DislikeTrack($trackId: ID!) {
-            dislikeTrack(trackId: $trackId)
-          }
-        `,
-        { trackId },
-      );
-      return response.dislikeTrack;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.tracks() });
-      queryClient.invalidateQueries({ queryKey: queryKeys.randomTrackWithStats() });
-    },
-  });
-};
-
-export const useUpdatePreferences = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (input: UpdatePreferencesInput) => {
-      const response = await graffleClient.request<{
-        updatePreferences: UserPreferences;
-      }>(
-        gql(
-          `
-          mutation UpdatePreferences($input: UpdatePreferencesInput!) {
-            updatePreferences(input: $input) {
-              id
-              analysisPreferences {
-                autoAnalyze
-                confidenceThreshold
-                preferredGenres
-                skipLowConfidence
-              }
-              organizationPreferences {
-                autoOrganize
-                organizationMethod
-                createPlaylists
-                exportToDJSoftware
-              }
-              editorPreferences {
-                showConfidenceScores
-                batchMode
-                autoSave
-                undoLevels
-              }
-              uiPreferences {
-                theme
-                language
-                defaultView
-              }
-              updatedAt
-            }
-          }
-        ` as any,
-        ),
-        { input },
-      );
-      return response.updatePreferences;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.preferences });
-    },
-  });
+	return useMutation({
+		mutationFn: async (trackId: string) => {
+			const response = await graffleClient.request<{
+				toggleDislike: boolean;
+			}>(
+				gql`
+					mutation ToggleDislike($trackId: Base64ID!) {
+						toggleDislike(trackId: $trackId)
+					}
+				`,
+				{ trackId }
+			);
+			return response.toggleDislike;
+		},
+		onSuccess: () => {
+			queryClient.invalidateQueries({
+				queryKey: queryKeys.randomTrackWithStats(),
+			});
+		},
+	});
 };
 
 // Note: playTrack mutation removed as it doesn't exist in the schema
