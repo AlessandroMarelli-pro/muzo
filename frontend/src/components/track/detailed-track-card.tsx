@@ -1,4 +1,4 @@
-import { SimpleMusicTrack } from '@/__generated__/types';
+import { Track } from '@/__generated__/types';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -28,7 +28,7 @@ import { SelectPlaylistTrigger } from '../playlist/select-playlist-dialog';
 import { Skeleton } from '../ui/skeleton';
 
 interface DetailedTrackCardProps {
-	track?: SimpleMusicTrack;
+	track?: Track;
 	refetch: () => void;
 	isLoading: boolean;
 }
@@ -199,7 +199,7 @@ export function DetailedTrackCard({
 						size="xs"
 					>
 						<Music className="w-4 h-4" />
-						<span>{formatBPM(track.tempo || 0)} BPM</span>
+						<span>{formatBPM(track.mfTempo || 0)} BPM</span>
 					</Badge>
 					<Badge
 						variant="outline"
@@ -207,7 +207,7 @@ export function DetailedTrackCard({
 						size="xs"
 					>
 						<Zap className="w-4 h-4" />
-						<span className="capitalize">{track.arousalMood}</span>
+						<span className="capitalize">{track.mfArousalMood}</span>
 					</Badge>
 					<Badge
 						variant="outline"
@@ -215,7 +215,7 @@ export function DetailedTrackCard({
 						size="xs"
 					>
 						<Activity className="w-4 h-4" />
-						<span className="capitalize">{track.danceabilityFeeling}</span>
+						<span className="capitalize">{track.mfDanceabilityFeeling}</span>
 					</Badge>{' '}
 					<Badge
 						variant="outline"
@@ -223,7 +223,7 @@ export function DetailedTrackCard({
 						size="xs"
 					>
 						<Activity className="w-4 h-4" />
-						<span className="capitalize">{track.valenceMood}</span>
+						<span className="capitalize">{track.mfValenceMood}</span>
 					</Badge>
 				</div>
 			</CardHeader>
@@ -260,14 +260,14 @@ export function DetailedTrackCard({
 							</h1>
 						</div>
 
-						{track?.contextBackgrounds && (
+						{track?.aiContextBackgrounds && (
 							<div className="text-sm text-muted-foreground  ">
-								{track?.contextBackgrounds}
+								{track?.aiContextBackgrounds}
 							</div>
 						)}
-						{track?.contextImpacts && (
+						{track?.aiContextImpacts && (
 							<div className="text-sm text-muted-foreground  ">
-								{track?.contextImpacts}
+								{track?.aiContextImpacts}
 							</div>
 						)}
 					</div>
@@ -277,8 +277,8 @@ export function DetailedTrackCard({
 							<SelectPlaylistTrigger
 								trackId={track.id}
 								isDropdownMenuItem={false}
-								artist={track.artist}
-								title={track.title}
+								artist={track.artist || ''}
+								title={track.title || ''}
 							/>
 
 							<Button
@@ -317,9 +317,9 @@ export function DetailedTrackCard({
 						))}
 					</div>
 				)}
-				{track?.atmosphereKeywords && (
+				{track?.aiAtmosphereKeywords && (
 					<div className="flex flex-wrap gap-2">
-						{track?.atmosphereKeywords.map((tag) => (
+						{track?.aiAtmosphereKeywords?.map((tag) => (
 							<Badge
 								key={tag}
 								variant="outline"

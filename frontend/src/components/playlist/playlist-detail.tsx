@@ -69,19 +69,20 @@ const PlaylistMetadata = ({
 	return (
 		<div className="flex flex-row gap-1 items-center">
 			<Badge variant="outline" className="text-xs ">
-				<Disc3 className="h-4 w-4 " /> Tracks: {playlist?.numberOfTracks}
+				<Disc3 className="h-4 w-4 " /> Tracks: {playlist?.stats?.numberOfTracks}
 			</Badge>
 			<Badge variant="outline" className="text-xs ">
 				<Clock className="h-4 w-4" />
-				Duration: {formatDuration(playlist?.totalDuration || 0)}
+				Duration: {formatDuration(playlist?.stats?.totalDuration || 0)}
 			</Badge>{' '}
 			<Badge variant="outline" className="text-xs ">
-				<HeartPlus className="h-4 w-4 " /> BPM: {playlist?.bpmRange.min} -{' '}
-				{playlist?.bpmRange.max}
+				<HeartPlus className="h-4 w-4 " /> BPM: {playlist?.stats?.bpmRange?.min}{' '}
+				- {playlist?.stats?.bpmRange?.max}
 			</Badge>
 			<Badge variant="outline" className="text-xs ">
 				<AudioWaveform className="h-4 w-4 " /> Energy:{' '}
-				{playlist?.energyRange.min} - {playlist?.energyRange.max}
+				{playlist?.stats?.energyRange?.min} -{' '}
+				{playlist?.stats?.energyRange?.max}
 			</Badge>
 		</div>
 	);
@@ -194,15 +195,15 @@ export function PlaylistDetail({ id, onBack }: PlaylistDetailProps) {
 
 			// Add all playlist tracks to queue (ignore errors for duplicates)
 			const trackIds = playlist.tracks
-				.filter((pt) => pt.track?.id)
+				?.filter((pt) => pt.track?.id)
 				.map((pt) => pt.track!.id);
 
-			addTracksToQueue.mutateAsync(trackIds);
+			addTracksToQueue.mutateAsync(trackIds || []);
 
 			// Optionally start playing the first track
-			if (playlist.tracks[0]?.track) {
-				setCurrentTrack(playlist.tracks[0].track);
-				actions.play(playlist.tracks[0].track.id);
+			if (playlist.tracks?.[0]?.track) {
+				setCurrentTrack(playlist.tracks?.[0]?.track);
+				actions.play(playlist.tracks?.[0]?.track?.id || '');
 			}
 		} catch (error) {
 			console.error('Failed to set playlist as queue:', error);

@@ -1,6 +1,6 @@
 'use client';
 
-import { SimpleMusicTrack } from '@/__generated__/types';
+import { Track } from '@/__generated__/types';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -27,7 +27,7 @@ import { DataTablePagination } from '../data-table/data-table-pagination';
 import { TrackMoreMenu } from './track-more-menu';
 
 interface MusicTableProps {
-	data: SimpleMusicTrack[];
+	data: Track[];
 	pageCount: number;
 	staticFilterOptions: StaticFilterOptionsData;
 	initialPageSize?: number;
@@ -97,10 +97,10 @@ const ActionCells = ({
 	actions,
 	setCurrentTrack,
 }: {
-	row: Row<SimpleMusicTrack>;
+	row: Row<Track>;
 	navigate: UseNavigateResult<string>;
 	actions: AudioPlayerActions;
-	setCurrentTrack: (track: SimpleMusicTrack) => void;
+	setCurrentTrack: (track: Track) => void;
 }) => {
 	const { currentTrack } = useCurrentTrack();
 	const isPlaying = useIsPlaying();
@@ -141,8 +141,8 @@ const ActionCells = ({
 			</Button>
 			<TrackMoreMenu
 				trackId={track.id}
-				artist={track.artist}
-				title={track.title}
+				artist={track.artist || ''}
+				title={track.title || ''}
 			/>
 		</div>
 	);
@@ -151,9 +151,9 @@ const columns = (
 	staticFilterOptions: StaticFilterOptionsData,
 	navigate: UseNavigateResult<string>,
 	actions: AudioPlayerActions,
-	setCurrentTrack: (track: SimpleMusicTrack) => void
+	setCurrentTrack: (track: Track) => void
 ) =>
-	React.useMemo<ColumnDef<SimpleMusicTrack>[]>(
+	React.useMemo<ColumnDef<Track>[]>(
 		() => [
 			{
 				id: 'library',
@@ -266,13 +266,13 @@ const columns = (
 			},
 
 			{
-				id: 'atmosphereKeywords',
-				accessorKey: 'atmospheres',
+				id: 'aiAtmosphereKeywords',
+				accessorKey: 'aiAtmosphereKeywords',
 				header: ({ column }) => (
 					<DataTableColumnHeader column={column} title="Atmosphere" />
 				),
 				cell: ({ row }) => {
-					const atmosphereKeywords = (row.getValue('atmosphereKeywords') ||
+					const atmosphereKeywords = (row.getValue('aiAtmosphereKeywords') ||
 						[]) as string[];
 
 					return (
@@ -363,13 +363,13 @@ const columns = (
 				enableColumnFilter: true,
 			},
 			{
-				id: 'tempo',
-				accessorKey: 'tempo',
+				id: 'mfTempo',
+				accessorKey: 'mfTempo',
 				header: ({ column }) => (
 					<DataTableColumnHeader column={column} title="Tempo" />
 				),
 				cell: ({ row }) => {
-					const tempo = row.getValue('tempo') as number;
+					const tempo = row.getValue('mfTempo') as number;
 
 					return (
 						<div className="max-w-[50px] text-right font-mono">
@@ -386,13 +386,13 @@ const columns = (
 				enableColumnFilter: true,
 			},
 			{
-				id: 'keys',
-				accessorKey: 'key',
+				id: 'mfKey',
+				accessorKey: 'mfKey',
 				header: ({ column }) => (
 					<DataTableColumnHeader column={column} title="Key" />
 				),
 				cell: ({ row }) => {
-					const key = row.original.key as string;
+					const key = row.original.mfKey as string;
 					return (
 						<Badge
 							variant="outline"
@@ -419,14 +419,14 @@ const columns = (
 			},
 
 			{
-				id: 'danceabilityFeeling',
-				accessorKey: 'danceabilityFeeling',
+				id: 'mfDanceabilityFeeling',
+				accessorKey: 'mfDanceabilityFeeling',
 				header: ({ column }) => (
 					<DataTableColumnHeader column={column} title="Danceability" />
 				),
 				cell: ({ row }) => {
 					const danceabilityFeeling = row.getValue(
-						'danceabilityFeeling'
+						'mfDanceabilityFeeling'
 					) as string;
 
 					return (
@@ -449,13 +449,13 @@ const columns = (
 				enableColumnFilter: true,
 			},
 			{
-				id: 'arousalMood',
-				accessorKey: 'arousalMood',
+				id: 'mfArousalMood',
+				accessorKey: 'mfArousalMood',
 				header: ({ column }) => (
 					<DataTableColumnHeader column={column} title="Arousal" />
 				),
 				cell: ({ row }) => {
-					const arousalMood = row.getValue('arousalMood') as string;
+					const arousalMood = row.getValue('mfArousalMood') as string;
 
 					return (
 						<Badge
@@ -476,13 +476,13 @@ const columns = (
 				enableColumnFilter: true,
 			},
 			{
-				id: 'valenceMood',
-				accessorKey: 'valenceMood',
+				id: 'mfValenceMood',
+				accessorKey: 'mfValenceMood',
 				header: ({ column }) => (
 					<DataTableColumnHeader column={column} title="Mood" />
 				),
 				cell: ({ row }) => {
-					const valenceMood = row.getValue('valenceMood') as string;
+					const valenceMood = row.getValue('mfValenceMood') as string;
 
 					return (
 						<Badge

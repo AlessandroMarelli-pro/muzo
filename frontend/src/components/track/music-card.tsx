@@ -1,4 +1,4 @@
-import { SimpleMusicTrack } from '@/__generated__/types';
+import { Track } from '@/__generated__/types';
 import { Card, CardContent } from '@/components/ui/card';
 import {
 	useAudioPlayerActions,
@@ -13,7 +13,7 @@ import { Skeleton } from '../ui/skeleton';
 import { MusicCardContent } from './music-card-content';
 
 interface MusicCardProps {
-	track: SimpleMusicTrack;
+	track: Track;
 	className?: string;
 	onAdd?: (trackId: string, artist: string, title: string) => void;
 	key: string;
@@ -80,7 +80,7 @@ export const HorizontalMusicCardList = ({
 	emptyMessage = 'No tracks found',
 	numberOfCards = 4,
 }: {
-	tracks: SimpleMusicTrack[];
+	tracks: Track[];
 	isLoading: boolean;
 	emptyMessage?: string;
 	numberOfCards?: number;

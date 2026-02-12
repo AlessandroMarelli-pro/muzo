@@ -13,7 +13,6 @@ import {
 	useQueryClient,
 } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { toTrack } from './track.mapper';
 
 // GraphQL Queries and Mutations
 const GET_QUEUE = gql`
@@ -111,10 +110,7 @@ const fetchQueue = async (): Promise<QueueItem[]> => {
 	const data = await graffleClient.request<{ me: { queue: QueueItem[] } }>(
 		GET_QUEUE
 	);
-	return data.me.queue.map((item) => ({
-		...item,
-		track: item.track ? toTrack(item.track) : undefined,
-	}));
+	return data.me.queue;
 };
 
 const addTrackToQueue = async (trackId: string): Promise<QueueItem> => {
@@ -122,12 +118,7 @@ const addTrackToQueue = async (trackId: string): Promise<QueueItem> => {
 		ADD_TRACK_TO_QUEUE,
 		{ trackId }
 	);
-	return {
-		...data.addTrackToQueue,
-		track: data.addTrackToQueue.track
-			? toTrack(data.addTrackToQueue.track)
-			: undefined,
-	};
+	return data.addTrackToQueue;
 };
 
 const addTracksToQueue = async (trackIds: string[]): Promise<QueueItem[]> => {
@@ -135,10 +126,7 @@ const addTracksToQueue = async (trackIds: string[]): Promise<QueueItem[]> => {
 		ADD_TRACKS_TO_QUEUE,
 		{ trackIds }
 	);
-	return data.addTracksToQueue.map((item) => ({
-		...item,
-		track: item.track ? toTrack(item.track) : undefined,
-	}));
+	return data.addTracksToQueue;
 };
 const removeTrackFromQueue = async (
 	trackId: string
@@ -165,10 +153,7 @@ const updateQueuePositions = async (
 	}>(UPDATE_QUEUE_POSITIONS, {
 		input,
 	});
-	return data.updateQueuePositions.map((item) => ({
-		...item,
-		track: item.track ? toTrack(item.track) : undefined,
-	}));
+	return data.updateQueuePositions;
 };
 
 // Query keys

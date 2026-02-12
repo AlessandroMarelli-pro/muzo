@@ -17,8 +17,6 @@ import {
 } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { playlistFragment, trackFragment } from './fragments';
-import { toPlaylistItem } from './playlist.mapper';
-import { toTrack } from './track.mapper';
 
 // GraphQL Queries and Mutations
 const GET_PLAYLISTS = gql`
@@ -320,7 +318,7 @@ export const fetchPlaylists = async (
 			search: search?.trim() || undefined,
 			verifyTrackId,
 		})
-		.then((data) => data.me.playlists.items.map(toPlaylistItem));
+		.then((data) => data.me.playlists.items);
 };
 
 export const fetchPlaylist = async (
@@ -331,14 +329,14 @@ export const fetchPlaylist = async (
 		id,
 		userId,
 	});
-	return toPlaylistItem(data.node);
+	return data.node;
 };
 
 export const fetchFavoritePlaylist = async (): Promise<Playlist> => {
 	const data = await graffleClient.request<{
 		me: { favorites: Playlist };
 	}>(GET_FAVORITE_PLAYLIST);
-	return toPlaylistItem(data.me.favorites);
+	return data.me.favorites;
 };
 
 const createPlaylist = async (
@@ -522,12 +520,7 @@ export const fetchPlaylistRecommendations = async (
 		limit,
 		excludeTrackIds,
 	});
-	return data.node.recommendations.map((recommendation) => ({
-		__typename: 'TrackRecommendation',
-		track: toTrack(recommendation.track),
-		similarity: recommendation.similarity,
-		reasons: recommendation.reasons,
-	}));
+	return data.node.recommendations;
 };
 
 interface UpdatePlaylistPositionInput {
@@ -629,7 +622,7 @@ export function usePlaylists(search?: string, verifyTrackId?: string) {
 			queryClient.invalidateQueries({
 				queryKey: ['playlistRecommendations', playlistId, 20],
 			});
-			const trackName = ` ${data.track.title} by ${data.track.artist}`;
+			const trackName = ` ${data?.track?.title} by ${data?.track?.artist}`;
 			toast.success(`Track added to playlist`, {
 				description: capitalizeEveryWord(trackName),
 			});
@@ -884,7 +877,7 @@ export function useAddTrackToPlaylist(userId: string = 'default') {
 			queryClient.invalidateQueries({
 				queryKey: ['playlistRecommendations', playlistId, 20],
 			});
-			const trackName = ` ${data.track.title} by ${data.track.artist}`;
+			const trackName = ` ${data?.track?.title} by ${data?.track?.artist}`;
 			toast.success(`Track added to playlist`, {
 				description: capitalizeEveryWord(trackName),
 			});

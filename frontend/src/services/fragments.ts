@@ -5,53 +5,39 @@ export const trackFragment = gql`
 		id
 		artist
 		title
-		stats {
-			listeningCount
-			lastPlayedAt
-			isFavorite
-			isLiked
-			isBanger
-		}
-		fileInfo {
-			filePath
-			fileName
-			fileSize
-			fileCreatedAt
-		}
-		technicalInfo {
-			duration
-			format
-		}
-		metadata {
-			album
-			date
-			genres
-			subgenres
-		}
-		aiMetadata {
-			tags
-			vocalsDesc
-			description
-			vocalsDescriptions
-			atmosphereKeywords
-			contextBackgrounds
-			contextImpacts
-		}
+		listeningCount
+		lastPlayedAt
+		isFavorite
+		isLiked
+		isBanger
+		filePath
+		fileName
+		fileCreatedAt
+		fileSize
+		duration
+		genres
+		subgenres
+		aiTags
+		aiVocalsDesc
+		aiDescription
+		aiVocalsDescriptions
+		aiAtmosphereKeywords
+		aiContextBackgrounds
+		aiContextImpacts
 		createdAt
 		updatedAt
-		musicalFeatures {
-			tempo
-			key
-			valenceMood
-			arousalMood
-			danceabilityFeeling
-			acousticness
-			instrumentalness
-			speechiness
-		}
+		mfTempo
+		mfKey
+		mfValenceMood
+		mfArousalMood
+		mfDanceabilityFeeling
+
 		imagePath
 		lastScannedAt
 		libraryId
+		analysisStatus
+		date
+		format
 	}
 `;
 

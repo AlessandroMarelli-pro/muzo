@@ -104,7 +104,7 @@ export function PlaylistCard({
 			alert('Failed to export playlist. Please try again.');
 		}
 	};
-	const images = playlist.images.slice(0, 4);
+	const images = playlist.stats?.images?.slice(0, 4) || [];
 	const handleCardClick = () => {
 		if (onCardClick) {
 			onCardClick(playlist.id);
@@ -214,7 +214,7 @@ export function PlaylistCard({
 						{playlist.description}
 					</p>
 					<p className="text-xs text-muted-foreground truncate capitalize">
-						{playlist.numberOfTracks} tracks
+						{playlist.stats?.numberOfTracks} tracks
 					</p>
 				</div>
 			</CardContent>

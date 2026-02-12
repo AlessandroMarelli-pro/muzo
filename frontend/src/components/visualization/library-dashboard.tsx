@@ -42,21 +42,15 @@ export const LibraryDashboard: React.FC<LibraryDashboardProps> = ({
 }) => {
 	const { ref, inView } = useInView();
 
-	const {
-		data,
-		isLoading,
-		isFetching,
-		isFetchingNextPage,
-		hasNextPage,
-		fetchNextPage,
-	} = useLibraryTracks(libraryId, {
-		direction: 'AFTER',
-		size: 40,
-		cursor: null,
-	});
+	const { data, isLoading, isFetchingNextPage, hasNextPage, fetchNextPage } =
+		useLibraryTracks(libraryId, {
+			direction: 'AFTER',
+			size: 40,
+			cursor: null,
+		});
 
 	const pages = data?.pages ?? [];
-	const tracks = pages?.flatMap((page) => page.tracks);
+	const tracks = pages?.flatMap((page) => page.items);
 
 	const { data: library, isLoading: isLibraryLoading } = useLibrary(libraryId);
 
@@ -218,7 +212,7 @@ export const LibraryDashboard: React.FC<LibraryDashboardProps> = ({
 								<p className="text-2xl font-bold">
 									{
 										new Set(
-											tracks.flatMap((t) => t.genres || []).filter(Boolean)
+											tracks.flatMap((t) => t?.genres || []).filter(Boolean)
 										).size
 									}
 								</p>

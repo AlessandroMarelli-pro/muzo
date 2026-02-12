@@ -1,14 +1,12 @@
 import {
 	RegisterPlayedTrackMutation,
 	ToggleFavoriteMutation,
-	Track,
 } from '@/__generated__/types';
 import { capitalizeEveryWord } from '@/lib/utils';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { trackFragment } from './fragments';
 import { gql, graffleClient } from './graffle-client';
-import { toTrack } from './track.mapper';
 
 // Music Player Types
 export interface PlaybackState {
@@ -141,7 +139,7 @@ export const useToggleFavorite = () => {
 				`,
 				{ trackId }
 			);
-			return toTrack(response.toggleFavorite as Track);
+			return response.toggleFavorite;
 		},
 		onSuccess: (data) => {
 			queryClient.invalidateQueries({ queryKey: ['playlistRecommendations'] });

@@ -170,7 +170,7 @@ export function PlaylistTable({
 				header: () => null,
 				cell: ({ row }) => {
 					const playlist = row.original;
-					const imagePath = playlist.images?.[0] || '';
+					const imagePath = playlist.stats?.images?.[0] || '';
 
 					return (
 						<div className="flex items-center justify-center h-8 w-8">

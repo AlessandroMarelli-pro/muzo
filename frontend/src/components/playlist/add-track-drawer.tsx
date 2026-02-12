@@ -1,3 +1,4 @@
+import { Track } from '@/__generated__/types';
 import {
 	Sheet,
 	SheetContent,
@@ -26,21 +27,14 @@ export function AddTrackDrawer({
 }: AddTrackDrawer) {
 	const { ref, inView } = useInView();
 
-	const {
-		data,
-		isLoading,
-		isFetching,
-		isFetchingNextPage,
-		hasNextPage,
-		fetchNextPage,
-	} = useTracks({
+	const { data, isFetchingNextPage, hasNextPage, fetchNextPage } = useTracks({
 		pagination: {
 			direction: 'AFTER',
 			size: 50,
 		},
 	});
 	const pages = data?.pages;
-	const tracks = pages?.flatMap((page) => page.tracks);
+	const tracks = pages?.flatMap((page) => page.items);
 	const [shouldDisplayFilter, setShouldDisplayFilter] = useState(false);
 	const [divMaxWidth, setDivMaxWidth] = useState<number>(800);
 
@@ -88,8 +82,8 @@ export function AddTrackDrawer({
 						>
 							{tracks?.map((track) => (
 								<MusicCard
-									key={track.id}
-									track={track}
+									key={track?.id || ''}
+									track={track as Track}
 									onAdd={addTrackToPlaylist}
 									width="235"
 									height="200"

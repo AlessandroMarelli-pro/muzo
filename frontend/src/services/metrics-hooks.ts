@@ -40,8 +40,6 @@ export interface TopArtist {
 export interface TopGenre {
 	genre: string;
 	trackCount: number;
-	averageConfidence: number;
-	averageDuration: number;
 }
 
 export interface RecentActivity {

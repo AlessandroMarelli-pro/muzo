@@ -1,4 +1,4 @@
-import type { MusicLibrary } from '@/__generated__/types';
+import type { Library } from '@/__generated__/types';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -16,7 +16,7 @@ import { BarChart3, Loader, Play, Trash } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 
 interface LibraryCardProps {
-	library: MusicLibrary;
+	library: Library;
 	onScan: (e: React.MouseEvent<HTMLButtonElement>, libraryId: string) => void;
 	onView: (libraryId: string) => void;
 	onPlay: (libraryId: string) => void;

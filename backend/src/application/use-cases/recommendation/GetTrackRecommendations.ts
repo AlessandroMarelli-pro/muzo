@@ -20,7 +20,9 @@ export class GetTrackRecommendationsUseCase {
   ): Promise<TrackSimilarity[]> {
     const track = await this.musicTrackRepository.getOneById(trackId);
     const features = this.recommendationDataPort.getAudioFeatures([track]);
-
+    if (!features) {
+      return [];
+    }
     const recommendations =
       await this.recommendationSearchPort.searchByFeatures([features], {
         weights: DEFAULT_RECOMMENDATION_WEIGHTS,

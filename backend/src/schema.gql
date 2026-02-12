@@ -356,75 +356,48 @@ type TopGenre {
 }
 
 type Track implements Node {
-  aiMetadata: TrackAIMetadata
+  aiAtmosphereKeywords: [String!]
+  aiContextBackgrounds: String
+  aiContextImpacts: String
+  aiDescription: String
+  aiTags: [String!]
+  aiVocalsDesc: String
+  aiVocalsDescriptions: String
+  analysisStatus: String
   artist: String
   createdAt: DateTime
-  fileInfo: TrackFileInfo
-  id: Base64ID!
-  imagePath: String
-  lastScannedAt: DateTime
-  libraryId: Base64ID
-  metadata: TrackMetadata
-  musicalFeatures: TrackMusicalFeatures
-  recommendations(limit: Int): [TrackRecommendation!]!
-  stats: TrackStats
-  technicalInfo: TrackTechnicalInfo
-  title: String
-  updatedAt: DateTime
-}
-
-type TrackAIMetadata {
-  atmosphereKeywords: [String!]
-  contextBackgrounds: String
-  contextImpacts: String
-  description: String
-  tags: [String!]
-  vocalsDesc: String
-  vocalsDescriptions: String
-}
-
-type TrackFileInfo {
+  date: DateTime
+  duration: Float!
   fileCreatedAt: DateTime!
   fileName: String!
   filePath: String!
   fileSize: Float!
-}
-
-type TrackMetadata {
-  album: String
-  date: DateTime
+  format: String
   genres: [String!]
+  id: Base64ID!
+  imagePath: String
+  isBanger: Boolean!
+  isFavorite: Boolean!
+  isLiked: Boolean!
+  lastPlayedAt: DateTime
+  lastScannedAt: DateTime
+  libraryId: Base64ID
+  listeningCount: Float!
+  mfArousalMood: String
+  mfDanceabilityFeeling: String
+  mfKey: String
+  mfTempo: Float
+  mfValenceMood: String
+  recommendations(limit: Int): [TrackRecommendation!]!
   subgenres: [String!]
-}
-
-type TrackMusicalFeatures {
-  acousticness: Float
-  arousalMood: String
-  danceabilityFeeling: String
-  instrumentalness: Float
-  key: String
-  speechiness: Float
-  tempo: Float
-  valenceMood: String
+  title: String
+  updatedAt: DateTime
 }
 
 type TrackRecommendation {
   reasons: [String!]!
   similarity: Float!
   track: Track!
-}
-
-type TrackStats {
-  isBanger: Boolean!
-  isFavorite: Boolean!
-  isLiked: Boolean!
-  lastPlayedAt: DateTime
-  listeningCount: Float!
-}
-
-type TrackTechnicalInfo {
-  duration: Float!
-  format: String!
 }
 
 input UpdatePlaylistInput {

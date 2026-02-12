@@ -9,21 +9,17 @@ import type {
 } from 'src/kernel/types/model-types';
 
 import { MaybeUndefined } from 'src/kernel/common';
-import type {
-  Track,
-  TrackAIMetadata,
-  TrackFileInfo,
-  TrackMetadata,
-  TrackMusicalFeatures,
-  TrackStats,
-  TrackTechnicalInfo,
-} from '../schema/track.schema';
+import type { Track } from '../schema/track.schema';
 
-function toTrackStats(
-  stats: MaybeUndefined<MusicTrackStats>,
-): MaybeUndefined<TrackStats> {
+function toTrackStats(stats: MaybeUndefined<MusicTrackStats>) {
   if (!stats) {
-    return undefined;
+    return {
+      listeningCount: 0,
+      lastPlayedAt: undefined,
+      isFavorite: false,
+      isLiked: false,
+      isBanger: false,
+    };
   }
   return {
     listeningCount: stats.listeningCount,
@@ -34,11 +30,14 @@ function toTrackStats(
   };
 }
 
-function toTrackFileInfo(
-  fileInfo: MaybeUndefined<AudioFileInfo>,
-): MaybeUndefined<TrackFileInfo> {
+function toTrackFileInfo(fileInfo: MaybeUndefined<AudioFileInfo>) {
   if (!fileInfo) {
-    return undefined;
+    return {
+      filePath: '',
+      fileName: '',
+      fileSize: 0,
+      fileCreatedAt: new Date(),
+    };
   }
   return {
     filePath: fileInfo.filePath,
@@ -48,11 +47,12 @@ function toTrackFileInfo(
   };
 }
 
-function toTrackTechnicalInfo(
-  technicalInfo: MaybeUndefined<AudioTechnical>,
-): MaybeUndefined<TrackTechnicalInfo> {
+function toTrackTechnicalInfo(technicalInfo: MaybeUndefined<AudioTechnical>) {
   if (!technicalInfo) {
-    return undefined;
+    return {
+      duration: 0,
+      format: '',
+    };
   }
   return {
     duration: technicalInfo.duration ?? 0,
@@ -60,55 +60,63 @@ function toTrackTechnicalInfo(
   };
 }
 
-function toTrackMetadata(
-  metadata: MaybeUndefined<AudioFileMetadata>,
-): MaybeUndefined<TrackMetadata> {
+function toTrackMetadata(metadata: MaybeUndefined<AudioFileMetadata>) {
   if (!metadata) {
-    return undefined;
+    return {
+      date: undefined,
+      genres: [],
+      subgenres: [],
+    };
   }
   return {
-    album: metadata.album,
     date: metadata.date,
     genres: metadata.genres?.length ? metadata.genres : undefined,
     subgenres: metadata.subgenres?.length ? metadata.subgenres : undefined,
   };
 }
 
-function toTrackAIMetadata(
-  aiMetadata: MaybeUndefined<AudioFileAIMetadata>,
-): MaybeUndefined<TrackAIMetadata> {
+function toTrackAIMetadata(aiMetadata: MaybeUndefined<AudioFileAIMetadata>) {
   if (!aiMetadata) {
-    return undefined;
+    return {
+      aiTags: [],
+      aiVocalsDesc: '',
+      aiDescription: '',
+      aiVocalsDescriptions: '',
+      aiAtmosphereKeywords: [],
+      aiContextBackgrounds: '',
+      aiContextImpacts: '',
+    };
   }
   return {
-    tags: aiMetadata.tags?.length ? aiMetadata.tags : undefined,
-    vocalsDesc: aiMetadata.vocalsDesc,
-    description: aiMetadata.description || undefined,
-    vocalsDescriptions: aiMetadata.vocalsDesc,
-    atmosphereKeywords: aiMetadata.atmosphereDesc?.length
+    aiTags: aiMetadata.tags?.length ? aiMetadata.tags : undefined,
+    aiVocalsDesc: aiMetadata.vocalsDesc,
+    aiDescription: aiMetadata.description || undefined,
+    aiVocalsDescriptions: aiMetadata.vocalsDesc,
+    aiAtmosphereKeywords: aiMetadata.atmosphereDesc?.length
       ? aiMetadata.atmosphereDesc
       : undefined,
-    contextBackgrounds: aiMetadata.contextBackground,
-    contextImpacts: aiMetadata.contextImpact,
+    aiContextBackgrounds: aiMetadata.contextBackground,
+    aiContextImpacts: aiMetadata.contextImpact,
   };
 }
 
-function toTrackMusicalFeatures(
-  features: MaybeUndefined<AudioFileFeatures>,
-): MaybeUndefined<TrackMusicalFeatures> {
+function toTrackMusicalFeatures(features: MaybeUndefined<AudioFileFeatures>) {
   if (!features?.musicalFeatures) {
-    return undefined;
+    return {
+      mfTempo: 0,
+      mfKey: '',
+      mfValenceMood: '',
+      mfArousalMood: '',
+      mfDanceabilityFeeling: '',
+    };
   }
   const m = features.musicalFeatures;
   return {
-    tempo: m.tempo,
-    key: m.key,
-    valenceMood: m.valenceMood,
-    arousalMood: m.arousalMood,
-    danceabilityFeeling: m.danceabilityFeeling,
-    acousticness: m.acousticness,
-    instrumentalness: m.instrumentalness,
-    speechiness: m.speechiness,
+    mfTempo: m.tempo,
+    mfKey: m.key,
+    mfValenceMood: m.valenceMood,
+    mfArousalMood: m.arousalMood,
+    mfDanceabilityFeeling: m.danceabilityFeeling,
   };
 }
 
@@ -121,17 +129,18 @@ export function toTrack(domain: MusicTrack): Track {
     id: domain.id,
     artist: domain.artist,
     title: domain.title,
-    stats: toTrackStats(domain.stats),
-    fileInfo: toTrackFileInfo(domain.fileInfo),
-    technicalInfo: toTrackTechnicalInfo(domain.technicalInfo),
-    metadata: toTrackMetadata(domain.metadata),
-    aiMetadata: toTrackAIMetadata(domain.aiMetadata),
+    ...toTrackStats(domain.stats),
+    ...toTrackFileInfo(domain.fileInfo),
+    ...toTrackTechnicalInfo(domain.technicalInfo),
+    ...toTrackMetadata(domain.metadata),
+    ...toTrackAIMetadata(domain.aiMetadata),
+    ...toTrackMusicalFeatures(domain.features),
     createdAt: domain.createdAt,
     updatedAt: domain.updatedAt,
-    musicalFeatures: toTrackMusicalFeatures(domain.features),
     imagePath: domain.imagePath,
     lastScannedAt: domain.analysisInfo?.completedAt,
     libraryId: domain.libraryId,
+    analysisStatus: domain.analysisInfo?.status,
   };
 }
 

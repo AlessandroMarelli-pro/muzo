@@ -1,4 +1,4 @@
-import { SimpleMusicTrack } from '@/__generated__/types';
+import { Track } from '@/__generated__/types';
 import { TrackList } from '@/components/track/track-list';
 import { useFilters } from '@/contexts/filter-context';
 import { useFilterOptionsData } from '@/hooks/useFilterOptions';
@@ -35,7 +35,7 @@ function MusicPage() {
 		<TrackList
 			page={page}
 			perPage={perPage}
-			sort={memoizedSort as ExtendedColumnSort<SimpleMusicTrack>[]}
+			sort={memoizedSort as ExtendedColumnSort<Track>[]}
 			staticFilterOptions={memoizedStaticFilterOptions}
 			filters={memoizedFilters}
 			handleFilterChange={handleFilterChange}

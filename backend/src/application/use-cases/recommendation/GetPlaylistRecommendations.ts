@@ -33,6 +33,9 @@ export class GetPlaylistRecommendationsUseCase {
     const features = this.recommendationDataPort.getAudioFeatures(
       playlistTracks.map((track) => track.track).slice(0, 15),
     );
+    if (!features) {
+      return [];
+    }
 
     const recommendations =
       await this.recommendationSearchPort.searchByFeatures([features], {

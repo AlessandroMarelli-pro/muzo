@@ -1,8 +1,7 @@
-import { SimpleMusicTrack } from '@/__generated__/types';
+import { Track } from '@/__generated__/types';
 import { StaticFilterOptionsData } from '@/hooks/useFilterOptions';
 import { FilterState } from '@/hooks/useFiltering';
 import { useTracksList } from '@/services/api-hooks';
-import { toTrack } from '@/services/track.mapper';
 import { ExtendedColumnSort } from '@/types/data-table';
 import React from 'react';
 import { DataTableSkeleton } from '../data-table/data-table-skeleton';
@@ -11,7 +10,7 @@ import { MusicTable } from './music-table';
 interface TrackListProps {
 	page: number;
 	perPage: number;
-	sort: ExtendedColumnSort<SimpleMusicTrack>[];
+	sort: ExtendedColumnSort<Track>[];
 	staticFilterOptions: StaticFilterOptionsData & {
 		isLoading: boolean;
 	};
@@ -112,12 +111,12 @@ export const TrackList = React.memo<TrackListProps>(
 				</div>
 			);
 		}
-		const tracks = data?.items?.map((track) => toTrack(track)) || [];
+		const tracks = data?.items;
 		const totalPages = data?.pages || 0;
 		return (
 			<div className="p-6  flex flex-col z-0" key="track-list">
 				<MusicTable
-					data={tracks}
+					data={tracks || []}
 					pageCount={totalPages}
 					staticFilterOptions={staticFilterOptions}
 					initialPageSize={perPage}

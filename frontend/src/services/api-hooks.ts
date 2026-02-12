@@ -19,7 +19,6 @@ import type {
 } from '../__generated__/types';
 import { libraryFragment, trackFragment } from './fragments';
 import { gql, graffleClient } from './graffle-client';
-import { toTrack } from './track.mapper';
 
 // Define AnalysisStatus enum locally since it's not in the generated types
 export type AnalysisStatus = 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED';
@@ -177,10 +176,7 @@ export const useLibraryTracks = (
 				`),
 				{ id, pagination: { ...pagination, cursor: d.pageParam } }
 			);
-			return {
-				...response.node.tracks,
-				tracks: response.node.tracks.items?.map(toTrack),
-			};
+			return response.node.tracks;
 		},
 		initialPageParam: null,
 		getPreviousPageParam: (firstPage) => firstPage.nextCursor,
@@ -218,10 +214,7 @@ export const useTracks = ({
 					pagination: { ...pagination, cursor: pageParam },
 				}
 			);
-			return {
-				...response.me.tracks,
-				tracks: response.me.tracks.items?.map(toTrack),
-			};
+			return response.me.tracks;
 		},
 		initialPageParam: null,
 		getPreviousPageParam: (firstPage) => firstPage.nextCursor,
@@ -245,7 +238,7 @@ export const fetchRandomTrack = async (id?: string, filterLiked?: boolean) => {
 		`,
 		{ id, filterLiked }
 	);
-	return toTrack(response.node);
+	return response.node;
 };
 
 export const useRandomTrack = (id?: string, filterLiked?: boolean) => {
@@ -274,14 +267,7 @@ export const fetchRandomTrackWithStats = async () => {
 			}
 		}
 	`);
-	const randomTrackWithStats = response.me.randomTrackWithStats;
-	const track = randomTrackWithStats.track
-		? toTrack(randomTrackWithStats.track)
-		: null;
-	return {
-		...randomTrackWithStats,
-		track,
-	};
+	return response.me.randomTrackWithStats;
 };
 export const useRandomTrackWithStats = () => {
 	return useQuery({
@@ -318,12 +304,7 @@ export const fetchTrackRecommendations = async (
 		`,
 		{ trackId: id, recommendationsLimit: 20 }
 	);
-	return response.node.recommendations.map((recommendation) => ({
-		__typename: 'TrackRecommendation',
-		track: toTrack(recommendation.track),
-		similarity: recommendation.similarity,
-		reasons: recommendation.reasons,
-	}));
+	return response.node.recommendations;
 };
 export const useTrackRecommendations = (id?: string, criteria?: string) => {
 	return useQuery({
@@ -447,7 +428,7 @@ export const fetchRecentlyPlayed = async () => {
 			}
 		}
 	`);
-	return response.me.recentlyPlayed.map(toTrack);
+	return response.me.recentlyPlayed;
 };
 
 // Playback Queries
@@ -544,7 +525,7 @@ export const useLikeTrack = () => {
 				`,
 				{ trackId }
 			);
-			return toTrack(response.toggleLike);
+			return response.toggleLike;
 		},
 		onSuccess: () => {
 			queryClient.invalidateQueries({
@@ -572,7 +553,7 @@ export const useBangerTrack = () => {
 				`,
 				{ trackId }
 			);
-			return toTrack(response.toggleBanger);
+			return response.toggleBanger;
 		},
 		onSuccess: () => {
 			queryClient.invalidateQueries({

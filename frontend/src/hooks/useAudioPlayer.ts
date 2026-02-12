@@ -1,4 +1,4 @@
-import { SimpleMusicTrack } from '@/__generated__/types';
+import { Track } from '@/__generated__/types';
 import {
 	useRegisterPlayedTrack,
 	useToggleFavorite,
@@ -22,8 +22,8 @@ export interface AudioPlayerActions {
 
 export interface UseAudioPlayerOptions {
 	trackId?: string;
-	currentTrack?: SimpleMusicTrack | null;
-	setCurrentTrack?: (track: SimpleMusicTrack | null) => void;
+	currentTrack?: Track | null;
+	setCurrentTrack?: (track: Track | null) => void;
 }
 
 export function useAudioPlayer(options: UseAudioPlayerOptions = {}) {

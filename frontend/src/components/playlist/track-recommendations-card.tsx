@@ -62,7 +62,7 @@ export const TrackRecommendationsCard = ({
 	recommendationsLength,
 }: {
 	recommendation: TrackRecommendation;
-	onAddTrack?: (trackId: string) => void;
+	onAddTrack?: (trackId: string, artist: string, title: string) => void;
 	index: number;
 	recommendationsLength: number;
 }) => {
@@ -94,7 +94,7 @@ export const TrackRecommendationsCard = ({
 	const handleAddTrack = (e: React.SyntheticEvent<any>) => {
 		e.stopPropagation();
 		if (onAddTrack) {
-			onAddTrack(track.id);
+			onAddTrack(track.id, track.artist || '', track.title || '');
 		}
 	};
 	const handleResearch = (e: React.SyntheticEvent<any>) => {
@@ -132,7 +132,7 @@ export const TrackRecommendationsCard = ({
 						{track?.title || 'Unknown Track'}{' '}
 					</span>
 					<Badge variant="outline" className="text-xs border-none">
-						{track.tempo} BPM
+						{track.mfTempo} BPM
 					</Badge>
 					<Badge variant="outline" className="text-xs border-none">
 						{formatDuration(track.duration)}

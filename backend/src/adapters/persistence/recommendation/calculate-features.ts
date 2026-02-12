@@ -1,5 +1,5 @@
 import { AudioFeatures } from 'src/application/ports/dtos/AudioFeatures';
-import { MusicTrack } from 'src/kernel/types';
+import { Maybe, MusicTrack } from 'src/kernel/types';
 
 function findMostCommon(counts: Record<string, number>): string {
   const entries = Object.entries(counts);
@@ -7,9 +7,9 @@ function findMostCommon(counts: Record<string, number>): string {
   return entries.sort((a, b) => b[1] - a[1])[0][0];
 }
 
-export function calculateFeatures(tracks: MusicTrack[]): AudioFeatures {
+export function calculateFeatures(tracks: MusicTrack[]): Maybe<AudioFeatures> {
   if (tracks.length === 0) {
-    throw new Error('calculateFeatures requires at least one track');
+    return null;
   }
 
   const features: Required<AudioFeatures> = {

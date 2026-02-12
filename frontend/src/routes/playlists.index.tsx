@@ -1,13 +1,14 @@
+import { Playlist } from '@/__generated__/types';
 import { PlaylistList } from '@/components/playlist/playlist-list';
 import { playlistsQueryOptions } from '@/services/playlist-hooks';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 
 const IMAGE_SERVE_BASE = 'http://localhost:3000/api/images/serve';
 
-function prefetchPlaylistImages(playlists: { images?: string[] }[]) {
+function prefetchPlaylistImages(playlists: Playlist[]) {
 	if (typeof window === 'undefined') return;
 	const urls = playlists.flatMap((p) =>
-		(p.images ?? [])
+		(p.stats?.images ?? [])
 			.slice(0, 4)
 			.map(
 				(path) => `${IMAGE_SERVE_BASE}?imagePath=${encodeURIComponent(path)}`
