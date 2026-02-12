@@ -11,9 +11,9 @@ export class RegisterPlayedTrackUseCase {
       await this.musicTrackRepository.getLastPlayedTrack();
 
     if (
-      lastPlayedTrack.id === id &&
-      lastPlayedTrack.stats?.lastPlayedAt &&
-      lastPlayedTrack.stats.lastPlayedAt >
+      lastPlayedTrack?.id === id &&
+      lastPlayedTrack?.stats?.lastPlayedAt &&
+      lastPlayedTrack?.stats?.lastPlayedAt >
         new Date(Date.now() - 1000 * 60 * 60 * 5)
     ) {
       return;

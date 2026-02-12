@@ -95,3 +95,6 @@ specs/**
 **/.cursor/*
 .claude/**
 todo
+
+coverage/**
+backend/coverage/**

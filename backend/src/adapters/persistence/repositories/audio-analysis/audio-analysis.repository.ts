@@ -1,7 +1,10 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
 import { AudioAnalysisResponse } from 'src/application/ports/dtos/AudioAnalysis';
 import { IAudioAnalysisRepository } from 'src/application/ports/repositories/IAudioAnalysisRepository';
-import { PrismaService } from 'src/infrastructure/database/prisma.service';
+import {
+  PRISMA_SERVICE,
+  PrismaService,
+} from 'src/infrastructure/database/prisma.service';
 import { extractModelId, MusicTrackId } from 'src/kernel/ids';
 import { getCurrentUserId, models } from 'src/kernel/types';
 import {
@@ -13,7 +16,9 @@ import {
 
 @Injectable()
 export class AudioAnalysisRepository implements IAudioAnalysisRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    @Inject(PRISMA_SERVICE) private readonly prisma: PrismaService,
+  ) {}
 
   async upsertAudioFingerprint(
     trackId: MusicTrackId,

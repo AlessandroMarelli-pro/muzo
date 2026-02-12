@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
 import { PlaylistTrackWithTrackDetail } from 'src/application/ports/dtos/PlaylistTrackWithDetail';
 import {
   IPlaylistTrackRepository,
@@ -6,7 +6,10 @@ import {
   PlaylistTrackPresence,
   PlaylistTrackUpdateData,
 } from 'src/application/ports/repositories/IPlaylistTrackRepository';
-import { PrismaService } from 'src/infrastructure/database/prisma.service';
+import {
+  PRISMA_SERVICE,
+  PrismaService,
+} from 'src/infrastructure/database/prisma.service';
 import {
   extractModelId,
   MusicTrackId,
@@ -16,13 +19,16 @@ import {
 import { models } from 'src/kernel/types';
 import { getCurrentUserId } from 'src/kernel/types/context';
 import { PlaylistTrack } from 'src/kernel/types/model-types';
+import { musicTracksIncludes } from '../../includes/music-tracks-includes';
 import { toDomain as toDomainMusicTrack } from '../music-track/music-track.mapper';
 import { handlePrismaNotFound } from '../prisma-errors';
 import { toDomain, toPrisma } from './playlist-track.mapper';
 
 @Injectable()
 export class PlaylistTrackRepository implements IPlaylistTrackRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    @Inject(PRISMA_SERVICE) private readonly prisma: PrismaService,
+  ) {}
 
   async save(playlistTrack: PlaylistTrack): Promise<PlaylistTrack> {
     return this.prisma.playlistTrack
@@ -74,20 +80,7 @@ export class PlaylistTrackRepository implements IPlaylistTrackRepository {
         },
         include: {
           track: {
-            include: {
-              audioFingerprint: true,
-              trackGenres: {
-                include: {
-                  genre: true,
-                },
-              },
-              trackSubgenres: {
-                include: {
-                  subgenre: true,
-                },
-              },
-              imageSearches: true,
-            },
+            include: musicTracksIncludes,
           },
         },
       })
@@ -111,20 +104,7 @@ export class PlaylistTrackRepository implements IPlaylistTrackRepository {
         },
         include: {
           track: {
-            include: {
-              audioFingerprint: true,
-              trackGenres: {
-                include: {
-                  genre: true,
-                },
-              },
-              trackSubgenres: {
-                include: {
-                  subgenre: true,
-                },
-              },
-              imageSearches: true,
-            },
+            include: musicTracksIncludes,
           },
         },
       })
@@ -150,20 +130,7 @@ export class PlaylistTrackRepository implements IPlaylistTrackRepository {
         },
         include: {
           track: {
-            include: {
-              audioFingerprint: true,
-              trackGenres: {
-                include: {
-                  genre: true,
-                },
-              },
-              trackSubgenres: {
-                include: {
-                  subgenre: true,
-                },
-              },
-              imageSearches: true,
-            },
+            include: musicTracksIncludes,
           },
         },
         orderBy: {
@@ -203,12 +170,11 @@ export class PlaylistTrackRepository implements IPlaylistTrackRepository {
     trackId: MusicTrackId,
   ): Promise<boolean> {
     return this.prisma.playlistTrack
-      .findUnique({
+      .findFirst({
         where: {
-          playlistId_trackId: {
-            playlistId: extractModelId(playlistId).dbId,
-            trackId: extractModelId(trackId).dbId,
-          },
+          playlistId: extractModelId(playlistId).dbId,
+          trackId: extractModelId(trackId).dbId,
+          createdById: getCurrentUserId(),
         },
       })
       .then((row) => row !== null);
@@ -217,7 +183,10 @@ export class PlaylistTrackRepository implements IPlaylistTrackRepository {
   getLastPosition(playlistId: PlaylistId): Promise<number> {
     return this.prisma.playlistTrack
       .findFirst({
-        where: { playlistId: extractModelId(playlistId).dbId },
+        where: {
+          playlistId: extractModelId(playlistId).dbId,
+          createdById: getCurrentUserId(),
+        },
         orderBy: { position: 'desc' },
       })
       .then((row) => row?.position ?? 0);

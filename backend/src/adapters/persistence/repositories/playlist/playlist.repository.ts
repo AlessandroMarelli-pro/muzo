@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
 import { PlaylistTrackWithTrackDetailAndSorting } from 'src/application/ports/dtos/PlaylistWithTrackDetailsAndSorting';
 import {
   IPlaylistRepository,
@@ -11,7 +11,10 @@ import { PlaylistId } from 'src/kernel/ids';
 import { extractModelId } from 'src/kernel/ids/factory';
 import { getCurrentUserId } from 'src/kernel/types/context';
 import { Playlist } from 'src/kernel/types/model-types';
-import { PrismaService } from '../../../../infrastructure/database/prisma.service';
+import {
+  PRISMA_SERVICE,
+  PrismaService,
+} from '../../../../infrastructure/database/prisma.service';
 import { playlistWithTracksInclude } from '../../includes/playlist-includes';
 import { handlePrismaNotFound } from '../prisma-errors';
 import {
@@ -24,7 +27,9 @@ import {
 
 @Injectable()
 export class PlaylistRepository implements IPlaylistRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    @Inject(PRISMA_SERVICE) private readonly prisma: PrismaService,
+  ) {}
 
   async save(playlist: Playlist): Promise<Playlist> {
     return this.prisma.playlist

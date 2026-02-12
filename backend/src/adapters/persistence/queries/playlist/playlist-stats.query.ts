@@ -1,10 +1,13 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
 import {
   IPlaylistStatsQuery,
   PlaylistStatsDto,
   RawPlaylistStatsRow,
 } from 'src/application/ports/queries/IPlaylistStatsQuery';
-import { PrismaService } from 'src/infrastructure/database/prisma.service';
+import {
+  PRISMA_SERVICE,
+  PrismaService,
+} from 'src/infrastructure/database/prisma.service';
 import { extractModelId } from 'src/kernel/ids';
 import { PlaylistId } from 'src/kernel/ids/scalars';
 import { getCurrentUserId } from 'src/kernel/types/context';
@@ -13,7 +16,9 @@ import { mapRawRowToPlaylistStatsDto } from './playlist-stats.mapper';
 
 @Injectable()
 export class PlaylistStatsQuery implements IPlaylistStatsQuery {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    @Inject(PRISMA_SERVICE) private readonly prisma: PrismaService,
+  ) {}
 
   async getPlaylistStats(playlistId: PlaylistId): Promise<PlaylistStatsDto> {
     const currentUserId = getCurrentUserId();

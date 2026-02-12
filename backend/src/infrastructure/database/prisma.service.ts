@@ -3,6 +3,9 @@ import { ConfigService } from '@nestjs/config';
 import { PrismaClient } from '@prisma/client';
 import { DatabaseConfig } from 'src/config';
 
+/** Injection token for PrismaService so unit tests (Vitest) can provide a mock reliably. */
+export const PRISMA_SERVICE = Symbol.for('PrismaService');
+
 @Injectable()
 export class PrismaService
   extends PrismaClient

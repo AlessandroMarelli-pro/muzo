@@ -15,7 +15,7 @@ const trackInclude = {
   imageSearches: true,
   trackGenres: { include: { genre: true } },
   trackSubgenres: { include: { subgenre: true } },
-} as const;
+} satisfies Prisma.MusicTrackInclude;
 
 export function playlistWithTracksInclude(
   sortingOpts: PlaylistWithTracksIncludeOptions,

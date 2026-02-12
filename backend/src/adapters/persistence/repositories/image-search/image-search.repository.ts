@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
 import {
   CreateImageSearchData,
   IImageSearchRepository,
@@ -7,12 +7,17 @@ import { MusicTrackId } from 'src/kernel/ids';
 import { extractModelId } from 'src/kernel/ids/factory';
 import { getCurrentUserId } from 'src/kernel/types/context';
 import { ImageSearch } from 'src/kernel/types/model-types';
-import { PrismaService } from '../../../../infrastructure/database/prisma.service';
+import {
+  PRISMA_SERVICE,
+  PrismaService,
+} from '../../../../infrastructure/database/prisma.service';
 import { toDomain, toPrismaCreate } from './image-search.mapper';
 
 @Injectable()
 export class ImageSearchRepository implements IImageSearchRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    @Inject(PRISMA_SERVICE) private readonly prisma: PrismaService,
+  ) {}
 
   async save(
     trackId: MusicTrackId,
@@ -23,6 +28,6 @@ export class ImageSearchRepository implements IImageSearchRepository {
       .create({
         data: toPrismaCreate(trackIdDb, data, getCurrentUserId()),
       })
-      .then((row) => toDomain(row));
+      .then(toDomain);
   }
 }

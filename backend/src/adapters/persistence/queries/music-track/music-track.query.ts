@@ -1,9 +1,12 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
 import {
   IMusicTrackQueries,
   RandomTrackWithStats,
 } from 'src/application/ports/queries/IMusicTrackQueries';
-import { PrismaService } from 'src/infrastructure/database/prisma.service';
+import {
+  PRISMA_SERVICE,
+  PrismaService,
+} from 'src/infrastructure/database/prisma.service';
 import { getCurrentUserId } from 'src/kernel/types';
 import { musicTracksIncludes } from '../../includes/music-tracks-includes';
 import {
@@ -13,7 +16,9 @@ import {
 
 @Injectable()
 export class MusicTrackQuery implements IMusicTrackQueries {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    @Inject(PRISMA_SERVICE) private readonly prisma: PrismaService,
+  ) {}
 
   async getRandomTrackWithStats(): Promise<RandomTrackWithStats> {
     const currentUserId = getCurrentUserId();

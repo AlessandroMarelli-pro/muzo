@@ -1,14 +1,19 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
 import {
   IMetricsQuery,
   MetricsDto,
 } from 'src/application/ports/queries/IMetricsQuery';
-import { PrismaService } from 'src/infrastructure/database/prisma.service';
+import {
+  PRISMA_SERVICE,
+  PrismaService,
+} from 'src/infrastructure/database/prisma.service';
 import { getCurrentUserId } from 'src/kernel/types/context';
 
 @Injectable()
 export class MetricsQuery implements IMetricsQuery {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    @Inject(PRISMA_SERVICE) private readonly prisma: PrismaService,
+  ) {}
 
   async getMetrics(): Promise<MetricsDto> {
     const [

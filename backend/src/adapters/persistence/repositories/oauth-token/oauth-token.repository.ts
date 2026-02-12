@@ -1,9 +1,13 @@
+import { Inject } from '@nestjs/common';
 import {
   IOAuthTokenRepository,
   OAuthTokenRecord,
   ThirdPartyProvider,
 } from 'src/application/ports/repositories/IOAuthTokenRepository';
-import { PrismaService } from 'src/infrastructure/database/prisma.service';
+import {
+  PRISMA_SERVICE,
+  PrismaService,
+} from 'src/infrastructure/database/prisma.service';
 
 const PROVIDER_SCOPE: Record<ThirdPartyProvider, string> = {
   youtube: 'youtube',
@@ -12,7 +16,9 @@ const PROVIDER_SCOPE: Record<ThirdPartyProvider, string> = {
 };
 
 export class OAuthTokenRepository implements IOAuthTokenRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    @Inject(PRISMA_SERVICE) private readonly prisma: PrismaService,
+  ) {}
 
   async getToken(
     userId: string,

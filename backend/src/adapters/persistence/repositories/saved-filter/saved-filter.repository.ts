@@ -1,6 +1,10 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
 import { ISavedFilterRepository } from 'src/application/ports/repositories/ISavedFilterRepository';
-import { PrismaService } from 'src/infrastructure/database/prisma.service';
+import {
+  PRISMA_SERVICE,
+  PrismaService,
+} from 'src/infrastructure/database/prisma.service';
+import { Maybe } from 'src/kernel/common';
 import { extractModelId, SavedFilterId } from 'src/kernel/ids';
 import { getCurrentUserId } from 'src/kernel/types/context';
 import { SavedFilter } from 'src/kernel/types/model-types';
@@ -9,7 +13,9 @@ import { toDomain, toPrisma, toPrismaUpdateData } from './saved-filter.mapper';
 
 @Injectable()
 export class SavedFilterRepository implements ISavedFilterRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    @Inject(PRISMA_SERVICE) private readonly prisma: PrismaService,
+  ) {}
 
   async save(data: SavedFilter): Promise<SavedFilter> {
     return this.prisma.savedFilter
@@ -19,12 +25,12 @@ export class SavedFilterRepository implements ISavedFilterRepository {
       .then(toDomain);
   }
 
-  async getById(id: SavedFilterId): Promise<SavedFilter> {
+  async getById(id: SavedFilterId): Promise<Maybe<SavedFilter>> {
     return this.prisma.savedFilter
       .findUnique({
         where: { id: extractModelId(id).dbId, createdById: getCurrentUserId() },
       })
-      .then(toDomain);
+      .then((row) => (row ? toDomain(row) : null));
   }
 
   async updateById(id: SavedFilterId, data: SavedFilter): Promise<SavedFilter> {
@@ -61,11 +67,11 @@ export class SavedFilterRepository implements ISavedFilterRepository {
       );
   }
 
-  async getCurrentFilter(): Promise<SavedFilter> {
+  async getCurrentFilter(): Promise<Maybe<SavedFilter>> {
     return this.prisma.savedFilter
       .findFirst({
         where: { createdById: getCurrentUserId(), isCurrent: true },
       })
-      .then(toDomain);
+      .then((row) => (row ? toDomain(row) : null));
   }
 }

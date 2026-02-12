@@ -1,3 +1,4 @@
+import { Maybe } from 'src/kernel/common';
 import { SessionId } from 'src/kernel/ids';
 import { ScanStatus, Session } from 'src/kernel/types/model-types';
 import { createToken } from '../../utils/create-token';
@@ -27,7 +28,7 @@ export interface IScanSessionRepository {
     sessionId: SessionId,
     updates: UpdateScanSessionInput,
   ): Promise<Session | null>;
-  getSession(sessionId: SessionId): Promise<Session>;
+  getSession(sessionId: SessionId): Promise<Maybe<Session>>;
   completeSession(sessionId: SessionId, success: boolean): Promise<Session>;
   getActiveSessions(): Promise<Session[]>;
   getCompletedSessions(): Promise<Session[]>;

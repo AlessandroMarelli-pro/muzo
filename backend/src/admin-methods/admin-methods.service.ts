@@ -1,11 +1,16 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { PrismaService } from '../infrastructure/database/prisma.service';
+import { Injectable, Inject, Logger } from '@nestjs/common';
+import {
+  PRISMA_SERVICE,
+  PrismaService,
+} from '../infrastructure/database/prisma.service';
 
 @Injectable()
 export class AdminMethodsService {
   private readonly logger = new Logger(AdminMethodsService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    @Inject(PRISMA_SERVICE) private readonly prisma: PrismaService,
+  ) {}
 
   updateTrackDurationToRoundedDuration(): Promise<{
     totalTracks: number;

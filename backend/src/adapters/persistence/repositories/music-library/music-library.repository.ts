@@ -1,9 +1,12 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
 import {
   IMusicLibraryRepository,
   MusicLibraryUpdateData,
 } from 'src/application/ports/repositories/IMusicLibraryRepository';
-import { PrismaService } from 'src/infrastructure/database/prisma.service';
+import {
+  PRISMA_SERVICE,
+  PrismaService,
+} from 'src/infrastructure/database/prisma.service';
 import { extractModelId, MusicLibraryId } from 'src/kernel/ids';
 import { getCurrentUserId, MusicLibrary, ScanStatus } from 'src/kernel/types';
 import { handlePrismaNotFound } from '../prisma-errors';
@@ -16,7 +19,9 @@ import {
 
 @Injectable()
 export class MusicLibraryRepository implements IMusicLibraryRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    @Inject(PRISMA_SERVICE) private readonly prisma: PrismaService,
+  ) {}
 
   async save(library: MusicLibrary): Promise<MusicLibrary> {
     return this.prisma.musicLibrary
@@ -69,7 +74,6 @@ export class MusicLibraryRepository implements IMusicLibraryRepository {
     id: MusicLibraryId,
     status: ScanStatus,
   ): Promise<MusicLibrary> {
-    const isScanning = status === 'SCANNING';
     return this.prisma.musicLibrary
       .update({
         where: { id: extractModelId(id).dbId, createdById: getCurrentUserId() },

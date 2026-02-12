@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
 import { isDate } from 'class-validator';
 import { AudioAnalysisResponse } from 'src/application/ports/dtos/AudioAnalysis';
 import {
@@ -6,7 +6,7 @@ import {
   MusicTrackUpdateData,
 } from 'src/application/ports/repositories/IMusicTrackRepository';
 import { extractModelId, MusicLibraryId, MusicTrackId } from 'src/kernel/ids';
-import { models } from 'src/kernel/types';
+import { Maybe, models } from 'src/kernel/types';
 import { getCurrentUserId } from 'src/kernel/types/context';
 import {
   AudioFileAnalysisStatusEnum,
@@ -20,7 +20,10 @@ import {
   WithCursorPagination,
   WithPagination,
 } from 'src/kernel/types/pagination';
-import { PrismaService } from '../../../../infrastructure/database/prisma.service';
+import {
+  PRISMA_SERVICE,
+  PrismaService,
+} from '../../../../infrastructure/database/prisma.service';
 import { buildMusicTrackFilterWhereClause } from '../../builders/music-track-filter.where';
 import { buildMusicTrackSortingOrderClause } from '../../builders/music-track-sorting.order';
 import { musicTracksIncludes } from '../../includes/music-tracks-includes';
@@ -34,7 +37,9 @@ import {
 
 @Injectable()
 export class MusicTrackRepository implements IMusicTrackRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    @Inject(PRISMA_SERVICE) private readonly prisma: PrismaService,
+  ) {}
 
   async getManyByLibraryId(libraryId: MusicLibraryId): Promise<MusicTrack[]> {
     return this.prisma.musicTrack
@@ -139,13 +144,13 @@ export class MusicTrackRepository implements IMusicTrackRepository {
         })),
       );
   }
-  async getLastPlayedTrack(): Promise<MusicTrack> {
+  async getLastPlayedTrack(): Promise<Maybe<MusicTrack>> {
     return this.prisma.musicTrack
       .findFirst({
         where: { createdById: getCurrentUserId() },
         orderBy: { lastPlayedAt: 'desc' },
       })
-      .then(toDomain);
+      .then((row) => (row ? toDomain(row) : null));
   }
   async getAll(): Promise<MusicTrack[]> {
     return this.prisma.musicTrack

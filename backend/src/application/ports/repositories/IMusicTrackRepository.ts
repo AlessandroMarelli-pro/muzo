@@ -48,7 +48,7 @@ export interface IMusicTrackRepository {
   areFilesAnalyzed(
     filePaths: string[],
   ): Promise<{ isAnalyzed: boolean; filePath: string }[]>;
-  getLastPlayedTrack(): Promise<MusicTrack>;
+  getLastPlayedTrack(): Promise<Maybe<MusicTrack>>;
   getManyByIds(ids: MusicTrackId[]): Promise<MusicTrack[]>;
   getAll(): Promise<MusicTrack[]>;
   verifyExistence(id: MusicTrackId): Promise<boolean>;

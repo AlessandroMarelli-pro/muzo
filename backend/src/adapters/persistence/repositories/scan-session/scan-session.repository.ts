@@ -1,18 +1,28 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
 
 import {
   IScanSessionRepository,
   UpdateScanSessionInput,
 } from 'src/application/ports/repositories/IScanSessionRepository';
-import { PrismaService } from 'src/infrastructure/database/prisma.service';
+import {
+  PRISMA_SERVICE,
+  PrismaService,
+} from 'src/infrastructure/database/prisma.service';
 import { extractModelId, SessionId } from 'src/kernel/ids';
-import { getCurrentUser, getCurrentUserId, models } from 'src/kernel/types';
+import {
+  getCurrentUser,
+  getCurrentUserId,
+  Maybe,
+  models,
+} from 'src/kernel/types';
 import { ScanStatusEnum, Session } from 'src/kernel/types/model-types';
 import { toDomain, toPrisma, toPrismaUpdate } from './scan-session.mapper';
 
 @Injectable()
 export class ScanSessionRepository implements IScanSessionRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    @Inject(PRISMA_SERVICE) private readonly prisma: PrismaService,
+  ) {}
 
   /**
    * Create a new scan session
@@ -57,7 +67,7 @@ export class ScanSessionRepository implements IScanSessionRepository {
   /**
    * Get session by sessionId
    */
-  async getSession(sessionId: SessionId): Promise<Session> {
+  async getSession(sessionId: SessionId): Promise<Maybe<Session>> {
     return this.prisma.scanSession
       .findFirst({
         where: {
@@ -65,7 +75,7 @@ export class ScanSessionRepository implements IScanSessionRepository {
           createdById: getCurrentUserId(),
         },
       })
-      .then(toDomain);
+      .then((row) => (row ? toDomain(row) : null));
   }
 
   /**

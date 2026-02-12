@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
 import {
   IQueueRepository,
   QueueItemWithTrack,
@@ -9,23 +9,24 @@ import { MusicTrackId } from 'src/kernel/ids';
 import { extractModelId } from 'src/kernel/ids/factory';
 import { getCurrentUserId } from 'src/kernel/types/context';
 import { QueueItem } from 'src/kernel/types/model-types';
-import { PrismaService } from '../../../../infrastructure/database/prisma.service';
+import {
+  PRISMA_SERVICE,
+  PrismaService,
+} from '../../../../infrastructure/database/prisma.service';
+import { musicTracksIncludes } from '../../includes/music-tracks-includes';
 import { toDomain, toDomainWithTrack, toPrismaCreate } from './queue.mapper';
 
 const queueTrackInclude = {
   track: {
-    include: {
-      audioFingerprint: true,
-      trackGenres: { include: { genre: true } },
-      trackSubgenres: { include: { subgenre: true } },
-      imageSearches: true,
-    },
+    include: musicTracksIncludes,
   },
 } as const;
 
 @Injectable()
 export class QueueRepository implements IQueueRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    @Inject(PRISMA_SERVICE) private readonly prisma: PrismaService,
+  ) {}
 
   async getQueue(): Promise<QueueItemWithTrack[]> {
     return this.prisma.queue

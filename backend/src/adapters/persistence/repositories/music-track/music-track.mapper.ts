@@ -30,7 +30,7 @@ import { toDbModel } from '../db';
 import { toDomainModel } from '../domain';
 
 export type PrismaMusicTrackWithRelations = PrismaMusicTrack & {
-  audioFingerprint: Maybe<PrismaAudioFingerprint>;
+  audioFingerprint?: Maybe<PrismaAudioFingerprint>;
   trackGenres?: Maybe<(PrismaTrackGenre & { genre: PrismaGenre })[]>;
   trackSubgenres?: Maybe<
     (PrismaTrackSubgenre & { subgenre: PrismaSubgenre })[]
@@ -49,7 +49,7 @@ export type ToAudioTechnical = (
   row: PrismaMusicTrack,
 ) => MaybeUndefined<AudioTechnical>;
 export type ToAudioFileFeatures = (
-  row: Maybe<PrismaAudioFingerprint>,
+  row?: Maybe<PrismaAudioFingerprint>,
 ) => MaybeUndefined<AudioFileFeatures>;
 export type ToAudioFileMetadata = (
   row: PrismaMusicTrackWithRelations,

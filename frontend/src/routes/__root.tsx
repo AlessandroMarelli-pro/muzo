@@ -13,7 +13,6 @@ import { cn } from '@/lib/utils';
 import { queryClient } from '@/query-client';
 import type { QueryClient } from '@tanstack/react-query';
 import { QueryClientProvider } from '@tanstack/react-query';
-import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { createRootRouteWithContext, Outlet } from '@tanstack/react-router';
 import {
 	BookHeadphones,
@@ -140,7 +139,6 @@ const RootComponent = React.memo(function RootComponent() {
 						</AudioPlayerProvider>
 					</FilterProvider>
 				</ScanSessionProvider>
-				<ReactQueryDevtools initialIsOpen={false} position="bottom" />
 				{/* <TanStackRouterDevtools position="top-right" initialIsOpen={false} /> */}
 			</QueryClientProvider>
 		</ThemeProvider>
