@@ -1,0 +1,328 @@
+import { Test } from '@nestjs/testing';
+import { PrismaClient } from '@prisma/client';
+import {
+  afterAll,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vitest';
+import { ProcessSingleTrackAnalysisUseCase } from 'src/application/use-cases/job-scheduler/ProcessSingleTrackAnalysis';
+import type { ILogger } from 'src/application/ports/infrastructure/ILogger';
+import { AUDIO_ANALYSIS_REPOSITORY } from 'src/application/ports/repositories/IAudioAnalysisRepository';
+import { MUSIC_TRACK_REPOSITORY } from 'src/application/ports/repositories/IMusicTrackRepository';
+import { SCAN_PROGRESS_PUBLISHER } from 'src/application/ports/infrastructure/IScanProgressPublisher';
+import { LOGGER_FACTORY } from 'src/application/ports/infrastructure/ILoggerFactory';
+import { LOGGER } from 'src/application/ports/infrastructure/ILogger';
+import type { AudioAnalysisResponse } from 'src/application/ports/dtos/AudioAnalysis';
+import { PRISMA_SERVICE } from 'src/infrastructure/database/prisma.service';
+import { AudioAnalysisRepository } from 'src/adapters/persistence/repositories/audio-analysis/audio-analysis.repository';
+import { MusicLibraryRepository } from 'src/adapters/persistence/repositories/music-library/music-library.repository';
+import { MusicTrackRepository } from 'src/adapters/persistence/repositories/music-track/music-track.repository';
+import { MUSIC_LIBRARY_REPOSITORY } from 'src/application/ports/repositories/IMusicLibraryRepository';
+import { models } from 'src/kernel/types/models';
+import type { MusicTrack } from 'src/kernel/types';
+import { AudioFileAnalysisStatusEnum } from 'src/kernel/types';
+import { setupIntegrationDb } from '../_test-utils/integration-db';
+import { makeLibrary } from '../_test-utils/make-library';
+
+const LIBRARY_ID = models.musicLibrary.id('lib-1');
+const TEST_USER_ID = 'test-user-id';
+const SESSION_ID = models.session.id('session-1');
+
+vi.mock('src/kernel/types/context', () => ({
+  ...vi.importActual('src/kernel/types/context'),
+  getCurrentUserId: vi.fn(() => TEST_USER_ID),
+  now: vi.fn(() => new Date()),
+  user: vi.fn(() => ({ id: `User:${TEST_USER_ID}` })),
+}));
+
+function makeValidAnalysisResult(overrides: Partial<AudioAnalysisResponse> = {}): AudioAnalysisResponse {
+  return {
+    status: 'success',
+    processing_time: 0,
+    processing_mode: 'batch',
+    features: {} as any,
+    fingerprint: { audio_hash: '', file_hash: '', method: '' },
+    hierarchical_classification: {} as any,
+    album_art: {} as any,
+    file_info: {} as any,
+    audio_technical: {
+      sample_rate: 44100,
+      duration_seconds: 120,
+      format: 'mp3',
+      bitrate: 128,
+      channels: 2,
+      samples: 0,
+      bit_depth: 16,
+      subtype: 'mp3',
+    },
+    id3_tags: { artist: 'Test Artist', title: 'Test Title' },
+    ai_metadata: {
+      artist: 'Test Artist',
+      title: 'Test Title',
+      genre: ['Pop'],
+      style: ['Indie'],
+      tags: [],
+    },
+    ...overrides,
+  };
+}
+
+describe('ProcessSingleTrackAnalysisUseCase', () => {
+  let useCase: ProcessSingleTrackAnalysisUseCase;
+  let musicLibraryRepository: MusicLibraryRepository;
+  let musicTrackRepository: MusicTrackRepository;
+  let prisma: PrismaClient;
+  let cleanupDb: () => Promise<void>;
+  let fakePublishEvent: ReturnType<typeof vi.fn>;
+  let fakePublishError: ReturnType<typeof vi.fn>;
+
+  beforeAll(async () => {
+    const { cleanup } = await setupIntegrationDb();
+    cleanupDb = cleanup;
+
+    fakePublishEvent = vi.fn().mockResolvedValue(undefined);
+    fakePublishError = vi.fn().mockResolvedValue(undefined);
+
+    const logger: ILogger = {
+      info: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+      debug: vi.fn(),
+    };
+    const loggerFactory = { createLogger: vi.fn(() => logger) };
+
+    const dbUrl = process.env.DATABASE_URL ?? 'file:./muzo.db';
+    const testPrisma = new PrismaClient({
+      datasources: { db: { url: dbUrl } },
+    });
+    await testPrisma.$connect();
+
+    const module = await Test.createTestingModule({
+      providers: [
+        { provide: PRISMA_SERVICE, useValue: testPrisma },
+        { provide: MUSIC_LIBRARY_REPOSITORY, useClass: MusicLibraryRepository },
+        { provide: MUSIC_TRACK_REPOSITORY, useClass: MusicTrackRepository },
+        { provide: AUDIO_ANALYSIS_REPOSITORY, useClass: AudioAnalysisRepository },
+        {
+          provide: SCAN_PROGRESS_PUBLISHER,
+          useValue: {
+            publishEvent: fakePublishEvent,
+            publishError: fakePublishError,
+          },
+        },
+        { provide: LOGGER_FACTORY, useValue: loggerFactory },
+        { provide: LOGGER, useValue: logger },
+        {
+          provide: ProcessSingleTrackAnalysisUseCase,
+          useFactory: (
+            trackRepo: MusicTrackRepository,
+            publisher: { publishEvent: typeof fakePublishEvent; publishError: typeof fakePublishError },
+            audioRepo: AudioAnalysisRepository,
+            lf: { createLogger: (name: string) => ILogger },
+            log: ILogger,
+          ) =>
+            new ProcessSingleTrackAnalysisUseCase(
+              trackRepo,
+              publisher,
+              audioRepo,
+              lf,
+              log,
+            ),
+          inject: [
+            MUSIC_TRACK_REPOSITORY,
+            SCAN_PROGRESS_PUBLISHER,
+            AUDIO_ANALYSIS_REPOSITORY,
+            LOGGER_FACTORY,
+            LOGGER,
+          ],
+        },
+      ],
+    }).compile();
+
+    await module.init();
+
+    useCase = module.get(ProcessSingleTrackAnalysisUseCase);
+    musicLibraryRepository = module.get(MUSIC_LIBRARY_REPOSITORY);
+    musicTrackRepository = module.get(MUSIC_TRACK_REPOSITORY);
+    prisma = module.get(PRISMA_SERVICE);
+  });
+
+  afterAll(async () => {
+    await prisma?.$disconnect?.();
+    await cleanupDb?.();
+  });
+
+  beforeEach(async () => {
+    await prisma.audioFingerprint.deleteMany({});
+    await prisma.trackGenre.deleteMany({});
+    await prisma.trackSubgenre.deleteMany({});
+    await prisma.musicTrack.deleteMany({});
+    await prisma.musicLibrary.deleteMany({});
+    await prisma.genre.deleteMany({});
+    await prisma.subgenre.deleteMany({});
+    fakePublishEvent.mockClear();
+    fakePublishError.mockClear();
+  });
+
+  describe('execute', () => {
+    it('happy path: updates track with analysis and publishes track.complete with correct batchInfo', async () => {
+      const library = makeLibrary({ id: 'lib-1' });
+      await musicLibraryRepository.save(library);
+      const track = await musicTrackRepository.upsertOne({
+        filePath: '/music/single.mp3',
+        libraryId: LIBRARY_ID,
+        fileName: 'single.mp3',
+        fileSize: 1024,
+        analysisStatus: AudioFileAnalysisStatusEnum.PROCESSING,
+        analysisStartedAt: new Date(),
+        duration: 0,
+        format: 'mp3',
+        fileCreatedAt: new Date(),
+        analysisCompletedAt: new Date(),
+        analysisError: '',
+      });
+
+      const analysisResult = makeValidAnalysisResult();
+      const batchInfo = {
+        trackIndex: 0,
+        sessionId: SESSION_ID,
+        batchIndex: 0,
+        totalTracks: 1,
+        libraryId: LIBRARY_ID,
+      };
+
+      const result = await useCase.execute(track, analysisResult, batchInfo);
+
+      expect(result.isSuccess).toBe(true);
+      expect(fakePublishEvent).toHaveBeenCalledTimes(1);
+      expect(fakePublishEvent).toHaveBeenCalledWith(
+        SESSION_ID,
+        expect.objectContaining({
+          type: 'track.complete',
+          sessionId: SESSION_ID,
+          libraryId: LIBRARY_ID,
+          batchIndex: 0,
+          data: expect.objectContaining({
+            totalTracks: 1,
+            trackIndex: 0,
+            fileName: 'single.mp3',
+          }),
+        }),
+      );
+    });
+
+    it('when analysis has no artist/title: removes track and still publishes track.complete', async () => {
+      const library = makeLibrary({ id: 'lib-1' });
+      await musicLibraryRepository.save(library);
+      const track = await musicTrackRepository.upsertOne({
+        filePath: '/music/no-meta.mp3',
+        libraryId: LIBRARY_ID,
+        fileName: 'no-meta.mp3',
+        fileSize: 1024,
+        analysisStatus: AudioFileAnalysisStatusEnum.PROCESSING,
+        analysisStartedAt: new Date(),
+        duration: 0,
+        format: 'mp3',
+        fileCreatedAt: new Date(),
+        analysisCompletedAt: new Date(),
+        analysisError: '',
+      });
+
+      const badAnalysis = makeValidAnalysisResult({
+        id3_tags: {},
+        ai_metadata: undefined,
+      });
+      const batchInfo = {
+        trackIndex: 0,
+        sessionId: SESSION_ID,
+        batchIndex: 0,
+        totalTracks: 1,
+        libraryId: LIBRARY_ID,
+      };
+
+      const result = await useCase.execute(track, badAnalysis, batchInfo);
+
+      expect(result.isSuccess).toBe(false);
+      await expect(musicTrackRepository.getOneById(track.id)).rejects.toThrow();
+      expect(fakePublishEvent).toHaveBeenCalledTimes(1);
+      expect(fakePublishEvent).toHaveBeenCalledWith(
+        SESSION_ID,
+        expect.objectContaining({
+          type: 'track.complete',
+          data: expect.objectContaining({ fileName: 'no-meta.mp3' }),
+        }),
+      );
+    });
+
+    it('multiple batches: publishEvent receives correct totalTracks, batchIndex, and trackIndex for each track', async () => {
+      const library = makeLibrary({ id: 'lib-1' });
+      await musicLibraryRepository.save(library);
+
+      const totalTracks = 4;
+      const tracksPerBatch = 2;
+      const totalBatches = 2;
+      const filePaths = ['/music/a.mp3', '/music/b.mp3', '/music/c.mp3', '/music/d.mp3'];
+      const tracks: MusicTrack[] = [];
+      for (const filePath of filePaths) {
+        const t = await musicTrackRepository.upsertOne({
+          filePath,
+          libraryId: LIBRARY_ID,
+          fileName: filePath.split('/').pop()!,
+          fileSize: 1024,
+          analysisStatus: AudioFileAnalysisStatusEnum.PROCESSING,
+          analysisStartedAt: new Date(),
+          duration: 0,
+          format: 'mp3',
+          fileCreatedAt: new Date(),
+          analysisCompletedAt: new Date(),
+          analysisError: '',
+        });
+        tracks.push(t);
+      }
+
+      const analysisResult = makeValidAnalysisResult();
+      let publishCallIndex = 0;
+      for (let batchIndex = 0; batchIndex < totalBatches; batchIndex++) {
+        for (let i = 0; i < tracksPerBatch; i++) {
+          const trackIndex = batchIndex * tracksPerBatch + i;
+          const track = tracks[trackIndex]!;
+          const result = await useCase.execute(track, analysisResult, {
+            trackIndex,
+            sessionId: SESSION_ID,
+            batchIndex,
+            totalTracks,
+            libraryId: LIBRARY_ID,
+          });
+          expect(result.isSuccess).toBe(true);
+
+          const event = fakePublishEvent.mock.calls[publishCallIndex];
+          expect(event).toBeDefined();
+          expect(event[0]).toBe(SESSION_ID);
+          expect(event[1]).toMatchObject({
+            type: 'track.complete',
+            sessionId: SESSION_ID,
+            libraryId: LIBRARY_ID,
+            batchIndex,
+            data: {
+              totalTracks,
+              trackIndex,
+              fileName: track.fileInfo.fileName,
+            },
+          });
+          publishCallIndex++;
+        }
+      }
+
+      expect(fakePublishEvent).toHaveBeenCalledTimes(totalTracks);
+      const calls = fakePublishEvent.mock.calls;
+      expect(calls[0]![1]).toMatchObject({ batchIndex: 0, data: { totalTracks: 4, trackIndex: 0 } });
+      expect(calls[1]![1]).toMatchObject({ batchIndex: 0, data: { totalTracks: 4, trackIndex: 1 } });
+      expect(calls[2]![1]).toMatchObject({ batchIndex: 1, data: { totalTracks: 4, trackIndex: 2 } });
+      expect(calls[3]![1]).toMatchObject({ batchIndex: 1, data: { totalTracks: 4, trackIndex: 3 } });
+    });
+  });
+});
