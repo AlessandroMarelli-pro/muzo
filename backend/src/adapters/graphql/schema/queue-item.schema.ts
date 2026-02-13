@@ -18,10 +18,10 @@ export class QueueItem {
   @Field(() => Track, { nullable: true })
   track: Maybe<Track>;
 
-  @Field(() => Date)
+  @Field()
   createdAt: Date;
 
-  @Field(() => Date, { nullable: true })
+  @Field({ nullable: true })
   updatedAt?: Date;
 }
 

@@ -14,6 +14,7 @@ import { SavedFilterResolver } from './resolvers/saved-filter.resolver';
 import { ThirdPartySyncResolver } from './resolvers/third-party-sync.resolver';
 import { UserResolver } from './resolvers/user.resolver';
 import { Base64ID } from './scalars/base64-id.scalar';
+import { DateScalar } from './scalars/date.scalar';
 
 @Module({
   imports: [UseCasesModule],
@@ -22,6 +23,7 @@ import { Base64ID } from './scalars/base64-id.scalar';
     NodeResolver,
     UserResolver,
     Base64ID,
+    DateScalar,
     AuthGuard,
     PlaylistTrackResolver,
     PlaybackQueueResolver,

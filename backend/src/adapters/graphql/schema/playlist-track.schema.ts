@@ -12,7 +12,7 @@ export class PlaylistTrack {
   @Field(() => Int)
   position: number;
 
-  @Field(() => Date)
+  @Field()
   addedAt: Date;
 
   @Field(() => Base64ID)

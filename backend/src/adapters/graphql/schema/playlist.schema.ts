@@ -25,7 +25,7 @@ export class Playlist {
   @Field()
   createdAt: Date;
 
-  @Field(() => Date, { nullable: true })
+  @Field({ nullable: true })
   updatedAt?: Date;
 
   @Field(() => Base64ID)

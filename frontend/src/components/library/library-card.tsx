@@ -57,7 +57,7 @@ export const LibraryCard: React.FC<LibraryCardProps> = ({
 	const session = getSessionForLibrary(library.id);
 	const { progress: scanProgress } = useScanProgress(session?.sessionId);
 	const [scanStatus, setScanStatus] = useState(library.scanStatus);
-	const [analysisProgress, setAnalysisProgress] = useState(-1);
+	const [analysisProgress, setAnalysisProgress] = useState(0);
 
 	// Calculate progress from scan progress event or library stats
 	useEffect(() => {

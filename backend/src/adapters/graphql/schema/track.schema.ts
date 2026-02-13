@@ -17,7 +17,7 @@ export class Track {
   @Field(() => String, { nullable: true })
   title: MaybeUndefined<string>;
 
-  @Field(() => Date, { nullable: true })
+  @Field({ nullable: true })
   date?: Date;
 
   @Field(() => String, { nullable: true })
@@ -26,7 +26,7 @@ export class Track {
   @Field(() => Float)
   listeningCount: number;
 
-  @Field(() => Date, { nullable: true })
+  @Field({ nullable: true })
   lastPlayedAt?: Date;
 
   @Field(() => Boolean)
@@ -47,7 +47,7 @@ export class Track {
   @Field(() => String)
   fileName: string;
 
-  @Field(() => Date)
+  @Field()
   fileCreatedAt: Date;
 
   @Field(() => Float)
@@ -98,7 +98,7 @@ export class Track {
   @Field({ nullable: true })
   imagePath?: string;
 
-  @Field(() => Date, { nullable: true })
+  @Field({ nullable: true })
   lastScannedAt?: Date;
 
   @Field(() => Base64ID, { nullable: true })

@@ -16,9 +16,9 @@ export class PlaylistSorting {
   @Field()
   sortingDirection: string;
 
-  @Field(() => Date)
+  @Field()
   createdAt: Date;
 
-  @Field(() => Date, { nullable: true })
+  @Field({ nullable: true })
   updatedAt?: Date;
 }

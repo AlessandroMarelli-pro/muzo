@@ -140,7 +140,7 @@ export class AudioScanSchedulerConsumerAdapter
     await this.processEndBatchAudioScanUseCase.execute(
       data,
       data.libraryId,
-      false,
+      data.incremental,
       data.contextUser,
     );
   }

@@ -1,4 +1,6 @@
-import { Injectable, Inject, Logger } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
+import { ILogger, LOGGER } from 'src/application/ports/infrastructure/ILogger';
+import { LOGGER_FACTORY } from 'src/application/ports/infrastructure/ILoggerFactory';
 import {
   PRISMA_SERVICE,
   PrismaService,
@@ -6,11 +8,15 @@ import {
 
 @Injectable()
 export class AdminMethodsService {
-  private readonly logger = new Logger(AdminMethodsService.name);
-
   constructor(
     @Inject(PRISMA_SERVICE) private readonly prisma: PrismaService,
-  ) {}
+    @Inject(LOGGER_FACTORY)
+    loggerFactory: { createLogger: (name: string) => ILogger },
+    @Inject(LOGGER)
+    private readonly logger: ILogger,
+  ) {
+    this.logger = loggerFactory.createLogger('AdminMethodsService');
+  }
 
   updateTrackDurationToRoundedDuration(): Promise<{
     totalTracks: number;

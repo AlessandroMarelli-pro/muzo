@@ -41,10 +41,8 @@ input CursorPaginationArgs {
   size: Int
 }
 
-"""
-A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
-"""
-scalar DateTime
+"""Date custom scalar type"""
+scalar Date
 
 input FilterCriteriaInput {
   acousticness: RangeInput
@@ -105,11 +103,11 @@ type HomeMetrics {
 
 type Library implements Node {
   analyzedTracks: Float!
-  createdAt: DateTime!
+  createdAt: Date!
   failedTracks: Float!
   id: Base64ID!
-  lastIncrementalScanAt: DateTime
-  lastScanAt: DateTime
+  lastIncrementalScanAt: Date
+  lastScanAt: Date
   name: String!
   pendingTracks: Float!
   rootPath: String!
@@ -117,7 +115,7 @@ type Library implements Node {
   settings: LibrarySettings!
   totalTracks: Float!
   tracks(pagination: CursorPaginationArgs): CursorPaginatedTracks!
-  updatedAt: DateTime
+  updatedAt: Date
 }
 
 type LibrarySettings {
@@ -194,7 +192,7 @@ input PaginationArgs {
 type Playlist implements Node {
   """True if the given track is already in this playlist"""
   containsTrack(trackId: Base64ID): Boolean
-  createdAt: DateTime!
+  createdAt: Date!
   createdById: Base64ID!
   description: String
   id: Base64ID!
@@ -204,7 +202,7 @@ type Playlist implements Node {
   sorting: PlaylistSorting
   stats: PlaylistStats
   tracks: [PlaylistTrack!]
-  updatedAt: DateTime
+  updatedAt: Date
 }
 
 input PlaylistFilterInput {
@@ -216,12 +214,12 @@ input PlaylistFilterInput {
 }
 
 type PlaylistSorting {
-  createdAt: DateTime!
+  createdAt: Date!
   id: Base64ID!
   playlistId: Base64ID!
   sortingDirection: String!
   sortingKey: String!
-  updatedAt: DateTime
+  updatedAt: Date
 }
 
 type PlaylistStats {
@@ -237,7 +235,7 @@ type PlaylistStats {
 }
 
 type PlaylistTrack {
-  addedAt: DateTime!
+  addedAt: Date!
   id: Base64ID!
   playlistId: Base64ID!
   position: Int!
@@ -262,12 +260,12 @@ type Query {
 }
 
 type QueueItem {
-  createdAt: DateTime!
+  createdAt: Date!
   id: Base64ID!
   position: Int!
   track: Track
   trackId: Base64ID!
-  updatedAt: DateTime
+  updatedAt: Date
 }
 
 type RandomTrackWithStats {
@@ -365,10 +363,10 @@ type Track implements Node {
   aiVocalsDescriptions: String
   analysisStatus: String
   artist: String
-  createdAt: DateTime
-  date: DateTime
+  createdAt: Date
+  date: Date
   duration: Float!
-  fileCreatedAt: DateTime!
+  fileCreatedAt: Date!
   fileName: String!
   filePath: String!
   fileSize: Float!
@@ -379,8 +377,8 @@ type Track implements Node {
   isBanger: Boolean!
   isFavorite: Boolean!
   isLiked: Boolean!
-  lastPlayedAt: DateTime
-  lastScannedAt: DateTime
+  lastPlayedAt: Date
+  lastScannedAt: Date
   libraryId: Base64ID
   listeningCount: Float!
   mfArousalMood: String
@@ -391,7 +389,7 @@ type Track implements Node {
   recommendations(limit: Int): [TrackRecommendation!]!
   subgenres: [String!]
   title: String
-  updatedAt: DateTime
+  updatedAt: Date
 }
 
 type TrackRecommendation {

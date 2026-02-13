@@ -158,7 +158,8 @@ const getYearDistribution = (tracks: Track[]) => {
 	const yearCounts: Record<number, number> = {};
 
 	tracks.forEach((track) => {
-		const year = track.date?.getFullYear();
+		const date = track.date ? new Date(track.date) : undefined;
+		const year = date?.getFullYear();
 		if (year && year >= 1900 && year <= new Date().getFullYear()) {
 			yearCounts[year] = (yearCounts[year] || 0) + 1;
 		}

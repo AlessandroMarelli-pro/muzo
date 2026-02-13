@@ -22,7 +22,11 @@ export class ScheduleLibraryScanUseCase {
   ): Promise<{ sessionId: SessionId }> {
     const { id } = await this.scanSessionRepository.createSession(null);
     try {
-      this.logger.info(`Creating session for library ${libraryId}`);
+      this.logger.info(`Creating session for library ${libraryId}`, {
+        libraryId,
+        incremental,
+        sessionId: id,
+      });
       await this.libraryScanSchedulerProducer.scheduleLibraryScan(
         libraryId,
         incremental,
