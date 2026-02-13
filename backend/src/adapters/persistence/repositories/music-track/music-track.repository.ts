@@ -54,7 +54,10 @@ export class MusicTrackRepository implements IMusicTrackRepository {
     return this.prisma.musicTrack
       .groupBy({
         by: ['analysisStatus'],
-        where: { libraryId, createdById: getCurrentUserId() },
+        where: {
+          libraryId: extractModelId(libraryId).dbId,
+          createdById: getCurrentUserId(),
+        },
         _count: {
           id: true,
         },

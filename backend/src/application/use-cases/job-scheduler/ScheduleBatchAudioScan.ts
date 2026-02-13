@@ -9,7 +9,9 @@ export class ScheduleBatchAudioScanUseCase {
     private readonly audioScanSchedulerProducer: IAudioScanSchedulerProducer,
     loggerFactory: { createLogger: (name: string) => ILogger },
     private readonly logger: ILogger,
-  ) {}
+  ) {
+    this.logger = loggerFactory.createLogger('ScheduleBatchAudioScanUseCase');
+  }
 
   async execute(
     audioFiles: FileInfo[],

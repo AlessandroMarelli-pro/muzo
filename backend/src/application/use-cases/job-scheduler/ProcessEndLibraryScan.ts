@@ -85,6 +85,7 @@ export class ProcessEndLibraryScanUseCase {
 
     this.logger.info(
       `Updating library ${libraryId} with data: ${JSON.stringify(updateData)}`,
+      { libraryId, updateData, analysisStatusCounts },
     );
     await this.musicLibraryRepository.updateOneById(libraryId, {
       ...updateData,
