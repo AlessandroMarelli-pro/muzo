@@ -1,6 +1,7 @@
 import { LibraryScanSchedulerConsumerAdapter } from 'src/adapters/job-schedulers/library-scan-scheduler-consumer.adapter';
-import { makeJob } from './_test-utils/make-job';
 import type { EndLibraryScanJobData, LibraryScanJobData } from 'src/application/ports/dtos/JobSchedulersData';
+import { makeContextUser } from '../../../_test-utils/make-context-user';
+import { makeJob } from './_test-utils/make-job';
 
 describe('LibraryScanSchedulerConsumerAdapter', () => {
   let adapter: LibraryScanSchedulerConsumerAdapter;
@@ -24,7 +25,7 @@ describe('LibraryScanSchedulerConsumerAdapter', () => {
       const libraryId = 'lib-1' as const;
       const sessionId = 'session-1' as const;
       const incremental = false;
-      const contextUser = { id: 'User:user-1' };
+      const contextUser = makeContextUser('user-1');
       const audioFiles = [
         { path: '/music/track.mp3', filename: 'track.mp3', extension: '.mp3', size: 1024 },
       ];
@@ -54,7 +55,7 @@ describe('LibraryScanSchedulerConsumerAdapter', () => {
       const libraryId = 'lib-1' as const;
       const sessionId = 'session-1' as const;
       const incremental = true;
-      const contextUser = { id: 'User:user-1' };
+      const contextUser = makeContextUser('user-1');
       const job = makeJob<EndLibraryScanJobData>({
         name: 'end-scan-library',
         data: { libraryId, sessionId, incremental, contextUser },
@@ -80,7 +81,7 @@ describe('LibraryScanSchedulerConsumerAdapter', () => {
           libraryId: 'lib-1',
           sessionId: 'session-1',
           incremental: false,
-          contextUser: { id: 'User:user-1' },
+          contextUser: makeContextUser('user-1'),
         },
       });
 
@@ -94,7 +95,7 @@ describe('LibraryScanSchedulerConsumerAdapter', () => {
           libraryId: 'lib-1',
           sessionId: 'session-1',
           incremental: false,
-          contextUser: { id: 'User:user-1' },
+          contextUser: makeContextUser('user-1'),
         },
       });
 

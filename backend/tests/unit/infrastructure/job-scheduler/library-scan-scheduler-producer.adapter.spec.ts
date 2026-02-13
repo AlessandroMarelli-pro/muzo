@@ -7,6 +7,7 @@ import {
   EndLibraryScanJobData,
   LibraryScanJobData,
 } from 'src/application/ports/dtos/JobSchedulersData';
+import { makeContextUser } from '../../../_test-utils/make-context-user';
 import { makeQueueConfig } from './_test-utils/make-queue-config';
 
 describe('LibraryScanSchedulerProducerAdapter', () => {
@@ -36,7 +37,7 @@ describe('LibraryScanSchedulerProducerAdapter', () => {
       const libraryId = 'lib-1' as const;
       const sessionId = 'session-1' as const;
       const incremental = false;
-      const contextUser = { id: 'User:user-1' };
+      const contextUser = makeContextUser('user-1');
 
       const result = await adapter.scheduleLibraryScan(
         libraryId,
@@ -60,7 +61,7 @@ describe('LibraryScanSchedulerProducerAdapter', () => {
     it('optimal: adds end-scan-library job and returns sessionId', async () => {
       const libraryId = 'lib-1' as const;
       const sessionId = 'session-1' as const;
-      const contextUser = { id: 'User:user-1' };
+      const contextUser = makeContextUser('user-1');
       const incremental = true;
 
       const result = await adapter.scheduleEndLibraryScan(
@@ -88,7 +89,7 @@ describe('LibraryScanSchedulerProducerAdapter', () => {
         adapter.scheduleEndLibraryScan(
           'lib-1' as const,
           'session-1' as const,
-          { id: 'User:user-1' },
+          makeContextUser('user-1'),
           false,
         ),
       ).rejects.toThrow('Redis connection failed');

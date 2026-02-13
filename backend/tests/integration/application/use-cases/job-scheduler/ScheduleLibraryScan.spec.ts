@@ -24,13 +24,14 @@ import {
   it,
   vi,
 } from 'vitest';
+import { makeContextUser } from '../../../../_test-utils/make-context-user';
 import { setupIntegrationDb } from '../_test-utils/integration-db';
 import { makeLibrary } from '../_test-utils/make-library';
 
 const LIBRARY_ID = models.musicLibrary.id('lib-1');
 const TEST_USER_ID = 'test-user-id';
 
-const mockUser = { id: `User:${TEST_USER_ID}` };
+const mockUser = makeContextUser(TEST_USER_ID);
 vi.mock('src/kernel/types/context', () => ({
   ...vi.importActual('src/kernel/types/context'),
   getCurrentUserId: vi.fn(() => TEST_USER_ID),
@@ -173,7 +174,12 @@ describe('ScheduleLibraryScanUseCase', () => {
       expect(fakeProducer.scheduleLibraryScanCalls[0]).toMatchObject({
         libraryId: LIBRARY_ID,
         incremental: false,
-        contextUser: { id: `User:${TEST_USER_ID}` },
+        contextUser: expect.objectContaining({
+          id: mockUser.id,
+          email: 'test@test.com',
+          firstName: 'Test',
+          lastName: 'User',
+        }),
       });
       expect(fakeProducer.scheduleLibraryScanCalls[0].sessionId).toEqual(
         result.sessionId,
@@ -195,7 +201,12 @@ describe('ScheduleLibraryScanUseCase', () => {
       expect(fakeProducer.scheduleLibraryScanCalls[0]).toMatchObject({
         libraryId: LIBRARY_ID,
         incremental: true,
-        contextUser: { id: `User:${TEST_USER_ID}` },
+        contextUser: expect.objectContaining({
+          id: mockUser.id,
+          email: 'test@test.com',
+          firstName: 'Test',
+          lastName: 'User',
+        }),
       });
     });
 

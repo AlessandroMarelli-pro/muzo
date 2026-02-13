@@ -18,12 +18,13 @@ import {
   it,
   vi,
 } from 'vitest';
+import { makeContextUser } from '../../../../_test-utils/make-context-user';
 
 const LIBRARY_ID = models.musicLibrary.id('lib-1');
 const SESSION_ID = models.session.id('session-1');
 const TEST_USER_ID = 'test-user-id';
 
-const mockUser = { id: `User:${TEST_USER_ID}` };
+const mockUser = makeContextUser(TEST_USER_ID);
 vi.mock('src/kernel/types/context', () => ({
   ...vi.importActual('src/kernel/types/context'),
   getCurrentUserId: vi.fn(() => TEST_USER_ID),
@@ -143,7 +144,12 @@ describe('ScheduleBatchAudioScanUseCase', () => {
         audioFiles,
         libraryId: LIBRARY_ID,
         sessionId: SESSION_ID,
-        contextUser: { id: `User:${TEST_USER_ID}` },
+        contextUser: expect.objectContaining({
+          id: mockUser.id,
+          email: 'test@test.com',
+          firstName: 'Test',
+          lastName: 'User',
+        }),
         incremental: false,
       });
     });
@@ -158,7 +164,12 @@ describe('ScheduleBatchAudioScanUseCase', () => {
         audioFiles,
         libraryId: LIBRARY_ID,
         sessionId: SESSION_ID,
-        contextUser: { id: `User:${TEST_USER_ID}` },
+        contextUser: expect.objectContaining({
+          id: mockUser.id,
+          email: 'test@test.com',
+          firstName: 'Test',
+          lastName: 'User',
+        }),
         incremental: true,
       });
     });
@@ -172,7 +183,12 @@ describe('ScheduleBatchAudioScanUseCase', () => {
         audioFiles: [],
         libraryId: LIBRARY_ID,
         sessionId: SESSION_ID,
-        contextUser: { id: `User:${TEST_USER_ID}` },
+        contextUser: expect.objectContaining({
+          id: mockUser.id,
+          email: 'test@test.com',
+          firstName: 'Test',
+          lastName: 'User',
+        }),
         incremental: false,
       });
     });

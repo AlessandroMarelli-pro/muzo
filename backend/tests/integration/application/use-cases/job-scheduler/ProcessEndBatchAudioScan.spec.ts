@@ -14,7 +14,6 @@ import { SCAN_SESSION_REPOSITORY } from 'src/application/ports/repositories/ISca
 import { ProcessEndBatchAudioScanUseCase } from 'src/application/use-cases/job-scheduler/ProcessEndBatchAudioScan';
 import { PRISMA_SERVICE } from 'src/infrastructure/database/prisma.service';
 import { models } from 'src/kernel/types/models';
-import { Email, Name } from 'src/kernel/types/value-object';
 import {
   afterAll,
   beforeAll,
@@ -24,6 +23,7 @@ import {
   it,
   vi,
 } from 'vitest';
+import { makeContextUser } from '../../../../_test-utils/make-context-user';
 import { setupIntegrationDb } from '../_test-utils/integration-db';
 
 const LIBRARY_ID = models.musicLibrary.id('lib-1');
@@ -37,16 +37,7 @@ vi.mock('src/kernel/types/context', () => ({
   user: vi.fn(() => ({ id: `User:${TEST_USER_ID}` })),
 }));
 
-const contextUser = {
-  id: models.user.id(TEST_USER_ID),
-  createdAt: new Date(),
-  createdById: models.user.id(TEST_USER_ID),
-  updatedAt: new Date(),
-  updatedById: models.user.id(TEST_USER_ID),
-  email: 'test@test.com' as Email,
-  firstName: 'Test' as Name,
-  lastName: 'User' as Name,
-};
+const contextUser = makeContextUser(TEST_USER_ID);
 
 function makeBatchData(
   overrides: Partial<AudioScanBatchJobData> = {},

@@ -1,8 +1,8 @@
 import { ConfigService } from '@nestjs/config';
 import { FileInfo } from 'src/application/ports/dtos/FileInfo';
 import { AudioScanSchedulerProducerAdapter } from 'src/infrastructure/job-scheduler/audio-scan-scheduler-producer.adapter';
-import { Email, Name } from 'src/kernel/types';
 import { models } from 'src/kernel/types/models';
+import { makeContextUser } from '../../../_test-utils/make-context-user';
 import { makeQueueConfig } from './_test-utils/make-queue-config';
 
 describe('AudioScanSchedulerProducerAdapter', () => {
@@ -45,16 +45,7 @@ describe('AudioScanSchedulerProducerAdapter', () => {
       ];
       const libraryId = models.musicLibrary.id('lib-1');
       const sessionId = models.session.id('session-1');
-      const contextUser = {
-        id: models.user.id('User:user-1'),
-        createdAt: new Date(),
-        createdById: models.user.id('User:user-1'),
-        updatedAt: new Date(),
-        updatedById: models.user.id('User:user-1'),
-        email: 'test@test.com' as Email,
-        firstName: 'Test' as Name,
-        lastName: 'User' as Name,
-      };
+      const contextUser = makeContextUser('user-1');
       const incremental = false;
 
       const result = await adapter.scheduleBatchAudioScan(
@@ -105,16 +96,7 @@ describe('AudioScanSchedulerProducerAdapter', () => {
           ],
           models.musicLibrary.id('lib-1'),
           models.session.id('session-1'),
-          {
-            id: models.user.id('User:user-1'),
-            createdAt: new Date(),
-            createdById: models.user.id('User:user-1'),
-            updatedAt: new Date(),
-            updatedById: models.user.id('User:user-1'),
-            email: 'test@test.com' as Email,
-            firstName: 'Test' as Name,
-            lastName: 'User' as Name,
-          },
+          makeContextUser('user-1'),
           false,
         ),
       ).rejects.toThrow('DB error');
@@ -127,16 +109,7 @@ describe('AudioScanSchedulerProducerAdapter', () => {
         [],
         models.musicLibrary.id('lib-1'),
         sessionId,
-        {
-          id: models.user.id('User:user-1'),
-          createdAt: new Date(),
-          createdById: models.user.id('User:user-1'),
-          updatedAt: new Date(),
-          updatedById: models.user.id('User:user-1'),
-          email: 'test@test.com' as Email,
-          firstName: 'Test' as Name,
-          lastName: 'User' as Name,
-        },
+        makeContextUser('user-1'),
         false,
       );
 
