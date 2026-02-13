@@ -73,18 +73,34 @@ export const toPrisma: ToPrisma = (domainModel) => {
   };
 };
 
+type FlatLibraryUpdate = Partial<MusicLibrary> & {
+  scanStatus?: MusicLibrary['scanInfo']['scanStatus'];
+  lastScanAt?: Date | null;
+  lastIncrementalScanAt?: Date | null;
+  analyzedTracks?: number;
+  failedTracks?: number;
+};
+
+/** Accepts nested (domain) or flat update shape for scan/track fields */
 export const toPrismaUpdate = (
-  domainModel: Partial<MusicLibrary>,
+  domainModel: FlatLibraryUpdate,
 ): Partial<PrismaMusicLibrary> => {
   const updatedModel = models.musicLibrary.update(domainModel);
+  const flat = domainModel as FlatLibraryUpdate;
   return {
     ...toDbModelUpdate(updatedModel),
     name: domainModel.name,
-    scanStatus: domainModel.scanInfo?.scanStatus ?? 'IDLE',
-    lastScanAt: domainModel.scanInfo?.lastScanAt ?? undefined,
+    scanStatus:
+      domainModel.scanInfo?.scanStatus ?? flat.scanStatus ?? 'IDLE',
+    lastScanAt:
+      domainModel.scanInfo?.lastScanAt ?? flat.lastScanAt ?? undefined,
     lastIncrementalScanAt:
-      domainModel.scanInfo?.lastIncrementalScanAt ?? undefined,
-    analyzedTracks: domainModel.tracksInfo?.analyzedTracks ?? undefined,
-    failedTracks: domainModel.tracksInfo?.failedTracks ?? undefined,
+      domainModel.scanInfo?.lastIncrementalScanAt ??
+      flat.lastIncrementalScanAt ??
+      undefined,
+    analyzedTracks:
+      domainModel.tracksInfo?.analyzedTracks ?? flat.analyzedTracks ?? undefined,
+    failedTracks:
+      domainModel.tracksInfo?.failedTracks ?? flat.failedTracks ?? undefined,
   };
 };
