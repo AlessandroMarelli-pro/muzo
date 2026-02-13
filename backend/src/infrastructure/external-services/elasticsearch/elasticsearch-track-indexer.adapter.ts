@@ -1,5 +1,7 @@
 import { Client } from '@elastic/elasticsearch';
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
+import { ILogger, LOGGER } from 'src/application/ports/infrastructure/ILogger';
+import { LOGGER_FACTORY } from 'src/application/ports/infrastructure/ILoggerFactory';
 import { ITrackIndexerPort } from 'src/application/ports/queries/ITrackIndexerPort';
 import { extractModelId, MusicTrackId } from 'src/kernel/ids';
 import { MusicTrack } from 'src/kernel/types';
@@ -11,7 +13,12 @@ import { trackIndexMapping } from './mappings/track-index.mapping';
 export class ElasticsearchTrackIndexerAdapter implements ITrackIndexerPort {
   private elasticsearchClient: Client;
 
-  constructor(private readonly client: ElasticsearchClient) {
+  constructor(
+    private readonly client: ElasticsearchClient,
+    @Inject(LOGGER_FACTORY)
+    loggerFactory: { createLogger: (name: string) => ILogger },
+    @Inject(LOGGER) private readonly logger: ILogger,
+  ) {
     this.elasticsearchClient = this.client.getClient();
   }
 
@@ -27,12 +34,20 @@ export class ElasticsearchTrackIndexerAdapter implements ITrackIndexerPort {
   }
   async indexTrack(document: MusicTrack): Promise<void> {
     try {
-      await this.elasticsearchClient.index({
+      const response = await this.elasticsearchClient.index({
         index: 'music_tracks',
         id: document.id,
         body: toElasticsearchTrackDocument(document),
       });
+      this.logger.debug('Indexed track to elasticsearch', {
+        trackId: document.id,
+        response,
+      });
     } catch (error) {
+      this.logger.error('Failed to index track to elasticsearch', {
+        error,
+        trackId: document.id,
+      });
       throw error;
     }
   }

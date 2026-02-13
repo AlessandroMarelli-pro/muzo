@@ -36,16 +36,18 @@ export class ProcessEndBatchAudioScanUseCase {
         completedTracks: audioFiles.length,
       },
     );
-    this.logger.info(`Updated session progress for session ${sessionId}`, {
-      ...data,
-      progressPercentage,
-    });
     if (!session) {
       this.logger.error(
-        `Failed to update session progress for session ${sessionId}`,
+        `Failed to update session progress for session ${sessionId} (session not found or not in SCANNING status)`,
       );
       return;
     }
+    this.logger.info(`Updated session progress for session ${sessionId}`, {
+      ...data,
+      progressPercentage,
+      completedBatches: session.completedBatches,
+      totalBatches: session.totalBatches,
+    });
     const isComplete = session.completedBatches === session.totalBatches;
     const batchCompleteEvent: BatchCompleteEvent = {
       type: 'batch.complete',

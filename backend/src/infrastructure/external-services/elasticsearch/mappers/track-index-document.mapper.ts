@@ -4,14 +4,15 @@ import { ElasticsearchTrackDocument } from '../types/elasticsearch-track-documen
 export const toElasticsearchTrackDocument = (
   dto: MusicTrack,
 ): ElasticsearchTrackDocument => {
-  return {
+  const date = dto.metadata?.date;
+  const doc: ElasticsearchTrackDocument = {
     trackId: dto.id,
     duration: dto.technicalInfo?.duration ?? 0,
     title: dto.title ?? '',
     artist: dto.artist ?? '',
     album: dto.metadata?.album ?? '',
-    year: dto.metadata?.date?.getFullYear() ?? 0,
-    date: dto.metadata?.date?.toISOString() ?? '',
+    year: date?.getFullYear() ?? 0,
+    ...(date && { date: date.toISOString() }),
     genres: dto.metadata?.genres ?? [],
     subgenres: dto.metadata?.subgenres ?? [],
     tags: dto.aiMetadata?.tags ?? [],
@@ -32,6 +33,7 @@ export const toElasticsearchTrackDocument = (
         dto.features?.musicalFeatures?.danceabilityFeeling ?? '',
     },
   };
+  return doc;
 };
 
 export const toMusicTrack = (

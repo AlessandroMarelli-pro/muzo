@@ -120,6 +120,8 @@ const useCasesProviders = [
   createUseCaseProvider(AddImageSearchRecordUseCase, [
     IMAGE_SEARCH_REPOSITORY,
     ConfigService,
+    LOGGER_FACTORY,
+    LOGGER,
   ]),
   createUseCaseProvider(ServeImageUseCase, [IMAGE_FILE_READER]),
   createUseCaseProvider(CreatePlaylistUseCase, [
@@ -200,7 +202,8 @@ const useCasesProviders = [
   createUseCaseProvider(SyncTrackToElasticSearchUseCase, [
     TRACK_INDEXER_PORT,
     MUSIC_TRACK_REPOSITORY,
-    RECOMMENDATION_DATA_PORT,
+    LOGGER_FACTORY,
+    LOGGER,
   ]),
   createUseCaseProvider(GetPlaylistRecommendationsUseCase, [
     RECOMMENDATION_SEARCH_PORT,

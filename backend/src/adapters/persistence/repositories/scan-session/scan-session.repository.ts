@@ -1,4 +1,4 @@
-import { Injectable, Inject } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 
 import {
   IScanSessionRepository,
@@ -9,20 +9,13 @@ import {
   PrismaService,
 } from 'src/infrastructure/database/prisma.service';
 import { extractModelId, SessionId } from 'src/kernel/ids';
-import {
-  getCurrentUser,
-  getCurrentUserId,
-  Maybe,
-  models,
-} from 'src/kernel/types';
+import { getCurrentUserId, Maybe, models } from 'src/kernel/types';
 import { ScanStatusEnum, Session } from 'src/kernel/types/model-types';
 import { toDomain, toPrisma, toPrismaUpdate } from './scan-session.mapper';
 
 @Injectable()
 export class ScanSessionRepository implements IScanSessionRepository {
-  constructor(
-    @Inject(PRISMA_SERVICE) private readonly prisma: PrismaService,
-  ) {}
+  constructor(@Inject(PRISMA_SERVICE) private readonly prisma: PrismaService) {}
 
   /**
    * Create a new scan session
@@ -42,7 +35,6 @@ export class ScanSessionRepository implements IScanSessionRepository {
           completedAt: undefined,
           errorMessage: undefined,
         }),
-        createdById: getCurrentUser().id,
       }),
     });
 

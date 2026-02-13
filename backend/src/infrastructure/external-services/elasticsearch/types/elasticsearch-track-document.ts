@@ -9,7 +9,8 @@ export interface ElasticsearchTrackDocument {
   artist: string;
   album: string;
   year: number;
-  date: string;
+  /** Omitted when track has no release date (Elasticsearch date type cannot parse empty string) */
+  date?: string;
   // Genres and Subgenres (from normalized relations)
   genres: string[];
   subgenres: string[];

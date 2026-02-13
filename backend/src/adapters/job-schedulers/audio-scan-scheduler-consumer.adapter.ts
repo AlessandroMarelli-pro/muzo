@@ -102,6 +102,14 @@ export class AudioScanSchedulerConsumerAdapter
               libraryId: track.libraryId,
             },
           );
+          this.logger.debug(
+            `Processed single track analysis for track ${track.id} ${track.fileInfo.fileName}`,
+            {
+              trackId: track.id,
+              fileName: track.fileInfo.fileName,
+              result,
+            },
+          );
           if (result.isSuccess) {
             successCount++;
           } else {

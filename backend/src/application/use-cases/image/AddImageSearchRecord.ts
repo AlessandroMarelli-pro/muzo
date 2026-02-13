@@ -1,5 +1,8 @@
+import { Inject } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as path from 'path';
+import { ILogger, LOGGER } from 'src/application/ports/infrastructure/ILogger';
+import { LOGGER_FACTORY } from 'src/application/ports/infrastructure/ILoggerFactory';
 import { MusicTrackId } from 'src/kernel/ids';
 import { ImageSearch } from 'src/kernel/types/model-types';
 import {
@@ -20,7 +23,13 @@ export class AddImageSearchRecordUseCase {
   constructor(
     private readonly imageSearchRepository: IImageSearchRepository,
     private readonly configService: ConfigService,
-  ) {}
+    @Inject(LOGGER_FACTORY)
+    loggerFactory: { createLogger: (name: string) => ILogger },
+    @Inject(LOGGER)
+    private readonly logger: ILogger,
+  ) {
+    this.logger = loggerFactory.createLogger('AddImageSearchRecordUseCase');
+  }
 
   async execute(
     trackId: MusicTrackId,
@@ -37,6 +46,10 @@ export class AddImageSearchRecordUseCase {
       imageUrl: data.imageUrl,
       source: data.source,
     };
+    this.logger.debug('Adding image search record', {
+      trackId,
+      createData,
+    });
     return this.imageSearchRepository.save(trackId, createData);
   }
 }
