@@ -224,7 +224,7 @@ export interface AudioAnalysisResponse {
   file_info: FileInfo;
   audio_technical: AudioTechnical;
   id3_tags: Id3Tags;
-  ai_metadata: AIMetadataResponse['metadata'];
+  ai_metadata?: AIMetadataResponse['metadata'];
 }
 
 export interface AudioAnalysisBatchResponse {

@@ -457,24 +457,24 @@ export class MusicTrackRepository implements IMusicTrackRepository {
     const metadata = analysisResult.ai_metadata;
 
     // Update AI-generated metadata fields
-    if (metadata.artist) {
+    if (metadata?.artist) {
       updateData.aiArtist = metadata.artist;
       updateData.originalArtist = metadata.artist;
     }
-    if (metadata.title) {
+    if (metadata?.title) {
       updateData.aiTitle = metadata.title;
       updateData.originalTitle = metadata.title;
-      if (metadata.mix) {
+      if (metadata?.mix) {
         updateData.originalTitle += ` (${metadata.mix})`;
         updateData.aiTitle += ` (${metadata.mix})`;
       }
     }
-    if (metadata.description) {
+    if (metadata?.description) {
       updateData.aiDescription = metadata.description;
     }
 
     // Parse year if available
-    if (metadata.year) {
+    if (metadata?.year) {
       const yearStr = String(metadata.year);
       const yearMatch = yearStr.match(/^\d{4}/);
       if (yearMatch) {
@@ -483,12 +483,12 @@ export class MusicTrackRepository implements IMusicTrackRepository {
     }
 
     // Store additional metadata in userTags as JSON (if tags exist)
-    if (metadata.tags && metadata.tags.length > 0) {
+    if (metadata?.tags && metadata.tags.length > 0) {
       updateData.aiTags = JSON.stringify(metadata.tags);
     }
 
     // Store audioFeatures data
-    if (metadata.audioFeatures) {
+    if (metadata?.audioFeatures) {
       if (metadata.audioFeatures.vocals) {
         updateData.vocalsDesc = metadata.audioFeatures.vocals;
       }
@@ -503,7 +503,7 @@ export class MusicTrackRepository implements IMusicTrackRepository {
     }
 
     // Store context data
-    if (metadata.context) {
+    if (metadata?.context) {
       if (metadata.context.background) {
         updateData.contextBackground = metadata.context.background;
       }
