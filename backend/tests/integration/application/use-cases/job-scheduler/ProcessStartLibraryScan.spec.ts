@@ -4,16 +4,12 @@ import * as fs from 'fs/promises';
 import * as os from 'os';
 import * as path from 'path';
 import { MusicLibraryRepository } from 'src/adapters/persistence/repositories/music-library/music-library.repository';
-import { ScanSessionRepository } from 'src/adapters/persistence/repositories/scan-session/scan-session.repository';
 import { FILE_MANAGER } from 'src/application/ports/infrastructure/IFileManager';
 import type { ILogger } from 'src/application/ports/infrastructure/ILogger';
 import { LOGGER } from 'src/application/ports/infrastructure/ILogger';
 import { LOGGER_FACTORY } from 'src/application/ports/infrastructure/ILoggerFactory';
-import type { IScanProgressPublisher } from 'src/application/ports/infrastructure/IScanProgressPublisher';
-import { SCAN_PROGRESS_PUBLISHER } from 'src/application/ports/infrastructure/IScanProgressPublisher';
 import type { IMusicLibraryRepository } from 'src/application/ports/repositories/IMusicLibraryRepository';
 import { MUSIC_LIBRARY_REPOSITORY } from 'src/application/ports/repositories/IMusicLibraryRepository';
-import { SCAN_SESSION_REPOSITORY } from 'src/application/ports/repositories/IScanSessionRepository';
 import { ProcessStartLibraryScanUseCase } from 'src/application/use-cases/job-scheduler/ProcessStartLibraryScan';
 import { PRISMA_SERVICE } from 'src/infrastructure/database/prisma.service';
 import { FileManager } from 'src/infrastructure/filesystem/file.manager';
@@ -31,7 +27,6 @@ import { setupIntegrationDb } from '../_test-utils/integration-db';
 import { makeLibrary } from '../_test-utils/make-library';
 
 const LIBRARY_ID = models.musicLibrary.id('lib-1');
-const SESSION_ID = models.session.id('session-1');
 const TEST_USER_ID = 'test-user-id';
 
 vi.mock('src/kernel/types/context', () => ({
@@ -44,12 +39,10 @@ vi.mock('src/kernel/types/context', () => ({
 describe('ProcessStartLibraryScanUseCase', () => {
   let useCase: ProcessStartLibraryScanUseCase;
   let musicLibraryRepository: IMusicLibraryRepository;
-  let scanSessionRepository: ScanSessionRepository;
   let prisma: PrismaClient;
   let cleanupDb: () => Promise<void>;
   let tempDirWithFiles: string;
   let tempDirEmpty: string;
-  let fakePublishEvent: ReturnType<typeof vi.fn>;
 
   beforeAll(async () => {
     const { cleanup } = await setupIntegrationDb();
@@ -69,7 +62,6 @@ describe('ProcessStartLibraryScanUseCase', () => {
       debug: vi.fn(),
     };
     const loggerFactory = { createLogger: vi.fn(() => logger) };
-    fakePublishEvent = vi.fn().mockResolvedValue(undefined);
 
     const dbUrl = process.env.DATABASE_URL ?? 'file:./muzo.db';
     const testPrisma = new PrismaClient({
@@ -81,17 +73,9 @@ describe('ProcessStartLibraryScanUseCase', () => {
       providers: [
         { provide: PRISMA_SERVICE, useValue: testPrisma },
         { provide: MUSIC_LIBRARY_REPOSITORY, useClass: MusicLibraryRepository },
-        { provide: SCAN_SESSION_REPOSITORY, useClass: ScanSessionRepository },
         { provide: FILE_MANAGER, useClass: FileManager },
         { provide: LOGGER_FACTORY, useValue: loggerFactory },
         { provide: LOGGER, useValue: logger },
-        {
-          provide: SCAN_PROGRESS_PUBLISHER,
-          useValue: {
-            publishEvent: fakePublishEvent,
-            publishError: vi.fn().mockResolvedValue(undefined),
-          },
-        },
         {
           provide: ProcessStartLibraryScanUseCase,
           useFactory: (
@@ -99,24 +83,12 @@ describe('ProcessStartLibraryScanUseCase', () => {
             repo: IMusicLibraryRepository,
             lf: { createLogger: (name: string) => ILogger },
             log: ILogger,
-            publisher: IScanProgressPublisher,
-            scanSessionRepo: ScanSessionRepository,
-          ) =>
-            new ProcessStartLibraryScanUseCase(
-              fileManager,
-              repo,
-              lf,
-              log,
-              publisher,
-              scanSessionRepo,
-            ),
+          ) => new ProcessStartLibraryScanUseCase(fileManager, repo, lf, log),
           inject: [
             FILE_MANAGER,
             MUSIC_LIBRARY_REPOSITORY,
             LOGGER_FACTORY,
             LOGGER,
-            SCAN_PROGRESS_PUBLISHER,
-            SCAN_SESSION_REPOSITORY,
           ],
         },
       ],
@@ -126,7 +98,6 @@ describe('ProcessStartLibraryScanUseCase', () => {
 
     useCase = module.get(ProcessStartLibraryScanUseCase);
     musicLibraryRepository = module.get(MUSIC_LIBRARY_REPOSITORY);
-    scanSessionRepository = module.get(SCAN_SESSION_REPOSITORY);
     prisma = module.get(PRISMA_SERVICE);
   });
 
@@ -140,9 +111,7 @@ describe('ProcessStartLibraryScanUseCase', () => {
   });
 
   beforeEach(async () => {
-    await prisma.scanSession.deleteMany({});
     await prisma.musicLibrary.deleteMany({});
-    fakePublishEvent?.mockClear?.();
   });
 
   describe('execute', () => {
@@ -150,7 +119,7 @@ describe('ProcessStartLibraryScanUseCase', () => {
       const library = makeLibrary({ id: 'lib-1', rootPath: tempDirWithFiles });
       await (musicLibraryRepository as MusicLibraryRepository).save(library);
 
-      const result = await useCase.execute(LIBRARY_ID, false, SESSION_ID);
+      const result = await useCase.execute(LIBRARY_ID, false);
 
       expect(result).toHaveLength(2);
       expect(result.map((f) => f.fileName).sort()).toEqual(['a.mp3', 'b.flac']);
@@ -161,50 +130,19 @@ describe('ProcessStartLibraryScanUseCase', () => {
       expect(libAfter.scanInfo.scanStatus).toBe('IDLE');
     });
 
-    it('edge case: when no audio files found, updates scan status to IDLE, publishes scan.complete, and returns []', async () => {
+    it('edge case: when no audio files found, updates scan status to IDLE and returns []', async () => {
       const library = makeLibrary({ id: 'lib-1', rootPath: tempDirEmpty });
       await (musicLibraryRepository as MusicLibraryRepository).save(library);
-      const session = await scanSessionRepository.createSession(SESSION_ID);
 
-      const result = await useCase.execute(LIBRARY_ID, false, session.id);
+      const result = await useCase.execute(LIBRARY_ID, false);
 
       expect(result).toEqual([]);
       const libAfter = await musicLibraryRepository.getOneById(LIBRARY_ID);
       expect(libAfter.scanInfo.scanStatus).toBe('IDLE');
-      expect(fakePublishEvent).toHaveBeenCalledTimes(1);
-      expect(fakePublishEvent).toHaveBeenCalledWith(
-        session.id,
-        expect.objectContaining({
-          type: 'scan.complete',
-          sessionId: LIBRARY_ID,
-          libraryId: LIBRARY_ID,
-          data: expect.objectContaining({
-            totalBatches: session.totalBatches,
-            totalTracks: session.totalTracks,
-            successful: session.completedTracks,
-            failed: session.failedTracks,
-          }),
-          overallProgress: 10000,
-        }),
-      );
-    });
-
-    it('edge case: when no audio files found and session does not exist, returns [] without publishing', async () => {
-      const library = makeLibrary({ id: 'lib-1', rootPath: tempDirEmpty });
-      await (musicLibraryRepository as MusicLibraryRepository).save(library);
-
-      const result = await useCase.execute(LIBRARY_ID, false, SESSION_ID);
-
-      expect(result).toEqual([]);
-      const libAfter = await musicLibraryRepository.getOneById(LIBRARY_ID);
-      expect(libAfter.scanInfo.scanStatus).toBe('IDLE');
-      expect(fakePublishEvent).not.toHaveBeenCalled();
     });
 
     it('failure: propagates when library does not exist', async () => {
-      await expect(
-        useCase.execute(LIBRARY_ID, false, SESSION_ID),
-      ).rejects.toMatchObject({
+      await expect(useCase.execute(LIBRARY_ID, false)).rejects.toMatchObject({
         message: expect.stringContaining('not found'),
       });
     });

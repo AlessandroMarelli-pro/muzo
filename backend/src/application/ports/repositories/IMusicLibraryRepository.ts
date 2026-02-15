@@ -10,6 +10,11 @@ export type MusicLibraryUpdateData = {
   supportedFormats?: string[];
   maxFileSize?: number;
   scanStatus?: ScanStatus;
+  totalTracks?: number;
+  analyzedTracks?: number;
+  failedTracks?: number;
+  lastScanAt?: Date;
+  lastIncrementalScanAt?: Date;
 };
 
 export type MusicLibraryCreateData = {

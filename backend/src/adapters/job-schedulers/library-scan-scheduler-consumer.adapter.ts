@@ -54,9 +54,13 @@ export class LibraryScanSchedulerConsumerAdapter
     const audioFiles = await this.processStartLibraryScanUseCase.execute(
       libraryId,
       incremental,
-      sessionId,
     );
     if (audioFiles.length === 0) {
+      await this.processEndLibraryScanUseCase.execute(
+        libraryId,
+        sessionId,
+        incremental,
+      );
       return;
     }
     await this.scheduleBatchAudioScanUseCase.execute(

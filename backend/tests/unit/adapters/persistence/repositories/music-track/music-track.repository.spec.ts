@@ -287,7 +287,7 @@ describe('MusicTrackRepository', () => {
 
       expect(prismaMock.musicTrack.groupBy).toHaveBeenCalledWith({
         by: ['analysisStatus'],
-        where: { libraryId: LIBRARY_ID_RAW, createdById: TEST_USER_ID },
+        where: { libraryId: LIB_ID, createdById: TEST_USER_ID },
         _count: { id: true },
       });
       expect(result).toHaveLength(2);
@@ -309,7 +309,7 @@ describe('MusicTrackRepository', () => {
 
       expect(prismaMock.musicTrack.groupBy).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: { libraryId: LIBRARY_ID_RAW, createdById: TEST_USER_ID },
+          where: { libraryId: LIB_ID, createdById: TEST_USER_ID },
         }),
       );
     });

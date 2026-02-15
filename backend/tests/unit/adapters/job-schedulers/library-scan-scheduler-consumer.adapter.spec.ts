@@ -51,6 +51,33 @@ describe('LibraryScanSchedulerConsumerAdapter', () => {
       expect(job.updateProgress).toHaveBeenCalledWith(100);
     });
 
+    it('happy path: start-library-scan with no files calls ProcessEndLibraryScan and not ScheduleBatchAudioScan', async () => {
+      const libraryId = 'lib-1' as const;
+      const sessionId = 'session-1' as const;
+      const incremental = true;
+      const contextUser = makeContextUser('user-1');
+      processStartLibraryScanUseCase.execute.mockResolvedValueOnce([]);
+
+      const job = makeJob<LibraryScanJobData>({
+        name: 'start-library-scan',
+        data: { libraryId, sessionId, incremental, contextUser },
+      });
+
+      await adapter.process(job);
+
+      expect(processStartLibraryScanUseCase.execute).toHaveBeenCalledTimes(1);
+      expect(processStartLibraryScanUseCase.execute).toHaveBeenCalledWith(libraryId, incremental);
+      expect(processEndLibraryScanUseCase.execute).toHaveBeenCalledTimes(1);
+      expect(processEndLibraryScanUseCase.execute).toHaveBeenCalledWith(
+        libraryId,
+        sessionId,
+        incremental,
+      );
+      expect(scheduleBatchAudioScanUseCase.execute).not.toHaveBeenCalled();
+      expect(job.updateProgress).toHaveBeenCalledWith(0);
+      expect(job.updateProgress).toHaveBeenCalledWith(100);
+    });
+
     it('happy path: end-scan-library calls ProcessEndLibraryScan', async () => {
       const libraryId = 'lib-1' as const;
       const sessionId = 'session-1' as const;

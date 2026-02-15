@@ -74,6 +74,7 @@ export class ProcessEndLibraryScanUseCase {
       analyzedTracks,
       failedTracks,
       scanStatus: ScanStatusEnum.IDLE,
+      totalTracks: analyzedTracks + failedTracks,
     };
 
     // Update appropriate scan timestamp

@@ -256,8 +256,6 @@ const useCasesProviders = [
     MUSIC_LIBRARY_REPOSITORY,
     LOGGER_FACTORY,
     LOGGER,
-    SCAN_PROGRESS_PUBLISHER,
-    SCAN_SESSION_REPOSITORY,
   ]),
   createUseCaseProvider(ScheduleBatchAudioScanUseCase, [
     AUDIO_SCAN_SCHEDULER_PRODUCER,

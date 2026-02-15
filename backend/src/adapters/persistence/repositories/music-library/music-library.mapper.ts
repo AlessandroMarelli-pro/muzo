@@ -79,6 +79,7 @@ type FlatLibraryUpdate = Partial<MusicLibrary> & {
   lastIncrementalScanAt?: Date | null;
   analyzedTracks?: number;
   failedTracks?: number;
+  totalTracks?: number;
 };
 
 /** Accepts nested (domain) or flat update shape for scan/track fields */
@@ -90,8 +91,7 @@ export const toPrismaUpdate = (
   return {
     ...toDbModelUpdate(updatedModel),
     name: domainModel.name,
-    scanStatus:
-      domainModel.scanInfo?.scanStatus ?? flat.scanStatus ?? 'IDLE',
+    scanStatus: domainModel.scanInfo?.scanStatus ?? flat.scanStatus ?? 'IDLE',
     lastScanAt:
       domainModel.scanInfo?.lastScanAt ?? flat.lastScanAt ?? undefined,
     lastIncrementalScanAt:
@@ -99,8 +99,12 @@ export const toPrismaUpdate = (
       flat.lastIncrementalScanAt ??
       undefined,
     analyzedTracks:
-      domainModel.tracksInfo?.analyzedTracks ?? flat.analyzedTracks ?? undefined,
+      domainModel.tracksInfo?.analyzedTracks ??
+      flat.analyzedTracks ??
+      undefined,
     failedTracks:
       domainModel.tracksInfo?.failedTracks ?? flat.failedTracks ?? undefined,
+    totalTracks:
+      domainModel.tracksInfo?.totalTracks ?? flat.totalTracks ?? undefined,
   };
 };
