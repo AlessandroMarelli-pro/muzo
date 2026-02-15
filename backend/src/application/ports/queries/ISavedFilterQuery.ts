@@ -1,4 +1,9 @@
-import { GenreId, MusicLibraryId, SubgenreId } from 'src/kernel/ids';
+import {
+  AiAtmosphereTagId,
+  GenreId,
+  MusicLibraryId,
+  SubgenreId,
+} from 'src/kernel/ids';
 import { createToken } from '../../utils/create-token';
 
 export const SAVED_FILTER_QUERY =
@@ -14,7 +19,7 @@ export type StaticFilterOptions = {
   subgenres: FilterWithID<SubgenreId>[];
   keys: FilterWithID<string>[];
   libraries: FilterWithID<MusicLibraryId>[];
-  atmospheres: FilterWithID<string>[];
+  atmospheres: FilterWithID<AiAtmosphereTagId>[];
 };
 
 export interface ISavedFilterQuery {

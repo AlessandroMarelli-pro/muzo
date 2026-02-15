@@ -17,7 +17,7 @@ export interface ElasticsearchTrackDocument {
 
   tags: string[];
   vocals_desc: string;
-  atmosphere_desc: string[];
+  atmosphere_tags: string[];
   context_background: string;
   context_impact: string;
 

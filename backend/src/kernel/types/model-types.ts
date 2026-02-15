@@ -1,5 +1,6 @@
 import { Maybe, MaybeUndefined } from '../common';
 import type {
+  AiAtmosphereTagId,
   Brand,
   GenreId,
   HiddenMusicTrackId,
@@ -13,6 +14,7 @@ import type {
   SavedFilterId,
   SessionId,
   SubgenreId,
+  TrackAiAtmosphereTagId,
   TrackGenreId,
   TrackSubgenreId,
   UserId,
@@ -36,6 +38,8 @@ export type Model =
   | Genre
   | TrackSubgenre
   | Subgenre
+  | TrackAiAtmosphereTag
+  | AiAtmosphereTag
   | SavedFilter
   | QueueItem
   | HiddenMusicTrack
@@ -95,7 +99,7 @@ export type HiddenMusicTrack = Readonly<ModelBase<HiddenMusicTrackId>> & {
   libraryId: MusicLibraryId;
   fileInfo: AudioFileInfo;
   technicalInfo: MaybeUndefined<AudioTechnical>;
-  aiMetadata: MaybeUndefined<AudioFileAIMetadata>;
+  aiMetadata: MaybeUndefined<Omit<AudioFileAIMetadata, 'atmosphereTags'>>;
 };
 
 export type MusicTrack = Readonly<ModelBase<MusicTrackId>> & {
@@ -225,9 +229,9 @@ export type AudioFileAIMetadata = {
   description: MaybeUndefined<string>;
   tags: string[];
   vocalsDesc: MaybeUndefined<string>;
-  atmosphereDesc: string[];
   contextBackground: MaybeUndefined<string>;
   contextImpact: MaybeUndefined<string>;
+  atmosphereTags: string[];
 };
 export enum AudioFileAnalysisStatusEnum {
   PENDING = 'PENDING',
@@ -313,6 +317,17 @@ export type Subgenre = Readonly<ModelBase<SubgenreId>> & {
   name: string;
   description: Maybe<string>;
   genreId: Maybe<GenreId>;
+};
+
+export type AiAtmosphereTag = Readonly<ModelBase<AiAtmosphereTagId>> & {
+  name: string;
+};
+
+export type TrackAiAtmosphereTag = Readonly<
+  ModelBase<TrackAiAtmosphereTagId>
+> & {
+  trackId: MusicTrackId;
+  aiAtmosphereTagId: AiAtmosphereTagId;
 };
 
 export type SavedFilter = Readonly<ModelBase<SavedFilterId>> & {

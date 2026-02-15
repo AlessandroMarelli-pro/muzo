@@ -11,5 +11,6 @@ export const musicTracksIncludes = Prisma.validator<Prisma.MusicTrackInclude>()(
     imageSearches: true,
     trackGenres: { include: { genre: true } },
     trackSubgenres: { include: { subgenre: true } },
+    trackAiAtmosphereTags: { include: { aiAtmosphereTag: true } },
   },
 );

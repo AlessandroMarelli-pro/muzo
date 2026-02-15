@@ -68,9 +68,30 @@ export const buildElasticsearchRecommendationQuery = (
         }
       : null;
 
-  const should = [shouldGenre, shouldSubgenre, shouldTempo]?.filter(
-    (s) => s !== null,
-  );
+  const shouldAtmosphere =
+    weights.aiMetadataSimilarity > 0 &&
+    playlistFeatures.atmosphereKeywords &&
+    playlistFeatures.atmosphereKeywords.length > 0
+      ? {
+          bool: {
+            should: playlistFeatures.atmosphereKeywords.map((keyword) => ({
+              term: {
+                atmosphere_tags: {
+                  value: keyword,
+                  boost: weights.aiMetadataSimilarity * 5.0,
+                },
+              },
+            })),
+            minimum_should_match: 1,
+          },
+        }
+      : null;
+  const should = [
+    shouldGenre,
+    shouldSubgenre,
+    shouldTempo,
+    shouldAtmosphere,
+  ]?.filter((s) => s !== null);
   return {
     size: criteria.limit || 20,
     query: {
@@ -86,7 +107,7 @@ export const buildElasticsearchRecommendationQuery = (
         genres: {},
         subgenres: {},
         ai_tags: {},
-        atmosphere_desc: {},
+        atmosphere_tags: {},
         ai_description: { number_of_fragments: 1, fragment_size: 100 },
         vocals_desc: { number_of_fragments: 1, fragment_size: 100 },
         context_background: { number_of_fragments: 1, fragment_size: 100 },

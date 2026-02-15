@@ -20,7 +20,7 @@ export const trackIndexMapping: {
       subgenres: { type: 'keyword' },
       tags: { type: 'keyword' },
       vocals_desc: { type: 'text' },
-      atmosphere_desc: { type: 'text' },
+      atmosphere_tags: { type: 'text' },
       context_background: { type: 'text' },
       context_impact: { type: 'text' },
       // AudioFingerprint fields

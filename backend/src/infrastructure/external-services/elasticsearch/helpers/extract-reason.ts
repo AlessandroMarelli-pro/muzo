@@ -122,12 +122,12 @@ const generateRecommendationReasons = (
   }
 
   if (
-    trackSource.atmosphere_desc &&
-    Array.isArray(trackSource.atmosphere_desc) &&
+    trackSource.atmosphere_tags &&
+    Array.isArray(trackSource.atmosphere_tags) &&
     playlistFeatures.atmosphereKeywords &&
     playlistFeatures.atmosphereKeywords.length > 0
   ) {
-    const commonAtmosphere = trackSource.atmosphere_desc.filter((keyword) =>
+    const commonAtmosphere = trackSource.atmosphere_tags.filter((keyword) =>
       playlistFeatures.atmosphereKeywords?.includes(keyword),
     );
     if (commonAtmosphere.length > 0) {
@@ -224,11 +224,11 @@ export const extractReasonsFromElasticsearch = (
     }
   }
 
-  if (highlights.atmosphere_desc && highlights.atmosphere_desc.length > 0) {
-    const matchedAtmosphere = highlights.atmosphere_desc
+  if (highlights.atmosphere_tags && highlights.atmosphere_tags.length > 0) {
+    const matchedAtmosphere = highlights.atmosphere_tags
       .map((h: string) => h.replace(/<em>|<\/em>/g, ''))
       .filter((keyword: string) =>
-        trackSource.atmosphere_desc?.includes(keyword),
+        trackSource.atmosphere_tags?.includes(keyword),
       );
     if (matchedAtmosphere.length > 0) {
       reasons.push(

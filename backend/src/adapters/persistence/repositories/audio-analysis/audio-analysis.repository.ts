@@ -8,8 +8,10 @@ import {
 import { extractModelId, MusicTrackId } from 'src/kernel/ids';
 import { getCurrentUserId, models } from 'src/kernel/types';
 import {
+  toPrismaAiAtmosphereTag,
   toPrismaGenre,
   toPrismaSubgenre,
+  toPrismaTrackAiAtmosphereTag,
   toPrismaTrackGenre,
   toPrismaTrackSubgenre,
 } from './audio-analysis.mapper';
@@ -177,6 +179,48 @@ export class AudioAnalysisRepository implements IAudioAnalysisRepository {
           models.trackSubgenre.instantiateNew({
             trackId,
             subgenreId: models.subgenre.id(subgenre.id),
+          }),
+        ),
+      });
+    }
+  }
+
+  async upsertAiAtmosphereTags(
+    trackId: MusicTrackId,
+    tags: string[],
+  ): Promise<void> {
+    const trackDbId = extractModelId(trackId).dbId;
+    const userId = getCurrentUserId();
+
+    await this.prisma.trackAiAtmosphereTag.deleteMany({
+      where: {
+        trackId: trackDbId,
+        createdById: userId,
+      },
+    });
+
+    for (const tagName of tags) {
+      if (!tagName || tagName.trim() === '') continue;
+
+      const normalizedName = tagName.trim().toLowerCase();
+
+      let tag = await this.prisma.aiAtmosphereTag.findFirst({
+        where: { name: normalizedName, createdById: userId },
+      });
+      if (!tag) {
+        tag = await this.prisma.aiAtmosphereTag.create({
+          data: toPrismaAiAtmosphereTag(
+            models.aiAtmosphereTag.instantiateNew({
+              name: normalizedName,
+            }),
+          ),
+        });
+      }
+      await this.prisma.trackAiAtmosphereTag.create({
+        data: toPrismaTrackAiAtmosphereTag(
+          models.trackAiAtmosphereTag.instantiateNew({
+            trackId,
+            aiAtmosphereTagId: models.aiAtmosphereTag.id(tag.id),
           }),
         ),
       });

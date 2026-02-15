@@ -22,7 +22,7 @@ export const toAudioFeatures = (track: MusicTrack): AudioFeatures => {
     aiDescriptions: [track.aiMetadata?.description ?? ''],
     aiTags: track.aiMetadata?.tags ?? [],
     vocalsDescriptions: track.aiMetadata?.vocalsDesc ?? '',
-    atmosphereKeywords: track.aiMetadata?.atmosphereDesc ?? [],
+    atmosphereKeywords: track.aiMetadata?.atmosphereTags ?? [],
     contextBackgrounds: track.aiMetadata?.contextBackground ?? '',
     contextImpacts: track.aiMetadata?.contextImpact ?? '',
   };

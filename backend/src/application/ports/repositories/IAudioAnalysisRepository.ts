@@ -17,4 +17,8 @@ export interface IAudioAnalysisRepository {
     trackId: MusicTrackId,
     subgenres: string[],
   ): Promise<void>;
+  upsertAiAtmosphereTags(
+    trackId: MusicTrackId,
+    tags: string[],
+  ): Promise<void>;
 }

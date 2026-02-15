@@ -7,6 +7,9 @@ import { router } from './router';
 function InnerApp() {
 	const user = useAuth();
 
+	if (!user || user.isLoading) {
+		return <div>Loading...</div>;
+	}
 	return (
 		<>
 			<RouterProvider router={router} context={user} />

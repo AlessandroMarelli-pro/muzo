@@ -385,4 +385,114 @@ describe('AudioAnalysisRepository', () => {
       });
     });
   });
+
+  describe('upsertAiAtmosphereTags', () => {
+    it('optimal: deletes existing track atmosphere tags, finds or creates tags, creates track-tag links', async () => {
+      const trackId = models.musicTrack.id(TRACK_DB_ID) as MusicTrackId;
+      const tags = ['Chill', 'Energetic'];
+      prismaMock.trackAiAtmosphereTag.deleteMany.mockResolvedValue({ count: 0 });
+      prismaMock.aiAtmosphereTag.findFirst
+        .mockResolvedValueOnce({
+          id: 'tag-1',
+          name: 'chill',
+          description: null,
+          createdAt: new Date(),
+          createdById: TEST_USER_ID,
+          updatedAt: null,
+          updatedById: null,
+        })
+        .mockResolvedValueOnce(null);
+      prismaMock.aiAtmosphereTag.create.mockResolvedValue({
+        id: 'tag-2',
+        name: 'energetic',
+        description: null,
+        createdAt: new Date(),
+        createdById: TEST_USER_ID,
+        updatedAt: null,
+        updatedById: null,
+      });
+      prismaMock.trackAiAtmosphereTag.create.mockResolvedValue({} as never);
+
+      await repo.upsertAiAtmosphereTags(trackId, tags);
+
+      expect(prismaMock.trackAiAtmosphereTag.deleteMany).toHaveBeenCalledWith({
+        where: {
+          trackId: TRACK_DB_ID,
+          createdById: TEST_USER_ID,
+        },
+      });
+      expect(prismaMock.aiAtmosphereTag.findFirst).toHaveBeenCalledWith({
+        where: { name: 'chill', createdById: TEST_USER_ID },
+      });
+      expect(prismaMock.aiAtmosphereTag.findFirst).toHaveBeenCalledWith({
+        where: { name: 'energetic', createdById: TEST_USER_ID },
+      });
+      expect(prismaMock.aiAtmosphereTag.create).toHaveBeenCalledTimes(1);
+      expect(prismaMock.trackAiAtmosphereTag.create).toHaveBeenCalledTimes(2);
+    });
+
+    it('failure: rethrows when Prisma deleteMany throws', async () => {
+      const trackId = models.musicTrack.id(TRACK_DB_ID) as MusicTrackId;
+      prismaMock.trackAiAtmosphereTag.deleteMany.mockRejectedValue(
+        new Error('DB error'),
+      );
+
+      await expect(
+        repo.upsertAiAtmosphereTags(trackId, ['Chill']),
+      ).rejects.toThrow('DB error');
+    });
+
+    it('createdById scope: deleteMany, findFirst, create use current user id', async () => {
+      const trackId = models.musicTrack.id(TRACK_DB_ID) as MusicTrackId;
+      prismaMock.trackAiAtmosphereTag.deleteMany.mockResolvedValue({ count: 0 });
+      prismaMock.aiAtmosphereTag.findFirst.mockResolvedValue({
+        id: 'tag-1',
+        name: 'chill',
+        description: null,
+        createdAt: new Date(),
+        createdById: TEST_USER_ID,
+        updatedAt: null,
+        updatedById: null,
+      });
+      prismaMock.trackAiAtmosphereTag.create.mockResolvedValue({} as never);
+
+      await repo.upsertAiAtmosphereTags(trackId, ['Chill']);
+
+      expect(prismaMock.trackAiAtmosphereTag.deleteMany).toHaveBeenCalledWith({
+        where: { trackId: TRACK_DB_ID, createdById: TEST_USER_ID },
+      });
+      expect(prismaMock.aiAtmosphereTag.findFirst).toHaveBeenCalledWith({
+        where: { name: 'chill', createdById: TEST_USER_ID },
+      });
+      expect(prismaMock.trackAiAtmosphereTag.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          trackId: TRACK_DB_ID,
+          createdById: TEST_USER_ID,
+        }),
+      });
+    });
+
+    it('optimal: skips empty or whitespace-only tag names', async () => {
+      const trackId = models.musicTrack.id(TRACK_DB_ID) as MusicTrackId;
+      prismaMock.trackAiAtmosphereTag.deleteMany.mockResolvedValue({ count: 0 });
+      prismaMock.aiAtmosphereTag.findFirst.mockResolvedValue({
+        id: 'tag-1',
+        name: 'valid',
+        description: null,
+        createdAt: new Date(),
+        createdById: TEST_USER_ID,
+        updatedAt: null,
+        updatedById: null,
+      });
+      prismaMock.trackAiAtmosphereTag.create.mockResolvedValue({} as never);
+
+      await repo.upsertAiAtmosphereTags(trackId, ['', '  ', 'Valid']);
+
+      expect(prismaMock.aiAtmosphereTag.findFirst).toHaveBeenCalledTimes(1);
+      expect(prismaMock.aiAtmosphereTag.findFirst).toHaveBeenCalledWith({
+        where: { name: 'valid', createdById: TEST_USER_ID },
+      });
+      expect(prismaMock.trackAiAtmosphereTag.create).toHaveBeenCalledTimes(1);
+    });
+  });
 });

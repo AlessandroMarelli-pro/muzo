@@ -495,14 +495,6 @@ export class MusicTrackRepository implements IMusicTrackRepository {
       if (metadata.audioFeatures.vocals) {
         updateData.vocalsDesc = metadata.audioFeatures.vocals;
       }
-      if (
-        metadata.audioFeatures.atmosphere &&
-        metadata.audioFeatures.atmosphere.length > 0
-      ) {
-        updateData.atmosphereDesc = JSON.stringify(
-          metadata.audioFeatures.atmosphere,
-        );
-      }
     }
 
     // Store context data

@@ -71,6 +71,12 @@ export function createMockPrisma(): DeepMockProxy<PrismaClient> {
     get subgenre() {
       return getDelegate('subgenre');
     },
+    get aiAtmosphereTag() {
+      return getDelegate('aiAtmosphereTag');
+    },
+    get trackAiAtmosphereTag() {
+      return getDelegate('trackAiAtmosphereTag');
+    },
     get imageSearch() {
       return getDelegate('imageSearch');
     },

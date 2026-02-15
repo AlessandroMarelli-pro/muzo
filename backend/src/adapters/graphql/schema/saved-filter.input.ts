@@ -18,7 +18,7 @@ export class FilterCriteriaInput {
   @Field(() => [Base64ID], { nullable: true })
   subgenreIds: Maybe<SubgenreId[]>;
 
-  @Field(() => [String], { nullable: true })
+  @Field(() => [Base64ID], { nullable: true })
   atmosphereIds: Maybe<string[]>;
 
   @Field(() => [Base64ID], { nullable: true })

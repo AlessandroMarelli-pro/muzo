@@ -78,7 +78,6 @@ model MusicTrack {
   aiDescription         String?
   aiTags                String?
   vocalsDesc            String?  // From audioFeatures.vocals
-  atmosphereDesc        String?  // JSON array as string from audioFeatures.atmosphere
   contextBackground     String?  // From context.background
   contextImpact         String?  // From context.impact
  
@@ -122,6 +121,7 @@ model MusicTrack {
   imageSearches         ImageSearch[]
   trackGenres           TrackGenre[]
   trackSubgenres        TrackSubgenre[]
+  trackAiAtmosphereTags TrackAiAtmosphereTag[]
   queue                 Queue?
 
 
@@ -455,6 +455,42 @@ model TrackSubgenre {
   @@map("track_subgenres")
 }
 
+// AI Atmosphere Tags (replaces atmosphereDesc when migrated)
+
+model AiAtmosphereTag {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  createdAt   DateTime @default(now())
+  createdById String   @default("userId")
+  updatedAt   DateTime? @updatedAt
+  updatedById String?
+
+  // Relations
+  trackAiAtmosphereTags TrackAiAtmosphereTag[]
+
+  @@index([name])
+  @@map("ai_atmosphere_tags")
+}
+
+model TrackAiAtmosphereTag {
+  id                 String   @id @default(uuid())
+  trackId            String
+  aiAtmosphereTagId  String
+  createdAt          DateTime @default(now())
+  createdById        String   @default("userId")
+  updatedAt          DateTime? @updatedAt
+  updatedById        String?
+
+  // Relations
+  track              MusicTrack     @relation(fields: [trackId], references: [id], onDelete: Cascade)
+  aiAtmosphereTag    AiAtmosphereTag @relation(fields: [aiAtmosphereTagId], references: [id], onDelete: Cascade)
+
+  @@unique([trackId, aiAtmosphereTagId])
+  @@index([trackId])
+  @@index([aiAtmosphereTagId])
+  @@map("track_ai_atmosphere_tags")
+}
+
 model HiddenMusicTrack {
   id                    String   @id @default(uuid())
   filePath              String   @unique
@@ -488,7 +524,6 @@ model HiddenMusicTrack {
   aiDescription         String?
   aiTags                String?
   vocalsDesc            String?
-  atmosphereDesc        String?
   contextBackground     String?
   contextImpact         String?
  

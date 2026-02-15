@@ -179,7 +179,14 @@ export const buildMusicTrackFilterWhereClause = (
     }
 
     if (criteria.atmosphereIds && criteria.atmosphereIds.length > 0) {
-      where.atmosphereDesc = { contains: criteria.atmosphereIds.join(',') };
+      const atmosphereTagDbIds = criteria.atmosphereIds.map((id) =>
+        id.includes(':') ? id.split(':')[1] : id,
+      );
+      where.trackAiAtmosphereTags = {
+        some: {
+          aiAtmosphereTagId: { in: atmosphereTagDbIds },
+        },
+      };
     }
     if (Object.keys(fingerprintWhere).length > 0) {
       where.audioFingerprint = fingerprintWhere;

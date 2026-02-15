@@ -48,7 +48,7 @@ input FilterCriteriaInput {
   acousticness: RangeInput
   arousalMood: [String!]
   artist: String
-  atmosphereIds: [String!]
+  atmosphereIds: [Base64ID!]
   danceabilityFeeling: [String!]
   genreIds: [Base64ID!]
   instrumentalness: RangeInput
@@ -72,7 +72,7 @@ type FilterCriteriaType {
   acousticness: Range
   arousalMood: [String!]
   artist: String
-  atmosphereIds: [String!]
+  atmosphereIds: [Base64ID!]
   danceabilityFeeling: [String!]
   genreIds: [Base64ID!]
   instrumentalness: Range

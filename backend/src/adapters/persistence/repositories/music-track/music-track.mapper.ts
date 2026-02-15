@@ -1,9 +1,11 @@
 import {
+  AiAtmosphereTag as PrismaAiAtmosphereTag,
   AudioFingerprint as PrismaAudioFingerprint,
   Genre as PrismaGenre,
   ImageSearch as PrismaImageSearch,
   MusicTrack as PrismaMusicTrack,
   Subgenre as PrismaSubgenre,
+  TrackAiAtmosphereTag as PrismaTrackAiAtmosphereTag,
   TrackGenre as PrismaTrackGenre,
   TrackSubgenre as PrismaTrackSubgenre,
 } from '@prisma/client';
@@ -35,6 +37,9 @@ export type PrismaMusicTrackWithRelations = PrismaMusicTrack & {
   trackSubgenres?: Maybe<
     (PrismaTrackSubgenre & { subgenre: PrismaSubgenre })[]
   >;
+  trackAiAtmosphereTags?: Maybe<
+    (PrismaTrackAiAtmosphereTag & { aiAtmosphereTag: PrismaAiAtmosphereTag })[]
+  >;
   imageSearches?: Maybe<PrismaImageSearch[]>;
 };
 
@@ -55,7 +60,7 @@ export type ToAudioFileMetadata = (
   row: PrismaMusicTrackWithRelations,
 ) => MaybeUndefined<AudioFileMetadata>;
 export type ToAudioFileAIMetadata = (
-  row: PrismaMusicTrack,
+  row: PrismaMusicTrackWithRelations,
 ) => MaybeUndefined<AudioFileAIMetadata>;
 export type ToImagePath = (
   row: PrismaMusicTrackWithRelations,
@@ -192,7 +197,8 @@ export const toAudioFileAIMetadata: ToAudioFileAIMetadata = (row) => {
     description: row.aiDescription ?? undefined,
     tags: JSON.parse(row.aiTags ?? '[]'),
     vocalsDesc: row.vocalsDesc ?? undefined,
-    atmosphereDesc: row.atmosphereDesc ? JSON.parse(row.atmosphereDesc) : [],
+    atmosphereTags:
+      row.trackAiAtmosphereTags?.map((tag) => tag.aiAtmosphereTag.name) ?? [],
     contextBackground: row.contextBackground ?? undefined,
     contextImpact: row.contextImpact ?? undefined,
   };
@@ -284,7 +290,6 @@ export const toPrisma: ToPrisma = (domainModel) => {
     aiDescription: domainModel.aiMetadata?.description ?? null,
     aiTags: domainModel.aiMetadata?.tags?.join(',') ?? null,
     vocalsDesc: domainModel.aiMetadata?.vocalsDesc ?? null,
-    atmosphereDesc: domainModel.aiMetadata?.atmosphereDesc?.join(',') ?? null,
     contextBackground: domainModel.aiMetadata?.contextBackground ?? null,
     contextImpact: domainModel.aiMetadata?.contextImpact ?? null,
     userTitle: domainModel.title ?? null,

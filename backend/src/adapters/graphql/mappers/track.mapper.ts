@@ -92,9 +92,9 @@ function toTrackAIMetadata(aiMetadata: MaybeUndefined<AudioFileAIMetadata>) {
     aiVocalsDesc: aiMetadata.vocalsDesc,
     aiDescription: aiMetadata.description || undefined,
     aiVocalsDescriptions: aiMetadata.vocalsDesc,
-    aiAtmosphereKeywords: aiMetadata.atmosphereDesc?.length
-      ? aiMetadata.atmosphereDesc
-      : undefined,
+    aiAtmosphereKeywords: aiMetadata.atmosphereTags?.length
+      ? aiMetadata.atmosphereTags
+      : [],
     aiContextBackgrounds: aiMetadata.contextBackground,
     aiContextImpacts: aiMetadata.contextImpact,
   };
@@ -125,6 +125,7 @@ function toTrackMusicalFeatures(features: MaybeUndefined<AudioFileFeatures>) {
  * Keeps the adapter as a pure translation layer: schema never imports domain entities.
  */
 export function toTrack(domain: MusicTrack): Track {
+  console.log('domain', domain);
   return {
     id: domain.id,
     artist: domain.artist,

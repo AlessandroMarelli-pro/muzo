@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 
 // REST API client for non-GraphQL endpoints
 class RestClient {
@@ -48,32 +48,6 @@ class RestClient {
 }
 
 export const restClient = new RestClient();
-
-// Queue operations
-export const useScanLibrary = () => {
-	const queryClient = useQueryClient();
-	return useMutation({
-		mutationFn: async (libraryId: string) => {
-			const response = await restClient.post<{
-				message: string;
-				sessionId: string;
-			}>(`/queue/scan-library/${libraryId}`);
-			return { ...response, libraryId };
-		},
-		onSuccess: (data) => {
-			// Store sessionId for progress tracking
-			if (data.sessionId) {
-				queryClient.setQueryData(['scan-session', data.sessionId], {
-					sessionId: data.sessionId,
-					libraryId: data.libraryId,
-					startedAt: new Date().toISOString(),
-				});
-			}
-			// Invalidate library queries to refresh scan status
-			queryClient.invalidateQueries({ queryKey: ['libraries'] });
-		},
-	});
-};
 
 // Scan progress operations
 export const useActiveScanSessions = () => {

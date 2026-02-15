@@ -125,8 +125,8 @@ export function calculateFeatures(tracks: MusicTrack[]): Maybe<AudioFeatures> {
     if (aiMetadata?.vocalsDesc) {
       vocalsDescriptions.push(aiMetadata.vocalsDesc);
     }
-    if (aiMetadata?.atmosphereDesc?.length) {
-      atmosphereKeywords.push(...aiMetadata.atmosphereDesc);
+    if (aiMetadata?.atmosphereTags?.length) {
+      atmosphereKeywords.push(...aiMetadata.atmosphereTags);
     }
     if (aiMetadata?.contextBackground) {
       contextBackgrounds.push(aiMetadata.contextBackground);

@@ -30,7 +30,7 @@ function makeRawRows(overrides: Partial<RawRow>[] = []): RawRow[] {
     { id: 'subgenre-1', name: 'Indie', type: 'subgenres' },
     { id: 'C', name: 'C', type: 'keys' },
     { id: 'lib-1', name: 'My Library', type: 'libraries' },
-    { id: 'chill', name: 'chill', type: 'atmospheres' },
+    { id: 'atmosphere-tag-uuid-1', name: 'chill', type: 'atmospheres' },
   ];
   if (overrides.length === 0) return defaults;
   return overrides as RawRow[];
@@ -65,7 +65,12 @@ describe('SavedFilterQuery', () => {
         subgenres: [{ id: models.subgenre.id('subgenre-1'), name: 'Indie' }],
         keys: [{ id: 'C', name: 'C' }],
         libraries: [{ id: models.library.id('lib-1'), name: 'My Library' }],
-        atmospheres: [{ id: 'chill', name: 'chill' }],
+        atmospheres: [
+          {
+            id: models.aiAtmosphereTag.id('atmosphere-tag-uuid-1'),
+            name: 'chill',
+          },
+        ],
       });
     });
 

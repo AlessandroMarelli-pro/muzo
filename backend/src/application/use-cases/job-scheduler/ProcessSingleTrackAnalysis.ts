@@ -84,6 +84,15 @@ export class ProcessSingleTrackAnalysisUseCase {
         );
       }
 
+      const atmosphereTags = analysisResult.ai_metadata?.audioFeatures?.atmosphere;
+      if (atmosphereTags && atmosphereTags.length > 0) {
+        this.logger.info(`Creating TrackAiAtmosphereTag records for track ${fileName}`);
+        await this.audioAnalysisRepository.upsertAiAtmosphereTags(
+          track.id,
+          atmosphereTags,
+        );
+      }
+
       this.logger.info(`Updating track ${fileName} with analysis results`);
       // Update track with AI metadata if available
       await this.musicTrackRepository.updateTrackWithAnalysis(

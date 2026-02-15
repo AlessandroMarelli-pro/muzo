@@ -296,7 +296,7 @@ const columns = (
 					options: staticFilterOptions.atmospheres,
 					hidden: true,
 				},
-				enableColumnFilter: false,
+				enableColumnFilter: true,
 				hidden: true,
 				enableHiding: true,
 			},

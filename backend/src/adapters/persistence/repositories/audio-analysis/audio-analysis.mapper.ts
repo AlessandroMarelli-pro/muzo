@@ -1,11 +1,20 @@
 import {
+  AiAtmosphereTag as PrismaAiAtmosphereTag,
   Genre as PrismaGenre,
   Subgenre as PrismaSubgenre,
+  TrackAiAtmosphereTag as PrismaTrackAiAtmosphereTag,
   TrackGenre as PrismaTrackGenre,
   TrackSubgenre as PrismaTrackSubgenre,
 } from '@prisma/client';
 import { extractModelId } from 'src/kernel/ids';
-import { Genre, Subgenre, TrackGenre, TrackSubgenre } from 'src/kernel/types';
+import {
+  AiAtmosphereTag,
+  Genre,
+  Subgenre,
+  TrackAiAtmosphereTag,
+  TrackGenre,
+  TrackSubgenre,
+} from 'src/kernel/types';
 import { toDbModel } from '../db';
 
 export const toPrismaGenre = (domain: Genre): PrismaGenre => {
@@ -44,5 +53,26 @@ export const toPrismaTrackSubgenre = (
     id: extractModelId(domain.id).dbId,
     trackId: extractModelId(domain.trackId).dbId,
     subgenreId: extractModelId(domain.subgenreId).dbId,
+  };
+};
+
+export const toPrismaAiAtmosphereTag = (
+  domain: AiAtmosphereTag,
+): PrismaAiAtmosphereTag => {
+  return {
+    ...toDbModel(domain),
+    id: extractModelId(domain.id).dbId,
+    name: domain.name,
+  };
+};
+
+export const toPrismaTrackAiAtmosphereTag = (
+  domain: TrackAiAtmosphereTag,
+): PrismaTrackAiAtmosphereTag => {
+  return {
+    ...toDbModel(domain),
+    id: extractModelId(domain.id).dbId,
+    trackId: extractModelId(domain.trackId).dbId,
+    aiAtmosphereTagId: extractModelId(domain.aiAtmosphereTagId).dbId,
   };
 };

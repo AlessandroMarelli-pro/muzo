@@ -22,6 +22,7 @@ import { AudioAnalysisRepository } from 'src/adapters/persistence/repositories/a
 import { MusicLibraryRepository } from 'src/adapters/persistence/repositories/music-library/music-library.repository';
 import { MusicTrackRepository } from 'src/adapters/persistence/repositories/music-track/music-track.repository';
 import { MUSIC_LIBRARY_REPOSITORY } from 'src/application/ports/repositories/IMusicLibraryRepository';
+import { extractModelId } from 'src/kernel/ids/factory';
 import { models } from 'src/kernel/types/models';
 import type { MusicTrack } from 'src/kernel/types';
 import { AudioFileAnalysisStatusEnum } from 'src/kernel/types';
@@ -66,6 +67,7 @@ function makeValidAnalysisResult(overrides: Partial<AudioAnalysisResponse> = {})
       genre: ['Pop'],
       style: ['Indie'],
       tags: [],
+      audioFeatures: undefined,
     },
     ...overrides,
   };
@@ -160,6 +162,8 @@ describe('ProcessSingleTrackAnalysisUseCase', () => {
     await prisma.audioFingerprint.deleteMany({});
     await prisma.trackGenre.deleteMany({});
     await prisma.trackSubgenre.deleteMany({});
+    await prisma.trackAiAtmosphereTag.deleteMany({});
+    await prisma.aiAtmosphereTag.deleteMany({});
     await prisma.musicTrack.deleteMany({});
     await prisma.musicLibrary.deleteMany({});
     await prisma.genre.deleteMany({});
@@ -323,6 +327,56 @@ describe('ProcessSingleTrackAnalysisUseCase', () => {
       expect(calls[1]![1]).toMatchObject({ batchIndex: 0, data: { totalTracks: 4, trackIndex: 1 } });
       expect(calls[2]![1]).toMatchObject({ batchIndex: 1, data: { totalTracks: 4, trackIndex: 2 } });
       expect(calls[3]![1]).toMatchObject({ batchIndex: 1, data: { totalTracks: 4, trackIndex: 3 } });
+    });
+
+    it('happy path: when analysis has atmosphere tags, upserts ai atmosphere tags for track', async () => {
+      const library = makeLibrary({ id: 'lib-1' });
+      await musicLibraryRepository.save(library);
+      const track = await musicTrackRepository.upsertOne({
+        filePath: '/music/with-atmosphere.mp3',
+        libraryId: LIBRARY_ID,
+        fileName: 'with-atmosphere.mp3',
+        fileSize: 1024,
+        analysisStatus: AudioFileAnalysisStatusEnum.PROCESSING,
+        analysisStartedAt: new Date(),
+        duration: 0,
+        format: 'mp3',
+        fileCreatedAt: new Date(),
+        analysisCompletedAt: new Date(),
+        analysisError: '',
+      });
+
+      const analysisResult = makeValidAnalysisResult({
+        ai_metadata: {
+          artist: 'Test Artist',
+          title: 'Test Title',
+          genre: ['Pop'],
+          style: ['Indie'],
+          tags: [],
+          audioFeatures: {
+            atmosphere: ['Chill', 'Energetic'],
+          },
+        },
+      });
+      const batchInfo = {
+        trackIndex: 0,
+        sessionId: SESSION_ID,
+        batchIndex: 0,
+        totalTracks: 1,
+        libraryId: LIBRARY_ID,
+      };
+
+      const result = await useCase.execute(track, analysisResult, batchInfo);
+
+      expect(result.isSuccess).toBe(true);
+      const trackDbId = extractModelId(track.id).dbId;
+      const trackTags = await prisma.trackAiAtmosphereTag.findMany({
+        where: { trackId: trackDbId },
+        include: { aiAtmosphereTag: true },
+      });
+      expect(trackTags).toHaveLength(2);
+      const names = trackTags.map((tt) => tt.aiAtmosphereTag.name).sort();
+      expect(names).toEqual(['chill', 'energetic']);
     });
   });
 });

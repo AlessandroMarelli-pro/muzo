@@ -32,7 +32,7 @@ export class SavedFilterQuery implements ISavedFilterQuery {
         UNION ALL
         SELECT id, name, 'libraries' as type FROM music_libraries as libraries WHERE createdById = ${getCurrentUserId()}
         UNION ALL
-        SELECT atmosphereDesc as id, atmosphereDesc as name, 'atmospheres' as type FROM music_tracks as atmospheres WHERE createdById = ${getCurrentUserId()}
+        SELECT id, name, 'atmospheres' as type FROM ai_atmosphere_tags as atmospheres WHERE createdById = ${getCurrentUserId()}
     `.then((result) => {
       const groups = groupBy(result, 'type');
 
@@ -51,7 +51,7 @@ export class SavedFilterQuery implements ISavedFilterQuery {
           name: group.name,
         })),
         atmospheres: (groups.atmospheres ?? []).map((group) => ({
-          id: group.id,
+          id: models.aiAtmosphereTag.id(group.id),
           name: group.name,
         })),
       };

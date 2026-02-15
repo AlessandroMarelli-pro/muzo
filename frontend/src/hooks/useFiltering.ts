@@ -80,6 +80,7 @@ const defaultFilterState: FilterState = {
 };
 
 const toFilterCriteriaInput = (filters: FilterState): FilterCriteriaInput => {
+	console.log('toFilterCriteriaInput', filters);
 	return {
 		genreIds: filters.genres,
 		subgenreIds: filters.subgenres,

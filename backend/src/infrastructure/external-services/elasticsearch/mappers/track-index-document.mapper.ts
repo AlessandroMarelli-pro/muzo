@@ -17,7 +17,7 @@ export const toElasticsearchTrackDocument = (
     subgenres: dto.metadata?.subgenres ?? [],
     tags: dto.aiMetadata?.tags ?? [],
     vocals_desc: dto.aiMetadata?.vocalsDesc ?? '',
-    atmosphere_desc: dto.aiMetadata?.atmosphereDesc ?? [],
+    atmosphere_tags: dto.aiMetadata?.atmosphereTags ?? [],
     context_background: dto.aiMetadata?.contextBackground ?? '',
     context_impact: dto.aiMetadata?.contextImpact ?? '',
     musical_audio_features: {
@@ -64,7 +64,7 @@ export const toMusicTrack = (
     aiMetadata: {
       tags: document.tags,
       vocalsDesc: document.vocals_desc,
-      atmosphereDesc: document.atmosphere_desc,
+      atmosphereTags: document.atmosphere_tags,
       contextBackground: document.context_background,
       contextImpact: document.context_impact,
       description: '',

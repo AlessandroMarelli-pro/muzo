@@ -50,7 +50,7 @@ export class FilterCriteriaType {
   @Field(() => [Base64ID], { nullable: true })
   libraryIds: Maybe<MusicLibraryId[]>;
 
-  @Field(() => [String], { nullable: true })
+  @Field(() => [Base64ID], { nullable: true })
   atmosphereIds: Maybe<string[]>;
 
   @Field(() => Range, { nullable: true })
