@@ -93,13 +93,13 @@ export const buildElasticsearchRecommendationQuery = (
     shouldAtmosphere,
   ]?.filter((s) => s !== null);
   return {
-    size: criteria.limit || 20,
+    size: criteria.limit || 50,
     query: {
       bool: {
         must_not: [{ terms: { trackId: excludeTrackIds } }],
         should,
         // Control scoring behavior to prevent scores exceeding calculated maximum
-        minimum_should_match: 1,
+        minimum_should_match: 2,
       },
     },
     highlight: {

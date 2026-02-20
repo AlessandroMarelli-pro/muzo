@@ -16,7 +16,7 @@ export class GetTrackRecommendationsUseCase {
 
   async execute(
     trackId: MusicTrackId,
-    limit: number = 20,
+    limit: number = 50,
   ): Promise<TrackSimilarity[]> {
     const track = await this.musicTrackRepository.getOneById(trackId);
     const features = this.recommendationDataPort.getAudioFeatures([track]);

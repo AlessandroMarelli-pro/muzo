@@ -19,7 +19,7 @@ export class GetPlaylistRecommendationsUseCase {
 
   async execute(
     playlistId: PlaylistId,
-    limit: number = 20,
+    limit: number = 50,
   ): Promise<TrackSimilarity[]> {
     const playlistTracks =
       await this.playlistTrackRepository.getTracksByPlaylistIdWithTrack(

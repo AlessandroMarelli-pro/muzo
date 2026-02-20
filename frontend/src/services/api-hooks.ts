@@ -302,7 +302,7 @@ export const fetchTrackRecommendations = async (
 				}
 			}
 		`,
-		{ trackId: id, recommendationsLimit: 20 }
+		{ trackId: id, recommendationsLimit: 50 }
 	);
 	return response.node.recommendations;
 };

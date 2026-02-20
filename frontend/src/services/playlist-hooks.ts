@@ -299,7 +299,7 @@ export const favoritePlaylistQueryOptions = () =>
 
 export const playlistRecommendationsQueryOptions = (
 	playlistId: string,
-	limit = 20
+	limit = 50
 ) =>
 	queryOptions({
 		queryKey: ['playlistRecommendations', playlistId, limit] as const,
@@ -508,7 +508,7 @@ const removeTrackFromPlaylist = async (
 
 export const fetchPlaylistRecommendations = async (
 	playlistId: string,
-	limit = 20,
+	limit = 50,
 	excludeTrackIds?: string[]
 ): Promise<TrackRecommendation[]> => {
 	const data = await graffleClient.request<{
@@ -620,7 +620,7 @@ export function usePlaylists(search?: string, verifyTrackId?: string) {
 			});
 			queryClient.invalidateQueries({ queryKey: ['playlist', playlistId] });
 			queryClient.invalidateQueries({
-				queryKey: ['playlistRecommendations', playlistId, 20],
+				queryKey: ['playlistRecommendations', playlistId, 50],
 			});
 			const trackName = ` ${data?.track?.title} by ${data?.track?.artist}`;
 			toast.success(`Track added to playlist`, {
@@ -875,7 +875,7 @@ export function useAddTrackToPlaylist(userId: string = 'default') {
 				queryKey: ['playlist', playlistId, userId],
 			});
 			queryClient.invalidateQueries({
-				queryKey: ['playlistRecommendations', playlistId, 20],
+				queryKey: ['playlistRecommendations', playlistId, 50],
 			});
 			const trackName = ` ${data?.track?.title} by ${data?.track?.artist}`;
 			toast.success(`Track added to playlist`, {
@@ -919,7 +919,7 @@ export function useRemoveTrackFromPlaylist() {
 
 export function usePlaylistRecommendations(
 	playlistId: string,
-	limit = 20,
+	limit = 50,
 	excludeTrackIds?: string[]
 ) {
 	const { data, isLoading, error, refetch } = useQuery({
