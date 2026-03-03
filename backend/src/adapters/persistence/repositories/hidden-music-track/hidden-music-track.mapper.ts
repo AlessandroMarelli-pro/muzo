@@ -77,7 +77,10 @@ export const toPrisma: ToPrisma = (domainModel) => {
     aiConfidence: 0,
     aiSubgenreConfidence: 0,
     aiDescription: domainModel.aiMetadata?.description ?? null,
-    aiTags: domainModel.aiMetadata?.tags?.join(',') ?? null,
+    aiTags:
+      domainModel.aiMetadata?.tags != null
+        ? JSON.stringify(domainModel.aiMetadata.tags)
+        : null,
     vocalsDesc: domainModel.aiMetadata?.vocalsDesc ?? null,
     contextBackground: domainModel.aiMetadata?.contextBackground ?? null,
     contextImpact: domainModel.aiMetadata?.contextImpact ?? null,

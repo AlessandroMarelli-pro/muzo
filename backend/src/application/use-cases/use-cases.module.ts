@@ -238,6 +238,8 @@ const useCasesProviders = [
   createUseCaseProvider(ToggleDislikeUseCase, [
     MUSIC_TRACK_REPOSITORY,
     HIDDEN_MUSIC_TRACK_REPOSITORY,
+    LOGGER_FACTORY,
+    LOGGER,
   ]),
   createUseCaseProvider(ToggleBangerUseCase, [MUSIC_TRACK_REPOSITORY]),
   createUseCaseProvider(GetRandomTrackWithStatsUseCase, [MUSIC_TRACK_QUERIES]),
