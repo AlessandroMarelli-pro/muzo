@@ -122,20 +122,21 @@ export const PlaylistTrackListCard = ({
 			</div>
 
 			{/* Genre */}
-			<div className="hidden md:block">
-				<Badge variant="secondary" className="text-xs">
-					{playlistTrack.track?.genres && playlistTrack.track?.genres.length > 0
-						? playlistTrack.track?.genres.join(', ')
-						: 'Unknown'}
-				</Badge>
+			<div className="hidden md:flex flex-row gap-2">
+				{playlistTrack.track?.genres &&
+					playlistTrack.track?.genres.map((genre) => (
+						<Badge variant="secondary" className="text-xs capitalize">
+							{genre}
+						</Badge>
+					))}
 			</div>
-			<div className="hidden md:block">
-				<Badge variant="outline" className="text-xs">
-					{playlistTrack.track?.subgenres &&
-					playlistTrack.track?.subgenres.length > 0
-						? playlistTrack.track?.subgenres.join(', ')
-						: 'Unknown'}
-				</Badge>
+			<div className="hidden md:flex flex-row gap-2">
+				{playlistTrack.track?.subgenres &&
+					playlistTrack.track?.subgenres.map((subgenre) => (
+						<Badge variant="outline" className="text-xs capitalize">
+							{subgenre}
+						</Badge>
+					))}
 			</div>
 			<div className="hidden md:block text-xs text-muted-foreground">
 				{playlistTrack.track?.mfTempo || 'Unknown'} BPM

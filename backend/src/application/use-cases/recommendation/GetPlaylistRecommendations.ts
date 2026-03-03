@@ -31,7 +31,7 @@ export class GetPlaylistRecommendationsUseCase {
       );
 
     const features = this.recommendationDataPort.getAudioFeatures(
-      playlistTracks.map((track) => track.track).slice(0, 15),
+      playlistTracks.map((track) => track.track).slice(0, 10),
     );
     if (!features) {
       return [];

@@ -1,4 +1,5 @@
 import { MusicTrackId } from 'src/kernel/ids';
+import { AggregationStatistics } from 'src/kernel/types';
 
 export type AudioFeatures = {
   trackId: MusicTrackId;
@@ -23,4 +24,15 @@ export type AudioFeatures = {
   atmosphereKeywords?: string[]; // Aggregated atmosphere keywords
   contextBackgrounds?: string; // Aggregated context backgrounds
   contextImpacts?: string; // Aggregated context impacts
+  spectralFeatures?: SpectralFeatures;
+};
+
+export type SpectralFeatures = {
+  spectralCentroidMean?: AggregationStatistics;
+  spectralRolloffMean?: AggregationStatistics;
+  spectralSpreadMean?: AggregationStatistics;
+  spectralBandwidthMean?: AggregationStatistics;
+  spectralFlatnessMean?: AggregationStatistics;
+  zeroCrossingRateMean?: AggregationStatistics;
+  mfccMean?: number[];
 };

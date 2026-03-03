@@ -1,5 +1,94 @@
+import type { SpectralFeatures } from 'src/application/ports/dtos/AudioFeatures';
 import { AudioFeatures } from 'src/application/ports/dtos/AudioFeatures';
-import { RecommendationCriteria } from 'src/kernel/types/model-types';
+import type {
+  AggregationStatistics,
+  RecommendationCriteria,
+} from 'src/kernel/types/model-types';
+
+type SpectralDecayOptions = {
+  minScale?: number;
+  fallbackScale: number;
+  offset: number;
+  decay: number;
+};
+
+/**
+ * Builds Elasticsearch function_score (gauss decay) clauses for one spectral
+ * feature. One clause per aggregation stat (mean, std, median, ...).
+ * Uses std as scale for the "mean" stat when available; otherwise fallbackScale.
+ */
+function buildSpectralDecayClauses(
+  esFieldPrefix: string,
+  stats: AggregationStatistics,
+  options: SpectralDecayOptions,
+): unknown[] {
+  const { minScale = 0, fallbackScale, offset, decay } = options;
+
+  return Object.entries(stats).map(([key, value]) => {
+    const scale =
+      key === 'mean' && stats.std != null
+        ? Math.max(stats.std, minScale)
+        : fallbackScale;
+    return {
+      function_score: {
+        query: { match_all: {} },
+        functions: [
+          {
+            gauss: {
+              [`${esFieldPrefix}.${key}`]: {
+                origin: value,
+                scale,
+                decay,
+                offset,
+              },
+            },
+            weight: 3,
+          },
+        ],
+        score_mode: 'sum' as const,
+        boost_mode: 'multiply' as const,
+      },
+    };
+  });
+}
+
+/** Spectral features that use AggregationStatistics (excludes mfccMean). */
+const SPECTRAL_AGG_FEATURES: ReadonlyArray<{
+  key: keyof SpectralFeatures;
+  esSegment: string;
+  options: SpectralDecayOptions;
+}> = [
+  {
+    key: 'spectralCentroidMean',
+    esSegment: 'spectral_features.spectral_centroid',
+    options: { minScale: 200, fallbackScale: 800, offset: 80, decay: 0.5 },
+  },
+  {
+    key: 'spectralRolloffMean',
+    esSegment: 'spectral_features.spectral_rolloff',
+    options: { minScale: 200, fallbackScale: 1000, offset: 100, decay: 0.5 },
+  },
+  {
+    key: 'spectralSpreadMean',
+    esSegment: 'spectral_features.spectral_spread',
+    options: { minScale: 100, fallbackScale: 500, offset: 50, decay: 0.5 },
+  },
+  {
+    key: 'spectralBandwidthMean',
+    esSegment: 'spectral_features.spectral_bandwidth',
+    options: { minScale: 5000, fallbackScale: 20000, offset: 500, decay: 0.5 },
+  },
+  {
+    key: 'spectralFlatnessMean',
+    esSegment: 'spectral_features.spectral_flatness',
+    options: { fallbackScale: 0.08, offset: 0.01, decay: 0.5 },
+  },
+  {
+    key: 'zeroCrossingRateMean',
+    esSegment: 'spectral_features.zero_crossing_rate',
+    options: { fallbackScale: 0.05, offset: 0.005, decay: 0.5 },
+  },
+];
 
 export const buildElasticsearchRecommendationQuery = (
   playlistFeatures: AudioFeatures,
@@ -17,11 +106,16 @@ export const buildElasticsearchRecommendationQuery = (
               term: {
                 genres: {
                   value: genre,
-                  boost: weights.genreSimilarity * 3.0,
+                  boost: weights.genreSimilarity * 30.0,
                 },
               },
             })),
-            minimum_should_match: 1,
+            minimum_should_match:
+              playlistFeatures.genres.length > 3
+                ? 2
+                : playlistFeatures.genres.length,
+
+            boost: weights.genreSimilarity * 30.0,
           },
         }
       : null;
@@ -35,38 +129,55 @@ export const buildElasticsearchRecommendationQuery = (
               term: {
                 subgenres: {
                   value: subgenre,
-                  boost: weights.genreSimilarity * 4.0,
+                  boost: weights.genreSimilarity * 40.0,
                 },
               },
             })),
-            minimum_should_match: 1,
+            minimum_should_match:
+              playlistFeatures.subgenres.length > 3
+                ? 2
+                : playlistFeatures.subgenres.length,
+            boost: weights.genreSimilarity * 40.0,
           },
         }
       : null;
 
-  const shouldTempo =
-    weights.audioFeatures > 0 && playlistFeatures.tempo
-      ? {
-          function_score: {
-            query: { match_all: {} },
-            functions: [
-              {
-                gauss: {
-                  'musical_audio_features.tempo': {
-                    origin: playlistFeatures.tempo || 120,
-                    scale: 10,
-                    decay: 0.5,
-                    offset: 0,
-                  },
-                },
-                weight: 3,
-              },
-            ],
-            score_mode: 'sum',
-            boost_mode: 'multiply',
+  const tempoOrigin = playlistFeatures.tempo ?? 120;
+  const secondaryTempoOrigin =
+    tempoOrigin > 120 ? tempoOrigin / 2 : tempoOrigin * 2;
+  const tempoDecayParams = {
+    scale: 12,
+    decay: 0.5,
+    offset: 3,
+  };
+
+  const shouldTempo = {
+    function_score: {
+      query: { match_all: {} },
+      functions: [
+        {
+          gauss: {
+            'musical_audio_features.tempo': {
+              origin: tempoOrigin,
+              ...tempoDecayParams,
+            },
           },
-        }
-      : null;
+          weight: 30,
+        },
+        {
+          gauss: {
+            'musical_audio_features.tempo': {
+              origin: secondaryTempoOrigin,
+              ...tempoDecayParams,
+            },
+          },
+          weight: 30,
+        },
+      ],
+      score_mode: 'max' as const,
+      boost_mode: 'multiply' as const,
+    },
+  };
 
   const shouldAtmosphere =
     weights.aiMetadataSimilarity > 0 &&
@@ -78,7 +189,7 @@ export const buildElasticsearchRecommendationQuery = (
               term: {
                 atmosphere_tags: {
                   value: keyword,
-                  boost: weights.aiMetadataSimilarity * 5.0,
+                  boost: weights.aiMetadataSimilarity * 2.0,
                 },
               },
             })),
@@ -86,33 +197,73 @@ export const buildElasticsearchRecommendationQuery = (
           },
         }
       : null;
+
+  const shouldTags =
+    weights.aiMetadataSimilarity > 0 &&
+    playlistFeatures.aiTags &&
+    playlistFeatures.aiTags.length > 0
+      ? {
+          bool: {
+            should: playlistFeatures.aiTags.map((tag) => ({
+              term: {
+                tags: {
+                  value: tag,
+                  boost: weights.aiMetadataSimilarity * 2.0,
+                },
+              },
+            })),
+            minimum_should_match: 1,
+          },
+        }
+      : null;
+  const spectralFeatures = playlistFeatures.spectralFeatures;
+
+  const shouldSpectral = (
+    weights.audioSimilarity > 0 && spectralFeatures
+      ? SPECTRAL_AGG_FEATURES.flatMap(({ key, esSegment, options }) => {
+          const stats = spectralFeatures[key];
+          if (!stats || typeof stats !== 'object' || Array.isArray(stats)) {
+            return [];
+          }
+          return buildSpectralDecayClauses(esSegment, stats, options);
+        })
+      : []
+  ) as unknown[];
+
+  // Global score = sum of genre + subgenre + tempo only (no atmosphere, tags, spectral)
   const should = [
     shouldGenre,
     shouldSubgenre,
     shouldTempo,
     shouldAtmosphere,
-  ]?.filter((s) => s !== null);
+    shouldTags,
+    ...shouldSpectral,
+  ].filter((s) => s !== null);
+
+  // Maximum diversity: require only one clause to match so results can be strong on
+  // genre only, tempo only, subgenre only, or any combination
+  const minimumShouldMatch = 2;
+
+  // Request more candidates than needed so we rank over a larger set and return
+  // the true top N (avoids cutting off better matches that tie or sit just below the cutoff)
+  const limit = criteria.limit ?? 50;
+  const candidatePoolSize = Math.min(Math.max(limit * 3, 150), 500);
+
   return {
-    size: criteria.limit || 50,
+    size: candidatePoolSize,
     query: {
       bool: {
         must_not: [{ terms: { trackId: excludeTrackIds } }],
         should,
-        // Control scoring behavior to prevent scores exceeding calculated maximum
-        minimum_should_match: 2,
+        minimum_should_match: minimumShouldMatch,
       },
     },
     highlight: {
       fields: {
         genres: {},
         subgenres: {},
-        ai_tags: {},
+        tags: {},
         atmosphere_tags: {},
-        ai_description: { number_of_fragments: 1, fragment_size: 100 },
-        vocals_desc: { number_of_fragments: 1, fragment_size: 100 },
-        context_background: { number_of_fragments: 1, fragment_size: 100 },
-        context_impact: { number_of_fragments: 1, fragment_size: 100 },
-        'musical_audio_features.tempo': {},
       },
       require_field_match: false,
     },

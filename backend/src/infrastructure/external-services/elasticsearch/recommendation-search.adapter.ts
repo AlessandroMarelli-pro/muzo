@@ -23,6 +23,7 @@ export class RecommendationSearchAdapter implements IRecommendationSearchPort {
     features: AudioFeatures[],
     criteria: RecommendationCriteria,
   ): Promise<RecommendationMatch[]> {
+    console.log('features', features);
     const query = buildElasticsearchRecommendationQuery(
       features[0],
       criteria,
@@ -33,9 +34,12 @@ export class RecommendationSearchAdapter implements IRecommendationSearchPort {
         body: query,
       });
       const hits = response.hits.hits;
+      hits.sort((a, b) => (b._score ?? 0) - (a._score ?? 0));
 
-      // Let Elasticsearch handle scoring - no normalization needed
-      return hits.map((hit: any) => {
+      const limit = criteria.limit ?? 50;
+      const topHits = hits.slice(0, limit);
+
+      return topHits.map((hit: any) => {
         return {
           track: toMusicTrack(hit._source),
           similarity: hit._score, // Use raw Elasticsearch score directly

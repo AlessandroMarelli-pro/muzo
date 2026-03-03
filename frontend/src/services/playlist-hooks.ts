@@ -869,8 +869,15 @@ export function useAddTrackToPlaylist(userId: string = 'default') {
 			artist: string;
 			title: string;
 		}) => addTrackToPlaylist(playlistId, input, artist, title),
-		onSuccess: (data, { playlistId }) => {
+		onSuccess: async (data, { playlistId }) => {
 			queryClient.invalidateQueries({ queryKey: ['playlists'] });
+			await queryClient.invalidateQueries({
+				queryKey: playlistsQueryOptions(undefined, undefined).queryKey,
+			});
+			// Ensure the playlists query has refetched and cache is updated
+			await queryClient.refetchQueries({
+				queryKey: playlistsQueryOptions(undefined, undefined).queryKey,
+			});
 			queryClient.invalidateQueries({
 				queryKey: ['playlist', playlistId, userId],
 			});

@@ -1,4 +1,5 @@
 import { MusicTrackId } from 'src/kernel/ids';
+import { AggregationStatistics } from 'src/kernel/types';
 
 export interface ElasticsearchTrackDocument {
   // MusicTrack core fields
@@ -31,5 +32,14 @@ export interface ElasticsearchTrackDocument {
     arousal_mood: string;
     danceability: number;
     danceability_feeling: string;
+  };
+  spectral_features: {
+    spectral_centroid?: AggregationStatistics;
+    spectral_rolloff?: AggregationStatistics;
+    spectral_spread?: AggregationStatistics;
+    spectral_bandwidth?: AggregationStatistics;
+    spectral_flatness?: AggregationStatistics;
+    zero_crossing_rate?: AggregationStatistics;
+    mfcc_mean?: number[];
   };
 }

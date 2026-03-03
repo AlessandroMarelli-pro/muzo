@@ -1,4 +1,4 @@
-import { Injectable, Inject } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { PlaylistTrackWithTrackDetailAndSorting } from 'src/application/ports/dtos/PlaylistWithTrackDetailsAndSorting';
 import {
   IPlaylistRepository,
@@ -27,9 +27,7 @@ import {
 
 @Injectable()
 export class PlaylistRepository implements IPlaylistRepository {
-  constructor(
-    @Inject(PRISMA_SERVICE) private readonly prisma: PrismaService,
-  ) {}
+  constructor(@Inject(PRISMA_SERVICE) private readonly prisma: PrismaService) {}
 
   async save(playlist: Playlist): Promise<Playlist> {
     return this.prisma.playlist
@@ -93,6 +91,7 @@ export class PlaylistRepository implements IPlaylistRepository {
     return this.prisma.playlist
       .findMany({
         where: { createdById: getCurrentUserId() },
+        orderBy: { updatedAt: 'desc' },
       })
       .then((rows) => rows.map(toDomain));
   }

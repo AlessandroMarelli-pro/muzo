@@ -93,9 +93,14 @@ export class ElasticsearchTrackIndexerAdapter implements ITrackIndexerPort {
 
   async recreateIndex(): Promise<void> {
     try {
-      await this.elasticsearchClient.indices.delete({
+      const indexExists = await this.elasticsearchClient.indices.exists({
         index: 'music_tracks',
       });
+      if (indexExists) {
+        await this.elasticsearchClient.indices.delete({
+          index: 'music_tracks',
+        });
+      }
       await this.createIndex();
     } catch (error) {
       throw error;

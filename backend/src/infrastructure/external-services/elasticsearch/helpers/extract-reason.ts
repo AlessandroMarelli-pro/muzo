@@ -23,14 +23,19 @@ const generateAudioFeatureReasons = (
     );
   }
 
-  // Audio feature reasons
-  if (trackSource.musical_audio_features?.tempo && playlistFeatures.tempo) {
-    const tempoDiff = Math.abs(
-      trackSource.musical_audio_features.tempo - playlistFeatures.tempo,
-    );
-    if (tempoDiff <= 10) {
+  // Tempo: same as query (exact or half/double when seed > 120 or <= 120)
+  if (trackSource.musical_audio_features?.tempo != null && playlistFeatures.tempo != null) {
+    const trackTempo = trackSource.musical_audio_features.tempo;
+    const seedTempo = playlistFeatures.tempo;
+    const diffExact = Math.abs(trackTempo - seedTempo);
+    const secondaryBpm = seedTempo > 120 ? seedTempo / 2 : seedTempo * 2;
+    const diffHalfDouble = Math.abs(trackTempo - secondaryBpm);
+    const threshold = 12; // align with gauss scale in recommendation-query.builder
+    if (diffExact <= threshold) {
+      reasons.push(`Similar tempo: ${Math.round(trackTempo)} BPM`);
+    } else if (diffHalfDouble <= threshold) {
       reasons.push(
-        `Similar tempo: ${trackSource.musical_audio_features.tempo} BPM`,
+        `Similar tempo (${seedTempo > 120 ? 'half-time' : 'double-time'}): ${Math.round(trackTempo)} BPM`,
       );
     }
   }
@@ -215,10 +220,10 @@ export const extractReasonsFromElasticsearch = (
     }
   }
 
-  if (highlights.ai_tags && highlights.ai_tags.length > 0) {
-    const matchedTags = highlights.ai_tags
+  if (highlights.tags && highlights.tags.length > 0) {
+    const matchedTags = highlights.tags
       .map((h: string) => h.replace(/<em>|<\/em>/g, ''))
-      .filter((tag: string) => trackSource.ai_tags?.includes(tag));
+      .filter((tag: string) => trackSource.tags?.includes(tag));
     if (matchedTags.length > 0) {
       reasons.push(`Similar tags: ${matchedTags.slice(0, 3).join(', ')}`);
     }

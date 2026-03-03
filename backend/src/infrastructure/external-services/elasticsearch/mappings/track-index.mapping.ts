@@ -4,6 +4,17 @@ import {
 } from '@elastic/elasticsearch/lib/api/types';
 import { ElasticsearchTrackDocument } from '../types/elasticsearch-track-document';
 
+const aggregationStatisticsMapping: MappingProperty = {
+  properties: {
+    mean: { type: 'float' },
+    std: { type: 'float' },
+    max: { type: 'float' },
+    p25: { type: 'float' },
+    p75: { type: 'float' },
+    median: { type: 'float' },
+    min: { type: 'float' },
+  },
+};
 export const trackIndexMapping: {
   mappings: MappingTypeMapping;
 } = {
@@ -37,6 +48,20 @@ export const trackIndexMapping: {
           danceability_feeling: { type: 'keyword' },
         } as Record<
           keyof ElasticsearchTrackDocument['musical_audio_features'],
+          MappingProperty
+        >,
+      },
+      spectral_features: {
+        properties: {
+          spectral_centroid: aggregationStatisticsMapping,
+          spectral_rolloff: aggregationStatisticsMapping,
+          spectral_spread: aggregationStatisticsMapping,
+          spectral_bandwidth: aggregationStatisticsMapping,
+          spectral_flatness: aggregationStatisticsMapping,
+          zero_crossing_rate: aggregationStatisticsMapping,
+          mfcc_mean: { type: 'keyword' },
+        } as Record<
+          keyof ElasticsearchTrackDocument['spectral_features'],
           MappingProperty
         >,
       },

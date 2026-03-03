@@ -32,6 +32,14 @@ export const toElasticsearchTrackDocument = (
       danceability_feeling:
         dto.features?.musicalFeatures?.danceabilityFeeling ?? '',
     },
+    spectral_features: {
+      spectral_centroid: dto.features?.spectralFeatures?.spectralCentroid,
+      spectral_rolloff: dto.features?.spectralFeatures?.spectralRolloff,
+      spectral_spread: dto.features?.spectralFeatures?.spectralSpread,
+      spectral_bandwidth: dto.features?.spectralFeatures?.spectralBandwith,
+      spectral_flatness: dto.features?.spectralFeatures?.spectralFlatness,
+      zero_crossing_rate: dto.features?.spectralFeatures?.zeroCrossingRate,
+    },
   };
   return doc;
 };
