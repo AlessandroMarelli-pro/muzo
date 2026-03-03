@@ -4,7 +4,7 @@ import {
 	useToggleFavorite,
 } from '@/services/music-player-hooks';
 import { useQueue } from '@/services/queue-hooks';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 export interface AudioPlayerState {
 	trackId: string | null;
@@ -41,6 +41,16 @@ export function useAudioPlayer(options: UseAudioPlayerOptions = {}) {
 
 	// Mutations
 	const toggleFavoriteMutation = useToggleFavorite();
+
+	useEffect(() => {
+		if (currentTrack?.id) {
+			setLocalState((prev) => ({
+				...prev,
+				trackId: currentTrack.id,
+				isFavorite: currentTrack.isFavorite,
+			}));
+		}
+	}, [currentTrack]);
 	// Sync local state from server state, but don't overwrite recent manual updates
 
 	// Play action - always calls playTrack mutation
