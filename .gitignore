@@ -100,3 +100,5 @@ todo
 
 coverage/**
 backend/coverage/**
+frontend/.claude/**
+frontend/.agents/**
