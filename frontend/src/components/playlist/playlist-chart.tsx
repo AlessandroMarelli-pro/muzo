@@ -1,15 +1,15 @@
-'use client';
+"use client";
 
-import { Area, AreaChart, CartesianGrid, XAxis } from 'recharts';
+import { Area, AreaChart, CartesianGrid, XAxis } from "recharts";
 
 import {
   ChartConfig,
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
-} from '@/components/ui/chart';
-import { formatTime } from '@/lib/utils';
-import { Skeleton } from '../ui/skeleton';
+} from "@/components/ui/chart";
+import { formatTime } from "@/lib/utils";
+import { Skeleton } from "../ui/skeleton";
 
 export interface PlaylistChartData {
   key?: string;
@@ -18,12 +18,12 @@ export interface PlaylistChartData {
   duration: number;
 }
 
-export const description = 'A multiple line chart';
+export const description = "A multiple line chart";
 
 const chartConfig = {
   tempo: {
-    label: 'Tempo',
-    color: 'var(--chart-3)',
+    label: "Tempo",
+    color: "var(--chart-3)",
   },
 } satisfies ChartConfig;
 
@@ -39,9 +39,7 @@ export function PlaylistChart({
   }
   const minTempo = Math.min(...data.map((item) => item.tempo || 0)) - 1;
   const dataWithTempoAdjusted = data.map((item, index) => {
-    const cumulatedDuration = data
-      .slice(0, index)
-      .reduce((acc, curr) => acc + curr.duration, 0);
+    const cumulatedDuration = data.slice(0, index).reduce((acc, curr) => acc + curr.duration, 0);
     return {
       ...item,
       tempo: item.tempo ? ((item.tempo - minTempo) / 10).toFixed(2) : 0,
@@ -77,12 +75,7 @@ export function PlaylistChart({
           </linearGradient>
         </defs>
         <CartesianGrid vertical={true} />
-        <XAxis
-          dataKey="duration"
-          tickLine={false}
-          axisLine={false}
-          tickMargin={8}
-        />
+        <XAxis dataKey="duration" tickLine={false} axisLine={false} tickMargin={8} />
         <Area
           dataKey="tempo"
           type="natural"
@@ -109,13 +102,13 @@ export function PlaylistChart({
                     className="h-2.5 w-2.5 shrink-0 rounded-[2px] bg-(--color-bg)"
                     style={
                       {
-                        '--color-bg': `var(--color-${name})`,
+                        "--color-bg": `var(--color-${name})`,
                       } as React.CSSProperties
                     }
                   />
                   {chartConfig[name as keyof typeof chartConfig]?.label || name}
                   <div className="text-foreground ml-auto flex items-baseline gap-0.5 font-mono font-medium tabular-nums">
-                    {name === 'tempo' ? Number(value) * 10 + minTempo : value}
+                    {name === "tempo" ? Number(value) * 10 + minTempo : value}
                   </div>
                   {/* Add this after the last item */}
                 </>

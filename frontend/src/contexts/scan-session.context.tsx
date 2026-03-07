@@ -4,9 +4,9 @@
  * Automatically fetches active sessions from the database on mount
  */
 
-import { useActiveScanSessions, useCompletedScanSessions } from '@/services/rest-client';
-import sseService from '@/services/sse-service';
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import { useActiveScanSessions, useCompletedScanSessions } from "@/services/rest-client";
+import sseService from "@/services/sse-service";
+import React, { createContext, useContext, useEffect, useState } from "react";
 
 interface ScanSession {
   sessionId: string;
@@ -30,21 +30,14 @@ interface ScanSessionContextType {
   isCompletedSessionsLoading: boolean;
 }
 
-const ScanSessionContext = createContext<ScanSessionContextType | undefined>(
-  undefined,
-);
+const ScanSessionContext = createContext<ScanSessionContextType | undefined>(undefined);
 
-export const ScanSessionProvider: React.FC<{ children: React.ReactNode }> = ({
-  children,
-}) => {
-  const [activeSessions, setActiveSessions] = useState<
-    Map<string, ScanSession>
-  >(new Map());
-  const [completedSessions, setCompletedSessions] = useState<
-    Map<string, ScanSession>
-  >(new Map());
+export const ScanSessionProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [activeSessions, setActiveSessions] = useState<Map<string, ScanSession>>(new Map());
+  const [completedSessions, setCompletedSessions] = useState<Map<string, ScanSession>>(new Map());
   const { data: activeSessionsFromDB, isLoading } = useActiveScanSessions();
-  const { data: completedSessionsFromDB, isLoading: isCompletedSessionsLoading } = useCompletedScanSessions();
+  const { data: completedSessionsFromDB, isLoading: isCompletedSessionsLoading } =
+    useCompletedScanSessions();
   // Load active sessions from database on mount and when they change
   useEffect(() => {
     if (activeSessionsFromDB && activeSessionsFromDB.length > 0) {
@@ -86,7 +79,6 @@ export const ScanSessionProvider: React.FC<{ children: React.ReactNode }> = ({
       });
     }
   }, [completedSessionsFromDB]);
-
 
   const addSession = (sessionId: string, libraryId?: string) => {
     setActiveSessions((prev) => {
@@ -166,7 +158,7 @@ export const ScanSessionProvider: React.FC<{ children: React.ReactNode }> = ({
 
         prev.forEach((session, key) => {
           // Remove if status is IDLE or ERROR (completed)
-          if (session.status === 'IDLE' || session.status === 'ERROR') {
+          if (session.status === "IDLE" || session.status === "ERROR") {
             newMap.delete(key);
             if (session.libraryId) {
               newMap.delete(session.libraryId);
@@ -193,7 +185,7 @@ export const ScanSessionProvider: React.FC<{ children: React.ReactNode }> = ({
         getSessionForLibrary,
         isLoading,
         completedSessions,
-        isCompletedSessionsLoading
+        isCompletedSessionsLoading,
       }}
     >
       {children}
@@ -204,9 +196,7 @@ export const ScanSessionProvider: React.FC<{ children: React.ReactNode }> = ({
 export const useScanSessionContext = () => {
   const context = useContext(ScanSessionContext);
   if (!context) {
-    throw new Error(
-      'useScanSessionContext must be used within ScanSessionProvider',
-    );
+    throw new Error("useScanSessionContext must be used within ScanSessionProvider");
   }
   return context;
 };

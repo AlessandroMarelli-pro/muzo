@@ -1,27 +1,27 @@
-import { QueueDrawer } from '@/components/queue/queue-sidebar';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
-import { SidebarTrigger } from '@/components/ui/sidebar';
-import { useQueue } from '@/services/queue-hooks';
-import { useLocation } from '@tanstack/react-router';
+import { QueueDrawer } from "@/components/queue/queue-sidebar";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import { SidebarTrigger } from "@/components/ui/sidebar";
+import { useQueue } from "@/services/queue-hooks";
+import { useLocation } from "@tanstack/react-router";
 
-import { ListMusic, Moon, Sun } from 'lucide-react';
-import { useTheme } from 'next-themes';
-import { useEffect, useState } from 'react';
+import { ListMusic, Moon, Sun } from "lucide-react";
+import { useTheme } from "next-themes";
+import { useEffect, useState } from "react";
 
-import { Switch } from '@/components/ui/switch';
-import { ScanProgress } from './scan-progress';
+import { Switch } from "@/components/ui/switch";
+import { ScanProgress } from "./scan-progress";
 
-interface SiteHeaderProps { }
+interface SiteHeaderProps {}
 
-export function SiteHeader({ }: SiteHeaderProps) {
+export function SiteHeader({}: SiteHeaderProps) {
   const [queueOpen, setQueueOpen] = useState(false);
   const location = useLocation();
   const { setTheme, resolvedTheme } = useTheme();
   const { data: queueItems = [] } = useQueue();
 
-  const isDark = resolvedTheme === 'dark';
+  const isDark = resolvedTheme === "dark";
 
   // Keyboard shortcut: CMD+J (Mac) or Ctrl+J (Windows/Linux) to toggle theme
   useEffect(() => {
@@ -36,42 +36,39 @@ export function SiteHeader({ }: SiteHeaderProps) {
       }
 
       // Check for CMD+J (Mac) or Ctrl+J (Windows/Linux)
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'j') {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "j") {
         event.preventDefault();
-        setTheme(isDark ? 'light' : 'dark');
+        setTheme(isDark ? "light" : "dark");
       }
     };
 
-    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown);
     return () => {
-      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener("keydown", handleKeyDown);
     };
   }, [isDark, setTheme]);
 
   // Get the current page title from the pathname
   const getPageTitle = (pathname: string) => {
-    if (pathname === '/') return 'Home';
-    if (pathname === '/music') return 'Music';
-    if (pathname === '/categories') return 'Categories';
-    if (pathname === '/libraries') return 'Libraries';
-    if (pathname.startsWith('/libraries/')) return 'Library Dashboard';
-    if (pathname === '/playlists') return 'Playlists';
-    if (pathname.startsWith('/playlists/')) return 'Playlist Details';
-    if (pathname === '/favorites') return 'Favorites';
-    if (pathname === '/settings') return 'Settings';
-    if (pathname === '/research') return 'Research';
-    if (pathname.startsWith('/research/')) return 'Research';
-    return 'Muzo';
+    if (pathname === "/") return "Home";
+    if (pathname === "/music") return "Music";
+    if (pathname === "/categories") return "Categories";
+    if (pathname === "/libraries") return "Libraries";
+    if (pathname.startsWith("/libraries/")) return "Library Dashboard";
+    if (pathname === "/playlists") return "Playlists";
+    if (pathname.startsWith("/playlists/")) return "Playlist Details";
+    if (pathname === "/favorites") return "Favorites";
+    if (pathname === "/settings") return "Settings";
+    if (pathname === "/research") return "Research";
+    if (pathname.startsWith("/research/")) return "Research";
+    return "Muzo";
   };
 
   return (
     <header className="relative group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 flex h-12 shrink-0 items-center gap-2 transition-[width,height] ease-linear">
       <div className="flex w-full items-center gap-1 px-4 lg:gap-2 lg:px-6 ">
         <SidebarTrigger className="-ml-1" />
-        <Separator
-          orientation="vertical"
-          className="mx-2 data-[orientation=vertical]:h-4"
-        />
+        <Separator orientation="vertical" className="mx-2 data-[orientation=vertical]:h-4" />
         <div className="flex items-center justify-between gap-2 w-full px-2 py-1.5">
           <span className="font-normal text-foreground min-w-md">
             {getPageTitle(location.pathname)}
@@ -81,9 +78,7 @@ export function SiteHeader({ }: SiteHeaderProps) {
             <ScanProgress />
             <Switch
               checked={isDark}
-              onCheckedChange={(checked: boolean) =>
-                setTheme(checked ? 'dark' : 'light')
-              }
+              onCheckedChange={(checked: boolean) => setTheme(checked ? "dark" : "light")}
               aria-label="Toggle night mode"
             >
               {isDark ? (
@@ -94,10 +89,7 @@ export function SiteHeader({ }: SiteHeaderProps) {
             </Switch>
           </div>
         </div>
-        <Separator
-          orientation="vertical"
-          className="mx-2 data-[orientation=vertical]:h-4"
-        />{' '}
+        <Separator orientation="vertical" className="mx-2 data-[orientation=vertical]:h-4" />{" "}
         <Button
           variant="ghost"
           size="icon"

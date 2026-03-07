@@ -1,360 +1,312 @@
-import type { Track } from '@/__generated__/types';
-import { Badge } from '@/components/ui/badge';
+import type { Track } from "@/__generated__/types";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { AnalysisStatus } from "@/services/api-hooks";
+import { BarChart3, Calendar, Music, PieChart as PieChartIcon, TrendingUp } from "lucide-react";
+import React from "react";
 import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-} from '@/components/ui/card';
-import { AnalysisStatus } from '@/services/api-hooks';
-import {
-	BarChart3,
-	Calendar,
-	Music,
-	PieChart as PieChartIcon,
-	TrendingUp,
-} from 'lucide-react';
-import React from 'react';
-import {
-	Bar,
-	BarChart,
-	CartesianGrid,
-	Cell,
-	Line,
-	LineChart,
-	Pie,
-	PieChart,
-	ResponsiveContainer,
-	Tooltip,
-	XAxis,
-	YAxis,
-} from 'recharts';
-import { NoData } from '../no-data';
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  Line,
+  LineChart,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
+import { NoData } from "../no-data";
 
 interface LibraryChartProps {
-	tracks: Track[];
-	isLoading?: boolean;
+  tracks: Track[];
+  isLoading?: boolean;
 }
 
 interface ChartCardProps {
-	title: string;
-	description: string;
-	icon: React.ReactNode;
-	children: React.ReactNode;
-	className?: string;
+  title: string;
+  description: string;
+  icon: React.ReactNode;
+  children: React.ReactNode;
+  className?: string;
 }
 
 const ChartCard: React.FC<ChartCardProps> = ({
-	title,
-	description,
-	icon,
-	children,
-	className = '',
+  title,
+  description,
+  icon,
+  children,
+  className = "",
 }) => (
-	<Card className={className}>
-		<CardHeader>
-			<CardTitle className="flex items-center">
-				{icon}
-				<span className="ml-2">{title}</span>
-			</CardTitle>
-			<CardDescription>{description}</CardDescription>
-		</CardHeader>
-		<CardContent>{children}</CardContent>
-	</Card>
+  <Card className={className}>
+    <CardHeader>
+      <CardTitle className="flex items-center">
+        {icon}
+        <span className="ml-2">{title}</span>
+      </CardTitle>
+      <CardDescription>{description}</CardDescription>
+    </CardHeader>
+    <CardContent>{children}</CardContent>
+  </Card>
 );
 
 const COLORS = [
-	'#0088FE',
-	'#00C49F',
-	'#FFBB28',
-	'#FF8042',
-	'#8884D8',
-	'#82CA9D',
-	'#FFC658',
-	'#FF7C7C',
-	'#8DD1E1',
-	'#D084D0',
+  "#0088FE",
+  "#00C49F",
+  "#FFBB28",
+  "#FF8042",
+  "#8884D8",
+  "#82CA9D",
+  "#FFC658",
+  "#FF7C7C",
+  "#8DD1E1",
+  "#D084D0",
 ];
 
 const getAnalysisStatusData = (tracks: Track[]) => {
-	const statusCounts = tracks
-		.filter((t) => t.analysisStatus)
-		.reduce(
-			(counts, track) => {
-				counts[track.analysisStatus as AnalysisStatus] =
-					(counts[track.analysisStatus as AnalysisStatus] || 0) + 1;
-				return counts;
-			},
-			{} as Record<AnalysisStatus, number>
-		);
+  const statusCounts = tracks
+    .filter((t) => t.analysisStatus)
+    .reduce(
+      (counts, track) => {
+        counts[track.analysisStatus as AnalysisStatus] =
+          (counts[track.analysisStatus as AnalysisStatus] || 0) + 1;
+        return counts;
+      },
+      {} as Record<AnalysisStatus, number>,
+    );
 
-	return Object.entries(statusCounts).map(([status, count]) => ({
-		status,
-		count,
-		percentage: (count / tracks.length) * 100,
-	}));
+  return Object.entries(statusCounts).map(([status, count]) => ({
+    status,
+    count,
+    percentage: (count / tracks.length) * 100,
+  }));
 };
 
 const getGenreData = (tracks: Track[]) => {
-	const genreCounts: Record<string, number> = {};
+  const genreCounts: Record<string, number> = {};
 
-	tracks.forEach((track) => {
-		if (track.genres && track.genres.length > 0) {
-			track.genres.forEach((genre) => {
-				genreCounts[genre] = (genreCounts[genre] || 0) + 1;
-			});
-		} else {
-			genreCounts['Unknown'] = (genreCounts['Unknown'] || 0) + 1;
-		}
-	});
+  tracks.forEach((track) => {
+    if (track.genres && track.genres.length > 0) {
+      track.genres.forEach((genre) => {
+        genreCounts[genre] = (genreCounts[genre] || 0) + 1;
+      });
+    } else {
+      genreCounts["Unknown"] = (genreCounts["Unknown"] || 0) + 1;
+    }
+  });
 
-	return Object.entries(genreCounts)
-		.map(([genre, count]) => ({ genre, count }))
-		.sort((a, b) => b.count - a.count)
-		.slice(0, 8); // Top 8 genres
+  return Object.entries(genreCounts)
+    .map(([genre, count]) => ({ genre, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 8); // Top 8 genres
 };
 
 const getFormatData = (tracks: Track[]) => {
-	const formatCounts: Record<string, number> = {};
+  const formatCounts: Record<string, number> = {};
 
-	tracks
-		.filter((t) => t.format)
-		.forEach((track) => {
-			formatCounts[track.format!] = (formatCounts[track.format!] || 0) + 1;
-		});
+  tracks
+    .filter((t) => t.format)
+    .forEach((track) => {
+      formatCounts[track.format!] = (formatCounts[track.format!] || 0) + 1;
+    });
 
-	return Object.entries(formatCounts)
-		.map(([format, count]) => ({ format, count }))
-		.sort((a, b) => b.count - a.count);
+  return Object.entries(formatCounts)
+    .map(([format, count]) => ({ format, count }))
+    .sort((a, b) => b.count - a.count);
 };
 
 const getYearData = (tracks: Track[]) => {
-	const yearCounts: Record<number, number> = {};
+  const yearCounts: Record<number, number> = {};
 
-	tracks.forEach((track) => {
-		const date = track.date ? new Date(track.date) : undefined;
-		const year = date?.getFullYear();
-		if (year && year >= 1950 && year <= new Date().getFullYear()) {
-			yearCounts[year] = (yearCounts[year] || 0) + 1;
-		}
-	});
+  tracks.forEach((track) => {
+    const date = track.date ? new Date(track.date) : undefined;
+    const year = date?.getFullYear();
+    if (year && year >= 1950 && year <= new Date().getFullYear()) {
+      yearCounts[year] = (yearCounts[year] || 0) + 1;
+    }
+  });
 
-	return Object.entries(yearCounts)
-		.map(([year, count]) => ({ year: parseInt(year), count }))
-		.sort((a, b) => a.year - b.year)
-		.filter((item) => item.count > 0);
+  return Object.entries(yearCounts)
+    .map(([year, count]) => ({ year: parseInt(year), count }))
+    .sort((a, b) => a.year - b.year)
+    .filter((item) => item.count > 0);
 };
 
 const getListeningTrendData = (tracks: Track[]) => {
-	const sortedTracks = [...tracks]
-		.sort((a, b) => (a.listeningCount || 0) - (b.listeningCount || 0))
-		.slice(0, 20); // Top 20 most played tracks
+  const sortedTracks = [...tracks]
+    .sort((a, b) => (a.listeningCount || 0) - (b.listeningCount || 0))
+    .slice(0, 20); // Top 20 most played tracks
 
-	return sortedTracks.map((track, index) => ({
-		rank: index + 1,
-		track: track.title || track.fileName,
-		plays: track.listeningCount || 0,
-	}));
+  return sortedTracks.map((track, index) => ({
+    rank: index + 1,
+    track: track.title || track.fileName,
+    plays: track.listeningCount || 0,
+  }));
 };
 
-export const LibraryChart: React.FC<LibraryChartProps> = ({
-	tracks,
-	isLoading = false,
-}) => {
-	if (isLoading) {
-		return (
-			<div className="space-y-6">
-				<h2 className="text-2xl font-bold">Library Analytics</h2>
-				<div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-					{Array.from({ length: 4 }).map((_, i) => (
-						<div
-							key={i}
-							className="h-80 bg-gray-100 rounded-lg animate-pulse"
-						/>
-					))}
-				</div>
-			</div>
-		);
-	}
+export const LibraryChart: React.FC<LibraryChartProps> = ({ tracks, isLoading = false }) => {
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <h2 className="text-2xl font-bold">Library Analytics</h2>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="h-80 bg-gray-100 rounded-lg animate-pulse" />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
-	if (tracks.length === 0) {
-		return (
-			<NoData
-				Icon={Music}
-				title="No Data Available"
-				subtitle="Add some tracks to see analytics and visualizations."
-			/>
-		);
-	}
+  if (tracks.length === 0) {
+    return (
+      <NoData
+        Icon={Music}
+        title="No Data Available"
+        subtitle="Add some tracks to see analytics and visualizations."
+      />
+    );
+  }
 
-	const analysisStatusData = getAnalysisStatusData(tracks);
-	const genreData = getGenreData(tracks);
-	const formatData = getFormatData(tracks);
-	const yearData = getYearData(tracks);
-	const listeningTrendData = getListeningTrendData(tracks);
+  const analysisStatusData = getAnalysisStatusData(tracks);
+  const genreData = getGenreData(tracks);
+  const formatData = getFormatData(tracks);
+  const yearData = getYearData(tracks);
+  const listeningTrendData = getListeningTrendData(tracks);
 
-	return (
-		<div className="space-y-6">
-			<div className="flex items-center justify-between">
-				<div>
-					<h2 className="text-2xl font-bold">Library Analytics</h2>
-					<p className="text-muted-foreground">
-						Visual insights into your music collection
-					</p>
-				</div>
-				<Badge variant="outline" className="text-sm">
-					{tracks.length} tracks analyzed
-				</Badge>
-			</div>
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold">Library Analytics</h2>
+          <p className="text-muted-foreground">Visual insights into your music collection</p>
+        </div>
+        <Badge variant="outline" className="text-sm">
+          {tracks.length} tracks analyzed
+        </Badge>
+      </div>
 
-			<div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-				{/* Analysis Status Pie Chart */}
-				<ChartCard
-					title="Analysis Status"
-					description="Distribution of track analysis states"
-					icon={<PieChartIcon className="h-5 w-5" />}
-				>
-					<ResponsiveContainer width="100%" height={300}>
-						<PieChart>
-							<Pie
-								data={analysisStatusData}
-								cx="50%"
-								cy="50%"
-								labelLine={false}
-								label={({ status, percentage }) => `${status}: ${percentage}%`}
-								outerRadius={80}
-								fill="#8884d8"
-								dataKey="count"
-							>
-								{analysisStatusData.map((_, index) => (
-									<Cell
-										key={`cell-${index}`}
-										fill={COLORS[index % COLORS.length]}
-									/>
-								))}
-							</Pie>
-							<Tooltip />
-						</PieChart>
-					</ResponsiveContainer>
-				</ChartCard>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Analysis Status Pie Chart */}
+        <ChartCard
+          title="Analysis Status"
+          description="Distribution of track analysis states"
+          icon={<PieChartIcon className="h-5 w-5" />}
+        >
+          <ResponsiveContainer width="100%" height={300}>
+            <PieChart>
+              <Pie
+                data={analysisStatusData}
+                cx="50%"
+                cy="50%"
+                labelLine={false}
+                label={({ status, percentage }) => `${status}: ${percentage}%`}
+                outerRadius={80}
+                fill="#8884d8"
+                dataKey="count"
+              >
+                {analysisStatusData.map((_, index) => (
+                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                ))}
+              </Pie>
+              <Tooltip />
+            </PieChart>
+          </ResponsiveContainer>
+        </ChartCard>
 
-				{/* Genre Distribution Bar Chart */}
-				{genreData.length > 0 && (
-					<ChartCard
-						title="Genre Distribution"
-						description="Most popular genres in your library"
-						icon={<BarChart3 className="h-5 w-5" />}
-					>
-						<ResponsiveContainer width="100%" height={300}>
-							<BarChart
-								data={genreData}
-								margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-							>
-								<CartesianGrid strokeDasharray="3 3" />
-								<XAxis
-									dataKey="genre"
-									angle={-45}
-									textAnchor="end"
-									height={80}
-									fontSize={12}
-								/>
-								<YAxis />
-								<Tooltip />
-								<Bar dataKey="count" fill="#8884d8" />
-							</BarChart>
-						</ResponsiveContainer>
-					</ChartCard>
-				)}
+        {/* Genre Distribution Bar Chart */}
+        {genreData.length > 0 && (
+          <ChartCard
+            title="Genre Distribution"
+            description="Most popular genres in your library"
+            icon={<BarChart3 className="h-5 w-5" />}
+          >
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={genreData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="genre" angle={-45} textAnchor="end" height={80} fontSize={12} />
+                <YAxis />
+                <Tooltip />
+                <Bar dataKey="count" fill="#8884d8" />
+              </BarChart>
+            </ResponsiveContainer>
+          </ChartCard>
+        )}
 
-				{/* Format Distribution */}
-				{formatData.length > 0 && (
-					<ChartCard
-						title="Audio Formats"
-						description="Distribution of audio file formats"
-						icon={<Music className="h-5 w-5" />}
-					>
-						<ResponsiveContainer width="100%" height={300}>
-							<PieChart>
-								<Pie
-									data={formatData}
-									cx="50%"
-									cy="50%"
-									labelLine={false}
-									label={({ format, count }) => `${format}: ${count}`}
-									outerRadius={80}
-									fill="#8884d8"
-									dataKey="count"
-								>
-									{formatData.map((_, index) => (
-										<Cell
-											key={`cell-${index}`}
-											fill={COLORS[index % COLORS.length]}
-										/>
-									))}
-								</Pie>
-								<Tooltip />
-							</PieChart>
-						</ResponsiveContainer>
-					</ChartCard>
-				)}
+        {/* Format Distribution */}
+        {formatData.length > 0 && (
+          <ChartCard
+            title="Audio Formats"
+            description="Distribution of audio file formats"
+            icon={<Music className="h-5 w-5" />}
+          >
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={formatData}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  label={({ format, count }) => `${format}: ${count}`}
+                  outerRadius={80}
+                  fill="#8884d8"
+                  dataKey="count"
+                >
+                  {formatData.map((_, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+          </ChartCard>
+        )}
 
-				{/* Year Distribution Line Chart */}
-				{yearData.length > 0 && (
-					<ChartCard
-						title="Release Years"
-						description="Music release timeline"
-						icon={<Calendar className="h-5 w-5" />}
-					>
-						<ResponsiveContainer width="100%" height={300}>
-							<LineChart
-								data={yearData}
-								margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-							>
-								<CartesianGrid strokeDasharray="3 3" />
-								<XAxis dataKey="year" />
-								<YAxis />
-								<Tooltip />
-								<Line
-									type="monotone"
-									dataKey="count"
-									stroke="#8884d8"
-									strokeWidth={2}
-								/>
-							</LineChart>
-						</ResponsiveContainer>
-					</ChartCard>
-				)}
-			</div>
+        {/* Year Distribution Line Chart */}
+        {yearData.length > 0 && (
+          <ChartCard
+            title="Release Years"
+            description="Music release timeline"
+            icon={<Calendar className="h-5 w-5" />}
+          >
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart data={yearData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="year" />
+                <YAxis />
+                <Tooltip />
+                <Line type="monotone" dataKey="count" stroke="#8884d8" strokeWidth={2} />
+              </LineChart>
+            </ResponsiveContainer>
+          </ChartCard>
+        )}
+      </div>
 
-			{/* Listening Trends */}
-			{listeningTrendData.length > 0 && (
-				<ChartCard
-					title="Most Played Tracks"
-					description="Top tracks by play count"
-					icon={<TrendingUp className="h-5 w-5" />}
-					className="col-span-full"
-				>
-					<ResponsiveContainer width="100%" height={400}>
-						<BarChart
-							data={listeningTrendData}
-							margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-							layout="horizontal"
-						>
-							<CartesianGrid strokeDasharray="3 3" />
-							<XAxis type="number" />
-							<YAxis
-								dataKey="track"
-								type="category"
-								width={200}
-								fontSize={12}
-							/>
-							<Tooltip />
-							<Bar dataKey="plays" fill="#82ca9d" />
-						</BarChart>
-					</ResponsiveContainer>
-				</ChartCard>
-			)}
-		</div>
-	);
+      {/* Listening Trends */}
+      {listeningTrendData.length > 0 && (
+        <ChartCard
+          title="Most Played Tracks"
+          description="Top tracks by play count"
+          icon={<TrendingUp className="h-5 w-5" />}
+          className="col-span-full"
+        >
+          <ResponsiveContainer width="100%" height={400}>
+            <BarChart
+              data={listeningTrendData}
+              margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+              layout="horizontal"
+            >
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis type="number" />
+              <YAxis dataKey="track" type="category" width={200} fontSize={12} />
+              <Tooltip />
+              <Bar dataKey="plays" fill="#82ca9d" />
+            </BarChart>
+          </ResponsiveContainer>
+        </ChartCard>
+      )}
+    </div>
+  );
 };

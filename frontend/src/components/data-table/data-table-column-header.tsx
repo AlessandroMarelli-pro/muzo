@@ -1,9 +1,7 @@
 "use client";
 
 import type { Column } from "@tanstack/react-table";
-import {
-  EyeOff
-} from "lucide-react";
+import { EyeOff } from "lucide-react";
 
 import {
   DropdownMenu,
@@ -15,8 +13,9 @@ import {
 import { cn } from "@/lib/utils";
 import { ChevronDownIcon, CaretSortIcon, ChevronUpIcon, Cross2Icon } from "@radix-ui/react-icons";
 
-interface DataTableColumnHeaderProps<TData, TValue>
-  extends React.ComponentProps<typeof DropdownMenuTrigger> {
+interface DataTableColumnHeaderProps<TData, TValue> extends React.ComponentProps<
+  typeof DropdownMenuTrigger
+> {
   column: Column<TData, TValue>;
   title: string;
 }

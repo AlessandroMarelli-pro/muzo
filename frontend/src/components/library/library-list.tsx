@@ -1,120 +1,110 @@
-import { Button } from '@/components/ui/button';
-import { Route } from '@/routes/libraries.index';
-import { useDeleteLibrary } from '@/services/api-hooks';
-import { useRouter } from '@tanstack/react-router';
-import { Plus, Search } from 'lucide-react';
-import React, { useEffect, useState } from 'react';
-import { Loading } from '../loading';
-import { Input } from '../ui/input';
-import { LibraryCard } from './library-card';
+import { Button } from "@/components/ui/button";
+import { Route } from "@/routes/libraries.index";
+import { useDeleteLibrary } from "@/services/api-hooks";
+import { useRouter } from "@tanstack/react-router";
+import { Plus, Search } from "lucide-react";
+import React, { useEffect, useState } from "react";
+import { Loading } from "../loading";
+import { Input } from "../ui/input";
+import { LibraryCard } from "./library-card";
 
 interface LibraryListProps {
-	onCreateLibrary: () => void;
-	onScanLibrary: (libraryId: string) => void;
-	onStopLibraryScan: (libraryId: string, sessionId: string) => void;
-	onViewLibrary: (libraryId: string) => void;
-	onPlayLibrary: (libraryId: string) => void;
-	isScanning?: boolean;
+  onCreateLibrary: () => void;
+  onScanLibrary: (libraryId: string) => void;
+  onStopLibraryScan: (libraryId: string, sessionId: string) => void;
+  onViewLibrary: (libraryId: string) => void;
+  onPlayLibrary: (libraryId: string) => void;
+  isScanning?: boolean;
 }
 
 export const LibraryList: React.FC<LibraryListProps> = ({
-	onCreateLibrary,
-	onScanLibrary,
-	onViewLibrary,
-	onPlayLibrary,
-	onStopLibraryScan,
-	isScanning = false,
+  onCreateLibrary,
+  onScanLibrary,
+  onViewLibrary,
+  onPlayLibrary,
+  onStopLibraryScan,
+  isScanning = false,
 }) => {
-	const isLoading = false;
-	const { libraries } = Route.useLoaderData();
-	const router = useRouter();
-	const [searchQuery, setSearchQuery] = useState('');
-	const [filteredLibraries, setFilteredLibraries] = useState(libraries);
-	const deleteLibraryMutation = useDeleteLibrary();
+  const isLoading = false;
+  const { libraries } = Route.useLoaderData();
+  const router = useRouter();
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filteredLibraries, setFilteredLibraries] = useState(libraries);
+  const deleteLibraryMutation = useDeleteLibrary();
 
-	useEffect(() => {
-		setFilteredLibraries(
-			libraries.filter((library) =>
-				library.name.toLowerCase().includes(searchQuery.toLowerCase())
-			)
-		);
-	}, [searchQuery, libraries]);
+  useEffect(() => {
+    setFilteredLibraries(
+      libraries.filter((library) => library.name.toLowerCase().includes(searchQuery.toLowerCase())),
+    );
+  }, [searchQuery, libraries]);
 
-	const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-		setSearchQuery(e.target.value);
-	};
-	const handleDeleteLibrary = async (
-		e: React.MouseEvent<HTMLButtonElement>,
-		libraryId: string
-	) => {
-		const hasConfirmed = confirm(
-			'Are you sure you want to delete this library?'
-		);
-		if (!hasConfirmed) {
-			return;
-		}
-		await deleteLibraryMutation.mutateAsync(libraryId);
-		await router.invalidate();
-		e.stopPropagation();
-		e.preventDefault();
-	};
-	if (isLoading) {
-		return <Loading />;
-	}
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
+  };
+  const handleDeleteLibrary = async (e: React.MouseEvent<HTMLButtonElement>, libraryId: string) => {
+    const hasConfirmed = confirm("Are you sure you want to delete this library?");
+    if (!hasConfirmed) {
+      return;
+    }
+    await deleteLibraryMutation.mutateAsync(libraryId);
+    await router.invalidate();
+    e.stopPropagation();
+    e.preventDefault();
+  };
+  if (isLoading) {
+    return <Loading />;
+  }
 
-	const handleScanLibrary = (
-		e: React.MouseEvent<HTMLButtonElement>,
-		libraryId: string
-	) => {
-		e.stopPropagation();
-		e.preventDefault();
-		onScanLibrary(libraryId);
-	};
-	const handleStopLibraryScan = (
-		e: React.MouseEvent<HTMLButtonElement>,
-		libraryId: string,
-		sessionId: string
-	) => {
-		e.stopPropagation();
-		e.preventDefault();
-		onStopLibraryScan(libraryId, sessionId);
-	};
-	return (
-		<div className="p-6  flex flex-col z-0 gap-4">
-			<div className="flex items-center justify-between">
-				<div className="flex flex-row justify-between items-center w-full">
-					<div className="relative flex-1 max-w-md">
-						<Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-						<Input
-							type="text"
-							placeholder="Filter libraries..."
-							value={searchQuery}
-							onChange={handleSearchChange}
-							className="w-full pl-10 pr-4 py-2 border  rounded-md "
-						/>
-					</div>
+  const handleScanLibrary = (e: React.MouseEvent<HTMLButtonElement>, libraryId: string) => {
+    e.stopPropagation();
+    e.preventDefault();
+    onScanLibrary(libraryId);
+  };
+  const handleStopLibraryScan = (
+    e: React.MouseEvent<HTMLButtonElement>,
+    libraryId: string,
+    sessionId: string,
+  ) => {
+    e.stopPropagation();
+    e.preventDefault();
+    onStopLibraryScan(libraryId, sessionId);
+  };
+  return (
+    <div className="p-6  flex flex-col z-0 gap-4">
+      <div className="flex items-center justify-between">
+        <div className="flex flex-row justify-between items-center w-full">
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Input
+              type="text"
+              placeholder="Filter libraries..."
+              value={searchQuery}
+              onChange={handleSearchChange}
+              className="w-full pl-10 pr-4 py-2 border  rounded-md "
+            />
+          </div>
 
-					<Button onClick={onCreateLibrary} size="sm" variant="link">
-						<Plus className="h-4 w-4" />
-						Add new library
-					</Button>
-				</div>
-			</div>
+          <Button onClick={onCreateLibrary} size="sm" variant="link">
+            <Plus className="h-4 w-4" />
+            Add new library
+          </Button>
+        </div>
+      </div>
 
-			<div className="flex flex-row flex-wrap gap-5 justify-start">
-				{filteredLibraries?.map((library) => (
-					<LibraryCard
-						key={library.id}
-						library={library}
-						onScan={handleScanLibrary}
-						onStopScan={handleStopLibraryScan}
-						onView={() => onViewLibrary(library.id)}
-						onPlay={() => onPlayLibrary(library.id)}
-						isScanning={isScanning}
-						onDelete={(e) => handleDeleteLibrary(e, library.id)}
-					/>
-				))}
-			</div>
-		</div>
-	);
+      <div className="flex flex-row flex-wrap gap-5 justify-start">
+        {filteredLibraries?.map((library) => (
+          <LibraryCard
+            key={library.id}
+            library={library}
+            onScan={handleScanLibrary}
+            onStopScan={handleStopLibraryScan}
+            onView={() => onViewLibrary(library.id)}
+            onPlay={() => onPlayLibrary(library.id)}
+            isScanning={isScanning}
+            onDelete={(e) => handleDeleteLibrary(e, library.id)}
+          />
+        ))}
+      </div>
+    </div>
+  );
 };

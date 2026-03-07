@@ -1,9 +1,9 @@
-import { FilterSheet } from '@/components/filters';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { useFilters } from '@/contexts/filter-context';
-import { ListFilter, X } from 'lucide-react';
-import { useState } from 'react';
+import { FilterSheet } from "@/components/filters";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { useFilters } from "@/contexts/filter-context";
+import { ListFilter, X } from "lucide-react";
+import { useState } from "react";
 
 interface FilterButtonProps {
   className?: string;
@@ -24,11 +24,7 @@ export function FilterButton({ className }: FilterButtonProps) {
 
   return (
     <>
-      <Button
-        variant="outline"
-        onClick={() => setIsOpen(true)}
-        className={`relative ${className}`}
-      >
+      <Button variant="outline" onClick={() => setIsOpen(true)} className={`relative ${className}`}>
         <ListFilter className="h-4 w-4 mr-2" />
         Filters
         {hasActiveFilters && (
@@ -42,7 +38,7 @@ export function FilterButton({ className }: FilterButtonProps) {
               role="button"
               tabIndex={0}
               onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
+                if (e.key === "Enter" || e.key === " ") {
                   handleClearFilters(e as any);
                 }
               }}

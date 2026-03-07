@@ -11,17 +11,11 @@ import {
   CommandList,
   CommandSeparator,
 } from "@/components/ui/command";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { CheckIcon, CaretSortIcon } from "@radix-ui/react-icons";
 
-type FacetedValue<Multiple extends boolean> = Multiple extends true
-  ? string[]
-  : string;
+type FacetedValue<Multiple extends boolean> = Multiple extends true ? string[] : string;
 
 interface FacetedContextValue<Multiple extends boolean = boolean> {
   value?: FacetedValue<Multiple>;
@@ -29,9 +23,7 @@ interface FacetedContextValue<Multiple extends boolean = boolean> {
   multiple?: Multiple;
 }
 
-const FacetedContext = React.createContext<FacetedContextValue<boolean> | null>(
-  null,
-);
+const FacetedContext = React.createContext<FacetedContextValue<boolean> | null>(null);
 
 function useFacetedContext(name: string) {
   const context = React.useContext(FacetedContext);
@@ -41,17 +33,16 @@ function useFacetedContext(name: string) {
   return context;
 }
 
-interface FacetedProps<Multiple extends boolean = false>
-  extends React.ComponentProps<typeof Popover> {
+interface FacetedProps<Multiple extends boolean = false> extends React.ComponentProps<
+  typeof Popover
+> {
   value?: FacetedValue<Multiple>;
   onValueChange?: (value: FacetedValue<Multiple> | undefined) => void;
   children?: React.ReactNode;
   multiple?: Multiple;
 }
 
-function Faceted<Multiple extends boolean = false>(
-  props: FacetedProps<Multiple>,
-) {
+function Faceted<Multiple extends boolean = false>(props: FacetedProps<Multiple>) {
   const {
     open: openProp,
     onOpenChange: onOpenChangeProp,
@@ -117,10 +108,7 @@ function FacetedTrigger(props: React.ComponentProps<typeof PopoverTrigger>) {
   const { className, children, ...triggerProps } = props;
 
   return (
-    <PopoverTrigger
-      {...triggerProps}
-      className={cn("justify-between text-left", className)}
-    >
+    <PopoverTrigger {...triggerProps} className={cn("justify-between text-left", className)}>
       {children}
     </PopoverTrigger>
   );
@@ -158,10 +146,7 @@ function FacetedBadgeList(props: FacetedBadgeListProps) {
 
   if (!values || values.length === 0) {
     return (
-      <div
-        {...badgeListProps}
-        className="flex w-full items-center gap-1 text-muted-foreground"
-      >
+      <div {...badgeListProps} className="flex w-full items-center gap-1 text-muted-foreground">
         {placeholder}
         <CaretSortIcon className="ml-auto size-4 shrink-0 opacity-50" />
       </div>
@@ -169,15 +154,9 @@ function FacetedBadgeList(props: FacetedBadgeListProps) {
   }
 
   return (
-    <div
-      {...badgeListProps}
-      className={cn("flex flex-wrap items-center gap-1", className)}
-    >
+    <div {...badgeListProps} className={cn("flex flex-wrap items-center gap-1", className)}>
       {values.length > max ? (
-        <Badge
-          variant="secondary"
-          className={cn("rounded-sm px-1 font-normal", badgeClassName)}
-        >
+        <Badge variant="secondary" className={cn("rounded-sm px-1 font-normal", badgeClassName)}>
           {values.length} selected
         </Badge>
       ) : (
@@ -202,10 +181,7 @@ function FacetedContent(props: React.ComponentProps<typeof PopoverContent>) {
     <PopoverContent
       {...contentProps}
       align="start"
-      className={cn(
-        "w-[200px] origin-(--radix-popover-content-transform-origin) p-0",
-        className,
-      )}
+      className={cn("w-[200px] origin-(--radix-popover-content-transform-origin) p-0", className)}
     >
       <Command>{children}</Command>
     </PopoverContent>
@@ -254,9 +230,7 @@ function FacetedItem(props: FacetedItemProps) {
       <span
         className={cn(
           "flex size-4 items-center justify-center rounded-sm border border-primary",
-          isSelected
-            ? "bg-primary text-primary-foreground"
-            : "opacity-50 [&_svg]:invisible",
+          isSelected ? "bg-primary text-primary-foreground" : "opacity-50 [&_svg]:invisible",
         )}
       >
         <CheckIcon className="size-4" />

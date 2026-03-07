@@ -21,23 +21,23 @@ AI-powered music library organization frontend built with React 19, Vite, TanSta
 
 ## Tech Stack
 
-| Category             | Technology                                                                 |
-| -------------------- | -------------------------------------------------------------------------- |
-| **Framework**        | React 19                                                                   |
-| **Build Tool**       | Vite 7                                                                     |
-| **Language**         | TypeScript 5.9 (strict mode)                                               |
-| **Routing**          | TanStack Router (file-based routing with auto code-splitting)              |
-| **Server State**     | TanStack Query (React Query)                                               |
-| **Styling**          | Tailwind CSS 4 + Shadcn/ui (New York style)                                |
-| **Form Validation**  | Zod                                                                        |
-| **Charts**           | Recharts                                                                   |
-| **Animations**       | Motion (Framer Motion)                                                     |
-| **Data Tables**      | TanStack Table                                                             |
-| **Drag & Drop**      | dnd-kit                                                                    |
-| **API Client**       | GraphQL (graphql-request) + REST                                           |
-| **Real-time**        | Socket.IO Client                                                           |
-| **Visualizations**   | p5.js (@p5-wrapper/react)                                                  |
-| **Testing**          | Vitest + React Testing Library                                             |
+| Category            | Technology                                                    |
+| ------------------- | ------------------------------------------------------------- |
+| **Framework**       | React 19                                                      |
+| **Build Tool**      | Vite 7                                                        |
+| **Language**        | TypeScript 5.9 (strict mode)                                  |
+| **Routing**         | TanStack Router (file-based routing with auto code-splitting) |
+| **Server State**    | TanStack Query (React Query)                                  |
+| **Styling**         | Tailwind CSS 4 + Shadcn/ui (New York style)                   |
+| **Form Validation** | Zod                                                           |
+| **Charts**          | Recharts                                                      |
+| **Animations**      | Motion (Framer Motion)                                        |
+| **Data Tables**     | TanStack Table                                                |
+| **Drag & Drop**     | dnd-kit                                                       |
+| **API Client**      | GraphQL (graphql-request) + REST                              |
+| **Real-time**       | Socket.IO Client                                              |
+| **Visualizations**  | p5.js (@p5-wrapper/react)                                     |
+| **Testing**         | Vitest + React Testing Library                                |
 
 ---
 
@@ -184,55 +184,61 @@ frontend/
 
 ## Available Scripts
 
-| Command                  | Description                                      |
-| ------------------------ | ------------------------------------------------ |
-| `npm run dev`            | Start development server on port 3000            |
-| `npm run build`          | TypeScript check + production build              |
-| `npm run preview`        | Preview production build locally                 |
-| `npm run lint`           | Run ESLint with zero warnings tolerance          |
-| `npm run lint:fix`       | Auto-fix ESLint issues                           |
-| `npm run type-check`     | Run TypeScript type checking (no emit)           |
-| `npm run test`           | Run tests in watch mode                          |
-| `npm run test:ui`        | Run tests with Vitest UI                         |
-| `npm run test:run`       | Run tests once                                   |
-| `npm run test:coverage`  | Run tests with coverage report                   |
-| `npm run test:contract`  | Run contract tests only                          |
-| `npm run test:unit`      | Run unit tests only                              |
-| `npm run test:integration` | Run integration tests only                     |
-| `npm run generate`       | Generate GraphQL types from schema               |
+| Command                    | Description                             |
+| -------------------------- | --------------------------------------- |
+| `npm run dev`              | Start development server on port 3000   |
+| `npm run build`            | TypeScript check + production build     |
+| `npm run preview`          | Preview production build locally        |
+| `npm run lint`             | Run ESLint with zero warnings tolerance |
+| `npm run lint:fix`         | Auto-fix ESLint issues                  |
+| `npm run type-check`       | Run TypeScript type checking (no emit)  |
+| `npm run test`             | Run tests in watch mode                 |
+| `npm run test:ui`          | Run tests with Vitest UI                |
+| `npm run test:run`         | Run tests once                          |
+| `npm run test:coverage`    | Run tests with coverage report          |
+| `npm run test:contract`    | Run contract tests only                 |
+| `npm run test:unit`        | Run unit tests only                     |
+| `npm run test:integration` | Run integration tests only              |
+| `npm run generate`         | Generate GraphQL types from schema      |
 
 ---
 
 ## Features
 
 ### Music Library Management
+
 - Browse and organize music libraries
 - Create, edit, and delete libraries
 - Advanced filtering and sorting with URL-persisted state
 
 ### Playlist Management
+
 - Create and manage playlists
 - Drag-and-drop track reordering (dnd-kit)
 - AI-powered track recommendations
 
 ### Music Player
+
 - Full-featured audio player with playback controls
 - Real-time waveform visualization (p5.js)
 - Beat visualization and audio analysis
 - WebSocket-based real-time sync
 
 ### Data Tables
+
 - Advanced data tables with TanStack Table
 - Faceted filtering, sorting, pagination
 - Column visibility controls
 - Responsive design
 
 ### Audio Visualizations
+
 - Waveform visualizer
 - Beat visualizer
 - Interactive p5.js canvas components
 
 ### Research & Analysis
+
 - Track analysis and metadata display
 - Audio feature visualization
 - AI-powered insights
@@ -261,16 +267,17 @@ The app uses **TanStack Router** with file-based routing and automatic code-spli
 
 ```typescript
 // GraphQL with graphql-request
-import { useQuery } from '@tanstack/react-query';
-import { graphqlClient } from '@/services/graffle-client';
+import { useQuery } from "@tanstack/react-query";
+import { graphqlClient } from "@/services/graffle-client";
 
 // REST with custom client
-import { restClient } from '@/services/rest-client';
+import { restClient } from "@/services/rest-client";
 ```
 
 ### Real-time Updates
 
 WebSocket integration via Socket.IO for:
+
 - Music player synchronization
 - Live updates and notifications
 
@@ -315,6 +322,7 @@ npm run test:integration
 ```
 
 Test files are organized in the `tests/` directory:
+
 - `tests/unit/` - Unit tests for components and hooks
 - `tests/contract/` - API contract tests
 - `tests/integration/` - Integration tests
@@ -357,80 +365,80 @@ Test files are organized in the `tests/` directory:
 
 ### Core
 
-| Package                    | Version   | Purpose                          |
-| -------------------------- | --------- | -------------------------------- |
-| `react`                    | ^19.1.1   | UI framework                     |
-| `react-dom`                | ^19.1.1   | React DOM rendering              |
-| `vite`                     | ^7.1.7    | Build tool & dev server          |
-| `typescript`               | ^5.9.2    | Type safety                      |
+| Package      | Version | Purpose                 |
+| ------------ | ------- | ----------------------- |
+| `react`      | ^19.1.1 | UI framework            |
+| `react-dom`  | ^19.1.1 | React DOM rendering     |
+| `vite`       | ^7.1.7  | Build tool & dev server |
+| `typescript` | ^5.9.2  | Type safety             |
 
 ### Routing & State
 
-| Package                        | Version   | Purpose                      |
-| ------------------------------ | --------- | ---------------------------- |
-| `@tanstack/react-router`       | ^1.133.3  | File-based routing           |
-| `@tanstack/react-query`        | ^5.90.2   | Server state management      |
-| `@tanstack/react-query-devtools` | ^5.90.2 | Query devtools               |
-| `@tanstack/router-devtools`    | ^1.133.3  | Router devtools              |
-| `@tanstack/react-table`        | ^8.21.3   | Headless table utilities     |
-| `nuqs`                         | ^2.7.2    | URL query state management   |
+| Package                          | Version  | Purpose                    |
+| -------------------------------- | -------- | -------------------------- |
+| `@tanstack/react-router`         | ^1.133.3 | File-based routing         |
+| `@tanstack/react-query`          | ^5.90.2  | Server state management    |
+| `@tanstack/react-query-devtools` | ^5.90.2  | Query devtools             |
+| `@tanstack/router-devtools`      | ^1.133.3 | Router devtools            |
+| `@tanstack/react-table`          | ^8.21.3  | Headless table utilities   |
+| `nuqs`                           | ^2.7.2   | URL query state management |
 
 ### UI & Styling
 
-| Package                    | Version   | Purpose                          |
-| -------------------------- | --------- | -------------------------------- |
-| `tailwindcss`              | ^4.1.13   | Utility-first CSS                |
-| `@radix-ui/*`              | various   | Accessible UI primitives         |
-| `class-variance-authority` | ^0.7.1    | Component variants               |
-| `clsx`                     | ^2.1.1    | Conditional classNames           |
-| `tailwind-merge`           | ^3.3.1    | Tailwind class merging           |
-| `lucide-react`             | ^0.544.0  | Icon library                     |
-| `motion`                   | ^12.23.24 | Animations                       |
-| `recharts`                 | ^2.15.4   | Charts & graphs                  |
-| `cmdk`                     | ^1.1.1    | Command palette                  |
-| `sonner`                   | ^2.0.7    | Toast notifications              |
-| `vaul`                     | ^1.1.2    | Drawer component                 |
+| Package                    | Version   | Purpose                  |
+| -------------------------- | --------- | ------------------------ |
+| `tailwindcss`              | ^4.1.13   | Utility-first CSS        |
+| `@radix-ui/*`              | various   | Accessible UI primitives |
+| `class-variance-authority` | ^0.7.1    | Component variants       |
+| `clsx`                     | ^2.1.1    | Conditional classNames   |
+| `tailwind-merge`           | ^3.3.1    | Tailwind class merging   |
+| `lucide-react`             | ^0.544.0  | Icon library             |
+| `motion`                   | ^12.23.24 | Animations               |
+| `recharts`                 | ^2.15.4   | Charts & graphs          |
+| `cmdk`                     | ^1.1.1    | Command palette          |
+| `sonner`                   | ^2.0.7    | Toast notifications      |
+| `vaul`                     | ^1.1.2    | Drawer component         |
 
 ### Data & API
 
-| Package              | Version   | Purpose                          |
-| -------------------- | --------- | -------------------------------- |
-| `graphql`            | ^16.11.0  | GraphQL core                     |
-| `graphql-request`    | ^7.2.0    | GraphQL client                   |
-| `zod`                | ^3.25.76  | Schema validation                |
-| `socket.io-client`   | ^4.8.1    | WebSocket client                 |
+| Package            | Version  | Purpose           |
+| ------------------ | -------- | ----------------- |
+| `graphql`          | ^16.11.0 | GraphQL core      |
+| `graphql-request`  | ^7.2.0   | GraphQL client    |
+| `zod`              | ^3.25.76 | Schema validation |
+| `socket.io-client` | ^4.8.1   | WebSocket client  |
 
 ### Drag & Drop
 
-| Package              | Version   | Purpose                          |
-| -------------------- | --------- | -------------------------------- |
-| `@dnd-kit/core`      | ^6.3.1    | Core drag & drop                 |
-| `@dnd-kit/sortable`  | ^10.0.0   | Sortable lists                   |
-| `@dnd-kit/modifiers` | ^9.0.0    | Drag modifiers                   |
-| `@dnd-kit/utilities` | ^3.2.2    | Utilities                        |
+| Package              | Version | Purpose          |
+| -------------------- | ------- | ---------------- |
+| `@dnd-kit/core`      | ^6.3.1  | Core drag & drop |
+| `@dnd-kit/sortable`  | ^10.0.0 | Sortable lists   |
+| `@dnd-kit/modifiers` | ^9.0.0  | Drag modifiers   |
+| `@dnd-kit/utilities` | ^3.2.2  | Utilities        |
 
 ### Visualizations
 
-| Package              | Version      | Purpose                       |
-| -------------------- | ------------ | ----------------------------- |
-| `@p5-wrapper/react`  | 5.0.0-rc.3   | p5.js React wrapper           |
-| `p5`                 | ^1.11.10     | Creative coding library       |
-| `simplex-noise`      | ^4.0.3       | Noise generation              |
+| Package             | Version    | Purpose                 |
+| ------------------- | ---------- | ----------------------- |
+| `@p5-wrapper/react` | 5.0.0-rc.3 | p5.js React wrapper     |
+| `p5`                | ^1.11.10   | Creative coding library |
+| `simplex-noise`     | ^4.0.3     | Noise generation        |
 
 ### Dev Dependencies
 
-| Package                              | Version   | Purpose                      |
-| ------------------------------------ | --------- | ---------------------------- |
-| `vitest`                             | ^3.2.4    | Test runner                  |
-| `@testing-library/react`             | ^16.3.0   | React testing utilities      |
-| `@testing-library/jest-dom`          | ^6.8.0    | Jest DOM matchers            |
-| `@testing-library/user-event`        | ^14.6.1   | User event simulation        |
-| `jsdom`                              | ^27.0.0   | DOM environment for tests    |
-| `@graphql-codegen/cli`               | ^6.0.0    | GraphQL code generation      |
-| `@graphql-codegen/client-preset`     | ^5.0.1    | GraphQL client preset        |
-| `@tanstack/router-plugin`            | ^1.133.22 | Router Vite plugin           |
-| `shadcn`                             | ^3.3.1    | Shadcn CLI                   |
-| `tw-animate-css`                     | ^1.4.0    | Tailwind animations          |
+| Package                          | Version   | Purpose                   |
+| -------------------------------- | --------- | ------------------------- |
+| `vitest`                         | ^3.2.4    | Test runner               |
+| `@testing-library/react`         | ^16.3.0   | React testing utilities   |
+| `@testing-library/jest-dom`      | ^6.8.0    | Jest DOM matchers         |
+| `@testing-library/user-event`    | ^14.6.1   | User event simulation     |
+| `jsdom`                          | ^27.0.0   | DOM environment for tests |
+| `@graphql-codegen/cli`           | ^6.0.0    | GraphQL code generation   |
+| `@graphql-codegen/client-preset` | ^5.0.1    | GraphQL client preset     |
+| `@tanstack/router-plugin`        | ^1.133.22 | Router Vite plugin        |
+| `shadcn`                         | ^3.3.1    | Shadcn CLI                |
+| `tw-animate-css`                 | ^1.4.0    | Tailwind animations       |
 
 ---
 
@@ -449,11 +457,11 @@ Always use the `@/` path alias:
 
 ```typescript
 // ✅ Good
-import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 // ❌ Bad
-import { Button } from '../../../components/ui/button';
+import { Button } from "../../../components/ui/button";
 ```
 
 ### Component Patterns
@@ -468,7 +476,7 @@ import { Button } from '../../../components/ui/button';
 Use Zod for all external data validation:
 
 ```typescript
-import { z } from 'zod';
+import { z } from "zod";
 
 const trackSchema = z.object({
   id: z.string(),

@@ -1,11 +1,11 @@
-import { Loading } from '@/components/loading';
-import { Card, CardContent } from '@/components/ui/card';
+import { Loading } from "@/components/loading";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   QueueItem,
   useQueue,
   useRemoveTrackFromQueue,
   useUpdateQueuePositions,
-} from '@/services/queue-hooks';
+} from "@/services/queue-hooks";
 import {
   DndContext,
   KeyboardSensor,
@@ -15,18 +15,18 @@ import {
   useSensor,
   useSensors,
   type DragEndEvent,
-} from '@dnd-kit/core';
-import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
+} from "@dnd-kit/core";
+import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
 import {
   SortableContext,
   arrayMove,
   useSortable,
   verticalListSortingStrategy,
-} from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
-import { Clock } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
-import { QueueItemCard } from './queue-item-card';
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import { Clock } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { QueueItemCard } from "./queue-item-card";
 
 export function QueueList() {
   const { data: queueItems = [], isLoading, error } = useQueue();
@@ -46,17 +46,14 @@ export function QueueList() {
     useSensor(KeyboardSensor, {}),
   );
 
-  const queueIds = useMemo(
-    () => localQueue.map((item) => item.id),
-    [localQueue],
-  );
+  const queueIds = useMemo(() => localQueue.map((item) => item.id), [localQueue]);
 
   const handleRemoveTrack = async (trackId: string) => {
     setRemovingTrackId(trackId);
     try {
       await removeTrackMutation.mutateAsync(trackId);
     } catch (error) {
-      console.error('Failed to remove track:', error);
+      console.error("Failed to remove track:", error);
     } finally {
       setRemovingTrackId(null);
     }
@@ -81,7 +78,7 @@ export function QueueList() {
           }));
           await updatePositionsMutation.mutateAsync(positions);
         } catch (error) {
-          console.error('Failed to update queue positions:', error);
+          console.error("Failed to update queue positions:", error);
           // Revert on error
           setLocalQueue(queueItems);
         }
@@ -103,9 +100,7 @@ export function QueueList() {
     return (
       <Card>
         <CardContent className="text-center py-12">
-          <div className="text-red-500">
-            Error loading queue: {error.message}
-          </div>
+          <div className="text-red-500">Error loading queue: {error.message}</div>
         </CardContent>
       </Card>
     );
@@ -136,10 +131,7 @@ export function QueueList() {
           onDragEnd={handleDragEnd}
           sensors={sensors}
         >
-          <SortableContext
-            items={queueIds}
-            strategy={verticalListSortingStrategy}
-          >
+          <SortableContext items={queueIds} strategy={verticalListSortingStrategy}>
             <div className="divide-y">
               {localQueue.map((queueItem, index) => (
                 <SortableQueueItem
@@ -172,14 +164,7 @@ function SortableQueueItem({
   removingTrackId: string | null;
   queueItemsCount: number;
 }) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: queueItem.id,
   });
 

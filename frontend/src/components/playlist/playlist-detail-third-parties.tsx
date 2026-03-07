@@ -1,14 +1,14 @@
-import { Playlist } from '@/__generated__/types';
-import { Button } from '@/components/ui/button';
+import { Playlist } from "@/__generated__/types";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { ChevronDown, Music2 } from 'lucide-react';
-import { SpotifySync } from './third-party-apps/spotify-sync';
-import { TidalSync } from './third-party-apps/tidal-sync';
-import { YouTubeSync } from './third-party-apps/youtube-sync';
+} from "@/components/ui/dropdown-menu";
+import { ChevronDown, Music2 } from "lucide-react";
+import { SpotifySync } from "./third-party-apps/spotify-sync";
+import { TidalSync } from "./third-party-apps/tidal-sync";
+import { YouTubeSync } from "./third-party-apps/youtube-sync";
 
 interface PlaylistDetailThirdPartiesProps {
   playlist: Playlist | undefined;

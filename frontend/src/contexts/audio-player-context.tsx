@@ -1,99 +1,93 @@
-import { Track } from '@/__generated__/types';
-import { useAudioPlayer } from '@/hooks/useAudioPlayer';
-import { createContext, ReactNode, useContext, useMemo, useState } from 'react';
+import { Track } from "@/__generated__/types";
+import { useAudioPlayer } from "@/hooks/useAudioPlayer";
+import { createContext, ReactNode, useContext, useMemo, useState } from "react";
 
 // Separate contexts to prevent unnecessary re-renders
 const CurrentTrackContext = createContext<{
-	currentTrack: Track | null;
-	setCurrentTrack: (track: Track | null) => void;
+  currentTrack: Track | null;
+  setCurrentTrack: (track: Track | null) => void;
 } | null>(null);
 
 const IsPlayingContext = createContext<boolean>(false);
 
-const AudioPlayerStateContext = createContext<
-	ReturnType<typeof useAudioPlayer>['state'] | null
->(null);
+const AudioPlayerStateContext = createContext<ReturnType<typeof useAudioPlayer>["state"] | null>(
+  null,
+);
 
 const AudioPlayerActionsContext = createContext<
-	ReturnType<typeof useAudioPlayer>['actions'] | null
+  ReturnType<typeof useAudioPlayer>["actions"] | null
 >(null);
 
 interface AudioPlayerProviderProps {
-	children: ReactNode;
+  children: ReactNode;
 }
 
 export function AudioPlayerProvider({ children }: AudioPlayerProviderProps) {
-	const [currentTrack, setCurrentTrack] = useState<Track | null>(null);
-	const { state, actions } = useAudioPlayer({
-		trackId: currentTrack?.id || undefined,
-		currentTrack,
-		setCurrentTrack,
-	});
+  const [currentTrack, setCurrentTrack] = useState<Track | null>(null);
+  const { state, actions } = useAudioPlayer({
+    trackId: currentTrack?.id || undefined,
+    currentTrack,
+    setCurrentTrack,
+  });
 
-	const currentTrackValue = useMemo(
-		() => ({
-			currentTrack,
-			setCurrentTrack,
-		}),
-		[currentTrack]
-	);
+  const currentTrackValue = useMemo(
+    () => ({
+      currentTrack,
+      setCurrentTrack,
+    }),
+    [currentTrack],
+  );
 
-	return (
-		<CurrentTrackContext.Provider value={currentTrackValue}>
-			<IsPlayingContext.Provider value={state.isPlaying}>
-				<AudioPlayerStateContext.Provider value={state}>
-					<AudioPlayerActionsContext.Provider value={actions}>
-						{children}
-					</AudioPlayerActionsContext.Provider>
-				</AudioPlayerStateContext.Provider>
-			</IsPlayingContext.Provider>
-		</CurrentTrackContext.Provider>
-	);
+  return (
+    <CurrentTrackContext.Provider value={currentTrackValue}>
+      <IsPlayingContext.Provider value={state.isPlaying}>
+        <AudioPlayerStateContext.Provider value={state}>
+          <AudioPlayerActionsContext.Provider value={actions}>
+            {children}
+          </AudioPlayerActionsContext.Provider>
+        </AudioPlayerStateContext.Provider>
+      </IsPlayingContext.Provider>
+    </CurrentTrackContext.Provider>
+  );
 }
 
 export function useCurrentTrack() {
-	const context = useContext(CurrentTrackContext);
-	if (!context) {
-		throw new Error(
-			'useCurrentTrack must be used within an AudioPlayerProvider'
-		);
-	}
-	return context;
+  const context = useContext(CurrentTrackContext);
+  if (!context) {
+    throw new Error("useCurrentTrack must be used within an AudioPlayerProvider");
+  }
+  return context;
 }
 
 export function useIsPlaying() {
-	return useContext(IsPlayingContext);
+  return useContext(IsPlayingContext);
 }
 
 export function useAudioPlayerActions() {
-	const context = useContext(AudioPlayerActionsContext);
-	if (!context) {
-		throw new Error(
-			'useAudioPlayerActions must be used within an AudioPlayerProvider'
-		);
-	}
-	return context;
+  const context = useContext(AudioPlayerActionsContext);
+  if (!context) {
+    throw new Error("useAudioPlayerActions must be used within an AudioPlayerProvider");
+  }
+  return context;
 }
 
 export function useAudioPlayerState() {
-	const context = useContext(AudioPlayerStateContext);
-	if (!context) {
-		throw new Error(
-			'useAudioPlayerState must be used within an AudioPlayerProvider'
-		);
-	}
-	return context;
+  const context = useContext(AudioPlayerStateContext);
+  if (!context) {
+    throw new Error("useAudioPlayerState must be used within an AudioPlayerProvider");
+  }
+  return context;
 }
 
 // Legacy hook for backward compatibility
 export function useAudioPlayerContext() {
-	const currentTrack = useCurrentTrack();
-	const state = useAudioPlayerState();
-	const actions = useAudioPlayerActions();
+  const currentTrack = useCurrentTrack();
+  const state = useAudioPlayerState();
+  const actions = useAudioPlayerActions();
 
-	return {
-		...currentTrack,
-		state,
-		actions,
-	};
+  return {
+    ...currentTrack,
+    state,
+    actions,
+  };
 }

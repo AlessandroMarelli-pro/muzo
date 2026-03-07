@@ -1,4 +1,4 @@
-import { Button } from './ui/button';
+import { Button } from "./ui/button";
 
 export const NoData = ({
   Icon,
@@ -23,9 +23,7 @@ export const NoData = ({
       <h3 className="text-lg font-semibold text-primary-foreground dark:text-primary mb-2">
         {title}
       </h3>
-      <p className="text-secondary-foreground dark:text-primary/80 mb-6">
-        {subtitle}
-      </p>
+      <p className="text-secondary-foreground dark:text-primary/80 mb-6">{subtitle}</p>
       {buttonAction && (
         <Button variant="outline" onClick={buttonAction}>
           {ButtonIcon && <ButtonIcon className="h-4 w-4 mr-2" />}

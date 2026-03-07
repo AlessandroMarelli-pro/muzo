@@ -1,6 +1,6 @@
-import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
-import { cn } from '@/lib/utils';
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+import { cn } from "@/lib/utils";
 import {
   Heart,
   MoreHorizontal,
@@ -12,7 +12,7 @@ import {
   SkipBack,
   SkipForward,
   Volume2,
-} from 'lucide-react';
+} from "lucide-react";
 
 interface MusicTrack {
   id: string;
@@ -58,22 +58,20 @@ export function MusicPlayerBar({
   onMoreOptions,
   className,
 }: MusicPlayerBarProps) {
-  const progress = currentTrack?.duration
-    ? (currentTime / currentTrack.duration) * 100
-    : 0;
+  const progress = currentTrack?.duration ? (currentTime / currentTrack.duration) * 100 : 0;
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
+    return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
 
   return (
     <div
       className={cn(
-        'fixed bottom-0 left-0 right-0 bg-background border-t border-border z-50',
-        'flex items-center justify-between px-2 sm:px-4 py-2 h-20 sm:h-16',
-        'flex-col sm:flex-row gap-2 sm:gap-0',
+        "fixed bottom-0 left-0 right-0 bg-background border-t border-border z-50",
+        "flex items-center justify-between px-2 sm:px-4 py-2 h-20 sm:h-16",
+        "flex-col sm:flex-row gap-2 sm:gap-0",
         className,
       )}
     >
@@ -93,19 +91,10 @@ export function MusicPlayerBar({
               )}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-medium truncate">
-                {currentTrack.title}
-              </p>
-              <p className="text-xs text-muted-foreground truncate">
-                {currentTrack.artist}
-              </p>
+              <p className="text-sm font-medium truncate">{currentTrack.title}</p>
+              <p className="text-xs text-muted-foreground truncate">{currentTrack.artist}</p>
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onToggleFavorite}
-              className="h-8 w-8 p-0"
-            >
+            <Button variant="ghost" size="sm" onClick={onToggleFavorite} className="h-8 w-8 p-0">
               <Heart className="h-4 w-4" />
             </Button>
           </>
@@ -124,20 +113,10 @@ export function MusicPlayerBar({
       {/* Player Controls */}
       <div className="flex flex-col items-center gap-1 flex-1 max-w-md order-2 sm:order-2">
         <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onToggleShuffle}
-            className="h-8 w-8 p-0"
-          >
+          <Button variant="ghost" size="sm" onClick={onToggleShuffle} className="h-8 w-8 p-0">
             <Shuffle className="h-4 w-4" />
           </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onSkipBack}
-            className="h-8 w-8 p-0"
-          >
+          <Button variant="ghost" size="sm" onClick={onSkipBack} className="h-8 w-8 p-0">
             <SkipBack className="h-4 w-4" />
           </Button>
           <Button
@@ -146,26 +125,12 @@ export function MusicPlayerBar({
             onClick={isPlaying ? onPause : onPlay}
             className="h-8 w-8 p-0"
           >
-            {isPlaying ? (
-              <Pause className="h-4 w-4" />
-            ) : (
-              <Play className="h-4 w-4" />
-            )}
+            {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
           </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onSkipForward}
-            className="h-8 w-8 p-0"
-          >
+          <Button variant="ghost" size="sm" onClick={onSkipForward} className="h-8 w-8 p-0">
             <SkipForward className="h-4 w-4" />
           </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onToggleRepeat}
-            className="h-8 w-8 p-0"
-          >
+          <Button variant="ghost" size="sm" onClick={onToggleRepeat} className="h-8 w-8 p-0">
             <Repeat className="h-4 w-4" />
           </Button>
         </div>
@@ -185,9 +150,7 @@ export function MusicPlayerBar({
             }}
           />
           <span className="text-xs text-muted-foreground w-10">
-            {currentTrack?.duration
-              ? formatTime(currentTrack.duration)
-              : '0:00'}
+            {currentTrack?.duration ? formatTime(currentTrack.duration) : "0:00"}
           </span>
         </div>
       </div>
@@ -208,12 +171,7 @@ export function MusicPlayerBar({
             }}
           />
         </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onMoreOptions}
-          className="h-8 w-8 p-0"
-        >
+        <Button variant="ghost" size="sm" onClick={onMoreOptions} className="h-8 w-8 p-0">
           <MoreHorizontal className="h-4 w-4" />
         </Button>
       </div>

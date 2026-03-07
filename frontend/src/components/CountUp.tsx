@@ -1,22 +1,22 @@
-import { formatDuration } from '@/lib/utils';
-import { useInView, useMotionValue, useSpring } from 'motion/react';
-import { useCallback, useEffect, useRef } from 'react';
+import { formatDuration } from "@/lib/utils";
+import { useInView, useMotionValue, useSpring } from "motion/react";
+import { useCallback, useEffect, useRef } from "react";
 export default function CountUp({
   to,
   from = 0,
-  direction = 'up',
+  direction = "up",
   delay = 0,
   duration = 2,
-  className = '',
+  className = "",
   startWhen = true,
-  separator = '',
+  separator = "",
   onStart,
   onEnd,
   isDuration = false,
 }: {
   to: number;
   from?: number;
-  direction?: 'up' | 'down';
+  direction?: "up" | "down";
   delay?: number;
   duration?: number;
   className?: string;
@@ -27,23 +27,23 @@ export default function CountUp({
   isDuration?: boolean;
 }) {
   const ref = useRef(null);
-  const motionValue = useMotionValue(direction === 'down' ? to : from);
+  const motionValue = useMotionValue(direction === "down" ? to : from);
 
   const damping = 20 + 40 * (1 / duration);
   const stiffness = 100 * (1 / duration);
 
   const springValue = useSpring(motionValue, {
     damping,
-    stiffness
+    stiffness,
   });
 
-  const isInView = useInView(ref, { once: true, margin: '0px' });
+  const isInView = useInView(ref, { once: true, margin: "0px" });
 
   const getDecimalPlaces = (num: number) => {
     const str = num.toString();
 
-    if (str.includes('.')) {
-      const decimals = str.split('.')[1];
+    if (str.includes(".")) {
+      const decimals = str.split(".")[1];
 
       if (parseInt(decimals) !== 0) {
         return decimals.length;
@@ -56,29 +56,29 @@ export default function CountUp({
   const maxDecimals = Math.max(getDecimalPlaces(from), getDecimalPlaces(to));
 
   const formatValue = useCallback(
-    latest => {
+    (latest) => {
       const hasDecimals = maxDecimals > 0;
 
       const options = {
         useGrouping: !!separator,
         minimumFractionDigits: hasDecimals ? maxDecimals : 0,
-        maximumFractionDigits: hasDecimals ? maxDecimals : 0
+        maximumFractionDigits: hasDecimals ? maxDecimals : 0,
       };
 
-      const formattedNumber = Intl.NumberFormat('en-US', options).format(latest);
+      const formattedNumber = Intl.NumberFormat("en-US", options).format(latest);
 
       return separator ? formattedNumber.replace(/,/g, separator) : formattedNumber;
     },
-    [maxDecimals, separator]
+    [maxDecimals, separator],
   );
 
   useEffect(() => {
     if (ref.current) {
-      const formattedValue = formatValue(direction === 'down' ? to : from);
+      const formattedValue = formatValue(direction === "down" ? to : from);
       if (!isDuration) {
         ref.current.textContent = formattedValue;
       } else {
-        const valueInSeconds = Math.round(formattedValue)
+        const valueInSeconds = Math.round(formattedValue);
         ref.current.textContent = formatDuration(valueInSeconds, true);
       }
     }
@@ -86,17 +86,17 @@ export default function CountUp({
 
   useEffect(() => {
     if (isInView && startWhen) {
-      if (typeof onStart === 'function') onStart();
+      if (typeof onStart === "function") onStart();
 
       const timeoutId = setTimeout(() => {
-        motionValue.set(direction === 'down' ? from : to);
+        motionValue.set(direction === "down" ? from : to);
       }, delay * 1000);
 
       const durationTimeoutId = setTimeout(
         () => {
-          if (typeof onEnd === 'function') onEnd();
+          if (typeof onEnd === "function") onEnd();
         },
-        delay * 1000 + duration * 1000
+        delay * 1000 + duration * 1000,
       );
 
       return () => {
@@ -107,7 +107,7 @@ export default function CountUp({
   }, [isInView, startWhen, motionValue, direction, from, to, delay, onStart, onEnd, duration]);
 
   useEffect(() => {
-    const unsubscribe = springValue.on('change', latest => {
+    const unsubscribe = springValue.on("change", (latest) => {
       if (ref.current) {
         const formattedValue = formatValue(latest);
         if (!isDuration) {
@@ -117,7 +117,6 @@ export default function CountUp({
           const toMinutes = Math.floor((to % 3600) / 60);
           const toSeconds = Math.floor(to % 60);
           const newTime = new Date(latestHours * 3600 + toMinutes * 60 + toSeconds);
-
 
           ref.current.textContent = formatDuration(newTime, true);
         }

@@ -1,4 +1,4 @@
-import { Button } from '@/components/ui/button';
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -6,12 +6,12 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
-import { DropdownMenuItem } from '@/components/ui/dropdown-menu';
-import { Input } from '@/components/ui/input';
-import { useYouTubeAuth } from '@/services/playlist-hooks';
-import { Youtube } from 'lucide-react';
-import { useState } from 'react';
+} from "@/components/ui/dialog";
+import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
+import { useYouTubeAuth } from "@/services/playlist-hooks";
+import { Youtube } from "lucide-react";
+import { useState } from "react";
 
 interface YouTubeSyncProps {
   onSync: () => Promise<{
@@ -27,11 +27,11 @@ interface YouTubeSyncProps {
 export function YouTubeSync({ onSync, disabled = false }: YouTubeSyncProps) {
   const [isAuthDialogOpen, setIsAuthDialogOpen] = useState(false);
   const [authUrl, setAuthUrl] = useState<string | null>(null);
-  const [authCode, setAuthCode] = useState('');
+  const [authCode, setAuthCode] = useState("");
   const [isSyncing, setIsSyncing] = useState(false);
 
   const { getAuthUrl, authenticate, isGettingAuthUrl, isAuthenticating } =
-    useYouTubeAuth('default');
+    useYouTubeAuth("default");
 
   const handleSync = async () => {
     if (disabled || isSyncing) return;
@@ -41,33 +41,31 @@ export function YouTubeSync({ onSync, disabled = false }: YouTubeSyncProps) {
       const result = await onSync();
       if (result.success) {
         if (result.playlistUrl) {
-          window.open(result.playlistUrl, '_blank');
+          window.open(result.playlistUrl, "_blank");
         }
         alert(
           `Successfully synced ${result.syncedCount} tracks to YouTube!${
-            result.skippedCount > 0
-              ? ` ${result.skippedCount} tracks were skipped.`
-              : ''
+            result.skippedCount > 0 ? ` ${result.skippedCount} tracks were skipped.` : ""
           }`,
         );
       } else {
         // Check if any error is an authentication error
-        const errorMessages = result.errors.join(' ');
+        const errorMessages = result.errors.join(" ");
         const isAuthError =
-          errorMessages.includes('not authenticated') ||
-          errorMessages.includes('Unauthorized') ||
-          errorMessages.includes('authorize') ||
-          errorMessages.includes('authentication') ||
-          errorMessages.includes('YouTube not authenticated');
+          errorMessages.includes("not authenticated") ||
+          errorMessages.includes("Unauthorized") ||
+          errorMessages.includes("authorize") ||
+          errorMessages.includes("authentication") ||
+          errorMessages.includes("YouTube not authenticated");
 
         if (isAuthError) {
           await handleStartAuth();
         } else {
-          alert(`Failed to sync playlist. Errors: ${result.errors.join(', ')}`);
+          alert(`Failed to sync playlist. Errors: ${result.errors.join(", ")}`);
         }
       }
     } catch (error: any) {
-      console.error('Failed to sync playlist to YouTube:', error);
+      console.error("Failed to sync playlist to YouTube:", error);
 
       const errorMessage =
         error?.message ||
@@ -77,11 +75,11 @@ export function YouTubeSync({ onSync, disabled = false }: YouTubeSyncProps) {
         JSON.stringify(error);
 
       const isAuthError =
-        errorMessage.includes('not authenticated') ||
-        errorMessage.includes('Unauthorized') ||
-        errorMessage.includes('authorize') ||
-        errorMessage.includes('authentication') ||
-        errorMessage.includes('YouTube not authenticated');
+        errorMessage.includes("not authenticated") ||
+        errorMessage.includes("Unauthorized") ||
+        errorMessage.includes("authorize") ||
+        errorMessage.includes("authentication") ||
+        errorMessage.includes("YouTube not authenticated");
 
       if (isAuthError) {
         await handleStartAuth();
@@ -95,21 +93,18 @@ export function YouTubeSync({ onSync, disabled = false }: YouTubeSyncProps) {
 
   const handleStartAuth = async () => {
     try {
-      console.log('Getting YouTube auth URL...');
+      console.log("Getting YouTube auth URL...");
       const url = await getAuthUrl();
-      console.log('YouTube auth URL received:', url);
+      console.log("YouTube auth URL received:", url);
       if (!url) {
-        throw new Error('No authorization URL received');
+        throw new Error("No authorization URL received");
       }
       setAuthUrl(url);
       setIsAuthDialogOpen(true);
-      console.log('Auth dialog should be open now');
+      console.log("Auth dialog should be open now");
     } catch (error: any) {
-      console.error('Failed to get auth URL:', error);
-      const errorMsg =
-        error?.message ||
-        error?.response?.errors?.[0]?.message ||
-        'Unknown error';
+      console.error("Failed to get auth URL:", error);
+      const errorMsg = error?.message || error?.response?.errors?.[0]?.message || "Unknown error";
       alert(
         `Failed to get authentication URL: ${errorMsg}. Please check your backend configuration.`,
       );
@@ -118,7 +113,7 @@ export function YouTubeSync({ onSync, disabled = false }: YouTubeSyncProps) {
 
   const handleCompleteAuth = async () => {
     if (!authCode.trim()) {
-      alert('Please enter the authorization code');
+      alert("Please enter the authorization code");
       return;
     }
 
@@ -126,19 +121,19 @@ export function YouTubeSync({ onSync, disabled = false }: YouTubeSyncProps) {
       const result = await authenticate(authCode);
       if (result.success) {
         setIsAuthDialogOpen(false);
-        setAuthCode('');
+        setAuthCode("");
         setAuthUrl(null);
-        alert('Successfully authenticated with YouTube! Retrying sync...');
+        alert("Successfully authenticated with YouTube! Retrying sync...");
         // Retry the sync
         setTimeout(() => {
           handleSync();
         }, 500);
       } else {
-        alert(`Authentication failed: ${result.message || 'Unknown error'}`);
+        alert(`Authentication failed: ${result.message || "Unknown error"}`);
       }
     } catch (error: any) {
-      console.error('Failed to authenticate:', error);
-      alert(`Failed to authenticate: ${error.message || 'Unknown error'}`);
+      console.error("Failed to authenticate:", error);
+      alert(`Failed to authenticate: ${error.message || "Unknown error"}`);
     }
   };
 
@@ -146,7 +141,7 @@ export function YouTubeSync({ onSync, disabled = false }: YouTubeSyncProps) {
     <>
       <DropdownMenuItem onClick={handleSync} disabled={disabled || isSyncing}>
         <Youtube className="h-4 w-4 mr-2" />
-        {isSyncing ? 'Syncing...' : 'Sync to YouTube'}
+        {isSyncing ? "Syncing..." : "Sync to YouTube"}
       </DropdownMenuItem>
 
       {/* YouTube Authentication Dialog */}
@@ -168,15 +163,11 @@ export function YouTubeSync({ onSync, disabled = false }: YouTubeSyncProps) {
                   <Button
                     onClick={(e) => {
                       e.preventDefault();
-                      console.log('Opening auth URL:', authUrl);
-                      const newWindow = window.open(
-                        authUrl,
-                        '_blank',
-                        'noopener,noreferrer',
-                      );
+                      console.log("Opening auth URL:", authUrl);
+                      const newWindow = window.open(authUrl, "_blank", "noopener,noreferrer");
                       if (!newWindow || newWindow.closed) {
                         alert(
-                          'Popup blocked. Please click the link below to open the authorization page.',
+                          "Popup blocked. Please click the link below to open the authorization page.",
                         );
                       }
                     }}
@@ -184,12 +175,10 @@ export function YouTubeSync({ onSync, disabled = false }: YouTubeSyncProps) {
                     className="w-full"
                     variant="outline"
                   >
-                    {isGettingAuthUrl
-                      ? 'Loading...'
-                      : 'Open YouTube Authorization'}
+                    {isGettingAuthUrl ? "Loading..." : "Open YouTube Authorization"}
                   </Button>
                   <p className="text-xs text-muted-foreground mt-2">
-                    Or{' '}
+                    Or{" "}
                     <a
                       href={authUrl}
                       target="_blank"
@@ -197,7 +186,7 @@ export function YouTubeSync({ onSync, disabled = false }: YouTubeSyncProps) {
                       className="text-primary underline hover:no-underline"
                       onClick={(e) => {
                         e.preventDefault();
-                        window.open(authUrl, '_blank', 'noopener,noreferrer');
+                        window.open(authUrl, "_blank", "noopener,noreferrer");
                       }}
                     >
                       click here to open in a new tab
@@ -206,16 +195,13 @@ export function YouTubeSync({ onSync, disabled = false }: YouTubeSyncProps) {
                 </>
               ) : (
                 <Button disabled className="w-full" variant="outline">
-                  {isGettingAuthUrl
-                    ? 'Loading authorization URL...'
-                    : 'No URL available'}
+                  {isGettingAuthUrl ? "Loading authorization URL..." : "No URL available"}
                 </Button>
               )}
             </div>
             <div>
               <p className="text-sm text-muted-foreground mb-2">
-                2. After authorizing, copy the authorization code from the URL
-                and paste it below
+                2. After authorizing, copy the authorization code from the URL and paste it below
               </p>
               <Input
                 placeholder="Enter authorization code"
@@ -230,19 +216,14 @@ export function YouTubeSync({ onSync, disabled = false }: YouTubeSyncProps) {
               variant="outline"
               onClick={() => {
                 setIsAuthDialogOpen(false);
-                setAuthCode('');
+                setAuthCode("");
                 setAuthUrl(null);
               }}
             >
               Cancel
             </Button>
-            <Button
-              onClick={handleCompleteAuth}
-              disabled={!authCode.trim() || isAuthenticating}
-            >
-              {isAuthenticating
-                ? 'Authenticating...'
-                : 'Complete Authentication'}
+            <Button onClick={handleCompleteAuth} disabled={!authCode.trim() || isAuthenticating}>
+              {isAuthenticating ? "Authenticating..." : "Complete Authentication"}
             </Button>
           </DialogFooter>
         </DialogContent>

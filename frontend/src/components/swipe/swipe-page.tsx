@@ -1,24 +1,20 @@
-'use client';
+"use client";
 
 import {
   useAudioPlayerActions,
   useCurrentTrack,
   useIsPlaying,
-} from '@/contexts/audio-player-context';
-import { Route } from '@/routes/swipe.index';
-import {
-  useBangerTrack,
-  useDislikeTrack,
-  useLikeTrack
-} from '@/services/api-hooks';
-import { useRouter } from '@tanstack/react-router';
-import { InfoIcon } from 'lucide-react';
-import { AnimatePresence, motion } from 'motion/react';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { FilterButton } from '../filters';
-import { Skeleton } from '../ui/skeleton';
-import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip';
-import { SwipeView } from './swipe-track';
+} from "@/contexts/audio-player-context";
+import { Route } from "@/routes/swipe.index";
+import { useBangerTrack, useDislikeTrack, useLikeTrack } from "@/services/api-hooks";
+import { useRouter } from "@tanstack/react-router";
+import { InfoIcon } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import { FilterButton } from "../filters";
+import { Skeleton } from "../ui/skeleton";
+import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
+import { SwipeView } from "./swipe-track";
 
 const UsageTooltip = () => {
   return (
@@ -26,20 +22,30 @@ const UsageTooltip = () => {
       <TooltipTrigger>
         <InfoIcon className="w-8 h-8 text-foreground hover:text-foreground cursor-pointer" />
       </TooltipTrigger>
-      <TooltipContent side="bottom" align="end" sideOffset={10} className='bg-secondary text-background p-4'>
+      <TooltipContent
+        side="bottom"
+        align="end"
+        sideOffset={10}
+        className="bg-secondary text-background p-4"
+      >
         <span className="text-base text-muted-foreground flex flex-col gap-2">
           Swipe right to like, left to dislike, or up for BANGER!
           <span>
-            <kbd className="px-2 py-1 bg-background rounded text-xs font-bold capitalize">Space</kbd>{' '}
+            <kbd className="px-2 py-1 bg-background rounded text-xs font-bold capitalize">
+              Space
+            </kbd>{" "}
             play/pause
           </span>
           <span>
-            <kbd className="px-2 py-1 bg-background rounded text-xs font-bold capitalize">E</kbd> like
+            <kbd className="px-2 py-1 bg-background rounded text-xs font-bold capitalize">E</kbd>{" "}
+            like
           </span>
-          <span><kbd className="px-2 py-1 bg-background rounded text-xs font-bold capitalize">Z</kbd>{' '}
-            banger </span>
           <span>
-            <kbd className="px-2 py-1 bg-background rounded text-xs font-bold capitalize">A</kbd>{' '}
+            <kbd className="px-2 py-1 bg-background rounded text-xs font-bold capitalize">Z</kbd>{" "}
+            banger{" "}
+          </span>
+          <span>
+            <kbd className="px-2 py-1 bg-background rounded text-xs font-bold capitalize">A</kbd>{" "}
             dislike
           </span>
         </span>
@@ -48,7 +54,7 @@ const UsageTooltip = () => {
   );
 };
 
-const AnimatedNumber = ({ animationKey, value }: { animationKey: string, value: number }) => {
+const AnimatedNumber = ({ animationKey, value }: { animationKey: string; value: number }) => {
   return (
     <AnimatePresence initial={false}>
       <motion.span
@@ -57,21 +63,23 @@ const AnimatedNumber = ({ animationKey, value }: { animationKey: string, value: 
         animate={{ y: 0, opacity: 1 }}
         exit={{ y: 20, opacity: 0, scale: 0.8 }}
         transition={{
-          y: { type: "spring", stiffness: 100, damping: 30, duration: 0.5, ease: 'easeIn' },
+          y: { type: "spring", stiffness: 100, damping: 30, duration: 0.5, ease: "easeIn" },
           opacity: { type: "spring", stiffness: 100, damping: 30, duration: 0.5 },
         }}
-        className='font-bold capitalize  absolute bottom-0 text-muted-foreground'>
+        className="font-bold capitalize  absolute bottom-0 text-muted-foreground"
+      >
         {value}
       </motion.span>
-    </AnimatePresence>)
-}
+    </AnimatePresence>
+  );
+};
 
-const Counter = ({ label, value }: { label: string, value: number }) => (
-  <span className='flex flex-col font-bold capitalize relative pr-4 h-18'>
+const Counter = ({ label, value }: { label: string; value: number }) => (
+  <span className="flex flex-col font-bold capitalize relative pr-4 h-18">
     <span>{label}</span>
     <AnimatedNumber animationKey={label + value} value={value} />
   </span>
-)
+);
 
 export const SwipePage = React.memo(() => {
   const { trackData, isLoading: isLoadingTrack } = Route.useLoaderData();
@@ -94,7 +102,6 @@ export const SwipePage = React.memo(() => {
   const isPlaying = useIsPlaying();
   const containerRef = useRef<HTMLDivElement>(null);
 
-
   // Auto-play next track if music was playing
   useEffect(() => {
     if (track && shouldAutoPlay && !isLoadingTrack) {
@@ -107,7 +114,6 @@ export const SwipePage = React.memo(() => {
       setShouldAutoPlay(false);
     }
   }, [track, shouldAutoPlay, isLoadingTrack, setCurrentTrack, actions]);
-
 
   const handleLike = useCallback(async () => {
     if (!track) return;
@@ -130,7 +136,7 @@ export const SwipePage = React.memo(() => {
         refetch();
       })
       .catch((error) => {
-        console.error('Error liking track:', error);
+        console.error("Error liking track:", error);
         setIsAnimating(false);
       });
   }, [track, likeMutation, isPlaying, currentTrack]);
@@ -145,8 +151,6 @@ export const SwipePage = React.memo(() => {
     // Start mutation asynchronously (don't wait)
     const mutationPromise = dislikeMutation.mutateAsync(track.id);
 
-
-
     // Wait for both animation and mutation to complete
     mutationPromise
       .then(() => {
@@ -155,13 +159,12 @@ export const SwipePage = React.memo(() => {
         }
         setIsAnimating(false);
         refetch();
-
       })
       .catch((error) => {
-        console.error('Error disliking track:', error);
+        console.error("Error disliking track:", error);
         setIsAnimating(false);
       });
-  }, [track, dislikeMutation,]);
+  }, [track, dislikeMutation]);
 
   const handleBanger = useCallback(async () => {
     if (!track) return;
@@ -183,9 +186,8 @@ export const SwipePage = React.memo(() => {
         refetch();
       })
       .catch((error) => {
-        console.error('Error banger track:', error);
+        console.error("Error banger track:", error);
         setIsAnimating(false);
-
       });
   }, [track, bangerMutation, isPlaying, currentTrack]);
 
@@ -212,7 +214,7 @@ export const SwipePage = React.memo(() => {
       if (!track || isLoading) return;
 
       // Spacebar: Play/Pause
-      if (event.code === 'Space') {
+      if (event.code === "Space") {
         event.preventDefault();
         if (currentTrack?.id !== track.id) {
           setCurrentTrack(track);
@@ -228,24 +230,24 @@ export const SwipePage = React.memo(() => {
       // Keyboard shortcuts for swiping
       const key = event.key.toLowerCase();
 
-      if (key === 'a') {
+      if (key === "a") {
         // Dislike
         event.preventDefault();
         handleDislike();
-      } else if (key === 'z') {
+      } else if (key === "z") {
         // Banger
         event.preventDefault();
         handleBanger();
-      } else if (key === 'e') {
+      } else if (key === "e") {
         // Like
         event.preventDefault();
         handleLike();
       }
     };
 
-    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown);
     return () => {
-      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener("keydown", handleKeyDown);
     };
   }, [
     track,
@@ -267,20 +269,26 @@ export const SwipePage = React.memo(() => {
       className="flex flex-col  justify-center w-full mt-10 gap-4 h-full outline-none "
       tabIndex={0}
     >
-
       <div className="flex flex-row justify-between  text-center p-6 backdrop-blur-2xl items-start">
-        {!likedTracksCount ? <Skeleton className='w-10 h-4' /> :
+        {!likedTracksCount ? (
+          <Skeleton className="w-10 h-4" />
+        ) : (
           <div className="text-3xl text-foreground flex flex-row gap-10">
-            {[{ label: 'Liked', value: likedTracksCount }, { label: 'Bangers', value: bangersCount }, { label: 'Disliked', value: dislikedTracksCount }, { label: 'Remaining', value: remainingTracksCount }].map((item) => (
+            {[
+              { label: "Liked", value: likedTracksCount },
+              { label: "Bangers", value: bangersCount },
+              { label: "Disliked", value: dislikedTracksCount },
+              { label: "Remaining", value: remainingTracksCount },
+            ].map((item) => (
               <Counter key={item.label} label={item.label} value={item.value} />
             ))}
-          </div>}
+          </div>
+        )}
 
         <div className="flex flex-row justify-end gap-4 ">
           <FilterButton />
           <UsageTooltip />
         </div>
-
       </div>
       <div className="flex flex-row justify-center mb-8 text-center h-full w-full backdrop-blur-2xl">
         <SwipeView
@@ -291,7 +299,6 @@ export const SwipePage = React.memo(() => {
           onBanger={handleBanger}
         />
       </div>
-
     </div>
   );
-})
+});

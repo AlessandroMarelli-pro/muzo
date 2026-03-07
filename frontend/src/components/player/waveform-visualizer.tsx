@@ -1,5 +1,5 @@
-import { cn, formatTime } from '@/lib/utils';
-import { useEffect, useState } from 'react';
+import { cn, formatTime } from "@/lib/utils";
+import { useEffect, useState } from "react";
 
 interface WaveformVisualizerProps {
   waveformData: number[];
@@ -33,10 +33,10 @@ export function WaveformVisualizer({
       setCurrentTime(audio.currentTime);
     };
 
-    audio.addEventListener('timeupdate', handleTimeUpdate);
+    audio.addEventListener("timeupdate", handleTimeUpdate);
 
     return () => {
-      audio.removeEventListener('timeupdate', handleTimeUpdate);
+      audio.removeEventListener("timeupdate", handleTimeUpdate);
     };
   }, [isPlaying]);
 
@@ -45,7 +45,7 @@ export function WaveformVisualizer({
       <span className="text-xs text-muted-foreground w-10 text-right">
         {formatTime(currentTime)}
       </span>
-      <div className={cn('relative ', className)}>
+      <div className={cn("relative ", className)}>
         <div className="h-10 cursor-pointer flex flex-row  items-center justify-center  transition-opacity opacity-80  duration-300 ">
           {waveformData.map((amplitude, i) => {
             const timeAtPosition = (i / waveformData.length) * duration;
@@ -59,11 +59,9 @@ export function WaveformVisualizer({
               >
                 <div
                   className={cn(
-                    'flex w-[0.1px] rounded-full min-w-[0.1px] px-[0.5px] ',
-                    !isPlaying && 'animate-pulse',
-                    !isPlayed
-                      ? 'bg-primary dark:bg-primary '
-                      : 'bg-chart-3 dark:bg-chart-3',
+                    "flex w-[0.1px] rounded-full min-w-[0.1px] px-[0.5px] ",
+                    !isPlaying && "animate-pulse",
+                    !isPlayed ? "bg-primary dark:bg-primary " : "bg-chart-3 dark:bg-chart-3",
                   )}
                   style={{
                     height: `${Math.min(100, amplitude * 100)}%`,
@@ -76,7 +74,7 @@ export function WaveformVisualizer({
         </div>
       </div>
       <span className="text-xs text-muted-foreground w-10">
-        {duration ? formatTime(duration) : '0:00'}
+        {duration ? formatTime(duration) : "0:00"}
       </span>
     </>
   );
