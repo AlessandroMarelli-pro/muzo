@@ -62,7 +62,7 @@ import { NestjsLoggerModule } from './infrastructure/logging/nestjs-logger.modul
         formatError: (formattedError) => {
           // Remove stacktrace from response (keep it in server logs if needed)
           if (formattedError.extensions?.stacktrace) {
-            const { stacktrace, ...rest } = formattedError.extensions;
+            const { stacktrace: _stacktrace, ...rest } = formattedError.extensions;
             return { ...formattedError, extensions: rest };
           }
           return formattedError;

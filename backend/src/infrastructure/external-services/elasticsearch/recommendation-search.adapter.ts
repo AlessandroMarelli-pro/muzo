@@ -28,26 +28,22 @@ export class RecommendationSearchAdapter implements IRecommendationSearchPort {
       features[0],
       criteria,
     ) as unknown as SearchRequest['body'];
-    try {
-      const response = await this.elasticsearchClient.search({
-        index: 'music_tracks',
-        body: query,
-      });
-      const hits = response.hits.hits;
-      hits.sort((a, b) => (b._score ?? 0) - (a._score ?? 0));
+    const response = await this.elasticsearchClient.search({
+      index: 'music_tracks',
+      body: query,
+    });
+    const hits = response.hits.hits;
+    hits.sort((a, b) => (b._score ?? 0) - (a._score ?? 0));
 
-      const limit = criteria.limit ?? 50;
-      const topHits = hits.slice(0, limit);
+    const limit = criteria.limit ?? 50;
+    const topHits = hits.slice(0, limit);
 
-      return topHits.map((hit: any) => {
-        return {
-          track: toMusicTrack(hit._source),
-          similarity: hit._score, // Use raw Elasticsearch score directly
-          reasons: extractReasonsFromElasticsearch(hit, features[0]),
-        };
-      });
-    } catch (error) {
-      throw error;
-    }
+    return topHits.map((hit: any) => {
+      return {
+        track: toMusicTrack(hit._source),
+        similarity: hit._score, // Use raw Elasticsearch score directly
+        reasons: extractReasonsFromElasticsearch(hit, features[0]),
+      };
+    });
   }
 }

@@ -68,7 +68,7 @@ function makeBatchJobData(overrides: Partial<AudioScanBatchJobData> = {}): Audio
 describe('ProcessBatchAudioScanUseCase', () => {
   let useCase: ProcessBatchAudioScanUseCase;
   let musicLibraryRepository: MusicLibraryRepository;
-  let musicTrackRepository: MusicTrackRepository;
+  let _musicTrackRepository: MusicTrackRepository;
   let prisma: PrismaClient;
   let cleanupDb: () => Promise<void>;
   let fakeAnalyzeBatch: ReturnType<typeof vi.fn>;
@@ -158,7 +158,7 @@ describe('ProcessBatchAudioScanUseCase', () => {
 
     useCase = module.get(ProcessBatchAudioScanUseCase);
     musicLibraryRepository = module.get(MUSIC_LIBRARY_REPOSITORY);
-    musicTrackRepository = module.get(MUSIC_TRACK_REPOSITORY);
+    _musicTrackRepository = module.get(MUSIC_TRACK_REPOSITORY);
     prisma = module.get(PRISMA_SERVICE);
   });
 

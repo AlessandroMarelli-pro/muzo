@@ -1,6 +1,6 @@
 import { Test } from '@nestjs/testing';
 import { Genre as PrismaGenre, Subgenre as PrismaSubgenre } from '@prisma/client';
-import { PRISMA_SERVICE, PrismaService } from 'src/infrastructure/database/prisma.service';
+import { PRISMA_SERVICE } from 'src/infrastructure/database/prisma.service';
 import { AudioAnalysisRepository } from 'src/adapters/persistence/repositories/audio-analysis/audio-analysis.repository';
 import { createMockPrisma } from '../_test-utils/prisma-mock';
 import { models } from 'src/kernel/types/models';
@@ -215,7 +215,6 @@ describe('AudioAnalysisRepository', () => {
       const fp = analysisResult.fingerprint;
 
       const expectedData = {
-        trackId: TRACK_DB_ID,
         mfcc: JSON.stringify(sf.mfcc_mean ?? []),
         spectralCentroid: JSON.stringify(sf.spectral_centroids ?? {}),
         spectralRolloff: JSON.stringify(sf.spectral_rolloffs ?? {}),
@@ -260,7 +259,7 @@ describe('AudioAnalysisRepository', () => {
           createdById: TEST_USER_ID,
         },
         update: expectedData,
-        create: expectedData,
+        create: { ...expectedData, trackId: TRACK_DB_ID, createdById: TEST_USER_ID },
       });
     });
 

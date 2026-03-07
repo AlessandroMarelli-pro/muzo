@@ -186,8 +186,8 @@ export class ScanProgressPubSubAdapter
       );
       const errorJson = JSON.stringify(error);
       await this.redisPublisher.publish(channel, errorJson);
-    } catch (error) {
-      this.logger.error(`Failed to publish error for session ${sessionId}:`, error);
+    } catch (err) {
+      this.logger.error(`Failed to publish error for session ${sessionId}:`, err);
       // Don't throw - error publishing shouldn't break the scan
     }
   }

@@ -1,12 +1,12 @@
 import { getQueueToken } from '@nestjs/bullmq';
-import { Test } from '@nestjs/testing';
-import { Queue } from 'bullmq';
 import { ConfigService } from '@nestjs/config';
-import { LibraryScanSchedulerProducerAdapter } from 'src/infrastructure/job-scheduler/library-scan-scheduler-producer.adapter';
+import { Test } from '@nestjs/testing';
 import {
   EndLibraryScanJobData,
   LibraryScanJobData,
 } from 'src/application/ports/dtos/JobSchedulersData';
+import { LibraryScanSchedulerProducerAdapter } from 'src/infrastructure/job-scheduler/library-scan-scheduler-producer.adapter';
+import { models } from 'src/kernel/types/models';
 import { makeContextUser } from '../../../_test-utils/make-context-user';
 import { makeQueueConfig } from './_test-utils/make-queue-config';
 
@@ -34,8 +34,8 @@ describe('LibraryScanSchedulerProducerAdapter', () => {
 
   describe('scheduleLibraryScan', () => {
     it('optimal: adds start-library-scan job and returns sessionId', async () => {
-      const libraryId = 'lib-1' as const;
-      const sessionId = 'session-1' as const;
+      const libraryId = models.musicLibrary.id('lib-1');
+      const sessionId = models.session.id('session-1');
       const incremental = false;
       const contextUser = makeContextUser('user-1');
 
@@ -59,8 +59,8 @@ describe('LibraryScanSchedulerProducerAdapter', () => {
 
   describe('scheduleEndLibraryScan', () => {
     it('optimal: adds end-scan-library job and returns sessionId', async () => {
-      const libraryId = 'lib-1' as const;
-      const sessionId = 'session-1' as const;
+      const libraryId = models.musicLibrary.id('lib-1');
+      const sessionId = models.session.id('session-1');
       const contextUser = makeContextUser('user-1');
       const incremental = true;
 
@@ -87,8 +87,8 @@ describe('LibraryScanSchedulerProducerAdapter', () => {
 
       await expect(
         adapter.scheduleEndLibraryScan(
-          'lib-1' as const,
-          'session-1' as const,
+          models.musicLibrary.id('lib-1'),
+          models.session.id('session-1'),
           makeContextUser('user-1'),
           false,
         ),

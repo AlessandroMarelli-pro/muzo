@@ -17,7 +17,7 @@ export class ScanSessionRepository implements IScanSessionRepository {
   /**
    * Create a new scan session
    */
-  async createSession(sessionId: SessionId): Promise<Session> {
+  async createSession(_sessionId: SessionId): Promise<Session> {
     const session = await this.prisma.scanSession.create({
       data: toPrisma({
         ...models.session.instantiateNew({

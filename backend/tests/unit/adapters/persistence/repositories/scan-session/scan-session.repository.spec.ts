@@ -1,11 +1,10 @@
 import { Test } from '@nestjs/testing';
 import { type Mock } from 'vitest';
 import { ScanSession as PrismaScanSession, ScanStatus as PrismaScanStatus } from '@prisma/client';
-import { PRISMA_SERVICE, PrismaService } from 'src/infrastructure/database/prisma.service';
+import { PRISMA_SERVICE } from 'src/infrastructure/database/prisma.service';
 import { ScanSessionRepository } from 'src/adapters/persistence/repositories/scan-session/scan-session.repository';
 import { createMockPrisma } from '../_test-utils/prisma-mock';
 import { models } from 'src/kernel/types/models';
-import type { Session } from 'src/kernel/types/model-types';
 import { SessionId } from 'src/kernel/ids';
 
 const TEST_USER_ID = 'test-user-id';
@@ -37,27 +36,6 @@ function makePrismaScanSessionRow(overrides: Partial<PrismaScanSession> = {}): P
     createdById: TEST_USER_ID,
     updatedAt: null,
     updatedById: null,
-    ...overrides,
-  };
-}
-
-function makeDomainSession(overrides: Partial<Session> = {}): Session {
-  return {
-    id: models.session.id(SESSION_DB_ID),
-    createdAt: new Date(),
-    createdById: models.user.id(TEST_USER_ID),
-    updatedAt: undefined,
-    updatedById: undefined,
-    status: 'SCANNING',
-    totalBatches: 0,
-    completedBatches: 0,
-    totalTracks: 0,
-    completedTracks: 0,
-    failedTracks: 0,
-    overallProgress: 0,
-    startedAt: new Date(),
-    completedAt: undefined,
-    errorMessage: undefined,
     ...overrides,
   };
 }

@@ -29,7 +29,7 @@ export class ProcessBatchAudioScanUseCase {
     createdTracks: MusicTrack[];
   }> {
     this.logger.info('Processing batch audio scan', { data });
-    const { audioFiles, sessionId, batchIndex, libraryId } = data;
+    const { audioFiles, sessionId, batchIndex, libraryId: _libraryId } = data;
 
     try {
       const areFilesAnalyzed = await this.musicTrackRepository.areFilesAnalyzed(

@@ -15,35 +15,33 @@ export class AdminMethodsService {
     this.logger = loggerFactory.createLogger('AdminMethodsService');
   }
 
-  updateTrackDurationToRoundedDuration(): Promise<{
+  async updateTrackDurationToRoundedDuration(): Promise<{
     totalTracks: number;
     updatedTracks: number;
     failedTracks: number;
     errors: Array<{ trackId: string; filePath: string; error: string }>;
   }> {
-    return new Promise(async (resolve, reject) => {
-      const tracks = await this.prisma.musicTrack.findMany({
-        select: {
-          id: true,
-          filePath: true,
-          duration: true,
-        },
-      });
-      for (const track of tracks) {
-        if (track.duration) {
-          await this.prisma.musicTrack.update({
-            where: { id: track.id },
-            data: { duration: Math.round(track.duration) },
-          });
-        }
-      }
-      resolve({
-        totalTracks: tracks.length,
-        updatedTracks: tracks.length,
-        failedTracks: 0,
-        errors: [],
-      });
+    const tracks = await this.prisma.musicTrack.findMany({
+      select: {
+        id: true,
+        filePath: true,
+        duration: true,
+      },
     });
+    for (const track of tracks) {
+      if (track.duration) {
+        await this.prisma.musicTrack.update({
+          where: { id: track.id },
+          data: { duration: Math.round(track.duration) },
+        });
+      }
+    }
+    return {
+      totalTracks: tracks.length,
+      updatedTracks: tracks.length,
+      failedTracks: 0,
+      errors: [],
+    };
   }
 
   async setCreatedByIdAnonymous(): Promise<void> {

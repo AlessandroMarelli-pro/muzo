@@ -263,7 +263,7 @@ export class AiServerPoolAdapter implements IAiServicePool {
   private async checkExpiredAssignments(): Promise<void> {
     try {
       const redis = await this.queue.client;
-      const now = new Date();
+      const _now = new Date();
 
       // Check simple server assignment
       if (this.assignedServers.simple) {

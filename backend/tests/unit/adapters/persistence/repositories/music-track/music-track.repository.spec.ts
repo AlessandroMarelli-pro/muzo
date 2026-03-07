@@ -3,7 +3,7 @@ import {
   AnalysisStatus as PrismaAnalysisStatus,
   MusicTrack as PrismaMusicTrack,
 } from '@prisma/client';
-import { PRISMA_SERVICE, PrismaService } from 'src/infrastructure/database/prisma.service';
+import { PRISMA_SERVICE } from 'src/infrastructure/database/prisma.service';
 import { MusicTrackRepository } from 'src/adapters/persistence/repositories/music-track/music-track.repository';
 import { createMockPrisma } from '../_test-utils/prisma-mock';
 import { models } from 'src/kernel/types/models';

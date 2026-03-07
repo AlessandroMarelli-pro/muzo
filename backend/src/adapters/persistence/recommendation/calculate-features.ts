@@ -12,7 +12,7 @@ function calculateMean(values?: (number | undefined)[]): number {
   return filteredValues.reduce((a, b) => a + b, 0) / filteredValues.length;
 }
 function calculateSpectralFeaturesMean(tracks: MusicTrack[]) {
-  const numberOfTracks = tracks.length;
+  const _numberOfTracks = tracks.length;
   return {
     spectralCentroidMean: {
       mean: calculateMean(

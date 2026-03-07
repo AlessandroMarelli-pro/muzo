@@ -6,7 +6,5 @@
   "semi": true,
   "singleQuote": true,
   "trailingComma": "all",
-  "ignorePatterns": [
-    "src/ex.json"
-  ]
+  "ignorePatterns": ["src/ex.json"]
 }

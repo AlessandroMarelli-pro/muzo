@@ -258,7 +258,7 @@ export class YoutubeSyncAdapter implements IYouTubeSyncProvider {
             },
           },
         });
-      } catch (err) {
+      } catch {
         // continue with other videos
       }
       if (i < videoIds.length - 1) {

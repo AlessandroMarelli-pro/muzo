@@ -1,5 +1,5 @@
 import { Test } from '@nestjs/testing';
-import { PRISMA_SERVICE, PrismaService } from 'src/infrastructure/database/prisma.service';
+import { PRISMA_SERVICE } from 'src/infrastructure/database/prisma.service';
 import { MetricsQuery } from 'src/adapters/persistence/queries/metrics/metrics.query';
 import { createMockPrisma } from '../../repositories/_test-utils/prisma-mock';
 import type { MetricsDto } from 'src/application/ports/queries/IMetricsQuery';

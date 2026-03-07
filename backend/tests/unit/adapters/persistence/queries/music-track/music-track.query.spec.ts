@@ -1,6 +1,6 @@
 import { Test } from '@nestjs/testing';
 import { AnalysisStatus as PrismaAnalysisStatus } from '@prisma/client';
-import { PRISMA_SERVICE, PrismaService } from 'src/infrastructure/database/prisma.service';
+import { PRISMA_SERVICE } from 'src/infrastructure/database/prisma.service';
 import { MusicTrackQuery } from 'src/adapters/persistence/queries/music-track/music-track.query';
 import { createMockPrisma } from '../../repositories/_test-utils/prisma-mock';
 import { models } from 'src/kernel/types';

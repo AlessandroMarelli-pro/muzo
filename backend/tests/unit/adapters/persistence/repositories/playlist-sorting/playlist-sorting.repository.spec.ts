@@ -4,7 +4,7 @@ import {
   PlaylistSortingDirection as PrismaPlaylistSortingDirection,
   PlaylistSortingKey as PrismaPlaylistSortingKey,
 } from '@prisma/client';
-import { PRISMA_SERVICE, PrismaService } from 'src/infrastructure/database/prisma.service';
+import { PRISMA_SERVICE } from 'src/infrastructure/database/prisma.service';
 import { PlaylistSortingRepository } from 'src/adapters/persistence/repositories/playlist-sorting/playlist-sorting.repository';
 import { createMockPrisma } from '../_test-utils/prisma-mock';
 import { models } from 'src/kernel/types/models';

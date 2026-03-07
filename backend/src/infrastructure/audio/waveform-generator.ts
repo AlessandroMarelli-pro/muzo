@@ -63,7 +63,7 @@ export class WaveformGenerator implements IAudioWaveformGenerator {
   private async generateRealWaveform(
     filePath: string,
     width: number,
-    samplesPerPixel: number,
+    _samplesPerPixel: number,
   ): Promise<number[]> {
     return new Promise((resolve, reject) => {
       const sampleRate = 44100;

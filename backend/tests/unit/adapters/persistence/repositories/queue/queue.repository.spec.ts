@@ -1,10 +1,9 @@
 import { Test } from '@nestjs/testing';
 import { Queue as PrismaQueue } from '@prisma/client';
-import { PRISMA_SERVICE, PrismaService } from 'src/infrastructure/database/prisma.service';
+import { PRISMA_SERVICE } from 'src/infrastructure/database/prisma.service';
 import { QueueRepository } from 'src/adapters/persistence/repositories/queue/queue.repository';
 import { createMockPrisma } from '../_test-utils/prisma-mock';
 import { models } from 'src/kernel/types/models';
-import type { QueueItem } from 'src/kernel/types/model-types';
 import { MusicTrackId } from 'src/kernel/ids';
 
 const TEST_USER_ID = 'test-user-id';
@@ -45,19 +44,6 @@ function makePrismaQueueRow(
       originalArtist?: string | null;
       originalTitle?: string | null;
     } | null;
-  };
-}
-
-function makeDomainQueueItem(overrides: Partial<QueueItem> = {}): QueueItem {
-  return {
-    id: models.queueItem.id('queue-1'),
-    createdAt: new Date(),
-    createdById: models.user.id(TEST_USER_ID),
-    updatedAt: undefined,
-    updatedById: undefined,
-    trackId: models.musicTrack.id(TRACK_ID_DB) as MusicTrackId,
-    position: 1,
-    ...overrides,
   };
 }
 

@@ -4,7 +4,7 @@ import {
   MusicTrack as PrismaMusicTrack,
   PlaylistTrack as PrismaPlaylistTrack,
 } from '@prisma/client';
-import { PRISMA_SERVICE, PrismaService } from 'src/infrastructure/database/prisma.service';
+import { PRISMA_SERVICE } from 'src/infrastructure/database/prisma.service';
 import { PlaylistTrackRepository } from 'src/adapters/persistence/repositories/playlist-track/playlist-track.repository';
 import { createMockPrisma } from '../_test-utils/prisma-mock';
 import { models } from 'src/kernel/types/models';

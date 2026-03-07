@@ -40,10 +40,10 @@ export class MusicTrackQuery implements IMusicTrackQueries {
       })) as PrismaMusicTrackWithRelations;
       return {
         track: track ? toDomain(track) : null,
-        likedCount: Number(row.likedCount) ?? 0,
-        bangerCount: Number(row.bangerCount) ?? 0,
-        dislikedCount: Number(row.dislikedCount) ?? 0,
-        remainingCount: Number(row.remainingCount) ?? 0,
+        likedCount: Number(row.likedCount) || 0,
+        bangerCount: Number(row.bangerCount) || 0,
+        dislikedCount: Number(row.dislikedCount) || 0,
+        remainingCount: Number(row.remainingCount) || 0,
       };
     });
   }

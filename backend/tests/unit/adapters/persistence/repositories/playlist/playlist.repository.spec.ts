@@ -312,6 +312,7 @@ describe('PlaylistRepository', () => {
 
       expect(prismaMock.playlist.findMany).toHaveBeenCalledWith({
         where: { createdById: TEST_USER_ID },
+        orderBy: { updatedAt: 'desc' },
       });
       expect(result).toHaveLength(2);
       expect(result[0].name).toBe('Test Playlist');
@@ -331,6 +332,7 @@ describe('PlaylistRepository', () => {
 
       expect(prismaMock.playlist.findMany).toHaveBeenCalledWith({
         where: { createdById: TEST_USER_ID },
+        orderBy: { updatedAt: 'desc' },
       });
     });
 
