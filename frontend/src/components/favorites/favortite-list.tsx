@@ -27,7 +27,7 @@ interface TrackListProps {
 }
 
 export const FavoriteList: React.FC<TrackListProps> = ({
-  viewMode = "grid",
+  viewMode: _viewMode = "grid",
   searchQuery = "",
   onSearchChange,
 }) => {

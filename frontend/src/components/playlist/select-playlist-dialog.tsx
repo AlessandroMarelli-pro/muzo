@@ -72,7 +72,7 @@ export const SelectPlaylistDialog: React.FC<SelectPlaylistDialogProps> = ({
   const { playlists, loading, refetch } = usePlaylists(undefined, trackId);
   console.log("playlists", playlists);
   const addTrackMutation = useAddTrackToPlaylist();
-  const [selectedPlaylistId, setSelectedPlaylistId] = useState<string | null>(null);
+  const [_selectedPlaylistId, setSelectedPlaylistId] = useState<string | null>(null);
 
   const handleSelectPlaylist = async (playlistId: string) => {
     setSelectedPlaylistId(playlistId);

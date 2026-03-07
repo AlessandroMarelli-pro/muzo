@@ -168,7 +168,7 @@ export function useResetQueue() {
         duration: 2000,
       });
     },
-    onError: (error: any) => {
+    onError: () => {
       toast.error("Failed to reset queue", {
         duration: 3000,
       });

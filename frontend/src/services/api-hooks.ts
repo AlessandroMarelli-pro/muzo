@@ -255,7 +255,7 @@ export const useRandomTrackWithStats = () => {
   });
 };
 
-export const fetchTrackRecommendations = async (id?: string, criteria?: string) => {
+export const fetchTrackRecommendations = async (id?: string, _criteria?: string) => {
   const response = await graffleClient.request<{
     node: { recommendations: TrackRecommendation[] };
   }>(

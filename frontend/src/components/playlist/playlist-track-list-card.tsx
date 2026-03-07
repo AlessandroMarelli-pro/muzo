@@ -28,7 +28,7 @@ export const PlaylistTrackListCardSkeleton = ({ position }: { position: number }
 export const PlaylistTrackListCard = ({
   playlistTrack,
   handleRemoveTrack,
-  removingTrackId,
+  removingTrackId: _removingTrackId,
   dragHandleProps,
   index,
   playlistLength,

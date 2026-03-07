@@ -4,7 +4,7 @@ import { Track } from "@/__generated__/types";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { useCurrentTrack, useIsPlaying } from "@/contexts/audio-player-context";
 import { cn } from "@/lib/utils";
-import { AnimatePresence, motion, useMotionValue } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useState } from "react";
 import { Badge } from "../ui/badge";
 import { SwipeControls } from "./swipe-controls";
@@ -26,9 +26,6 @@ export function SwipeTrack({ track, onLike, onDislike, onBanger }: SwipeTrackPro
   // Check if this track is currently playing
   const isCurrentTrack = currentTrack?.id === track.id;
   const isThisTrackPlaying = isCurrentTrack && isPlaying;
-
-  const x = useMotionValue(0);
-  const y = useMotionValue(0);
 
   // Animate audio bars when playing
   useEffect(() => {

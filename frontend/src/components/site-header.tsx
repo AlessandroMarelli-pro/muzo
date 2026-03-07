@@ -15,7 +15,7 @@ import { ScanProgress } from "./scan-progress";
 
 interface SiteHeaderProps {}
 
-export function SiteHeader({}: SiteHeaderProps) {
+export function SiteHeader(_props: SiteHeaderProps) {
   const [queueOpen, setQueueOpen] = useState(false);
   const location = useLocation();
   const { setTheme, resolvedTheme } = useTheme();

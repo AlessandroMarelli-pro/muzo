@@ -31,7 +31,7 @@ export default function MultiSelect({
   onChange,
   placeholder = "Select items...",
   className,
-  isLoading = false,
+  isLoading: _isLoading = false,
   disabled = false,
 }: MultiSelectProps) {
   const [open, setOpen] = React.useState(false);
@@ -131,7 +131,7 @@ export default function MultiSelect({
                     <CommandItem
                       key={option.label}
                       value={option.label}
-                      onSelect={(selectedValue) => {
+                      onSelect={() => {
                         handleSelect(option.value);
                       }}
                     >

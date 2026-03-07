@@ -34,7 +34,6 @@ import { formatDuration } from "@/lib/utils";
 import { Route } from "@/routes/playlists.$playlistId";
 import {
   useAddTracksToQueue,
-  useAddTrackToQueue,
   useQueue,
   useRemoveTrackFromQueue,
 } from "@/services/queue-hooks";
@@ -108,7 +107,6 @@ export function PlaylistDetail({ id, onBack }: PlaylistDetailProps) {
   const { setCurrentTrack } = useCurrentTrack();
   const actions = useAudioPlayerActions();
   const { data: currentQueue = [] } = useQueue();
-  const addTrackToQueue = useAddTrackToQueue();
   const addTracksToQueue = useAddTracksToQueue();
   const removeTrackFromQueue = useRemoveTrackFromQueue();
   const [activeTab, setActiveTab] = useState("tracks");

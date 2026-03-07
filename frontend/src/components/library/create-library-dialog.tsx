@@ -104,12 +104,6 @@ export const CreateLibraryDialog: React.FC<CreateLibraryDialogProps> = ({
     }
   };
 
-  const handleBrowsePath = () => {
-    // In a real implementation, this would open a file browser
-    // For now, we'll just show an alert
-    alert("File browser would open here. Please enter the path manually.");
-  };
-
   return (
     <Sheet open={open} onOpenChange={handleOpenChange}>
       <SheetContent className="sm:max-w-[600px] overflow-y-auto">

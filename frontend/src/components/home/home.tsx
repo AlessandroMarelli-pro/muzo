@@ -3,9 +3,6 @@ import CountUp from "../CountUp";
 import { HorizontalMusicCardList } from "../track/music-card";
 import { Badge } from "../ui/badge";
 import { Card, CardDescription, CardHeader, CardTitle } from "../ui/card";
-
-("use client");
-
 import { PolarAngleAxis, PolarGrid, Radar, RadarChart } from "recharts";
 
 import { CardContent } from "@/components/ui/card";

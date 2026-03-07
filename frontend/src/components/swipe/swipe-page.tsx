@@ -125,8 +125,8 @@ export const SwipePage = React.memo(() => {
     // Start mutation asynchronously (don't wait)
     const mutationPromise = likeMutation.mutateAsync(track.id);
 
-    // Wait for both animation and mutation to complete
-    Promise.all([mutationPromise])
+    // Wait for animation and mutation to complete
+    mutationPromise
       .then(() => {
         if (wasPlaying) {
           setShouldAutoPlay(true);

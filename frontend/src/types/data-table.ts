@@ -3,12 +3,12 @@ import type { FilterItemSchema } from "@/lib/parsers";
 import type { ColumnSort, Row, RowData } from "@tanstack/react-table";
 
 declare module "@tanstack/react-table" {
-  // biome-ignore lint/correctness/noUnusedVariables: TData is used in the TableMeta interface
+  // eslint-disable-next-line no-unused-vars -- TData is part of TableMeta type identity for augmentation
   interface TableMeta<TData extends RowData> {
     queryKeys?: QueryKeys;
   }
 
-  // biome-ignore lint/correctness/noUnusedVariables: TValue is used in the ColumnMeta interface
+  // eslint-disable-next-line no-unused-vars -- TData, TValue are part of ColumnMeta type identity for augmentation
   interface ColumnMeta<TData extends RowData, TValue> {
     label?: string;
     placeholder?: string;

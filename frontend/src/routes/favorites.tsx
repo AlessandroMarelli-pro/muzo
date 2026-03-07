@@ -11,11 +11,6 @@ function FavoritesPage() {
     await new Promise((resolve) => setTimeout(resolve, 1000));
   };
 
-  const handleMoreTrack = (trackId: string) => {
-    console.log("More options for track:", trackId);
-    // Implement track options
-  };
-
   return (
     <FavoriteList
       viewMode="grid"

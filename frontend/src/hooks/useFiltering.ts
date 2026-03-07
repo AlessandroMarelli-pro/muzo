@@ -98,7 +98,7 @@ const toFilterCriteriaInput = (filters: FilterState): FilterCriteriaInput => {
 };
 
 export const useFiltering = (options: UseFilteringOptions = {}) => {
-  const { autoSave = false, onSaveError } = options;
+  const { autoSave = false } = options;
   const currentFilter = useCurrentFilter();
   const updateActiveFilter = useUpdateActiveFilter();
   const createActiveFilter = useCreateActiveFilter();

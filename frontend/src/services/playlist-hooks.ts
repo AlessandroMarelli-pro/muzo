@@ -886,7 +886,7 @@ export function useUpdatePlaylistPositions() {
       playlistId: string;
       positions: UpdatePlaylistPositionInput[];
     }) => updatePlaylistPositions(playlistId, positions),
-    onSuccess: (_, { playlistId, positions }) => {
+    onSuccess: (_, { playlistId }) => {
       queryClient.invalidateQueries({ queryKey: ["playlists"] });
       queryClient.invalidateQueries({ queryKey: ["playlist", playlistId] });
       toast.success("Playlist positions updated successfully");
@@ -901,7 +901,7 @@ export function useUpdatePlaylistPositions() {
   });
 }
 
-export function useUpdatePlaylistSorting(userId: string = "default") {
+export function useUpdatePlaylistSorting(_userId: string = "default") {
   const queryClient = useQueryClient();
 
   return useMutation({

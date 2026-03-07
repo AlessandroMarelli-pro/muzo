@@ -25,7 +25,7 @@ function DetailedTrackCardSkeleton() {
       <CardHeader className="flex flex-row justify-between items-center">
         {/* Genre Tags */}
         <div className="flex gap-2">
-          {Array.from({ length: 4 }).map((_, index) => (
+          {Array.from({ length: 4 }).map((_) => (
             <Skeleton className="w-20 h-5 rounded-full" />
           ))}
         </div>
@@ -81,12 +81,12 @@ function DetailedTrackCardSkeleton() {
       </CardContent>
       <CardFooter className="flex flex-row justify-between items-center">
         <div className="flex gap-2 flex-wrap">
-          {Array.from({ length: 4 }).map((_, index) => (
+          {Array.from({ length: 4 }).map((_) => (
             <Skeleton className="w-20 h-5 rounded-full" />
           ))}
         </div>
         <div className="flex flex-wrap gap-2">
-          {Array.from({ length: 4 }).map((_, index) => (
+          {Array.from({ length: 4 }).map((_) => (
             <Skeleton className="w-20 h-5 rounded-full" />
           ))}
         </div>

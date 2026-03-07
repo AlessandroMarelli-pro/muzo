@@ -19,7 +19,7 @@ export const SliderComponent = ({
   rangeMinValue,
   rangeMaxValue,
   step,
-  unit,
+  unit: _unit,
   id,
 }: {
   handleChange: (value: number[]) => void;
