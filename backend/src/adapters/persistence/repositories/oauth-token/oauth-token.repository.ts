@@ -4,10 +4,7 @@ import {
   OAuthTokenRecord,
   ThirdPartyProvider,
 } from 'src/application/ports/repositories/IOAuthTokenRepository';
-import {
-  PRISMA_SERVICE,
-  PrismaService,
-} from 'src/infrastructure/database/prisma.service';
+import { PRISMA_SERVICE, PrismaService } from 'src/infrastructure/database/prisma.service';
 
 const PROVIDER_SCOPE: Record<ThirdPartyProvider, string> = {
   youtube: 'youtube',
@@ -16,14 +13,9 @@ const PROVIDER_SCOPE: Record<ThirdPartyProvider, string> = {
 };
 
 export class OAuthTokenRepository implements IOAuthTokenRepository {
-  constructor(
-    @Inject(PRISMA_SERVICE) private readonly prisma: PrismaService,
-  ) {}
+  constructor(@Inject(PRISMA_SERVICE) private readonly prisma: PrismaService) {}
 
-  async getToken(
-    userId: string,
-    provider: ThirdPartyProvider,
-  ): Promise<OAuthTokenRecord | null> {
+  async getToken(userId: string, provider: ThirdPartyProvider): Promise<OAuthTokenRecord | null> {
     const row = await this.prisma.thirdPartyOAuthToken.findUnique({
       where: {
         userId_provider: { userId, provider },

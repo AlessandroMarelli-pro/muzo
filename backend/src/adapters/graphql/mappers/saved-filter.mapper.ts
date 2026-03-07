@@ -1,9 +1,7 @@
 import { FilterCriteria, SavedFilter } from 'src/kernel/types';
 import { FilterCriteriaType } from '../schema/saved-filter.schema';
 
-export const toFilterCriteria = (
-  criteria: FilterCriteria,
-): FilterCriteriaType => {
+export const toFilterCriteria = (criteria: FilterCriteria): FilterCriteriaType => {
   return {
     genreIds: criteria.genreIds ?? [],
     subgenreIds: criteria.subgenreIds ?? [],

@@ -1,7 +1,4 @@
-import {
-  IMusicTrackQueries,
-  RandomTrackWithStats,
-} from '../../ports/queries/IMusicTrackQueries';
+import { IMusicTrackQueries, RandomTrackWithStats } from '../../ports/queries/IMusicTrackQueries';
 
 export class GetRandomTrackWithStatsUseCase {
   constructor(private readonly musicTrackQueries: IMusicTrackQueries) {}

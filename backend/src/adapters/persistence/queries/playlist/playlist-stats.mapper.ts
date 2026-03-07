@@ -25,9 +25,7 @@ function getTopItems(items: string[], limit: number): string[] {
     .map(([item]) => item);
 }
 
-export function mapRawRowToPlaylistStatsDto(
-  row: RawPlaylistStatsRow,
-): PlaylistStatsDto {
+export function mapRawRowToPlaylistStatsDto(row: RawPlaylistStatsRow): PlaylistStatsDto {
   return {
     playlistId: models.playlist.id(row.id),
     bpmRange: { min: Number(row.bpmMin), max: Number(row.bpmMax) },

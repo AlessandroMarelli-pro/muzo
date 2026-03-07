@@ -1,12 +1,5 @@
 import { UseGuards } from '@nestjs/common';
-import {
-  Args,
-  Int,
-  Mutation,
-  Parent,
-  ResolveField,
-  Resolver,
-} from '@nestjs/graphql';
+import { Args, Int, Mutation, Parent, ResolveField, Resolver } from '@nestjs/graphql';
 import { GetTrackRecommendationsUseCase } from 'src/application/use-cases';
 import {
   ToggleBangerUseCase,
@@ -37,32 +30,22 @@ export class MusicTrackResolver {
     @Parent() parent: Track,
     @Args('limit', { type: () => Int, nullable: true }) limit?: number,
   ) {
-    return this.getTrackRecommendationsUseCase
-      .execute(parent.id, limit)
-      .then((recommendations) =>
-        recommendations.map((recommendation) => ({
-          track: toTrack(recommendation.track),
-          similarity: recommendation.similarity,
-          reasons: recommendation.reasons,
-        })),
-      );
+    return this.getTrackRecommendationsUseCase.execute(parent.id, limit).then((recommendations) =>
+      recommendations.map((recommendation) => ({
+        track: toTrack(recommendation.track),
+        similarity: recommendation.similarity,
+        reasons: recommendation.reasons,
+      })),
+    );
   }
 
   @Mutation(() => Track)
-  async toggleFavorite(
-    @Args('trackId', { type: () => Base64ID }) trackId: string,
-  ): Promise<Track> {
-    return this.toggleFavoriteUseCase
-      .execute(parseMusicTrackId(trackId))
-      .then(toTrack);
+  async toggleFavorite(@Args('trackId', { type: () => Base64ID }) trackId: string): Promise<Track> {
+    return this.toggleFavoriteUseCase.execute(parseMusicTrackId(trackId)).then(toTrack);
   }
   @Mutation(() => Track)
-  async toggleLike(
-    @Args('trackId', { type: () => Base64ID }) trackId: string,
-  ): Promise<Track> {
-    return this.toggleLikeUseCase
-      .execute(parseMusicTrackId(trackId))
-      .then(toTrack);
+  async toggleLike(@Args('trackId', { type: () => Base64ID }) trackId: string): Promise<Track> {
+    return this.toggleLikeUseCase.execute(parseMusicTrackId(trackId)).then(toTrack);
   }
   @Mutation(() => Boolean)
   async toggleDislike(
@@ -72,11 +55,7 @@ export class MusicTrackResolver {
   }
 
   @Mutation(() => Track)
-  async toggleBanger(
-    @Args('trackId', { type: () => Base64ID }) trackId: string,
-  ): Promise<Track> {
-    return this.toggleBangerUseCase
-      .execute(parseMusicTrackId(trackId))
-      .then(toTrack);
+  async toggleBanger(@Args('trackId', { type: () => Base64ID }) trackId: string): Promise<Track> {
+    return this.toggleBangerUseCase.execute(parseMusicTrackId(trackId)).then(toTrack);
   }
 }

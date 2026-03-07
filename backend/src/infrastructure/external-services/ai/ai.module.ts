@@ -10,11 +10,7 @@ import { AiServerPoolAdapter } from './ai-server-pool.adapter';
 
 @Global()
 @Module({
-  imports: [
-    ConfigModule,
-    HttpModule,
-    BullModule.registerQueue({ name: 'library-scan' }),
-  ],
+  imports: [ConfigModule, HttpModule, BullModule.registerQueue({ name: 'library-scan' })],
   providers: [
     {
       provide: AI_SERVICE_POOL,

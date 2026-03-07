@@ -1,9 +1,7 @@
 import { MusicTrack } from 'src/kernel/types';
 import { ElasticsearchTrackDocument } from '../types/elasticsearch-track-document';
 
-export const toElasticsearchTrackDocument = (
-  dto: MusicTrack,
-): ElasticsearchTrackDocument => {
+export const toElasticsearchTrackDocument = (dto: MusicTrack): ElasticsearchTrackDocument => {
   const date = dto.metadata?.date;
   const doc: ElasticsearchTrackDocument = {
     trackId: dto.id,
@@ -29,8 +27,7 @@ export const toElasticsearchTrackDocument = (
       arousal: dto.features?.musicalFeatures?.arousal ?? 0,
       arousal_mood: dto.features?.musicalFeatures?.arousalMood ?? '',
       danceability: dto.features?.musicalFeatures?.danceability ?? 0,
-      danceability_feeling:
-        dto.features?.musicalFeatures?.danceabilityFeeling ?? '',
+      danceability_feeling: dto.features?.musicalFeatures?.danceabilityFeeling ?? '',
     },
     spectral_features: {
       spectral_centroid: dto.features?.spectralFeatures?.spectralCentroid,
@@ -87,8 +84,7 @@ export const toMusicTrack = (
         arousal: document.musical_audio_features.arousal,
         arousalMood: document.musical_audio_features.arousal_mood,
         danceability: document.musical_audio_features.danceability,
-        danceabilityFeeling:
-          document.musical_audio_features.danceability_feeling,
+        danceabilityFeeling: document.musical_audio_features.danceability_feeling,
       },
       spectralFeatures: undefined,
       melodicFeatures: undefined,

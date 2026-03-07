@@ -10,15 +10,10 @@ export interface OAuthTokenRecord {
   expiresAt: Date | null;
 }
 
-export const OAUTH_TOKEN_REPOSITORY = createToken<IOAuthTokenRepository>(
-  'OAUTH_TOKEN_REPOSITORY',
-);
+export const OAUTH_TOKEN_REPOSITORY = createToken<IOAuthTokenRepository>('OAUTH_TOKEN_REPOSITORY');
 
 export interface IOAuthTokenRepository {
-  getToken(
-    userId: string,
-    provider: ThirdPartyProvider,
-  ): Promise<OAuthTokenRecord | null>;
+  getToken(userId: string, provider: ThirdPartyProvider): Promise<OAuthTokenRecord | null>;
 
   saveToken(record: OAuthTokenRecord): Promise<void>;
 

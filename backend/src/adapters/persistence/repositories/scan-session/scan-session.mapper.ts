@@ -53,9 +53,7 @@ export const toPrisma: ToPrisma = (domainModel) => {
 };
 
 export type ToPrismaUpdate = (
-  domainModel: Partial<
-    Omit<Session, 'id' | 'sessionId' | 'createdAt' | 'createdById'>
-  >,
+  domainModel: Partial<Omit<Session, 'id' | 'sessionId' | 'createdAt' | 'createdById'>>,
 ) => Partial<PrismaScanSession>;
 
 export const toPrismaUpdate: ToPrismaUpdate = (domainModel) => {

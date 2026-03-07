@@ -1,9 +1,6 @@
-import { Injectable, Inject } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { ISavedFilterRepository } from 'src/application/ports/repositories/ISavedFilterRepository';
-import {
-  PRISMA_SERVICE,
-  PrismaService,
-} from 'src/infrastructure/database/prisma.service';
+import { PRISMA_SERVICE, PrismaService } from 'src/infrastructure/database/prisma.service';
 import { Maybe } from 'src/kernel/common';
 import { extractModelId, SavedFilterId } from 'src/kernel/ids';
 import { getCurrentUserId } from 'src/kernel/types/context';
@@ -13,9 +10,7 @@ import { toDomain, toPrisma, toPrismaUpdateData } from './saved-filter.mapper';
 
 @Injectable()
 export class SavedFilterRepository implements ISavedFilterRepository {
-  constructor(
-    @Inject(PRISMA_SERVICE) private readonly prisma: PrismaService,
-  ) {}
+  constructor(@Inject(PRISMA_SERVICE) private readonly prisma: PrismaService) {}
 
   async save(data: SavedFilter): Promise<SavedFilter> {
     return this.prisma.savedFilter
@@ -40,9 +35,7 @@ export class SavedFilterRepository implements ISavedFilterRepository {
         data: toPrismaUpdateData(data),
       })
       .then(toDomain)
-      .catch((e: unknown) =>
-        handlePrismaNotFound(e, `Saved filter with ID ${id} not found`),
-      );
+      .catch((e: unknown) => handlePrismaNotFound(e, `Saved filter with ID ${id} not found`));
   }
 
   async getAll(): Promise<SavedFilter[]> {
@@ -62,9 +55,7 @@ export class SavedFilterRepository implements ISavedFilterRepository {
         where: { id: extractModelId(id).dbId, createdById: getCurrentUserId() },
       })
       .then(() => true)
-      .catch((e: unknown) =>
-        handlePrismaNotFound(e, `Saved filter with ID ${id} not found`),
-      );
+      .catch((e: unknown) => handlePrismaNotFound(e, `Saved filter with ID ${id} not found`));
   }
 
   async getCurrentFilter(): Promise<Maybe<SavedFilter>> {

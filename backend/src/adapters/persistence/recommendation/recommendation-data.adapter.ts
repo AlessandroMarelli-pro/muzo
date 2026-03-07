@@ -6,8 +6,6 @@ import { calculateFeatures } from './calculate-features';
 
 @Injectable()
 export class RecommendationDataAdapter implements IRecommendationDataPort {
-  constructor() {}
-
   getAudioFeatures(tracks: MusicTrack[]): Maybe<AudioFeatures> {
     return calculateFeatures(tracks);
   }

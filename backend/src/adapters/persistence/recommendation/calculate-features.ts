@@ -16,224 +16,140 @@ function calculateSpectralFeaturesMean(tracks: MusicTrack[]) {
   return {
     spectralCentroidMean: {
       mean: calculateMean(
-        tracks.map(
-          (track) => track.features?.spectralFeatures?.spectralCentroid.mean,
-        ),
+        tracks.map((track) => track.features?.spectralFeatures?.spectralCentroid.mean),
       ),
       std: calculateMean(
-        tracks.map(
-          (track) => track.features?.spectralFeatures?.spectralCentroid.std,
-        ),
+        tracks.map((track) => track.features?.spectralFeatures?.spectralCentroid.std),
       ),
       max: calculateMean(
-        tracks.map(
-          (track) => track.features?.spectralFeatures?.spectralCentroid.max,
-        ),
+        tracks.map((track) => track.features?.spectralFeatures?.spectralCentroid.max),
       ),
       min: calculateMean(
-        tracks.map(
-          (track) => track.features?.spectralFeatures?.spectralCentroid.min,
-        ),
+        tracks.map((track) => track.features?.spectralFeatures?.spectralCentroid.min),
       ),
       p25: calculateMean(
-        tracks.map(
-          (track) => track.features?.spectralFeatures?.spectralCentroid.p25,
-        ),
+        tracks.map((track) => track.features?.spectralFeatures?.spectralCentroid.p25),
       ),
       p75: calculateMean(
-        tracks.map(
-          (track) => track.features?.spectralFeatures?.spectralCentroid.p75,
-        ),
+        tracks.map((track) => track.features?.spectralFeatures?.spectralCentroid.p75),
       ),
       median: calculateMean(
-        tracks.map(
-          (track) => track.features?.spectralFeatures?.spectralCentroid.median,
-        ),
+        tracks.map((track) => track.features?.spectralFeatures?.spectralCentroid.median),
       ),
     },
     spectralRolloffMean: {
       mean: calculateMean(
-        tracks.map(
-          (track) => track.features?.spectralFeatures?.spectralRolloff.mean,
-        ),
+        tracks.map((track) => track.features?.spectralFeatures?.spectralRolloff.mean),
       ),
       std: calculateMean(
-        tracks.map(
-          (track) => track.features?.spectralFeatures?.spectralRolloff.std,
-        ),
+        tracks.map((track) => track.features?.spectralFeatures?.spectralRolloff.std),
       ),
       max: calculateMean(
-        tracks.map(
-          (track) => track.features?.spectralFeatures?.spectralRolloff.max,
-        ),
+        tracks.map((track) => track.features?.spectralFeatures?.spectralRolloff.max),
       ),
       min: calculateMean(
-        tracks.map(
-          (track) => track.features?.spectralFeatures?.spectralRolloff.min,
-        ),
+        tracks.map((track) => track.features?.spectralFeatures?.spectralRolloff.min),
       ),
       p25: calculateMean(
-        tracks.map(
-          (track) => track.features?.spectralFeatures?.spectralRolloff.p25,
-        ),
+        tracks.map((track) => track.features?.spectralFeatures?.spectralRolloff.p25),
       ),
       p75: calculateMean(
-        tracks.map(
-          (track) => track.features?.spectralFeatures?.spectralRolloff.p75,
-        ),
+        tracks.map((track) => track.features?.spectralFeatures?.spectralRolloff.p75),
       ),
       median: calculateMean(
-        tracks.map(
-          (track) => track.features?.spectralFeatures?.spectralRolloff.median,
-        ),
+        tracks.map((track) => track.features?.spectralFeatures?.spectralRolloff.median),
       ),
     },
     spectralSpreadMean: {
       mean: calculateMean(
-        tracks.map(
-          (track) => track.features?.spectralFeatures?.spectralSpread.mean,
-        ),
+        tracks.map((track) => track.features?.spectralFeatures?.spectralSpread.mean),
       ),
       std: calculateMean(
-        tracks.map(
-          (track) => track.features?.spectralFeatures?.spectralSpread.std,
-        ),
+        tracks.map((track) => track.features?.spectralFeatures?.spectralSpread.std),
       ),
       max: calculateMean(
-        tracks.map(
-          (track) => track.features?.spectralFeatures?.spectralSpread.max,
-        ),
+        tracks.map((track) => track.features?.spectralFeatures?.spectralSpread.max),
       ),
       min: calculateMean(
-        tracks.map(
-          (track) => track.features?.spectralFeatures?.spectralSpread.min,
-        ),
+        tracks.map((track) => track.features?.spectralFeatures?.spectralSpread.min),
       ),
       p25: calculateMean(
-        tracks.map(
-          (track) => track.features?.spectralFeatures?.spectralSpread.p25,
-        ),
+        tracks.map((track) => track.features?.spectralFeatures?.spectralSpread.p25),
       ),
       p75: calculateMean(
-        tracks.map(
-          (track) => track.features?.spectralFeatures?.spectralSpread.p75,
-        ),
+        tracks.map((track) => track.features?.spectralFeatures?.spectralSpread.p75),
       ),
       median: calculateMean(
-        tracks.map(
-          (track) => track.features?.spectralFeatures?.spectralSpread.median,
-        ),
+        tracks.map((track) => track.features?.spectralFeatures?.spectralSpread.median),
       ),
     },
     spectralBandwidthMean: {
       mean: calculateMean(
-        tracks.map(
-          (track) => track.features?.spectralFeatures?.spectralBandwith.mean,
-        ),
+        tracks.map((track) => track.features?.spectralFeatures?.spectralBandwith.mean),
       ),
       std: calculateMean(
-        tracks.map(
-          (track) => track.features?.spectralFeatures?.spectralBandwith.std,
-        ),
+        tracks.map((track) => track.features?.spectralFeatures?.spectralBandwith.std),
       ),
       max: calculateMean(
-        tracks.map(
-          (track) => track.features?.spectralFeatures?.spectralBandwith.max,
-        ),
+        tracks.map((track) => track.features?.spectralFeatures?.spectralBandwith.max),
       ),
       min: calculateMean(
-        tracks.map(
-          (track) => track.features?.spectralFeatures?.spectralBandwith.min,
-        ),
+        tracks.map((track) => track.features?.spectralFeatures?.spectralBandwith.min),
       ),
       p25: calculateMean(
-        tracks.map(
-          (track) => track.features?.spectralFeatures?.spectralBandwith.p25,
-        ),
+        tracks.map((track) => track.features?.spectralFeatures?.spectralBandwith.p25),
       ),
       p75: calculateMean(
-        tracks.map(
-          (track) => track.features?.spectralFeatures?.spectralBandwith.p75,
-        ),
+        tracks.map((track) => track.features?.spectralFeatures?.spectralBandwith.p75),
       ),
       median: calculateMean(
-        tracks.map(
-          (track) => track.features?.spectralFeatures?.spectralBandwith.median,
-        ),
+        tracks.map((track) => track.features?.spectralFeatures?.spectralBandwith.median),
       ),
     },
     spectralFlatnessMean: {
       mean: calculateMean(
-        tracks.map(
-          (track) => track.features?.spectralFeatures?.spectralFlatness.mean,
-        ),
+        tracks.map((track) => track.features?.spectralFeatures?.spectralFlatness.mean),
       ),
       std: calculateMean(
-        tracks.map(
-          (track) => track.features?.spectralFeatures?.spectralFlatness.std,
-        ),
+        tracks.map((track) => track.features?.spectralFeatures?.spectralFlatness.std),
       ),
       max: calculateMean(
-        tracks.map(
-          (track) => track.features?.spectralFeatures?.spectralFlatness.max,
-        ),
+        tracks.map((track) => track.features?.spectralFeatures?.spectralFlatness.max),
       ),
       min: calculateMean(
-        tracks.map(
-          (track) => track.features?.spectralFeatures?.spectralFlatness.min,
-        ),
+        tracks.map((track) => track.features?.spectralFeatures?.spectralFlatness.min),
       ),
       p25: calculateMean(
-        tracks.map(
-          (track) => track.features?.spectralFeatures?.spectralFlatness.p25,
-        ),
+        tracks.map((track) => track.features?.spectralFeatures?.spectralFlatness.p25),
       ),
       p75: calculateMean(
-        tracks.map(
-          (track) => track.features?.spectralFeatures?.spectralFlatness.p75,
-        ),
+        tracks.map((track) => track.features?.spectralFeatures?.spectralFlatness.p75),
       ),
       median: calculateMean(
-        tracks.map(
-          (track) => track.features?.spectralFeatures?.spectralFlatness.median,
-        ),
+        tracks.map((track) => track.features?.spectralFeatures?.spectralFlatness.median),
       ),
     },
     zeroCrossingRateMean: {
       mean: calculateMean(
-        tracks.map(
-          (track) => track.features?.spectralFeatures?.zeroCrossingRate.mean,
-        ),
+        tracks.map((track) => track.features?.spectralFeatures?.zeroCrossingRate.mean),
       ),
       std: calculateMean(
-        tracks.map(
-          (track) => track.features?.spectralFeatures?.zeroCrossingRate.std,
-        ),
+        tracks.map((track) => track.features?.spectralFeatures?.zeroCrossingRate.std),
       ),
       max: calculateMean(
-        tracks.map(
-          (track) => track.features?.spectralFeatures?.zeroCrossingRate.max,
-        ),
+        tracks.map((track) => track.features?.spectralFeatures?.zeroCrossingRate.max),
       ),
       min: calculateMean(
-        tracks.map(
-          (track) => track.features?.spectralFeatures?.zeroCrossingRate.min,
-        ),
+        tracks.map((track) => track.features?.spectralFeatures?.zeroCrossingRate.min),
       ),
       p25: calculateMean(
-        tracks.map(
-          (track) => track.features?.spectralFeatures?.zeroCrossingRate.p25,
-        ),
+        tracks.map((track) => track.features?.spectralFeatures?.zeroCrossingRate.p25),
       ),
       p75: calculateMean(
-        tracks.map(
-          (track) => track.features?.spectralFeatures?.zeroCrossingRate.p75,
-        ),
+        tracks.map((track) => track.features?.spectralFeatures?.zeroCrossingRate.p75),
       ),
       median: calculateMean(
-        tracks.map(
-          (track) => track.features?.spectralFeatures?.zeroCrossingRate.median,
-        ),
+        tracks.map((track) => track.features?.spectralFeatures?.zeroCrossingRate.median),
       ),
     },
     mfccMean: [],
@@ -331,16 +247,13 @@ export function calculateFeatures(tracks: MusicTrack[]): Maybe<AudioFeatures> {
         keyCounts[mf.key] = (keyCounts[mf.key] || 0) + 1;
       }
       if (mf.camelotKey) {
-        camelotKeyCounts[mf.camelotKey] =
-          (camelotKeyCounts[mf.camelotKey] || 0) + 1;
+        camelotKeyCounts[mf.camelotKey] = (camelotKeyCounts[mf.camelotKey] || 0) + 1;
       }
       if (mf.valenceMood) {
-        valenceMoodCounts[mf.valenceMood] =
-          (valenceMoodCounts[mf.valenceMood] || 0) + 1;
+        valenceMoodCounts[mf.valenceMood] = (valenceMoodCounts[mf.valenceMood] || 0) + 1;
       }
       if (mf.arousalMood) {
-        arousalMoodCounts[mf.arousalMood] =
-          (arousalMoodCounts[mf.arousalMood] || 0) + 1;
+        arousalMoodCounts[mf.arousalMood] = (arousalMoodCounts[mf.arousalMood] || 0) + 1;
       }
       if (mf.danceabilityFeeling) {
         danceabilityFeelingCounts[mf.danceabilityFeeling] =
@@ -437,9 +350,7 @@ export function calculateFeatures(tracks: MusicTrack[]): Maybe<AudioFeatures> {
     vocalsDescriptions.forEach((vocals) => {
       vocalsCounts[vocals] = (vocalsCounts[vocals] || 0) + 1;
     });
-    const mostCommonVocals = Object.entries(vocalsCounts).sort(
-      (a, b) => b[1] - a[1],
-    )[0]?.[0];
+    const mostCommonVocals = Object.entries(vocalsCounts).sort((a, b) => b[1] - a[1])[0]?.[0];
     if (mostCommonVocals) {
       features.vocalsDescriptions = mostCommonVocals;
     }
@@ -460,9 +371,7 @@ export function calculateFeatures(tracks: MusicTrack[]): Maybe<AudioFeatures> {
     contextBackgrounds.forEach((context) => {
       contextCounts[context] = (contextCounts[context] || 0) + 1;
     });
-    const mostCommonContext = Object.entries(contextCounts).sort(
-      (a, b) => b[1] - a[1],
-    )[0]?.[0];
+    const mostCommonContext = Object.entries(contextCounts).sort((a, b) => b[1] - a[1])[0]?.[0];
     if (mostCommonContext) {
       features.contextBackgrounds = mostCommonContext;
     }
@@ -473,9 +382,7 @@ export function calculateFeatures(tracks: MusicTrack[]): Maybe<AudioFeatures> {
     contextImpacts.forEach((impact) => {
       impactCounts[impact] = (impactCounts[impact] || 0) + 1;
     });
-    const mostCommonImpact = Object.entries(impactCounts).sort(
-      (a, b) => b[1] - a[1],
-    )[0]?.[0];
+    const mostCommonImpact = Object.entries(impactCounts).sort((a, b) => b[1] - a[1])[0]?.[0];
     if (mostCommonImpact) {
       features.contextImpacts = mostCommonImpact;
     }

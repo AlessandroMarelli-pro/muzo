@@ -6,17 +6,13 @@ export function toDbModel(domainModel: ModelBase) {
     createdAt: domainModel.createdAt,
     createdById: extractModelId(domainModel.createdById).dbId,
     updatedAt: domainModel.updatedAt ?? null,
-    updatedById: domainModel.updatedById
-      ? extractModelId(domainModel.updatedById).dbId
-      : null,
+    updatedById: domainModel.updatedById ? extractModelId(domainModel.updatedById).dbId : null,
   };
 }
 
 export function toDbModelUpdate(domainModel: Partial<ModelBase>) {
   return {
     updatedAt: domainModel.updatedAt ?? null,
-    updatedById: domainModel.updatedById
-      ? extractModelId(domainModel.updatedById).dbId
-      : null,
+    updatedById: domainModel.updatedById ? extractModelId(domainModel.updatedById).dbId : null,
   };
 }

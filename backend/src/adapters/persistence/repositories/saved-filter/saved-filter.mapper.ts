@@ -36,9 +36,7 @@ export const toPrisma: ToPrisma = (domainModel) => {
   };
 };
 
-export type ToPrismaUpdateData = (
-  data: SavedFilterData,
-) => Partial<PrismaSavedFilter>;
+export type ToPrismaUpdateData = (data: SavedFilterData) => Partial<PrismaSavedFilter>;
 
 export const toPrismaUpdateData: ToPrismaUpdateData = (data) => {
   const result: Partial<PrismaSavedFilter> = {

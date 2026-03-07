@@ -92,9 +92,7 @@ function toTrackAIMetadata(aiMetadata: MaybeUndefined<AudioFileAIMetadata>) {
     aiVocalsDesc: aiMetadata.vocalsDesc,
     aiDescription: aiMetadata.description || undefined,
     aiVocalsDescriptions: aiMetadata.vocalsDesc,
-    aiAtmosphereKeywords: aiMetadata.atmosphereTags?.length
-      ? aiMetadata.atmosphereTags
-      : [],
+    aiAtmosphereKeywords: aiMetadata.atmosphereTags?.length ? aiMetadata.atmosphereTags : [],
     aiContextBackgrounds: aiMetadata.contextBackground,
     aiContextImpacts: aiMetadata.contextImpact,
   };

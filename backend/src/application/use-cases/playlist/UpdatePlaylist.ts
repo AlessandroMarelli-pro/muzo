@@ -6,10 +6,7 @@ import { UpdatePlaylistInput } from './UpdatePlaylist.input';
 export class UpdatePlaylistUseCase {
   constructor(private readonly playlistRepository: IPlaylistRepository) {}
 
-  async execute(
-    id: PlaylistId,
-    updatePlaylistInput: UpdatePlaylistInput,
-  ): Promise<Playlist> {
+  async execute(id: PlaylistId, updatePlaylistInput: UpdatePlaylistInput): Promise<Playlist> {
     return this.playlistRepository.updateOneById(id, {
       name: updatePlaylistInput.name,
       description: updatePlaylistInput.description ?? null,

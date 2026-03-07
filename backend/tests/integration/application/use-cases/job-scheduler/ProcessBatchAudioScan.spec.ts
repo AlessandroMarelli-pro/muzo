@@ -20,15 +20,7 @@ import { ProcessBatchAudioScanUseCase } from 'src/application/use-cases/job-sche
 import { PRISMA_SERVICE } from 'src/infrastructure/database/prisma.service';
 import { extractModelId } from 'src/kernel/ids/factory';
 import { models } from 'src/kernel/types/models';
-import {
-  afterAll,
-  beforeAll,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  vi,
-} from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { makeContextUser } from '../../../../_test-utils/make-context-user';
 import { setupIntegrationDb } from '../_test-utils/integration-db';
 import { makeLibrary } from '../_test-utils/make-library';
@@ -48,9 +40,7 @@ vi.mock('src/kernel/types/context', () => ({
   user: vi.fn(() => ({ id: `User:${TEST_USER_ID}` })),
 }));
 
-function makeBatchJobData(
-  overrides: Partial<AudioScanBatchJobData> = {},
-): AudioScanBatchJobData {
+function makeBatchJobData(overrides: Partial<AudioScanBatchJobData> = {}): AudioScanBatchJobData {
   return {
     audioFiles: [
       {
@@ -189,10 +179,7 @@ describe('ProcessBatchAudioScanUseCase', () => {
   });
 
   /** Seed an already-analyzed track (COMPLETED + genre + subgenre) so areFilesAnalyzed returns true for it. */
-  async function seedAlreadyAnalyzedTrack(
-    filePath: string,
-    libraryDbId: string,
-  ) {
+  async function seedAlreadyAnalyzedTrack(filePath: string, libraryDbId: string) {
     const genre = await prisma.genre.create({
       data: {
         name: `TestGenre-${Date.now()}`,
@@ -274,14 +261,8 @@ describe('ProcessBatchAudioScanUseCase', () => {
       expect(result.files).toHaveLength(1);
       expect(result.analysisResults).toHaveLength(1);
       expect(result.createdTracks).toHaveLength(1);
-      expect(result.createdTracks[0].fileInfo.filePath).toBe(
-        '/music/track1.mp3',
-      );
-      expect(fakeAnalyzeBatch).toHaveBeenCalledWith(
-        ['/music/track1.mp3'],
-        SESSION_ID,
-        0,
-      );
+      expect(result.createdTracks[0].fileInfo.filePath).toBe('/music/track1.mp3');
+      expect(fakeAnalyzeBatch).toHaveBeenCalledWith(['/music/track1.mp3'], SESSION_ID, 0);
     });
 
     it('edge case: when audioFiles is empty, returns batch complete with empty arrays', async () => {
@@ -377,17 +358,10 @@ describe('ProcessBatchAudioScanUseCase', () => {
 
       expect(result.isBatchComplete).toBe(false);
       expect(result.files).toHaveLength(2);
-      expect(result.files.map((f) => f.filePath)).toEqual([
-        TRACK1_PATH,
-        TRACK2_PATH,
-      ]);
+      expect(result.files.map((f) => f.filePath)).toEqual([TRACK1_PATH, TRACK2_PATH]);
       expect(result.createdTracks).toHaveLength(2);
       expect(result.analysisResults).toHaveLength(2);
-      expect(fakeAnalyzeBatch).toHaveBeenCalledWith(
-        [TRACK1_PATH, TRACK2_PATH],
-        SESSION_ID,
-        0,
-      );
+      expect(fakeAnalyzeBatch).toHaveBeenCalledWith([TRACK1_PATH, TRACK2_PATH], SESSION_ID, 0);
 
       expect(fakePublishEvent).toHaveBeenCalledTimes(1);
       expect(fakePublishEvent).toHaveBeenCalledWith(
@@ -406,14 +380,10 @@ describe('ProcessBatchAudioScanUseCase', () => {
     it('failure: propagates when audio analysis throws', async () => {
       const library = makeLibrary({ id: 'lib-1' });
       await musicLibraryRepository.save(library);
-      fakeAnalyzeBatch.mockRejectedValue(
-        new Error('Analysis service unavailable'),
-      );
+      fakeAnalyzeBatch.mockRejectedValue(new Error('Analysis service unavailable'));
 
       const data = makeBatchJobData();
-      await expect(useCase.execute(data)).rejects.toThrow(
-        'Analysis service unavailable',
-      );
+      await expect(useCase.execute(data)).rejects.toThrow('Analysis service unavailable');
     });
   });
 });

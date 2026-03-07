@@ -16,9 +16,7 @@ vi.mock('src/kernel/types/context', () => ({
   user: vi.fn(() => ({ id: 'User:test-user-id' })),
 }));
 
-function makePrismaPlaylistRow(
-  overrides: Partial<PrismaPlaylist> = {},
-): PrismaPlaylist {
+function makePrismaPlaylistRow(overrides: Partial<PrismaPlaylist> = {}): PrismaPlaylist {
   return {
     id: 'playlist-1',
     name: 'Test Playlist',
@@ -56,10 +54,7 @@ describe('PlaylistRepository', () => {
   beforeEach(async () => {
     prismaMock = createMockPrisma();
     const module = await Test.createTestingModule({
-      providers: [
-        PlaylistRepository,
-        { provide: PRISMA_SERVICE, useValue: prismaMock },
-      ],
+      providers: [PlaylistRepository, { provide: PRISMA_SERVICE, useValue: prismaMock }],
     }).compile();
     repo = module.get(PlaylistRepository);
   });
@@ -95,9 +90,7 @@ describe('PlaylistRepository', () => {
       const prismaError = new Error('Unique constraint failed');
       prismaMock.playlist.create.mockRejectedValue(prismaError);
 
-      await expect(repo.save(domain)).rejects.toThrow(
-        'Unique constraint failed',
-      );
+      await expect(repo.save(domain)).rejects.toThrow('Unique constraint failed');
     });
 
     it('createdById scope: create is called with current user id in data', async () => {
@@ -141,13 +134,9 @@ describe('PlaylistRepository', () => {
 
     it('failure: rethrows when Prisma throws non-P2025 error', async () => {
       const playlistId = models.playlist.id('playlist-1') as PlaylistId;
-      prismaMock.playlist.findFirstOrThrow.mockRejectedValue(
-        new Error('Connection lost'),
-      );
+      prismaMock.playlist.findFirstOrThrow.mockRejectedValue(new Error('Connection lost'));
 
-      await expect(repo.getOneById(playlistId)).rejects.toThrow(
-        'Connection lost',
-      );
+      await expect(repo.getOneById(playlistId)).rejects.toThrow('Connection lost');
     });
 
     it('createdById scope: findFirstOrThrow is called with current user in where', async () => {
@@ -165,9 +154,7 @@ describe('PlaylistRepository', () => {
     });
 
     it('empty result: not found yields NotFoundError (P2025)', async () => {
-      const playlistId = models.playlist.id(
-        'playlist-nonexistent',
-      ) as PlaylistId;
+      const playlistId = models.playlist.id('playlist-nonexistent') as PlaylistId;
       prismaMock.playlist.findFirstOrThrow.mockRejectedValue({ code: 'P2025' });
 
       await expect(repo.getOneById(playlistId)).rejects.toMatchObject({
@@ -225,9 +212,7 @@ describe('PlaylistRepository', () => {
       const playlistId = models.playlist.id('playlist-missing') as PlaylistId;
       prismaMock.playlist.findFirstOrThrow.mockRejectedValue({ code: 'P2025' });
 
-      await expect(
-        repo.getOneByIdWithTracks(playlistId, null),
-      ).rejects.toMatchObject({
+      await expect(repo.getOneByIdWithTracks(playlistId, null)).rejects.toMatchObject({
         errorType: 'NotFoundError',
         message: 'Playlist with ID Playlist:playlist-missing not found',
       });
@@ -249,14 +234,10 @@ describe('PlaylistRepository', () => {
     });
 
     it('empty result: not found yields NotFoundError (P2025)', async () => {
-      const playlistId = models.playlist.id(
-        'playlist-nonexistent',
-      ) as PlaylistId;
+      const playlistId = models.playlist.id('playlist-nonexistent') as PlaylistId;
       prismaMock.playlist.findFirstOrThrow.mockRejectedValue({ code: 'P2025' });
 
-      await expect(
-        repo.getOneByIdWithTracks(playlistId, null),
-      ).rejects.toMatchObject({
+      await expect(repo.getOneByIdWithTracks(playlistId, null)).rejects.toMatchObject({
         errorType: 'NotFoundError',
         message: expect.stringContaining('playlist-nonexistent'),
       });
@@ -386,9 +367,7 @@ describe('PlaylistRepository', () => {
       const playlistId = models.playlist.id('playlist-missing') as PlaylistId;
       prismaMock.playlist.update.mockRejectedValue({ code: 'P2025' });
 
-      await expect(
-        repo.updateOneById(playlistId, { name: 'X' }),
-      ).rejects.toMatchObject({
+      await expect(repo.updateOneById(playlistId, { name: 'X' })).rejects.toMatchObject({
         errorType: 'NotFoundError',
         message: 'Playlist with ID Playlist:playlist-missing not found',
       });
@@ -396,13 +375,11 @@ describe('PlaylistRepository', () => {
 
     it('failure: rethrows when Prisma throws non-P2025 error', async () => {
       const playlistId = models.playlist.id('playlist-1') as PlaylistId;
-      prismaMock.playlist.update.mockRejectedValue(
-        new Error('Connection lost'),
-      );
+      prismaMock.playlist.update.mockRejectedValue(new Error('Connection lost'));
 
-      await expect(
-        repo.updateOneById(playlistId, { name: 'X' }),
-      ).rejects.toThrow('Connection lost');
+      await expect(repo.updateOneById(playlistId, { name: 'X' })).rejects.toThrow(
+        'Connection lost',
+      );
     });
 
     it('createdById scope: update is called with current user in where', async () => {
@@ -444,13 +421,9 @@ describe('PlaylistRepository', () => {
 
     it('failure: rethrows when Prisma throws non-P2025 error', async () => {
       const playlistId = models.playlist.id('playlist-1') as PlaylistId;
-      prismaMock.playlist.delete.mockRejectedValue(
-        new Error('Constraint failed'),
-      );
+      prismaMock.playlist.delete.mockRejectedValue(new Error('Constraint failed'));
 
-      await expect(repo.deleteOneById(playlistId)).rejects.toThrow(
-        'Constraint failed',
-      );
+      await expect(repo.deleteOneById(playlistId)).rejects.toThrow('Constraint failed');
     });
 
     it('createdById scope: delete is called with current user in where', async () => {
@@ -502,9 +475,7 @@ describe('PlaylistRepository', () => {
     });
 
     it('empty result: not found yields NotFoundError (P2025)', async () => {
-      const playlistId = models.playlist.id(
-        'playlist-nonexistent',
-      ) as PlaylistId;
+      const playlistId = models.playlist.id('playlist-nonexistent') as PlaylistId;
       prismaMock.playlist.findFirstOrThrow.mockRejectedValue({ code: 'P2025' });
 
       await expect(repo.verifyAccess(playlistId)).rejects.toMatchObject({

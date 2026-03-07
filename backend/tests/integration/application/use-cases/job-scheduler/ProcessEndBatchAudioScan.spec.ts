@@ -14,15 +14,7 @@ import { SCAN_SESSION_REPOSITORY } from 'src/application/ports/repositories/ISca
 import { ProcessEndBatchAudioScanUseCase } from 'src/application/use-cases/job-scheduler/ProcessEndBatchAudioScan';
 import { PRISMA_SERVICE } from 'src/infrastructure/database/prisma.service';
 import { models } from 'src/kernel/types/models';
-import {
-  afterAll,
-  beforeAll,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  vi,
-} from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { makeContextUser } from '../../../../_test-utils/make-context-user';
 import { setupIntegrationDb } from '../_test-utils/integration-db';
 
@@ -39,9 +31,7 @@ vi.mock('src/kernel/types/context', () => ({
 
 const contextUser = makeContextUser(TEST_USER_ID);
 
-function makeBatchData(
-  overrides: Partial<AudioScanBatchJobData> = {},
-): AudioScanBatchJobData {
+function makeBatchData(overrides: Partial<AudioScanBatchJobData> = {}): AudioScanBatchJobData {
   return {
     audioFiles: [
       {
@@ -141,14 +131,7 @@ describe('ProcessEndBatchAudioScanUseCase', () => {
             },
             lf: { createLogger: (name: string) => ILogger },
             log: ILogger,
-          ) =>
-            new ProcessEndBatchAudioScanUseCase(
-              scanSessionRepo,
-              publisher,
-              producer,
-              lf,
-              log,
-            ),
+          ) => new ProcessEndBatchAudioScanUseCase(scanSessionRepo, publisher, producer, lf, log),
           inject: [
             SCAN_SESSION_REPOSITORY,
             SCAN_PROGRESS_PUBLISHER,

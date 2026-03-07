@@ -34,23 +34,17 @@ export class AudioStreamingController {
   ): Promise<void> {
     const decodedTrackId = fromBase64Id(trackId);
 
-    const track = await this.getTrackUseCase.execute(
-      parseMusicTrackId(decodedTrackId),
-    );
+    const track = await this.getTrackUseCase.execute(parseMusicTrackId(decodedTrackId));
 
     if (!track) {
       throw new NotFoundException(`Track with ID ${trackId} not found`);
     }
     const filePath = track.fileInfo?.filePath;
     if (!filePath) {
-      throw new BadRequestException(
-        `Track with ID ${trackId} has no file path`,
-      );
+      throw new BadRequestException(`Track with ID ${trackId} has no file path`);
     }
     if (!fs.existsSync(filePath)) {
-      throw new BadRequestException(
-        `Audio file not found at path: ${filePath}`,
-      );
+      throw new BadRequestException(`Audio file not found at path: ${filePath}`);
     }
 
     const fileSize = statSync(filePath).size;

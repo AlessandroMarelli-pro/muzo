@@ -42,10 +42,7 @@ export class ScheduleLibraryScanUseCase {
       );
       return { sessionId: id };
     } catch (error) {
-      this.logger.error(
-        `Failed to schedule library scan for library ${libraryId}:`,
-        error,
-      );
+      this.logger.error(`Failed to schedule library scan for library ${libraryId}:`, error);
       await this.musicLibraryRepository.updateScanStatus(libraryId, 'IDLE');
       await this.scanSessionRepository.deleteSession(id);
       throw error;

@@ -3,10 +3,7 @@ import {
   AnalysisStatus as PrismaAnalysisStatus,
   MusicTrack as PrismaMusicTrack,
 } from '@prisma/client';
-import {
-  PRISMA_SERVICE,
-  PrismaService,
-} from 'src/infrastructure/database/prisma.service';
+import { PRISMA_SERVICE, PrismaService } from 'src/infrastructure/database/prisma.service';
 import { MusicTrackRepository } from 'src/adapters/persistence/repositories/music-track/music-track.repository';
 import { createMockPrisma } from '../_test-utils/prisma-mock';
 import { models } from 'src/kernel/types/models';
@@ -27,9 +24,7 @@ vi.mock('src/kernel/types/context', () => ({
 }));
 
 /** Minimal Prisma MusicTrack row with relations required by toDomain (include shape). */
-function makePrismaTrackRow(
-  overrides: Partial<PrismaMusicTrack> = {},
-): PrismaMusicTrack & {
+function makePrismaTrackRow(overrides: Partial<PrismaMusicTrack> = {}): PrismaMusicTrack & {
   audioFingerprint?: null;
   trackGenres?: never[];
   trackSubgenres?: never[];
@@ -125,10 +120,7 @@ describe('MusicTrackRepository', () => {
   beforeEach(async () => {
     prismaMock = createMockPrisma();
     const module = await Test.createTestingModule({
-      providers: [
-        MusicTrackRepository,
-        { provide: PRISMA_SERVICE, useValue: prismaMock },
-      ],
+      providers: [MusicTrackRepository, { provide: PRISMA_SERVICE, useValue: prismaMock }],
     }).compile();
     repo = module.get(MusicTrackRepository);
   });
@@ -198,7 +190,9 @@ describe('MusicTrackRepository', () => {
 
     it('failure: throws NotFoundError when Prisma throws P2025', async () => {
       const trackId = models.musicTrack.id('track-missing') as MusicTrackId;
-      prismaMock.musicTrack.findUniqueOrThrow.mockRejectedValue({ code: 'P2025' });
+      prismaMock.musicTrack.findUniqueOrThrow.mockRejectedValue({
+        code: 'P2025',
+      });
 
       await expect(repo.getOneById(trackId)).rejects.toMatchObject({
         errorType: 'NotFoundError',
@@ -228,7 +222,9 @@ describe('MusicTrackRepository', () => {
 
     it('empty result: not found yields NotFoundError (P2025)', async () => {
       const trackId = models.musicTrack.id('track-nonexistent') as MusicTrackId;
-      prismaMock.musicTrack.findUniqueOrThrow.mockRejectedValue({ code: 'P2025' });
+      prismaMock.musicTrack.findUniqueOrThrow.mockRejectedValue({
+        code: 'P2025',
+      });
 
       await expect(repo.getOneById(trackId)).rejects.toMatchObject({
         errorType: 'NotFoundError',
@@ -240,7 +236,10 @@ describe('MusicTrackRepository', () => {
   describe('upsertOne', () => {
     it('optimal: upserts track and returns domain model', async () => {
       const data = makeUpsertData();
-      const row = makePrismaTrackRow({ id: 'track-1', filePath: data.filePath });
+      const row = makePrismaTrackRow({
+        id: 'track-1',
+        filePath: data.filePath,
+      });
       prismaMock.musicTrack.upsert.mockResolvedValue(row);
 
       const result = await repo.upsertOne(data);
@@ -291,7 +290,10 @@ describe('MusicTrackRepository', () => {
         _count: { id: true },
       });
       expect(result).toHaveLength(2);
-      expect(result[0]).toEqual({ analysisStatus: AudioFileAnalysisStatusEnum.COMPLETED, count: 5 });
+      expect(result[0]).toEqual({
+        analysisStatus: AudioFileAnalysisStatusEnum.COMPLETED,
+        count: 5,
+      });
     });
 
     it('failure: rethrows when Prisma groupBy throws', async () => {
@@ -470,9 +472,9 @@ describe('MusicTrackRepository', () => {
   describe('verifyExistence', () => {
     it('optimal: returns true when track exists', async () => {
       const trackId = models.musicTrack.id('track-1') as MusicTrackId;
-      prismaMock.musicTrack.findUnique.mockResolvedValue({ id: 'track-1' } as Awaited<
-        ReturnType<typeof prismaMock.musicTrack.findUnique>
-      >);
+      prismaMock.musicTrack.findUnique.mockResolvedValue({
+        id: 'track-1',
+      } as Awaited<ReturnType<typeof prismaMock.musicTrack.findUnique>>);
 
       const result = await repo.verifyExistence(trackId);
 
@@ -515,7 +517,10 @@ describe('MusicTrackRepository', () => {
   describe('updateOneById', () => {
     it('optimal: updates track and returns domain model', async () => {
       const trackId = models.musicTrack.id('track-1') as MusicTrackId;
-      const updatedRow = makePrismaTrackRow({ id: 'track-1', isFavorite: true });
+      const updatedRow = makePrismaTrackRow({
+        id: 'track-1',
+        isFavorite: true,
+      });
       prismaMock.musicTrack.update.mockResolvedValue(updatedRow);
 
       const result = await repo.updateOneById(trackId, {
@@ -536,7 +541,10 @@ describe('MusicTrackRepository', () => {
       prismaMock.musicTrack.update.mockRejectedValue({ code: 'P2025' });
 
       await expect(
-        repo.updateOneById(trackId, { ...makeUpsertData(), stats: { isFavorite: true } }),
+        repo.updateOneById(trackId, {
+          ...makeUpsertData(),
+          stats: { isFavorite: true },
+        }),
       ).rejects.toMatchObject({ code: 'P2025' });
     });
 
@@ -544,7 +552,10 @@ describe('MusicTrackRepository', () => {
       const trackId = models.musicTrack.id('track-1') as MusicTrackId;
       prismaMock.musicTrack.update.mockResolvedValue(makePrismaTrackRow());
 
-      await repo.updateOneById(trackId, { ...makeUpsertData(), stats: { isLiked: true } });
+      await repo.updateOneById(trackId, {
+        ...makeUpsertData(),
+        stats: { isLiked: true },
+      });
 
       expect(prismaMock.musicTrack.update).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -571,7 +582,9 @@ describe('MusicTrackRepository', () => {
       const trackId = models.musicTrack.id('track-missing') as MusicTrackId;
       prismaMock.musicTrack.delete.mockRejectedValue({ code: 'P2025' });
 
-      await expect(repo.removeOneById(trackId)).rejects.toMatchObject({ code: 'P2025' });
+      await expect(repo.removeOneById(trackId)).rejects.toMatchObject({
+        code: 'P2025',
+      });
     });
 
     it('createdById scope: delete is called with current user in where', async () => {
@@ -648,7 +661,9 @@ describe('MusicTrackRepository', () => {
 
     it('failure: throws NotFoundError when no tracks (P2025)', async () => {
       prismaMock.musicTrack.count.mockResolvedValue(0);
-      prismaMock.musicTrack.findFirstOrThrow.mockRejectedValue({ code: 'P2025' });
+      prismaMock.musicTrack.findFirstOrThrow.mockRejectedValue({
+        code: 'P2025',
+      });
 
       await expect(repo.getRandomTrackId()).rejects.toMatchObject({
         errorType: 'NotFoundError',
@@ -675,7 +690,10 @@ describe('MusicTrackRepository', () => {
 
   describe('getLastPlayedTrack', () => {
     it('optimal: returns last played track when found', async () => {
-      const row = makePrismaTrackRow({ id: 'track-1', lastPlayedAt: new Date() });
+      const row = makePrismaTrackRow({
+        id: 'track-1',
+        lastPlayedAt: new Date(),
+      });
       prismaMock.musicTrack.findFirst.mockResolvedValue(row);
 
       const result = await repo.getLastPlayedTrack();

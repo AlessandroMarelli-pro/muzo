@@ -10,12 +10,8 @@ export class ExportPlaylistToM3UUseCase {
   ) {}
 
   async execute(playlistId: PlaylistId): Promise<string> {
-    const sorting =
-      await this.playlistSortingRepository.getByPlaylistId(playlistId);
-    const playlist = await this.playlistRepository.getOneByIdWithTracks(
-      playlistId,
-      sorting,
-    );
+    const sorting = await this.playlistSortingRepository.getByPlaylistId(playlistId);
+    const playlist = await this.playlistRepository.getOneByIdWithTracks(playlistId, sorting);
 
     // Start with M3U header
     let m3uContent = '#EXTM3U\n';

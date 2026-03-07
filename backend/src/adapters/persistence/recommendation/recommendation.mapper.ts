@@ -13,8 +13,7 @@ export const toAudioFeatures = (track: MusicTrack): AudioFeatures => {
     arousal: track.features?.musicalFeatures?.arousal ?? 0,
     arousalMood: track.features?.musicalFeatures?.arousalMood ?? '',
     danceability: track.features?.musicalFeatures?.danceability ?? 0,
-    danceabilityFeeling:
-      track.features?.musicalFeatures?.danceabilityFeeling ?? '',
+    danceabilityFeeling: track.features?.musicalFeatures?.danceabilityFeeling ?? '',
     genres: track.metadata?.genres ?? [],
     subgenres: track.metadata?.subgenres ?? [],
     artist: track.artist,

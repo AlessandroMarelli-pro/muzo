@@ -5,9 +5,7 @@ import { getAnonymousUser } from '../../../kernel/types/defaults';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
-  canActivate(
-    context: ExecutionContext,
-  ): boolean | Promise<boolean> | Observable<boolean> {
+  canActivate(context: ExecutionContext): boolean | Promise<boolean> | Observable<boolean> {
     const gqlContext = GqlExecutionContext.create(context).getContext();
     const request = gqlContext.req;
 

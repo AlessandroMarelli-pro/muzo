@@ -31,10 +31,7 @@ export class AddImageSearchRecordUseCase {
     this.logger = loggerFactory.createLogger('AddImageSearchRecordUseCase');
   }
 
-  async execute(
-    trackId: MusicTrackId,
-    data: AddImageSearchRecordData,
-  ): Promise<ImageSearch> {
+  async execute(trackId: MusicTrackId, data: AddImageSearchRecordData): Promise<ImageSearch> {
     const imagesDir =
       this.configService.get<string>(IMAGES_DIR_KEY) ??
       path.join(process.cwd(), DEFAULT_IMAGES_RELATIVE);

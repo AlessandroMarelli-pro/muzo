@@ -1,5 +1,8 @@
 import { LibraryScanSchedulerConsumerAdapter } from 'src/adapters/job-schedulers/library-scan-scheduler-consumer.adapter';
-import type { EndLibraryScanJobData, LibraryScanJobData } from 'src/application/ports/dtos/JobSchedulersData';
+import type {
+  EndLibraryScanJobData,
+  LibraryScanJobData,
+} from 'src/application/ports/dtos/JobSchedulersData';
 import { makeContextUser } from '../../../_test-utils/make-context-user';
 import { makeJob } from './_test-utils/make-job';
 
@@ -11,8 +14,12 @@ describe('LibraryScanSchedulerConsumerAdapter', () => {
 
   beforeEach(() => {
     processStartLibraryScanUseCase = { execute: vi.fn().mockResolvedValue([]) };
-    scheduleBatchAudioScanUseCase = { execute: vi.fn().mockResolvedValue(undefined) };
-    processEndLibraryScanUseCase = { execute: vi.fn().mockResolvedValue(undefined) };
+    scheduleBatchAudioScanUseCase = {
+      execute: vi.fn().mockResolvedValue(undefined),
+    };
+    processEndLibraryScanUseCase = {
+      execute: vi.fn().mockResolvedValue(undefined),
+    };
     adapter = new LibraryScanSchedulerConsumerAdapter(
       processStartLibraryScanUseCase as any,
       scheduleBatchAudioScanUseCase as any,
@@ -27,7 +34,12 @@ describe('LibraryScanSchedulerConsumerAdapter', () => {
       const incremental = false;
       const contextUser = makeContextUser('user-1');
       const audioFiles = [
-        { path: '/music/track.mp3', filename: 'track.mp3', extension: '.mp3', size: 1024 },
+        {
+          path: '/music/track.mp3',
+          filename: 'track.mp3',
+          extension: '.mp3',
+          size: 1024,
+        },
       ];
       processStartLibraryScanUseCase.execute.mockResolvedValueOnce(audioFiles);
 

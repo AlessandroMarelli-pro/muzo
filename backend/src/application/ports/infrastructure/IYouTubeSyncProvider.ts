@@ -6,9 +6,7 @@ export interface VideoMatchResult {
   matchedVideo?: { id: string; title: string; duration: number };
 }
 
-export const YOUTUBE_SYNC_PROVIDER = createToken<IYouTubeSyncProvider>(
-  'YOUTUBE_SYNC_PROVIDER',
-);
+export const YOUTUBE_SYNC_PROVIDER = createToken<IYouTubeSyncProvider>('YOUTUBE_SYNC_PROVIDER');
 
 export interface IYouTubeSyncProvider {
   getAuthUrl(): string;
@@ -24,14 +22,6 @@ export interface IYouTubeSyncProvider {
     trackDurationSeconds: number,
     userId: string,
   ): Promise<VideoMatchResult>;
-  createPlaylist(
-    userId: string,
-    name: string,
-    description?: string,
-  ): Promise<string>;
-  addVideosToPlaylist(
-    userId: string,
-    playlistId: string,
-    videoIds: string[],
-  ): Promise<void>;
+  createPlaylist(userId: string, name: string, description?: string): Promise<string>;
+  addVideosToPlaylist(userId: string, playlistId: string, videoIds: string[]): Promise<void>;
 }

@@ -9,7 +9,5 @@ export const fail: Fail = (message) => {
 
 type OverlapKeys<A, B> = Extract<keyof A, keyof B>;
 
-export type StrictExtend<U, Add> = [OverlapKeys<Add, U>] extends [never]
-  ? U & Add
-  : never;
+export type StrictExtend<U, Add> = [OverlapKeys<Add, U>] extends [never] ? U & Add : never;
 export const isNull = <T>(x: T | null): x is null => x === null;

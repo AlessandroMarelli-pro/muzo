@@ -17,18 +17,14 @@ export class GetPlaylistRecommendationsUseCase {
     private readonly musicTrackRepository: IMusicTrackRepository,
   ) {}
 
-  async execute(
-    playlistId: PlaylistId,
-    limit: number = 50,
-  ): Promise<TrackSimilarity[]> {
-    const playlistTracks =
-      await this.playlistTrackRepository.getTracksByPlaylistIdWithTrack(
-        playlistId,
-        {
-          sortingKey: 'addedAt',
-          sortingDirection: 'desc',
-        },
-      );
+  async execute(playlistId: PlaylistId, limit: number = 50): Promise<TrackSimilarity[]> {
+    const playlistTracks = await this.playlistTrackRepository.getTracksByPlaylistIdWithTrack(
+      playlistId,
+      {
+        sortingKey: 'addedAt',
+        sortingDirection: 'desc',
+      },
+    );
 
     const features = this.recommendationDataPort.getAudioFeatures(
       playlistTracks.map((track) => track.track).slice(0, 10),
@@ -37,12 +33,11 @@ export class GetPlaylistRecommendationsUseCase {
       return [];
     }
 
-    const recommendations =
-      await this.recommendationSearchPort.searchByFeatures([features], {
-        weights: DEFAULT_RECOMMENDATION_WEIGHTS,
-        limit,
-        excludeTrackIds: playlistTracks.map((track) => track.track.id),
-      });
+    const recommendations = await this.recommendationSearchPort.searchByFeatures([features], {
+      weights: DEFAULT_RECOMMENDATION_WEIGHTS,
+      limit,
+      excludeTrackIds: playlistTracks.map((track) => track.track.id),
+    });
     const findTracks = await this.musicTrackRepository.getManyByIds(
       recommendations.map((recommendation) => recommendation.track?.id),
     );

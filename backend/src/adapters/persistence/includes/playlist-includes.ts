@@ -1,9 +1,6 @@
 // playlist-includes.ts
 import { Prisma } from '@prisma/client';
-import type {
-  PlaylistSortingDirection,
-  PlaylistSortingKey,
-} from 'src/kernel/types/model-types';
+import type { PlaylistSortingDirection, PlaylistSortingKey } from 'src/kernel/types/model-types';
 
 export type PlaylistWithTracksIncludeOptions = {
   sortingKey: PlaylistSortingKey;
@@ -18,9 +15,7 @@ const trackInclude = {
   trackAiAtmosphereTags: { include: { aiAtmosphereTag: true } },
 } satisfies Prisma.MusicTrackInclude;
 
-export function playlistWithTracksInclude(
-  sortingOpts: PlaylistWithTracksIncludeOptions,
-) {
+export function playlistWithTracksInclude(sortingOpts: PlaylistWithTracksIncludeOptions) {
   const orderBy =
     sortingOpts.sortingKey === 'position'
       ? ({ position: sortingOpts.sortingDirection } as const)

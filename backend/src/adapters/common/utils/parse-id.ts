@@ -26,8 +26,7 @@ function parseId<T extends string>(
 export const parsePlaylistId = (value: string): PlaylistId =>
   parseId(value, models.playlist.isId, 'Playlist');
 
-export const parseUserId = (value: string): UserId =>
-  parseId(value, models.user.isId, 'User');
+export const parseUserId = (value: string): UserId => parseId(value, models.user.isId, 'User');
 
 export const parseMusicTrackId = (value: string): MusicTrackId =>
   parseId(value, models.musicTrack.isId, 'MusicTrack');

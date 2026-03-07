@@ -54,9 +54,7 @@ export class ThirdPartySyncResolver {
       };
     } catch (error) {
       const message =
-        error instanceof Error
-          ? error.message
-          : 'Failed to authenticate with YouTube';
+        error instanceof Error ? error.message : 'Failed to authenticate with YouTube';
       return { success: false, message };
     }
   }
@@ -89,10 +87,7 @@ export class ThirdPartySyncResolver {
         message: 'Successfully authenticated with TIDAL',
       };
     } catch (error) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : 'Failed to authenticate with TIDAL';
+      const message = error instanceof Error ? error.message : 'Failed to authenticate with TIDAL';
       return { success: false, message };
     }
   }
@@ -126,9 +121,7 @@ export class ThirdPartySyncResolver {
       };
     } catch (error) {
       const message =
-        error instanceof Error
-          ? error.message
-          : 'Failed to authenticate with Spotify';
+        error instanceof Error ? error.message : 'Failed to authenticate with Spotify';
       return { success: false, message };
     }
   }

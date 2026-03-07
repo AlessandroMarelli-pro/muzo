@@ -22,8 +22,7 @@ export class AiServerPoolAdapter implements IAiServicePool {
     hierarchical: null,
   };
   private readonly assignmentKey = 'ai-service:assignments';
-  private readonly serviceId =
-    process.env.HOSTNAME || `muzo-backend-${Date.now()}`;
+  private readonly serviceId = process.env.HOSTNAME || `muzo-backend-${Date.now()}`;
   private healthCheckInterval: NodeJS.Timeout | null = null;
   private heartbeatInterval: NodeJS.Timeout | null = null;
 
@@ -37,8 +36,7 @@ export class AiServerPoolAdapter implements IAiServicePool {
   ) {
     this.logger = loggerFactory.createLogger('AiServerPoolAdapter');
     // Get AI service configuration from centralized config
-    this.aiServiceConfig =
-      this.configService.get<AiServiceConfig>('aiService')!;
+    this.aiServiceConfig = this.configService.get<AiServiceConfig>('aiService')!;
 
     // Initialize service instances
     this.initializeServiceInstances();
@@ -117,9 +115,7 @@ export class AiServerPoolAdapter implements IAiServicePool {
    * Assign servers at startup using Redis-based coordination
    */
   private async assignServersAtStartup(): Promise<void> {
-    this.logger.info(
-      `Assigning servers at startup for service: ${this.serviceId}`,
-    );
+    this.logger.info(`Assigning servers at startup for service: ${this.serviceId}`);
 
     // Check health of all instances first
     await this.checkAllInstancesHealth();
@@ -138,11 +134,8 @@ export class AiServerPoolAdapter implements IAiServicePool {
   /**
    * Try to assign a server of the specified type using Redis coordination
    */
-  private async tryAssignServer(
-    type: 'simple' | 'hierarchical',
-  ): Promise<void> {
-    const instances =
-      type === 'simple' ? this.simpleInstances : this.hierarchicalInstances;
+  private async tryAssignServer(type: 'simple' | 'hierarchical'): Promise<void> {
+    const instances = type === 'simple' ? this.simpleInstances : this.hierarchicalInstances;
     const healthyInstances = instances.filter((instance) => instance.isHealthy);
 
     if (healthyInstances.length === 0) {
@@ -155,36 +148,25 @@ export class AiServerPoolAdapter implements IAiServicePool {
     for (const instance of healthyInstances) {
       if (await this.reserveServer(instance.url, type)) {
         this.assignedServers[type] = instance;
-        this.logger.info(
-          `Successfully assigned ${type} server: ${instance.url}`,
-        );
+        this.logger.info(`Successfully assigned ${type} server: ${instance.url}`);
         return;
       }
     }
-    const serverByPort = instances.find(
-      (instance) => instance.backendPort === currentPort,
-    );
+    const serverByPort = instances.find((instance) => instance.backendPort === currentPort);
 
     if (serverByPort) {
       this.assignedServers[type] = serverByPort;
-      this.logger.info(
-        `Successfully assigned ${type} server: ${serverByPort.url}`,
-      );
+      this.logger.info(`Successfully assigned ${type} server: ${serverByPort.url}`);
       return;
     }
 
-    this.logger.warn(
-      `Could not assign any ${type} server - all are taken by other services`,
-    );
+    this.logger.warn(`Could not assign any ${type} server - all are taken by other services`);
   }
 
   /**
    * Reserve a server using Redis atomic operations
    */
-  private async reserveServer(
-    url: string,
-    type: 'simple' | 'hierarchical',
-  ): Promise<boolean> {
+  private async reserveServer(url: string, type: 'simple' | 'hierarchical'): Promise<boolean> {
     try {
       const redis = await this.queue.client;
       const lockKey = `${this.assignmentKey}:${type}:${url}`;
@@ -215,10 +197,7 @@ export class AiServerPoolAdapter implements IAiServicePool {
   /**
    * Release a server assignment
    */
-  private async releaseServer(
-    url: string,
-    type: 'simple' | 'hierarchical',
-  ): Promise<void> {
+  private async releaseServer(url: string, type: 'simple' | 'hierarchical'): Promise<void> {
     try {
       const redis = await this.queue.client;
       const lockKey = `${this.assignmentKey}:${type}:${url}`;
@@ -293,9 +272,7 @@ export class AiServerPoolAdapter implements IAiServicePool {
 
         if (!assignment) {
           // Assignment expired, try to reassign
-          this.logger.info(
-            `Simple server assignment expired, attempting reassignment`,
-          );
+          this.logger.info(`Simple server assignment expired, attempting reassignment`);
           this.assignedServers.simple = null;
           await this.tryAssignServer('simple');
         }
@@ -308,9 +285,7 @@ export class AiServerPoolAdapter implements IAiServicePool {
 
         if (!assignment) {
           // Assignment expired, try to reassign
-          this.logger.info(
-            `Hierarchical server assignment expired, attempting reassignment`,
-          );
+          this.logger.info(`Hierarchical server assignment expired, attempting reassignment`);
           this.assignedServers.hierarchical = null;
           await this.tryAssignServer('hierarchical');
         }
@@ -335,17 +310,11 @@ export class AiServerPoolAdapter implements IAiServicePool {
     }
 
     // Check if hierarchical server needs reassignment
-    if (
-      this.assignedServers.hierarchical &&
-      !this.assignedServers.hierarchical.isHealthy
-    ) {
+    if (this.assignedServers.hierarchical && !this.assignedServers.hierarchical.isHealthy) {
       this.logger.info(
         `Hierarchical server ${this.assignedServers.hierarchical.url} became unhealthy, releasing assignment`,
       );
-      await this.releaseServer(
-        this.assignedServers.hierarchical.url,
-        'hierarchical',
-      );
+      await this.releaseServer(this.assignedServers.hierarchical.url, 'hierarchical');
       this.assignedServers.hierarchical = null;
       await this.tryAssignServer('hierarchical');
     }
@@ -379,9 +348,7 @@ export class AiServerPoolAdapter implements IAiServicePool {
    */
   private async checkAllInstancesHealth(): Promise<void> {
     const healthChecks = [
-      ...this.simpleInstances.map((instance) =>
-        this.checkInstanceHealth(instance, 'simple'),
-      ),
+      ...this.simpleInstances.map((instance) => this.checkInstanceHealth(instance, 'simple')),
       ...this.hierarchicalInstances.map((instance) =>
         this.checkInstanceHealth(instance, 'hierarchical'),
       ),
@@ -393,18 +360,14 @@ export class AiServerPoolAdapter implements IAiServicePool {
   /**
    * Check health of a specific service instance
    */
-  private async checkInstanceHealth(
-    instance: ServiceInstance,
-    type: string,
-  ): Promise<void> {
+  private async checkInstanceHealth(instance: ServiceInstance, type: string): Promise<void> {
     try {
       const response = await axios.get(`${instance.url}/api/v1/health`, {
         timeout: 5000,
       });
 
       const wasHealthy = instance.isHealthy;
-      instance.isHealthy =
-        response.status === 200 && (response.data as any)?.status === 'healthy';
+      instance.isHealthy = response.status === 200 && (response.data as any)?.status === 'healthy';
       instance.lastChecked = new Date();
 
       if (wasHealthy !== instance.isHealthy) {
@@ -432,12 +395,8 @@ export class AiServerPoolAdapter implements IAiServicePool {
     const redis = await this.queue.client;
 
     // Get all current assignments from Redis
-    const simpleAssignments = await redis.keys(
-      `${this.assignmentKey}:simple:*`,
-    );
-    const hierarchicalAssignments = await redis.keys(
-      `${this.assignmentKey}:hierarchical:*`,
-    );
+    const simpleAssignments = await redis.keys(`${this.assignmentKey}:simple:*`);
+    const hierarchicalAssignments = await redis.keys(`${this.assignmentKey}:hierarchical:*`);
 
     const simpleStats = this.simpleInstances.map((instance) => {
       const assignmentKey = `${this.assignmentKey}:simple:${instance.url}`;
@@ -473,11 +432,8 @@ export class AiServerPoolAdapter implements IAiServicePool {
       },
       simple: simpleStats,
       hierarchical: hierarchicalStats,
-      totalHealthySimple: this.simpleInstances.filter((i) => i.isHealthy)
-        .length,
-      totalHealthyHierarchical: this.hierarchicalInstances.filter(
-        (i) => i.isHealthy,
-      ).length,
+      totalHealthySimple: this.simpleInstances.filter((i) => i.isHealthy).length,
+      totalHealthyHierarchical: this.hierarchicalInstances.filter((i) => i.isHealthy).length,
       totalAssignedSimple: simpleAssignments.length,
       totalAssignedHierarchical: hierarchicalAssignments.length,
     };
@@ -499,10 +455,7 @@ export class AiServerPoolAdapter implements IAiServicePool {
       await this.releaseServer(this.assignedServers.simple.url, 'simple');
     }
     if (this.assignedServers.hierarchical) {
-      await this.releaseServer(
-        this.assignedServers.hierarchical.url,
-        'hierarchical',
-      );
+      await this.releaseServer(this.assignedServers.hierarchical.url, 'hierarchical');
     }
 
     this.logger.info('AI Integration Service destroyed');
@@ -514,12 +467,8 @@ export class AiServerPoolAdapter implements IAiServicePool {
    * @returns Promise<boolean> - True if any service instance is healthy, false otherwise
    */
   private async checkHealth(): Promise<boolean> {
-    const healthySimple = this.simpleInstances.some(
-      (instance) => instance.isHealthy,
-    );
-    const healthyHierarchical = this.hierarchicalInstances.some(
-      (instance) => instance.isHealthy,
-    );
+    const healthySimple = this.simpleInstances.some((instance) => instance.isHealthy);
+    const healthyHierarchical = this.hierarchicalInstances.some((instance) => instance.isHealthy);
     return healthySimple && healthyHierarchical;
   }
 }

@@ -34,9 +34,7 @@ import { toDomainModel } from '../domain';
 export type PrismaMusicTrackWithRelations = PrismaMusicTrack & {
   audioFingerprint?: Maybe<PrismaAudioFingerprint>;
   trackGenres?: Maybe<(PrismaTrackGenre & { genre: PrismaGenre })[]>;
-  trackSubgenres?: Maybe<
-    (PrismaTrackSubgenre & { subgenre: PrismaSubgenre })[]
-  >;
+  trackSubgenres?: Maybe<(PrismaTrackSubgenre & { subgenre: PrismaSubgenre })[]>;
   trackAiAtmosphereTags?: Maybe<
     (PrismaTrackAiAtmosphereTag & { aiAtmosphereTag: PrismaAiAtmosphereTag })[]
   >;
@@ -45,14 +43,10 @@ export type PrismaMusicTrackWithRelations = PrismaMusicTrack & {
 
 export type ToDomain = (row: PrismaMusicTrackWithRelations) => MusicTrack;
 
-export type ToMusicTrackStats = (
-  row: PrismaMusicTrack,
-) => MaybeUndefined<MusicTrackStats>;
+export type ToMusicTrackStats = (row: PrismaMusicTrack) => MaybeUndefined<MusicTrackStats>;
 
 export type ToAudioFileInfo = (row: PrismaMusicTrack) => AudioFileInfo;
-export type ToAudioTechnical = (
-  row: PrismaMusicTrack,
-) => MaybeUndefined<AudioTechnical>;
+export type ToAudioTechnical = (row: PrismaMusicTrack) => MaybeUndefined<AudioTechnical>;
 export type ToAudioFileFeatures = (
   row?: Maybe<PrismaAudioFingerprint>,
 ) => MaybeUndefined<AudioFileFeatures>;
@@ -62,12 +56,8 @@ export type ToAudioFileMetadata = (
 export type ToAudioFileAIMetadata = (
   row: PrismaMusicTrackWithRelations,
 ) => MaybeUndefined<AudioFileAIMetadata>;
-export type ToImagePath = (
-  row: PrismaMusicTrackWithRelations,
-) => MaybeUndefined<string>;
-export type ToAudioFileAnalysis = (
-  row: PrismaMusicTrack,
-) => MaybeUndefined<AudioFileAnalysis>;
+export type ToImagePath = (row: PrismaMusicTrackWithRelations) => MaybeUndefined<string>;
+export type ToAudioFileAnalysis = (row: PrismaMusicTrack) => MaybeUndefined<AudioFileAnalysis>;
 
 export const toMusicTrackStats: ToMusicTrackStats = (row) => {
   if (!row) return undefined;
@@ -186,8 +176,7 @@ export const toAudioFileMetadata: ToAudioFileMetadata = (row) => {
     duration: row.duration ?? undefined,
     date: row.originalDate ?? undefined,
     genres: row.trackGenres?.map((genre) => genre.genre.name) || [],
-    subgenres:
-      row.trackSubgenres?.map((subgenre) => subgenre.subgenre.name) || [],
+    subgenres: row.trackSubgenres?.map((subgenre) => subgenre.subgenre.name) || [],
   };
 };
 
@@ -197,8 +186,7 @@ export const toAudioFileAIMetadata: ToAudioFileAIMetadata = (row) => {
     description: row.aiDescription ?? undefined,
     tags: JSON.parse(row.aiTags ?? '[]'),
     vocalsDesc: row.vocalsDesc ?? undefined,
-    atmosphereTags:
-      row.trackAiAtmosphereTags?.map((tag) => tag.aiAtmosphereTag.name) ?? [],
+    atmosphereTags: row.trackAiAtmosphereTags?.map((tag) => tag.aiAtmosphereTag.name) ?? [],
     contextBackground: row.contextBackground ?? undefined,
     contextImpact: row.contextImpact ?? undefined,
   };
@@ -301,9 +289,7 @@ export const toPrisma: ToPrisma = (domainModel) => {
   };
 };
 
-export type ToPrismaUpdate = (
-  data: MusicTrackUpdateData,
-) => Partial<PrismaMusicTrack>;
+export type ToPrismaUpdate = (data: MusicTrackUpdateData) => Partial<PrismaMusicTrack>;
 
 export const toPrismaUpdate: ToPrismaUpdate = (data) => {
   const stats = data.stats ?? undefined;

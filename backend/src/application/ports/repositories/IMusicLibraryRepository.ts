@@ -35,13 +35,7 @@ export interface IMusicLibraryRepository {
   save(library: MusicLibraryCreateData): Promise<MusicLibrary>;
   getOneById(id: MusicLibraryId): Promise<MusicLibrary>;
   getMany(): Promise<MusicLibrary[]>;
-  updateOneById(
-    id: MusicLibraryId,
-    data: MusicLibraryUpdateData,
-  ): Promise<MusicLibrary>;
+  updateOneById(id: MusicLibraryId, data: MusicLibraryUpdateData): Promise<MusicLibrary>;
   deleteOneById(id: MusicLibraryId): Promise<boolean>;
-  updateScanStatus(
-    id: MusicLibraryId,
-    status: ScanStatus,
-  ): Promise<MusicLibrary>;
+  updateScanStatus(id: MusicLibraryId, status: ScanStatus): Promise<MusicLibrary>;
 }

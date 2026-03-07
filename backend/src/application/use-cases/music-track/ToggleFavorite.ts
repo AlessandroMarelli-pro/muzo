@@ -26,9 +26,7 @@ export class ToggleFavoriteUseCase {
     }
 
     if (isFavorite) {
-      const lastPosition = await this.playlistTrackRepository.getLastPosition(
-        playlist.id,
-      );
+      const lastPosition = await this.playlistTrackRepository.getLastPosition(playlist.id);
       const position = (lastPosition ?? 0) + 1;
       await this.playlistTrackRepository.save(
         models.playlistTrack.instantiateNew({
@@ -39,10 +37,7 @@ export class ToggleFavoriteUseCase {
         }),
       );
     } else {
-      await this.playlistTrackRepository.removeTrackFromPlaylist(
-        playlist.id,
-        id,
-      );
+      await this.playlistTrackRepository.removeTrackFromPlaylist(playlist.id, id);
     }
     return this.musicTrackRepository.updateOneById(id, {
       stats: { isFavorite, isBanger: isFavorite, isLiked: isFavorite },

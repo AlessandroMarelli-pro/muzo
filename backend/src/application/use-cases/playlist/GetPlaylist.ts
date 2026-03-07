@@ -16,10 +16,7 @@ export class GetPlaylistUseCase {
 
   async execute(id: PlaylistId): Promise<PlaylistWithSortingAndTracks> {
     const sorting = await this.playlistSortingRepository.getByPlaylistId(id);
-    const playlist = await this.playlistRepository.getOneByIdWithTracks(
-      id,
-      sorting,
-    );
+    const playlist = await this.playlistRepository.getOneByIdWithTracks(id, sorting);
     return playlist;
   }
 }

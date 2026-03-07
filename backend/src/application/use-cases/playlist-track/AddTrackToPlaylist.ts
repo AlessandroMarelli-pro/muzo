@@ -29,18 +29,16 @@ export class AddTrackToPlaylistUseCase {
     await this.musicTrackRepository.verifyExistence(addTrackDto.trackId);
 
     // Check if track is already in playlist
-    const existingPlaylistTrack =
-      await this.playlistTrackRepository.verifyPresence(
-        playlistId,
-        addTrackDto.trackId,
-      );
+    const existingPlaylistTrack = await this.playlistTrackRepository.verifyPresence(
+      playlistId,
+      addTrackDto.trackId,
+    );
 
     if (existingPlaylistTrack) {
       throw createConflictError('Track is already in this playlist');
     }
     // Get the next position
-    const lastPosition =
-      await this.playlistTrackRepository.getLastPosition(playlistId);
+    const lastPosition = await this.playlistTrackRepository.getLastPosition(playlistId);
 
     const nextPosition = (lastPosition ?? 0) + 1;
     const playlistTrack = models.playlistTrack.instantiateNew({

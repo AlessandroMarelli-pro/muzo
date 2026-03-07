@@ -1,7 +1,4 @@
-import {
-  IFileManager,
-  ScanOptions,
-} from 'src/application/ports/infrastructure/IFileManager';
+import { IFileManager, ScanOptions } from 'src/application/ports/infrastructure/IFileManager';
 
 import { Inject, Injectable } from '@nestjs/common';
 import * as fs from 'fs/promises';
@@ -28,15 +25,12 @@ export class FileManager implements IFileManager {
     currentDepth: number = 0,
   ): Promise<FileInfo[]> {
     const files: FileInfo[] = [];
-    this.logger.info(
-      `Scanning directory ${rootPath} at depth ${currentDepth}`,
-      {
-        rootPath,
-        supportedFormats,
-        options,
-        currentDepth,
-      },
-    );
+    this.logger.info(`Scanning directory ${rootPath} at depth ${currentDepth}`, {
+      rootPath,
+      supportedFormats,
+      options,
+      currentDepth,
+    });
     if (currentDepth >= options.maxDepth) {
       return files;
     }
@@ -66,9 +60,7 @@ export class FileManager implements IFileManager {
           files.push(...subFiles);
         } else if (entry.isFile()) {
           const extension = path.extname(entry.name).toLowerCase().slice(1);
-          const isSupported = supportedFormats
-            .map((f) => f.toLowerCase())
-            .includes(extension);
+          const isSupported = supportedFormats.map((f) => f.toLowerCase()).includes(extension);
           if (isSupported) {
             const stats = await fs.stat(fullPath);
             // Filter by modification time if newerThan is specified
@@ -90,9 +82,7 @@ export class FileManager implements IFileManager {
       this.logger.error(`Cannot read directory ${rootPath}:`, error);
     }
 
-    this.logger.info(
-      `Found ${files.length} audio files in directory ${rootPath}`,
-    );
+    this.logger.info(`Found ${files.length} audio files in directory ${rootPath}`);
     return files;
   }
 }

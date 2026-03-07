@@ -37,8 +37,7 @@ export class SyncPlaylistToTidalUseCase {
         }
         const artist = track.artist ?? 'Unknown Artist';
         const title = track.title ?? 'Unknown Title';
-        const duration =
-          track.technicalInfo?.duration ?? track.metadata?.duration ?? 0;
+        const duration = track.technicalInfo?.duration ?? track.metadata?.duration ?? 0;
         if (!trackId) {
           const matchResult = await this.tidalProvider.findBestMatch(
             artist,
@@ -76,11 +75,7 @@ export class SyncPlaylistToTidalUseCase {
       playlist.name,
       playlist.description ?? undefined,
     );
-    await this.tidalProvider.addTracksToPlaylist(
-      userId,
-      tidalPlaylistId,
-      trackIds,
-    );
+    await this.tidalProvider.addTracksToPlaylist(userId, tidalPlaylistId, trackIds);
 
     result.success = true;
     result.playlistId = tidalPlaylistId;

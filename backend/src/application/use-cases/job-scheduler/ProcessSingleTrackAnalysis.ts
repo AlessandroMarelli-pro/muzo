@@ -1,10 +1,7 @@
 import { MusicLibraryId, SessionId } from 'src/kernel/ids';
 import { AudioFileAnalysisStatusEnum, MusicTrack } from 'src/kernel/types';
 import { AudioAnalysisResponse } from '../../ports/dtos/AudioAnalysis';
-import {
-  ScanErrorEvent,
-  TrackCompleteEvent,
-} from '../../ports/dtos/ScanProgress.types';
+import { ScanErrorEvent, TrackCompleteEvent } from '../../ports/dtos/ScanProgress.types';
 import { ILogger } from '../../ports/infrastructure/ILogger';
 import { IScanProgressPublisher } from '../../ports/infrastructure/IScanProgressPublisher';
 import { IAudioAnalysisRepository } from '../../ports/repositories/IAudioAnalysisRepository';
@@ -18,9 +15,7 @@ export class ProcessSingleTrackAnalysisUseCase {
     loggerFactory: { createLogger: (name: string) => ILogger },
     private readonly logger: ILogger,
   ) {
-    this.logger = loggerFactory.createLogger(
-      'ProcessSingleTrackAnalysisUseCase',
-    );
+    this.logger = loggerFactory.createLogger('ProcessSingleTrackAnalysisUseCase');
   }
 
   async execute(
@@ -59,14 +54,9 @@ export class ProcessSingleTrackAnalysisUseCase {
         return { isSuccess: false };
       }
 
-      this.logger.info(
-        `Creating AudioFingerprint record for track ${fileName}`,
-      );
+      this.logger.info(`Creating AudioFingerprint record for track ${fileName}`);
       // Create AudioFingerprint record
-      await this.audioAnalysisRepository.upsertAudioFingerprint(
-        track.id,
-        analysisResult,
-      );
+      await this.audioAnalysisRepository.upsertAudioFingerprint(track.id, analysisResult);
 
       if (analysisResult.ai_metadata?.genre) {
         this.logger.info(`Creating TrackGenre record for track ${fileName}`);
@@ -87,18 +77,12 @@ export class ProcessSingleTrackAnalysisUseCase {
       const atmosphereTags = analysisResult.ai_metadata?.audioFeatures?.atmosphere;
       if (atmosphereTags && atmosphereTags.length > 0) {
         this.logger.info(`Creating TrackAiAtmosphereTag records for track ${fileName}`);
-        await this.audioAnalysisRepository.upsertAiAtmosphereTags(
-          track.id,
-          atmosphereTags,
-        );
+        await this.audioAnalysisRepository.upsertAiAtmosphereTags(track.id, atmosphereTags);
       }
 
       this.logger.info(`Updating track ${fileName} with analysis results`);
       // Update track with AI metadata if available
-      await this.musicTrackRepository.updateTrackWithAnalysis(
-        track.id,
-        analysisResult,
-      );
+      await this.musicTrackRepository.updateTrackWithAnalysis(track.id, analysisResult);
 
       this.logger.info(`Successfully analyzed audio file: ${fileName}`);
 
@@ -148,8 +132,7 @@ export class ProcessSingleTrackAnalysisUseCase {
       libraryId: MusicLibraryId;
     },
   ) => {
-    const { trackIndex, sessionId, batchIndex, totalTracks, libraryId } =
-      batchInfo;
+    const { trackIndex, sessionId, batchIndex, totalTracks, libraryId } = batchInfo;
     if (!sessionId) {
       this.logger.warn(`No session ID found for track ${fileName}`);
       return;
@@ -168,9 +151,6 @@ export class ProcessSingleTrackAnalysisUseCase {
         success: false,
       },
     };
-    await this.scanProgressPublisher.publishEvent(
-      sessionId,
-      trackCompleteEvent,
-    );
+    await this.scanProgressPublisher.publishEvent(sessionId, trackCompleteEvent);
   };
 }

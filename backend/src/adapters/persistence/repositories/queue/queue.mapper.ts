@@ -24,21 +24,13 @@ export function toDomain(row: PrismaQueue): QueueItem {
   };
 }
 
-export function toDomainWithTrack(
-  row: PrismaQueueWithTrack,
-): QueueItemWithTrack {
+export function toDomainWithTrack(row: PrismaQueueWithTrack): QueueItemWithTrack {
   const item = toDomain(row);
-  const track = row.track
-    ? toDomainMusicTrack(row.track as PrismaMusicTrackWithRelations)
-    : null;
+  const track = row.track ? toDomainMusicTrack(row.track as PrismaMusicTrackWithRelations) : null;
   return { ...item, track };
 }
 
-export function toPrismaCreate(
-  trackIdDb: string,
-  position: number,
-  createdById: string,
-) {
+export function toPrismaCreate(trackIdDb: string, position: number, createdById: string) {
   return {
     trackId: trackIdDb,
     position,

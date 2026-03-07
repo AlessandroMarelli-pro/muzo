@@ -37,14 +37,8 @@ export type UpdatePositionsData = {
 export interface IPlaylistTrackRepository {
   save(playlistTrack: PlaylistTrack): Promise<PlaylistTrack>;
   saveMany(playlistTracks: PlaylistTrack[]): Promise<PlaylistTrack[]>;
-  updateOneById(
-    id: PlaylistTrackId,
-    data: PlaylistTrackUpdateData,
-  ): Promise<PlaylistTrack>;
-  decrementTracksPosition(
-    playlistId: PlaylistId,
-    startingPosition: number,
-  ): Promise<boolean>;
+  updateOneById(id: PlaylistTrackId, data: PlaylistTrackUpdateData): Promise<PlaylistTrack>;
+  decrementTracksPosition(playlistId: PlaylistId, startingPosition: number): Promise<boolean>;
   getTracksByPlaylistId(playlistId: PlaylistId): Promise<PlaylistTrack[]>;
   getTracks(): Promise<PlaylistTrack[]>;
   getTracksWithTrack(): Promise<PlaylistTrackWithTrackDetail[]>;
@@ -59,13 +53,7 @@ export interface IPlaylistTrackRepository {
   getPresenceBatch(
     pairs: Array<{ playlistId: PlaylistId; trackId: MusicTrackId }>,
   ): Promise<PlaylistTrackPresence[]>;
-  verifyPresence(
-    playlistId: PlaylistId,
-    trackId: MusicTrackId,
-  ): Promise<boolean>;
+  verifyPresence(playlistId: PlaylistId, trackId: MusicTrackId): Promise<boolean>;
   getLastPosition(playlistId: PlaylistId): Promise<number>;
-  removeTrackFromPlaylist(
-    playlistId: PlaylistId,
-    trackId: MusicTrackId,
-  ): Promise<PlaylistTrack>;
+  removeTrackFromPlaylist(playlistId: PlaylistId, trackId: MusicTrackId): Promise<PlaylistTrack>;
 }

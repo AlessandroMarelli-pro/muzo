@@ -8,10 +8,7 @@ import {
 export class UpdateSavedFilterUseCase {
   constructor(private readonly savedFilterRepository: ISavedFilterRepository) {}
 
-  async execute(
-    id: SavedFilterId,
-    data: SavedFilterData,
-  ): Promise<SavedFilter> {
+  async execute(id: SavedFilterId, data: SavedFilterData): Promise<SavedFilter> {
     return this.savedFilterRepository.updateById(id, data);
   }
 }

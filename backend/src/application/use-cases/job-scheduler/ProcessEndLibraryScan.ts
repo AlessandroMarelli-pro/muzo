@@ -23,19 +23,13 @@ export class ProcessEndLibraryScanUseCase {
     sessionId: SessionId,
     incremental: boolean,
   ): Promise<void> {
-    this.logger.info(
-      `Ending library scan for library ${libraryId} with session ${sessionId}`,
-      {
-        libraryId,
-        sessionId,
-        incremental,
-      },
-    );
-
-    const session = await this.scanSessionRepository.completeSession(
+    this.logger.info(`Ending library scan for library ${libraryId} with session ${sessionId}`, {
+      libraryId,
       sessionId,
-      true,
-    );
+      incremental,
+    });
+
+    const session = await this.scanSessionRepository.completeSession(sessionId, true);
     await this.scanProgressPublisher.publishEvent(sessionId, {
       type: 'scan.complete',
       sessionId: libraryId,
@@ -52,21 +46,17 @@ export class ProcessEndLibraryScanUseCase {
     });
 
     const analysisStatusCounts =
-      await this.musicTrackRepository.getAnalysisStatusForManyByLibraryId(
-        libraryId,
-      );
+      await this.musicTrackRepository.getAnalysisStatusForManyByLibraryId(libraryId);
 
     // Calculate current statistics
     const analyzedTracks =
       analysisStatusCounts.find(
-        ({ analysisStatus }) =>
-          analysisStatus === AudioFileAnalysisStatusEnum.COMPLETED,
+        ({ analysisStatus }) => analysisStatus === AudioFileAnalysisStatusEnum.COMPLETED,
       )?.count ?? 0;
 
     const failedTracks =
       analysisStatusCounts.find(
-        ({ analysisStatus }) =>
-          analysisStatus === AudioFileAnalysisStatusEnum.FAILED,
+        ({ analysisStatus }) => analysisStatus === AudioFileAnalysisStatusEnum.FAILED,
       )?.count ?? 0;
 
     // Update library with final statistics
@@ -84,10 +74,11 @@ export class ProcessEndLibraryScanUseCase {
       updateData.lastIncrementalScanAt = new Date();
     }
 
-    this.logger.info(
-      `Updating library ${libraryId} with data: ${JSON.stringify(updateData)}`,
-      { libraryId, updateData, analysisStatusCounts },
-    );
+    this.logger.info(`Updating library ${libraryId} with data: ${JSON.stringify(updateData)}`, {
+      libraryId,
+      updateData,
+      analysisStatusCounts,
+    });
     await this.musicLibraryRepository.updateOneById(libraryId, {
       ...updateData,
     });

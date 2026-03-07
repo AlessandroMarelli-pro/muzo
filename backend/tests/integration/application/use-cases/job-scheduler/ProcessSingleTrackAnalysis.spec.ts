@@ -1,14 +1,6 @@
 import { Test } from '@nestjs/testing';
 import { PrismaClient } from '@prisma/client';
-import {
-  afterAll,
-  beforeAll,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  vi,
-} from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ProcessSingleTrackAnalysisUseCase } from 'src/application/use-cases/job-scheduler/ProcessSingleTrackAnalysis';
 import type { ILogger } from 'src/application/ports/infrastructure/ILogger';
 import { AUDIO_ANALYSIS_REPOSITORY } from 'src/application/ports/repositories/IAudioAnalysisRepository';
@@ -40,7 +32,9 @@ vi.mock('src/kernel/types/context', () => ({
   user: vi.fn(() => ({ id: `User:${TEST_USER_ID}` })),
 }));
 
-function makeValidAnalysisResult(overrides: Partial<AudioAnalysisResponse> = {}): AudioAnalysisResponse {
+function makeValidAnalysisResult(
+  overrides: Partial<AudioAnalysisResponse> = {},
+): AudioAnalysisResponse {
   return {
     status: 'success',
     processing_time: 0,
@@ -108,7 +102,10 @@ describe('ProcessSingleTrackAnalysisUseCase', () => {
         { provide: PRISMA_SERVICE, useValue: testPrisma },
         { provide: MUSIC_LIBRARY_REPOSITORY, useClass: MusicLibraryRepository },
         { provide: MUSIC_TRACK_REPOSITORY, useClass: MusicTrackRepository },
-        { provide: AUDIO_ANALYSIS_REPOSITORY, useClass: AudioAnalysisRepository },
+        {
+          provide: AUDIO_ANALYSIS_REPOSITORY,
+          useClass: AudioAnalysisRepository,
+        },
         {
           provide: SCAN_PROGRESS_PUBLISHER,
           useValue: {
@@ -122,18 +119,14 @@ describe('ProcessSingleTrackAnalysisUseCase', () => {
           provide: ProcessSingleTrackAnalysisUseCase,
           useFactory: (
             trackRepo: MusicTrackRepository,
-            publisher: { publishEvent: typeof fakePublishEvent; publishError: typeof fakePublishError },
+            publisher: {
+              publishEvent: typeof fakePublishEvent;
+              publishError: typeof fakePublishError;
+            },
             audioRepo: AudioAnalysisRepository,
             lf: { createLogger: (name: string) => ILogger },
             log: ILogger,
-          ) =>
-            new ProcessSingleTrackAnalysisUseCase(
-              trackRepo,
-              publisher,
-              audioRepo,
-              lf,
-              log,
-            ),
+          ) => new ProcessSingleTrackAnalysisUseCase(trackRepo, publisher, audioRepo, lf, log),
           inject: [
             MUSIC_TRACK_REPOSITORY,
             SCAN_PROGRESS_PUBLISHER,
@@ -323,10 +316,22 @@ describe('ProcessSingleTrackAnalysisUseCase', () => {
 
       expect(fakePublishEvent).toHaveBeenCalledTimes(totalTracks);
       const calls = fakePublishEvent.mock.calls;
-      expect(calls[0]![1]).toMatchObject({ batchIndex: 0, data: { totalTracks: 4, trackIndex: 0 } });
-      expect(calls[1]![1]).toMatchObject({ batchIndex: 0, data: { totalTracks: 4, trackIndex: 1 } });
-      expect(calls[2]![1]).toMatchObject({ batchIndex: 1, data: { totalTracks: 4, trackIndex: 2 } });
-      expect(calls[3]![1]).toMatchObject({ batchIndex: 1, data: { totalTracks: 4, trackIndex: 3 } });
+      expect(calls[0]![1]).toMatchObject({
+        batchIndex: 0,
+        data: { totalTracks: 4, trackIndex: 0 },
+      });
+      expect(calls[1]![1]).toMatchObject({
+        batchIndex: 0,
+        data: { totalTracks: 4, trackIndex: 1 },
+      });
+      expect(calls[2]![1]).toMatchObject({
+        batchIndex: 1,
+        data: { totalTracks: 4, trackIndex: 2 },
+      });
+      expect(calls[3]![1]).toMatchObject({
+        batchIndex: 1,
+        data: { totalTracks: 4, trackIndex: 3 },
+      });
     });
 
     it('happy path: when analysis has atmosphere tags, upserts ai atmosphere tags for track', async () => {

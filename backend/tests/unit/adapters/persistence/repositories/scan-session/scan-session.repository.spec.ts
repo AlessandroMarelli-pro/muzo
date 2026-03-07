@@ -1,13 +1,7 @@
 import { Test } from '@nestjs/testing';
 import { type Mock } from 'vitest';
-import {
-  ScanSession as PrismaScanSession,
-  ScanStatus as PrismaScanStatus,
-} from '@prisma/client';
-import {
-  PRISMA_SERVICE,
-  PrismaService,
-} from 'src/infrastructure/database/prisma.service';
+import { ScanSession as PrismaScanSession, ScanStatus as PrismaScanStatus } from '@prisma/client';
+import { PRISMA_SERVICE, PrismaService } from 'src/infrastructure/database/prisma.service';
 import { ScanSessionRepository } from 'src/adapters/persistence/repositories/scan-session/scan-session.repository';
 import { createMockPrisma } from '../_test-utils/prisma-mock';
 import { models } from 'src/kernel/types/models';
@@ -25,9 +19,7 @@ vi.mock('src/kernel/types/context', () => ({
   user: vi.fn(() => ({ id: 'User:test-user-id' })),
 }));
 
-function makePrismaScanSessionRow(
-  overrides: Partial<PrismaScanSession> = {},
-): PrismaScanSession {
+function makePrismaScanSessionRow(overrides: Partial<PrismaScanSession> = {}): PrismaScanSession {
   return {
     id: SESSION_DB_ID,
     sessionId: SESSION_DB_ID,
@@ -77,10 +69,7 @@ describe('ScanSessionRepository', () => {
   beforeEach(async () => {
     prismaMock = createMockPrisma();
     const module = await Test.createTestingModule({
-      providers: [
-        ScanSessionRepository,
-        { provide: PRISMA_SERVICE, useValue: prismaMock },
-      ],
+      providers: [ScanSessionRepository, { provide: PRISMA_SERVICE, useValue: prismaMock }],
     }).compile();
     repo = module.get(ScanSessionRepository);
   });
@@ -112,9 +101,7 @@ describe('ScanSessionRepository', () => {
       const prismaError = new Error('Unique constraint failed');
       prismaMock.scanSession.create.mockRejectedValue(prismaError);
 
-      await expect(repo.createSession(sessionId)).rejects.toThrow(
-        'Unique constraint failed',
-      );
+      await expect(repo.createSession(sessionId)).rejects.toThrow('Unique constraint failed');
     });
 
     it('createdById scope: create is called with current user id in data', async () => {
@@ -159,9 +146,9 @@ describe('ScanSessionRepository', () => {
       const sessionId = models.session.id('missing-session') as SessionId;
       prismaMock.scanSession.update.mockRejectedValue({ code: 'P2025' });
 
-      await expect(
-        repo.updateSession(sessionId, { totalBatches: 1 }),
-      ).rejects.toMatchObject({ code: 'P2025' });
+      await expect(repo.updateSession(sessionId, { totalBatches: 1 })).rejects.toMatchObject({
+        code: 'P2025',
+      });
     });
 
     it('createdById scope: update is called with current user in where', async () => {
@@ -201,9 +188,7 @@ describe('ScanSessionRepository', () => {
 
     it('failure: rethrows when Prisma findFirst throws', async () => {
       const sessionId = models.session.id(SESSION_DB_ID) as SessionId;
-      prismaMock.scanSession.findFirst.mockRejectedValue(
-        new Error('Connection lost'),
-      );
+      prismaMock.scanSession.findFirst.mockRejectedValue(new Error('Connection lost'));
 
       await expect(repo.getSession(sessionId)).rejects.toThrow('Connection lost');
     });
@@ -246,9 +231,9 @@ describe('ScanSessionRepository', () => {
         overallProgress: 50,
         completedBatches: 1,
       });
-      prismaMock.scanSession.findUnique.mockResolvedValue(
-        { status: PrismaScanStatus.SCANNING } as PrismaScanSession,
-      );
+      prismaMock.scanSession.findUnique.mockResolvedValue({
+        status: PrismaScanStatus.SCANNING,
+      } as PrismaScanSession);
       prismaMock.scanSession.update.mockResolvedValue(updatedRow);
 
       const result = await repo.updateSessionProgress(sessionId, {
@@ -285,12 +270,10 @@ describe('ScanSessionRepository', () => {
 
     it('createdById scope: findUnique and update are called with current user in where', async () => {
       const sessionId = models.session.id(SESSION_DB_ID) as SessionId;
-      prismaMock.scanSession.findUnique.mockResolvedValue(
-        { status: PrismaScanStatus.SCANNING } as PrismaScanSession,
-      );
-      prismaMock.scanSession.update.mockResolvedValue(
-        makePrismaScanSessionRow(),
-      );
+      prismaMock.scanSession.findUnique.mockResolvedValue({
+        status: PrismaScanStatus.SCANNING,
+      } as PrismaScanSession);
+      prismaMock.scanSession.update.mockResolvedValue(makePrismaScanSessionRow());
 
       await repo.updateSessionProgress(sessionId, { completedBatches: 1 });
 
@@ -312,9 +295,9 @@ describe('ScanSessionRepository', () => {
 
     it('empty result: returns null when session is not in SCANNING status', async () => {
       const sessionId = models.session.id(SESSION_DB_ID) as SessionId;
-      prismaMock.scanSession.findUnique.mockResolvedValue(
-        { status: PrismaScanStatus.IDLE } as PrismaScanSession,
-      );
+      prismaMock.scanSession.findUnique.mockResolvedValue({
+        status: PrismaScanStatus.IDLE,
+      } as PrismaScanSession);
 
       const result = await repo.updateSessionProgress(sessionId, {
         progressPercentage: 1,
@@ -383,9 +366,7 @@ describe('ScanSessionRepository', () => {
       const sessionId = models.session.id('missing') as SessionId;
       prismaMock.scanSession.update.mockRejectedValue({ code: 'P2025' });
 
-      await expect(repo.completeSession(sessionId, true)).rejects.toMatchObject(
-        { code: 'P2025' },
-      );
+      await expect(repo.completeSession(sessionId, true)).rejects.toMatchObject({ code: 'P2025' });
     });
 
     it('createdById scope: update is called with current user in where', async () => {
@@ -410,7 +391,10 @@ describe('ScanSessionRepository', () => {
   describe('getActiveSessions', () => {
     it('optimal: returns active sessions (SCANNING or ANALYZING)', async () => {
       const rows = [
-        makePrismaScanSessionRow({ id: 's1', status: PrismaScanStatus.SCANNING }),
+        makePrismaScanSessionRow({
+          id: 's1',
+          status: PrismaScanStatus.SCANNING,
+        }),
         makePrismaScanSessionRow({
           id: 's2',
           status: PrismaScanStatus.ANALYZING,
@@ -515,9 +499,7 @@ describe('ScanSessionRepository', () => {
   describe('deleteSession', () => {
     it('optimal: deletes session', async () => {
       const sessionId = models.session.id(SESSION_DB_ID) as SessionId;
-      prismaMock.scanSession.delete.mockResolvedValue(
-        makePrismaScanSessionRow(),
-      );
+      prismaMock.scanSession.delete.mockResolvedValue(makePrismaScanSessionRow());
 
       await repo.deleteSession(sessionId);
 
@@ -540,9 +522,7 @@ describe('ScanSessionRepository', () => {
 
     it('createdById scope: delete is called with current user in where', async () => {
       const sessionId = models.session.id(SESSION_DB_ID) as SessionId;
-      prismaMock.scanSession.delete.mockResolvedValue(
-        makePrismaScanSessionRow(),
-      );
+      prismaMock.scanSession.delete.mockResolvedValue(makePrismaScanSessionRow());
 
       await repo.deleteSession(sessionId);
 

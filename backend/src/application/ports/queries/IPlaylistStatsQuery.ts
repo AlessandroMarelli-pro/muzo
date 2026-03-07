@@ -1,9 +1,7 @@
 import { PlaylistId } from 'src/kernel/ids';
 import { createToken } from '../../utils/create-token';
 
-export const PLAYLIST_STATS_QUERY = createToken<IPlaylistStatsQuery>(
-  'PLAYLIST_STATS_QUERY',
-);
+export const PLAYLIST_STATS_QUERY = createToken<IPlaylistStatsQuery>('PLAYLIST_STATS_QUERY');
 
 export interface RangeDto {
   min: number;

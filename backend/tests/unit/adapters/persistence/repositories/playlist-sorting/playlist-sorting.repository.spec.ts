@@ -4,10 +4,7 @@ import {
   PlaylistSortingDirection as PrismaPlaylistSortingDirection,
   PlaylistSortingKey as PrismaPlaylistSortingKey,
 } from '@prisma/client';
-import {
-  PRISMA_SERVICE,
-  PrismaService,
-} from 'src/infrastructure/database/prisma.service';
+import { PRISMA_SERVICE, PrismaService } from 'src/infrastructure/database/prisma.service';
 import { PlaylistSortingRepository } from 'src/adapters/persistence/repositories/playlist-sorting/playlist-sorting.repository';
 import { createMockPrisma } from '../_test-utils/prisma-mock';
 import { models } from 'src/kernel/types/models';
@@ -41,9 +38,7 @@ function makePrismaPlaylistSortingRow(
   };
 }
 
-function makeDomainPlaylistSorting(
-  overrides: Partial<PlaylistSorting> = {},
-): PlaylistSorting {
+function makeDomainPlaylistSorting(overrides: Partial<PlaylistSorting> = {}): PlaylistSorting {
   return {
     id: models.playlistSorting.id('sorting-1'),
     createdAt: new Date(),
@@ -64,10 +59,7 @@ describe('PlaylistSortingRepository', () => {
   beforeEach(async () => {
     prismaMock = createMockPrisma();
     const module = await Test.createTestingModule({
-      providers: [
-        PlaylistSortingRepository,
-        { provide: PRISMA_SERVICE, useValue: prismaMock },
-      ],
+      providers: [PlaylistSortingRepository, { provide: PRISMA_SERVICE, useValue: prismaMock }],
     }).compile();
     repo = module.get(PlaylistSortingRepository);
   });
@@ -225,7 +217,10 @@ describe('PlaylistSortingRepository', () => {
 
       expect(prismaMock.playlistSorting.update).toHaveBeenCalledWith({
         where: { playlistId: PLAYLIST_ID_DB, createdById: TEST_USER_ID },
-        data: { sortingKey: data.sortingKey, sortingDirection: data.sortingDirection },
+        data: {
+          sortingKey: data.sortingKey,
+          sortingDirection: data.sortingDirection,
+        },
       });
     });
   });
@@ -233,9 +228,7 @@ describe('PlaylistSortingRepository', () => {
   describe('verifyExistence', () => {
     it('optimal: returns true when sorting exists', async () => {
       const playlistId = models.playlist.id(PLAYLIST_ID_DB) as PlaylistId;
-      prismaMock.playlistSorting.findFirst.mockResolvedValue(
-        makePrismaPlaylistSortingRow(),
-      );
+      prismaMock.playlistSorting.findFirst.mockResolvedValue(makePrismaPlaylistSortingRow());
 
       const result = await repo.verifyExistence(playlistId);
 

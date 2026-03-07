@@ -6,14 +6,9 @@ import {
 } from '../../ports/repositories/IPlaylistSortingRepository';
 
 export class UpdatePlaylistSortingUseCase {
-  constructor(
-    private readonly playlistSortingRepository: IPlaylistSortingRepository,
-  ) {}
+  constructor(private readonly playlistSortingRepository: IPlaylistSortingRepository) {}
 
-  async execute(
-    playlistId: PlaylistId,
-    data: PlaylistSortingUpsertData,
-  ): Promise<PlaylistSorting> {
+  async execute(playlistId: PlaylistId, data: PlaylistSortingUpsertData): Promise<PlaylistSorting> {
     if (await this.playlistSortingRepository.verifyExistence(playlistId)) {
       return this.playlistSortingRepository.update(playlistId, data);
     }

@@ -2,10 +2,7 @@ import { ILogger } from 'src/application/ports/infrastructure/ILogger';
 import { IMusicTrackRepository } from 'src/application/ports/repositories/IMusicTrackRepository';
 import { AudioFileAnalysisStatusEnum, MusicTrack } from 'src/kernel/types';
 import { AudioAnalysisResponse } from '../../ports/dtos/AudioAnalysis';
-import {
-  AudioFile,
-  AudioScanBatchJobData,
-} from '../../ports/dtos/JobSchedulersData';
+import { AudioFile, AudioScanBatchJobData } from '../../ports/dtos/JobSchedulersData';
 import { TrackAlreadyAnalyzedEvent } from '../../ports/dtos/ScanProgress.types';
 import { IAudioAnalysisStructure } from '../../ports/infrastructure/IAudioAnalysisStructure';
 import { IScanProgressPublisher } from '../../ports/infrastructure/IScanProgressPublisher';
@@ -44,12 +41,9 @@ export class ProcessBatchAudioScanUseCase {
         .map((file) => file.filePath);
 
       if (alreadyAnalyzedFiles.length > 0) {
-        this.logger.info(
-          `${alreadyAnalyzedFiles.length} files are already analyzed`,
-          {
-            alreadyAnalyzedFiles,
-          },
-        );
+        this.logger.info(`${alreadyAnalyzedFiles.length} files are already analyzed`, {
+          alreadyAnalyzedFiles,
+        });
         const trackAlreadyAnalyzedEvent: TrackAlreadyAnalyzedEvent = {
           type: 'tracks.already.analyzed',
           sessionId,
@@ -60,10 +54,7 @@ export class ProcessBatchAudioScanUseCase {
           },
         };
         if (sessionId) {
-          await this.scanProgressPublisher.publishEvent(
-            sessionId,
-            trackAlreadyAnalyzedEvent,
-          );
+          await this.scanProgressPublisher.publishEvent(sessionId, trackAlreadyAnalyzedEvent);
         }
       }
 

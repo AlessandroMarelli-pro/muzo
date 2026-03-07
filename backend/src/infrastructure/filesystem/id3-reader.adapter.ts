@@ -1,9 +1,6 @@
 import * as fs from 'fs';
 import * as mm from 'music-metadata';
-import type {
-  IId3Reader,
-  Id3Tags,
-} from 'src/application/ports/infrastructure/IId3Reader';
+import type { IId3Reader, Id3Tags } from 'src/application/ports/infrastructure/IId3Reader';
 
 export class Id3ReaderAdapter implements IId3Reader {
   async readId3Tags(filePath: string): Promise<Id3Tags> {
@@ -50,9 +47,7 @@ export class Id3ReaderAdapter implements IId3Reader {
               nativeTag.id === 'WXXX' ||
               nativeTag.id?.toLowerCase().includes('purl')
             ) {
-              const value = Array.isArray(nativeTag.value)
-                ? nativeTag.value[0]
-                : nativeTag.value;
+              const value = Array.isArray(nativeTag.value) ? nativeTag.value[0] : nativeTag.value;
               if (typeof value === 'string') {
                 const url = this.extractYouTubeUrl(value);
                 if (url) return url;
@@ -83,9 +78,7 @@ export class Id3ReaderAdapter implements IId3Reader {
               nativeTag.id === 'WXXX' ||
               nativeTag.id?.toLowerCase().includes('url')
             ) {
-              const value = Array.isArray(nativeTag.value)
-                ? nativeTag.value[0]
-                : nativeTag.value;
+              const value = Array.isArray(nativeTag.value) ? nativeTag.value[0] : nativeTag.value;
               if (typeof value === 'string') {
                 const url = this.extractTidalUrl(value);
                 if (url) return url;
@@ -113,10 +106,7 @@ export class Id3ReaderAdapter implements IId3Reader {
     return text.match(tidalRegex) ? text : null;
   }
 
-  private getTagValue(
-    metadata: mm.IAudioMetadata,
-    fieldNames: string[],
-  ): string | null {
+  private getTagValue(metadata: mm.IAudioMetadata, fieldNames: string[]): string | null {
     if (!metadata.common) return null;
     for (const fieldName of fieldNames) {
       const common = metadata.common as unknown as Record<string, unknown>;

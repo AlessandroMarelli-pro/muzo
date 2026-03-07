@@ -11,9 +11,7 @@ export interface SpotifyTrackMatchResult {
   matchedTrack?: { id: string; duration_ms: number };
 }
 
-export const SPOTIFY_SYNC_PROVIDER = createToken<ISpotifySyncProvider>(
-  'SPOTIFY_SYNC_PROVIDER',
-);
+export const SPOTIFY_SYNC_PROVIDER = createToken<ISpotifySyncProvider>('SPOTIFY_SYNC_PROVIDER');
 
 export interface ISpotifySyncProvider {
   getAuthUrl(): SpotifyAuthUrlResult;
@@ -30,14 +28,6 @@ export interface ISpotifySyncProvider {
     trackDurationSeconds: number,
     userId: string,
   ): Promise<SpotifyTrackMatchResult>;
-  createPlaylist(
-    userId: string,
-    name: string,
-    description?: string,
-  ): Promise<string>;
-  addTracksToPlaylist(
-    userId: string,
-    playlistId: string,
-    trackIds: string[],
-  ): Promise<void>;
+  createPlaylist(userId: string, name: string, description?: string): Promise<string>;
+  addTracksToPlaylist(userId: string, playlistId: string, trackIds: string[]): Promise<void>;
 }

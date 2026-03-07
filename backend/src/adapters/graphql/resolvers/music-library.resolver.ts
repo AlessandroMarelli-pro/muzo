@@ -1,10 +1,4 @@
-import {
-  Args,
-  Mutation,
-  Parent,
-  ResolveField,
-  Resolver,
-} from '@nestjs/graphql';
+import { Args, Mutation, Parent, ResolveField, Resolver } from '@nestjs/graphql';
 import { CreateLibraryInput } from 'src/adapters/graphql/schema/library.input';
 import {
   CreateLibraryUseCase,
@@ -17,10 +11,7 @@ import {
 import { UseGuards } from '@nestjs/common';
 import { SessionId } from 'src/kernel/ids';
 import { MusicTrack } from 'src/kernel/types';
-import {
-  parseMusicLibraryId,
-  parseSessionId,
-} from '../../common/utils/parse-id';
+import { parseMusicLibraryId, parseSessionId } from '../../common/utils/parse-id';
 import { AuthGuard } from '../context/auth.guard';
 import { toMusicLibrary } from '../mappers/music-library.mapper';
 import { toTrack } from '../mappers/track.mapper';
@@ -73,22 +64,15 @@ export class MusicLibraryResolver {
   }
 
   @Mutation(() => Library)
-  async createLibrary(
-    @Args('input') input: CreateLibraryInput,
-  ): Promise<Library> {
+  async createLibrary(@Args('input') input: CreateLibraryInput): Promise<Library> {
     return this.createLibraryUseCase.execute(input).then((library) => {
-      this.scheduleLibraryScanUseCase.execute(
-        parseMusicLibraryId(library.id),
-        false,
-      );
+      this.scheduleLibraryScanUseCase.execute(parseMusicLibraryId(library.id), false);
       return toMusicLibrary(library);
     });
   }
 
   @Mutation(() => Boolean)
-  async deleteLibrary(
-    @Args('id', { type: () => Base64ID }) id: string,
-  ): Promise<boolean> {
+  async deleteLibrary(@Args('id', { type: () => Base64ID }) id: string): Promise<boolean> {
     return this.deleteLibraryUseCase.execute(parseMusicLibraryId(id));
   }
 

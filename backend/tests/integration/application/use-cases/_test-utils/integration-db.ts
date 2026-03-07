@@ -15,7 +15,10 @@ export async function setupIntegrationDb(): Promise<{
   cleanup: () => Promise<void>;
 }> {
   const tmpDir = os.tmpdir();
-  const dbPath = path.join(tmpDir, `muzo-integration-${Date.now()}-${Math.random().toString(36).slice(2)}.db`);
+  const dbPath = path.join(
+    tmpDir,
+    `muzo-integration-${Date.now()}-${Math.random().toString(36).slice(2)}.db`,
+  );
   const dbUrl = `file:${dbPath}`;
 
   process.env.DATABASE_URL = dbUrl;

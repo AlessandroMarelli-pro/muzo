@@ -24,9 +24,7 @@ export class LibraryScanSchedulerConsumerAdapter
     super();
   }
 
-  async process(
-    job: Job<LibraryScanJobData | EndLibraryScanJobData>,
-  ): Promise<void> {
+  async process(job: Job<LibraryScanJobData | EndLibraryScanJobData>): Promise<void> {
     const { libraryId, sessionId, incremental, contextUser } = job.data;
     return als.run({ now: new Date(), user: contextUser }, async () => {
       switch (job.name) {
@@ -51,32 +49,16 @@ export class LibraryScanSchedulerConsumerAdapter
     sessionId: SessionId,
     incremental: boolean,
   ): Promise<void> {
-    const audioFiles = await this.processStartLibraryScanUseCase.execute(
-      libraryId,
-      incremental,
-    );
+    const audioFiles = await this.processStartLibraryScanUseCase.execute(libraryId, incremental);
     if (audioFiles.length === 0) {
-      await this.processEndLibraryScanUseCase.execute(
-        libraryId,
-        sessionId,
-        incremental,
-      );
+      await this.processEndLibraryScanUseCase.execute(libraryId, sessionId, incremental);
       return;
     }
-    await this.scheduleBatchAudioScanUseCase.execute(
-      audioFiles,
-      libraryId,
-      sessionId,
-      incremental,
-    );
+    await this.scheduleBatchAudioScanUseCase.execute(audioFiles, libraryId, sessionId, incremental);
   }
 
   async consumeEndLibraryScan(data: EndLibraryScanJobData): Promise<void> {
     const { libraryId, sessionId, incremental } = data;
-    await this.processEndLibraryScanUseCase.execute(
-      libraryId,
-      sessionId,
-      incremental,
-    );
+    await this.processEndLibraryScanUseCase.execute(libraryId, sessionId, incremental);
   }
 }

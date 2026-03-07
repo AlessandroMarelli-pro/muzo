@@ -15,15 +15,7 @@ import { extractModelId } from 'src/kernel/ids/factory';
 import type { MusicLibraryId, SessionId } from 'src/kernel/ids';
 import { models } from 'src/kernel/types/models';
 import type { ActionContext } from 'src/kernel/types/model-types';
-import {
-  afterAll,
-  beforeAll,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  vi,
-} from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { makeContextUser } from '../../../../_test-utils/make-context-user';
 import { setupIntegrationDb } from '../_test-utils/integration-db';
 import { makeLibrary } from '../_test-utils/make-library';
@@ -125,14 +117,7 @@ describe('ScheduleLibraryScanUseCase', () => {
             scanSessionRepo: ScanSessionRepository,
             lf: { createLogger: (name: string) => ILogger },
             log: ILogger,
-          ) =>
-            new ScheduleLibraryScanUseCase(
-              producer,
-              libraryRepo,
-              scanSessionRepo,
-              lf,
-              log,
-            ),
+          ) => new ScheduleLibraryScanUseCase(producer, libraryRepo, scanSessionRepo, lf, log),
           inject: [
             LIBRARY_SCAN_SCHEDULER_PRODUCER,
             MUSIC_LIBRARY_REPOSITORY,
@@ -181,9 +166,7 @@ describe('ScheduleLibraryScanUseCase', () => {
           lastName: 'User',
         }),
       });
-      expect(fakeProducer.scheduleLibraryScanCalls[0].sessionId).toEqual(
-        result.sessionId,
-      );
+      expect(fakeProducer.scheduleLibraryScanCalls[0].sessionId).toEqual(result.sessionId);
       const libAfter = await musicLibraryRepository.getOneById(LIBRARY_ID);
       expect(libAfter.scanInfo.scanStatus).toBe('SCANNING');
       const sessions = await prisma.scanSession.findMany({
@@ -215,9 +198,7 @@ describe('ScheduleLibraryScanUseCase', () => {
       await musicLibraryRepository.save(library);
       fakeProducer.setNextError(new Error('Queue unavailable'));
 
-      await expect(useCase.execute(LIBRARY_ID, false)).rejects.toThrow(
-        'Queue unavailable',
-      );
+      await expect(useCase.execute(LIBRARY_ID, false)).rejects.toThrow('Queue unavailable');
 
       const libAfter = await musicLibraryRepository.getOneById(LIBRARY_ID);
       expect(libAfter.scanInfo.scanStatus).toBe('IDLE');

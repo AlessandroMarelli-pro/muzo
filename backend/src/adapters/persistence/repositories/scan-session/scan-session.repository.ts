@@ -4,10 +4,7 @@ import {
   IScanSessionRepository,
   UpdateScanSessionInput,
 } from 'src/application/ports/repositories/IScanSessionRepository';
-import {
-  PRISMA_SERVICE,
-  PrismaService,
-} from 'src/infrastructure/database/prisma.service';
+import { PRISMA_SERVICE, PrismaService } from 'src/infrastructure/database/prisma.service';
 import { extractModelId, SessionId } from 'src/kernel/ids';
 import { getCurrentUserId, Maybe, models } from 'src/kernel/types';
 import { ScanStatusEnum, Session } from 'src/kernel/types/model-types';
@@ -41,10 +38,7 @@ export class ScanSessionRepository implements IScanSessionRepository {
     return toDomain(session);
   }
 
-  async updateSession(
-    sessionId: SessionId,
-    updates: UpdateScanSessionInput,
-  ): Promise<Session> {
+  async updateSession(sessionId: SessionId, updates: UpdateScanSessionInput): Promise<Session> {
     return this.prisma.scanSession
       .update({
         where: {
@@ -101,10 +95,7 @@ export class ScanSessionRepository implements IScanSessionRepository {
         };
       }
     }
-    if (
-      updates.completedBatches !== undefined &&
-      updates.completedBatches !== null
-    ) {
+    if (updates.completedBatches !== undefined && updates.completedBatches !== null) {
       updateData.completedBatches = {
         increment: updates.completedBatches,
       };
@@ -122,13 +113,8 @@ export class ScanSessionRepository implements IScanSessionRepository {
           select: { status: true },
         });
 
-        if (
-          !activeSession ||
-          activeSession.status !== ScanStatusEnum.SCANNING
-        ) {
-          console.debug(
-            `Session ${sessionId} is not in SCANNING status, skipping update`,
-          );
+        if (!activeSession || activeSession.status !== ScanStatusEnum.SCANNING) {
+          console.debug(`Session ${sessionId} is not in SCANNING status, skipping update`);
           return null;
         }
 
@@ -147,10 +133,7 @@ export class ScanSessionRepository implements IScanSessionRepository {
   /**
    * Mark session as completed
    */
-  async completeSession(
-    sessionId: SessionId,
-    success: boolean = true,
-  ): Promise<Session> {
+  async completeSession(sessionId: SessionId, success: boolean = true): Promise<Session> {
     return this.prisma.scanSession
       .update({
         where: {

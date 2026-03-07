@@ -6,10 +6,7 @@ import { IScanProgressPublisher } from 'src/application/ports/infrastructure/ISc
 import { IScanProgressSubscriber } from 'src/application/ports/infrastructure/IScanProgressSubscriber';
 import { QueueConfig } from 'src/config';
 import { SessionId } from 'src/kernel/ids';
-import {
-  ScanErrorEvent,
-  ScanProgressEvent,
-} from '../../application/ports/dtos/ScanProgress.types';
+import { ScanErrorEvent, ScanProgressEvent } from '../../application/ports/dtos/ScanProgress.types';
 
 @Injectable()
 export class ScanProgressPubSubAdapter
@@ -17,10 +14,7 @@ export class ScanProgressPubSubAdapter
 {
   private readonly logger = new Logger(ScanProgressPubSubAdapter.name);
   private readonly subscribers = new Map<string, Subject<ScanProgressEvent>>();
-  private readonly errorSubscribers = new Map<
-    string,
-    Subject<ScanErrorEvent>
-  >();
+  private readonly errorSubscribers = new Map<string, Subject<ScanErrorEvent>>();
   private readonly redisSubscribers = new Map<
     string,
     {
@@ -35,8 +29,7 @@ export class ScanProgressPubSubAdapter
   constructor(private readonly configService: ConfigService) {
     const queueConfig = this.configService.get<QueueConfig>('queue')!;
     this.channelPrefix =
-      this.configService.get<string>('REDIS_SCAN_CHANNEL_PREFIX') ||
-      'scan:session';
+      this.configService.get<string>('REDIS_SCAN_CHANNEL_PREFIX') || 'scan:session';
 
     // Create Redis clients for publishing and state management
     this.redisPublisher = new Redis({
@@ -90,10 +83,7 @@ export class ScanProgressPubSubAdapter
             const event: ScanProgressEvent = JSON.parse(message);
             eventsSubject.next(event);
           } catch (error) {
-            this.logger.error(
-              `Failed to parse event for session ${sessionId}:`,
-              error,
-            );
+            this.logger.error(`Failed to parse event for session ${sessionId}:`, error);
           }
         }
       });
@@ -113,10 +103,7 @@ export class ScanProgressPubSubAdapter
             const error: ScanErrorEvent = JSON.parse(message);
             errorsSubject.next(error);
           } catch (error) {
-            this.logger.error(
-              `Failed to parse error for session ${sessionId}:`,
-              error,
-            );
+            this.logger.error(`Failed to parse error for session ${sessionId}:`, error);
           }
         }
       });
@@ -163,24 +150,16 @@ export class ScanProgressPubSubAdapter
         this.errorSubscribers.delete(sessionId);
       }
 
-      this.logger.log(
-        `Unsubscribed from scan progress for session: ${sessionId}`,
-      );
+      this.logger.log(`Unsubscribed from scan progress for session: ${sessionId}`);
     } catch (error) {
-      this.logger.error(
-        `Failed to unsubscribe from session ${sessionId}:`,
-        error,
-      );
+      this.logger.error(`Failed to unsubscribe from session ${sessionId}:`, error);
     }
   }
 
   /**
    * Publish an event to Redis
    */
-  async publishEvent(
-    sessionId: SessionId,
-    event: ScanProgressEvent,
-  ): Promise<void> {
+  async publishEvent(sessionId: SessionId, event: ScanProgressEvent): Promise<void> {
     try {
       const channel = `${this.channelPrefix}:${sessionId}:events`;
       // Use setImmediate to avoid blocking the event loop
@@ -190,10 +169,7 @@ export class ScanProgressPubSubAdapter
       await this.redisPublisher.publish(channel, eventJson);
       await new Promise((resolve) => setTimeout(resolve, 1000));
     } catch (error) {
-      this.logger.error(
-        `Failed to publish event for session ${sessionId}:`,
-        error,
-      );
+      this.logger.error(`Failed to publish event for session ${sessionId}:`, error);
       // Don't throw - event publishing shouldn't break the scan
     }
   }
@@ -211,10 +187,7 @@ export class ScanProgressPubSubAdapter
       const errorJson = JSON.stringify(error);
       await this.redisPublisher.publish(channel, errorJson);
     } catch (error) {
-      this.logger.error(
-        `Failed to publish error for session ${sessionId}:`,
-        error,
-      );
+      this.logger.error(`Failed to publish error for session ${sessionId}:`, error);
       // Don't throw - error publishing shouldn't break the scan
     }
   }
@@ -263,10 +236,7 @@ export class ScanProgressPubSubAdapter
       // State should be small, so synchronous parse is acceptable
       return JSON.parse(state);
     } catch (error) {
-      this.logger.error(
-        `Failed to get current state for session ${sessionId}:`,
-        error,
-      );
+      this.logger.error(`Failed to get current state for session ${sessionId}:`, error);
       return null;
     }
   }

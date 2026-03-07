@@ -4,9 +4,7 @@ import { getAnonymousUser } from '../../../kernel/types/defaults';
 
 @Injectable()
 export class HttpAuthGuard implements CanActivate {
-  canActivate(
-    context: ExecutionContext,
-  ): boolean | Promise<boolean> | Observable<boolean> {
+  canActivate(context: ExecutionContext): boolean | Promise<boolean> | Observable<boolean> {
     const request = context.switchToHttp().getRequest();
 
     if (request) {

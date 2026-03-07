@@ -7,14 +7,12 @@ export class RegisterPlayedTrackUseCase {
   constructor(private readonly musicTrackRepository: IMusicTrackRepository) {}
 
   async execute(id: MusicTrackId): Promise<MaybeUndefined<MusicTrack>> {
-    const lastPlayedTrack =
-      await this.musicTrackRepository.getLastPlayedTrack();
+    const lastPlayedTrack = await this.musicTrackRepository.getLastPlayedTrack();
 
     if (
       lastPlayedTrack?.id === id &&
       lastPlayedTrack?.stats?.lastPlayedAt &&
-      lastPlayedTrack?.stats?.lastPlayedAt >
-        new Date(Date.now() - 1000 * 60 * 60 * 5)
+      lastPlayedTrack?.stats?.lastPlayedAt > new Date(Date.now() - 1000 * 60 * 60 * 5)
     ) {
       return;
     }

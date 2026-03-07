@@ -1,10 +1,5 @@
 import { Field, ObjectType } from '@nestjs/graphql';
-import {
-  GenreId,
-  MusicLibraryId,
-  SavedFilterId,
-  SubgenreId,
-} from 'src/kernel/ids';
+import { GenreId, MusicLibraryId, SavedFilterId, SubgenreId } from 'src/kernel/ids';
 import { Maybe } from 'src/kernel/types';
 import { Base64ID } from '../scalars/base64-id.scalar';
 import { Range } from './common.schema';

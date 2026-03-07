@@ -1,9 +1,6 @@
 import { UseGuards } from '@nestjs/common';
 import { Args, Float, Mutation, ResolveField, Resolver } from '@nestjs/graphql';
-import {
-  GetWaveformDataUseCase,
-  RegisterPlayedTrackUseCase,
-} from 'src/application/use-cases';
+import { GetWaveformDataUseCase, RegisterPlayedTrackUseCase } from 'src/application/use-cases';
 import { parseMusicTrackId } from '../../common/utils/parse-id';
 import { AuthGuard } from '../context/auth.guard';
 import { Base64ID } from '../scalars/base64-id.scalar';
@@ -28,8 +25,6 @@ export class MusicPlayerResolver {
   async registerPlayedTrack(
     @Args('trackId', { type: () => Base64ID }) trackId: string,
   ): Promise<boolean> {
-    return this.registerPlayedTrackUseCase
-      .execute(parseMusicTrackId(trackId))
-      .then(() => true);
+    return this.registerPlayedTrackUseCase.execute(parseMusicTrackId(trackId)).then(() => true);
   }
 }

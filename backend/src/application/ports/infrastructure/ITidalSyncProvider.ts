@@ -8,12 +8,15 @@ export interface TidalAuthUrlResult {
 export interface TrackMatchResult {
   trackId: string | null;
   confidence: 'exact' | 'fuzzy' | 'none';
-  matchedTrack?: { id: string; title: string; artist: string; duration: number };
+  matchedTrack?: {
+    id: string;
+    title: string;
+    artist: string;
+    duration: number;
+  };
 }
 
-export const TIDAL_SYNC_PROVIDER = createToken<ITidalSyncProvider>(
-  'TIDAL_SYNC_PROVIDER',
-);
+export const TIDAL_SYNC_PROVIDER = createToken<ITidalSyncProvider>('TIDAL_SYNC_PROVIDER');
 
 export interface ITidalSyncProvider {
   getAuthUrl(): TidalAuthUrlResult;
@@ -30,14 +33,6 @@ export interface ITidalSyncProvider {
     trackDurationSeconds: number,
     userId: string,
   ): Promise<TrackMatchResult>;
-  createPlaylist(
-    userId: string,
-    name: string,
-    description?: string,
-  ): Promise<string>;
-  addTracksToPlaylist(
-    userId: string,
-    playlistId: string,
-    trackIds: string[],
-  ): Promise<void>;
+  createPlaylist(userId: string, name: string, description?: string): Promise<string>;
+  addTracksToPlaylist(userId: string, playlistId: string, trackIds: string[]): Promise<void>;
 }

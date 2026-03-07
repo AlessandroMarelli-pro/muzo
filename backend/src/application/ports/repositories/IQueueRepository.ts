@@ -19,17 +19,14 @@ export type UpdateQueuePositionInput = {
   position: number;
 };
 
-export const QUEUE_REPOSITORY =
-  createToken<IQueueRepository>('QUEUE_REPOSITORY');
+export const QUEUE_REPOSITORY = createToken<IQueueRepository>('QUEUE_REPOSITORY');
 
 export interface IQueueRepository {
   getQueue(): Promise<QueueItemWithTrack[]>;
   addTrack(trackId: MusicTrackId): Promise<QueueItemWithTrack>;
   addTracks(trackIds: MusicTrackId[]): Promise<QueueItemWithTrack[]>;
   removeTrack(trackId: MusicTrackId): Promise<RemoveTrackFromQueueResult>;
-  updatePositions(
-    positions: UpdateQueuePositionInput[],
-  ): Promise<QueueItemWithTrack[]>;
+  updatePositions(positions: UpdateQueuePositionInput[]): Promise<QueueItemWithTrack[]>;
   resetQueue(): Promise<boolean>;
   findByTrackId(trackId: MusicTrackId): Promise<QueueItem | null>;
   getLastPosition(): Promise<number | null>;

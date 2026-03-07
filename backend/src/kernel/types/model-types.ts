@@ -45,10 +45,7 @@ export type Model =
   | HiddenMusicTrack
   | Session;
 
-export type ModelBase<
-  Id extends string | Brand<T, string> = string,
-  T = unknown,
-> = {
+export type ModelBase<Id extends string | Brand<T, string> = string, T = unknown> = {
   id: Id;
   createdAt: Date;
   createdById: UserId;
@@ -84,8 +81,7 @@ export type PlaylistSortingKey = (typeof playlistSortingKeys)[number];
 
 export const playlistSortingDirections = ['asc', 'desc'] as const;
 
-export type PlaylistSortingDirection =
-  (typeof playlistSortingDirections)[number];
+export type PlaylistSortingDirection = (typeof playlistSortingDirections)[number];
 
 export type PlaylistSorting = Readonly<ModelBase<PlaylistSortingId>> & {
   playlistId: PlaylistId;
@@ -323,9 +319,7 @@ export type AiAtmosphereTag = Readonly<ModelBase<AiAtmosphereTagId>> & {
   name: string;
 };
 
-export type TrackAiAtmosphereTag = Readonly<
-  ModelBase<TrackAiAtmosphereTagId>
-> & {
+export type TrackAiAtmosphereTag = Readonly<ModelBase<TrackAiAtmosphereTagId>> & {
   trackId: MusicTrackId;
   aiAtmosphereTagId: AiAtmosphereTagId;
 };

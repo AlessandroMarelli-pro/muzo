@@ -98,19 +98,13 @@ export const buildMusicTrackFilterWhereClause = (
       fingerprintWhere.arousalMood = { in: criteria.arousalMood };
     }
 
-    if (
-      criteria.danceabilityFeeling &&
-      criteria.danceabilityFeeling?.length > 0
-    ) {
+    if (criteria.danceabilityFeeling && criteria.danceabilityFeeling?.length > 0) {
       fingerprintWhere.danceabilityFeeling = {
         in: criteria.danceabilityFeeling,
       };
     }
 
-    if (
-      criteria.tempo &&
-      (criteria.tempo?.min !== 0 || criteria.tempo?.max !== 200)
-    ) {
+    if (criteria.tempo && (criteria.tempo?.min !== 0 || criteria.tempo?.max !== 200)) {
       fingerprintWhere.tempo = {};
       if (criteria.tempo.min !== undefined && criteria.tempo.max !== 200) {
         fingerprintWhere.tempo.gte = criteria.tempo.min;
@@ -135,8 +129,7 @@ export const buildMusicTrackFilterWhereClause = (
 
     if (
       criteria.instrumentalness &&
-      (criteria.instrumentalness?.min !== 0 ||
-        criteria.instrumentalness?.max !== 1)
+      (criteria.instrumentalness?.min !== 0 || criteria.instrumentalness?.max !== 1)
     ) {
       fingerprintWhere.instrumentalness = {};
       if (criteria.instrumentalness.min !== undefined) {
@@ -147,10 +140,7 @@ export const buildMusicTrackFilterWhereClause = (
       }
     }
 
-    if (
-      criteria.liveness &&
-      (criteria.liveness?.min !== 0 || criteria.liveness?.max !== 1)
-    ) {
+    if (criteria.liveness && (criteria.liveness?.min !== 0 || criteria.liveness?.max !== 1)) {
       fingerprintWhere.liveness = {};
       if (criteria.liveness.min !== undefined) {
         fingerprintWhere.liveness.gte = criteria.liveness.min;

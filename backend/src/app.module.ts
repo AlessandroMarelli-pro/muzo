@@ -73,12 +73,8 @@ import { NestjsLoggerModule } from './infrastructure/logging/nestjs-logger.modul
           loaders: {
             playlistStats: createPlaylistStatsLoader(statsQuery),
             playlistTracks: createPlaylistTracksLoader(playlistTrackRepository),
-            playlistContainsTrack: createPlaylistContainsTrackLoader(
-              playlistTrackRepository,
-            ),
-            playlistTracksWithTrack: createPlaylistTracksWithTrackLoader(
-              playlistTrackRepository,
-            ),
+            playlistContainsTrack: createPlaylistContainsTrackLoader(playlistTrackRepository),
+            playlistTracksWithTrack: createPlaylistTracksWithTrackLoader(playlistTrackRepository),
           },
         }),
       }),
@@ -113,8 +109,6 @@ import { NestjsLoggerModule } from './infrastructure/logging/nestjs-logger.modul
 })
 export class AppModule {
   configure(consumer: MiddlewareConsumer): void {
-    consumer
-      .apply(ActionContextMiddleware)
-      .forRoutes({ path: '*', method: RequestMethod.ALL });
+    consumer.apply(ActionContextMiddleware).forRoutes({ path: '*', method: RequestMethod.ALL });
   }
 }

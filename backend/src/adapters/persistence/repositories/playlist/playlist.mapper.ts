@@ -8,11 +8,7 @@ import { PlaylistUpdateData } from 'src/application/ports/repositories/IPlaylist
 import { Maybe, MaybeUndefined } from 'src/kernel/common';
 import { extractModelId } from 'src/kernel/ids/factory';
 import { now, user } from 'src/kernel/types/context';
-import {
-  Playlist,
-  PlaylistSorting,
-  PlaylistTrack,
-} from 'src/kernel/types/model-types';
+import { Playlist, PlaylistSorting, PlaylistTrack } from 'src/kernel/types/model-types';
 import { models } from 'src/kernel/types/models';
 import { toDbModel } from '../db';
 import { toDomainModel } from '../domain';
@@ -30,10 +26,9 @@ export type PrismaPlaylistWithTracksAndSorting = PrismaPlaylistWithSorting & {
   tracks: Maybe<PrismaPlaylistTrack[]>;
 };
 
-export type PrismaPlaylistWithTracksWithRelationsAndSorting =
-  PrismaPlaylistWithSorting & {
-    tracks: Maybe<PrismaPlaylistTrackWithTrackDetail[]>;
-  };
+export type PrismaPlaylistWithTracksWithRelationsAndSorting = PrismaPlaylistWithSorting & {
+  tracks: Maybe<PrismaPlaylistTrackWithTrackDetail[]>;
+};
 
 export type ToDomain = (row: PrismaPlaylist) => Playlist;
 
@@ -41,9 +36,7 @@ export type ToDomainWithSorting = (
   row: PrismaPlaylistWithSorting,
 ) => Playlist & { sorting: MaybeUndefined<PlaylistSorting> };
 
-export type ToDomainWithTracksAndSorting = (
-  row: PrismaPlaylistWithTracksAndSorting,
-) => Playlist & {
+export type ToDomainWithTracksAndSorting = (row: PrismaPlaylistWithTracksAndSorting) => Playlist & {
   sorting: MaybeUndefined<PlaylistSorting>;
   tracks: MaybeUndefined<PlaylistTrack[]>;
 };
@@ -59,9 +52,7 @@ export const toDomainWithSorting: ToDomainWithSorting = (row) => {
   };
 };
 
-export const toDomainWithTracksAndSorting: ToDomainWithTracksAndSorting = (
-  row,
-) => {
+export const toDomainWithTracksAndSorting: ToDomainWithTracksAndSorting = (row) => {
   return {
     ...toDomainWithSorting(row),
     tracks: row.tracks?.map((track) => toDomainPlaylistTrack(track)) ?? [],
@@ -109,9 +100,7 @@ export const toPrisma: ToPrisma = (domainModel) => {
   };
 };
 
-export type ToPrismaUpdateData = (
-  data: PlaylistUpdateData,
-) => Partial<PrismaPlaylist>;
+export type ToPrismaUpdateData = (data: PlaylistUpdateData) => Partial<PrismaPlaylist>;
 
 export const toPrismaUpdateData: ToPrismaUpdateData = (data) => {
   const result: Partial<PrismaPlaylist> = {

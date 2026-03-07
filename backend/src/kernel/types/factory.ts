@@ -20,9 +20,7 @@ export function modelFactory<M extends ModelBase<Id>, Id extends string>(id: {
         updatedById: undefined,
         ...x,
       }) as M,
-    update: (
-      x: Partial<M>,
-    ): Partial<M> & { updatedAt: Date; updatedById: UserId } => ({
+    update: (x: Partial<M>): Partial<M> & { updatedAt: Date; updatedById: UserId } => ({
       ...x,
       updatedAt: now(),
       updatedById: user().id,

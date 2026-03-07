@@ -1,8 +1,5 @@
 import { Test } from '@nestjs/testing';
-import {
-  PRISMA_SERVICE,
-  PrismaService,
-} from 'src/infrastructure/database/prisma.service';
+import { PRISMA_SERVICE, PrismaService } from 'src/infrastructure/database/prisma.service';
 import { MetricsQuery } from 'src/adapters/persistence/queries/metrics/metrics.query';
 import { createMockPrisma } from '../../repositories/_test-utils/prisma-mock';
 import type { MetricsDto } from 'src/application/ports/queries/IMetricsQuery';
@@ -36,11 +33,23 @@ function setupGetMetricsMock(prismaMock: ReturnType<typeof createMockPrisma>) {
     }
     if (sql.includes('tracks_added') && sql.includes('tracks_analyzed')) {
       return Promise.resolve([
-        { date: '2025-02-12', tracks_added: BigInt(2), tracks_analyzed: BigInt(2) },
-        { date: '2025-02-11', tracks_added: BigInt(1), tracks_analyzed: BigInt(1) },
+        {
+          date: '2025-02-12',
+          tracks_added: BigInt(2),
+          tracks_analyzed: BigInt(2),
+        },
+        {
+          date: '2025-02-11',
+          tracks_added: BigInt(1),
+          tracks_analyzed: BigInt(1),
+        },
       ]);
     }
-    if (sql.includes('COUNT(*) as count') && sql.includes('music_tracks') && !sql.includes('genreId')) {
+    if (
+      sql.includes('COUNT(*) as count') &&
+      sql.includes('music_tracks') &&
+      !sql.includes('genreId')
+    ) {
       return Promise.resolve([{ count: BigInt(42) }]);
     }
     if (sql.includes('total_seconds')) {
@@ -50,12 +59,14 @@ function setupGetMetricsMock(prismaMock: ReturnType<typeof createMockPrisma>) {
       return Promise.resolve([{ count: BigInt(5) }]);
     }
     if (sql.includes('total_plays') && sql.includes('favorite_count')) {
-      return Promise.resolve([{
-        total_plays: BigInt(100),
-        total_play_time: BigInt(7200),
-        avg_confidence: 0.95,
-        favorite_count: BigInt(3),
-      }]);
+      return Promise.resolve([
+        {
+          total_plays: BigInt(100),
+          total_play_time: BigInt(7200),
+          avg_confidence: 0.95,
+          favorite_count: BigInt(3),
+        },
+      ]);
     }
     if (sql.includes('track_count') && sql.includes('total_duration') && sql.includes('aiArtist')) {
       return Promise.resolve([
@@ -78,10 +89,7 @@ describe('MetricsQuery', () => {
     vi.clearAllMocks();
     prismaMock = createMockPrisma();
     const module = await Test.createTestingModule({
-      providers: [
-        MetricsQuery,
-        { provide: PRISMA_SERVICE, useValue: prismaMock },
-      ],
+      providers: [MetricsQuery, { provide: PRISMA_SERVICE, useValue: prismaMock }],
     }).compile();
     query = module.get(MetricsQuery);
   });
@@ -167,12 +175,14 @@ describe('MetricsQuery', () => {
           return Promise.resolve([{ count: BigInt(0) }]);
         }
         if (sql.includes('total_plays') && sql.includes('favorite_count')) {
-          return Promise.resolve([{
-            total_plays: BigInt(0),
-            total_play_time: BigInt(0),
-            avg_confidence: 0,
-            favorite_count: BigInt(0),
-          }]);
+          return Promise.resolve([
+            {
+              total_plays: BigInt(0),
+              total_play_time: BigInt(0),
+              avg_confidence: 0,
+              favorite_count: BigInt(0),
+            },
+          ]);
         }
         return Promise.resolve([]);
       };

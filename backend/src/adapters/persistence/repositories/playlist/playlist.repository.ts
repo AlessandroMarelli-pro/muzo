@@ -11,10 +11,7 @@ import { PlaylistId } from 'src/kernel/ids';
 import { extractModelId } from 'src/kernel/ids/factory';
 import { getCurrentUserId } from 'src/kernel/types/context';
 import { Playlist } from 'src/kernel/types/model-types';
-import {
-  PRISMA_SERVICE,
-  PrismaService,
-} from '../../../../infrastructure/database/prisma.service';
+import { PRISMA_SERVICE, PrismaService } from '../../../../infrastructure/database/prisma.service';
 import { playlistWithTracksInclude } from '../../includes/playlist-includes';
 import { handlePrismaNotFound } from '../prisma-errors';
 import {
@@ -44,9 +41,7 @@ export class PlaylistRepository implements IPlaylistRepository {
         include: { sorting: true },
       })
       .then((row) => toDomainWithSorting(row))
-      .catch((e: unknown) =>
-        handlePrismaNotFound(e, `Playlist with ID ${id} not found`),
-      );
+      .catch((e: unknown) => handlePrismaNotFound(e, `Playlist with ID ${id} not found`));
   }
 
   async getOneByIdWithTracks(
@@ -66,9 +61,7 @@ export class PlaylistRepository implements IPlaylistRepository {
         include: playlistWithTracksInclude(sortingOpts),
       })
       .then((row) => toDomainWithTracksWithRelationsAndSorting(row))
-      .catch((e: unknown) =>
-        handlePrismaNotFound(e, `Playlist with ID ${id} not found`),
-      );
+      .catch((e: unknown) => handlePrismaNotFound(e, `Playlist with ID ${id} not found`));
   }
 
   async getFavorite(): Promise<PlaylistTrackWithTrackDetailAndSorting> {
@@ -82,9 +75,7 @@ export class PlaylistRepository implements IPlaylistRepository {
         include: playlistWithTracksInclude(sortingOpts),
       })
       .then((row) => toDomainWithTracksWithRelationsAndSorting(row))
-      .catch((e: unknown) =>
-        handlePrismaNotFound(e, 'Favorite playlist not found'),
-      );
+      .catch((e: unknown) => handlePrismaNotFound(e, 'Favorite playlist not found'));
   }
 
   async getMany(): Promise<Playlist[]> {
@@ -95,19 +86,14 @@ export class PlaylistRepository implements IPlaylistRepository {
       })
       .then((rows) => rows.map(toDomain));
   }
-  async updateOneById(
-    id: PlaylistId,
-    data: PlaylistUpdateData,
-  ): Promise<Playlist> {
+  async updateOneById(id: PlaylistId, data: PlaylistUpdateData): Promise<Playlist> {
     return this.prisma.playlist
       .update({
         where: { id: extractModelId(id).dbId, createdById: getCurrentUserId() },
         data: toPrismaUpdateData(data),
       })
       .then(toDomain)
-      .catch((e: unknown) =>
-        handlePrismaNotFound(e, `Playlist with ID ${id} not found`),
-      );
+      .catch((e: unknown) => handlePrismaNotFound(e, `Playlist with ID ${id} not found`));
   }
 
   async deleteOneById(id: PlaylistId): Promise<boolean> {
@@ -116,9 +102,7 @@ export class PlaylistRepository implements IPlaylistRepository {
         where: { id: extractModelId(id).dbId, createdById: getCurrentUserId() },
       })
       .then(() => true)
-      .catch((e: unknown) =>
-        handlePrismaNotFound(e, `Playlist with ID ${id} not found`),
-      );
+      .catch((e: unknown) => handlePrismaNotFound(e, `Playlist with ID ${id} not found`));
   }
 
   async verifyAccess(id: PlaylistId): Promise<boolean> {
@@ -127,8 +111,6 @@ export class PlaylistRepository implements IPlaylistRepository {
         where: { id: extractModelId(id).dbId, createdById: getCurrentUserId() },
       })
       .then(() => true)
-      .catch((e: unknown) =>
-        handlePrismaNotFound(e, `Playlist with ID ${id} not found`),
-      );
+      .catch((e: unknown) => handlePrismaNotFound(e, `Playlist with ID ${id} not found`));
   }
 }

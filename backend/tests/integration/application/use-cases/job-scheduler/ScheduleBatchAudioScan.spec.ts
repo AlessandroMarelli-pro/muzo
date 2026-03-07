@@ -9,15 +9,7 @@ import { ScheduleBatchAudioScanUseCase } from 'src/application/use-cases/job-sch
 import type { MusicLibraryId, SessionId } from 'src/kernel/ids';
 import { models } from 'src/kernel/types/models';
 import type { ActionContext } from 'src/kernel/types/model-types';
-import {
-  afterAll,
-  beforeAll,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  vi,
-} from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { makeContextUser } from '../../../../_test-utils/make-context-user';
 
 const LIBRARY_ID = models.musicLibrary.id('lib-1');
@@ -66,7 +58,13 @@ class FakeAudioScanSchedulerProducer implements IAudioScanSchedulerProducer {
     contextUser: ActionContext['user'],
     incremental: boolean,
   ): Promise<{ sessionId: SessionId }> {
-    this.calls.push({ audioFiles, libraryId, sessionId, contextUser, incremental });
+    this.calls.push({
+      audioFiles,
+      libraryId,
+      sessionId,
+      contextUser,
+      incremental,
+    });
     if (this.nextError) {
       const err = this.nextError;
       this.nextError = null;
@@ -131,12 +129,7 @@ describe('ScheduleBatchAudioScanUseCase', () => {
         makeFileInfo({ filePath: '/lib/b.flac', fileName: 'b.flac' }),
       ];
 
-      const result = await useCase.execute(
-        audioFiles,
-        LIBRARY_ID,
-        SESSION_ID,
-        false,
-      );
+      const result = await useCase.execute(audioFiles, LIBRARY_ID, SESSION_ID, false);
 
       expect(result).toEqual({ sessionId: SESSION_ID });
       expect(fakeProducer.calls).toHaveLength(1);

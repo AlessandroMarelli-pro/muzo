@@ -3,10 +3,7 @@ import { IPlaylistTrackRepository } from 'src/application/ports/repositories/IPl
 import { extractModelId } from 'src/kernel/ids';
 import { MusicTrackId, PlaylistId } from 'src/kernel/ids/scalars';
 
-const getCompositeKey = (
-  playlistId: PlaylistId,
-  trackId: MusicTrackId,
-): string => {
+const getCompositeKey = (playlistId: PlaylistId, trackId: MusicTrackId): string => {
   return `${extractModelId(playlistId).dbId}:${extractModelId(trackId).dbId}`;
 };
 

@@ -1,14 +1,6 @@
 import { Test } from '@nestjs/testing';
 import { PrismaClient } from '@prisma/client';
-import {
-  afterAll,
-  beforeAll,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  vi,
-} from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { StopLibraryScanUseCase } from 'src/application/use-cases/job-scheduler/StopLibraryScan';
 import type { ILogger } from 'src/application/ports/infrastructure/ILogger';
 import { LOGGER_FACTORY } from 'src/application/ports/infrastructure/ILoggerFactory';
@@ -71,19 +63,8 @@ describe('StopLibraryScanUseCase', () => {
             scanSessionRepo: ScanSessionRepository,
             lf: { createLogger: (name: string) => ILogger },
             log: ILogger,
-          ) =>
-            new StopLibraryScanUseCase(
-              libraryRepo,
-              scanSessionRepo,
-              lf,
-              log,
-            ),
-          inject: [
-            MUSIC_LIBRARY_REPOSITORY,
-            SCAN_SESSION_REPOSITORY,
-            LOGGER_FACTORY,
-            LOGGER,
-          ],
+          ) => new StopLibraryScanUseCase(libraryRepo, scanSessionRepo, lf, log),
+          inject: [MUSIC_LIBRARY_REPOSITORY, SCAN_SESSION_REPOSITORY, LOGGER_FACTORY, LOGGER],
         },
       ],
     }).compile();
@@ -150,9 +131,7 @@ describe('StopLibraryScanUseCase', () => {
     it('when library does not exist: updateScanStatus throws', async () => {
       await seedSession();
 
-      await expect(
-        useCase.execute(LIBRARY_ID, SESSION_ID),
-      ).rejects.toThrow();
+      await expect(useCase.execute(LIBRARY_ID, SESSION_ID)).rejects.toThrow();
     });
 
     it('when session does not exist: deleteSession throws', async () => {
@@ -160,9 +139,7 @@ describe('StopLibraryScanUseCase', () => {
       await musicLibraryRepository.save(library);
       // no session seeded
 
-      await expect(
-        useCase.execute(LIBRARY_ID, SESSION_ID),
-      ).rejects.toThrow();
+      await expect(useCase.execute(LIBRARY_ID, SESSION_ID)).rejects.toThrow();
     });
   });
 });

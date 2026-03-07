@@ -24,9 +24,7 @@ export const buildMusicTrackSortingOrderClause = (options: SortingOptions) => {
     arousalMood: 'arousal',
     valenceMood: 'valence',
   };
-  const orderByProp =
-    changedNames[options.orderBy as keyof typeof changedNames] ||
-    options.orderBy;
+  const orderByProp = changedNames[options.orderBy as keyof typeof changedNames] || options.orderBy;
   if (audioFingerprintFields.includes(orderByProp)) {
     orderByClause = {
       audioFingerprint: {

@@ -4,10 +4,7 @@ import {
   MusicTrack as PrismaMusicTrack,
   PlaylistTrack as PrismaPlaylistTrack,
 } from '@prisma/client';
-import {
-  PRISMA_SERVICE,
-  PrismaService,
-} from 'src/infrastructure/database/prisma.service';
+import { PRISMA_SERVICE, PrismaService } from 'src/infrastructure/database/prisma.service';
 import { PlaylistTrackRepository } from 'src/adapters/persistence/repositories/playlist-track/playlist-track.repository';
 import { createMockPrisma } from '../_test-utils/prisma-mock';
 import { models } from 'src/kernel/types/models';
@@ -41,9 +38,7 @@ function makePrismaPlaylistTrackRow(
 }
 
 /** Minimal Prisma MusicTrack row for include shape (getTrackForPlaylist, getTracksWithTrack, etc.). */
-function makeMinimalPrismaTrackRow(
-  overrides: Partial<PrismaMusicTrack> = {},
-): PrismaMusicTrack & {
+function makeMinimalPrismaTrackRow(overrides: Partial<PrismaMusicTrack> = {}): PrismaMusicTrack & {
   audioFingerprint?: null;
   trackGenres?: never[];
   trackSubgenres?: never[];
@@ -115,9 +110,7 @@ function makeMinimalPrismaTrackRow(
   };
 }
 
-function makeDomainPlaylistTrack(
-  overrides: Partial<PlaylistTrack> = {},
-): PlaylistTrack {
+function makeDomainPlaylistTrack(overrides: Partial<PlaylistTrack> = {}): PlaylistTrack {
   return {
     id: models.playlistTrack.id('pt-1'),
     createdAt: new Date(),
@@ -139,10 +132,7 @@ describe('PlaylistTrackRepository', () => {
   beforeEach(async () => {
     prismaMock = createMockPrisma();
     const module = await Test.createTestingModule({
-      providers: [
-        PlaylistTrackRepository,
-        { provide: PRISMA_SERVICE, useValue: prismaMock },
-      ],
+      providers: [PlaylistTrackRepository, { provide: PRISMA_SERVICE, useValue: prismaMock }],
     }).compile();
     repo = module.get(PlaylistTrackRepository);
   });
@@ -178,9 +168,7 @@ describe('PlaylistTrackRepository', () => {
       const prismaError = new Error('Unique constraint failed');
       prismaMock.playlistTrack.create.mockRejectedValue(prismaError);
 
-      await expect(repo.save(domain)).rejects.toThrow(
-        'Unique constraint failed',
-      );
+      await expect(repo.save(domain)).rejects.toThrow('Unique constraint failed');
     });
 
     it('createdById scope: create is called with current user id in data', async () => {
@@ -198,7 +186,9 @@ describe('PlaylistTrackRepository', () => {
 
   describe('saveMany', () => {
     it('optimal: creates many playlist tracks and returns domain models', async () => {
-      const domain1 = makeDomainPlaylistTrack({ id: models.playlistTrack.id('pt-1') });
+      const domain1 = makeDomainPlaylistTrack({
+        id: models.playlistTrack.id('pt-1'),
+      });
       const domain2 = makeDomainPlaylistTrack({
         id: models.playlistTrack.id('pt-2'),
         position: 1,
@@ -221,9 +211,7 @@ describe('PlaylistTrackRepository', () => {
 
     it('failure: rethrows when Prisma createManyAndReturn throws', async () => {
       const domain = makeDomainPlaylistTrack();
-      prismaMock.playlistTrack.createManyAndReturn.mockRejectedValue(
-        new Error('DB error'),
-      );
+      prismaMock.playlistTrack.createManyAndReturn.mockRejectedValue(new Error('DB error'));
 
       await expect(repo.saveMany([domain])).rejects.toThrow('DB error');
     });
@@ -236,9 +224,7 @@ describe('PlaylistTrackRepository', () => {
       await repo.saveMany([domain]);
 
       expect(prismaMock.playlistTrack.createManyAndReturn).toHaveBeenCalledWith({
-        data: expect.arrayContaining([
-          expect.objectContaining({ createdById: TEST_USER_ID }),
-        ]),
+        data: expect.arrayContaining([expect.objectContaining({ createdById: TEST_USER_ID })]),
       });
     });
   });
@@ -268,9 +254,7 @@ describe('PlaylistTrackRepository', () => {
       const playlistId = models.playlist.id('playlist-1') as PlaylistId;
       prismaMock.playlistTrack.findMany.mockRejectedValue(new Error('DB error'));
 
-      await expect(
-        repo.getTracksByPlaylistId(playlistId),
-      ).rejects.toThrow('DB error');
+      await expect(repo.getTracksByPlaylistId(playlistId)).rejects.toThrow('DB error');
     });
 
     it('createdById scope: findMany is called with current user in where', async () => {
@@ -374,9 +358,7 @@ describe('PlaylistTrackRepository', () => {
         code: 'P2025',
       });
 
-      await expect(
-        repo.getTrackForPlaylist(playlistId, trackId),
-      ).rejects.toMatchObject({
+      await expect(repo.getTrackForPlaylist(playlistId, trackId)).rejects.toMatchObject({
         errorType: 'NotFoundError',
         message: expect.stringContaining('playlist-missing'),
       });
@@ -385,13 +367,11 @@ describe('PlaylistTrackRepository', () => {
     it('failure: rethrows when Prisma throws non-P2025 error', async () => {
       const playlistId = models.playlist.id('playlist-1') as PlaylistId;
       const trackId = models.musicTrack.id('track-1') as MusicTrackId;
-      prismaMock.playlistTrack.findFirstOrThrow.mockRejectedValue(
-        new Error('Connection lost'),
-      );
+      prismaMock.playlistTrack.findFirstOrThrow.mockRejectedValue(new Error('Connection lost'));
 
-      await expect(
-        repo.getTrackForPlaylist(playlistId, trackId),
-      ).rejects.toThrow('Connection lost');
+      await expect(repo.getTrackForPlaylist(playlistId, trackId)).rejects.toThrow(
+        'Connection lost',
+      );
     });
 
     it('createdById scope: findFirstOrThrow is called with current user in where', async () => {
@@ -422,9 +402,7 @@ describe('PlaylistTrackRepository', () => {
         code: 'P2025',
       });
 
-      await expect(
-        repo.getTrackForPlaylist(playlistId, trackId),
-      ).rejects.toMatchObject({
+      await expect(repo.getTrackForPlaylist(playlistId, trackId)).rejects.toMatchObject({
         errorType: 'NotFoundError',
         message: expect.stringContaining('playlist-nonexistent'),
       });
@@ -524,9 +502,7 @@ describe('PlaylistTrackRepository', () => {
       const playlistId = models.playlist.id('playlist-1') as PlaylistId;
       prismaMock.playlistTrack.findMany.mockRejectedValue(new Error('DB error'));
 
-      await expect(
-        repo.getTracksByPlaylistIdWithTrack(playlistId),
-      ).rejects.toThrow('DB error');
+      await expect(repo.getTracksByPlaylistIdWithTrack(playlistId)).rejects.toThrow('DB error');
     });
 
     it('createdById scope: findMany is called with current user in where', async () => {
@@ -665,9 +641,7 @@ describe('PlaylistTrackRepository', () => {
       const trackId = models.musicTrack.id('track-1') as MusicTrackId;
       prismaMock.playlistTrack.findFirst.mockRejectedValue(new Error('DB error'));
 
-      await expect(
-        repo.verifyPresence(playlistId, trackId),
-      ).rejects.toThrow('DB error');
+      await expect(repo.verifyPresence(playlistId, trackId)).rejects.toThrow('DB error');
     });
 
     it('createdById scope: findFirst is called with current user in where', async () => {
@@ -718,9 +692,7 @@ describe('PlaylistTrackRepository', () => {
       const playlistId = models.playlist.id('playlist-1') as PlaylistId;
       prismaMock.playlistTrack.findFirst.mockRejectedValue(new Error('DB error'));
 
-      await expect(repo.getLastPosition(playlistId)).rejects.toThrow(
-        'DB error',
-      );
+      await expect(repo.getLastPosition(playlistId)).rejects.toThrow('DB error');
     });
 
     it('createdById scope: findFirst is called with current user in where', async () => {
@@ -766,9 +738,7 @@ describe('PlaylistTrackRepository', () => {
       const trackId = models.musicTrack.id('track-1') as MusicTrackId;
       prismaMock.playlistTrack.delete.mockRejectedValue({ code: 'P2025' });
 
-      await expect(
-        repo.removeTrackFromPlaylist(playlistId, trackId),
-      ).rejects.toMatchObject({
+      await expect(repo.removeTrackFromPlaylist(playlistId, trackId)).rejects.toMatchObject({
         errorType: 'NotFoundError',
         message: expect.stringContaining('playlist-missing'),
       });
@@ -777,13 +747,11 @@ describe('PlaylistTrackRepository', () => {
     it('failure: rethrows when Prisma throws non-P2025 error', async () => {
       const playlistId = models.playlist.id('playlist-1') as PlaylistId;
       const trackId = models.musicTrack.id('track-1') as MusicTrackId;
-      prismaMock.playlistTrack.delete.mockRejectedValue(
-        new Error('Constraint failed'),
-      );
+      prismaMock.playlistTrack.delete.mockRejectedValue(new Error('Constraint failed'));
 
-      await expect(
-        repo.removeTrackFromPlaylist(playlistId, trackId),
-      ).rejects.toThrow('Constraint failed');
+      await expect(repo.removeTrackFromPlaylist(playlistId, trackId)).rejects.toThrow(
+        'Constraint failed',
+      );
     });
 
     it('createdById scope: delete is called with current user in where', async () => {
@@ -828,9 +796,9 @@ describe('PlaylistTrackRepository', () => {
       const id = models.playlistTrack.id('pt-missing') as PlaylistTrackId;
       prismaMock.playlistTrack.update.mockRejectedValue({ code: 'P2025' });
 
-      await expect(repo.updateOneById(id, { position: 1 })).rejects.toMatchObject(
-        { code: 'P2025' },
-      );
+      await expect(repo.updateOneById(id, { position: 1 })).rejects.toMatchObject({
+        code: 'P2025',
+      });
     });
 
     it('createdById scope: update is called with current user in where', async () => {
@@ -867,13 +835,9 @@ describe('PlaylistTrackRepository', () => {
 
     it('failure: rethrows when Prisma updateMany throws', async () => {
       const playlistId = models.playlist.id('playlist-1') as PlaylistId;
-      prismaMock.playlistTrack.updateMany.mockRejectedValue(
-        new Error('DB error'),
-      );
+      prismaMock.playlistTrack.updateMany.mockRejectedValue(new Error('DB error'));
 
-      await expect(
-        repo.decrementTracksPosition(playlistId, 0),
-      ).rejects.toThrow('DB error');
+      await expect(repo.decrementTracksPosition(playlistId, 0)).rejects.toThrow('DB error');
     });
 
     it('createdById scope: updateMany is called with current user in where', async () => {

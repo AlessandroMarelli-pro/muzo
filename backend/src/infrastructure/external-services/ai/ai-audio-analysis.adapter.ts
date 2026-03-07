@@ -1,11 +1,5 @@
 import { HttpService } from '@nestjs/axios';
-import {
-  HttpException,
-  HttpStatus,
-  Inject,
-  Injectable,
-  Logger,
-} from '@nestjs/common';
+import { HttpException, HttpStatus, Inject, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import FormData from 'form-data';
 import fs from 'fs';
@@ -29,8 +23,7 @@ export class AiAudioAnalysisAdapter implements IAudioAnalysisStructure {
     private readonly httpService: HttpService,
     private readonly configService: ConfigService,
   ) {
-    this.aiServiceConfig =
-      this.configService.get<AiServiceConfig>('aiService')!;
+    this.aiServiceConfig = this.configService.get<AiServiceConfig>('aiService')!;
   }
 
   async analyzeAudioBatch(
@@ -40,9 +33,7 @@ export class AiAudioAnalysisAdapter implements IAudioAnalysisStructure {
     skipImageSearch?: boolean,
   ): Promise<AudioAnalysisBatchResponse> {
     try {
-      this.logger.log(
-        `Analyzing ${audioFilePaths.length} audio files in batch`,
-      );
+      this.logger.log(`Analyzing ${audioFilePaths.length} audio files in batch`);
 
       // Get assigned simple server
       const simpleInstance = this.aiServicePool.getAssignedServer('simple');
@@ -67,16 +58,12 @@ export class AiAudioAnalysisAdapter implements IAudioAnalysisStructure {
 
       // Make request to batch endpoint
       const response = await firstValueFrom(
-        this.httpService.post(
-          `${simpleInstance.url}/api/v1/audio/analyze/batch`,
-          formData,
-          {
-            headers: {
-              ...formData.getHeaders(),
-            },
-            timeout: this.aiServiceConfig.timeout * audioFilePaths.length, // Increase timeout for batch
+        this.httpService.post(`${simpleInstance.url}/api/v1/audio/analyze/batch`, formData, {
+          headers: {
+            ...formData.getHeaders(),
           },
-        ),
+          timeout: this.aiServiceConfig.timeout * audioFilePaths.length, // Increase timeout for batch
+        }),
       );
 
       this.logger.log(

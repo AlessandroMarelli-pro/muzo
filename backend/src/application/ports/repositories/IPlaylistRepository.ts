@@ -12,9 +12,7 @@ export type PlaylistUpdateData = {
   isPublic?: boolean;
 };
 
-export const PLAYLIST_REPOSITORY = createToken<IPlaylistRepository>(
-  'PLAYLIST_REPOSITORY',
-);
+export const PLAYLIST_REPOSITORY = createToken<IPlaylistRepository>('PLAYLIST_REPOSITORY');
 
 export type PlaylistWithSorting = Playlist & {
   sorting: MaybeUndefined<PlaylistSorting>;

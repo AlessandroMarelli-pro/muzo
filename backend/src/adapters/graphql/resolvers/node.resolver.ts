@@ -37,30 +37,24 @@ export class NodeResolver {
     description:
       'Fetch any node by global ID. Use inline fragments (... on Playlist { ... }) to request fields.',
   })
-  async node(
-    @Args('id', { type: () => Base64ID }) id: string,
-  ): Promise<{ id: string } | null> {
+  async node(@Args('id', { type: () => Base64ID }) id: string): Promise<{ id: string } | null> {
     const { modelName } = extractModelId(id as Model['id']);
 
     if (modelName === 'Playlist') {
-      return this.getPlaylistUseCase
-        .execute(parsePlaylistId(id))
-        .then((playlist) => ({
-          ...playlist,
-          tracks:
-            playlist.tracks?.map((track) => ({
-              ...track,
-              track: toTrack(track.track),
-            })) ?? [],
-        }));
+      return this.getPlaylistUseCase.execute(parsePlaylistId(id)).then((playlist) => ({
+        ...playlist,
+        tracks:
+          playlist.tracks?.map((track) => ({
+            ...track,
+            track: toTrack(track.track),
+          })) ?? [],
+      }));
     }
     if (modelName === 'MusicTrack') {
       return this.getTrackUseCase.execute(parseMusicTrackId(id)).then(toTrack);
     }
     if (modelName === 'MusicLibrary') {
-      return this.getLibraryUseCase
-        .execute(parseMusicLibraryId(id))
-        .then(toMusicLibrary);
+      return this.getLibraryUseCase.execute(parseMusicLibraryId(id)).then(toMusicLibrary);
     }
     if (modelName === 'User') {
       // Optional: add GetUserByIdUseCase and resolve here

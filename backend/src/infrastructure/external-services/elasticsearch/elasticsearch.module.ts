@@ -18,10 +18,6 @@ import { RecommendationSearchAdapter } from './recommendation-search.adapter';
       useClass: RecommendationSearchAdapter,
     },
   ],
-  exports: [
-    ElasticsearchClient,
-    TRACK_INDEXER_PORT,
-    RECOMMENDATION_SEARCH_PORT,
-  ],
+  exports: [ElasticsearchClient, TRACK_INDEXER_PORT, RECOMMENDATION_SEARCH_PORT],
 })
 export class ElasticsearchModule {}

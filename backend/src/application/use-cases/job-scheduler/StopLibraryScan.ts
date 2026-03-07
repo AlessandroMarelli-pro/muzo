@@ -13,13 +13,8 @@ export class StopLibraryScanUseCase {
     this.logger = loggerFactory.createLogger('StopLibraryScanUseCase');
   }
 
-  async execute(
-    libraryId: MusicLibraryId,
-    sessionId: SessionId,
-  ): Promise<boolean> {
-    this.logger.info(
-      `Stopping library scan for library ${libraryId} with session ${sessionId}`,
-    );
+  async execute(libraryId: MusicLibraryId, sessionId: SessionId): Promise<boolean> {
+    this.logger.info(`Stopping library scan for library ${libraryId} with session ${sessionId}`);
     await this.musicLibraryRepository.updateScanStatus(libraryId, 'IDLE');
     await this.scanSessionRepository.deleteSession(sessionId);
     this.logger.info(

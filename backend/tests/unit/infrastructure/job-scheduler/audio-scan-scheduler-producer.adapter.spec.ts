@@ -58,13 +58,10 @@ describe('AudioScanSchedulerProducerAdapter', () => {
 
       expect(result).toEqual({ sessionId });
       expect(scanSessionRepositoryMock.updateSession).toHaveBeenCalledTimes(1);
-      expect(scanSessionRepositoryMock.updateSession).toHaveBeenCalledWith(
-        sessionId,
-        {
-          totalBatches: 1,
-          totalTracks: 2,
-        },
-      );
+      expect(scanSessionRepositoryMock.updateSession).toHaveBeenCalledWith(sessionId, {
+        totalBatches: 1,
+        totalTracks: 2,
+      });
       expect(queueMock.addBulk).toHaveBeenCalledTimes(1);
       const [bulkJobs] = queueMock.addBulk.mock.calls[0];
       expect(bulkJobs).toHaveLength(1);
@@ -80,9 +77,7 @@ describe('AudioScanSchedulerProducerAdapter', () => {
     });
 
     it('failure: scanSessionRepository.updateSession throws and error propagates', async () => {
-      scanSessionRepositoryMock.updateSession.mockRejectedValueOnce(
-        new Error('DB error'),
-      );
+      scanSessionRepositoryMock.updateSession.mockRejectedValueOnce(new Error('DB error'));
       await expect(
         adapter.scheduleBatchAudioScan(
           [
@@ -114,13 +109,10 @@ describe('AudioScanSchedulerProducerAdapter', () => {
       );
 
       expect(result).toEqual({ sessionId });
-      expect(scanSessionRepositoryMock.updateSession).toHaveBeenCalledWith(
-        sessionId,
-        {
-          totalBatches: 0,
-          totalTracks: 0,
-        },
-      );
+      expect(scanSessionRepositoryMock.updateSession).toHaveBeenCalledWith(sessionId, {
+        totalBatches: 0,
+        totalTracks: 0,
+      });
       expect(queueMock.addBulk).toHaveBeenCalledWith([]);
     });
   });

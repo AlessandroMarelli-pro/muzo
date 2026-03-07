@@ -1,27 +1,17 @@
-import { Injectable, Inject } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import {
   IMusicLibraryRepository,
   MusicLibraryUpdateData,
 } from 'src/application/ports/repositories/IMusicLibraryRepository';
-import {
-  PRISMA_SERVICE,
-  PrismaService,
-} from 'src/infrastructure/database/prisma.service';
+import { PRISMA_SERVICE, PrismaService } from 'src/infrastructure/database/prisma.service';
 import { extractModelId, MusicLibraryId } from 'src/kernel/ids';
 import { getCurrentUserId, MusicLibrary, ScanStatus } from 'src/kernel/types';
 import { handlePrismaNotFound } from '../prisma-errors';
-import {
-  toDomain,
-  toDomainArray,
-  toPrisma,
-  toPrismaUpdate,
-} from './music-library.mapper';
+import { toDomain, toDomainArray, toPrisma, toPrismaUpdate } from './music-library.mapper';
 
 @Injectable()
 export class MusicLibraryRepository implements IMusicLibraryRepository {
-  constructor(
-    @Inject(PRISMA_SERVICE) private readonly prisma: PrismaService,
-  ) {}
+  constructor(@Inject(PRISMA_SERVICE) private readonly prisma: PrismaService) {}
 
   async save(library: MusicLibrary): Promise<MusicLibrary> {
     return this.prisma.musicLibrary
@@ -37,9 +27,7 @@ export class MusicLibraryRepository implements IMusicLibraryRepository {
         where: { id: extractModelId(id).dbId, createdById: getCurrentUserId() },
       })
       .then(toDomain)
-      .catch((e: unknown) =>
-        handlePrismaNotFound(e, `Music library with ID ${id} not found`),
-      );
+      .catch((e: unknown) => handlePrismaNotFound(e, `Music library with ID ${id} not found`));
   }
 
   async getMany(): Promise<MusicLibrary[]> {
@@ -70,10 +58,7 @@ export class MusicLibraryRepository implements IMusicLibraryRepository {
       .then(() => true);
   }
 
-  async updateScanStatus(
-    id: MusicLibraryId,
-    status: ScanStatus,
-  ): Promise<MusicLibrary> {
+  async updateScanStatus(id: MusicLibraryId, status: ScanStatus): Promise<MusicLibrary> {
     return this.prisma.musicLibrary
       .update({
         where: { id: extractModelId(id).dbId, createdById: getCurrentUserId() },

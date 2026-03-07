@@ -1,7 +1,4 @@
-import {
-  CursorPaginationArgs,
-  PaginationArgs,
-} from '../schema/pagination.args';
+import { CursorPaginationArgs, PaginationArgs } from '../schema/pagination.args';
 // user.resolver.ts
 import { UseGuards } from '@nestjs/common';
 import { Args, Query, ResolveField, Resolver } from '@nestjs/graphql';
@@ -33,16 +30,10 @@ import { Base64ID } from '../scalars/base64-id.scalar';
 import { Library } from '../schema/library.schema';
 import { HomeMetrics } from '../schema/metrics.schema';
 import { MusicPlayer } from '../schema/music-player.schema';
-import {
-  ICursorPaginatedType,
-  IPaginatedType,
-} from '../schema/pagination.schema';
+import { ICursorPaginatedType, IPaginatedType } from '../schema/pagination.schema';
 import { Playlist } from '../schema/playlist.schema';
 import { QueueItem } from '../schema/queue-item.schema';
-import {
-  FilterCriteriaResult,
-  StaticFilterOptions,
-} from '../schema/saved-filter.schema';
+import { FilterCriteriaResult, StaticFilterOptions } from '../schema/saved-filter.schema';
 import {
   CursorPaginatedTracks,
   PaginatedTracks,
@@ -101,9 +92,7 @@ export class UserResolver {
 
   @ResolveField(() => [FilterCriteriaResult], { nullable: true })
   async activeFilters(): Promise<Maybe<FilterCriteriaResult[]>> {
-    return this.getActiveFiltersUseCase
-      .execute()
-      .then((filters) => filters.map(toFilter));
+    return this.getActiveFiltersUseCase.execute().then((filters) => filters.map(toFilter));
   }
 
   @ResolveField(() => FilterCriteriaResult, { nullable: true })
@@ -118,9 +107,7 @@ export class UserResolver {
 
   @ResolveField(() => [Track])
   async recentlyPlayed(): Promise<Track[]> {
-    return this.getRecentlyPlayedUseCase
-      .execute()
-      .then((tracks) => tracks.map(toTrack));
+    return this.getRecentlyPlayedUseCase.execute().then((tracks) => tracks.map(toTrack));
   }
 
   @ResolveField(() => MusicPlayer)
@@ -192,9 +179,7 @@ export class UserResolver {
 
   @ResolveField(() => [Library])
   async libraries(): Promise<Library[]> {
-    return this.getLibrariesUseCase
-      .execute()
-      .then((libraries) => libraries.map(toMusicLibrary));
+    return this.getLibrariesUseCase.execute().then((libraries) => libraries.map(toMusicLibrary));
   }
 
   @ResolveField(() => Playlist)

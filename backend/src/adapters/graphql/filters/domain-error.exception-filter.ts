@@ -1,9 +1,4 @@
-import {
-  ArgumentsHost,
-  Catch,
-  ExceptionFilter,
-  Injectable,
-} from '@nestjs/common';
+import { ArgumentsHost, Catch, ExceptionFilter, Injectable } from '@nestjs/common';
 import { GqlArgumentsHost, GqlExceptionFilter } from '@nestjs/graphql';
 import { GraphQLError } from 'graphql';
 import { isDomainError, type DomainError } from 'src/kernel/types/errors';
@@ -27,9 +22,7 @@ function domainErrorToGraphQL(exception: DomainError): GraphQLError {
  */
 @Catch()
 @Injectable()
-export class DomainErrorExceptionFilter
-  implements ExceptionFilter, GqlExceptionFilter
-{
+export class DomainErrorExceptionFilter implements ExceptionFilter, GqlExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost): GraphQLError | never {
     const gqlHost = GqlArgumentsHost.create(host);
     const type = gqlHost.getType<string>();

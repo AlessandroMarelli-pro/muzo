@@ -1,10 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { AudioAnalysisResponse } from 'src/application/ports/dtos/AudioAnalysis';
 import { IAudioAnalysisRepository } from 'src/application/ports/repositories/IAudioAnalysisRepository';
-import {
-  PRISMA_SERVICE,
-  PrismaService,
-} from 'src/infrastructure/database/prisma.service';
+import { PRISMA_SERVICE, PrismaService } from 'src/infrastructure/database/prisma.service';
 import { extractModelId, MusicTrackId } from 'src/kernel/ids';
 import { getCurrentUserId, models } from 'src/kernel/types';
 import {
@@ -31,24 +28,14 @@ export class AudioAnalysisRepository implements IAudioAnalysisRepository {
     const fingerprint = analysisResult.fingerprint;
     const fingerprintData = {
       mfcc: JSON.stringify(spectralFeatures?.mfcc_mean || []),
-      spectralCentroid: JSON.stringify(
-        spectralFeatures?.spectral_centroids || {},
-      ),
-      spectralRolloff: JSON.stringify(
-        spectralFeatures?.spectral_rolloffs || {},
-      ),
+      spectralCentroid: JSON.stringify(spectralFeatures?.spectral_centroids || {}),
+      spectralRolloff: JSON.stringify(spectralFeatures?.spectral_rolloffs || {}),
       spectralContrast: JSON.stringify([]),
       chroma: JSON.stringify(melodicFingerprint?.chroma || {}),
       spectralSpread: JSON.stringify(spectralFeatures?.spectral_spreads || {}),
-      spectralBandwith: JSON.stringify(
-        spectralFeatures?.spectral_bandwidths || {},
-      ),
-      spectralFlatness: JSON.stringify(
-        spectralFeatures?.spectral_flatnesses || {},
-      ),
-      zeroCrossingRate: JSON.stringify(
-        spectralFeatures?.zero_crossing_rate || {},
-      ),
+      spectralBandwith: JSON.stringify(spectralFeatures?.spectral_bandwidths || {}),
+      spectralFlatness: JSON.stringify(spectralFeatures?.spectral_flatnesses || {}),
+      zeroCrossingRate: JSON.stringify(spectralFeatures?.zero_crossing_rate || {}),
       tempo: musicalFeatures?.tempo || 0,
       key: musicalFeatures?.key || '',
 
@@ -66,23 +53,17 @@ export class AudioAnalysisRepository implements IAudioAnalysisRepository {
       valenceMood: musicalFeatures?.valence_mood || '',
       arousalMood: musicalFeatures?.arousal_mood || '',
       danceabilityFeeling: musicalFeatures?.danceability_feeling || '',
-      rhythmStability:
-        musicalFeatures?.danceability_calculation?.rhythm_stability || 0,
-      bassPresence:
-        musicalFeatures?.danceability_calculation?.bass_presence || 0,
-      tempoRegularity:
-        musicalFeatures?.danceability_calculation?.tempo_regularity || 0,
-      tempoAppropriateness:
-        musicalFeatures?.danceability_calculation?.tempo_appropriateness || 0,
-      energyFactor:
-        musicalFeatures?.danceability_calculation?.energy_factor || 0,
+      rhythmStability: musicalFeatures?.danceability_calculation?.rhythm_stability || 0,
+      bassPresence: musicalFeatures?.danceability_calculation?.bass_presence || 0,
+      tempoRegularity: musicalFeatures?.danceability_calculation?.tempo_regularity || 0,
+      tempoAppropriateness: musicalFeatures?.danceability_calculation?.tempo_appropriateness || 0,
+      energyFactor: musicalFeatures?.danceability_calculation?.energy_factor || 0,
       syncopation: musicalFeatures?.danceability_calculation?.syncopation || 0,
       modeFactor: musicalFeatures?.mood_calculation?.mode_factor || 0,
       modeConfidence: musicalFeatures?.mood_calculation?.mode_confidence || 0,
       modeWeight: musicalFeatures?.mood_calculation?.mode_weight || 0,
       tempoFactor: musicalFeatures?.mood_calculation?.tempo_factor || 0,
-      brightnessFactor:
-        musicalFeatures?.mood_calculation?.brightness_factor || 0,
+      brightnessFactor: musicalFeatures?.mood_calculation?.brightness_factor || 0,
     };
 
     await this.prisma.audioFingerprint.upsert({
@@ -99,10 +80,7 @@ export class AudioAnalysisRepository implements IAudioAnalysisRepository {
     });
   }
 
-  async upsertTrackGenres(
-    trackId: MusicTrackId,
-    genres: string[],
-  ): Promise<void> {
+  async upsertTrackGenres(trackId: MusicTrackId, genres: string[]): Promise<void> {
     // Remove existing genre associations
     await this.prisma.trackGenre.deleteMany({
       where: {
@@ -142,10 +120,7 @@ export class AudioAnalysisRepository implements IAudioAnalysisRepository {
     }
   }
 
-  async upsertTrackSubgenres(
-    trackId: MusicTrackId,
-    subgenres: string[],
-  ): Promise<void> {
+  async upsertTrackSubgenres(trackId: MusicTrackId, subgenres: string[]): Promise<void> {
     // Remove existing genre associations
     await this.prisma.trackSubgenre.deleteMany({
       where: {
@@ -187,10 +162,7 @@ export class AudioAnalysisRepository implements IAudioAnalysisRepository {
     }
   }
 
-  async upsertAiAtmosphereTags(
-    trackId: MusicTrackId,
-    tags: string[],
-  ): Promise<void> {
+  async upsertAiAtmosphereTags(trackId: MusicTrackId, tags: string[]): Promise<void> {
     const trackDbId = extractModelId(trackId).dbId;
     const userId = getCurrentUserId();
 

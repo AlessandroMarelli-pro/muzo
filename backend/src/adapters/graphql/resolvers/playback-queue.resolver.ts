@@ -12,10 +12,7 @@ import { AuthGuard } from '../context/auth.guard';
 import { parseMusicTrackId } from '../../common/utils/parse-id';
 import { toTrack } from '../mappers/track.mapper';
 import { Base64ID } from '../scalars/base64-id.scalar';
-import {
-  QueueItem,
-  RemoveTrackFromQueueResponse,
-} from '../schema/queue-item.schema';
+import { QueueItem, RemoveTrackFromQueueResponse } from '../schema/queue-item.schema';
 import { UpdateQueuePositionsInput } from '../schema/queue.input';
 
 @Resolver(() => QueueItem)
@@ -33,9 +30,7 @@ export class PlaybackQueueResolver {
   async addTrackToQueue(
     @Args('trackId', { type: () => Base64ID }) trackId: string,
   ): Promise<QueueItem> {
-    const item = await this.addTrackToQueueUseCase.execute(
-      parseMusicTrackId(trackId),
-    );
+    const item = await this.addTrackToQueueUseCase.execute(parseMusicTrackId(trackId));
     return {
       id: item.id,
       trackId: item.trackId,
@@ -50,9 +45,7 @@ export class PlaybackQueueResolver {
   async addTracksToQueue(
     @Args('trackIds', { type: () => [Base64ID] }) trackIds: string[],
   ): Promise<QueueItem[]> {
-    const items = await this.addTracksToQueueUseCase.execute(
-      trackIds.map(parseMusicTrackId),
-    );
+    const items = await this.addTracksToQueueUseCase.execute(trackIds.map(parseMusicTrackId));
     return items.map((item) => ({
       id: item.id,
       trackId: item.trackId,

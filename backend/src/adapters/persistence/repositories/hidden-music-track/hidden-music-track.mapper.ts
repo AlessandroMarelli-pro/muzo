@@ -5,9 +5,7 @@ import { HiddenMusicTrack } from 'src/kernel/types/model-types';
 import { toDbModel } from '../db';
 import { toDomainModel } from '../domain';
 
-export type ToDomain = (
-  prismaModel: PrismaHiddenMusicTrack,
-) => HiddenMusicTrack;
+export type ToDomain = (prismaModel: PrismaHiddenMusicTrack) => HiddenMusicTrack;
 
 export const toDomain: ToDomain = (row) => {
   return {
@@ -44,9 +42,7 @@ export const toDomain: ToDomain = (row) => {
   };
 };
 
-export type ToPrisma = (
-  domainModel: HiddenMusicTrack,
-) => PrismaHiddenMusicTrack;
+export type ToPrisma = (domainModel: HiddenMusicTrack) => PrismaHiddenMusicTrack;
 
 export const toPrisma: ToPrisma = (domainModel) => {
   return {
@@ -78,9 +74,7 @@ export const toPrisma: ToPrisma = (domainModel) => {
     aiSubgenreConfidence: 0,
     aiDescription: domainModel.aiMetadata?.description ?? null,
     aiTags:
-      domainModel.aiMetadata?.tags != null
-        ? JSON.stringify(domainModel.aiMetadata.tags)
-        : null,
+      domainModel.aiMetadata?.tags != null ? JSON.stringify(domainModel.aiMetadata.tags) : null,
     vocalsDesc: domainModel.aiMetadata?.vocalsDesc ?? null,
     contextBackground: domainModel.aiMetadata?.contextBackground ?? null,
     contextImpact: domainModel.aiMetadata?.contextImpact ?? null,

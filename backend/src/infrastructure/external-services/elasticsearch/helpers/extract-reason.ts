@@ -15,12 +15,9 @@ const generateAudioFeatureReasons = (
   if (
     trackSource.musical_audio_features?.camelot_key &&
     playlistFeatures.camelotKey &&
-    trackSource.musical_audio_features.camelot_key ===
-      playlistFeatures.camelotKey
+    trackSource.musical_audio_features.camelot_key === playlistFeatures.camelotKey
   ) {
-    reasons.push(
-      `Harmonic key match: ${trackSource.musical_audio_features.camelot_key}`,
-    );
+    reasons.push(`Harmonic key match: ${trackSource.musical_audio_features.camelot_key}`);
   }
 
   // Tempo: same as query (exact or half/double when seed > 120 or <= 120)
@@ -75,8 +72,7 @@ const generateAudioFeatureReasons = (
     playlistFeatures.danceability !== undefined
   ) {
     const danceabilityDiff = Math.abs(
-      trackSource.musical_audio_features.danceability -
-        playlistFeatures.danceability,
+      trackSource.musical_audio_features.danceability - playlistFeatures.danceability,
     );
     if (danceabilityDiff <= 0.1) {
       reasons.push(
@@ -101,9 +97,7 @@ const generateRecommendationReasons = (
     trackSource.genres &&
     trackSource.genres.length > 0
   ) {
-    const matchingGenres = playlistFeatures.genres.filter((g) =>
-      trackSource.genres.includes(g),
-    );
+    const matchingGenres = playlistFeatures.genres.filter((g) => trackSource.genres.includes(g));
     if (matchingGenres.length > 0) {
       reasons.push(
         `Same genre${matchingGenres.length > 1 ? 's' : ''}: ${matchingGenres.join(', ')}`,
@@ -136,9 +130,7 @@ const generateRecommendationReasons = (
       playlistFeatures.atmosphereKeywords?.includes(keyword),
     );
     if (commonAtmosphere.length > 0) {
-      reasons.push(
-        `Similar atmosphere: ${commonAtmosphere.slice(0, 2).join(', ')}`,
-      );
+      reasons.push(`Similar atmosphere: ${commonAtmosphere.slice(0, 2).join(', ')}`);
     }
   }
 
@@ -232,13 +224,9 @@ export const extractReasonsFromElasticsearch = (
   if (highlights.atmosphere_tags && highlights.atmosphere_tags.length > 0) {
     const matchedAtmosphere = highlights.atmosphere_tags
       .map((h: string) => h.replace(/<em>|<\/em>/g, ''))
-      .filter((keyword: string) =>
-        trackSource.atmosphere_tags?.includes(keyword),
-      );
+      .filter((keyword: string) => trackSource.atmosphere_tags?.includes(keyword));
     if (matchedAtmosphere.length > 0) {
-      reasons.push(
-        `Similar atmosphere: ${matchedAtmosphere.slice(0, 2).join(', ')}`,
-      );
+      reasons.push(`Similar atmosphere: ${matchedAtmosphere.slice(0, 2).join(', ')}`);
     }
   }
 
@@ -250,10 +238,7 @@ export const extractReasonsFromElasticsearch = (
     reasons.push('Similar vocal characteristics');
   }
 
-  if (
-    highlights.context_background &&
-    highlights.context_background.length > 0
-  ) {
+  if (highlights.context_background && highlights.context_background.length > 0) {
     reasons.push('Similar context background');
   }
 
@@ -277,10 +262,7 @@ export const extractReasonsFromElasticsearch = (
 
   // Add audio feature reasons that can't be highlighted (tempo, key, energy, etc.)
   // These come from function_score and k-NN queries which don't support highlighting
-  const audioFeatureReasons = generateAudioFeatureReasons(
-    trackSource,
-    playlistFeatures,
-  );
+  const audioFeatureReasons = generateAudioFeatureReasons(trackSource, playlistFeatures);
   audioFeatureReasons.forEach((reason) => {
     // Avoid duplicates
     if (!reasons.some((r) => r === reason)) {

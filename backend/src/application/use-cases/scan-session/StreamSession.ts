@@ -1,10 +1,7 @@
 import { NotFoundException } from '@nestjs/common';
 import { catchError, EMPTY, map, merge, Observable } from 'rxjs';
 import { SessionId } from 'src/kernel/ids';
-import {
-  ScanErrorEvent,
-  ScanProgressEvent,
-} from '../../ports/dtos/ScanProgress.types';
+import { ScanErrorEvent, ScanProgressEvent } from '../../ports/dtos/ScanProgress.types';
 import { ILogger } from '../../ports/infrastructure/ILogger';
 import { IScanProgressSubscriber } from '../../ports/infrastructure/IScanProgressSubscriber';
 import { IScanSessionRepository } from '../../ports/repositories/IScanSessionRepository';
@@ -36,8 +33,7 @@ export class StreamSessionUseCase {
       this.logger.info(`Subscribed to events for session ${sessionId}`);
 
       // Get initial state
-      const currentState =
-        await this.scanProgressSubscriber.getCurrentState(sessionId);
+      const currentState = await this.scanProgressSubscriber.getCurrentState(sessionId);
       this.logger.info(`Got initial state for session ${sessionId}`);
       const initialState: ScanProgressEvent = currentState
         ? {
@@ -71,10 +67,7 @@ export class StreamSessionUseCase {
       }> = this.scanProgressSubscriber.getEventStream(sessionId).pipe(
         map((event) => ({ data: event })),
         catchError((error) => {
-          this.logger.error(
-            `Error in event stream for session ${sessionId}:`,
-            error,
-          );
+          this.logger.error(`Error in event stream for session ${sessionId}:`, error);
           const errorEvent: ScanErrorEvent = {
             type: 'error',
             sessionId,
@@ -95,25 +88,24 @@ export class StreamSessionUseCase {
 
       // Create error stream
       this.logger.info(`Creating error stream for session ${sessionId}`);
-      const errorsStream: Observable<{ data: ScanErrorEvent }> =
-        this.scanProgressSubscriber.getErrorStream(sessionId).pipe(
+      const errorsStream: Observable<{ data: ScanErrorEvent }> = this.scanProgressSubscriber
+        .getErrorStream(sessionId)
+        .pipe(
           map((error) => ({ data: error })),
           catchError((error) => {
-            this.logger.error(
-              `Error in error stream for session ${sessionId}:`,
-              error,
-            );
+            this.logger.error(`Error in error stream for session ${sessionId}:`, error);
             return EMPTY;
           }),
         );
 
       // Merge all streams: start with initial state, then merge events and errors
       // NestJS handles connection management, so keep-alive is not needed
-      const initialStateStream: Observable<{ data: ScanProgressEvent }> =
-        new Observable((subscriber) => {
+      const initialStateStream: Observable<{ data: ScanProgressEvent }> = new Observable(
+        (subscriber) => {
           subscriber.next({ data: initialState });
           subscriber.complete();
-        });
+        },
+      );
 
       this.logger.info(`Merging streams for session ${sessionId}`);
       const mergedStream: Observable<{
@@ -124,10 +116,7 @@ export class StreamSessionUseCase {
 
       return mergedStream.pipe(
         catchError((error): Observable<{ data: ScanErrorEvent }> => {
-          this.logger.error(
-            `Fatal error in SSE stream for session ${sessionId}:`,
-            error,
-          );
+          this.logger.error(`Fatal error in SSE stream for session ${sessionId}:`, error);
           const fatalError: ScanErrorEvent = {
             type: 'error',
             sessionId,
@@ -146,10 +135,10 @@ export class StreamSessionUseCase {
         }),
       );
     } catch (error) {
-      this.logger.error(
-        `Failed to create SSE stream for session ${sessionId}:`,
-        { errorMessage: error.message, error },
-      );
+      this.logger.error(`Failed to create SSE stream for session ${sessionId}:`, {
+        errorMessage: error.message,
+        error,
+      });
       console.error(error.stack);
       const errorEvent: ScanErrorEvent = {
         type: 'error',
@@ -158,10 +147,7 @@ export class StreamSessionUseCase {
         severity: 'error',
         source: 'backend',
         error: {
-          code:
-            error instanceof NotFoundException
-              ? 'SESSION_NOT_FOUND'
-              : 'STREAM_INIT_ERROR',
+          code: error instanceof NotFoundException ? 'SESSION_NOT_FOUND' : 'STREAM_INIT_ERROR',
           message: error.message,
         },
       };

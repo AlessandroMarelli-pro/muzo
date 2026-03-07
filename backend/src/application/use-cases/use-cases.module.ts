@@ -132,21 +132,14 @@ const useCasesProviders = [
     LOGGER,
   ]),
   createUseCaseProvider(GetPlaylistsUseCase, [PLAYLIST_REPOSITORY]),
-  createUseCaseProvider(GetPlaylistUseCase, [
-    PLAYLIST_REPOSITORY,
-    PLAYLIST_SORTING_REPOSITORY,
-  ]),
+  createUseCaseProvider(GetPlaylistUseCase, [PLAYLIST_REPOSITORY, PLAYLIST_SORTING_REPOSITORY]),
   createUseCaseProvider(UpdatePlaylistUseCase, [PLAYLIST_REPOSITORY]),
   createUseCaseProvider(DeletePlaylistUseCase, [PLAYLIST_REPOSITORY, LOGGER]),
   createUseCaseProvider(GetPlaylistStatsUseCase, [PLAYLIST_STATS_QUERY]),
   createUseCaseProvider(GetPlaylistTracksUseCase, [PLAYLIST_TRACK_REPOSITORY]),
   createUseCaseProvider(GetPlaylistsStatsUseCase, [PLAYLIST_STATS_QUERY]),
-  createUseCaseProvider(GetPlaylistSortingByPlaylistIdUseCase, [
-    PLAYLIST_SORTING_REPOSITORY,
-  ]),
-  createUseCaseProvider(GetPlaylistTracksWithDetailUseCase, [
-    PLAYLIST_TRACK_REPOSITORY,
-  ]),
+  createUseCaseProvider(GetPlaylistSortingByPlaylistIdUseCase, [PLAYLIST_SORTING_REPOSITORY]),
+  createUseCaseProvider(GetPlaylistTracksWithDetailUseCase, [PLAYLIST_TRACK_REPOSITORY]),
   createUseCaseProvider(GetFavoriteUseCase, [PLAYLIST_REPOSITORY]),
   createUseCaseProvider(AddTrackToPlaylistUseCase, [
     PLAYLIST_TRACK_REPOSITORY,
@@ -161,9 +154,7 @@ const useCasesProviders = [
     PLAYLIST_REPOSITORY,
     PLAYLIST_SORTING_REPOSITORY,
   ]),
-  createUseCaseProvider(UpdatePlaylistSortingUseCase, [
-    PLAYLIST_SORTING_REPOSITORY,
-  ]),
+  createUseCaseProvider(UpdatePlaylistSortingUseCase, [PLAYLIST_SORTING_REPOSITORY]),
   createUseCaseProvider(UpdatePlaylistTracksPositionsUseCase, [
     PLAYLIST_TRACK_REPOSITORY,
     PLAYLIST_REPOSITORY,
@@ -175,25 +166,14 @@ const useCasesProviders = [
   createUseCaseProvider(UpdateSavedFilterUseCase, [SAVED_FILTER_REPOSITORY]),
   createUseCaseProvider(GetCurrentFilterUseCase, [SAVED_FILTER_REPOSITORY]),
   createUseCaseProvider(GetQueueUseCase, [QUEUE_REPOSITORY]),
-  createUseCaseProvider(AddTrackToQueueUseCase, [
-    QUEUE_REPOSITORY,
-    MUSIC_TRACK_REPOSITORY,
-  ]),
-  createUseCaseProvider(AddTracksToQueueUseCase, [
-    QUEUE_REPOSITORY,
-    MUSIC_TRACK_REPOSITORY,
-  ]),
+  createUseCaseProvider(AddTrackToQueueUseCase, [QUEUE_REPOSITORY, MUSIC_TRACK_REPOSITORY]),
+  createUseCaseProvider(AddTracksToQueueUseCase, [QUEUE_REPOSITORY, MUSIC_TRACK_REPOSITORY]),
   createUseCaseProvider(RemoveTrackFromQueueUseCase, [QUEUE_REPOSITORY]),
   createUseCaseProvider(ResetQueueUseCase, [QUEUE_REPOSITORY]),
   createUseCaseProvider(UpdateQueuePositionsUseCase, [QUEUE_REPOSITORY]),
   createUseCaseProvider(GetHomeMetricsUseCase, [METRICS_QUERY]),
-  createUseCaseProvider(GetWaveformDataUseCase, [
-    AUDIO_WAVEFORM_GENERATOR,
-    MUSIC_TRACK_REPOSITORY,
-  ]),
-  createUseCaseProvider(RecreateElasticsearchIndexUseCase, [
-    TRACK_INDEXER_PORT,
-  ]),
+  createUseCaseProvider(GetWaveformDataUseCase, [AUDIO_WAVEFORM_GENERATOR, MUSIC_TRACK_REPOSITORY]),
+  createUseCaseProvider(RecreateElasticsearchIndexUseCase, [TRACK_INDEXER_PORT]),
   createUseCaseProvider(SyncAllTracksToElasticsearchUseCase, [
     MUSIC_TRACK_REPOSITORY,
     TRACK_INDEXER_PORT,

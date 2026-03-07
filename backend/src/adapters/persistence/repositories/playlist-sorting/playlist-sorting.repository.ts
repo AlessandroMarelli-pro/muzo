@@ -1,12 +1,9 @@
-import { Injectable, Inject } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import {
   IPlaylistSortingRepository,
   PlaylistSortingUpsertData,
 } from 'src/application/ports/repositories/IPlaylistSortingRepository';
-import {
-  PRISMA_SERVICE,
-  PrismaService,
-} from 'src/infrastructure/database/prisma.service';
+import { PRISMA_SERVICE, PrismaService } from 'src/infrastructure/database/prisma.service';
 import { Maybe } from 'src/kernel/common';
 import { extractModelId, PlaylistId } from 'src/kernel/ids';
 import { getCurrentUserId } from 'src/kernel/types/context';
@@ -16,9 +13,7 @@ import { toDomain, toPrisma } from './playlist-sorting.mapper';
 
 @Injectable()
 export class PlaylistSortingRepository implements IPlaylistSortingRepository {
-  constructor(
-    @Inject(PRISMA_SERVICE) private readonly prisma: PrismaService,
-  ) {}
+  constructor(@Inject(PRISMA_SERVICE) private readonly prisma: PrismaService) {}
 
   async save(data: PlaylistSorting): Promise<PlaylistSorting> {
     return this.prisma.playlistSorting
@@ -28,9 +23,7 @@ export class PlaylistSortingRepository implements IPlaylistSortingRepository {
       .then(toDomain);
   }
 
-  async getByPlaylistId(
-    playlistId: PlaylistId,
-  ): Promise<Maybe<PlaylistSorting>> {
+  async getByPlaylistId(playlistId: PlaylistId): Promise<Maybe<PlaylistSorting>> {
     return this.prisma.playlistSorting
       .findFirst({
         where: {
@@ -41,10 +34,7 @@ export class PlaylistSortingRepository implements IPlaylistSortingRepository {
       .then((row) => (row ? toDomain(row) : null));
   }
 
-  update(
-    playlistId: PlaylistId,
-    data: PlaylistSortingUpsertData,
-  ): Promise<PlaylistSorting> {
+  update(playlistId: PlaylistId, data: PlaylistSortingUpsertData): Promise<PlaylistSorting> {
     return this.prisma.playlistSorting
       .update({
         where: {
@@ -58,10 +48,7 @@ export class PlaylistSortingRepository implements IPlaylistSortingRepository {
       })
       .then(toDomain)
       .catch((e: unknown) =>
-        handlePrismaNotFound(
-          e,
-          `Playlist sorting with ID ${playlistId} not found`,
-        ),
+        handlePrismaNotFound(e, `Playlist sorting with ID ${playlistId} not found`),
       );
   }
 

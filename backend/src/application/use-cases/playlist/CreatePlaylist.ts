@@ -34,8 +34,7 @@ export class CreatePlaylistUseCase {
         filters.subgenreIds?.length ||
         filters.atmospheres?.length ||
         filters.libraryIds?.length ||
-        (filters.tempo &&
-          (filters.tempo.min !== undefined || filters.tempo.max !== undefined)))
+        (filters.tempo && (filters.tempo.min !== undefined || filters.tempo.max !== undefined)))
     ) {
       const filterCriteria: FilterCriteria = {
         genreIds: filters.genreIds,

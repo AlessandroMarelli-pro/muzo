@@ -38,9 +38,7 @@ export type ICursorPaginatedType<T> = {
   hasMore: boolean;
 };
 
-export function CursorPaginated<T>(
-  classRef: Type<T>,
-): Type<ICursorPaginatedType<T>> {
+export function CursorPaginated<T>(classRef: Type<T>): Type<ICursorPaginatedType<T>> {
   @ObjectType({ isAbstract: true })
   abstract class CursorPaginatedType implements ICursorPaginatedType<T> {
     @Field(() => Boolean)

@@ -1,7 +1,4 @@
-import {
-  MappingProperty,
-  MappingTypeMapping,
-} from '@elastic/elasticsearch/lib/api/types';
+import { MappingProperty, MappingTypeMapping } from '@elastic/elasticsearch/lib/api/types';
 import { ElasticsearchTrackDocument } from '../types/elasticsearch-track-document';
 
 const aggregationStatisticsMapping: MappingProperty = {
@@ -46,10 +43,7 @@ export const trackIndexMapping: {
           arousal_mood: { type: 'keyword' },
           danceability: { type: 'float' },
           danceability_feeling: { type: 'keyword' },
-        } as Record<
-          keyof ElasticsearchTrackDocument['musical_audio_features'],
-          MappingProperty
-        >,
+        } as Record<keyof ElasticsearchTrackDocument['musical_audio_features'], MappingProperty>,
       },
       spectral_features: {
         properties: {
@@ -60,10 +54,7 @@ export const trackIndexMapping: {
           spectral_flatness: aggregationStatisticsMapping,
           zero_crossing_rate: aggregationStatisticsMapping,
           mfcc_mean: { type: 'keyword' },
-        } as Record<
-          keyof ElasticsearchTrackDocument['spectral_features'],
-          MappingProperty
-        >,
+        } as Record<keyof ElasticsearchTrackDocument['spectral_features'], MappingProperty>,
       },
     } as Record<keyof ElasticsearchTrackDocument, MappingProperty>,
   },

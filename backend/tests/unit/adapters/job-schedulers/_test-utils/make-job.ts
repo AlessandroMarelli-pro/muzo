@@ -1,6 +1,8 @@
 import type { Job } from 'bullmq';
 
-export function makeJob<T>(overrides: { name: string; data: T } & Partial<Job<T>> = {} as any): Job<T> {
+export function makeJob<T>(
+  overrides: { name: string; data: T } & Partial<Job<T>> = {} as any,
+): Job<T> {
   const { name, data, ...rest } = overrides;
   return {
     id: 'job-1',

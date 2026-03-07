@@ -1,9 +1,6 @@
 import { Controller, Get, Logger, Param, Sse } from '@nestjs/common';
 import { Observable } from 'rxjs';
-import {
-  ScanErrorEvent,
-  ScanProgressEvent,
-} from 'src/application/ports/dtos/ScanProgress.types';
+import { ScanErrorEvent, ScanProgressEvent } from 'src/application/ports/dtos/ScanProgress.types';
 import { GetActiveSessionsUseCase } from 'src/application/use-cases/scan-session/GetActiveSessions';
 import { GetCompleteSessionsUseCase } from 'src/application/use-cases/scan-session/GetCompleteSessions';
 import { StreamSessionUseCase } from 'src/application/use-cases/scan-session/StreamSession';
@@ -50,8 +47,6 @@ export class ScanProgressController {
   async streamProgress(
     @Param('sessionId') sessionId: string,
   ): Promise<Observable<{ data: ScanProgressEvent | ScanErrorEvent }>> {
-    return this.streamSessionUseCase.execute(
-      parseSessionId(fromBase64Id(sessionId)),
-    );
+    return this.streamSessionUseCase.execute(parseSessionId(fromBase64Id(sessionId)));
   }
 }

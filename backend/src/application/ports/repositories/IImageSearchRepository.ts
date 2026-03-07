@@ -9,13 +9,9 @@ export type CreateImageSearchData = {
   source?: string;
 };
 
-export const IMAGE_SEARCH_REPOSITORY = createToken<IImageSearchRepository>(
-  'IMAGE_SEARCH_REPOSITORY',
-);
+export const IMAGE_SEARCH_REPOSITORY =
+  createToken<IImageSearchRepository>('IMAGE_SEARCH_REPOSITORY');
 
 export interface IImageSearchRepository {
-  save(
-    trackId: MusicTrackId,
-    data: CreateImageSearchData,
-  ): Promise<ImageSearch>;
+  save(trackId: MusicTrackId, data: CreateImageSearchData): Promise<ImageSearch>;
 }

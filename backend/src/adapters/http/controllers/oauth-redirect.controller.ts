@@ -4,11 +4,7 @@ import { Response } from 'express';
 @Controller()
 export class OAuthRedirectController {
   @Get()
-  oauthRedirect(
-    @Query('code') code: string,
-    @Query('state') state: string,
-    @Res() res: Response,
-  ) {
+  oauthRedirect(@Query('code') code: string, @Query('state') state: string, @Res() res: Response) {
     if (code) {
       const html = `
 <!DOCTYPE html>

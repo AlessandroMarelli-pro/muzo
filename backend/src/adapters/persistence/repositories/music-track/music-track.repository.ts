@@ -20,20 +20,12 @@ import {
   WithCursorPagination,
   WithPagination,
 } from 'src/kernel/types/pagination';
-import {
-  PRISMA_SERVICE,
-  PrismaService,
-} from '../../../../infrastructure/database/prisma.service';
+import { PRISMA_SERVICE, PrismaService } from '../../../../infrastructure/database/prisma.service';
 import { buildMusicTrackFilterWhereClause } from '../../builders/music-track-filter.where';
 import { buildMusicTrackSortingOrderClause } from '../../builders/music-track-sorting.order';
 import { musicTracksIncludes } from '../../includes/music-tracks-includes';
 import { handlePrismaNotFound } from '../prisma-errors';
-import {
-  toDomain,
-  toMusicTrackId,
-  toPrisma,
-  toPrismaUpdate,
-} from './music-track.mapper';
+import { toDomain, toMusicTrackId, toPrisma, toPrismaUpdate } from './music-track.mapper';
 
 @Injectable()
 export class MusicTrackRepository implements IMusicTrackRepository {
@@ -118,9 +110,7 @@ export class MusicTrackRepository implements IMusicTrackRepository {
         where: { id: extractModelId(id).dbId, createdById: getCurrentUserId() },
         include: musicTracksIncludes,
       })
-      .catch((e: unknown) =>
-        handlePrismaNotFound(e, `Music track with ID ${id} not found`),
-      )
+      .catch((e: unknown) => handlePrismaNotFound(e, `Music track with ID ${id} not found`))
       .then(toDomain);
   }
 
@@ -211,12 +201,7 @@ export class MusicTrackRepository implements IMusicTrackRepository {
     criteria: Maybe<FilterCriteria>,
     pagination: WithPagination,
   ): Promise<PaginationResult<MusicTrack>> {
-    const {
-      limit = 50,
-      offset = 0,
-      orderBy,
-      orderDirection,
-    } = pagination.pagination;
+    const { limit = 50, offset = 0, orderBy, orderDirection } = pagination.pagination;
     const where = buildMusicTrackFilterWhereClause(criteria, 'exact');
     const count = await this.prisma.musicTrack.count({ where });
     return this.prisma.musicTrack
@@ -266,15 +251,13 @@ export class MusicTrackRepository implements IMusicTrackRepository {
         include: musicTracksIncludes,
         take: size + 1,
         skip: where?.cursor ? 1 : undefined,
-        orderBy:
-          cursor?.direction === 'BEFORE' ? { id: 'desc' } : { id: 'asc' },
+        orderBy: cursor?.direction === 'BEFORE' ? { id: 'desc' } : { id: 'asc' },
       })
       .then((rows) => {
         if (rows.length === 0) {
           return { items: [], nextCursor: null, hasMore: false };
         }
-        const nextCursor =
-          rows.length > size ? toMusicTrackId(rows[rows.length - 1]) : null;
+        const nextCursor = rows.length > size ? toMusicTrackId(rows[rows.length - 1]) : null;
         const hasMore = rows.length > size;
         const items = rows.slice(0, size);
         return {
@@ -307,10 +290,7 @@ export class MusicTrackRepository implements IMusicTrackRepository {
       .catch((e: unknown) => handlePrismaNotFound(e, `No music tracks found`));
   }
 
-  async updateOneById(
-    id: MusicTrackId,
-    data: MusicTrackUpdateData,
-  ): Promise<MusicTrack> {
+  async updateOneById(id: MusicTrackId, data: MusicTrackUpdateData): Promise<MusicTrack> {
     return this.prisma.musicTrack
       .update({
         where: { id: extractModelId(id).dbId, createdById: getCurrentUserId() },
@@ -348,9 +328,7 @@ export class MusicTrackRepository implements IMusicTrackRepository {
 
     // Update duration if available
     if (analysisResult.audio_technical.duration_seconds) {
-      updateData.duration = Math.round(
-        analysisResult.audio_technical.duration_seconds,
-      );
+      updateData.duration = Math.round(analysisResult.audio_technical.duration_seconds);
     }
 
     // Update audio format details
@@ -370,20 +348,14 @@ export class MusicTrackRepository implements IMusicTrackRepository {
 
     if (analysisResult.hierarchical_classification?.classification) {
       if (analysisResult.hierarchical_classification.classification.genre) {
-        genreNames.push(
-          analysisResult.hierarchical_classification.classification.genre,
-        );
+        genreNames.push(analysisResult.hierarchical_classification.classification.genre);
       }
       if (analysisResult.hierarchical_classification.classification.subgenre) {
-        subgenreNames.push(
-          analysisResult.hierarchical_classification.classification.subgenre,
-        );
+        subgenreNames.push(analysisResult.hierarchical_classification.classification.subgenre);
       }
     }
 
-    if (
-      analysisResult.hierarchical_classification?.classification?.confidence
-    ) {
+    if (analysisResult.hierarchical_classification?.classification?.confidence) {
       updateData.aiConfidence =
         analysisResult.hierarchical_classification.classification.confidence.genre;
       updateData.aiSubgenreConfidence =
@@ -408,10 +380,7 @@ export class MusicTrackRepository implements IMusicTrackRepository {
       if (analysisResult.id3_tags.albumartist) {
         updateData.originalAlbumartist = analysisResult.id3_tags.albumartist;
       }
-      if (
-        analysisResult.id3_tags.date &&
-        isDate(new Date(analysisResult.id3_tags.date))
-      ) {
+      if (analysisResult.id3_tags.date && isDate(new Date(analysisResult.id3_tags.date))) {
         updateData.originalDate = new Date(analysisResult.id3_tags.date);
       }
 
@@ -419,10 +388,7 @@ export class MusicTrackRepository implements IMusicTrackRepository {
         updateData.originalBpm = parseInt(analysisResult.id3_tags.bpm, 10);
       }
       if (analysisResult.id3_tags.track_number) {
-        updateData.originalTrack_number = parseInt(
-          analysisResult.id3_tags.track_number,
-          10,
-        );
+        updateData.originalTrack_number = parseInt(analysisResult.id3_tags.track_number, 10);
       }
       if (analysisResult.id3_tags.disc_number) {
         updateData.originalDisc_number = analysisResult.id3_tags.disc_number;

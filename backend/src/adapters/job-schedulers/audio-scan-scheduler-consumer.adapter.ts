@@ -29,9 +29,7 @@ export class AudioScanSchedulerConsumerAdapter
     private readonly logger: ILogger,
   ) {
     super();
-    this.logger = loggerFactory.createLogger(
-      'AudioScanSchedulerConsumerAdapter',
-    );
+    this.logger = loggerFactory.createLogger('AudioScanSchedulerConsumerAdapter');
   }
 
   async process(job: Job<AudioScanBatchJobData>): Promise<void> {
@@ -55,28 +53,22 @@ export class AudioScanSchedulerConsumerAdapter
   }
 
   async consumeBatchAudioScan(data: AudioScanBatchJobData): Promise<void> {
-    this.logger.info(
-      `Consuming audio scan batch for session ${data.sessionId}`,
-      {
-        sessionId: data.sessionId,
-        contextUser: data.contextUser,
-        jobData: data,
-      },
-    );
+    this.logger.info(`Consuming audio scan batch for session ${data.sessionId}`, {
+      sessionId: data.sessionId,
+      contextUser: data.contextUser,
+      jobData: data,
+    });
     const { isBatchComplete, analysisResults, files, createdTracks } =
       await this.processBatchAudioScanUseCase.execute(data);
-    this.logger.info(
-      `Processed audio scan batch for session ${data.sessionId}`,
-      {
-        sessionId: data.sessionId,
-        contextUser: data.contextUser,
-        jobData: data,
-        isBatchComplete,
-        analysisResults: analysisResults.length,
-        files: files.length,
-        createdTracks: createdTracks.length,
-      },
-    );
+    this.logger.info(`Processed audio scan batch for session ${data.sessionId}`, {
+      sessionId: data.sessionId,
+      contextUser: data.contextUser,
+      jobData: data,
+      isBatchComplete,
+      analysisResults: analysisResults.length,
+      files: files.length,
+      createdTracks: createdTracks.length,
+    });
     let successCount = 0;
     let failedCount = 0;
     if (!isBatchComplete) {
@@ -116,10 +108,7 @@ export class AudioScanSchedulerConsumerAdapter
             failedCount++;
           }
           // Search for image if available
-          if (
-            analysisResult.album_art?.imageUrl ||
-            analysisResult.album_art?.imagePath
-          ) {
+          if (analysisResult.album_art?.imageUrl || analysisResult.album_art?.imagePath) {
             await this.addImageSearchRecordUseCase.execute(track.id, {
               imagePath: analysisResult.album_art.imagePath,
               imageUrl: analysisResult.album_art.imageUrl,
@@ -131,20 +120,17 @@ export class AudioScanSchedulerConsumerAdapter
         }),
       );
     }
-    this.logger.info(
-      `Processing end batch audio scan for session ${data.sessionId}`,
-      {
-        sessionId: data.sessionId,
-        contextUser: data.contextUser,
-        jobData: data,
-        isBatchComplete,
-        analysisResults: analysisResults.length,
-        files: files.length,
-        createdTracks: createdTracks.length,
-        successCount,
-        failedCount,
-      },
-    );
+    this.logger.info(`Processing end batch audio scan for session ${data.sessionId}`, {
+      sessionId: data.sessionId,
+      contextUser: data.contextUser,
+      jobData: data,
+      isBatchComplete,
+      analysisResults: analysisResults.length,
+      files: files.length,
+      createdTracks: createdTracks.length,
+      successCount,
+      failedCount,
+    });
     await this.processEndBatchAudioScanUseCase.execute(
       data,
       data.libraryId,

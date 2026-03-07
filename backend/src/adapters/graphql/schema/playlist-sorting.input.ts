@@ -3,9 +3,9 @@ import { PlaylistSortingDirection, PlaylistSortingKey } from 'src/kernel/types';
 
 @InputType()
 export class UpdatePlaylistSortingInput {
-  @Field()
+  @Field(() => String)
   sortingKey: PlaylistSortingKey;
 
-  @Field()
+  @Field(() => String)
   sortingDirection: PlaylistSortingDirection;
 }

@@ -1,11 +1,4 @@
-import {
-  Controller,
-  Get,
-  HttpStatus,
-  Logger,
-  Query,
-  Res,
-} from '@nestjs/common';
+import { Controller, Get, HttpStatus, Logger, Query, Res } from '@nestjs/common';
 import { Response } from 'express';
 import path from 'path';
 import { ServeImageUseCase } from 'src/application/use-cases/image/ServeImage';
@@ -13,10 +6,7 @@ import { ServeImageUseCase } from 'src/application/use-cases/image/ServeImage';
 @Controller('api/images')
 export class ImageController {
   private readonly logger = new Logger(ImageController.name);
-  private readonly defaultImagesDir = path.join(
-    process.cwd(),
-    './default-images',
-  );
+  private readonly defaultImagesDir = path.join(process.cwd(), './default-images');
 
   constructor(private readonly serveImageUseCase: ServeImageUseCase) {}
 
@@ -24,38 +14,21 @@ export class ImageController {
    * Serve image file
    */
   @Get('serve')
-  async serveImage(
-    @Query('imagePath') imagePath: string,
-    @Res() res: Response,
-  ): Promise<void> {
+  async serveImage(@Query('imagePath') imagePath: string, @Res() res: Response): Promise<void> {
     try {
       let isDefault = false;
-      if (
-        imagePath.includes('Unknown Image') ||
-        !imagePath ||
-        imagePath === 'undefined'
-      ) {
+      if (imagePath.includes('Unknown Image') || !imagePath || imagePath === 'undefined') {
         // Return one random of default_1, default_2, default_3 from default-images folder
-        const defaultImages = [
-          'default_1.jpg',
-          'default_2.jpg',
-          'default_3.jpg',
-        ];
-        const randomImage =
-          defaultImages[Math.floor(Math.random() * defaultImages.length)];
+        const defaultImages = ['default_1.jpg', 'default_2.jpg', 'default_3.jpg'];
+        const randomImage = defaultImages[Math.floor(Math.random() * defaultImages.length)];
         imagePath = path.join(this.defaultImagesDir, randomImage);
         isDefault = true;
       }
 
-      const imageBuffer = await this.serveImageUseCase.execute(
-        imagePath,
-        isDefault,
-      );
+      const imageBuffer = await this.serveImageUseCase.execute(imagePath, isDefault);
 
       // Determine content type based on file extension
-      const contentType = imagePath.endsWith('.svg')
-        ? 'image/svg+xml'
-        : 'image/jpeg';
+      const contentType = imagePath.endsWith('.svg') ? 'image/svg+xml' : 'image/jpeg';
 
       // Browser caching: 1 year for track images, no cache for random default
       res.set({

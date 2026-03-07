@@ -1,9 +1,6 @@
 import { Test } from '@nestjs/testing';
 import { Queue as PrismaQueue } from '@prisma/client';
-import {
-  PRISMA_SERVICE,
-  PrismaService,
-} from 'src/infrastructure/database/prisma.service';
+import { PRISMA_SERVICE, PrismaService } from 'src/infrastructure/database/prisma.service';
 import { QueueRepository } from 'src/adapters/persistence/repositories/queue/queue.repository';
 import { createMockPrisma } from '../_test-utils/prisma-mock';
 import { models } from 'src/kernel/types/models';
@@ -23,9 +20,17 @@ vi.mock('src/kernel/types/context', () => ({
 /** Minimal Prisma Queue row; with include, track can be attached. */
 function makePrismaQueueRow(
   overrides: Partial<PrismaQueue> & {
-    track?: { originalArtist?: string | null; originalTitle?: string | null } | null;
+    track?: {
+      originalArtist?: string | null;
+      originalTitle?: string | null;
+    } | null;
   } = {},
-): PrismaQueue & { track?: { originalArtist?: string | null; originalTitle?: string | null } | null } {
+): PrismaQueue & {
+  track?: {
+    originalArtist?: string | null;
+    originalTitle?: string | null;
+  } | null;
+} {
   return {
     id: 'queue-1',
     trackId: TRACK_ID_DB,
@@ -35,7 +40,12 @@ function makePrismaQueueRow(
     updatedAt: null,
     updatedById: null,
     ...overrides,
-  } as PrismaQueue & { track?: { originalArtist?: string | null; originalTitle?: string | null } | null };
+  } as PrismaQueue & {
+    track?: {
+      originalArtist?: string | null;
+      originalTitle?: string | null;
+    } | null;
+  };
 }
 
 function makeDomainQueueItem(overrides: Partial<QueueItem> = {}): QueueItem {
@@ -58,10 +68,7 @@ describe('QueueRepository', () => {
   beforeEach(async () => {
     prismaMock = createMockPrisma();
     const module = await Test.createTestingModule({
-      providers: [
-        QueueRepository,
-        { provide: PRISMA_SERVICE, useValue: prismaMock },
-      ],
+      providers: [QueueRepository, { provide: PRISMA_SERVICE, useValue: prismaMock }],
     }).compile();
     repo = module.get(QueueRepository);
   });
@@ -115,9 +122,9 @@ describe('QueueRepository', () => {
   describe('addTrack', () => {
     it('optimal: adds track at next position and returns queue item with track', async () => {
       const trackId = models.musicTrack.id(TRACK_ID_DB) as MusicTrackId;
-      prismaMock.queue.findFirst.mockResolvedValue(
-        { position: 0 } as Awaited<ReturnType<typeof prismaMock.queue.findFirst>>,
-      );
+      prismaMock.queue.findFirst.mockResolvedValue({ position: 0 } as Awaited<
+        ReturnType<typeof prismaMock.queue.findFirst>
+      >);
       const createdRow = makePrismaQueueRow({ id: 'q-new', position: 1 });
       prismaMock.queue.create.mockResolvedValue(createdRow);
 
@@ -176,9 +183,9 @@ describe('QueueRepository', () => {
         models.musicTrack.id('t1') as MusicTrackId,
         models.musicTrack.id('t2') as MusicTrackId,
       ];
-      prismaMock.queue.findFirst.mockResolvedValue(
-        { position: 0 } as Awaited<ReturnType<typeof prismaMock.queue.findFirst>>,
-      );
+      prismaMock.queue.findFirst.mockResolvedValue({ position: 0 } as Awaited<
+        ReturnType<typeof prismaMock.queue.findFirst>
+      >);
       prismaMock.queue.create
         .mockResolvedValueOnce(makePrismaQueueRow({ id: 'q1', trackId: 't1', position: 1 }))
         .mockResolvedValueOnce(makePrismaQueueRow({ id: 'q2', trackId: 't2', position: 2 }));
@@ -291,7 +298,12 @@ describe('QueueRepository', () => {
     });
 
     it('createdById scope: update and getQueue use current user in where', async () => {
-      const positions = [{ trackId: models.musicTrack.id(TRACK_ID_DB) as MusicTrackId, position: 1 }];
+      const positions = [
+        {
+          trackId: models.musicTrack.id(TRACK_ID_DB) as MusicTrackId,
+          position: 1,
+        },
+      ];
       prismaMock.queue.update.mockResolvedValue(makePrismaQueueRow());
       prismaMock.queue.findMany.mockResolvedValue([]);
 
@@ -356,9 +368,9 @@ describe('QueueRepository', () => {
 
   describe('getLastPosition', () => {
     it('optimal: returns last position when queue has items', async () => {
-      prismaMock.queue.findFirst.mockResolvedValue(
-        { position: 5 } as Awaited<ReturnType<typeof prismaMock.queue.findFirst>>,
-      );
+      prismaMock.queue.findFirst.mockResolvedValue({ position: 5 } as Awaited<
+        ReturnType<typeof prismaMock.queue.findFirst>
+      >);
 
       const result = await repo.getLastPosition();
 

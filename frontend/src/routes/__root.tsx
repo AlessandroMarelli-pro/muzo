@@ -52,7 +52,7 @@ const MusicPlayerInset = React.memo(function MusicPlayerInset({
 	);
 });
 
-const navigationData: AppSidebarProps['data'] = {
+const navigationData: Omit<AppSidebarProps['data'], 'user'> = {
 	navMain: [
 		{
 			title: 'Home',
@@ -122,7 +122,16 @@ const RootComponent = React.memo(function RootComponent() {
 										: false
 								}
 							>
-								<AppSidebar data={navigationData} />
+								<AppSidebar
+									data={{
+										...navigationData,
+										user: {
+											name: 'John Doe',
+											email: 'john.doe@example.com',
+											avatar: 'https://github.com/shadcn.png',
+										},
+									}}
+								/>
 
 								<SidebarInset>
 									<MusicPlayerInset>

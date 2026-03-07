@@ -1,7 +1,4 @@
-import {
-  IPlaylistStatsQuery,
-  PlaylistStatsDto,
-} from '../../ports/queries/IPlaylistStatsQuery';
+import { IPlaylistStatsQuery, PlaylistStatsDto } from '../../ports/queries/IPlaylistStatsQuery';
 
 export class GetPlaylistsStatsUseCase {
   constructor(private readonly playlistStatsQuery: IPlaylistStatsQuery) {}

@@ -2,12 +2,7 @@ import { fail } from '../common';
 import { Model } from '../types/model-types';
 import { Brand } from './scalars';
 
-export const modelIdFactory = <
-  Y extends string,
-  B extends Brand<string, `${Y}Id`>,
->(
-  prefix: Y,
-) => {
+export const modelIdFactory = <Y extends string, B extends Brand<string, `${Y}Id`>>(prefix: Y) => {
   const validator = (x: string): x is B => {
     return x.split(':')[0] === prefix;
   };

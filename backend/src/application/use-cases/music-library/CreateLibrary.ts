@@ -5,9 +5,7 @@ import {
 } from '../../ports/repositories/IMusicLibraryRepository';
 
 export class CreateLibraryUseCase {
-  constructor(
-    private readonly musicLibraryRepository: IMusicLibraryRepository,
-  ) {}
+  constructor(private readonly musicLibraryRepository: IMusicLibraryRepository) {}
 
   async execute(libraryData: MusicLibraryCreateData): Promise<MusicLibrary> {
     const musicLibrary = models.musicLibrary.instantiateNew({

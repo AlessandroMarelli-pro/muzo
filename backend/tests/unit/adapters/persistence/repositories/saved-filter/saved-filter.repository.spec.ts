@@ -1,9 +1,6 @@
 import { Test } from '@nestjs/testing';
 import { SavedFilter as PrismaSavedFilter } from '@prisma/client';
-import {
-  PRISMA_SERVICE,
-  PrismaService,
-} from 'src/infrastructure/database/prisma.service';
+import { PRISMA_SERVICE, PrismaService } from 'src/infrastructure/database/prisma.service';
 import { SavedFilterRepository } from 'src/adapters/persistence/repositories/saved-filter/saved-filter.repository';
 import { createMockPrisma } from '../_test-utils/prisma-mock';
 import { models } from 'src/kernel/types/models';
@@ -37,9 +34,7 @@ const defaultCriteria: SavedFilter['criteria'] = {
   atmosphereIds: null,
 };
 
-function makePrismaSavedFilterRow(
-  overrides: Partial<PrismaSavedFilter> = {},
-): PrismaSavedFilter {
+function makePrismaSavedFilterRow(overrides: Partial<PrismaSavedFilter> = {}): PrismaSavedFilter {
   return {
     id: 'saved-filter-1',
     name: 'My Filter',
@@ -53,9 +48,7 @@ function makePrismaSavedFilterRow(
   };
 }
 
-function makeDomainSavedFilter(
-  overrides: Partial<SavedFilter> = {},
-): SavedFilter {
+function makeDomainSavedFilter(overrides: Partial<SavedFilter> = {}): SavedFilter {
   return {
     id: models.savedFilter.id('saved-filter-1'),
     createdAt: new Date(),
@@ -76,10 +69,7 @@ describe('SavedFilterRepository', () => {
   beforeEach(async () => {
     prismaMock = createMockPrisma();
     const module = await Test.createTestingModule({
-      providers: [
-        SavedFilterRepository,
-        { provide: PRISMA_SERVICE, useValue: prismaMock },
-      ],
+      providers: [SavedFilterRepository, { provide: PRISMA_SERVICE, useValue: prismaMock }],
     }).compile();
     repo = module.get(SavedFilterRepository);
   });
@@ -147,9 +137,7 @@ describe('SavedFilterRepository', () => {
 
     it('failure: rethrows when Prisma findUnique throws', async () => {
       const filterId = models.savedFilter.id('saved-filter-1') as SavedFilterId;
-      prismaMock.savedFilter.findUnique.mockRejectedValue(
-        new Error('Connection lost'),
-      );
+      prismaMock.savedFilter.findUnique.mockRejectedValue(new Error('Connection lost'));
 
       await expect(repo.getById(filterId)).rejects.toThrow('Connection lost');
     });
@@ -199,9 +187,7 @@ describe('SavedFilterRepository', () => {
       const filterId = models.savedFilter.id('saved-filter-missing') as SavedFilterId;
       prismaMock.savedFilter.update.mockRejectedValue({ code: 'P2025' });
 
-      await expect(
-        repo.updateById(filterId, makeDomainSavedFilter()),
-      ).rejects.toMatchObject({
+      await expect(repo.updateById(filterId, makeDomainSavedFilter())).rejects.toMatchObject({
         errorType: 'NotFoundError',
         message: 'Saved filter with ID SavedFilter:saved-filter-missing not found',
       });
@@ -209,13 +195,11 @@ describe('SavedFilterRepository', () => {
 
     it('failure: rethrows when Prisma throws non-P2025 error', async () => {
       const filterId = models.savedFilter.id('saved-filter-1') as SavedFilterId;
-      prismaMock.savedFilter.update.mockRejectedValue(
-        new Error('Connection lost'),
-      );
+      prismaMock.savedFilter.update.mockRejectedValue(new Error('Connection lost'));
 
-      await expect(
-        repo.updateById(filterId, makeDomainSavedFilter()),
-      ).rejects.toThrow('Connection lost');
+      await expect(repo.updateById(filterId, makeDomainSavedFilter())).rejects.toThrow(
+        'Connection lost',
+      );
     });
 
     it('createdById scope: update is called with current user in where', async () => {
@@ -278,9 +262,7 @@ describe('SavedFilterRepository', () => {
   describe('deleteById', () => {
     it('optimal: deletes saved filter and returns true', async () => {
       const filterId = models.savedFilter.id('saved-filter-1') as SavedFilterId;
-      prismaMock.savedFilter.delete.mockResolvedValue(
-        makePrismaSavedFilterRow(),
-      );
+      prismaMock.savedFilter.delete.mockResolvedValue(makePrismaSavedFilterRow());
 
       const result = await repo.deleteById(filterId);
 
@@ -302,20 +284,14 @@ describe('SavedFilterRepository', () => {
 
     it('failure: rethrows when Prisma throws non-P2025 error', async () => {
       const filterId = models.savedFilter.id('saved-filter-1') as SavedFilterId;
-      prismaMock.savedFilter.delete.mockRejectedValue(
-        new Error('Constraint failed'),
-      );
+      prismaMock.savedFilter.delete.mockRejectedValue(new Error('Constraint failed'));
 
-      await expect(repo.deleteById(filterId)).rejects.toThrow(
-        'Constraint failed',
-      );
+      await expect(repo.deleteById(filterId)).rejects.toThrow('Constraint failed');
     });
 
     it('createdById scope: delete is called with current user in where', async () => {
       const filterId = models.savedFilter.id('saved-filter-1') as SavedFilterId;
-      prismaMock.savedFilter.delete.mockResolvedValue(
-        makePrismaSavedFilterRow(),
-      );
+      prismaMock.savedFilter.delete.mockResolvedValue(makePrismaSavedFilterRow());
 
       await repo.deleteById(filterId);
 
@@ -344,9 +320,7 @@ describe('SavedFilterRepository', () => {
     });
 
     it('failure: rethrows when Prisma findFirst throws', async () => {
-      prismaMock.savedFilter.findFirst.mockRejectedValue(
-        new Error('Connection lost'),
-      );
+      prismaMock.savedFilter.findFirst.mockRejectedValue(new Error('Connection lost'));
 
       await expect(repo.getCurrentFilter()).rejects.toThrow('Connection lost');
     });

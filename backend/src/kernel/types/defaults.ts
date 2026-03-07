@@ -1,7 +1,4 @@
-import type {
-  ActionContext,
-  RecommendationWeights,
-} from 'src/kernel/types/model-types';
+import type { ActionContext, RecommendationWeights } from 'src/kernel/types/model-types';
 import { models } from 'src/kernel/types/models';
 
 export function getAnonymousUser(): ActionContext['user'] {

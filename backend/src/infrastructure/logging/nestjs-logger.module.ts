@@ -8,8 +8,7 @@ import { NestjsLoggerFactory } from './nestjs-logger.factory';
   providers: [
     {
       provide: LOGGER,
-      useFactory: (factory: NestjsLoggerFactory) =>
-        factory.createLogger('Application'),
+      useFactory: (factory: NestjsLoggerFactory) => factory.createLogger('Application'),
       inject: [LOGGER_FACTORY],
     },
     {

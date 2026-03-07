@@ -23,31 +23,18 @@ export interface WaveformOptions {
 
 @Injectable()
 export class WaveformGenerator implements IAudioWaveformGenerator {
-  private readonly SUPPORTED_FORMATS = [
-    '.mp3',
-    '.wav',
-    '.flac',
-    '.m4a',
-    '.aac',
-    '.ogg',
-    '.opus',
-  ];
+  private readonly SUPPORTED_FORMATS = ['.mp3', '.wav', '.flac', '.m4a', '.aac', '.ogg', '.opus'];
   private readonly DEFAULT_SAMPLES_PER_PIXEL = 100;
   private readonly MAX_WAVEFORM_POINTS = 200;
 
-  async generateWaveform(
-    filePath: string,
-    options: WaveformOptions = {},
-  ): Promise<number[]> {
+  async generateWaveform(filePath: string, options: WaveformOptions = {}): Promise<number[]> {
     if (!fs.existsSync(filePath)) {
       throw new BadRequestException(`Audio file not found: ${filePath}`);
     }
 
     const fileExtension = path.extname(filePath).toLowerCase();
     if (!this.SUPPORTED_FORMATS.includes(fileExtension)) {
-      throw new BadRequestException(
-        `Unsupported audio format: ${fileExtension}`,
-      );
+      throw new BadRequestException(`Unsupported audio format: ${fileExtension}`);
     }
 
     const {
@@ -58,11 +45,7 @@ export class WaveformGenerator implements IAudioWaveformGenerator {
 
     try {
       // Generate real waveform data using audio analysis
-      const waveformData = await this.generateRealWaveform(
-        filePath,
-        width,
-        samplesPerPixel,
-      );
+      const waveformData = await this.generateRealWaveform(filePath, width, samplesPerPixel);
       if (normalize) {
         return this.normalizeWaveform(waveformData);
       }
@@ -117,19 +100,13 @@ export class WaveformGenerator implements IAudioWaveformGenerator {
           }
 
           // Calculate how many samples to skip for each pixel
-          const samplesPerPixelActual = Math.max(
-            1,
-            Math.floor(totalSamples / width),
-          );
+          const samplesPerPixelActual = Math.max(1, Math.floor(totalSamples / width));
 
           const waveform: number[] = [];
 
           for (let i = 0; i < width; i++) {
             const startSample = i * samplesPerPixelActual;
-            const endSample = Math.min(
-              startSample + samplesPerPixelActual,
-              totalSamples,
-            );
+            const endSample = Math.min(startSample + samplesPerPixelActual, totalSamples);
 
             // Calculate RMS (Root Mean Square) for this segment
             let sumSquares = 0;
@@ -141,8 +118,7 @@ export class WaveformGenerator implements IAudioWaveformGenerator {
               sampleCount++;
             }
 
-            const rms =
-              sampleCount > 0 ? Math.sqrt(sumSquares / sampleCount) : 0;
+            const rms = sampleCount > 0 ? Math.sqrt(sumSquares / sampleCount) : 0;
 
             // Normalize to 0-1 range
             const normalizedAmplitude = Math.min(1, Math.max(0, rms));

@@ -1,8 +1,5 @@
 import { Test } from '@nestjs/testing';
-import {
-  PRISMA_SERVICE,
-  PrismaService,
-} from 'src/infrastructure/database/prisma.service';
+import { PRISMA_SERVICE, PrismaService } from 'src/infrastructure/database/prisma.service';
 import { PlaylistStatsQuery } from 'src/adapters/persistence/queries/playlist/playlist-stats.query';
 import { createMockPrisma } from '../../repositories/_test-utils/prisma-mock';
 import { models } from 'src/kernel/types/models';
@@ -50,10 +47,7 @@ describe('PlaylistStatsQuery', () => {
   beforeEach(async () => {
     prismaMock = createMockPrisma();
     const module = await Test.createTestingModule({
-      providers: [
-        PlaylistStatsQuery,
-        { provide: PRISMA_SERVICE, useValue: prismaMock },
-      ],
+      providers: [PlaylistStatsQuery, { provide: PRISMA_SERVICE, useValue: prismaMock }],
     }).compile();
     query = module.get(PlaylistStatsQuery);
   });
@@ -93,9 +87,7 @@ describe('PlaylistStatsQuery', () => {
       const playlistId = models.playlist.id(PLAYLIST_DB_ID) as PlaylistId;
       prismaMock.$queryRaw.mockRejectedValue(new Error('Connection lost'));
 
-      await expect(query.getPlaylistStats(playlistId)).rejects.toThrow(
-        'Connection lost',
-      );
+      await expect(query.getPlaylistStats(playlistId)).rejects.toThrow('Connection lost');
     });
 
     it('createdById scope: raw query is invoked with current user id in template values', async () => {

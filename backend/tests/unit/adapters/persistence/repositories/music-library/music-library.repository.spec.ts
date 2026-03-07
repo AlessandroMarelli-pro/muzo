@@ -1,9 +1,6 @@
 import { Test } from '@nestjs/testing';
 import { MusicLibrary as PrismaMusicLibrary, ScanStatus as PrismaScanStatus } from '@prisma/client';
-import {
-  PRISMA_SERVICE,
-  PrismaService,
-} from 'src/infrastructure/database/prisma.service';
+import { PRISMA_SERVICE, PrismaService } from 'src/infrastructure/database/prisma.service';
 import { MusicLibraryRepository } from 'src/adapters/persistence/repositories/music-library/music-library.repository';
 import { createMockPrisma } from '../_test-utils/prisma-mock';
 import { models } from 'src/kernel/types/models';
@@ -82,10 +79,7 @@ describe('MusicLibraryRepository', () => {
   beforeEach(async () => {
     prismaMock = createMockPrisma();
     const module = await Test.createTestingModule({
-      providers: [
-        MusicLibraryRepository,
-        { provide: PRISMA_SERVICE, useValue: prismaMock },
-      ],
+      providers: [MusicLibraryRepository, { provide: PRISMA_SERVICE, useValue: prismaMock }],
     }).compile();
     repo = module.get(MusicLibraryRepository);
   });
@@ -93,7 +87,11 @@ describe('MusicLibraryRepository', () => {
   describe('save', () => {
     it('optimal: creates a library and returns domain model', async () => {
       const domain = makeDomainLibrary();
-      const row = makePrismaLibraryRow({ id: 'lib-1', name: domain.name, rootPath: domain.rootPath });
+      const row = makePrismaLibraryRow({
+        id: 'lib-1',
+        name: domain.name,
+        rootPath: domain.rootPath,
+      });
       prismaMock.musicLibrary.create.mockResolvedValue(row);
 
       const result = await repo.save(domain);
@@ -149,7 +147,9 @@ describe('MusicLibraryRepository', () => {
 
     it('failure: throws NotFoundError when Prisma throws P2025 (record not found)', async () => {
       const libraryId = models.musicLibrary.id('lib-missing') as MusicLibraryId;
-      prismaMock.musicLibrary.findUniqueOrThrow.mockRejectedValue({ code: 'P2025' });
+      prismaMock.musicLibrary.findUniqueOrThrow.mockRejectedValue({
+        code: 'P2025',
+      });
 
       await expect(repo.getOneById(libraryId)).rejects.toMatchObject({
         errorType: 'NotFoundError',
@@ -178,7 +178,9 @@ describe('MusicLibraryRepository', () => {
 
     it('empty result: not found yields NotFoundError (P2025)', async () => {
       const libraryId = models.musicLibrary.id('lib-nonexistent') as MusicLibraryId;
-      prismaMock.musicLibrary.findUniqueOrThrow.mockRejectedValue({ code: 'P2025' });
+      prismaMock.musicLibrary.findUniqueOrThrow.mockRejectedValue({
+        code: 'P2025',
+      });
 
       await expect(repo.getOneById(libraryId)).rejects.toMatchObject({
         errorType: 'NotFoundError',
@@ -189,7 +191,10 @@ describe('MusicLibraryRepository', () => {
 
   describe('getMany', () => {
     it('optimal: returns all libraries for current user', async () => {
-      const rows = [makePrismaLibraryRow({ id: 'lib-1' }), makePrismaLibraryRow({ id: 'lib-2', name: 'Lib 2' })];
+      const rows = [
+        makePrismaLibraryRow({ id: 'lib-1' }),
+        makePrismaLibraryRow({ id: 'lib-2', name: 'Lib 2' }),
+      ];
       prismaMock.musicLibrary.findMany.mockResolvedValue(rows);
 
       const result = await repo.getMany();
@@ -230,10 +235,15 @@ describe('MusicLibraryRepository', () => {
   describe('updateOneById', () => {
     it('optimal: updates library and returns domain model', async () => {
       const libraryId = models.musicLibrary.id('lib-1') as MusicLibraryId;
-      const updatedRow = makePrismaLibraryRow({ id: 'lib-1', name: 'Updated Name' });
+      const updatedRow = makePrismaLibraryRow({
+        id: 'lib-1',
+        name: 'Updated Name',
+      });
       prismaMock.musicLibrary.update.mockResolvedValue(updatedRow);
 
-      const result = await repo.updateOneById(libraryId, { name: 'Updated Name' });
+      const result = await repo.updateOneById(libraryId, {
+        name: 'Updated Name',
+      });
 
       expect(prismaMock.musicLibrary.update).toHaveBeenCalledWith({
         where: { id: 'lib-1', createdById: TEST_USER_ID },
@@ -246,7 +256,9 @@ describe('MusicLibraryRepository', () => {
       const libraryId = models.musicLibrary.id('lib-missing') as MusicLibraryId;
       prismaMock.musicLibrary.update.mockRejectedValue({ code: 'P2025' });
 
-      await expect(repo.updateOneById(libraryId, { name: 'X' })).rejects.toMatchObject({ code: 'P2025' });
+      await expect(repo.updateOneById(libraryId, { name: 'X' })).rejects.toMatchObject({
+        code: 'P2025',
+      });
     });
 
     it('createdById scope: update is called with current user in where', async () => {
@@ -280,7 +292,9 @@ describe('MusicLibraryRepository', () => {
       const libraryId = models.musicLibrary.id('lib-missing') as MusicLibraryId;
       prismaMock.musicLibrary.delete.mockRejectedValue({ code: 'P2025' });
 
-      await expect(repo.deleteOneById(libraryId)).rejects.toMatchObject({ code: 'P2025' });
+      await expect(repo.deleteOneById(libraryId)).rejects.toMatchObject({
+        code: 'P2025',
+      });
     });
 
     it('createdById scope: delete is called with current user in where', async () => {
@@ -298,7 +312,10 @@ describe('MusicLibraryRepository', () => {
   describe('updateScanStatus', () => {
     it('optimal: updates scan status to SCANNING and returns domain model', async () => {
       const libraryId = models.musicLibrary.id('lib-1') as MusicLibraryId;
-      const updatedRow = makePrismaLibraryRow({ id: 'lib-1', scanStatus: PrismaScanStatus.SCANNING });
+      const updatedRow = makePrismaLibraryRow({
+        id: 'lib-1',
+        scanStatus: PrismaScanStatus.SCANNING,
+      });
       prismaMock.musicLibrary.update.mockResolvedValue(updatedRow);
 
       const result = await repo.updateScanStatus(libraryId, 'SCANNING');
@@ -316,12 +333,17 @@ describe('MusicLibraryRepository', () => {
       const libraryId = models.musicLibrary.id('lib-missing') as MusicLibraryId;
       prismaMock.musicLibrary.update.mockRejectedValue({ code: 'P2025' });
 
-      await expect(repo.updateScanStatus(libraryId, 'SCANNING')).rejects.toMatchObject({ code: 'P2025' });
+      await expect(repo.updateScanStatus(libraryId, 'SCANNING')).rejects.toMatchObject({
+        code: 'P2025',
+      });
     });
 
     it('createdById scope: update is called with current user in where', async () => {
       const libraryId = models.musicLibrary.id('lib-1') as MusicLibraryId;
-      const updatedRow = makePrismaLibraryRow({ id: 'lib-1', scanStatus: PrismaScanStatus.SCANNING });
+      const updatedRow = makePrismaLibraryRow({
+        id: 'lib-1',
+        scanStatus: PrismaScanStatus.SCANNING,
+      });
       prismaMock.musicLibrary.update.mockResolvedValue(updatedRow);
 
       await repo.updateScanStatus(libraryId, 'SCANNING');

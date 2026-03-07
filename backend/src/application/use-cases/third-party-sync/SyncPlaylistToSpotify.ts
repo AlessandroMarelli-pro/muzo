@@ -36,8 +36,7 @@ export class SyncPlaylistToSpotifyUseCase {
         }
         const artist = track.artist ?? 'Unknown Artist';
         const title = track.title ?? 'Unknown Title';
-        const duration =
-          track.technicalInfo?.duration ?? track.metadata?.duration ?? 0;
+        const duration = track.technicalInfo?.duration ?? track.metadata?.duration ?? 0;
         if (!trackId) {
           const matchResult = await this.spotifyProvider.findBestMatch(
             artist,
@@ -75,11 +74,7 @@ export class SyncPlaylistToSpotifyUseCase {
       playlist.name,
       playlist.description ?? undefined,
     );
-    await this.spotifyProvider.addTracksToPlaylist(
-      userId,
-      spotifyPlaylistId,
-      trackIds,
-    );
+    await this.spotifyProvider.addTracksToPlaylist(userId, spotifyPlaylistId, trackIds);
 
     result.success = true;
     result.playlistId = spotifyPlaylistId;

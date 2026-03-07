@@ -9,17 +9,13 @@ export class RemoveTrackFromPlaylistUseCase {
     private readonly playlistRepository: IPlaylistRepository,
   ) {}
 
-  async execute(
-    playlistId: PlaylistId,
-    trackId: MusicTrackId,
-  ): Promise<boolean> {
+  async execute(playlistId: PlaylistId, trackId: MusicTrackId): Promise<boolean> {
     await this.playlistRepository.verifyAccess(playlistId);
 
-    const removedPosition =
-      await this.playlistTrackRepository.removeTrackFromPlaylist(
-        playlistId,
-        trackId,
-      );
+    const removedPosition = await this.playlistTrackRepository.removeTrackFromPlaylist(
+      playlistId,
+      trackId,
+    );
 
     return this.playlistTrackRepository.decrementTracksPosition(
       playlistId,

@@ -24,16 +24,10 @@ export class YoutubeSyncAdapter implements IYouTubeSyncProvider {
 
   private initializeOAuth2(): void {
     const clientId = this.configService.get<string>('YOUTUBE_CLIENT_ID');
-    const clientSecret = this.configService.get<string>(
-      'YOUTUBE_CLIENT_SECRET',
-    );
+    const clientSecret = this.configService.get<string>('YOUTUBE_CLIENT_SECRET');
     const redirectUri = this.configService.get<string>('YOUTUBE_REDIRECT_URI');
     if (!clientId || !clientSecret || !redirectUri) return;
-    this.oauth2Client = new google.auth.OAuth2(
-      clientId,
-      clientSecret,
-      redirectUri,
-    );
+    this.oauth2Client = new google.auth.OAuth2(clientId, clientSecret, redirectUri);
   }
 
   getAuthUrl(): string {
@@ -75,10 +69,7 @@ export class YoutubeSyncAdapter implements IYouTubeSyncProvider {
   }
 
   async getAccessToken(userId: string): Promise<string> {
-    const tokenRecord = await this.oauthTokenRepository.getToken(
-      userId,
-      'youtube',
-    );
+    const tokenRecord = await this.oauthTokenRepository.getToken(userId, 'youtube');
     if (!tokenRecord) {
       throw new Error('YouTube not authenticated. Please authorize first.');
     }
@@ -88,10 +79,7 @@ export class YoutubeSyncAdapter implements IYouTubeSyncProvider {
     return tokenRecord.accessToken;
   }
 
-  private async refreshAccessToken(
-    userId: string,
-    refreshToken: string | null,
-  ): Promise<string> {
+  private async refreshAccessToken(userId: string, refreshToken: string | null): Promise<string> {
     if (!refreshToken || !this.oauth2Client) {
       throw new Error('No refresh token available');
     }
@@ -103,9 +91,7 @@ export class YoutubeSyncAdapter implements IYouTubeSyncProvider {
     }
     await this.oauthTokenRepository.updateToken(userId, 'youtube', {
       accessToken: newAccessToken,
-      expiresAt: credentials.expiry_date
-        ? new Date(credentials.expiry_date)
-        : null,
+      expiresAt: credentials.expiry_date ? new Date(credentials.expiry_date) : null,
     });
     return newAccessToken;
   }
@@ -158,22 +144,16 @@ export class YoutubeSyncAdapter implements IYouTubeSyncProvider {
       }
     }
 
-    let bestMatch: { id: string; title: string; duration: number } | null =
-      null;
+    let bestMatch: { id: string; title: string; duration: number } | null = null;
     let bestScore = 0;
     for (const video of videos) {
       const videoTitle = normalize(video.title);
       let score = 0;
       const titleWords = normalizedTitle.split(/\s+/);
-      score +=
-        (titleWords.filter((w) => videoTitle.includes(w)).length /
-          titleWords.length) *
-        0.5;
+      score += (titleWords.filter((w) => videoTitle.includes(w)).length / titleWords.length) * 0.5;
       const artistWords = normalizedArtist.split(/\s+/);
       score +=
-        (artistWords.filter((w) => videoTitle.includes(w)).length /
-          artistWords.length) *
-        0.3;
+        (artistWords.filter((w) => videoTitle.includes(w)).length / artistWords.length) * 0.3;
       const durationDiff = Math.abs(video.duration - trackDuration);
       score += Math.max(0, 0.2 - durationDiff / 100);
       if (score > bestScore) {
@@ -237,11 +217,7 @@ export class YoutubeSyncAdapter implements IYouTubeSyncProvider {
     return hours * 3600 + minutes * 60 + seconds;
   }
 
-  async createPlaylist(
-    userId: string,
-    name: string,
-    description?: string,
-  ): Promise<string> {
+  async createPlaylist(userId: string, name: string, description?: string): Promise<string> {
     await this.setAuthCredentials(userId);
     const youtube = google.youtube({
       version: 'v3',
@@ -262,11 +238,7 @@ export class YoutubeSyncAdapter implements IYouTubeSyncProvider {
     return playlistId;
   }
 
-  async addVideosToPlaylist(
-    userId: string,
-    playlistId: string,
-    videoIds: string[],
-  ): Promise<void> {
+  async addVideosToPlaylist(userId: string, playlistId: string, videoIds: string[]): Promise<void> {
     await this.setAuthCredentials(userId);
     const youtube = google.youtube({
       version: 'v3',

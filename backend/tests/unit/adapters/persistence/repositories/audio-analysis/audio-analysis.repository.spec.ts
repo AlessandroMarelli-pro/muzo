@@ -1,9 +1,6 @@
 import { Test } from '@nestjs/testing';
 import { Genre as PrismaGenre, Subgenre as PrismaSubgenre } from '@prisma/client';
-import {
-  PRISMA_SERVICE,
-  PrismaService,
-} from 'src/infrastructure/database/prisma.service';
+import { PRISMA_SERVICE, PrismaService } from 'src/infrastructure/database/prisma.service';
 import { AudioAnalysisRepository } from 'src/adapters/persistence/repositories/audio-analysis/audio-analysis.repository';
 import { createMockPrisma } from '../_test-utils/prisma-mock';
 import { models } from 'src/kernel/types/models';
@@ -20,9 +17,7 @@ vi.mock('src/kernel/types/context', () => ({
   user: vi.fn(() => ({ id: `User:${TEST_USER_ID}` })),
 }));
 
-function makeAnalysisResult(
-  overrides: Partial<AudioAnalysisResponse> = {},
-): AudioAnalysisResponse {
+function makeAnalysisResult(overrides: Partial<AudioAnalysisResponse> = {}): AudioAnalysisResponse {
   return {
     status: 'success',
     processing_time: 0,
@@ -68,19 +63,80 @@ function makeAnalysisResult(
       },
       spectral_features: {
         mfcc_mean: [0, 0],
-        spectral_centroids: { mean: 0, std: 0, median: 0, min: 0, max: 0, p25: 0, p75: 0 },
-        spectral_rolloffs: { mean: 0, std: 0, median: 0, min: 0, max: 0, p25: 0, p75: 0 },
-        spectral_spreads: { mean: 0, std: 0, median: 0, min: 0, max: 0, p25: 0, p75: 0 },
-        spectral_bandwidths: { mean: 0, std: 0, median: 0, min: 0, max: 0, p25: 0, p75: 0 },
-        spectral_flatnesses: { mean: 0, std: 0, median: 0, min: 0, max: 0, p25: 0, p75: 0 },
-        zero_crossing_rate: { mean: 0, std: 0, median: 0, min: 0, max: 0, p25: 0, p75: 0 },
+        spectral_centroids: {
+          mean: 0,
+          std: 0,
+          median: 0,
+          min: 0,
+          max: 0,
+          p25: 0,
+          p75: 0,
+        },
+        spectral_rolloffs: {
+          mean: 0,
+          std: 0,
+          median: 0,
+          min: 0,
+          max: 0,
+          p25: 0,
+          p75: 0,
+        },
+        spectral_spreads: {
+          mean: 0,
+          std: 0,
+          median: 0,
+          min: 0,
+          max: 0,
+          p25: 0,
+          p75: 0,
+        },
+        spectral_bandwidths: {
+          mean: 0,
+          std: 0,
+          median: 0,
+          min: 0,
+          max: 0,
+          p25: 0,
+          p75: 0,
+        },
+        spectral_flatnesses: {
+          mean: 0,
+          std: 0,
+          median: 0,
+          min: 0,
+          max: 0,
+          p25: 0,
+          p75: 0,
+        },
+        zero_crossing_rate: {
+          mean: 0,
+          std: 0,
+          median: 0,
+          min: 0,
+          max: 0,
+          p25: 0,
+          p75: 0,
+        },
         rms: { mean: 0, std: 0, median: 0, min: 0, max: 0, p25: 0, p75: 0 },
         energy_by_band: [],
         energy_ratios: [],
       },
       melodic_fingerprint: {
-        chroma: { mean: [], std: [], max: [], overall_mean: 0, overall_std: 0, dominant_pitch: 0 },
-        tonnetz: { mean: [], std: [], max: [], overall_mean: 0, overall_std: 0 },
+        chroma: {
+          mean: [],
+          std: [],
+          max: [],
+          overall_mean: 0,
+          overall_std: 0,
+          dominant_pitch: 0,
+        },
+        tonnetz: {
+          mean: [],
+          std: [],
+          max: [],
+          overall_mean: 0,
+          overall_std: 0,
+        },
       },
       rhythm_fingerprint: { zcr_mean: 0, zcr_std: 0 },
     },
@@ -118,9 +174,7 @@ function makePrismaGenreRow(overrides: Partial<PrismaGenre> = {}): PrismaGenre {
   };
 }
 
-function makePrismaSubgenreRow(
-  overrides: Partial<PrismaSubgenre> = {},
-): PrismaSubgenre {
+function makePrismaSubgenreRow(overrides: Partial<PrismaSubgenre> = {}): PrismaSubgenre {
   return {
     id: 'subgenre-1',
     name: 'indie rock',
@@ -141,10 +195,7 @@ describe('AudioAnalysisRepository', () => {
   beforeEach(async () => {
     prismaMock = createMockPrisma();
     const module = await Test.createTestingModule({
-      providers: [
-        AudioAnalysisRepository,
-        { provide: PRISMA_SERVICE, useValue: prismaMock },
-      ],
+      providers: [AudioAnalysisRepository, { provide: PRISMA_SERVICE, useValue: prismaMock }],
     }).compile();
     repo = module.get(AudioAnalysisRepository);
   });
@@ -193,8 +244,7 @@ describe('AudioAnalysisRepository', () => {
         rhythmStability: mf.danceability_calculation?.rhythm_stability ?? 0,
         bassPresence: mf.danceability_calculation?.bass_presence ?? 0,
         tempoRegularity: mf.danceability_calculation?.tempo_regularity ?? 0,
-        tempoAppropriateness:
-          mf.danceability_calculation?.tempo_appropriateness ?? 0,
+        tempoAppropriateness: mf.danceability_calculation?.tempo_appropriateness ?? 0,
         energyFactor: mf.danceability_calculation?.energy_factor ?? 0,
         syncopation: mf.danceability_calculation?.syncopation ?? 0,
         modeFactor: mf.mood_calculation?.mode_factor ?? 0,
@@ -220,9 +270,9 @@ describe('AudioAnalysisRepository', () => {
       const prismaError = new Error('Unique constraint failed');
       prismaMock.audioFingerprint.upsert.mockRejectedValue(prismaError);
 
-      await expect(
-        repo.upsertAudioFingerprint(trackId, analysisResult),
-      ).rejects.toThrow('Unique constraint failed');
+      await expect(repo.upsertAudioFingerprint(trackId, analysisResult)).rejects.toThrow(
+        'Unique constraint failed',
+      );
     });
 
     it('createdById scope: upsert where and create/update use current user id', async () => {
@@ -248,9 +298,7 @@ describe('AudioAnalysisRepository', () => {
       prismaMock.genre.findUnique
         .mockResolvedValueOnce(makePrismaGenreRow({ id: 'g1', name: 'rock' }))
         .mockResolvedValueOnce(null);
-      prismaMock.genre.create.mockResolvedValue(
-        makePrismaGenreRow({ id: 'g2', name: 'indie' }),
-      );
+      prismaMock.genre.create.mockResolvedValue(makePrismaGenreRow({ id: 'g2', name: 'indie' }));
       prismaMock.trackGenre.create.mockResolvedValue({} as never);
 
       await repo.upsertTrackGenres(trackId, genres);
@@ -273,21 +321,15 @@ describe('AudioAnalysisRepository', () => {
 
     it('failure: rethrows when Prisma deleteMany throws', async () => {
       const trackId = models.musicTrack.id(TRACK_DB_ID) as MusicTrackId;
-      prismaMock.trackGenre.deleteMany.mockRejectedValue(
-        new Error('Connection lost'),
-      );
+      prismaMock.trackGenre.deleteMany.mockRejectedValue(new Error('Connection lost'));
 
-      await expect(
-        repo.upsertTrackGenres(trackId, ['Rock']),
-      ).rejects.toThrow('Connection lost');
+      await expect(repo.upsertTrackGenres(trackId, ['Rock'])).rejects.toThrow('Connection lost');
     });
 
     it('createdById scope: deleteMany, findUnique, create use current user id', async () => {
       const trackId = models.musicTrack.id(TRACK_DB_ID) as MusicTrackId;
       prismaMock.trackGenre.deleteMany.mockResolvedValue({ count: 0 });
-      prismaMock.genre.findUnique.mockResolvedValue(
-        makePrismaGenreRow({ name: 'rock' }),
-      );
+      prismaMock.genre.findUnique.mockResolvedValue(makePrismaGenreRow({ name: 'rock' }));
       prismaMock.trackGenre.create.mockResolvedValue({} as never);
 
       await repo.upsertTrackGenres(trackId, ['Rock']);
@@ -306,9 +348,7 @@ describe('AudioAnalysisRepository', () => {
     it('optimal: skips empty or whitespace-only genre names', async () => {
       const trackId = models.musicTrack.id(TRACK_DB_ID) as MusicTrackId;
       prismaMock.trackGenre.deleteMany.mockResolvedValue({ count: 0 });
-      prismaMock.genre.findUnique.mockResolvedValue(
-        makePrismaGenreRow({ name: 'valid' }),
-      );
+      prismaMock.genre.findUnique.mockResolvedValue(makePrismaGenreRow({ name: 'valid' }));
       prismaMock.trackGenre.create.mockResolvedValue({} as never);
 
       await repo.upsertTrackGenres(trackId, ['', '  ', 'Valid']);
@@ -355,21 +395,15 @@ describe('AudioAnalysisRepository', () => {
 
     it('failure: rethrows when Prisma deleteMany throws', async () => {
       const trackId = models.musicTrack.id(TRACK_DB_ID) as MusicTrackId;
-      prismaMock.trackSubgenre.deleteMany.mockRejectedValue(
-        new Error('DB error'),
-      );
+      prismaMock.trackSubgenre.deleteMany.mockRejectedValue(new Error('DB error'));
 
-      await expect(
-        repo.upsertTrackSubgenres(trackId, ['Indie']),
-      ).rejects.toThrow('DB error');
+      await expect(repo.upsertTrackSubgenres(trackId, ['Indie'])).rejects.toThrow('DB error');
     });
 
     it('createdById scope: deleteMany, findUnique, create use current user id', async () => {
       const trackId = models.musicTrack.id(TRACK_DB_ID) as MusicTrackId;
       prismaMock.trackSubgenre.deleteMany.mockResolvedValue({ count: 0 });
-      prismaMock.subgenre.findUnique.mockResolvedValue(
-        makePrismaSubgenreRow({ name: 'indie' }),
-      );
+      prismaMock.subgenre.findUnique.mockResolvedValue(makePrismaSubgenreRow({ name: 'indie' }));
       prismaMock.trackSubgenre.create.mockResolvedValue({} as never);
 
       await repo.upsertTrackSubgenres(trackId, ['Indie']);
@@ -390,7 +424,9 @@ describe('AudioAnalysisRepository', () => {
     it('optimal: deletes existing track atmosphere tags, finds or creates tags, creates track-tag links', async () => {
       const trackId = models.musicTrack.id(TRACK_DB_ID) as MusicTrackId;
       const tags = ['Chill', 'Energetic'];
-      prismaMock.trackAiAtmosphereTag.deleteMany.mockResolvedValue({ count: 0 });
+      prismaMock.trackAiAtmosphereTag.deleteMany.mockResolvedValue({
+        count: 0,
+      });
       prismaMock.aiAtmosphereTag.findFirst
         .mockResolvedValueOnce({
           id: 'tag-1',
@@ -433,18 +469,16 @@ describe('AudioAnalysisRepository', () => {
 
     it('failure: rethrows when Prisma deleteMany throws', async () => {
       const trackId = models.musicTrack.id(TRACK_DB_ID) as MusicTrackId;
-      prismaMock.trackAiAtmosphereTag.deleteMany.mockRejectedValue(
-        new Error('DB error'),
-      );
+      prismaMock.trackAiAtmosphereTag.deleteMany.mockRejectedValue(new Error('DB error'));
 
-      await expect(
-        repo.upsertAiAtmosphereTags(trackId, ['Chill']),
-      ).rejects.toThrow('DB error');
+      await expect(repo.upsertAiAtmosphereTags(trackId, ['Chill'])).rejects.toThrow('DB error');
     });
 
     it('createdById scope: deleteMany, findFirst, create use current user id', async () => {
       const trackId = models.musicTrack.id(TRACK_DB_ID) as MusicTrackId;
-      prismaMock.trackAiAtmosphereTag.deleteMany.mockResolvedValue({ count: 0 });
+      prismaMock.trackAiAtmosphereTag.deleteMany.mockResolvedValue({
+        count: 0,
+      });
       prismaMock.aiAtmosphereTag.findFirst.mockResolvedValue({
         id: 'tag-1',
         name: 'chill',
@@ -474,7 +508,9 @@ describe('AudioAnalysisRepository', () => {
 
     it('optimal: skips empty or whitespace-only tag names', async () => {
       const trackId = models.musicTrack.id(TRACK_DB_ID) as MusicTrackId;
-      prismaMock.trackAiAtmosphereTag.deleteMany.mockResolvedValue({ count: 0 });
+      prismaMock.trackAiAtmosphereTag.deleteMany.mockResolvedValue({
+        count: 0,
+      });
       prismaMock.aiAtmosphereTag.findFirst.mockResolvedValue({
         id: 'tag-1',
         name: 'valid',

@@ -1,14 +1,6 @@
 import { Test } from '@nestjs/testing';
 import { PrismaClient } from '@prisma/client';
-import {
-  afterAll,
-  beforeAll,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  vi,
-} from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ProcessEndLibraryScanUseCase } from 'src/application/use-cases/job-scheduler/ProcessEndLibraryScan';
 import type { ILogger } from 'src/application/ports/infrastructure/ILogger';
 import { SCAN_PROGRESS_PUBLISHER } from 'src/application/ports/infrastructure/IScanProgressPublisher';
@@ -127,16 +119,18 @@ describe('ProcessEndLibraryScanUseCase', () => {
     fakePublishEvent.mockClear();
   });
 
-  async function seedSession(overrides: {
-    sessionId?: string;
-    totalBatches?: number;
-    completedBatches?: number;
-    totalTracks?: number;
-    completedTracks?: number;
-    failedTracks?: number;
-    overallProgress?: number;
-    startedAt?: Date;
-  } = {}) {
+  async function seedSession(
+    overrides: {
+      sessionId?: string;
+      totalBatches?: number;
+      completedBatches?: number;
+      totalTracks?: number;
+      completedTracks?: number;
+      failedTracks?: number;
+      overallProgress?: number;
+      startedAt?: Date;
+    } = {},
+  ) {
     const sessionId = overrides.sessionId ?? 'session-1';
     const startedAt = overrides.startedAt ?? new Date();
     await prisma.scanSession.create({
@@ -159,7 +153,12 @@ describe('ProcessEndLibraryScanUseCase', () => {
 
   describe('execute', () => {
     it('happy path: completes session, publishes scan.complete with session data, and updates library to IDLE', async () => {
-      await seedSession({ totalBatches: 1, totalTracks: 2, completedTracks: 2, failedTracks: 0 });
+      await seedSession({
+        totalBatches: 1,
+        totalTracks: 2,
+        completedTracks: 2,
+        failedTracks: 0,
+      });
       const library = makeLibrary({ id: 'lib-1' });
       await musicLibraryRepository.save(library);
 
@@ -211,7 +210,11 @@ describe('ProcessEndLibraryScanUseCase', () => {
     });
 
     it('when incremental true: updates library with lastIncrementalScanAt (scan still ends IDLE)', async () => {
-      await seedSession({ totalBatches: 1, totalTracks: 1, completedTracks: 1 });
+      await seedSession({
+        totalBatches: 1,
+        totalTracks: 1,
+        completedTracks: 1,
+      });
       const library = makeLibrary({ id: 'lib-1' });
       await musicLibraryRepository.save(library);
 
@@ -225,7 +228,11 @@ describe('ProcessEndLibraryScanUseCase', () => {
     });
 
     it('when incremental false: updates library with lastScanAt', async () => {
-      await seedSession({ totalBatches: 1, totalTracks: 1, completedTracks: 1 });
+      await seedSession({
+        totalBatches: 1,
+        totalTracks: 1,
+        completedTracks: 1,
+      });
       const library = makeLibrary({ id: 'lib-1' });
       await musicLibraryRepository.save(library);
 

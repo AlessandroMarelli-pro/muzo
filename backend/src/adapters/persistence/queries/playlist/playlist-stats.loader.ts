@@ -35,10 +35,6 @@ export const batchPlaylistStats = async (
 
 export type PlaylistStatsLoader = DataLoader<PlaylistId, PlaylistStatsDto>;
 
-export function createPlaylistStatsLoader(
-  statsQuery: IPlaylistStatsQuery,
-): PlaylistStatsLoader {
-  return new DataLoader((keys: readonly PlaylistId[]) =>
-    batchPlaylistStats(keys, statsQuery),
-  );
+export function createPlaylistStatsLoader(statsQuery: IPlaylistStatsQuery): PlaylistStatsLoader {
+  return new DataLoader((keys: readonly PlaylistId[]) => batchPlaylistStats(keys, statsQuery));
 }

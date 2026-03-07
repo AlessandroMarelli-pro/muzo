@@ -13,12 +13,6 @@ export interface IAudioAnalysisRepository {
   ): Promise<void>;
 
   upsertTrackGenres(trackId: MusicTrackId, genres: string[]): Promise<void>;
-  upsertTrackSubgenres(
-    trackId: MusicTrackId,
-    subgenres: string[],
-  ): Promise<void>;
-  upsertAiAtmosphereTags(
-    trackId: MusicTrackId,
-    tags: string[],
-  ): Promise<void>;
+  upsertTrackSubgenres(trackId: MusicTrackId, subgenres: string[]): Promise<void>;
+  upsertAiAtmosphereTags(trackId: MusicTrackId, tags: string[]): Promise<void>;
 }

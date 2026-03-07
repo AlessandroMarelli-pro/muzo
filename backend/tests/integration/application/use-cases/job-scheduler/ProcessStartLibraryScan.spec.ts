@@ -14,15 +14,7 @@ import { ProcessStartLibraryScanUseCase } from 'src/application/use-cases/job-sc
 import { PRISMA_SERVICE } from 'src/infrastructure/database/prisma.service';
 import { FileManager } from 'src/infrastructure/filesystem/file.manager';
 import { models } from 'src/kernel/types/models';
-import {
-  afterAll,
-  beforeAll,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  vi,
-} from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { setupIntegrationDb } from '../_test-utils/integration-db';
 import { makeLibrary } from '../_test-utils/make-library';
 
@@ -84,12 +76,7 @@ describe('ProcessStartLibraryScanUseCase', () => {
             lf: { createLogger: (name: string) => ILogger },
             log: ILogger,
           ) => new ProcessStartLibraryScanUseCase(fileManager, repo, lf, log),
-          inject: [
-            FILE_MANAGER,
-            MUSIC_LIBRARY_REPOSITORY,
-            LOGGER_FACTORY,
-            LOGGER,
-          ],
+          inject: [FILE_MANAGER, MUSIC_LIBRARY_REPOSITORY, LOGGER_FACTORY, LOGGER],
         },
       ],
     }).compile();
@@ -104,9 +91,7 @@ describe('ProcessStartLibraryScanUseCase', () => {
   afterAll(async () => {
     await prisma?.$disconnect?.();
     await cleanupDb?.();
-    await fs
-      .rm(tempDirWithFiles, { recursive: true, force: true })
-      .catch(() => {});
+    await fs.rm(tempDirWithFiles, { recursive: true, force: true }).catch(() => {});
     await fs.rm(tempDirEmpty, { recursive: true, force: true }).catch(() => {});
   });
 
@@ -123,9 +108,7 @@ describe('ProcessStartLibraryScanUseCase', () => {
 
       expect(result).toHaveLength(2);
       expect(result.map((f) => f.fileName).sort()).toEqual(['a.mp3', 'b.flac']);
-      expect(result.every((f) => f.filePath.startsWith(tempDirWithFiles))).toBe(
-        true,
-      );
+      expect(result.every((f) => f.filePath.startsWith(tempDirWithFiles))).toBe(true);
       const libAfter = await musicLibraryRepository.getOneById(LIBRARY_ID);
       expect(libAfter.scanInfo.scanStatus).toBe('IDLE');
     });

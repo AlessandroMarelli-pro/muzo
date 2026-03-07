@@ -25,19 +25,13 @@ export class TidalSyncAdapter implements ITidalSyncProvider {
     private readonly oauthTokenRepository: IOAuthTokenRepository,
   ) {
     this.clientId = this.configService.get<string>('TIDAL_CLIENT_ID') || '';
-    this.clientSecret =
-      this.configService.get<string>('TIDAL_CLIENT_SECRET') || '';
+    this.clientSecret = this.configService.get<string>('TIDAL_CLIENT_SECRET') || '';
     this.redirectUri =
-      this.configService.get<string>('TIDAL_REDIRECT_URI') ||
-      'http://localhost:3000';
+      this.configService.get<string>('TIDAL_REDIRECT_URI') || 'http://localhost:3000';
   }
 
   private base64URLEncode(buffer: Buffer): string {
-    return buffer
-      .toString('base64')
-      .replace(/\+/g, '-')
-      .replace(/\//g, '_')
-      .replace(/=/g, '');
+    return buffer.toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
   }
 
   private generatePKCE(): { codeVerifier: string; codeChallenge: string } {
@@ -55,12 +49,7 @@ export class TidalSyncAdapter implements ITidalSyncProvider {
   getAuthUrl(): TidalAuthUrlResult {
     if (!this.clientId) throw new Error('TIDAL OAuth2 not configured');
     const { codeVerifier, codeChallenge } = this.generatePKCE();
-    const scopes = [
-      'playlists.read',
-      'playlists.write',
-      'user.read',
-      'search.read',
-    ].join(' ');
+    const scopes = ['playlists.read', 'playlists.write', 'user.read', 'search.read'].join(' ');
     const params = new URLSearchParams({
       client_id: this.clientId,
       redirect_uri: this.redirectUri,
@@ -123,10 +112,7 @@ export class TidalSyncAdapter implements ITidalSyncProvider {
   }
 
   async getAccessToken(userId: string): Promise<string> {
-    const tokenRecord = await this.oauthTokenRepository.getToken(
-      userId,
-      'tidal',
-    );
+    const tokenRecord = await this.oauthTokenRepository.getToken(userId, 'tidal');
     if (!tokenRecord) {
       throw new Error('TIDAL not authenticated. Please authorize first.');
     }
@@ -139,10 +125,7 @@ export class TidalSyncAdapter implements ITidalSyncProvider {
     return tokenRecord.accessToken;
   }
 
-  private async refreshAccessToken(
-    userId: string,
-    refreshToken: string,
-  ): Promise<string> {
+  private async refreshAccessToken(userId: string, refreshToken: string): Promise<string> {
     const tokenUrl = 'https://auth.tidal.com/v1/oauth2/token';
     const params = new URLSearchParams({
       grant_type: 'refresh_token',
@@ -207,9 +190,7 @@ export class TidalSyncAdapter implements ITidalSyncProvider {
     query: string,
     userId: string,
     limit: number,
-  ): Promise<
-    { id: string; title: string; artist: string; duration: number }[]
-  > {
+  ): Promise<{ id: string; title: string; artist: string; duration: number }[]> {
     await this.delay(200);
     const response = (await this.makeRequest(
       userId,
@@ -226,17 +207,12 @@ export class TidalSyncAdapter implements ITidalSyncProvider {
     if (!response?.data || !Array.isArray(response.data)) return [];
     return response.data
       .filter((item: { type: string }) => item.type === 'tracks')
-      .map(
-        (item: {
-          id: string;
-          attributes?: { title?: string; duration?: string };
-        }) => ({
-          id: item.id,
-          title: item.attributes?.title || '',
-          artist: 'Unknown Artist',
-          duration: this.parseDuration(item.attributes?.duration || 'PT0S'),
-        }),
-      );
+      .map((item: { id: string; attributes?: { title?: string; duration?: string } }) => ({
+        id: item.id,
+        title: item.attributes?.title || '',
+        artist: 'Unknown Artist',
+        duration: this.parseDuration(item.attributes?.duration || 'PT0S'),
+      }));
   }
 
   private parseDuration(duration: string): number {
@@ -296,15 +272,10 @@ export class TidalSyncAdapter implements ITidalSyncProvider {
       const trackArtist = normalize(track.artist);
       let score = 0;
       const titleWords = normalizedTitle.split(/\s+/);
-      score +=
-        (titleWords.filter((w) => trackTitle.includes(w)).length /
-          titleWords.length) *
-        0.5;
+      score += (titleWords.filter((w) => trackTitle.includes(w)).length / titleWords.length) * 0.5;
       const artistWords = normalizedArtist.split(/\s+/);
       score +=
-        (artistWords.filter((w) => trackArtist.includes(w)).length /
-          artistWords.length) *
-        0.3;
+        (artistWords.filter((w) => trackArtist.includes(w)).length / artistWords.length) * 0.3;
       const durationDiff = Math.abs(track.duration - trackDuration);
       score += Math.max(0, 0.2 - durationDiff / 100);
       if (score > bestScore) {
@@ -322,11 +293,7 @@ export class TidalSyncAdapter implements ITidalSyncProvider {
     return { trackId: null, confidence: 'none' };
   }
 
-  async createPlaylist(
-    userId: string,
-    name: string,
-    description?: string,
-  ): Promise<string> {
+  async createPlaylist(userId: string, name: string, description?: string): Promise<string> {
     const requestBody = {
       data: {
         type: 'playlists',
@@ -345,11 +312,7 @@ export class TidalSyncAdapter implements ITidalSyncProvider {
     return playlistId;
   }
 
-  async addTracksToPlaylist(
-    userId: string,
-    playlistId: string,
-    trackIds: string[],
-  ): Promise<void> {
+  async addTracksToPlaylist(userId: string, playlistId: string, trackIds: string[]): Promise<void> {
     const maxItems = 20;
     for (let i = 0; i < trackIds.length; i += maxItems) {
       const batch = trackIds.slice(i, i + maxItems);
@@ -358,14 +321,10 @@ export class TidalSyncAdapter implements ITidalSyncProvider {
         id: trackId,
         meta: { addedAt: new Date().toISOString() },
       }));
-      await this.makeRequest(
-        userId,
-        `/playlists/${playlistId}/relationships/items`,
-        {
-          method: 'POST',
-          body: JSON.stringify({ data }),
-        },
-      );
+      await this.makeRequest(userId, `/playlists/${playlistId}/relationships/items`, {
+        method: 'POST',
+        body: JSON.stringify({ data }),
+      });
       if (i + maxItems < trackIds.length) await this.delay(100);
     }
   }

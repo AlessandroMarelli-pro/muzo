@@ -1,9 +1,6 @@
 import { UseGuards } from '@nestjs/common';
 import { Args, Mutation, Resolver } from '@nestjs/graphql';
-import {
-  DeleteSavedFilterUseCase,
-  UpdateSavedFilterUseCase,
-} from 'src/application/use-cases';
+import { DeleteSavedFilterUseCase, UpdateSavedFilterUseCase } from 'src/application/use-cases';
 import { CreateSavedFilterUseCase } from 'src/application/use-cases/saved-filter/CreateSavedFilter';
 import { parseSavedFilterId } from '../../common/utils/parse-id';
 import { AuthGuard } from '../context/auth.guard';
@@ -20,9 +17,7 @@ export class SavedFilterResolver {
     private readonly updateSavedFilterUseCase: UpdateSavedFilterUseCase,
   ) {}
   @Mutation(() => FilterCriteriaResult)
-  async createSavedFilter(
-    @Args('input') input: SavedFilterInput,
-  ): Promise<FilterCriteriaResult> {
+  async createSavedFilter(@Args('input') input: SavedFilterInput): Promise<FilterCriteriaResult> {
     return this.createSavedFilterUseCase.execute({
       name: input.name,
       criteria: input.criteria,
@@ -31,9 +26,7 @@ export class SavedFilterResolver {
   }
 
   @Mutation(() => Boolean)
-  async deleteSavedFilter(
-    @Args('id', { type: () => Base64ID }) id: string,
-  ): Promise<boolean> {
+  async deleteSavedFilter(@Args('id', { type: () => Base64ID }) id: string): Promise<boolean> {
     return this.deleteSavedFilterUseCase.execute(parseSavedFilterId(id));
   }
 

@@ -13,26 +13,18 @@ export class UpdatePlaylistTracksPositionsUseCase {
     private readonly playlistRepository: IPlaylistRepository,
   ) {}
 
-  async execute(
-    playlistId: PlaylistId,
-    positions: UpdatePositionsData[],
-  ): Promise<boolean> {
+  async execute(playlistId: PlaylistId, positions: UpdatePositionsData[]): Promise<boolean> {
     // Verify playlist access
     await this.playlistRepository.verifyAccess(playlistId);
 
     // Validate all tracks exist in playlist
     const trackIds = positions.map((p) => p.id);
-    const existingItems =
-      await this.playlistTrackRepository.getTracksByPlaylistId(playlistId);
+    const existingItems = await this.playlistTrackRepository.getTracksByPlaylistId(playlistId);
 
     if (existingItems.length !== trackIds.length) {
       const existingTrackIds = existingItems.map((item) => item.id);
-      const missingTrackIds = trackIds.filter(
-        (id) => !existingTrackIds.includes(id),
-      );
-      throw new NotFoundException(
-        `Tracks not found in playlist: ${missingTrackIds.join(', ')}`,
-      );
+      const missingTrackIds = trackIds.filter((id) => !existingTrackIds.includes(id));
+      throw new NotFoundException(`Tracks not found in playlist: ${missingTrackIds.join(', ')}`);
     }
 
     // Update positions

@@ -24,18 +24,14 @@ export class ProcessEndBatchAudioScanUseCase {
     incremental: boolean,
     contextUser: ActionContext['user'],
   ): Promise<void> {
-    const { totalFiles, totalBatches, audioFiles, sessionId, batchIndex } =
-      data;
+    const { totalFiles, totalBatches, audioFiles, sessionId, batchIndex } = data;
     const progressPercentage = Math.round((1 / totalBatches!) * 10000);
     // Update session progress
-    const session = await this.scanSessionRepository.updateSessionProgress(
-      sessionId,
-      {
-        completedBatches: 1,
-        progressPercentage,
-        completedTracks: audioFiles.length,
-      },
-    );
+    const session = await this.scanSessionRepository.updateSessionProgress(sessionId, {
+      completedBatches: 1,
+      progressPercentage,
+      completedTracks: audioFiles.length,
+    });
     if (!session) {
       this.logger.error(
         `Failed to update session progress for session ${sessionId} (session not found or not in SCANNING status)`,
@@ -66,10 +62,7 @@ export class ProcessEndBatchAudioScanUseCase {
     this.logger.debug(
       `Progress update for ${libraryId}: ${session.completedBatches}/${session.totalBatches} (${(session.overallProgress / 100).toFixed(1)}%)`,
     );
-    await this.scanProgressPublisher.publishEvent(
-      sessionId,
-      batchCompleteEvent,
-    );
+    await this.scanProgressPublisher.publishEvent(sessionId, batchCompleteEvent);
 
     // Update progress tracking
     if (isComplete) {

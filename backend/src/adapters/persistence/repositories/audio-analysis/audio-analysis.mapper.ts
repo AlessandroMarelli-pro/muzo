@@ -45,9 +45,7 @@ export const toPrismaSubgenre = (domain: Subgenre): PrismaSubgenre => {
   };
 };
 
-export const toPrismaTrackSubgenre = (
-  domain: TrackSubgenre,
-): PrismaTrackSubgenre => {
+export const toPrismaTrackSubgenre = (domain: TrackSubgenre): PrismaTrackSubgenre => {
   return {
     ...toDbModel(domain),
     id: extractModelId(domain.id).dbId,
@@ -56,9 +54,7 @@ export const toPrismaTrackSubgenre = (
   };
 };
 
-export const toPrismaAiAtmosphereTag = (
-  domain: AiAtmosphereTag,
-): PrismaAiAtmosphereTag => {
+export const toPrismaAiAtmosphereTag = (domain: AiAtmosphereTag): PrismaAiAtmosphereTag => {
   return {
     ...toDbModel(domain),
     id: extractModelId(domain.id).dbId,

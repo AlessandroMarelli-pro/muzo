@@ -1,9 +1,6 @@
 import { Test } from '@nestjs/testing';
 import { AnalysisStatus as PrismaAnalysisStatus } from '@prisma/client';
-import {
-  PRISMA_SERVICE,
-  PrismaService,
-} from 'src/infrastructure/database/prisma.service';
+import { PRISMA_SERVICE, PrismaService } from 'src/infrastructure/database/prisma.service';
 import { MusicTrackQuery } from 'src/adapters/persistence/queries/music-track/music-track.query';
 import { createMockPrisma } from '../../repositories/_test-utils/prisma-mock';
 import { models } from 'src/kernel/types';
@@ -114,10 +111,7 @@ describe('MusicTrackQuery', () => {
     vi.clearAllMocks();
     prismaMock = createMockPrisma();
     const module = await Test.createTestingModule({
-      providers: [
-        MusicTrackQuery,
-        { provide: PRISMA_SERVICE, useValue: prismaMock },
-      ],
+      providers: [MusicTrackQuery, { provide: PRISMA_SERVICE, useValue: prismaMock }],
     }).compile();
     musicTrackQuery = module.get(MusicTrackQuery);
   });
@@ -159,27 +153,19 @@ describe('MusicTrackQuery', () => {
     it('failure: rethrows when Prisma $queryRaw throws', async () => {
       prismaMock.$queryRaw.mockRejectedValue(new Error('Connection lost'));
 
-      await expect(musicTrackQuery.getRandomTrackWithStats()).rejects.toThrow(
-        'Connection lost',
-      );
+      await expect(musicTrackQuery.getRandomTrackWithStats()).rejects.toThrow('Connection lost');
     });
 
     it('failure: rethrows when Prisma findFirst throws', async () => {
       prismaMock.$queryRaw.mockResolvedValue(makeRawStatsRow());
-      prismaMock.musicTrack.findFirst.mockRejectedValue(
-        new Error('DB error'),
-      );
+      prismaMock.musicTrack.findFirst.mockRejectedValue(new Error('DB error'));
 
-      await expect(musicTrackQuery.getRandomTrackWithStats()).rejects.toThrow(
-        'DB error',
-      );
+      await expect(musicTrackQuery.getRandomTrackWithStats()).rejects.toThrow('DB error');
     });
 
     it('createdById scope: findFirst is called with current user in where', async () => {
       prismaMock.$queryRaw.mockResolvedValue(makeRawStatsRow());
-      prismaMock.musicTrack.findFirst.mockResolvedValue(
-        makePrismaTrackWithRelations(),
-      );
+      prismaMock.musicTrack.findFirst.mockResolvedValue(makePrismaTrackWithRelations());
 
       await musicTrackQuery.getRandomTrackWithStats();
 
@@ -191,9 +177,7 @@ describe('MusicTrackQuery', () => {
 
     it('createdById scope: getCurrentUserId is invoked when running query', async () => {
       prismaMock.$queryRaw.mockResolvedValue(makeRawStatsRow());
-      prismaMock.musicTrack.findFirst.mockResolvedValue(
-        makePrismaTrackWithRelations(),
-      );
+      prismaMock.musicTrack.findFirst.mockResolvedValue(makePrismaTrackWithRelations());
 
       await musicTrackQuery.getRandomTrackWithStats();
 

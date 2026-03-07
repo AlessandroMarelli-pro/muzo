@@ -3,9 +3,8 @@ import { SavedFilterId } from 'src/kernel/ids';
 import { FilterCriteria, SavedFilter } from 'src/kernel/types/model-types';
 import { createToken } from '../../utils/create-token';
 
-export const SAVED_FILTER_REPOSITORY = createToken<ISavedFilterRepository>(
-  'SAVED_FILTER_REPOSITORY',
-);
+export const SAVED_FILTER_REPOSITORY =
+  createToken<ISavedFilterRepository>('SAVED_FILTER_REPOSITORY');
 
 export type SavedFilterData = {
   name: string;

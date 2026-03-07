@@ -1,4 +1,4 @@
-import { Injectable, Inject } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { PlaylistTrackWithTrackDetail } from 'src/application/ports/dtos/PlaylistTrackWithDetail';
 import {
   IPlaylistTrackRepository,
@@ -6,16 +6,8 @@ import {
   PlaylistTrackPresence,
   PlaylistTrackUpdateData,
 } from 'src/application/ports/repositories/IPlaylistTrackRepository';
-import {
-  PRISMA_SERVICE,
-  PrismaService,
-} from 'src/infrastructure/database/prisma.service';
-import {
-  extractModelId,
-  MusicTrackId,
-  PlaylistId,
-  PlaylistTrackId,
-} from 'src/kernel/ids';
+import { PRISMA_SERVICE, PrismaService } from 'src/infrastructure/database/prisma.service';
+import { extractModelId, MusicTrackId, PlaylistId, PlaylistTrackId } from 'src/kernel/ids';
 import { models } from 'src/kernel/types';
 import { getCurrentUserId } from 'src/kernel/types/context';
 import { PlaylistTrack } from 'src/kernel/types/model-types';
@@ -26,9 +18,7 @@ import { toDomain, toPrisma } from './playlist-track.mapper';
 
 @Injectable()
 export class PlaylistTrackRepository implements IPlaylistTrackRepository {
-  constructor(
-    @Inject(PRISMA_SERVICE) private readonly prisma: PrismaService,
-  ) {}
+  constructor(@Inject(PRISMA_SERVICE) private readonly prisma: PrismaService) {}
 
   async save(playlistTrack: PlaylistTrack): Promise<PlaylistTrack> {
     return this.prisma.playlistTrack
@@ -45,9 +35,7 @@ export class PlaylistTrackRepository implements IPlaylistTrackRepository {
       })
       .then((rows) => rows.map(toDomain));
   }
-  async getTracksByPlaylistId(
-    playlistId: PlaylistId,
-  ): Promise<PlaylistTrack[]> {
+  async getTracksByPlaylistId(playlistId: PlaylistId): Promise<PlaylistTrack[]> {
     return this.prisma.playlistTrack
       .findMany({
         where: {
@@ -165,10 +153,7 @@ export class PlaylistTrackRepository implements IPlaylistTrackRepository {
         })),
       );
   }
-  verifyPresence(
-    playlistId: PlaylistId,
-    trackId: MusicTrackId,
-  ): Promise<boolean> {
+  verifyPresence(playlistId: PlaylistId, trackId: MusicTrackId): Promise<boolean> {
     return this.prisma.playlistTrack
       .findFirst({
         where: {
@@ -191,10 +176,7 @@ export class PlaylistTrackRepository implements IPlaylistTrackRepository {
       })
       .then((row) => row?.position ?? 0);
   }
-  removeTrackFromPlaylist(
-    playlistId: PlaylistId,
-    trackId: MusicTrackId,
-  ): Promise<PlaylistTrack> {
+  removeTrackFromPlaylist(playlistId: PlaylistId, trackId: MusicTrackId): Promise<PlaylistTrack> {
     return this.prisma.playlistTrack
       .delete({
         where: {
@@ -213,10 +195,7 @@ export class PlaylistTrackRepository implements IPlaylistTrackRepository {
         ),
       );
   }
-  updateOneById(
-    id: PlaylistTrackId,
-    data: PlaylistTrackUpdateData,
-  ): Promise<PlaylistTrack> {
+  updateOneById(id: PlaylistTrackId, data: PlaylistTrackUpdateData): Promise<PlaylistTrack> {
     return this.prisma.playlistTrack
       .update({
         where: { id: extractModelId(id).dbId, createdById: getCurrentUserId() },

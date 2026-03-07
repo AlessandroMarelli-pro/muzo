@@ -37,8 +37,7 @@ export class SyncPlaylistToYouTubeUseCase {
         }
         const artist = track.artist ?? 'Unknown Artist';
         const title = track.title ?? 'Unknown Title';
-        const duration =
-          track.technicalInfo?.duration ?? track.metadata?.duration ?? 0;
+        const duration = track.technicalInfo?.duration ?? track.metadata?.duration ?? 0;
         if (!videoId) {
           const matchResult = await this.youtubeProvider.findBestMatch(
             artist,
@@ -76,11 +75,7 @@ export class SyncPlaylistToYouTubeUseCase {
       playlist.name,
       playlist.description ?? undefined,
     );
-    await this.youtubeProvider.addVideosToPlaylist(
-      userId,
-      youtubePlaylistId,
-      videoIds,
-    );
+    await this.youtubeProvider.addVideosToPlaylist(userId, youtubePlaylistId, videoIds);
 
     result.success = true;
     result.playlistId = youtubePlaylistId;

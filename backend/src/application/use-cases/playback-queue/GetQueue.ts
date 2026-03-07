@@ -1,7 +1,4 @@
-import {
-  IQueueRepository,
-  QueueItemWithTrack,
-} from '../../ports/repositories/IQueueRepository';
+import { IQueueRepository, QueueItemWithTrack } from '../../ports/repositories/IQueueRepository';
 
 export class GetQueueUseCase {
   constructor(private readonly queueRepository: IQueueRepository) {}

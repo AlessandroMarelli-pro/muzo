@@ -15,9 +15,7 @@ import {
 import { createToken } from '../../utils/create-token';
 import { AudioAnalysisResponse } from '../dtos/AudioAnalysis';
 
-export const MUSIC_TRACK_REPOSITORY = createToken<IMusicTrackRepository>(
-  'MUSIC_TRACK_REPOSITORY',
-);
+export const MUSIC_TRACK_REPOSITORY = createToken<IMusicTrackRepository>('MUSIC_TRACK_REPOSITORY');
 
 export type MusicTrackUpdateData = {
   stats?: {
@@ -45,9 +43,7 @@ export interface IMusicTrackRepository {
   ): Promise<{ analysisStatus: AudioFileAnalysisStatusEnum; count: number }[]>;
   upsertOne(track: Partial<MusicTrackUpdateData>): Promise<MusicTrack>;
   getOneById(id: MusicTrackId): Promise<MusicTrack>;
-  areFilesAnalyzed(
-    filePaths: string[],
-  ): Promise<{ isAnalyzed: boolean; filePath: string }[]>;
+  areFilesAnalyzed(filePaths: string[]): Promise<{ isAnalyzed: boolean; filePath: string }[]>;
   getLastPlayedTrack(): Promise<Maybe<MusicTrack>>;
   getManyByIds(ids: MusicTrackId[]): Promise<MusicTrack[]>;
   getAll(): Promise<MusicTrack[]>;
@@ -67,10 +63,7 @@ export interface IMusicTrackRepository {
     pagination: WithCursorPagination<MusicTrack>,
   ): Promise<CursorPaginationResult<MusicTrack>>;
   getRandomTrackId(): Promise<MusicTrackId>;
-  updateOneById(
-    id: MusicTrackId,
-    data: Partial<MusicTrackUpdateData>,
-  ): Promise<MusicTrack>;
+  updateOneById(id: MusicTrackId, data: Partial<MusicTrackUpdateData>): Promise<MusicTrack>;
   removeOneById(id: MusicTrackId): Promise<boolean>;
   incrementListeningCount(id: MusicTrackId): Promise<MusicTrack>;
   updateTrackWithAnalysis(

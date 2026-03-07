@@ -26,10 +26,7 @@ export const batchPlaylistTracksWithTrack = async (
   });
 };
 
-export type PlaylistTracksWithTrackLoader = DataLoader<
-  PlaylistId,
-  PlaylistTrackWithTrackDetail[]
->;
+export type PlaylistTracksWithTrackLoader = DataLoader<PlaylistId, PlaylistTrackWithTrackDetail[]>;
 
 export function createPlaylistTracksWithTrackLoader(
   playlistTrackRepository: IPlaylistTrackRepository,

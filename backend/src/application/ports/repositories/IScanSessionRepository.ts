@@ -3,9 +3,8 @@ import { SessionId } from 'src/kernel/ids';
 import { ScanStatus, Session } from 'src/kernel/types/model-types';
 import { createToken } from '../../utils/create-token';
 
-export const SCAN_SESSION_REPOSITORY = createToken<IScanSessionRepository>(
-  'SCAN_SESSION_REPOSITORY',
-);
+export const SCAN_SESSION_REPOSITORY =
+  createToken<IScanSessionRepository>('SCAN_SESSION_REPOSITORY');
 
 export interface UpdateScanSessionInput {
   totalBatches?: number;
@@ -20,10 +19,7 @@ export interface UpdateScanSessionInput {
 
 export interface IScanSessionRepository {
   createSession(sessionId: SessionId | null): Promise<Session>;
-  updateSession(
-    sessionId: SessionId,
-    updates: UpdateScanSessionInput,
-  ): Promise<Session>;
+  updateSession(sessionId: SessionId, updates: UpdateScanSessionInput): Promise<Session>;
   updateSessionProgress(
     sessionId: SessionId,
     updates: UpdateScanSessionInput,

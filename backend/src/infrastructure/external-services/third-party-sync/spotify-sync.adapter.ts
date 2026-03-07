@@ -26,19 +26,13 @@ export class SpotifySyncAdapter implements ISpotifySyncProvider {
     private readonly oauthTokenRepository: IOAuthTokenRepository,
   ) {
     this.clientId = this.configService.get<string>('SPOTIFY_CLIENT_ID') || '';
-    this.clientSecret =
-      this.configService.get<string>('SPOTIFY_CLIENT_SECRET') || '';
+    this.clientSecret = this.configService.get<string>('SPOTIFY_CLIENT_SECRET') || '';
     this.redirectUri =
-      this.configService.get<string>('SPOTIFY_REDIRECT_URI') ||
-      'http://localhost:3000';
+      this.configService.get<string>('SPOTIFY_REDIRECT_URI') || 'http://localhost:3000';
   }
 
   private base64URLEncode(buffer: Buffer): string {
-    return buffer
-      .toString('base64')
-      .replace(/\+/g, '-')
-      .replace(/\//g, '_')
-      .replace(/=/g, '');
+    return buffer.toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
   }
 
   private generatePKCE(): { codeVerifier: string; codeChallenge: string } {
@@ -88,9 +82,7 @@ export class SpotifySyncAdapter implements ISpotifySyncProvider {
       client_id: this.clientId,
       code_verifier: codeVerifier,
     });
-    const credentials = Buffer.from(
-      `${this.clientId}:${this.clientSecret}`,
-    ).toString('base64');
+    const credentials = Buffer.from(`${this.clientId}:${this.clientSecret}`).toString('base64');
     const response = await fetch(tokenUrl, {
       method: 'POST',
       headers: {
@@ -127,10 +119,7 @@ export class SpotifySyncAdapter implements ISpotifySyncProvider {
   }
 
   async getAccessToken(userId: string): Promise<string> {
-    const tokenRecord = await this.oauthTokenRepository.getToken(
-      userId,
-      'spotify',
-    );
+    const tokenRecord = await this.oauthTokenRepository.getToken(userId, 'spotify');
     if (!tokenRecord) {
       throw new Error('Spotify not authenticated. Please authorize first.');
     }
@@ -143,18 +132,13 @@ export class SpotifySyncAdapter implements ISpotifySyncProvider {
     return tokenRecord.accessToken;
   }
 
-  private async refreshAccessToken(
-    userId: string,
-    refreshToken: string,
-  ): Promise<string> {
+  private async refreshAccessToken(userId: string, refreshToken: string): Promise<string> {
     const tokenUrl = `${AUTH_URL}/api/token`;
     const params = new URLSearchParams({
       grant_type: 'refresh_token',
       refresh_token: refreshToken,
     });
-    const credentials = Buffer.from(
-      `${this.clientId}:${this.clientSecret}`,
-    ).toString('base64');
+    const credentials = Buffer.from(`${this.clientId}:${this.clientSecret}`).toString('base64');
     const response = await fetch(tokenUrl, {
       method: 'POST',
       headers: {
@@ -180,8 +164,7 @@ export class SpotifySyncAdapter implements ISpotifySyncProvider {
 
   extractTrackIdFromUrl(url: string): string | null {
     const trackIdMatch =
-      url.match(/spotify\.com\/track\/([a-zA-Z0-9]+)/) ||
-      url.match(/spotify:track:([a-zA-Z0-9]+)/);
+      url.match(/spotify\.com\/track\/([a-zA-Z0-9]+)/) || url.match(/spotify:track:([a-zA-Z0-9]+)/);
     return trackIdMatch ? trackIdMatch[1] : null;
   }
 
@@ -191,9 +174,7 @@ export class SpotifySyncAdapter implements ISpotifySyncProvider {
     options: RequestInit = {},
   ): Promise<unknown> {
     const accessToken = await this.getAccessToken(userId);
-    const url = endpoint.startsWith('http')
-      ? endpoint
-      : `${BASE_URL}${endpoint}`;
+    const url = endpoint.startsWith('http') ? endpoint : `${BASE_URL}${endpoint}`;
     const response = await fetch(url, {
       ...options,
       headers: {
@@ -206,10 +187,7 @@ export class SpotifySyncAdapter implements ISpotifySyncProvider {
       const text = await response.text();
       throw new Error(`Spotify API error: ${response.status} - ${text}`);
     }
-    if (
-      response.status === 204 ||
-      response.headers.get('content-length') === '0'
-    ) {
+    if (response.status === 204 || response.headers.get('content-length') === '0') {
       return null;
     }
     const text = await response.text();
@@ -231,11 +209,9 @@ export class SpotifySyncAdapter implements ISpotifySyncProvider {
       type: 'track',
       limit: limit.toString(),
     });
-    const response = (await this.makeRequest(
-      userId,
-      `/search?${params.toString()}`,
-      { method: 'GET' },
-    )) as { tracks?: { items?: { id: string; duration_ms: number }[] } };
+    const response = (await this.makeRequest(userId, `/search?${params.toString()}`, {
+      method: 'GET',
+    })) as { tracks?: { items?: { id: string; duration_ms: number }[] } };
     return response?.tracks?.items ?? [];
   }
 
@@ -253,11 +229,7 @@ export class SpotifySyncAdapter implements ISpotifySyncProvider {
       const query = `artist:"${artist}" track:"${title}"`;
       const tracks = await this.searchTracks(query, userId, 10);
       if (tracks.length === 0) {
-        const fuzzyTracks = await this.searchTracks(
-          `${artist} ${title}`,
-          userId,
-          10,
-        );
+        const fuzzyTracks = await this.searchTracks(`${artist} ${title}`, userId, 10);
         if (fuzzyTracks.length === 0) {
           return { trackId: null, confidence: 'none' };
         }
@@ -268,9 +240,7 @@ export class SpotifySyncAdapter implements ISpotifySyncProvider {
         };
       }
       const durationMs = durationSeconds * 1000;
-      const exactMatch = tracks.find(
-        (t) => Math.abs(t.duration_ms - durationMs) <= 5000,
-      );
+      const exactMatch = tracks.find((t) => Math.abs(t.duration_ms - durationMs) <= 5000);
       if (exactMatch) {
         return {
           trackId: exactMatch.id,
@@ -288,11 +258,7 @@ export class SpotifySyncAdapter implements ISpotifySyncProvider {
     }
   }
 
-  async createPlaylist(
-    userId: string,
-    name: string,
-    description?: string,
-  ): Promise<string> {
+  async createPlaylist(userId: string, name: string, description?: string): Promise<string> {
     const me = (await this.makeRequest(userId, '/me', {
       method: 'GET',
     })) as { id?: string };
@@ -303,23 +269,15 @@ export class SpotifySyncAdapter implements ISpotifySyncProvider {
       description: description || '',
       public: false,
     };
-    const response = (await this.makeRequest(
-      userId,
-      `/users/${spotifyUserId}/playlists`,
-      {
-        method: 'POST',
-        body: JSON.stringify(body),
-      },
-    )) as { id?: string };
+    const response = (await this.makeRequest(userId, `/users/${spotifyUserId}/playlists`, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    })) as { id?: string };
     if (!response?.id) throw new Error('Failed to create Spotify playlist');
     return response.id;
   }
 
-  async addTracksToPlaylist(
-    userId: string,
-    playlistId: string,
-    trackIds: string[],
-  ): Promise<void> {
+  async addTracksToPlaylist(userId: string, playlistId: string, trackIds: string[]): Promise<void> {
     const maxItems = 100;
     for (let i = 0; i < trackIds.length; i += maxItems) {
       const batch = trackIds.slice(i, i + maxItems);

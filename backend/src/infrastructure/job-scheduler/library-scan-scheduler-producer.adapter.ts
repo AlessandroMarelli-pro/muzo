@@ -10,9 +10,7 @@ import { MusicLibraryId, SessionId } from 'src/kernel/ids';
 import { ActionContext } from 'src/kernel/types';
 
 @Injectable()
-export class LibraryScanSchedulerProducerAdapter
-  implements ILibraryScanSchedulerProducer
-{
+export class LibraryScanSchedulerProducerAdapter implements ILibraryScanSchedulerProducer {
   constructor(
     @InjectQueue('library-scan')
     private readonly libraryScanQueue: Queue<LibraryScanJobData>,

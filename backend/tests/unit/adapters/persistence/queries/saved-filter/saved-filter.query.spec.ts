@@ -1,8 +1,5 @@
 import { Test } from '@nestjs/testing';
-import {
-  PRISMA_SERVICE,
-  PrismaService,
-} from 'src/infrastructure/database/prisma.service';
+import { PRISMA_SERVICE, PrismaService } from 'src/infrastructure/database/prisma.service';
 import { SavedFilterQuery } from 'src/adapters/persistence/queries/saved-filter/saved-filter.query';
 import { createMockPrisma } from '../../repositories/_test-utils/prisma-mock';
 import { models } from 'src/kernel/types';
@@ -44,10 +41,7 @@ describe('SavedFilterQuery', () => {
     vi.clearAllMocks();
     prismaMock = createMockPrisma();
     const module = await Test.createTestingModule({
-      providers: [
-        SavedFilterQuery,
-        { provide: PRISMA_SERVICE, useValue: prismaMock },
-      ],
+      providers: [SavedFilterQuery, { provide: PRISMA_SERVICE, useValue: prismaMock }],
     }).compile();
     query = module.get(SavedFilterQuery);
   });
@@ -85,8 +79,14 @@ describe('SavedFilterQuery', () => {
       const result = await query.getStaticFilterOptions();
 
       expect(result.genres).toHaveLength(2);
-      expect(result.genres[0]).toEqual({ id: models.genre.id('g1'), name: 'Genre A' });
-      expect(result.genres[1]).toEqual({ id: models.genre.id('g2'), name: 'Genre B' });
+      expect(result.genres[0]).toEqual({
+        id: models.genre.id('g1'),
+        name: 'Genre A',
+      });
+      expect(result.genres[1]).toEqual({
+        id: models.genre.id('g2'),
+        name: 'Genre B',
+      });
       expect(result.keys).toHaveLength(1);
       expect(result.subgenres).toEqual([]);
       expect(result.libraries).toEqual([]);

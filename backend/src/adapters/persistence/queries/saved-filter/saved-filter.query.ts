@@ -1,20 +1,15 @@
-import { Injectable, Inject } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { groupBy } from 'lodash';
 import {
   ISavedFilterQuery,
   StaticFilterOptions,
 } from 'src/application/ports/queries/ISavedFilterQuery';
-import {
-  PRISMA_SERVICE,
-  PrismaService,
-} from 'src/infrastructure/database/prisma.service';
+import { PRISMA_SERVICE, PrismaService } from 'src/infrastructure/database/prisma.service';
 import { getCurrentUserId, models } from 'src/kernel/types';
 
 @Injectable()
 export class SavedFilterQuery implements ISavedFilterQuery {
-  constructor(
-    @Inject(PRISMA_SERVICE) private readonly prisma: PrismaService,
-  ) {}
+  constructor(@Inject(PRISMA_SERVICE) private readonly prisma: PrismaService) {}
 
   async getStaticFilterOptions(): Promise<StaticFilterOptions> {
     return this.prisma.$queryRaw<
@@ -45,7 +40,10 @@ export class SavedFilterQuery implements ISavedFilterQuery {
           id: models.subgenre.id(group.id),
           name: group.name,
         })),
-        keys: (groups.keys ?? []).map((group) => ({ id: group.id, name: group.name })),
+        keys: (groups.keys ?? []).map((group) => ({
+          id: group.id,
+          name: group.name,
+        })),
         libraries: (groups.libraries ?? []).map((group) => ({
           id: models.library.id(group.id),
           name: group.name,

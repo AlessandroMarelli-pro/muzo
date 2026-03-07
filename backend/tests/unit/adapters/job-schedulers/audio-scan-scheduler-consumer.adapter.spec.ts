@@ -42,10 +42,18 @@ describe('AudioScanSchedulerConsumerAdapter', () => {
         createdTracks: [],
       }),
     };
-    processSingleTrackAnalysisUseCase = { execute: vi.fn().mockResolvedValue({ isSuccess: true }) };
-    addImageSearchRecordUseCase = { execute: vi.fn().mockResolvedValue(undefined) };
-    processEndBatchAudioScanUseCase = { execute: vi.fn().mockResolvedValue(undefined) };
-    syncTrackToElasticSearchUseCase = { execute: vi.fn().mockResolvedValue(undefined) };
+    processSingleTrackAnalysisUseCase = {
+      execute: vi.fn().mockResolvedValue({ isSuccess: true }),
+    };
+    addImageSearchRecordUseCase = {
+      execute: vi.fn().mockResolvedValue(undefined),
+    };
+    processEndBatchAudioScanUseCase = {
+      execute: vi.fn().mockResolvedValue(undefined),
+    };
+    syncTrackToElasticSearchUseCase = {
+      execute: vi.fn().mockResolvedValue(undefined),
+    };
 
     const logger = {
       info: vi.fn(),
@@ -121,9 +129,7 @@ describe('AudioScanSchedulerConsumerAdapter', () => {
         data: makeAudioScanBatchJobData(),
       });
 
-      await expect(adapter.process(job)).rejects.toThrow(
-        'Unknown job name: unknown-job',
-      );
+      await expect(adapter.process(job)).rejects.toThrow('Unknown job name: unknown-job');
     });
   });
 });

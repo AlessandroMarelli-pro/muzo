@@ -1,9 +1,6 @@
 import type { SpectralFeatures } from 'src/application/ports/dtos/AudioFeatures';
 import { AudioFeatures } from 'src/application/ports/dtos/AudioFeatures';
-import type {
-  AggregationStatistics,
-  RecommendationCriteria,
-} from 'src/kernel/types/model-types';
+import type { AggregationStatistics, RecommendationCriteria } from 'src/kernel/types/model-types';
 
 type SpectralDecayOptions = {
   minScale?: number;
@@ -26,9 +23,7 @@ function buildSpectralDecayClauses(
 
   return Object.entries(stats).map(([key, value]) => {
     const scale =
-      key === 'mean' && stats.std != null
-        ? Math.max(stats.std, minScale)
-        : fallbackScale;
+      key === 'mean' && stats.std != null ? Math.max(stats.std, minScale) : fallbackScale;
     return {
       function_score: {
         query: { match_all: {} },
@@ -97,9 +92,7 @@ export const buildElasticsearchRecommendationQuery = (
   const { weights, excludeTrackIds } = criteria;
 
   const shouldGenre =
-    weights.genreSimilarity > 0 &&
-    playlistFeatures.genres &&
-    playlistFeatures.genres.length > 0
+    weights.genreSimilarity > 0 && playlistFeatures.genres && playlistFeatures.genres.length > 0
       ? {
           bool: {
             should: playlistFeatures.genres.map((genre) => ({
@@ -111,9 +104,7 @@ export const buildElasticsearchRecommendationQuery = (
               },
             })),
             minimum_should_match:
-              playlistFeatures.genres.length > 3
-                ? 2
-                : playlistFeatures.genres.length,
+              playlistFeatures.genres.length > 3 ? 2 : playlistFeatures.genres.length,
 
             boost: weights.genreSimilarity * 30.0,
           },
@@ -134,17 +125,14 @@ export const buildElasticsearchRecommendationQuery = (
               },
             })),
             minimum_should_match:
-              playlistFeatures.subgenres.length > 3
-                ? 2
-                : playlistFeatures.subgenres.length,
+              playlistFeatures.subgenres.length > 3 ? 2 : playlistFeatures.subgenres.length,
             boost: weights.genreSimilarity * 40.0,
           },
         }
       : null;
 
   const tempoOrigin = playlistFeatures.tempo ?? 120;
-  const secondaryTempoOrigin =
-    tempoOrigin > 120 ? tempoOrigin / 2 : tempoOrigin * 2;
+  const secondaryTempoOrigin = tempoOrigin > 120 ? tempoOrigin / 2 : tempoOrigin * 2;
   const tempoDecayParams = {
     scale: 12,
     decay: 0.5,

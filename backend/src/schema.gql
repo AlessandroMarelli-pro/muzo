@@ -7,7 +7,9 @@ input AddTrackToPlaylistInput {
   trackId: Base64ID!
 }
 
-"""ID encoded as base64 for transport"""
+"""
+ID encoded as base64 for transport
+"""
 scalar Base64ID
 
 input CreateLibraryInput {
@@ -41,7 +43,9 @@ input CursorPaginationArgs {
   size: Int
 }
 
-"""Date custom scalar type"""
+"""
+Date custom scalar type
+"""
 scalar Date
 
 input FilterCriteriaInput {
@@ -165,7 +169,10 @@ type Mutation {
   toggleFavorite(trackId: Base64ID!): Track!
   toggleLike(trackId: Base64ID!): Track!
   updatePlaylistSorting(input: UpdatePlaylistSortingInput!, playlistId: Base64ID!): PlaylistSorting!
-  updatePlaylistTracksPositions(input: UpdatePlaylistPositionsInput!, playlistId: Base64ID!): Boolean!
+  updatePlaylistTracksPositions(
+    input: UpdatePlaylistPositionsInput!
+    playlistId: Base64ID!
+  ): Boolean!
   updateQueuePositions(input: UpdateQueuePositionsInput!): [QueueItem!]!
   updateSavedFilter(id: Base64ID!, input: SavedFilterInput!): FilterCriteriaResult!
 }
@@ -190,7 +197,9 @@ input PaginationArgs {
 }
 
 type Playlist implements Node {
-  """True if the given track is already in this playlist"""
+  """
+  True if the given track is already in this playlist
+  """
   containsTrack(trackId: Base64ID): Boolean
   createdAt: Date!
   createdById: Base64ID!

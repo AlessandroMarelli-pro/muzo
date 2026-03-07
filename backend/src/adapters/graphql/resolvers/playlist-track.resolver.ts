@@ -3,10 +3,7 @@ import { Args, Mutation, Resolver } from '@nestjs/graphql';
 import { AddTrackToPlaylistUseCase } from 'src/application/use-cases/playlist-track/AddTrackToPlaylist';
 import { RemoveTrackFromPlaylistUseCase } from 'src/application/use-cases/playlist-track/RemoveTrackFromPlaylist';
 import { UpdatePlaylistTracksPositionsUseCase } from 'src/application/use-cases/playlist-track/UpdatePlaylistTracksPositions';
-import {
-  parseMusicTrackId,
-  parsePlaylistId,
-} from '../../common/utils/parse-id';
+import { parseMusicTrackId, parsePlaylistId } from '../../common/utils/parse-id';
 import { AuthGuard } from '../context/auth.guard';
 import { Base64ID } from '../scalars/base64-id.scalar';
 import {

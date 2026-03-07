@@ -14,9 +14,7 @@ import { MusicLibraryId, SessionId } from 'src/kernel/ids';
 import { ActionContext } from 'src/kernel/types';
 
 @Injectable()
-export class AudioScanSchedulerProducerAdapter
-  implements IAudioScanSchedulerProducer
-{
+export class AudioScanSchedulerProducerAdapter implements IAudioScanSchedulerProducer {
   private readonly queueConfig: QueueConfig;
 
   constructor(

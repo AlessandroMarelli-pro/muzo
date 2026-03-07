@@ -42,40 +42,24 @@ import {
 export const models = {
   playlist: modelFactory<Playlist, PlaylistId>(modelIdFactory('Playlist')),
   user: modelFactory<User, UserId>(modelIdFactory('User')),
-  playlistTrack: modelFactory<PlaylistTrack, PlaylistTrackId>(
-    modelIdFactory('PlaylistTrack'),
-  ),
+  playlistTrack: modelFactory<PlaylistTrack, PlaylistTrackId>(modelIdFactory('PlaylistTrack')),
   playlistSorting: modelFactory<PlaylistSorting, PlaylistSortingId>(
     modelIdFactory('PlaylistSorting'),
   ),
-  musicTrack: modelFactory<MusicTrack, MusicTrackId>(
-    modelIdFactory('MusicTrack'),
-  ),
-  musicLibrary: modelFactory<MusicLibrary, MusicLibraryId>(
-    modelIdFactory('MusicLibrary'),
-  ),
-  savedFilter: modelFactory<SavedFilter, SavedFilterId>(
-    modelIdFactory('SavedFilter'),
-  ),
+  musicTrack: modelFactory<MusicTrack, MusicTrackId>(modelIdFactory('MusicTrack')),
+  musicLibrary: modelFactory<MusicLibrary, MusicLibraryId>(modelIdFactory('MusicLibrary')),
+  savedFilter: modelFactory<SavedFilter, SavedFilterId>(modelIdFactory('SavedFilter')),
   genre: modelFactory<Genre, GenreId>(modelIdFactory('Genre')),
   subgenre: modelFactory<Subgenre, SubgenreId>(modelIdFactory('Subgenre')),
-  library: modelFactory<MusicLibrary, MusicLibraryId>(
-    modelIdFactory('MusicLibrary'),
-  ),
+  library: modelFactory<MusicLibrary, MusicLibraryId>(modelIdFactory('MusicLibrary')),
   queueItem: modelFactory<QueueItem, QueueItemId>(modelIdFactory('QueueItem')),
-  imageSearch: modelFactory<ImageSearch, ImageSearchId>(
-    modelIdFactory('ImageSearch'),
-  ),
+  imageSearch: modelFactory<ImageSearch, ImageSearchId>(modelIdFactory('ImageSearch')),
   hiddenMusicTrack: modelFactory<HiddenMusicTrack, HiddenMusicTrackId>(
     modelIdFactory('HiddenMusicTrack'),
   ),
   session: modelFactory<Session, SessionId>(modelIdFactory('Session')),
-  trackGenre: modelFactory<TrackGenre, TrackGenreId>(
-    modelIdFactory('TrackGenre'),
-  ),
-  trackSubgenre: modelFactory<TrackSubgenre, TrackSubgenreId>(
-    modelIdFactory('TrackSubgenre'),
-  ),
+  trackGenre: modelFactory<TrackGenre, TrackGenreId>(modelIdFactory('TrackGenre')),
+  trackSubgenre: modelFactory<TrackSubgenre, TrackSubgenreId>(modelIdFactory('TrackSubgenre')),
   aiAtmosphereTag: modelFactory<AiAtmosphereTag, AiAtmosphereTagId>(
     modelIdFactory('AiAtmosphereTag'),
   ),

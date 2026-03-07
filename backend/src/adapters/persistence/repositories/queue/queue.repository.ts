@@ -1,4 +1,4 @@
-import { Injectable, Inject } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import {
   IQueueRepository,
   QueueItemWithTrack,
@@ -9,10 +9,7 @@ import { MusicTrackId } from 'src/kernel/ids';
 import { extractModelId } from 'src/kernel/ids/factory';
 import { getCurrentUserId } from 'src/kernel/types/context';
 import { QueueItem } from 'src/kernel/types/model-types';
-import {
-  PRISMA_SERVICE,
-  PrismaService,
-} from '../../../../infrastructure/database/prisma.service';
+import { PRISMA_SERVICE, PrismaService } from '../../../../infrastructure/database/prisma.service';
 import { musicTracksIncludes } from '../../includes/music-tracks-includes';
 import { toDomain, toDomainWithTrack, toPrismaCreate } from './queue.mapper';
 
@@ -24,9 +21,7 @@ const queueTrackInclude = {
 
 @Injectable()
 export class QueueRepository implements IQueueRepository {
-  constructor(
-    @Inject(PRISMA_SERVICE) private readonly prisma: PrismaService,
-  ) {}
+  constructor(@Inject(PRISMA_SERVICE) private readonly prisma: PrismaService) {}
 
   async getQueue(): Promise<QueueItemWithTrack[]> {
     return this.prisma.queue
@@ -65,9 +60,7 @@ export class QueueRepository implements IQueueRepository {
     return results;
   }
 
-  async removeTrack(
-    trackId: MusicTrackId,
-  ): Promise<RemoveTrackFromQueueResult> {
+  async removeTrack(trackId: MusicTrackId): Promise<RemoveTrackFromQueueResult> {
     const trackIdDb = extractModelId(trackId).dbId;
     const queueItem = await this.prisma.queue.delete({
       where: { trackId: trackIdDb, createdById: getCurrentUserId() },
@@ -82,9 +75,7 @@ export class QueueRepository implements IQueueRepository {
     };
   }
 
-  async updatePositions(
-    positions: UpdateQueuePositionInput[],
-  ): Promise<QueueItemWithTrack[]> {
+  async updatePositions(positions: UpdateQueuePositionInput[]): Promise<QueueItemWithTrack[]> {
     for (const { trackId, position } of positions) {
       const trackIdDb = extractModelId(trackId).dbId;
       await this.prisma.queue.update({
@@ -122,9 +113,7 @@ export class QueueRepository implements IQueueRepository {
       .then((result) => result.count > 0);
   }
 
-  private async reorderPositionsAfterRemoval(
-    removedPosition: number,
-  ): Promise<boolean> {
+  private async reorderPositionsAfterRemoval(removedPosition: number): Promise<boolean> {
     return this.prisma.queue
       .updateMany({
         where: {

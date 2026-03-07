@@ -1,10 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { ILogger, LOGGER } from 'src/application/ports/infrastructure/ILogger';
 import { LOGGER_FACTORY } from 'src/application/ports/infrastructure/ILoggerFactory';
-import {
-  PRISMA_SERVICE,
-  PrismaService,
-} from '../infrastructure/database/prisma.service';
+import { PRISMA_SERVICE, PrismaService } from '../infrastructure/database/prisma.service';
 
 @Injectable()
 export class AdminMethodsService {

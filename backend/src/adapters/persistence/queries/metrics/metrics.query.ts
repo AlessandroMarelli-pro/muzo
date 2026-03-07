@@ -1,19 +1,11 @@
-import { Injectable, Inject } from '@nestjs/common';
-import {
-  IMetricsQuery,
-  MetricsDto,
-} from 'src/application/ports/queries/IMetricsQuery';
-import {
-  PRISMA_SERVICE,
-  PrismaService,
-} from 'src/infrastructure/database/prisma.service';
+import { Inject, Injectable } from '@nestjs/common';
+import { IMetricsQuery, MetricsDto } from 'src/application/ports/queries/IMetricsQuery';
+import { PRISMA_SERVICE, PrismaService } from 'src/infrastructure/database/prisma.service';
 import { getCurrentUserId } from 'src/kernel/types/context';
 
 @Injectable()
 export class MetricsQuery implements IMetricsQuery {
-  constructor(
-    @Inject(PRISMA_SERVICE) private readonly prisma: PrismaService,
-  ) {}
+  constructor(@Inject(PRISMA_SERVICE) private readonly prisma: PrismaService) {}
 
   async getMetrics(): Promise<MetricsDto> {
     const [
@@ -119,9 +111,7 @@ export class MetricsQuery implements IMetricsQuery {
   }
 
   private async getTopGenres() {
-    return this.prisma.$queryRaw<
-      Array<{ genreId: string; count: bigint; name: string }>
-    >`
+    return this.prisma.$queryRaw<Array<{ genreId: string; count: bigint; name: string }>>`
       SELECT genreId, genres.name, COUNT(*) as count FROM track_genres JOIN genres ON track_genres.genreId = genres.id WHERE track_genres.createdById = ${getCurrentUserId()} GROUP BY genreId ORDER BY count DESC LIMIT 10
     `.then((rows) =>
       rows.map((row) => ({

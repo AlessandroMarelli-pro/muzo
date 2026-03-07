@@ -1,10 +1,7 @@
 import { MusicTrackId } from 'src/kernel/ids';
 import { createConflictError } from 'src/kernel/types/errors';
 import { IMusicTrackRepository } from '../../ports/repositories/IMusicTrackRepository';
-import {
-  IQueueRepository,
-  QueueItemWithTrack,
-} from '../../ports/repositories/IQueueRepository';
+import { IQueueRepository, QueueItemWithTrack } from '../../ports/repositories/IQueueRepository';
 
 export class AddTrackToQueueUseCase {
   constructor(

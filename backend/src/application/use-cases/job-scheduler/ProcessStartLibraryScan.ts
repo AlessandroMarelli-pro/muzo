@@ -14,16 +14,12 @@ export class ProcessStartLibraryScanUseCase {
     this.logger = loggerFactory.createLogger('ProcessStartLibraryScanUseCase');
   }
 
-  async execute(
-    libraryId: MusicLibraryId,
-    incremental: boolean,
-  ): Promise<FileInfo[]> {
+  async execute(libraryId: MusicLibraryId, incremental: boolean): Promise<FileInfo[]> {
     const library = await this.musicLibraryRepository.getOneById(libraryId);
 
     this.logger.info(`Scanning library ${libraryId}`, { library });
 
-    const lastIncrementalScanAt =
-      library?.scanInfo?.lastIncrementalScanAt ?? undefined;
+    const lastIncrementalScanAt = library?.scanInfo?.lastIncrementalScanAt ?? undefined;
 
     // Get all audio files in the library
     const audioFiles = await this.fileManager.scanDirectory(

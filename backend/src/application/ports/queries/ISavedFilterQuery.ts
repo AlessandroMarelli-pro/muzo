@@ -1,13 +1,7 @@
-import {
-  AiAtmosphereTagId,
-  GenreId,
-  MusicLibraryId,
-  SubgenreId,
-} from 'src/kernel/ids';
+import { AiAtmosphereTagId, GenreId, MusicLibraryId, SubgenreId } from 'src/kernel/ids';
 import { createToken } from '../../utils/create-token';
 
-export const SAVED_FILTER_QUERY =
-  createToken<ISavedFilterQuery>('SAVED_FILTER_QUERY');
+export const SAVED_FILTER_QUERY = createToken<ISavedFilterQuery>('SAVED_FILTER_QUERY');
 
 export type FilterWithID<T> = {
   id: T;

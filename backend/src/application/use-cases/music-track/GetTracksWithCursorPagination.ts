@@ -1,9 +1,6 @@
 import { MusicLibraryId } from 'src/kernel/ids';
 import { FilterCriteria, MusicTrack } from 'src/kernel/types/model-types';
-import {
-  CursorPaginationResult,
-  WithCursorPagination,
-} from 'src/kernel/types/pagination';
+import { CursorPaginationResult, WithCursorPagination } from 'src/kernel/types/pagination';
 import { IMusicTrackRepository } from '../../ports/repositories/IMusicTrackRepository';
 import { ISavedFilterRepository } from '../../ports/repositories/ISavedFilterRepository';
 
@@ -25,9 +22,6 @@ export class GetTracksWithCursorPaginationUseCase {
     } else if (libraryId) {
       criteria = { libraryIds: [libraryId] } as FilterCriteria;
     }
-    return this.musicTrackRepository.getManyByCriteriaWithCursorPagination(
-      criteria,
-      pagination,
-    );
+    return this.musicTrackRepository.getManyByCriteriaWithCursorPagination(criteria, pagination);
   }
 }
