@@ -1,12 +1,12 @@
-import { Button } from "@/components/ui/button";
-import { Route } from "@/routes/libraries.index";
-import { useDeleteLibrary } from "@/services/api-hooks";
-import { useRouter } from "@tanstack/react-router";
-import { Plus, Search } from "lucide-react";
-import React, { useEffect, useState } from "react";
-import { Loading } from "../loading";
-import { Input } from "../ui/input";
-import { LibraryCard } from "./library-card";
+import { Button } from '@/components/ui/button';
+import { Route } from '@/routes/libraries.index';
+import { useDeleteLibrary } from '@/services/api-hooks';
+import { useRouter } from '@tanstack/react-router';
+import { Plus, Search } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Loading } from '../loading';
+import { Input } from '../ui/input';
+import { LibraryCard } from './library-card';
 
 interface LibraryListProps {
   onCreateLibrary: () => void;
@@ -28,7 +28,7 @@ export const LibraryList: React.FC<LibraryListProps> = ({
   const isLoading = false;
   const { libraries } = Route.useLoaderData();
   const router = useRouter();
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState('');
   const [filteredLibraries, setFilteredLibraries] = useState(libraries);
   const deleteLibraryMutation = useDeleteLibrary();
 
@@ -42,7 +42,7 @@ export const LibraryList: React.FC<LibraryListProps> = ({
     setSearchQuery(e.target.value);
   };
   const handleDeleteLibrary = async (e: React.MouseEvent<HTMLButtonElement>, libraryId: string) => {
-    const hasConfirmed = confirm("Are you sure you want to delete this library?");
+    const hasConfirmed = confirm('Are you sure you want to delete this library?');
     if (!hasConfirmed) {
       return;
     }

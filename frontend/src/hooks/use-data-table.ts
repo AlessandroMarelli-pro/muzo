@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import {
   type ColumnFiltersState,
@@ -17,19 +17,19 @@ import {
   type Updater,
   useReactTable,
   type VisibilityState,
-} from "@tanstack/react-table";
-import { parseAsInteger, useQueryState, type UseQueryStateOptions } from "nuqs";
-import * as React from "react";
+} from '@tanstack/react-table';
+import { parseAsInteger, useQueryState, type UseQueryStateOptions } from 'nuqs';
+import * as React from 'react';
 
-import { useDebouncedCallback } from "@/hooks/use-debounced-callback";
-import { getSortingStateParser } from "@/lib/parsers";
-import type { ExtendedColumnSort, QueryKeys } from "@/types/data-table";
+import { useDebouncedCallback } from '@/hooks/use-debounced-callback';
+import { getSortingStateParser } from '@/lib/parsers';
+import type { ExtendedColumnSort, QueryKeys } from '@/types/data-table';
 
-const PAGE_KEY = "page";
-const PER_PAGE_KEY = "perPage";
-const SORT_KEY = "sort";
-const FILTERS_KEY = "filters";
-const JOIN_OPERATOR_KEY = "joinOperator";
+const PAGE_KEY = 'page';
+const PER_PAGE_KEY = 'perPage';
+const SORT_KEY = 'sort';
+const FILTERS_KEY = 'filters';
+const JOIN_OPERATOR_KEY = 'joinOperator';
 const DEBOUNCE_MS = 300;
 const THROTTLE_MS = 50;
 
@@ -37,19 +37,19 @@ interface UseDataTableProps<TData>
   extends
     Omit<
       TableOptions<TData>,
-      | "state"
-      | "pageCount"
-      | "getCoreRowModel"
-      | "manualFiltering"
-      | "manualPagination"
-      | "manualSorting"
+      | 'state'
+      | 'pageCount'
+      | 'getCoreRowModel'
+      | 'manualFiltering'
+      | 'manualPagination'
+      | 'manualSorting'
     >,
-    Required<Pick<TableOptions<TData>, "pageCount">> {
-  initialState?: Omit<Partial<TableState>, "sorting"> & {
+    Required<Pick<TableOptions<TData>, 'pageCount'>> {
+  initialState?: Omit<Partial<TableState>, 'sorting'> & {
     sorting?: ExtendedColumnSort<TData>[];
   };
   queryKeys?: Partial<QueryKeys>;
-  history?: "push" | "replace";
+  history?: 'push' | 'replace';
   debounceMs?: number;
   throttleMs?: number;
   clearOnDefault?: boolean;
@@ -67,7 +67,7 @@ export function useDataTable<TData>(props: UseDataTableProps<TData>) {
     pageCount = -1,
     initialState,
     queryKeys,
-    history = "replace",
+    history = 'replace',
     debounceMs = DEBOUNCE_MS,
     throttleMs = THROTTLE_MS,
     clearOnDefault = false,
@@ -85,7 +85,7 @@ export function useDataTable<TData>(props: UseDataTableProps<TData>) {
   const filtersKey = queryKeys?.filters ?? FILTERS_KEY;
   const joinOperatorKey = queryKeys?.joinOperator ?? JOIN_OPERATOR_KEY;
 
-  const queryStateOptions = React.useMemo<Omit<UseQueryStateOptions<string>, "parse">>(
+  const queryStateOptions = React.useMemo<Omit<UseQueryStateOptions<string>, 'parse'>>(
     () => ({
       history,
       scroll,
@@ -125,7 +125,7 @@ export function useDataTable<TData>(props: UseDataTableProps<TData>) {
 
   const onPaginationChange = React.useCallback(
     (updaterOrValue: Updater<PaginationState>) => {
-      if (typeof updaterOrValue === "function") {
+      if (typeof updaterOrValue === 'function') {
         const newPagination = updaterOrValue(pagination);
         void setPage(newPagination.pageIndex + 1);
         void setPerPage(newPagination.pageSize);
@@ -150,7 +150,7 @@ export function useDataTable<TData>(props: UseDataTableProps<TData>) {
 
   const onSortingChange = React.useCallback(
     (updaterOrValue: Updater<SortingState>) => {
-      if (typeof updaterOrValue === "function") {
+      if (typeof updaterOrValue === 'function') {
         const newSorting = updaterOrValue(sorting);
         setSorting(newSorting as ExtendedColumnSort<TData>[]);
       } else {
@@ -181,7 +181,7 @@ export function useDataTable<TData>(props: UseDataTableProps<TData>) {
       }
 
       // Skip empty strings
-      if (typeof value === "string" && value.trim() === "") {
+      if (typeof value === 'string' && value.trim() === '') {
         return filters;
       }
 
@@ -192,14 +192,14 @@ export function useDataTable<TData>(props: UseDataTableProps<TData>) {
 
       // Find the column to determine the expected filter type
       const column = columns.find((col) => col.id === key);
-      const isMultiSelect = column?.meta?.variant === "multiSelect";
+      const isMultiSelect = column?.meta?.variant === 'multiSelect';
       const isRangeObject =
-        typeof value === "object" &&
+        typeof value === 'object' &&
         value !== null &&
-        "min" in value &&
-        "max" in value &&
-        typeof (value as { min: number; max: number }).min === "number" &&
-        typeof (value as { min: number; max: number }).max === "number";
+        'min' in value &&
+        'max' in value &&
+        typeof (value as { min: number; max: number }).min === 'number' &&
+        typeof (value as { min: number; max: number }).max === 'number';
 
       // Process the value based on column type
       let processedValue: string | string[] | number | boolean;
@@ -209,17 +209,17 @@ export function useDataTable<TData>(props: UseDataTableProps<TData>) {
         processedValue = [String(range.min), String(range.max)];
       } else if (Array.isArray(value)) {
         // Filter out empty strings from arrays
-        const filtered = value.filter((v) => v !== "" && v !== null && v !== undefined);
+        const filtered = value.filter((v) => v !== '' && v !== null && v !== undefined);
         // Skip if array becomes empty after filtering
         if (filtered.length === 0) {
           return filters;
         }
         processedValue = filtered;
-      } else if (typeof value === "string") {
+      } else if (typeof value === 'string') {
         // For multi-select columns, split comma-separated values
-        if (isMultiSelect && value.includes(",")) {
+        if (isMultiSelect && value.includes(',')) {
           const split = value
-            .split(",")
+            .split(',')
             .map((v) => v.trim())
             .filter(Boolean);
           if (split.length === 0) {
@@ -252,7 +252,7 @@ export function useDataTable<TData>(props: UseDataTableProps<TData>) {
       if (enableAdvancedFilter) return;
 
       setColumnFilters((prev) => {
-        const next = typeof updaterOrValue === "function" ? updaterOrValue(prev) : updaterOrValue;
+        const next = typeof updaterOrValue === 'function' ? updaterOrValue(prev) : updaterOrValue;
 
         const filterUpdates = next.reduce<Record<string, string | string[] | null>>(
           (acc, filter) => {

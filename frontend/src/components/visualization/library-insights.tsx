@@ -1,6 +1,6 @@
-import type { Library, Track } from "@/__generated__/types";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import type { Library, Track } from '@/__generated__/types';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   AlertTriangle,
   CheckCircle,
@@ -12,9 +12,9 @@ import {
   TrendingUp,
   Users,
   Zap,
-} from "lucide-react";
-import React from "react";
-import { NoData } from "../no-data";
+} from 'lucide-react';
+import React from 'react';
+import { NoData } from '../no-data';
 
 interface LibraryInsightsProps {
   library: Library;
@@ -24,7 +24,7 @@ interface LibraryInsightsProps {
 }
 
 interface InsightCardProps {
-  type: "success" | "warning" | "info" | "tip";
+  type: 'success' | 'warning' | 'info' | 'tip';
   title: string;
   description: string;
   action?: {
@@ -37,31 +37,31 @@ interface InsightCardProps {
 const InsightCard: React.FC<InsightCardProps> = ({ type, title, description, action, icon }) => {
   const getTypeStyles = () => {
     switch (type) {
-      case "success":
-        return "border-green-200 bg-green-50";
-      case "warning":
-        return "border-yellow-200 bg-yellow-50";
-      case "info":
-        return "border-blue-200 bg-blue-50";
-      case "tip":
-        return "border-purple-200 bg-purple-50";
+      case 'success':
+        return 'border-green-200 bg-green-50';
+      case 'warning':
+        return 'border-yellow-200 bg-yellow-50';
+      case 'info':
+        return 'border-blue-200 bg-blue-50';
+      case 'tip':
+        return 'border-purple-200 bg-purple-50';
       default:
-        return "border-gray-200 bg-gray-50";
+        return 'border-gray-200 bg-gray-50';
     }
   };
 
   const getIconStyles = () => {
     switch (type) {
-      case "success":
-        return "text-green-600";
-      case "warning":
-        return "text-yellow-600";
-      case "info":
-        return "text-blue-600";
-      case "tip":
-        return "text-purple-600";
+      case 'success':
+        return 'text-green-600';
+      case 'warning':
+        return 'text-yellow-600';
+      case 'info':
+        return 'text-blue-600';
+      case 'tip':
+        return 'text-purple-600';
       default:
-        return "text-gray-600";
+        return 'text-gray-600';
     }
   };
 
@@ -89,9 +89,9 @@ const generateInsights = (tracks: Track[]) => {
   const insights: InsightCardProps[] = [];
 
   const totalTracks = tracks.length;
-  const analyzedTracks = tracks.filter((t) => t.analysisStatus === "COMPLETED").length;
-  const pendingTracks = tracks.filter((t) => t.analysisStatus === "PENDING").length;
-  const failedTracks = tracks.filter((t) => t.analysisStatus === "FAILED").length;
+  const analyzedTracks = tracks.filter((t) => t.analysisStatus === 'COMPLETED').length;
+  const pendingTracks = tracks.filter((t) => t.analysisStatus === 'PENDING').length;
+  const failedTracks = tracks.filter((t) => t.analysisStatus === 'FAILED').length;
 
   const totalPlayCount = tracks.reduce((sum, track) => sum + track.listeningCount, 0);
   const avgPlayCount = totalPlayCount / totalTracks;
@@ -99,19 +99,19 @@ const generateInsights = (tracks: Track[]) => {
   // Analysis completion insight
   if (analyzedTracks === totalTracks && totalTracks > 0) {
     insights.push({
-      type: "success",
-      title: "Analysis Complete!",
+      type: 'success',
+      title: 'Analysis Complete!',
       description: `All ${totalTracks} tracks have been successfully analyzed. Your library is fully organized and ready for AI-powered features.`,
       icon: <CheckCircle className="h-5 w-5" />,
     });
   } else if (pendingTracks > 0) {
     insights.push({
-      type: "warning",
-      title: "Analysis In Progress",
+      type: 'warning',
+      title: 'Analysis In Progress',
       description: `${pendingTracks} tracks are still pending analysis. Consider running a batch analysis to complete the process.`,
       action: {
-        label: "Start Analysis",
-        onClick: () => console.log("Start analysis"),
+        label: 'Start Analysis',
+        onClick: () => console.log('Start analysis'),
       },
       icon: <Clock className="h-5 w-5" />,
     });
@@ -120,12 +120,12 @@ const generateInsights = (tracks: Track[]) => {
   // Failed analysis insight
   if (failedTracks > 0) {
     insights.push({
-      type: "warning",
-      title: "Analysis Issues Detected",
+      type: 'warning',
+      title: 'Analysis Issues Detected',
       description: `${failedTracks} tracks failed analysis. These may need manual review or different processing settings.`,
       action: {
-        label: "Review Failed",
-        onClick: () => console.log("Review failed tracks"),
+        label: 'Review Failed',
+        onClick: () => console.log('Review failed tracks'),
       },
       icon: <AlertTriangle className="h-5 w-5" />,
     });
@@ -134,8 +134,8 @@ const generateInsights = (tracks: Track[]) => {
   // Listening patterns insight
   if (avgPlayCount > 10) {
     insights.push({
-      type: "tip",
-      title: "Active Listening Library",
+      type: 'tip',
+      title: 'Active Listening Library',
       description: `Your tracks average ${Math.round(
         avgPlayCount,
       )} plays each. This suggests a well-used and curated collection.`,
@@ -143,14 +143,14 @@ const generateInsights = (tracks: Track[]) => {
     });
   } else if (avgPlayCount < 2) {
     insights.push({
-      type: "tip",
-      title: "Discovery Opportunity",
+      type: 'tip',
+      title: 'Discovery Opportunity',
       description: `Your tracks average ${Math.round(
         avgPlayCount,
       )} plays each. Consider exploring your library more or creating playlists for discovery.`,
       action: {
-        label: "Create Playlist",
-        onClick: () => console.log("Create playlist"),
+        label: 'Create Playlist',
+        onClick: () => console.log('Create playlist'),
       },
       icon: <Music className="h-5 w-5" />,
     });
@@ -160,15 +160,15 @@ const generateInsights = (tracks: Track[]) => {
   const genres = new Set(tracks.flatMap((t) => t.genres || []).filter(Boolean));
   if (genres.size > 10) {
     insights.push({
-      type: "success",
-      title: "Diverse Music Taste",
+      type: 'success',
+      title: 'Diverse Music Taste',
       description: `Your library spans ${genres.size} different genres, showing excellent musical diversity.`,
       icon: <Star className="h-5 w-5" />,
     });
   } else if (genres.size < 3) {
     insights.push({
-      type: "tip",
-      title: "Genre Focus",
+      type: 'tip',
+      title: 'Genre Focus',
       description: `Your library focuses on ${genres.size} main genres. Consider exploring new musical styles to expand your collection.`,
       icon: <Music className="h-5 w-5" />,
     });
@@ -177,15 +177,15 @@ const generateInsights = (tracks: Track[]) => {
   // Library size insight
   if (totalTracks > 1000) {
     insights.push({
-      type: "success",
-      title: "Large Collection",
+      type: 'success',
+      title: 'Large Collection',
       description: `With ${totalTracks} tracks, you have a substantial music library. Consider using advanced organization features.`,
       icon: <Users className="h-5 w-5" />,
     });
   } else if (totalTracks < 50) {
     insights.push({
-      type: "tip",
-      title: "Growing Collection",
+      type: 'tip',
+      title: 'Growing Collection',
       description: `You have ${totalTracks} tracks. As your library grows, AI organization will become even more valuable.`,
       icon: <TrendingUp className="h-5 w-5" />,
     });
@@ -203,15 +203,15 @@ const generateInsights = (tracks: Track[]) => {
     );
 
   const hasLowQualityFormats = Object.keys(formats).some(
-    (format) => ["MP3"].includes(format) && formats[format] / totalTracks > 0.8,
+    (format) => ['MP3'].includes(format) && formats[format] / totalTracks > 0.8,
   );
 
   if (hasLowQualityFormats) {
     insights.push({
-      type: "info",
-      title: "Audio Quality Opportunity",
+      type: 'info',
+      title: 'Audio Quality Opportunity',
       description:
-        "Most of your tracks are in compressed formats. Consider upgrading to lossless formats for better quality.",
+        'Most of your tracks are in compressed formats. Consider upgrading to lossless formats for better quality.',
       icon: <Zap className="h-5 w-5" />,
     });
   }
@@ -246,7 +246,7 @@ export const LibraryInsights: React.FC<LibraryInsightsProps> = ({
         Icon={Lightbulb}
         title="No Insights Available"
         subtitle="Add more tracks to your library to get personalized insights and recommendations."
-        buttonAction={() => console.log("Add tracks")}
+        buttonAction={() => console.log('Add tracks')}
         buttonLabel="Add Tracks"
         ButtonIcon={Music}
       />
@@ -300,7 +300,7 @@ export const LibraryInsights: React.FC<LibraryInsightsProps> = ({
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-green-600">
-                {tracks.filter((t) => t.analysisStatus === "COMPLETED").length}
+                {tracks.filter((t) => t.analysisStatus === 'COMPLETED').length}
               </div>
               <div className="text-sm text-muted-foreground">Analyzed</div>
             </div>

@@ -165,7 +165,7 @@ function MusicCard({ track, className, onAdd, height = '250', width = '300' }: M
               variant="outline"
               className="z-1000 absolute bottom-2 left-2 border-none"
               onClick={playMusic}
-              aria-label={isThisTrackPlaying ? "Pause" : "Play"}
+              aria-label={isThisTrackPlaying ? 'Pause' : 'Play'}
             >
               {isThisTrackPlaying ? (
                 <Pause className="h-5 w-5" aria-hidden />

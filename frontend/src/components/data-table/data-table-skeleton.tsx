@@ -1,4 +1,4 @@
-import { Skeleton } from "@/components/ui/skeleton";
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   Table,
   TableBody,
@@ -6,10 +6,10 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { cn } from "@/lib/utils";
+} from '@/components/ui/table';
+import { cn } from '@/lib/utils';
 
-interface DataTableSkeletonProps extends React.ComponentProps<"div"> {
+interface DataTableSkeletonProps extends React.ComponentProps<'div'> {
   columnCount: number;
   rowCount?: number;
   filterCount?: number;
@@ -24,7 +24,7 @@ export function DataTableSkeleton({
   columnCount,
   rowCount = 10,
   filterCount = 0,
-  cellWidths = ["auto"],
+  cellWidths = ['auto'],
   withViewOptions = true,
   withPagination = true,
   withTopPagination = true,
@@ -34,11 +34,11 @@ export function DataTableSkeleton({
 }: DataTableSkeletonProps) {
   const cozyCellWidths = Array.from(
     { length: columnCount },
-    (_, index) => cellWidths[index % cellWidths.length] ?? "auto",
+    (_, index) => cellWidths[index % cellWidths.length] ?? 'auto',
   );
 
   return (
-    <div className={cn("flex w-full flex-col gap-2.5 overflow-auto", className)} {...props}>
+    <div className={cn('flex w-full flex-col gap-2.5 overflow-auto', className)} {...props}>
       <div className="flex w-full items-center justify-between gap-2 overflow-auto p-1">
         <div className="flex flex-1 items-center gap-2 flex-wrap">
           {filterCount > 0
@@ -79,7 +79,7 @@ export function DataTableSkeleton({
                     key={j}
                     style={{
                       width: cozyCellWidths[j],
-                      minWidth: shrinkZero ? cozyCellWidths[j] : "auto",
+                      minWidth: shrinkZero ? cozyCellWidths[j] : 'auto',
                     }}
                   >
                     <Skeleton className="h-6 w-full" />
@@ -96,7 +96,7 @@ export function DataTableSkeleton({
                     key={j}
                     style={{
                       width: cozyCellWidths[j],
-                      minWidth: shrinkZero ? cozyCellWidths[j] : "auto",
+                      minWidth: shrinkZero ? cozyCellWidths[j] : 'auto',
                     }}
                   >
                     <Skeleton className="h-6 w-full" />

@@ -1,17 +1,17 @@
-import { Button } from "@/components/ui/button";
+import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+} from '@/components/ui/dropdown-menu';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   useAddTrackToPlaylist,
   useDeletePlaylist,
   usePlaylist,
   useUpdatePlaylistSorting,
-} from "@/services/playlist-hooks";
+} from '@/services/playlist-hooks';
 import {
   ArrowDown,
   ArrowLeft,
@@ -23,28 +23,24 @@ import {
   Disc3,
   HeartPlus,
   Sparkles,
-} from "lucide-react";
-import { useState } from "react";
-import { Badge } from "../ui/badge";
+} from 'lucide-react';
+import { useState } from 'react';
+import { Badge } from '../ui/badge';
 // Note: This app uses custom view state instead of routing
 // The id should be passed as a prop from the parent component
-import { Playlist } from "@/__generated__/types";
-import { useAudioPlayerActions, useCurrentTrack } from "@/contexts/audio-player-context";
-import { formatDuration } from "@/lib/utils";
-import { Route } from "@/routes/playlists.$playlistId";
-import {
-  useAddTracksToQueue,
-  useQueue,
-  useRemoveTrackFromQueue,
-} from "@/services/queue-hooks";
-import { useRouter } from "@tanstack/react-router";
-import { Skeleton } from "../ui/skeleton";
-import { AddTrackDrawer } from "./add-track-drawer";
-import { PlaylistDetailActions } from "./playlist-detail-actions";
-import { PlaylistDetailChart } from "./playlist-detail-chart";
-import { PlaylistDetailThirdParties } from "./playlist-detail-third-parties";
-import { PlaylistTracksList } from "./playlist-tracks-list";
-import { TrackRecommendations } from "./track-recommendations";
+import { Playlist } from '@/__generated__/types';
+import { useAudioPlayerActions, useCurrentTrack } from '@/contexts/audio-player-context';
+import { formatDuration } from '@/lib/utils';
+import { Route } from '@/routes/playlists.$playlistId';
+import { useAddTracksToQueue, useQueue, useRemoveTrackFromQueue } from '@/services/queue-hooks';
+import { useRouter } from '@tanstack/react-router';
+import { Skeleton } from '../ui/skeleton';
+import { AddTrackDrawer } from './add-track-drawer';
+import { PlaylistDetailActions } from './playlist-detail-actions';
+import { PlaylistDetailChart } from './playlist-detail-chart';
+import { PlaylistDetailThirdParties } from './playlist-detail-third-parties';
+import { PlaylistTracksList } from './playlist-tracks-list';
+import { TrackRecommendations } from './track-recommendations';
 
 interface PlaylistDetailProps {
   id: string;
@@ -70,13 +66,13 @@ const PlaylistMetadata = ({
       <Badge variant="outline" className="text-xs ">
         <Clock className="h-4 w-4" />
         Duration: {formatDuration(playlist?.stats?.totalDuration || 0)}
-      </Badge>{" "}
+      </Badge>{' '}
       <Badge variant="outline" className="text-xs ">
-        <HeartPlus className="h-4 w-4 " /> BPM: {playlist?.stats?.bpmRange?.min} -{" "}
+        <HeartPlus className="h-4 w-4 " /> BPM: {playlist?.stats?.bpmRange?.min} -{' '}
         {playlist?.stats?.bpmRange?.max}
       </Badge>
       <Badge variant="outline" className="text-xs ">
-        <AudioWaveform className="h-4 w-4 " /> Energy: {playlist?.stats?.energyRange?.min} -{" "}
+        <AudioWaveform className="h-4 w-4 " /> Energy: {playlist?.stats?.energyRange?.min} -{' '}
         {playlist?.stats?.energyRange?.max}
       </Badge>
     </div>
@@ -109,13 +105,13 @@ export function PlaylistDetail({ id, onBack }: PlaylistDetailProps) {
   const { data: currentQueue = [] } = useQueue();
   const addTracksToQueue = useAddTracksToQueue();
   const removeTrackFromQueue = useRemoveTrackFromQueue();
-  const [activeTab, setActiveTab] = useState("tracks");
+  const [activeTab, setActiveTab] = useState('tracks');
   const [isDeleting, setIsDeleting] = useState(false);
   const [isSettingAsQueue, setIsSettingAsQueue] = useState(false);
   const [isAddTrackDrawerOpen, setIsAddTrackDrawerOpen] = useState(false);
-  const { syncToYouTube, syncToTidal, syncToSpotify } = usePlaylist(id, "default");
+  const { syncToYouTube, syncToTidal, syncToSpotify } = usePlaylist(id, 'default');
   const deletePlaylistMutation = useDeletePlaylist();
-  const updatePlaylistSortingMutation = useUpdatePlaylistSorting("default");
+  const updatePlaylistSortingMutation = useUpdatePlaylistSorting('default');
   const addTrackToPlaylistMutation = useAddTrackToPlaylist();
 
   const refetch = () => {
@@ -124,7 +120,7 @@ export function PlaylistDetail({ id, onBack }: PlaylistDetailProps) {
   const addTrackToPlaylist = async (trackId: string, artist: string, title: string) => {
     return addTrackToPlaylistMutation
       .mutateAsync({
-        playlistId: playlist?.id || "",
+        playlistId: playlist?.id || '',
         input: {
           trackId,
         },
@@ -135,7 +131,7 @@ export function PlaylistDetail({ id, onBack }: PlaylistDetailProps) {
         refetch();
       })
       .catch((error) => {
-        console.error("Failed to add track to playlist:", error);
+        console.error('Failed to add track to playlist:', error);
       });
   };
   const handleDelete = async () => {
@@ -151,7 +147,7 @@ export function PlaylistDetail({ id, onBack }: PlaylistDetailProps) {
       });
       onBack();
     } catch (error) {
-      console.error("Failed to delete playlist:", error);
+      console.error('Failed to delete playlist:', error);
     } finally {
       setIsDeleting(false);
     }
@@ -178,18 +174,18 @@ export function PlaylistDetail({ id, onBack }: PlaylistDetailProps) {
       // Optionally start playing the first track
       if (playlist.tracks?.[0]?.track) {
         setCurrentTrack(playlist.tracks?.[0]?.track);
-        actions.play(playlist.tracks?.[0]?.track?.id || "");
+        actions.play(playlist.tracks?.[0]?.track?.id || '');
       }
     } catch (error) {
-      console.error("Failed to set playlist as queue:", error);
+      console.error('Failed to set playlist as queue:', error);
     } finally {
       setIsSettingAsQueue(false);
     }
   };
 
   const handleUpdateSorting = async (
-    sortingKey: "position" | "addedAt",
-    sortingDirection: "asc" | "desc",
+    sortingKey: 'position' | 'addedAt',
+    sortingDirection: 'asc' | 'desc',
   ) => {
     if (!playlist) return;
     try {
@@ -199,14 +195,14 @@ export function PlaylistDetail({ id, onBack }: PlaylistDetailProps) {
       });
       refetch();
     } catch (error) {
-      console.error("Failed to update playlist sorting:", error);
+      console.error('Failed to update playlist sorting:', error);
     }
   };
 
   const currentSortingKey =
-    (playlist as any)?.sorting?.sortingKey === "addedAt" ? "addedAt" : "position";
+    (playlist as any)?.sorting?.sortingKey === 'addedAt' ? 'addedAt' : 'position';
   const currentSortingDirection =
-    (playlist as any)?.sorting?.sortingDirection === "desc" ? "desc" : "asc";
+    (playlist as any)?.sorting?.sortingDirection === 'desc' ? 'desc' : 'asc';
 
   return (
     <div className="p-4 lg:p-6 space-y-8 flex flex-col z-0">
@@ -251,43 +247,43 @@ export function PlaylistDetail({ id, onBack }: PlaylistDetailProps) {
             <DropdownMenuContent align="end">
               <div className="px-2 py-1.5 text-sm font-semibold">Sort by</div>
               <DropdownMenuItem
-                onClick={() => handleUpdateSorting("position", "asc")}
+                onClick={() => handleUpdateSorting('position', 'asc')}
                 disabled={updatePlaylistSortingMutation.isPending}
               >
                 <ArrowUp className="h-4 w-4 mr-2" />
                 Manual (Ascending)
-                {currentSortingKey === "position" && currentSortingDirection === "asc" && (
+                {currentSortingKey === 'position' && currentSortingDirection === 'asc' && (
                   <span className="ml-auto text-xs">✓</span>
                 )}
               </DropdownMenuItem>
               <DropdownMenuItem
-                onClick={() => handleUpdateSorting("position", "desc")}
+                onClick={() => handleUpdateSorting('position', 'desc')}
                 disabled={updatePlaylistSortingMutation.isPending}
               >
                 <ArrowDown className="h-4 w-4 mr-2" />
                 Manual (Descending)
-                {currentSortingKey === "position" && currentSortingDirection === "desc" && (
+                {currentSortingKey === 'position' && currentSortingDirection === 'desc' && (
                   <span className="ml-auto text-xs">✓</span>
                 )}
               </DropdownMenuItem>
               <div className="h-px bg-border my-1" />
               <DropdownMenuItem
-                onClick={() => handleUpdateSorting("addedAt", "asc")}
+                onClick={() => handleUpdateSorting('addedAt', 'asc')}
                 disabled={updatePlaylistSortingMutation.isPending}
               >
                 <ArrowUp className="h-4 w-4 mr-2" />
                 Added Date (Ascending)
-                {currentSortingKey === "addedAt" && currentSortingDirection === "asc" && (
+                {currentSortingKey === 'addedAt' && currentSortingDirection === 'asc' && (
                   <span className="ml-auto text-xs">✓</span>
                 )}
               </DropdownMenuItem>
               <DropdownMenuItem
-                onClick={() => handleUpdateSorting("addedAt", "desc")}
+                onClick={() => handleUpdateSorting('addedAt', 'desc')}
                 disabled={updatePlaylistSortingMutation.isPending}
               >
                 <ArrowDown className="h-4 w-4 mr-2" />
                 Added Date (Descending)
-                {currentSortingKey === "addedAt" && currentSortingDirection === "desc" && (
+                {currentSortingKey === 'addedAt' && currentSortingDirection === 'desc' && (
                   <span className="ml-auto text-xs">✓</span>
                 )}
               </DropdownMenuItem>
@@ -319,7 +315,7 @@ export function PlaylistDetail({ id, onBack }: PlaylistDetailProps) {
 
         <TabsContent value="recommendations" className="space-y-4">
           <TrackRecommendations
-            playlistId={playlist?.id || ""}
+            playlistId={playlist?.id || ''}
             onTrackAdded={() => refetch()}
             recommendations={recommendations}
           />

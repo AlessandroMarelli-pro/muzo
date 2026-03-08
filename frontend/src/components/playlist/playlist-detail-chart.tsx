@@ -1,5 +1,5 @@
-import { Track } from "@/__generated__/types";
-import { PlaylistChart } from "./playlist-chart";
+import { Track } from '@/__generated__/types';
+import { PlaylistChart } from './playlist-chart';
 
 interface PlaylistDetailChartProps {
   tracks: Array<{
@@ -16,7 +16,7 @@ export function PlaylistDetailChart({ tracks, isLoading }: PlaylistDetailChartPr
         data={(tracks || []).map((track) => ({
           position: track.position,
           tempo: Math.round((track.track?.mfTempo || 0) * 100) / 100,
-          key: track.track?.mfKey || "",
+          key: track.track?.mfKey || '',
           name: `${track.track?.artist} - ${track.track?.title}`,
           duration: track.track?.duration || 0,
         }))}

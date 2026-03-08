@@ -1,4 +1,4 @@
-import { gql } from "./graffle-client";
+import { gql } from './graffle-client';
 
 export const trackFragment = gql`
   fragment TrackFragment on Track {

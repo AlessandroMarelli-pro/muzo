@@ -1,12 +1,12 @@
-import { Playlist } from "@/__generated__/types";
-import { Button } from "@/components/ui/button";
-import { Route } from "@/routes/playlists.index";
-import { Plus, Search } from "lucide-react";
-import { useEffect, useState } from "react";
-import { Input } from "../ui/input";
-import { CreatePlaylistDialog } from "./create-playlist-dialog";
-import { InlinePlaylistCard, InlinePlaylistCardSkeleton } from "./inline-playlist-card";
-import { PlaylistCard, PlaylistCardSkeleton } from "./playlist-card";
+import { Playlist } from '@/__generated__/types';
+import { Button } from '@/components/ui/button';
+import { Route } from '@/routes/playlists.index';
+import { Plus, Search } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Input } from '../ui/input';
+import { CreatePlaylistDialog } from './create-playlist-dialog';
+import { InlinePlaylistCard, InlinePlaylistCardSkeleton } from './inline-playlist-card';
+import { PlaylistCard, PlaylistCardSkeleton } from './playlist-card';
 
 interface PlaylistListProps {
   onViewPlaylistDetails: (playlistId: string) => void;
@@ -79,7 +79,7 @@ export function PlaylistList({ onViewPlaylistDetails, loading = false }: Playlis
   const playlists = Route.useLoaderData() as Playlist[];
 
   const [filteredPlaylists, setFilteredPlaylists] = useState(playlists);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState('');
   useEffect(() => {
     setFilteredPlaylists(
       playlists.filter((playlist) =>

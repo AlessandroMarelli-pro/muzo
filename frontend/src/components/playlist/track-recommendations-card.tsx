@@ -1,22 +1,22 @@
-import { TrackRecommendation } from "@/__generated__/types";
+import { TrackRecommendation } from '@/__generated__/types';
 import {
   useAudioPlayerActions,
   useCurrentTrack,
   useIsPlaying,
-} from "@/contexts/audio-player-context";
-import { cn, formatDuration } from "@/lib/utils";
-import { useNavigate } from "@tanstack/react-router";
-import { Brain, Pause, Play, Plus } from "lucide-react";
-import { TrackMoreMenu } from "../track/track-more-menu";
-import { Badge } from "../ui/badge";
-import { Button } from "../ui/button";
-import { Skeleton } from "../ui/skeleton";
+} from '@/contexts/audio-player-context';
+import { cn, formatDuration } from '@/lib/utils';
+import { useNavigate } from '@tanstack/react-router';
+import { Brain, Pause, Play, Plus } from 'lucide-react';
+import { TrackMoreMenu } from '../track/track-more-menu';
+import { Badge } from '../ui/badge';
+import { Button } from '../ui/button';
+import { Skeleton } from '../ui/skeleton';
 
 export const TrackRecommendationsCardSkeleton = ({ index }: { index: number }) => {
   return (
     <div
       key={`skeleton-recommendations-card-${index}`}
-      className={cn("flex items-center gap-4 p-4 hover:bg-muted/50 transition-colors group")}
+      className={cn('flex items-center gap-4 p-4 hover:bg-muted/50 transition-colors group')}
     >
       <Skeleton className="min-w-15 min-h-15 w-15 h-15 rounded-md" />
 
@@ -30,7 +30,7 @@ export const TrackRecommendationsCardSkeleton = ({ index }: { index: number }) =
         {/* Similarity Reasons */}
         <div className="flex flex-wrap gap-2 mt-2">
           {Array.from({ length: 3 }).map((_, index) => (
-            <Skeleton key={index + "-skeleton-similarity-reason"} className="w-30 h-6" />
+            <Skeleton key={index + '-skeleton-similarity-reason'} className="w-30 h-6" />
           ))}
         </div>
       </div>
@@ -66,7 +66,7 @@ export const TrackRecommendationsCard = ({
   const isCurrentTrack = currentTrack?.id === track.id;
   const isThisTrackPlaying = isCurrentTrack && isPlaying;
 
-  const formattedImage = track.imagePath || "Unknown Image";
+  const formattedImage = track.imagePath || 'Unknown Image';
 
   const handlePlay = (e: React.SyntheticEvent<any>) => {
     e.stopPropagation();
@@ -85,7 +85,7 @@ export const TrackRecommendationsCard = ({
   const handleAddTrack = (e: React.SyntheticEvent<any>) => {
     e.stopPropagation();
     if (onAddTrack) {
-      onAddTrack(track.id, track.artist || "", track.title || "");
+      onAddTrack(track.id, track.artist || '', track.title || '');
     }
   };
   const handleResearch = (e: React.SyntheticEvent<any>) => {
@@ -96,16 +96,16 @@ export const TrackRecommendationsCard = ({
     <div
       key={recommendation.track.id}
       className={cn(
-        "flex items-center gap-4 p-4 hover:bg-muted/50 transition-colors group",
-        isThisTrackPlaying && "bg-muted/80  ",
-        isThisTrackPlaying && index === 0 && "border-l-2 border-l-primary rounded-t-xl",
+        'flex items-center gap-4 p-4 hover:bg-muted/50 transition-colors group',
+        isThisTrackPlaying && 'bg-muted/80  ',
+        isThisTrackPlaying && index === 0 && 'border-l-2 border-l-primary rounded-t-xl',
         isCurrentTrack &&
           index === recommendationsLength - 1 &&
-          "border-l-2 border-l-primary rounded-b-xl",
+          'border-l-2 border-l-primary rounded-b-xl',
         isCurrentTrack &&
           index !== 0 &&
           index !== recommendationsLength - 1 &&
-          "border-l-2 border-l-primary",
+          'border-l-2 border-l-primary',
       )}
     >
       <img
@@ -117,7 +117,7 @@ export const TrackRecommendationsCard = ({
       <div className="flex-1 min-w-0">
         <div className="flex text-foreground truncate capitalize gap-2">
           <span className="max-w-md truncate">
-            {track?.artist || "Unknown Artist"} - {track?.title || "Unknown Track"}{" "}
+            {track?.artist || 'Unknown Artist'} - {track?.title || 'Unknown Track'}{' '}
           </span>
           <Badge variant="outline" className="text-xs border-none">
             {track.mfTempo} BPM
@@ -185,8 +185,8 @@ export const TrackRecommendationsCard = ({
         ) : (
           <TrackMoreMenu
             trackId={track.id}
-            artist={track.artist || "Unknown Artist"}
-            title={track.title || "Unknown Track"}
+            artist={track.artist || 'Unknown Artist'}
+            title={track.title || 'Unknown Track'}
           />
         )}
       </div>

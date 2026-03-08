@@ -1,5 +1,5 @@
-import { cn } from "@/lib/utils";
-import { useEffect, useRef, useState } from "react";
+import { cn } from '@/lib/utils';
+import { useEffect, useRef, useState } from 'react';
 
 interface BeatVisualizerProps {
   beatData: Array<{ timestamp: number; confidence: number; strength: number }>;
@@ -45,7 +45,7 @@ export function BeatVisualizer({
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const ctx = canvas.getContext("2d");
+    const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
     const { width, height: canvasHeight } = canvas;
@@ -54,7 +54,7 @@ export function BeatVisualizer({
     ctx.clearRect(0, 0, width, canvasHeight);
 
     // Draw background
-    ctx.fillStyle = "hsl(var(--muted))";
+    ctx.fillStyle = 'hsl(var(--muted))';
     ctx.fillRect(0, 0, width, canvasHeight);
 
     // Find current beat (unused for now but available for future features)
@@ -74,18 +74,18 @@ export function BeatVisualizer({
       const isCurrent = Math.abs(timeAtPosition - currentTime) < 1;
       const isPast = timeAtPosition < currentTime;
 
-      let color = "hsl(var(--muted-foreground) / 0.3)";
+      let color = 'hsl(var(--muted-foreground) / 0.3)';
 
       if (isCurrent) {
         // Pulsing effect for current energy
         const pulse = Math.sin(animationTime * 10) * 0.3 + 0.7;
         color = `hsl(var(--primary) / ${pulse})`;
       } else if (isPast) {
-        color = "hsl(var(--primary) / 0.6)";
+        color = 'hsl(var(--primary) / 0.6)';
       } else if (energy.energy > 0.7) {
-        color = "hsl(var(--accent) / 0.8)";
+        color = 'hsl(var(--accent) / 0.8)';
       } else if (energy.energy > 0.4) {
-        color = "hsl(var(--accent) / 0.5)";
+        color = 'hsl(var(--accent) / 0.5)';
       }
 
       ctx.fillStyle = color;
@@ -104,17 +104,17 @@ export function BeatVisualizer({
         ctx.fillStyle = `hsl(var(--destructive) / ${pulse})`;
         ctx.fillRect(beatX - 2, 0, 4, canvasHeight);
       } else if (isPast) {
-        ctx.fillStyle = "hsl(var(--destructive) / 0.6)";
+        ctx.fillStyle = 'hsl(var(--destructive) / 0.6)';
         ctx.fillRect(beatX - 1, 0, 2, canvasHeight);
       } else {
-        ctx.fillStyle = "hsl(var(--destructive) / 0.3)";
+        ctx.fillStyle = 'hsl(var(--destructive) / 0.3)';
         ctx.fillRect(beatX - 1, canvasHeight * 0.2, 2, canvasHeight * 0.6);
       }
     });
 
     // Draw current time indicator
     const currentX = (currentTime / duration) * width;
-    ctx.strokeStyle = "hsl(var(--foreground))";
+    ctx.strokeStyle = 'hsl(var(--foreground))';
     ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.moveTo(currentX, 0);
@@ -123,13 +123,13 @@ export function BeatVisualizer({
   }, [beatData, energyData, currentTime, duration, isPlaying, animationTime, height]);
 
   return (
-    <div className={cn("relative", className)}>
+    <div className={cn('relative', className)}>
       <canvas
         ref={canvasRef}
         width={800}
         height={height}
         className="w-full"
-        style={{ imageRendering: "pixelated" }}
+        style={{ imageRendering: 'pixelated' }}
       />
     </div>
   );

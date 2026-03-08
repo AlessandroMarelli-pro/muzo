@@ -1,16 +1,16 @@
-import { User } from "@/__generated__/types";
-import { AppSidebar, AppSidebarProps } from "@/components/layout/app-sidebar";
-import { EnhancedMusicPlayer } from "@/components/player/enhanced-music-player";
-import { SiteHeader } from "@/components/site-header";
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-import { AudioPlayerProvider, useCurrentTrack } from "@/contexts/audio-player-context";
-import { FilterProvider } from "@/contexts/filter-context";
-import { ScanSessionProvider } from "@/contexts/scan-session.context";
-import { cn } from "@/lib/utils";
-import { queryClient } from "@/query-client";
-import type { QueryClient } from "@tanstack/react-query";
-import { QueryClientProvider } from "@tanstack/react-query";
-import { createRootRouteWithContext, Outlet } from "@tanstack/react-router";
+import { User } from '@/__generated__/types';
+import { AppSidebar, AppSidebarProps } from '@/components/layout/app-sidebar';
+import { EnhancedMusicPlayer } from '@/components/player/enhanced-music-player';
+import { SiteHeader } from '@/components/site-header';
+import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
+import { AudioPlayerProvider, useCurrentTrack } from '@/contexts/audio-player-context';
+import { FilterProvider } from '@/contexts/filter-context';
+import { ScanSessionProvider } from '@/contexts/scan-session.context';
+import { cn } from '@/lib/utils';
+import { queryClient } from '@/query-client';
+import type { QueryClient } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { createRootRouteWithContext, Outlet } from '@tanstack/react-router';
 import {
   BookHeadphones,
   Brain,
@@ -20,9 +20,9 @@ import {
   ListMusic,
   Settings,
   Sparkles,
-} from "lucide-react";
-import { ThemeProvider, useTheme } from "next-themes";
-import * as React from "react";
+} from 'lucide-react';
+import { ThemeProvider, useTheme } from 'next-themes';
+import * as React from 'react';
 
 interface RouterContext {
   queryClient: QueryClient;
@@ -33,15 +33,15 @@ interface RouterContext {
 const MusicPlayerInset = React.memo(function MusicPlayerInset({
   className,
   ...props
-}: React.ComponentProps<"div">) {
+}: React.ComponentProps<'div'>) {
   const { currentTrack } = useCurrentTrack();
   const hasPlayer = !!currentTrack;
 
   return (
     <div
       className={cn(
-        " flex w-full flex-col transition-[margin-bottom] duration-200 ease-linear   h-full ",
-        hasPlayer ? "mb-20 sm:mb-16" : "mb-0",
+        ' flex w-full flex-col transition-[margin-bottom] duration-200 ease-linear   h-full ',
+        hasPlayer ? 'mb-20 sm:mb-16' : 'mb-0',
         className,
       )}
       {...props}
@@ -49,16 +49,16 @@ const MusicPlayerInset = React.memo(function MusicPlayerInset({
   );
 });
 
-const navigationData: Omit<AppSidebarProps["data"], "user"> = {
+const navigationData: Omit<AppSidebarProps['data'], 'user'> = {
   navMain: [
     {
-      title: "Home",
-      url: "/",
+      title: 'Home',
+      url: '/',
       icon: Home,
     },
     {
-      title: "Music",
-      url: "/music",
+      title: 'Music',
+      url: '/music',
       icon: ListMusic,
     },
     /*    {
@@ -67,50 +67,50 @@ const navigationData: Omit<AppSidebarProps["data"], "user"> = {
       icon: Boxes,
     }, */
     {
-      title: "Research",
-      url: "/research",
+      title: 'Research',
+      url: '/research',
       icon: Brain,
       preload: false,
     },
     {
-      title: "Swipe",
-      url: "/swipe",
+      title: 'Swipe',
+      url: '/swipe',
       icon: Sparkles,
       preload: false,
     },
     {
-      title: "Playlists",
-      url: "/playlists",
+      title: 'Playlists',
+      url: '/playlists',
       icon: BookHeadphones,
     },
     {
-      title: "Favorites",
-      url: "/favorites",
+      title: 'Favorites',
+      url: '/favorites',
       icon: Heart,
     },
     {
-      title: "Settings",
-      url: "/settings",
+      title: 'Settings',
+      url: '/settings',
       icon: Settings,
     },
     {
-      title: "Libraries",
-      url: "/libraries",
+      title: 'Libraries',
+      url: '/libraries',
       icon: Library,
     },
   ],
 };
 function RootContent() {
   const handleToggleShuffle = React.useCallback(() => {
-    console.log("Toggle shuffle");
+    console.log('Toggle shuffle');
   }, []);
   const { resolvedTheme } = useTheme();
   const [sidebarDefaultOpen] = React.useState(() =>
-    typeof window !== "undefined" ? localStorage.getItem("sidebar_state") === "expanded" : false,
+    typeof window !== 'undefined' ? localStorage.getItem('sidebar_state') === 'expanded' : false,
   );
 
   React.useEffect(() => {
-    document.documentElement.style.colorScheme = resolvedTheme === "dark" ? "dark" : "light";
+    document.documentElement.style.colorScheme = resolvedTheme === 'dark' ? 'dark' : 'light';
   }, [resolvedTheme]);
 
   return (
@@ -120,9 +120,9 @@ function RootContent() {
           data={{
             ...navigationData,
             user: {
-              name: "John Doe",
-              email: "john.doe@example.com",
-              avatar: "https://github.com/shadcn.png",
+              name: 'John Doe',
+              email: 'john.doe@example.com',
+              avatar: 'https://github.com/shadcn.png',
             },
           }}
         />
@@ -134,10 +134,7 @@ function RootContent() {
           </MusicPlayerInset>
         </SidebarInset>
       </SidebarProvider>
-      <EnhancedMusicPlayer
-        onToggleShuffle={handleToggleShuffle}
-        showVisualizations={true}
-      />
+      <EnhancedMusicPlayer onToggleShuffle={handleToggleShuffle} showVisualizations={true} />
     </>
   );
 }

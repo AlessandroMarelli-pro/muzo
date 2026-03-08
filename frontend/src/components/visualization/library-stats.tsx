@@ -1,9 +1,9 @@
-import type { Library, Track } from "@/__generated__/types";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { useScanSessionContext } from "@/contexts/scan-session.context";
-import { AnalysisStatus } from "@/services/api-hooks";
-import { useScanProgress } from "@/services/sse-service";
+import type { Library, Track } from '@/__generated__/types';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useScanSessionContext } from '@/contexts/scan-session.context';
+import { AnalysisStatus } from '@/services/api-hooks';
+import { useScanProgress } from '@/services/sse-service';
 import {
   AlertCircle,
   BarChart3,
@@ -15,8 +15,8 @@ import {
   Music,
   TrendingUp,
   Users,
-} from "lucide-react";
-import React from "react";
+} from 'lucide-react';
+import React from 'react';
 
 interface LibraryStatsProps {
   library: Library;
@@ -33,7 +33,7 @@ interface StatCardProps {
     value: number;
     isPositive: boolean;
   };
-  color?: "default" | "success" | "warning" | "danger";
+  color?: 'default' | 'success' | 'warning' | 'danger';
 }
 
 const StatCard: React.FC<StatCardProps> = ({
@@ -42,18 +42,18 @@ const StatCard: React.FC<StatCardProps> = ({
   description,
   icon,
   trend,
-  color = "default",
+  color = 'default',
 }) => {
   const getColorClasses = () => {
     switch (color) {
-      case "success":
-        return "text-green-600 bg-green-50 border-green-200";
-      case "warning":
-        return "text-yellow-600 bg-yellow-50 border-yellow-200";
-      case "danger":
-        return "text-red-600 bg-red-50 border-red-200";
+      case 'success':
+        return 'text-green-600 bg-green-50 border-green-200';
+      case 'warning':
+        return 'text-yellow-600 bg-yellow-50 border-yellow-200';
+      case 'danger':
+        return 'text-red-600 bg-red-50 border-red-200';
       default:
-        return "text-blue-600 bg-blue-50 border-blue-200";
+        return 'text-blue-600 bg-blue-50 border-blue-200';
     }
   };
 
@@ -72,10 +72,10 @@ const StatCard: React.FC<StatCardProps> = ({
           {trend && (
             <div
               className={`flex items-center space-x-1 text-sm ${
-                trend.isPositive ? "text-green-600" : "text-red-600"
+                trend.isPositive ? 'text-green-600' : 'text-red-600'
               }`}
             >
-              <TrendingUp className={`h-4 w-4 ${trend.isPositive ? "" : "rotate-180"}`} />
+              <TrendingUp className={`h-4 w-4 ${trend.isPositive ? '' : 'rotate-180'}`} />
               <span>{Math.abs(trend.value)}%</span>
             </div>
           )}
@@ -92,10 +92,10 @@ const formatDuration = (seconds: number) => {
 };
 
 const formatFileSize = (bytes: number) => {
-  const sizes = ["Bytes", "KB", "MB", "GB", "TB"];
-  if (bytes === 0) return "0 Bytes";
+  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+  if (bytes === 0) return '0 Bytes';
   const i = Math.floor(Math.log(bytes) / Math.log(1024));
-  return Math.round((bytes / Math.pow(1024, i)) * 100) / 100 + " " + sizes[i];
+  return Math.round((bytes / Math.pow(1024, i)) * 100) / 100 + ' ' + sizes[i];
 };
 
 const getAnalysisStatusCounts = (tracks: Track[]) => {
@@ -118,7 +118,7 @@ const getGenreDistribution = (tracks: Track[]) => {
         genreCounts[genre] = (genreCounts[genre] || 0) + 1;
       });
     } else {
-      genreCounts["Unknown"] = (genreCounts["Unknown"] || 0) + 1;
+      genreCounts['Unknown'] = (genreCounts['Unknown'] || 0) + 1;
     }
   });
 
@@ -210,7 +210,7 @@ export const LibraryStats: React.FC<LibraryStatsProps> = ({
         <div>
           <div className="flex items-center gap-2">
             <h2 className="text-2xl font-bold">Library Statistics</h2>
-            {scanStatus === "SCANNING" && (
+            {scanStatus === 'SCANNING' && (
               <div className="flex items-center gap-1 text-blue-600">
                 <Loader className="h-4 w-4 animate-spin" />
                 <span className="text-sm font-medium">Scanning…</span>
@@ -279,13 +279,13 @@ export const LibraryStats: React.FC<LibraryStatsProps> = ({
               : `${analysisStatusCounts.COMPLETED || 0} completed`
           }
           icon={<CheckCircle className="h-5 w-5" />}
-          color={scanStatus === "SCANNING" ? "warning" : "success"}
+          color={scanStatus === 'SCANNING' ? 'warning' : 'success'}
         />
 
         <StatCard
           title="Pending Analysis"
           value={scanProgress ? remainingFiles : analysisStatusCounts.PENDING || 0}
-          description={scanProgress ? "Remaining files" : "Awaiting processing"}
+          description={scanProgress ? 'Remaining files' : 'Awaiting processing'}
           icon={<Clock className="h-5 w-5" />}
           color="warning"
         />

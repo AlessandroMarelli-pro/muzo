@@ -1,12 +1,12 @@
-import { cn } from "@/lib/utils";
-import { Route } from "@/routes/research.{-$trackId}";
-import { fetchRandomTrack } from "@/services/api-hooks";
-import { useNavigate, useRouter } from "@tanstack/react-router";
-import { Check, PlusCircle } from "lucide-react";
-import { useMemo } from "react";
-import { TrackRecommandationsComponent } from "../playlist/track-recommendations";
-import { DetailedTrackCard } from "../track/detailed-track-card";
-import { Button } from "../ui/button";
+import { cn } from '@/lib/utils';
+import { Route } from '@/routes/research.{-$trackId}';
+import { fetchRandomTrack } from '@/services/api-hooks';
+import { useNavigate, useRouter } from '@tanstack/react-router';
+import { Check, PlusCircle } from 'lucide-react';
+import { useMemo } from 'react';
+import { TrackRecommandationsComponent } from '../playlist/track-recommendations';
+import { DetailedTrackCard } from '../track/detailed-track-card';
+import { Button } from '../ui/button';
 
 const DashedButton = ({
   children,
@@ -20,8 +20,8 @@ const DashedButton = ({
   return (
     <Button
       onClick={onClick}
-      className={cn("border-dashed")}
-      variant={selected ? "default" : "outline"}
+      className={cn('border-dashed')}
+      variant={selected ? 'default' : 'outline'}
       size="sm"
     >
       {selected ? <Check className="w-4 h-4 " /> : <PlusCircle className="w-4 h-4" />}
@@ -39,13 +39,13 @@ export function Research() {
   const refetch = async () => {
     const randomTrack = await fetchRandomTrack();
     navigate({
-      to: "/research/{-$trackId}",
+      to: '/research/{-$trackId}',
       params: { trackId: randomTrack.id },
     });
   };
   // Parse boost from search params (comma-separated string)
   const selectedBoost = useMemo(() => {
-    return search.boost ? search.boost.split(",").filter(Boolean) : [];
+    return search.boost ? search.boost.split(',').filter(Boolean) : [];
   }, [search.boost]);
 
   const handleSelectedBoost = (key: string) => {
@@ -61,7 +61,7 @@ export function Research() {
     // Update search params - this will trigger loaderDeps to change and refetch
     router.navigate({
       search: {
-        boost: newBoost.length > 0 ? newBoost.join(",") : undefined,
+        boost: newBoost.length > 0 ? newBoost.join(',') : undefined,
       },
       replace: true,
     });
@@ -72,11 +72,11 @@ export function Research() {
       <DetailedTrackCard track={track} refetch={refetch} isLoading={isLoading} />
       <div className="flex flex-wrap gap-2">
         {[
-          { key: "audioSimilarity", label: "Audio Similarity" },
-          { key: "genreSimilarity", label: "Genre Similarity" },
-          { key: "metadataSimilarity", label: "Metadata Similarity" },
-          { key: "userBehavior", label: "User Behavior" },
-          { key: "audioFeatures", label: "Audio Features" },
+          { key: 'audioSimilarity', label: 'Audio Similarity' },
+          { key: 'genreSimilarity', label: 'Genre Similarity' },
+          { key: 'metadataSimilarity', label: 'Metadata Similarity' },
+          { key: 'userBehavior', label: 'User Behavior' },
+          { key: 'audioFeatures', label: 'Audio Features' },
         ].map(({ key, label }) => (
           <DashedButton
             key={key}

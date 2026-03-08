@@ -1,0 +1,18 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["typescript", "oxc"],
+  "categories": {
+    "correctness": "warn",
+    "suspicious": "warn"
+  },
+  "env": {
+    "node": true,
+    "jest": true
+  },
+  "ignorePatterns": [".eslintrc.js"],
+  "rules": {
+    "typescript/no-explicit-any": "off",
+    "typescript/no-extraneous-class": ["warn", { "allowWithDecorator": true }],
+    "eslint/quotes": ["warn", "single"]
+  }
+}

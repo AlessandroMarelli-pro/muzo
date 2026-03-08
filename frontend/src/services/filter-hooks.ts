@@ -1,8 +1,8 @@
-import { FilterCriteriaResult } from "@/__generated__/types";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { toFilterState } from "./filter.mapper";
-import { filterFragment } from "./fragments";
-import { gql, graffleClient } from "./graffle-client";
+import { FilterCriteriaResult } from '@/__generated__/types';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { toFilterState } from './filter.mapper';
+import { filterFragment } from './fragments';
+import { gql, graffleClient } from './graffle-client';
 
 // Filter Types
 
@@ -35,7 +35,7 @@ export interface RangeInput {
 
 // Query Keys
 export const filterQueryKeys = {
-  currentFilter: () => ["filter", "current"] as const,
+  currentFilter: () => ['filter', 'current'] as const,
 };
 
 // Queries
@@ -99,22 +99,22 @@ export const useCreateActiveFilter = () => {
             }
           }
         `,
-        { input: { criteria, name: "current", isCurrent: true } },
+        { input: { criteria, name: 'current', isCurrent: true } },
       );
       return toFilterState(response.createSavedFilter);
     },
     onSuccess: (data) => {
       queryClient.setQueryData(filterQueryKeys.currentFilter(), data);
-      console.log("Filter set successfully:", data);
+      console.log('Filter set successfully:', data);
 
       // Invalidate all queries that depend on filters
-      queryClient.invalidateQueries({ queryKey: ["music-tracks"] });
-      queryClient.invalidateQueries({ queryKey: ["tracks"] });
-      queryClient.invalidateQueries({ queryKey: ["playlistRecommendations"] });
-      queryClient.invalidateQueries({ queryKey: ["tracksList"] });
+      queryClient.invalidateQueries({ queryKey: ['music-tracks'] });
+      queryClient.invalidateQueries({ queryKey: ['tracks'] });
+      queryClient.invalidateQueries({ queryKey: ['playlistRecommendations'] });
+      queryClient.invalidateQueries({ queryKey: ['tracksList'] });
     },
     onError: (error) => {
-      console.error("Error setting filter:", error);
+      console.error('Error setting filter:', error);
     },
   });
 };
@@ -134,22 +134,22 @@ export const useUpdateActiveFilter = () => {
             }
           }
         `,
-        { input: { criteria, name: "current", isCurrent: true }, id },
+        { input: { criteria, name: 'current', isCurrent: true }, id },
       );
       return toFilterState(response.updateSavedFilter);
     },
     onSuccess: (data) => {
       queryClient.setQueryData(filterQueryKeys.currentFilter(), data);
-      console.log("Filter set successfully:", data);
+      console.log('Filter set successfully:', data);
 
       // Invalidate all queries that depend on filters
-      queryClient.invalidateQueries({ queryKey: ["music-tracks"] });
-      queryClient.invalidateQueries({ queryKey: ["tracks"] });
-      queryClient.invalidateQueries({ queryKey: ["playlistRecommendations"] });
-      queryClient.invalidateQueries({ queryKey: ["tracksList"] });
+      queryClient.invalidateQueries({ queryKey: ['music-tracks'] });
+      queryClient.invalidateQueries({ queryKey: ['tracks'] });
+      queryClient.invalidateQueries({ queryKey: ['playlistRecommendations'] });
+      queryClient.invalidateQueries({ queryKey: ['tracksList'] });
     },
     onError: (error) => {
-      console.error("Error setting filter:", error);
+      console.error('Error setting filter:', error);
     },
   });
 };
@@ -172,15 +172,15 @@ export const useDeleteActiveFilter = () => {
     },
     onSuccess: (data) => {
       queryClient.setQueryData(filterQueryKeys.currentFilter(), null);
-      console.log("Filter cleared successfully:", data);
+      console.log('Filter cleared successfully:', data);
 
       // Invalidate all queries that depend on filters
-      queryClient.invalidateQueries({ queryKey: ["music-tracks"] });
-      queryClient.invalidateQueries({ queryKey: ["tracks"] });
-      queryClient.invalidateQueries({ queryKey: ["playlistRecommendations"] });
+      queryClient.invalidateQueries({ queryKey: ['music-tracks'] });
+      queryClient.invalidateQueries({ queryKey: ['tracks'] });
+      queryClient.invalidateQueries({ queryKey: ['playlistRecommendations'] });
     },
     onError: (error) => {
-      console.error("Error clearing filter:", error);
+      console.error('Error clearing filter:', error);
     },
   });
 };

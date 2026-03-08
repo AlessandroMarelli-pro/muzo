@@ -1,9 +1,9 @@
-import { PlaylistTrack } from "@/__generated__/types";
-import { Card, CardContent } from "@/components/ui/card";
+import { PlaylistTrack } from '@/__generated__/types';
+import { Card, CardContent } from '@/components/ui/card';
 
-import { Playlist } from "@/__generated__/types";
-import { capitalizeEveryWord } from "@/lib/utils";
-import { useRemoveTrackFromPlaylist, useUpdatePlaylistPositions } from "@/services/playlist-hooks";
+import { Playlist } from '@/__generated__/types';
+import { capitalizeEveryWord } from '@/lib/utils';
+import { useRemoveTrackFromPlaylist, useUpdatePlaylistPositions } from '@/services/playlist-hooks';
 import {
   DndContext,
   KeyboardSensor,
@@ -13,18 +13,18 @@ import {
   useSensor,
   useSensors,
   type DragEndEvent,
-} from "@dnd-kit/core";
-import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
+} from '@dnd-kit/core';
+import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
 import {
   SortableContext,
   arrayMove,
   useSortable,
   verticalListSortingStrategy,
-} from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
-import { useEffect, useMemo, useState } from "react";
-import { toast } from "sonner";
-import { PlaylistTrackListCard, PlaylistTrackListCardSkeleton } from "./playlist-track-list-card";
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import { useEffect, useMemo, useState } from 'react';
+import { toast } from 'sonner';
+import { PlaylistTrackListCard, PlaylistTrackListCardSkeleton } from './playlist-track-list-card';
 
 interface PlaylistTracksListProps {
   playlist: Playlist | undefined;
@@ -41,7 +41,7 @@ export function PlaylistTracksList({
 }: PlaylistTracksListProps) {
   const [removingTrackId, setRemovingTrackId] = useState<string | null>(null);
   const [localTracks, setLocalTracks] = useState<PlaylistTrack[]>(playlist?.tracks || []);
-  console.log("sortingOrder", playlist);
+  console.log('sortingOrder', playlist);
 
   const removeTrackMutation = useRemoveTrackFromPlaylist();
   const updatePositionsMutation = useUpdatePlaylistPositions();
@@ -49,7 +49,7 @@ export function PlaylistTracksList({
   // Sync localTracks with playlist.tracks when playlist changes (e.g., after sorting)
   // Use a stringified version of track IDs and positions to detect order changes
   const tracksSignature = useMemo(
-    () => playlist?.tracks?.map((t) => `${t.id}:${t.position}`).join(","),
+    () => playlist?.tracks?.map((t) => `${t.id}:${t.position}`).join(','),
     [playlist?.tracks],
   );
 
@@ -72,23 +72,23 @@ export function PlaylistTracksList({
     setRemovingTrackId(trackId);
     try {
       await removeTrackMutation.mutateAsync({
-        playlistId: playlist?.id || "",
+        playlistId: playlist?.id || '',
         trackId,
-        artist: track?.track?.artist || "",
-        title: track?.track?.title || "",
+        artist: track?.track?.artist || '',
+        title: track?.track?.title || '',
       });
       toast.success(`Track removed from playlist`, {
         description: capitalizeEveryWord(trackName),
         action: {
-          label: "Undo",
+          label: 'Undo',
           onClick: () => {
-            addTrackToPlaylist(trackId, track?.track?.artist || "", track?.track?.title || "");
+            addTrackToPlaylist(trackId, track?.track?.artist || '', track?.track?.title || '');
           },
         },
       });
       onUpdate();
     } catch (error) {
-      console.error("Failed to remove track:", error);
+      console.error('Failed to remove track:', error);
     } finally {
       setRemovingTrackId(null);
     }
@@ -96,7 +96,7 @@ export function PlaylistTracksList({
 
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
-    const sortingOrder = playlist?.sorting?.sortingDirection === "asc" ? 1 : -1;
+    const sortingOrder = playlist?.sorting?.sortingDirection === 'asc' ? 1 : -1;
     if (!active || !over || active.id !== over.id) {
       const oldIndex = trackIds.indexOf(active.id as string);
       const newIndex = trackIds.indexOf(over?.id as string);
@@ -118,12 +118,12 @@ export function PlaylistTracksList({
             };
           });
           await updatePositionsMutation.mutateAsync({
-            playlistId: playlist?.id || "",
+            playlistId: playlist?.id || '',
             positions,
           });
           onUpdate();
         } catch (error) {
-          console.error("Failed to update playlist positions:", error);
+          console.error('Failed to update playlist positions:', error);
           // Revert on error
           setLocalTracks(playlist?.tracks || []);
         }

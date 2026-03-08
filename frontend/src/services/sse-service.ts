@@ -3,23 +3,23 @@
  * Replaces WebSocket service for scan progress tracking
  */
 
-import { useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useQueryClient } from '@tanstack/react-query';
+import { useEffect, useState } from 'react';
 
 export interface ScanProgressEvent {
   type:
-    | "state"
-    | "scan.started"
-    | "batch.created"
-    | "batch.processing"
-    | "track.processing"
-    | "llm.filename"
-    | "llm.metadata"
-    | "audio.analysis"
-    | "saving"
-    | "track.complete"
-    | "batch.complete"
-    | "scan.complete";
+    | 'state'
+    | 'scan.started'
+    | 'batch.created'
+    | 'batch.processing'
+    | 'track.processing'
+    | 'llm.filename'
+    | 'llm.metadata'
+    | 'audio.analysis'
+    | 'saving'
+    | 'track.complete'
+    | 'batch.complete'
+    | 'scan.complete';
   sessionId: string;
   timestamp: string;
   libraryId?: string;
@@ -46,11 +46,11 @@ export interface ScanProgressEvent {
 }
 
 export interface ScanErrorEvent {
-  type: "error";
+  type: 'error';
   sessionId: string;
   timestamp: string;
-  severity: "warning" | "error" | "critical";
-  source: "backend" | "ai-service";
+  severity: 'warning' | 'error' | 'critical';
+  source: 'backend' | 'ai-service';
   libraryId?: string;
   batchIndex?: number;
   trackIndex?: number;
@@ -83,9 +83,9 @@ class SSEService {
     }
 
     try {
-      console.log("connecting to SSE", sessionId);
+      console.log('connecting to SSE', sessionId);
       // Use the same base URL as rest-client
-      const baseUrl = "http://localhost:3000";
+      const baseUrl = 'http://localhost:3000';
       const eventSource = new EventSource(`${baseUrl}/scan-progress/${sessionId}`);
 
       eventSource.onopen = () => {
@@ -160,8 +160,8 @@ class SSEService {
    */
   private handleMessage(sessionId: string, event: ScanEvent): void {
     // Update query client cache
-    if (this.queryClient && event.type === "state") {
-      this.queryClient.setQueryData(["scan-progress", sessionId], event);
+    if (this.queryClient && event.type === 'state') {
+      this.queryClient.setQueryData(['scan-progress', sessionId], event);
     }
 
     // Notify all listeners
@@ -171,7 +171,7 @@ class SSEService {
         try {
           callback(event);
         } catch (error) {
-          console.error("Error in SSE event callback:", error);
+          console.error('Error in SSE event callback:', error);
         }
       });
     }
@@ -235,7 +235,7 @@ export const useScanProgress = (sessionId?: string) => {
 
       // Subscribe to events
       const unsubscribe = sseService.subscribe(sessionId, (event) => {
-        if (event.type === "error") {
+        if (event.type === 'error') {
           setError(event as ScanErrorEvent);
         } else {
           setProgress(event as ScanProgressEvent);
@@ -261,7 +261,7 @@ export const useScanProgress = (sessionId?: string) => {
   }, [sessionId]);
 
   // Get cached data from query client
-  const cachedProgress = queryClient.getQueryData<ScanProgressEvent>(["scan-progress", sessionId]);
+  const cachedProgress = queryClient.getQueryData<ScanProgressEvent>(['scan-progress', sessionId]);
 
   return {
     progress: progress || cachedProgress || null,

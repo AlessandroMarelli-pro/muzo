@@ -4,8 +4,8 @@ import {
   useMutation,
   useQuery,
   useQueryClient,
-} from "@tanstack/react-query";
-import { parse } from "graphql";
+} from '@tanstack/react-query';
+import { parse } from 'graphql';
 import type {
   CreateLibraryInput,
   CursorPaginatedTracks,
@@ -16,23 +16,23 @@ import type {
   StaticFilterOptions,
   Track,
   TrackRecommendation,
-} from "../__generated__/types";
-import { libraryFragment, trackFragment } from "./fragments";
-import { gql, graffleClient } from "./graffle-client";
+} from '../__generated__/types';
+import { libraryFragment, trackFragment } from './fragments';
+import { gql, graffleClient } from './graffle-client';
 
 // Define AnalysisStatus enum locally since it's not in the generated types
-export type AnalysisStatus = "PENDING" | "PROCESSING" | "COMPLETED" | "FAILED";
+export type AnalysisStatus = 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED';
 
 // Define LibraryScanStatus enum locally since it's not in the generated types
-export type LibraryScanStatus = "IDLE" | "SCANNING" | "ANALYZING" | "PAUSED" | "ERROR";
+export type LibraryScanStatus = 'IDLE' | 'SCANNING' | 'ANALYZING' | 'PAUSED' | 'ERROR';
 
 // Query Keys
 export const queryKeys = {
-  libraries: ["libraries"] as const,
-  library: (id: string) => ["libraries", id] as const,
+  libraries: ['libraries'] as const,
+  library: (id: string) => ['libraries', id] as const,
   libraryTracks: (id: string, pagination: CursorPaginationArgs) =>
-    ["libraries", id, "tracks", { pagination }] as const,
-  tracks: (pagination: CursorPaginationArgs) => ["tracks", { pagination }] as const,
+    ['libraries', id, 'tracks', { pagination }] as const,
+  tracks: (pagination: CursorPaginationArgs) => ['tracks', { pagination }] as const,
   tracksList: (
     libraryId?: string,
     status?: AnalysisStatus,
@@ -40,22 +40,22 @@ export const queryKeys = {
     limit?: number,
     offset?: number,
     orderBy?: string,
-    orderDirection?: "asc" | "desc",
+    orderDirection?: 'asc' | 'desc',
   ) =>
     [
-      "tracksList",
+      'tracksList',
       { libraryId, status, isFavorite, limit, offset, orderBy, orderDirection },
     ] as const,
 
-  recentlyPlayed: (limit?: number) => ["tracks", "recently-played", { limit }] as const,
+  recentlyPlayed: (limit?: number) => ['tracks', 'recently-played', { limit }] as const,
 
-  currentPlayback: ["playback", "current"] as const,
-  staticFilters: ["static-filters"] as const,
+  currentPlayback: ['playback', 'current'] as const,
+  staticFilters: ['static-filters'] as const,
   randomTrack: (id?: string, filterLiked?: boolean) =>
-    ["tracks", "random", { id, filterLiked }] as const,
-  randomTrackWithStats: () => ["tracks", "random-with-stats"] as const,
+    ['tracks', 'random', { id, filterLiked }] as const,
+  randomTrackWithStats: () => ['tracks', 'random-with-stats'] as const,
   trackRecommendations: (id?: string, criteria?: string) =>
-    ["tracks", "recommendations", { id, criteria }] as const,
+    ['tracks', 'recommendations', { id, criteria }] as const,
 };
 
 /** Query options for loaders (ensureQueryData dedupes preload + load). */
@@ -293,8 +293,8 @@ export const useTracksList = ({
   isFavorite,
   limit = 50,
   offset = 0,
-  orderBy = "createdAt",
-  orderDirection = "desc",
+  orderBy = 'createdAt',
+  orderDirection = 'desc',
 }: {
   libraryId?: string;
   status?: AnalysisStatus;
@@ -302,7 +302,7 @@ export const useTracksList = ({
   limit?: number;
   offset?: number;
   orderBy?: string;
-  orderDirection?: "asc" | "desc";
+  orderDirection?: 'asc' | 'desc';
 }) => {
   return useQuery({
     queryKey: queryKeys.tracksList(
@@ -475,7 +475,7 @@ export const useDeleteLibrary = () => {
       });
     },
     onError: (error) => {
-      console.error("Failed to delete library:", error);
+      console.error('Failed to delete library:', error);
     },
   });
 };

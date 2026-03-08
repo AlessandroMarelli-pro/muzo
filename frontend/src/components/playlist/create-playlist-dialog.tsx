@@ -1,6 +1,6 @@
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import MultiSelect from "@/components/ui/multi-select";
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import MultiSelect from '@/components/ui/multi-select';
 import {
   Sheet,
   SheetContent,
@@ -8,19 +8,19 @@ import {
   SheetFooter,
   SheetHeader,
   SheetTitle,
-} from "@/components/ui/sheet";
-import { Switch } from "@/components/ui/switch";
-import { useFilterOptionsData } from "@/hooks/useFilterOptions";
-import { useCreatePlaylist } from "@/services/playlist-hooks";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@radix-ui/react-collapsible";
-import { useRouter } from "@tanstack/react-router";
-import { ChevronDownIcon, Info } from "lucide-react";
-import React, { useState } from "react";
-import { SliderComponent } from "../filters/filter-component";
-import { Loading } from "../loading";
-import { Field, FieldLabel } from "../ui/field";
-import { Item, ItemContent, ItemDescription, ItemMedia } from "../ui/item";
-import { Textarea } from "../ui/textarea";
+} from '@/components/ui/sheet';
+import { Switch } from '@/components/ui/switch';
+import { useFilterOptionsData } from '@/hooks/useFilterOptions';
+import { useCreatePlaylist } from '@/services/playlist-hooks';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@radix-ui/react-collapsible';
+import { useRouter } from '@tanstack/react-router';
+import { ChevronDownIcon, Info } from 'lucide-react';
+import React, { useState } from 'react';
+import { SliderComponent } from '../filters/filter-component';
+import { Loading } from '../loading';
+import { Field, FieldLabel } from '../ui/field';
+import { Item, ItemContent, ItemDescription, ItemMedia } from '../ui/item';
+import { Textarea } from '../ui/textarea';
 
 interface CreatePlaylistDialogProps {
   open: boolean;
@@ -29,9 +29,9 @@ interface CreatePlaylistDialogProps {
 }
 
 export function CreatePlaylistDialog({ open, onOpenChange, onSuccess }: CreatePlaylistDialogProps) {
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
-  const [nameError, setNameError] = useState("");
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+  const [nameError, setNameError] = useState('');
   const [isPublic, setIsPublic] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const router = useRouter();
@@ -43,7 +43,7 @@ export function CreatePlaylistDialog({ open, onOpenChange, onSuccess }: CreatePl
   const [selectedLibraries, setSelectedLibraries] = useState<string[]>([]);
   const [bpmRange, setBpmRange] = useState<[number, number]>([0, 200]);
   const [maxTracks, setMaxTracks] = useState<number>(100);
-  const [subgenreSelectionMode, setSubgenreSelectionMode] = useState<"exact" | "contain">("exact");
+  const [subgenreSelectionMode, setSubgenreSelectionMode] = useState<'exact' | 'contain'>('exact');
 
   const { createPlaylist } = useCreatePlaylist();
   const options = useFilterOptionsData();
@@ -51,11 +51,11 @@ export function CreatePlaylistDialog({ open, onOpenChange, onSuccess }: CreatePl
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) {
-      setNameError("Playlist name is required. Enter a name for your playlist.");
-      setTimeout(() => document.getElementById("playlist-name")?.focus(), 0);
+      setNameError('Playlist name is required. Enter a name for your playlist.');
+      setTimeout(() => document.getElementById('playlist-name')?.focus(), 0);
       return;
     }
-    setNameError("");
+    setNameError('');
 
     setIsCreating(true);
     try {
@@ -93,8 +93,8 @@ export function CreatePlaylistDialog({ open, onOpenChange, onSuccess }: CreatePl
       await router.invalidate();
 
       // Reset form
-      setName("");
-      setDescription("");
+      setName('');
+      setDescription('');
       setIsPublic(false);
       setSelectedGenres([]);
       setSelectedSubgenres([]);
@@ -102,11 +102,11 @@ export function CreatePlaylistDialog({ open, onOpenChange, onSuccess }: CreatePl
       setSelectedLibraries([]);
       setBpmRange([0, 200]);
       setMaxTracks(100);
-      setSubgenreSelectionMode("exact");
+      setSubgenreSelectionMode('exact');
 
       onSuccess();
     } catch (error) {
-      console.error("Failed to create playlist:", error);
+      console.error('Failed to create playlist:', error);
     } finally {
       setIsCreating(false);
     }
@@ -154,14 +154,14 @@ export function CreatePlaylistDialog({ open, onOpenChange, onSuccess }: CreatePl
                 value={name}
                 onChange={(e) => {
                   setName(e.target.value);
-                  if (nameError) setNameError("");
+                  if (nameError) setNameError('');
                 }}
                 placeholder="My Awesome Playlist"
                 required
                 disabled={isCreating}
                 className="w-xs"
                 aria-invalid={!!nameError}
-                aria-describedby={nameError ? "playlist-name-error" : undefined}
+                aria-describedby={nameError ? 'playlist-name-error' : undefined}
               />
               {nameError && (
                 <p id="playlist-name-error" className="text-sm text-red-600" role="alert">
@@ -240,16 +240,16 @@ export function CreatePlaylistDialog({ open, onOpenChange, onSuccess }: CreatePl
                     <div className="flex flex-col gap-1">
                       <FieldLabel htmlFor="subgenre-mode">Match any subgenre</FieldLabel>
                       <span className="text-xs text-muted-foreground">
-                        {subgenreSelectionMode === "contain"
-                          ? "Tracks with any selected subgenre will be included"
-                          : "Tracks must have all selected subgenres (exact match)"}
+                        {subgenreSelectionMode === 'contain'
+                          ? 'Tracks with any selected subgenre will be included'
+                          : 'Tracks must have all selected subgenres (exact match)'}
                       </span>
                     </div>
                     <Switch
                       id="subgenre-mode"
-                      checked={subgenreSelectionMode === "contain"}
+                      checked={subgenreSelectionMode === 'contain'}
                       onCheckedChange={(checked) =>
-                        setSubgenreSelectionMode(checked ? "contain" : "exact")
+                        setSubgenreSelectionMode(checked ? 'contain' : 'exact')
                       }
                       disabled={isCreating}
                       aria-label="Toggle subgenre selection mode"
@@ -326,7 +326,7 @@ export function CreatePlaylistDialog({ open, onOpenChange, onSuccess }: CreatePl
               Cancel
             </Button>
             <Button type="submit" disabled={isCreating || !name.trim()}>
-              {isCreating ? "Creating…" : "Create Playlist"}
+              {isCreating ? 'Creating…' : 'Create Playlist'}
             </Button>
           </SheetFooter>
         </form>

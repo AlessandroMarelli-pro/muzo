@@ -1,5 +1,5 @@
-import { LibraryDashboard } from "@/components/visualization/library-dashboard";
-import { createFileRoute } from "@tanstack/react-router";
+import { LibraryDashboard } from '@/components/visualization/library-dashboard';
+import { createFileRoute } from '@tanstack/react-router';
 
 function LibraryDashboardPage() {
   const { libraryId } = Route.useParams();
@@ -13,12 +13,12 @@ function LibraryDashboardPage() {
     <LibraryDashboard
       libraryId={libraryId}
       onRefresh={handleRefresh}
-      onExportData={() => console.log("Export data")}
-      onShareLibrary={() => console.log("Share library")}
+      onExportData={() => console.log('Export data')}
+      onShareLibrary={() => console.log('Share library')}
     />
   );
 }
 
-export const Route = createFileRoute("/libraries/$libraryId")({
+export const Route = createFileRoute('/libraries/$libraryId')({
   component: LibraryDashboardPage,
 });

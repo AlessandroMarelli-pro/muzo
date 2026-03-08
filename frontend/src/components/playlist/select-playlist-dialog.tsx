@@ -4,13 +4,13 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
-import { useAddTrackToPlaylist, usePlaylists } from "@/services/playlist-hooks";
-import { ListPlus } from "lucide-react";
-import React, { useState } from "react";
-import { Button } from "../ui/button";
-import { InlinePlaylistListComponent } from "./playlist-list";
+} from '@/components/ui/dialog';
+import { DropdownMenuItem } from '@/components/ui/dropdown-menu';
+import { useAddTrackToPlaylist, usePlaylists } from '@/services/playlist-hooks';
+import { ListPlus } from 'lucide-react';
+import React, { useState } from 'react';
+import { Button } from '../ui/button';
+import { InlinePlaylistListComponent } from './playlist-list';
 
 interface SelectPlaylistDialogProps {
   open: boolean;
@@ -46,7 +46,7 @@ export const SelectPlaylistTrigger = ({
         </DropdownMenuItem>
       ) : (
         <Button onClick={handleOpen} variant="outline" size="sm">
-          {" "}
+          {' '}
           <ListPlus className="w-4 h-4" />
           Add to Playlist
         </Button>
@@ -70,7 +70,7 @@ export const SelectPlaylistDialog: React.FC<SelectPlaylistDialogProps> = ({
   title,
 }) => {
   const { playlists, loading, refetch } = usePlaylists(undefined, trackId);
-  console.log("playlists", playlists);
+  console.log('playlists', playlists);
   const addTrackMutation = useAddTrackToPlaylist();
   const [_selectedPlaylistId, setSelectedPlaylistId] = useState<string | null>(null);
 
@@ -88,7 +88,7 @@ export const SelectPlaylistDialog: React.FC<SelectPlaylistDialogProps> = ({
       // onOpenChange(false);
       setSelectedPlaylistId(null);
     } catch (error) {
-      console.error("Failed to add track to playlist:", error);
+      console.error('Failed to add track to playlist:', error);
       setSelectedPlaylistId(null);
     }
   };

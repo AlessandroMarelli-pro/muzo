@@ -1,15 +1,15 @@
-"use client";
+'use client';
 
-import { Playlist } from "@/__generated__/types";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Playlist } from '@/__generated__/types';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { ColumnDef } from "@tanstack/react-table";
+} from '@/components/ui/dropdown-menu';
+import { ColumnDef } from '@tanstack/react-table';
 import {
   Clock,
   Disc3,
@@ -20,16 +20,16 @@ import {
   Play,
   Plus,
   Trash2,
-} from "lucide-react";
-import * as React from "react";
+} from 'lucide-react';
+import * as React from 'react';
 
-import { DataTable } from "@/components/data-table/data-table";
-import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
-import { DataTableSortList } from "@/components/data-table/data-table-sort-list";
-import { DataTableToolbar } from "@/components/data-table/data-table-toolbar";
-import { useDataTable } from "@/hooks/use-data-table";
-import { useDeletePlaylist, useExportPlaylistToM3U } from "@/services/playlist-hooks";
-import { format } from "date-fns";
+import { DataTable } from '@/components/data-table/data-table';
+import { DataTableColumnHeader } from '@/components/data-table/data-table-column-header';
+import { DataTableSortList } from '@/components/data-table/data-table-sort-list';
+import { DataTableToolbar } from '@/components/data-table/data-table-toolbar';
+import { useDataTable } from '@/hooks/use-data-table';
+import { useDeletePlaylist, useExportPlaylistToM3U } from '@/services/playlist-hooks';
+import { format } from 'date-fns';
 
 interface PlaylistTableProps {
   data: Playlist[];
@@ -79,7 +79,7 @@ const ActionCells = ({
       });
       onUpdate();
     } catch (error) {
-      console.error("Failed to delete playlist:", error);
+      console.error('Failed to delete playlist:', error);
     } finally {
       setIsDeleting(false);
     }
@@ -87,7 +87,7 @@ const ActionCells = ({
 
   const handlePlay = () => {
     // TODO: Implement playlist playback
-    console.log("Playing playlist:", playlist.id);
+    console.log('Playing playlist:', playlist.id);
   };
 
   const handleEdit = () => {
@@ -100,18 +100,18 @@ const ActionCells = ({
       const m3uContent = await exportPlaylistMutation.mutateAsync(playlist.id);
 
       // Create a blob and download the file
-      const blob = new Blob([m3uContent], { type: "audio/mpegurl" });
+      const blob = new Blob([m3uContent], { type: 'audio/mpegurl' });
       const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
+      const link = document.createElement('a');
       link.href = url;
-      link.download = `${playlist.name.replace(/[^a-z0-9]/gi, "_")}.m3u`;
+      link.download = `${playlist.name.replace(/[^a-z0-9]/gi, '_')}.m3u`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
     } catch (error) {
-      console.error("Failed to export playlist:", error);
-      alert("Failed to export playlist. Please try again.");
+      console.error('Failed to export playlist:', error);
+      alert('Failed to export playlist. Please try again.');
     } finally {
       setIsExporting(false);
     }
@@ -136,7 +136,7 @@ const ActionCells = ({
         </DropdownMenuItem>
         <DropdownMenuItem onClick={handleExport} disabled={isExporting}>
           <Download className="mr-2 h-4 w-4" />
-          {isExporting ? "Exporting…" : "Export"}
+          {isExporting ? 'Exporting…' : 'Export'}
         </DropdownMenuItem>
         <DropdownMenuItem
           onClick={handleDelete}
@@ -162,12 +162,12 @@ export function PlaylistTable({
   const columns = React.useMemo<ColumnDef<Playlist>[]>(
     () => [
       {
-        id: "image",
-        accessorKey: "images",
+        id: 'image',
+        accessorKey: 'images',
         header: () => null,
         cell: ({ row }) => {
           const playlist = row.original;
-          const imagePath = playlist.stats?.images?.[0] || "";
+          const imagePath = playlist.stats?.images?.[0] || '';
 
           return (
             <div className="flex items-center justify-center h-8 w-8">
@@ -182,11 +182,11 @@ export function PlaylistTable({
         enableSorting: false,
       },
       {
-        id: "name",
-        accessorKey: "name",
+        id: 'name',
+        accessorKey: 'name',
         header: ({ column }) => <DataTableColumnHeader column={column} title="Name" />,
         cell: ({ row }) => {
-          const name = row.getValue("name") as string;
+          const name = row.getValue('name') as string;
 
           return (
             <div className="max-w-[200px] truncate font-medium capitalize" title={name}>
@@ -197,11 +197,11 @@ export function PlaylistTable({
         enableSorting: true,
       },
       {
-        id: "description",
-        accessorKey: "description",
+        id: 'description',
+        accessorKey: 'description',
         header: ({ column }) => <DataTableColumnHeader column={column} title="Description" />,
         cell: ({ row }) => {
-          const description = row.getValue("description") as string;
+          const description = row.getValue('description') as string;
 
           return (
             <div className="min-w-[400px] truncate text-muted-foreground" title={description}>
@@ -212,11 +212,11 @@ export function PlaylistTable({
         enableSorting: false,
       },
       {
-        id: "numberOfTracks",
-        accessorKey: "numberOfTracks",
+        id: 'numberOfTracks',
+        accessorKey: 'numberOfTracks',
         header: ({ column }) => <DataTableColumnHeader column={column} title="Tracks" />,
         cell: ({ row }) => {
-          const count = row.getValue("numberOfTracks") as number;
+          const count = row.getValue('numberOfTracks') as number;
 
           return (
             <div className="flex items-center gap-1 ">
@@ -228,11 +228,11 @@ export function PlaylistTable({
         enableSorting: false,
       },
       {
-        id: "totalDuration",
-        accessorKey: "totalDuration",
+        id: 'totalDuration',
+        accessorKey: 'totalDuration',
         header: ({ column }) => <DataTableColumnHeader column={column} title="Duration" />,
         cell: ({ row }) => {
-          const duration = row.getValue("totalDuration") as number;
+          const duration = row.getValue('totalDuration') as number;
 
           return (
             <div className="flex items-center gap-1">
@@ -244,11 +244,11 @@ export function PlaylistTable({
         enableSorting: false,
       },
       {
-        id: "bpmRange",
-        accessorKey: "bpmRange",
+        id: 'bpmRange',
+        accessorKey: 'bpmRange',
         header: ({ column }) => <DataTableColumnHeader column={column} title="BPM Range" />,
         cell: ({ row }) => {
-          const bpmRange = row.getValue("bpmRange") as {
+          const bpmRange = row.getValue('bpmRange') as {
             min: number;
             max: number;
           };
@@ -266,11 +266,11 @@ export function PlaylistTable({
       },
 
       {
-        id: "topGenres",
-        accessorKey: "topGenres",
+        id: 'topGenres',
+        accessorKey: 'topGenres',
         header: ({ column }) => <DataTableColumnHeader column={column} title="Top Genres" />,
         cell: ({ row }) => {
-          const genres = row.getValue("topGenres") as string[];
+          const genres = row.getValue('topGenres') as string[];
 
           return (
             <div className="flex flex-row gap-1 ">
@@ -295,19 +295,19 @@ export function PlaylistTable({
         enableSorting: false,
       },
       {
-        id: "createdAt",
-        accessorKey: "createdAt",
+        id: 'createdAt',
+        accessorKey: 'createdAt',
         header: ({ column }) => <DataTableColumnHeader column={column} title="Created At" />,
         cell: ({ row }) => {
-          const createdAt = row.getValue("createdAt") as string;
+          const createdAt = row.getValue('createdAt') as string;
           return (
-            <div className="text-right">{format(new Date(createdAt), "MM/dd/yyyy HH:mm")}</div>
+            <div className="text-right">{format(new Date(createdAt), 'MM/dd/yyyy HH:mm')}</div>
           );
         },
         enableSorting: true,
       },
       {
-        id: "actions",
+        id: 'actions',
         enableHiding: false,
         enableSorting: false,
         cell: ({ row }) => (
@@ -328,8 +328,8 @@ export function PlaylistTable({
     columns,
     pageCount: calculatedPageCount > 0 ? calculatedPageCount : 1,
     initialState: {
-      sorting: [{ id: "name", desc: false }],
-      columnPinning: { right: ["actions"] },
+      sorting: [{ id: 'name', desc: false }],
+      columnPinning: { right: ['actions'] },
       pagination: {
         pageIndex: 0,
         pageSize: initialPageSize,

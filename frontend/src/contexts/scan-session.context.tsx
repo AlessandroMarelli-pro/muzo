@@ -4,9 +4,9 @@
  * Automatically fetches active sessions from the database on mount
  */
 
-import { useActiveScanSessions, useCompletedScanSessions } from "@/services/rest-client";
-import sseService from "@/services/sse-service";
-import React, { createContext, useContext, useEffect, useState } from "react";
+import { useActiveScanSessions, useCompletedScanSessions } from '@/services/rest-client';
+import sseService from '@/services/sse-service';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 
 interface ScanSession {
   sessionId: string;
@@ -158,7 +158,7 @@ export const ScanSessionProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
         prev.forEach((session, key) => {
           // Remove if status is IDLE or ERROR (completed)
-          if (session.status === "IDLE" || session.status === "ERROR") {
+          if (session.status === 'IDLE' || session.status === 'ERROR') {
             newMap.delete(key);
             if (session.libraryId) {
               newMap.delete(session.libraryId);
@@ -196,7 +196,7 @@ export const ScanSessionProvider: React.FC<{ children: React.ReactNode }> = ({ c
 export const useScanSessionContext = () => {
   const context = useContext(ScanSessionContext);
   if (!context) {
-    throw new Error("useScanSessionContext must be used within ScanSessionProvider");
+    throw new Error('useScanSessionContext must be used within ScanSessionProvider');
   }
   return context;
 };

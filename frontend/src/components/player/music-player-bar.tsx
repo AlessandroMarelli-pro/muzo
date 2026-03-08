@@ -1,6 +1,6 @@
-import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
-import { cn } from "@/lib/utils";
+import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
+import { cn } from '@/lib/utils';
 import {
   Heart,
   MoreHorizontal,
@@ -12,7 +12,7 @@ import {
   SkipBack,
   SkipForward,
   Volume2,
-} from "lucide-react";
+} from 'lucide-react';
 
 interface MusicTrack {
   id: string;
@@ -63,15 +63,15 @@ export function MusicPlayerBar({
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
-    return `${mins}:${secs.toString().padStart(2, "0")}`;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
   return (
     <div
       className={cn(
-        "fixed bottom-0 left-0 right-0 bg-background border-t border-border z-50",
-        "flex items-center justify-between px-2 sm:px-4 py-2 h-20 sm:h-16",
-        "flex-col sm:flex-row gap-2 sm:gap-0",
+        'fixed bottom-0 left-0 right-0 bg-background border-t border-border z-50',
+        'flex items-center justify-between px-2 sm:px-4 py-2 h-20 sm:h-16',
+        'flex-col sm:flex-row gap-2 sm:gap-0',
         className,
       )}
     >
@@ -144,7 +144,7 @@ export function MusicPlayerBar({
             size="sm"
             onClick={isPlaying ? onPause : onPlay}
             className="h-8 w-8 p-0"
-            aria-label={isPlaying ? "Pause" : "Play"}
+            aria-label={isPlaying ? 'Pause' : 'Play'}
           >
             {isPlaying ? (
               <Pause className="h-4 w-4" aria-hidden />
@@ -187,7 +187,7 @@ export function MusicPlayerBar({
             }}
           />
           <span className="text-xs text-muted-foreground w-10">
-            {currentTrack?.duration ? formatTime(currentTrack.duration) : "0:00"}
+            {currentTrack?.duration ? formatTime(currentTrack.duration) : '0:00'}
           </span>
         </div>
       </div>

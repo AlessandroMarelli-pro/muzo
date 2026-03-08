@@ -1,17 +1,17 @@
-import { Playlist } from "@/__generated__/types";
-import { Button } from "@/components/ui/button";
+import { Playlist } from '@/__generated__/types';
+import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from '@/components/ui/dropdown-menu';
 import {
   useAudioPlayerActions,
   useCurrentTrack,
   useIsPlaying,
-} from "@/contexts/audio-player-context";
-import { ChevronDown, ListMusic, Pause, Play, Plus, Trash2 } from "lucide-react";
+} from '@/contexts/audio-player-context';
+import { ChevronDown, ListMusic, Pause, Play, Plus, Trash2 } from 'lucide-react';
 
 interface PlaylistDetailActionsProps {
   playlist: Playlist | undefined;
@@ -39,7 +39,7 @@ export function PlaylistDetailActions({
   const handlePlay = () => {
     if (!playlist?.tracks?.[0]?.track) return;
     setCurrentTrack(playlist?.tracks[0]?.track || undefined);
-    actions.play(playlist?.tracks[0]?.track?.id || "");
+    actions.play(playlist?.tracks[0]?.track?.id || '');
   };
   const isDisabled = isLoading || !playlist;
 
@@ -58,7 +58,7 @@ export function PlaylistDetailActions({
         </DropdownMenuItem>
         <DropdownMenuItem onClick={onSetAsQueue} disabled={isDisabled || isSettingAsQueue}>
           <ListMusic className="h-4 w-4 mr-2" />
-          {isSettingAsQueue ? "Setting as Queue…" : "Set as Queue"}
+          {isSettingAsQueue ? 'Setting as Queue…' : 'Set as Queue'}
         </DropdownMenuItem>
         <DropdownMenuItem onClick={handlePlay} disabled={isDisabled}>
           {isPlaying ? (

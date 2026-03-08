@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import { ChevronRight, type LucideIcon } from "lucide-react";
+import { ChevronRight, type LucideIcon } from 'lucide-react';
 
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import {
   SidebarGroup,
   SidebarMenu,
@@ -12,8 +12,8 @@ import {
   SidebarMenuSub,
   SidebarMenuSubButton,
   SidebarMenuSubItem,
-} from "@/components/ui/sidebar";
-import { Link, useLocation, useNavigate } from "@tanstack/react-router";
+} from '@/components/ui/sidebar';
+import { Link, useLocation, useNavigate } from '@tanstack/react-router';
 
 export function NavMain({
   items,
@@ -23,7 +23,7 @@ export function NavMain({
     url: string;
     icon: LucideIcon;
     isActive?: boolean;
-    preload?: "render" | "intent" | false | "viewport" | undefined;
+    preload?: 'render' | 'intent' | false | 'viewport' | undefined;
     items?: {
       title: string;
       url: string;
@@ -33,7 +33,7 @@ export function NavMain({
   const location = useLocation();
   const navigate = useNavigate();
   const handleNavigate = (url: string) => {
-    sessionStorage.setItem("isLoaded", "true");
+    sessionStorage.setItem('isLoaded', 'true');
     navigate({ to: url });
   };
 
@@ -44,8 +44,8 @@ export function NavMain({
           const Icon = item.icon;
 
           const isActive =
-            (location.pathname !== "/" &&
-              item.url !== "/" &&
+            (location.pathname !== '/' &&
+              item.url !== '/' &&
               location.pathname.startsWith(item.url)) ||
             location.pathname === item.url;
           return (

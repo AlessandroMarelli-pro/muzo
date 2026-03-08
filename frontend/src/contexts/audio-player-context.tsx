@@ -1,6 +1,6 @@
-import { Track } from "@/__generated__/types";
-import { useAudioPlayer } from "@/hooks/useAudioPlayer";
-import { createContext, ReactNode, useContext, useMemo, useState } from "react";
+import { Track } from '@/__generated__/types';
+import { useAudioPlayer } from '@/hooks/useAudioPlayer';
+import { createContext, ReactNode, useContext, useMemo, useState } from 'react';
 
 // Separate contexts to prevent unnecessary re-renders
 const CurrentTrackContext = createContext<{
@@ -10,12 +10,12 @@ const CurrentTrackContext = createContext<{
 
 const IsPlayingContext = createContext<boolean>(false);
 
-const AudioPlayerStateContext = createContext<ReturnType<typeof useAudioPlayer>["state"] | null>(
+const AudioPlayerStateContext = createContext<ReturnType<typeof useAudioPlayer>['state'] | null>(
   null,
 );
 
 const AudioPlayerActionsContext = createContext<
-  ReturnType<typeof useAudioPlayer>["actions"] | null
+  ReturnType<typeof useAudioPlayer>['actions'] | null
 >(null);
 
 interface AudioPlayerProviderProps {
@@ -54,7 +54,7 @@ export function AudioPlayerProvider({ children }: AudioPlayerProviderProps) {
 export function useCurrentTrack() {
   const context = useContext(CurrentTrackContext);
   if (!context) {
-    throw new Error("useCurrentTrack must be used within an AudioPlayerProvider");
+    throw new Error('useCurrentTrack must be used within an AudioPlayerProvider');
   }
   return context;
 }
@@ -66,7 +66,7 @@ export function useIsPlaying() {
 export function useAudioPlayerActions() {
   const context = useContext(AudioPlayerActionsContext);
   if (!context) {
-    throw new Error("useAudioPlayerActions must be used within an AudioPlayerProvider");
+    throw new Error('useAudioPlayerActions must be used within an AudioPlayerProvider');
   }
   return context;
 }
@@ -74,7 +74,7 @@ export function useAudioPlayerActions() {
 export function useAudioPlayerState() {
   const context = useContext(AudioPlayerStateContext);
   if (!context) {
-    throw new Error("useAudioPlayerState must be used within an AudioPlayerProvider");
+    throw new Error('useAudioPlayerState must be used within an AudioPlayerProvider');
   }
   return context;
 }

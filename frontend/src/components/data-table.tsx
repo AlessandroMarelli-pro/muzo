@@ -8,15 +8,15 @@ import {
   useSensors,
   type DragEndEvent,
   type UniqueIdentifier,
-} from "@dnd-kit/core";
-import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
+} from '@dnd-kit/core';
+import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
 import {
   SortableContext,
   arrayMove,
   useSortable,
   verticalListSortingStrategy,
-} from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -31,7 +31,7 @@ import {
   getPaginationRowModel,
   getSortedRowModel,
   useReactTable,
-} from "@tanstack/react-table";
+} from '@tanstack/react-table';
 import {
   CheckCircle2Icon,
   ChevronDownIcon,
@@ -45,21 +45,21 @@ import {
   MoreVerticalIcon,
   PlusIcon,
   TrendingUpIcon,
-} from "lucide-react";
-import * as React from "react";
-import { Area, AreaChart, CartesianGrid, XAxis } from "recharts";
-import { toast } from "sonner";
-import { z } from "zod";
+} from 'lucide-react';
+import * as React from 'react';
+import { Area, AreaChart, CartesianGrid, XAxis } from 'recharts';
+import { toast } from 'sonner';
+import { z } from 'zod';
 
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
   ChartConfig,
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
-} from "@/components/ui/chart";
-import { Checkbox } from "@/components/ui/checkbox";
+} from '@/components/ui/chart';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -67,17 +67,17 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+} from '@/components/ui/dropdown-menu';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
+} from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
 import {
   Sheet,
   SheetClose,
@@ -87,7 +87,7 @@ import {
   SheetHeader,
   SheetTitle,
   SheetTrigger,
-} from "@/components/ui/sheet";
+} from '@/components/ui/sheet';
 import {
   Table,
   TableBody,
@@ -95,9 +95,9 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useIsMobile } from "@/hooks/use-mobile";
+} from '@/components/ui/table';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 export const schema = z.object({
   id: z.number(),
@@ -131,18 +131,18 @@ function DragHandle({ id }: { id: number }) {
 
 const columns: ColumnDef<z.infer<typeof schema>>[] = [
   {
-    id: "drag",
+    id: 'drag',
     header: () => null,
     cell: ({ row }) => <DragHandle id={row.original.id} />,
   },
   {
-    id: "select",
+    id: 'select',
     header: ({ table }) => (
       <div className="flex items-center justify-center">
         <Checkbox
           checked={
             table.getIsAllPageRowsSelected() ||
-            (table.getIsSomePageRowsSelected() && "indeterminate")
+            (table.getIsSomePageRowsSelected() && 'indeterminate')
           }
           onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
           aria-label="Select all"
@@ -162,16 +162,16 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
     enableHiding: false,
   },
   {
-    accessorKey: "header",
-    header: "Header",
+    accessorKey: 'header',
+    header: 'Header',
     cell: ({ row }) => {
       return <TableCellViewer item={row.original} />;
     },
     enableHiding: false,
   },
   {
-    accessorKey: "type",
-    header: "Section Type",
+    accessorKey: 'type',
+    header: 'Section Type',
     cell: ({ row }) => (
       <div className="w-32">
         <Badge variant="outline" className="px-1.5 text-muted-foreground">
@@ -181,11 +181,11 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
     ),
   },
   {
-    accessorKey: "status",
-    header: "Status",
+    accessorKey: 'status',
+    header: 'Status',
     cell: ({ row }) => (
       <Badge variant="outline" className="flex gap-1 px-1.5 text-muted-foreground [&_svg]:size-3">
-        {row.original.status === "Done" ? (
+        {row.original.status === 'Done' ? (
           <CheckCircle2Icon className="text-green-500 dark:text-green-400" />
         ) : (
           <LoaderIcon />
@@ -195,7 +195,7 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
     ),
   },
   {
-    accessorKey: "target",
+    accessorKey: 'target',
     header: () => <div className="w-full text-right">Target</div>,
     cell: ({ row }) => (
       <form
@@ -203,8 +203,8 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
           e.preventDefault();
           toast.promise(new Promise((resolve) => setTimeout(resolve, 1000)), {
             loading: `Saving ${row.original.header}`,
-            success: "Done",
-            error: "Error",
+            success: 'Done',
+            error: 'Error',
           });
         }}
       >
@@ -220,7 +220,7 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
     ),
   },
   {
-    accessorKey: "limit",
+    accessorKey: 'limit',
     header: () => <div className="w-full text-right">Limit</div>,
     cell: ({ row }) => (
       <form
@@ -228,8 +228,8 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
           e.preventDefault();
           toast.promise(new Promise((resolve) => setTimeout(resolve, 1000)), {
             loading: `Saving ${row.original.header}`,
-            success: "Done",
-            error: "Error",
+            success: 'Done',
+            error: 'Error',
           });
         }}
       >
@@ -245,10 +245,10 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
     ),
   },
   {
-    accessorKey: "reviewer",
-    header: "Reviewer",
+    accessorKey: 'reviewer',
+    header: 'Reviewer',
     cell: ({ row }) => {
-      const isAssigned = row.original.reviewer !== "Assign reviewer";
+      const isAssigned = row.original.reviewer !== 'Assign reviewer';
 
       if (isAssigned) {
         return row.original.reviewer;
@@ -273,7 +273,7 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
     },
   },
   {
-    id: "actions",
+    id: 'actions',
     cell: () => (
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
@@ -305,7 +305,7 @@ function DraggableRow({ row }: { row: Row<z.infer<typeof schema>> }) {
 
   return (
     <TableRow
-      data-state={row.getIsSelected() && "selected"}
+      data-state={row.getIsSelected() && 'selected'}
       data-dragging={isDragging}
       ref={setNodeRef}
       className="relative z-0 data-[dragging=true]:z-10 data-[dragging=true]:opacity-80"
@@ -399,7 +399,7 @@ export function DataTable({ data: initialData }: { data: z.infer<typeof schema>[
         <TabsList className="@4xl/main:flex hidden">
           <TabsTrigger value="outline">Outline</TabsTrigger>
           <TabsTrigger value="past-performance" className="gap-1">
-            Past Performance{" "}
+            Past Performance{' '}
             <Badge
               variant="secondary"
               className="flex h-5 w-5 items-center justify-center rounded-full bg-muted-foreground/30"
@@ -408,7 +408,7 @@ export function DataTable({ data: initialData }: { data: z.infer<typeof schema>[
             </Badge>
           </TabsTrigger>
           <TabsTrigger value="key-personnel" className="gap-1">
-            Key Personnel{" "}
+            Key Personnel{' '}
             <Badge
               variant="secondary"
               className="flex h-5 w-5 items-center justify-center rounded-full bg-muted-foreground/30"
@@ -431,7 +431,7 @@ export function DataTable({ data: initialData }: { data: z.infer<typeof schema>[
             <DropdownMenuContent align="end" className="w-56">
               {table
                 .getAllColumns()
-                .filter((column) => typeof column.accessorFn !== "undefined" && column.getCanHide())
+                .filter((column) => typeof column.accessorFn !== 'undefined' && column.getCanHide())
                 .map((column) => {
                   return (
                     <DropdownMenuCheckboxItem
@@ -500,7 +500,7 @@ export function DataTable({ data: initialData }: { data: z.infer<typeof schema>[
         </div>
         <div className="flex items-center justify-between px-4">
           <div className="hidden flex-1 text-sm text-muted-foreground lg:flex">
-            {table.getFilteredSelectedRowModel().rows.length} of{" "}
+            {table.getFilteredSelectedRowModel().rows.length} of{' '}
             {table.getFilteredRowModel().rows.length} row(s) selected.
           </div>
           <div className="flex w-full items-center gap-8 lg:w-fit">
@@ -587,22 +587,22 @@ export function DataTable({ data: initialData }: { data: z.infer<typeof schema>[
 }
 
 const chartData = [
-  { month: "January", desktop: 186, mobile: 80 },
-  { month: "February", desktop: 305, mobile: 200 },
-  { month: "March", desktop: 237, mobile: 120 },
-  { month: "April", desktop: 73, mobile: 190 },
-  { month: "May", desktop: 209, mobile: 130 },
-  { month: "June", desktop: 214, mobile: 140 },
+  { month: 'January', desktop: 186, mobile: 80 },
+  { month: 'February', desktop: 305, mobile: 200 },
+  { month: 'March', desktop: 237, mobile: 120 },
+  { month: 'April', desktop: 73, mobile: 190 },
+  { month: 'May', desktop: 209, mobile: 130 },
+  { month: 'June', desktop: 214, mobile: 140 },
 ];
 
 const chartConfig = {
   desktop: {
-    label: "Desktop",
-    color: "var(--primary)",
+    label: 'Desktop',
+    color: 'var(--primary)',
   },
   mobile: {
-    label: "Mobile",
-    color: "var(--primary)",
+    label: 'Mobile',
+    color: 'var(--primary)',
   },
 } satisfies ChartConfig;
 

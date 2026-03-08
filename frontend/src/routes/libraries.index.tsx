@@ -1,10 +1,10 @@
-import { CreateLibraryDialog } from "@/components/library/create-library-dialog";
-import { LibraryList } from "@/components/library/library-list";
-import { useScanSessionContext } from "@/contexts/scan-session.context";
-import { librariesQueryOptions } from "@/services/api-hooks";
-import { useStartLibraryScan, useStopLibraryScan } from "@/services/job-scheduler-hooks";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { CreateLibraryDialog } from '@/components/library/create-library-dialog';
+import { LibraryList } from '@/components/library/library-list';
+import { useScanSessionContext } from '@/contexts/scan-session.context';
+import { librariesQueryOptions } from '@/services/api-hooks';
+import { useStartLibraryScan, useStopLibraryScan } from '@/services/job-scheduler-hooks';
+import { createFileRoute, useNavigate } from '@tanstack/react-router';
+import { useState } from 'react';
 
 function LibrariesPage() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -28,7 +28,7 @@ function LibrariesPage() {
           }
         },
         onError: (error) => {
-          console.error("Failed to start library scan:", error);
+          console.error('Failed to start library scan:', error);
         },
       },
     );
@@ -39,7 +39,7 @@ function LibrariesPage() {
   };
 
   const handlePlayLibrary = (libraryId: string) => {
-    console.log("Playing library:", libraryId);
+    console.log('Playing library:', libraryId);
     // Implement library playback
   };
 
@@ -47,7 +47,7 @@ function LibrariesPage() {
     stopLibraryScanMutation.mutate({
       libraryId,
       sessionId:
-        activeSessions.get(libraryId)?.sessionId ?? activeSessions.keys().next().value ?? "",
+        activeSessions.get(libraryId)?.sessionId ?? activeSessions.keys().next().value ?? '',
     });
   };
 
@@ -71,7 +71,7 @@ function LibrariesPage() {
   );
 }
 
-export const Route = createFileRoute("/libraries/")({
+export const Route = createFileRoute('/libraries/')({
   component: LibrariesPage,
   loader: async ({ context }) => ({
     libraries: await context.queryClient.ensureQueryData(librariesQueryOptions()),

@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-import { Flame, ThumbsDown, ThumbsUp } from "lucide-react";
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+import { Flame, ThumbsDown, ThumbsUp } from 'lucide-react';
 
 interface SwipeControlsProps {
   onLike: () => void;
@@ -22,7 +22,7 @@ export function SwipeControls({
       <Button
         size="icon"
         variant="destructive"
-        className={cn("border-none text-white ", disabled && "opacity-50 cursor-not-allowed")}
+        className={cn('border-none text-white ', disabled && 'opacity-50 cursor-not-allowed')}
         onClick={onDislike}
         disabled={disabled}
         aria-label="Dislike"
@@ -34,8 +34,8 @@ export function SwipeControls({
         size="icon"
         variant="default"
         className={cn(
-          "border-none text-white bg-orange-500 hover:bg-orange-500/80",
-          disabled && "opacity-50 cursor-not-allowed",
+          'border-none text-white bg-orange-500 hover:bg-orange-500/80',
+          disabled && 'opacity-50 cursor-not-allowed',
         )}
         onClick={onBanger}
         disabled={disabled}
@@ -47,7 +47,7 @@ export function SwipeControls({
       <Button
         size="icon"
         variant="default"
-        className={cn("border-none text-white ", disabled && "opacity-50 cursor-not-allowed")}
+        className={cn('border-none text-white ', disabled && 'opacity-50 cursor-not-allowed')}
         onClick={onLike}
         disabled={disabled}
         aria-label="Like"

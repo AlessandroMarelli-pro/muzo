@@ -1,13 +1,13 @@
-"use client";
+'use client';
 
-import { Track } from "@/__generated__/types";
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import { useCurrentTrack, useIsPlaying } from "@/contexts/audio-player-context";
-import { cn } from "@/lib/utils";
-import { AnimatePresence, motion } from "motion/react";
-import { useEffect, useState } from "react";
-import { Badge } from "../ui/badge";
-import { SwipeControls } from "./swipe-controls";
+import { Track } from '@/__generated__/types';
+import { Card, CardContent, CardFooter } from '@/components/ui/card';
+import { useCurrentTrack, useIsPlaying } from '@/contexts/audio-player-context';
+import { cn } from '@/lib/utils';
+import { AnimatePresence, motion } from 'motion/react';
+import { useEffect, useState } from 'react';
+import { Badge } from '../ui/badge';
+import { SwipeControls } from './swipe-controls';
 
 interface SwipeTrackProps {
   track: Track;
@@ -43,12 +43,12 @@ export function SwipeTrack({ track, onLike, onDislike, onBanger }: SwipeTrackPro
   return (
     <Card
       className={cn(
-        "relative h-full w-full gap-0",
-        "cursor-pointer",
-        "bg-transparent z-2",
-        "py-0",
-        "border-none",
-        "shadow-none",
+        'relative h-full w-full gap-0',
+        'cursor-pointer',
+        'bg-transparent z-2',
+        'py-0',
+        'border-none',
+        'shadow-none',
       )}
     >
       <CardContent className="flex flex-col items-center justify-center h-full w-full relative overflow-hidden   ">
@@ -71,8 +71,8 @@ export function SwipeTrack({ track, onLike, onDislike, onBanger }: SwipeTrackPro
                 <div
                   key={index}
                   className={cn(
-                    "w-2 bg-foreground rounded-full transition-all duration-150",
-                    isThisTrackPlaying && "animate-pulse",
+                    'w-2 bg-foreground rounded-full transition-all duration-150',
+                    isThisTrackPlaying && 'animate-pulse',
                   )}
                   style={{ height: `${height}%` }}
                 />
@@ -92,13 +92,13 @@ export function SwipeTrack({ track, onLike, onDislike, onBanger }: SwipeTrackPro
                   exit={{ y: 300, opacity: 0, paddingTop: 100 }}
                   transition={{
                     y: {
-                      type: "spring",
+                      type: 'spring',
                       stiffness: 100,
                       damping: 30,
                       duration: 0.5,
                     },
                     opacity: {
-                      type: "spring",
+                      type: 'spring',
                       stiffness: 100,
                       damping: 30,
                       duration: 0.5,
@@ -116,8 +116,8 @@ export function SwipeTrack({ track, onLike, onDislike, onBanger }: SwipeTrackPro
                 <div
                   key={index}
                   className={cn(
-                    "w-2 bg-foreground rounded-full transition-all duration-150",
-                    isThisTrackPlaying && "animate-pulse",
+                    'w-2 bg-foreground rounded-full transition-all duration-150',
+                    isThisTrackPlaying && 'animate-pulse',
                   )}
                   style={{ height: `${height}%` }}
                 />

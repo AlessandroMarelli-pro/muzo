@@ -267,11 +267,11 @@ The app uses **TanStack Router** with file-based routing and automatic code-spli
 
 ```typescript
 // GraphQL with graphql-request
-import { useQuery } from "@tanstack/react-query";
-import { graphqlClient } from "@/services/graffle-client";
+import { useQuery } from '@tanstack/react-query';
+import { graphqlClient } from '@/services/graffle-client';
 
 // REST with custom client
-import { restClient } from "@/services/rest-client";
+import { restClient } from '@/services/rest-client';
 ```
 
 ### Real-time Updates
@@ -457,11 +457,11 @@ Always use the `@/` path alias:
 
 ```typescript
 // ✅ Good
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
 // ❌ Bad
-import { Button } from "../../../components/ui/button";
+import { Button } from '../../../components/ui/button';
 ```
 
 ### Component Patterns
@@ -476,7 +476,7 @@ import { Button } from "../../../components/ui/button";
 Use Zod for all external data validation:
 
 ```typescript
-import { z } from "zod";
+import { z } from 'zod';
 
 const trackSchema = z.object({
   id: z.string(),

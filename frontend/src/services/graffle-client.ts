@@ -1,9 +1,9 @@
-import { gql, GraphQLClient } from "graphql-request";
+import { gql, GraphQLClient } from 'graphql-request';
 
 // Create a GraphQL client instance
-export const graffleClient = new GraphQLClient("http://localhost:3000/graphql", {
+export const graffleClient = new GraphQLClient('http://localhost:3000/graphql', {
   headers: {
-    "Content-Type": "application/json",
+    'Content-Type': 'application/json',
   },
 });
 

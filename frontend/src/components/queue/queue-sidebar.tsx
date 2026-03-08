@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import {
   Sheet,
@@ -6,12 +6,12 @@ import {
   SheetDescription,
   SheetHeader,
   SheetTitle,
-} from "@/components/ui/sheet";
-import { useQueue, useResetQueue } from "@/services/queue-hooks";
-import { RefreshCcwIcon } from "lucide-react";
-import { MUSIC_PLAYER_HEIGHT } from "../player/enhanced-music-player";
-import { Button } from "../ui/button";
-import { QueueList } from "./queue-list";
+} from '@/components/ui/sheet';
+import { useQueue, useResetQueue } from '@/services/queue-hooks';
+import { RefreshCcwIcon } from 'lucide-react';
+import { MUSIC_PLAYER_HEIGHT } from '../player/enhanced-music-player';
+import { Button } from '../ui/button';
+import { QueueList } from './queue-list';
 
 interface QueueDrawerProps {
   open: boolean;
@@ -32,7 +32,7 @@ export function QueueDrawer({ open, onOpenChange }: QueueDrawerProps) {
         onInteractOutside={(e) => e.preventDefault()}
         style={
           {
-            "--music-player-height": MUSIC_PLAYER_HEIGHT,
+            '--music-player-height': MUSIC_PLAYER_HEIGHT,
           } as React.CSSProperties
         }
       >
@@ -44,14 +44,14 @@ export function QueueDrawer({ open, onOpenChange }: QueueDrawerProps) {
                 <span className="ml-2 text-sm font-normal text-muted-foreground">
                   ({queueItems.length})
                 </span>
-                                <Button
-                                  variant="ghost"
-                                  size="iconSm"
-                                  onClick={handleResetQueue}
-                                  aria-label="Clear queue"
-                                >
-                                  <RefreshCcwIcon className="h-4 w-4" aria-hidden />
-                                </Button>
+                <Button
+                  variant="ghost"
+                  size="iconSm"
+                  onClick={handleResetQueue}
+                  aria-label="Clear queue"
+                >
+                  <RefreshCcwIcon className="h-4 w-4" aria-hidden />
+                </Button>
               </div>
             )}
           </SheetTitle>

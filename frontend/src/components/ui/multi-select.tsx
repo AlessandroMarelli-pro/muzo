@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { Badge } from "@/components/ui/badge";
+import { Badge } from '@/components/ui/badge';
 import {
   Command,
   CommandEmpty,
@@ -8,12 +8,12 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-} from "@/components/ui/command";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { cn } from "@/lib/utils";
-import { ScrollArea } from "@radix-ui/react-scroll-area";
-import { Check, ChevronsUpDown, X } from "lucide-react";
-import * as React from "react";
+} from '@/components/ui/command';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { cn } from '@/lib/utils';
+import { ScrollArea } from '@radix-ui/react-scroll-area';
+import { Check, ChevronsUpDown, X } from 'lucide-react';
+import * as React from 'react';
 
 interface MultiSelectProps {
   options?: { label: string; value: string }[];
@@ -29,7 +29,7 @@ export default function MultiSelect({
   options,
   value,
   onChange,
-  placeholder = "Select items…",
+  placeholder = 'Select items…',
   className,
   isLoading: _isLoading = false,
   disabled = false,
@@ -51,14 +51,14 @@ export default function MultiSelect({
   };
 
   return (
-    <div className={cn("w-full", className)}>
+    <div className={cn('w-full', className)}>
       <Popover open={open} onOpenChange={setOpen} modal={false}>
         <PopoverTrigger
           className={cn(
-            "flex h-8 w-full  items-center justify-between rounded-md border border-input bg-background text-sm ",
-            "focus:outline-none ",
-            "disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer",
-            "hover:bg-accent hover:text-accent-foreground",
+            'flex h-8 w-full  items-center justify-between rounded-md border border-input bg-background text-sm ',
+            'focus:outline-none ',
+            'disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer',
+            'hover:bg-accent hover:text-accent-foreground',
           )}
           disabled={disabled}
           aria-expanded={open}
@@ -67,8 +67,8 @@ export default function MultiSelect({
             <div
               className="flex gap-1 flex-1 py-2 px-3 overflow-x-auto"
               style={{
-                scrollbarWidth: "thin",
-                scrollbarColor: "hsl(var(--border)) transparent",
+                scrollbarWidth: 'thin',
+                scrollbarColor: 'hsl(var(--border)) transparent',
               }}
             >
               {value.length === 0 ? (
@@ -105,9 +105,9 @@ export default function MultiSelect({
               }}
               tabIndex={0}
               className={cn(
-                "p-1 mx-1.5 my-auto h-full outline-none",
-                "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                "hover:bg-accent/50 rounded-sm cursor-pointer",
+                'p-1 mx-1.5 my-auto h-full outline-none',
+                'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+                'hover:bg-accent/50 rounded-sm cursor-pointer',
               )}
             >
               <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
@@ -137,8 +137,8 @@ export default function MultiSelect({
                     >
                       <Check
                         className={cn(
-                          "mr-2 h-4 w-4",
-                          value.includes(option.value) ? "opacity-100" : "opacity-0",
+                          'mr-2 h-4 w-4',
+                          value.includes(option.value) ? 'opacity-100' : 'opacity-0',
                         )}
                       />
                       {option.label}

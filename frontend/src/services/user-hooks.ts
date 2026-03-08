@@ -1,6 +1,6 @@
-import { User } from "@/__generated__/types";
-import { gql, graffleClient } from "@/services/graffle-client";
-import { useQuery } from "@tanstack/react-query";
+import { User } from '@/__generated__/types';
+import { gql, graffleClient } from '@/services/graffle-client';
+import { useQuery } from '@tanstack/react-query';
 
 export const USER_QUERY = gql`
   query User {
@@ -20,7 +20,7 @@ export const fetchUser = async () => {
 
 export const useUser = () => {
   const { data: user, isLoading } = useQuery({
-    queryKey: ["user"],
+    queryKey: ['user'],
     queryFn: fetchUser,
   });
   return { user, isLoading };

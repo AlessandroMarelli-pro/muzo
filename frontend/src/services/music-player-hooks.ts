@@ -1,9 +1,9 @@
-import { RegisterPlayedTrackMutation, ToggleFavoriteMutation } from "@/__generated__/types";
-import { capitalizeEveryWord } from "@/lib/utils";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
-import { trackFragment } from "./fragments";
-import { gql, graffleClient } from "./graffle-client";
+import { RegisterPlayedTrackMutation, ToggleFavoriteMutation } from '@/__generated__/types';
+import { capitalizeEveryWord } from '@/lib/utils';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
+import { trackFragment } from './fragments';
+import { gql, graffleClient } from './graffle-client';
 
 // Music Player Types
 export interface PlaybackState {
@@ -33,7 +33,7 @@ export interface AudioAnalysisResult {
   energy: EnergyData[];
   tempo: number;
   key: string;
-  mode: "major" | "minor";
+  mode: 'major' | 'minor';
   danceability: number;
   valence: number;
   acousticness: number;
@@ -49,7 +49,7 @@ export interface RealTimeAnalysis {
   currentEnergy: number;
   beatConfidence: number;
   nextBeatEstimate: number;
-  energyTrend: "increasing" | "decreasing" | "stable";
+  energyTrend: 'increasing' | 'decreasing' | 'stable';
 }
 
 export interface WaveformData {
@@ -73,7 +73,7 @@ export interface AudioInfo {
 
 // Query Keys
 export const musicPlayerQueryKeys = {
-  waveform: (trackId: string) => ["waveform", trackId] as const,
+  waveform: (trackId: string) => ['waveform', trackId] as const,
 };
 
 export const useWaveformData = (trackId: string) => {
@@ -139,9 +139,9 @@ export const useToggleFavorite = () => {
       return response.toggleFavorite;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["playlistRecommendations"] });
+      queryClient.invalidateQueries({ queryKey: ['playlistRecommendations'] });
       toast.success(
-        `Track has been ${data.isFavorite ? "added to" : "removed from"} your favorites`,
+        `Track has been ${data.isFavorite ? 'added to' : 'removed from'} your favorites`,
         {
           duration: 3000,
           description: capitalizeEveryWord(`${data.title} by ${data.artist} `),

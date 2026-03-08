@@ -1,5 +1,5 @@
-import { FilterState, useFiltering, UseFilteringOptions } from "@/hooks/useFiltering";
-import { createContext, ReactNode, useContext, useMemo, useState } from "react";
+import { FilterState, useFiltering, UseFilteringOptions } from '@/hooks/useFiltering';
+import { createContext, ReactNode, useContext, useMemo, useState } from 'react';
 
 export interface Range {
   min: number;
@@ -86,7 +86,7 @@ export function FilterProvider({
 export function useFilters() {
   const context = useContext(FilterContext);
   if (!context) {
-    throw new Error("useFilters must be used within a FilterProvider");
+    throw new Error('useFilters must be used within a FilterProvider');
   }
   return context;
 }
@@ -94,7 +94,7 @@ export function useFilters() {
 export function useFilterOptions() {
   const context = useContext(FilterOptionsContext);
   if (!context) {
-    throw new Error("useFilterOptions must be used within a FilterProvider");
+    throw new Error('useFilterOptions must be used within a FilterProvider');
   }
   return context;
 }

@@ -1,7 +1,7 @@
-import { StaticFilterOptions } from "@/__generated__/types";
-import { useFilterOptions, useFilters } from "@/contexts/filter-context";
-import { useStaticFilters } from "@/services/api-hooks";
-import { useEffect } from "react";
+import { StaticFilterOptions } from '@/__generated__/types';
+import { useFilterOptions, useFilters } from '@/contexts/filter-context';
+import { useStaticFilters } from '@/services/api-hooks';
+import { useEffect } from 'react';
 
 export type StaticFilterOptionsData = {
   [key in keyof StaticFilterOptions]: { label: string; value: string }[];
@@ -78,7 +78,7 @@ export function useFilteredTracksQuery(baseQuery: any) {
 
   return {
     ...baseQuery,
-    queryKey: [...baseQuery.queryKey, "filtered", filters],
+    queryKey: [...baseQuery.queryKey, 'filtered', filters],
     // Add filter logic here when integrating with actual API
     // This would typically modify the query parameters
   };

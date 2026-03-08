@@ -1,17 +1,17 @@
-import { Track } from "@/__generated__/types";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
+import { Track } from '@/__generated__/types';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import {
   useAudioPlayerActions,
   useCurrentTrack,
   useIsPlaying,
-} from "@/contexts/audio-player-context";
-import { cn } from "@/lib/utils";
-import { Activity, Clock, Heart, Music, Pause, Play, Shuffle, Zap } from "lucide-react";
-import { useEffect, useState } from "react";
-import { SelectPlaylistTrigger } from "../playlist/select-playlist-dialog";
-import { Skeleton } from "../ui/skeleton";
+} from '@/contexts/audio-player-context';
+import { cn } from '@/lib/utils';
+import { Activity, Clock, Heart, Music, Pause, Play, Shuffle, Zap } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { SelectPlaylistTrigger } from '../playlist/select-playlist-dialog';
+import { Skeleton } from '../ui/skeleton';
 
 interface DetailedTrackCardProps {
   track?: Track;
@@ -109,29 +109,29 @@ export function DetailedTrackCard({ track, refetch, isLoading }: DetailedTrackCa
   const formatDuration = (seconds: number) => {
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = Math.floor(seconds % 60);
-    return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
+    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
   };
 
   const formatBPM = (tempo?: number) => {
-    return tempo ? `${Math.round(tempo)}` : "N/A";
+    return tempo ? `${Math.round(tempo)}` : 'N/A';
   };
 
   const handlePlay = (e: React.SyntheticEvent) => {
     e.stopPropagation();
     if (currentTrack?.id !== track?.id && track) {
       setCurrentTrack(track);
-      actions.play(track?.id || "");
+      actions.play(track?.id || '');
     } else {
       // Same track - toggle play/pause
       if (isPlaying) {
-        actions.pause(track?.id || "");
+        actions.pause(track?.id || '');
       } else {
-        actions.play(track?.id || "");
+        actions.play(track?.id || '');
       }
     }
   };
   const handleToggleFavorite = () => {
-    actions.toggleFavorite(track?.id || "");
+    actions.toggleFavorite(track?.id || '');
     setIsFavorite(!isFavorite);
   };
 
@@ -173,7 +173,7 @@ export function DetailedTrackCard({ track, refetch, isLoading }: DetailedTrackCa
           <Badge variant="outline" className="flex items-center gap-2  " size="xs">
             <Activity className="w-4 h-4" />
             <span className="capitalize">{track.mfDanceabilityFeeling}</span>
-          </Badge>{" "}
+          </Badge>{' '}
           <Badge variant="outline" className="flex items-center gap-2  " size="xs">
             <Activity className="w-4 h-4" />
             <span className="capitalize">{track.mfValenceMood}</span>
@@ -222,13 +222,13 @@ export function DetailedTrackCard({ track, refetch, isLoading }: DetailedTrackCa
               <SelectPlaylistTrigger
                 trackId={track.id}
                 isDropdownMenuItem={false}
-                artist={track.artist || ""}
-                title={track.title || ""}
+                artist={track.artist || ''}
+                title={track.title || ''}
               />
 
               <Button variant="destructive" size="sm" onClick={handleToggleFavorite}>
-                <Heart className={cn("w-4 h-4", isFavorite ? "fill-red-500 text-red-500" : "")} />
-                {isFavorite ? "Favorite" : "Add to favorite"}
+                <Heart className={cn('w-4 h-4', isFavorite ? 'fill-red-500 text-red-500' : '')} />
+                {isFavorite ? 'Favorite' : 'Add to favorite'}
               </Button>
               <Button variant="outline" size="sm" onClick={refetch}>
                 <Shuffle className="w-4 h-4" />

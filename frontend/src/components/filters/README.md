@@ -17,7 +17,7 @@ The filter system has been **consolidated** into a single, clean architecture:
 The main context provider that manages filter state across the application.
 
 ```tsx
-import { FilterProvider } from "@/contexts/filter-context";
+import { FilterProvider } from '@/contexts/filter-context';
 
 function App() {
   return <FilterProvider>{/* Your app components */}</FilterProvider>;
@@ -29,7 +29,7 @@ function App() {
 A sheet component that contains all filter controls with automatic server persistence.
 
 ```tsx
-import { FilterSheet } from "@/components/filters";
+import { FilterSheet } from '@/components/filters';
 
 function MyComponent() {
   const [isOpen, setIsOpen] = useState(false);
@@ -43,7 +43,7 @@ function MyComponent() {
 A button component that opens the filter sheet and shows active filter status.
 
 ```tsx
-import { FilterButton } from "@/components/filters";
+import { FilterButton } from '@/components/filters';
 
 function MyComponent() {
   return <FilterButton className="my-custom-class" />;
@@ -57,7 +57,7 @@ function MyComponent() {
 Access filter state and actions through the unified context.
 
 ```tsx
-import { useFilters } from "@/contexts/filter-context";
+import { useFilters } from '@/contexts/filter-context';
 
 function MyComponent() {
   const {
@@ -81,7 +81,7 @@ function MyComponent() {
 Direct access to the core filtering hook for advanced use cases.
 
 ```tsx
-import { useFiltering } from "@/hooks/useFiltering";
+import { useFiltering } from '@/hooks/useFiltering';
 
 function MyComponent() {
   const filtering = useFiltering();
@@ -96,7 +96,7 @@ function MyComponent() {
 Access filter options data.
 
 ```tsx
-import { useFilterOptions } from "@/contexts/filter-context";
+import { useFilterOptions } from '@/contexts/filter-context';
 
 function MyComponent() {
   const { options, setOptions } = useFilterOptions();
@@ -110,7 +110,7 @@ function MyComponent() {
 Fetch and manage filter options from API.
 
 ```tsx
-import { useFilterOptionsData } from "@/hooks/useFilterOptions";
+import { useFilterOptionsData } from '@/hooks/useFilterOptions';
 
 function MyComponent() {
   const { isLoading, genres, subgenres, keys } = useFilterOptionsData();
@@ -154,9 +154,9 @@ interface FilterOptions {
 ### Basic Setup
 
 ```tsx
-import { FilterProvider } from "@/contexts/filter-context";
-import { FilterButton } from "@/components/filters";
-import { useFilterOptionsData } from "@/hooks/useFilterOptions";
+import { FilterProvider } from '@/contexts/filter-context';
+import { FilterButton } from '@/components/filters';
+import { useFilterOptionsData } from '@/hooks/useFilterOptions';
 
 function App() {
   return (
@@ -184,14 +184,14 @@ function MusicLibrary() {
 ### Custom Filter Integration
 
 ```tsx
-import { useFilters } from "@/contexts/filter-context";
+import { useFilters } from '@/contexts/filter-context';
 
 function TrackList() {
   const { filters, isLoading } = useFilters();
 
   // Apply filters to your track query
   const filteredTracks = useQuery({
-    queryKey: ["tracks", filters],
+    queryKey: ['tracks', filters],
     queryFn: () => fetchTracks(filters),
     enabled: !isLoading, // Wait for filters to load
   });
@@ -209,7 +209,7 @@ function TrackList() {
 ### Programmatic Filter Updates
 
 ```tsx
-import { useFilters } from "@/contexts/filter-context";
+import { useFilters } from '@/contexts/filter-context';
 
 function QuickFilterButtons() {
   const { updateFilter, saveCurrentFilter } = useFilters();
@@ -221,8 +221,8 @@ function QuickFilterButtons() {
 
   return (
     <div className="flex gap-2">
-      <Button onClick={() => handleQuickFilter("genres", ["electronic"])}>Electronic Only</Button>
-      <Button onClick={() => handleQuickFilter("tempo", { min: 120, max: 140 })}>
+      <Button onClick={() => handleQuickFilter('genres', ['electronic'])}>Electronic Only</Button>
+      <Button onClick={() => handleQuickFilter('tempo', { min: 120, max: 140 })}>
         Dance Tempo
       </Button>
     </div>
@@ -233,7 +233,7 @@ function QuickFilterButtons() {
 ### Server Persistence
 
 ```tsx
-import { useFilters } from "@/contexts/filter-context";
+import { useFilters } from '@/contexts/filter-context';
 
 function FilterManager() {
   const { loadSavedFilter, saveCurrentFilter, clearSavedFilter, isLoading } = useFilters();
@@ -243,7 +243,7 @@ function FilterManager() {
       <Button onClick={loadSavedFilter} disabled={isLoading}>
         Load Saved Filter
       </Button>
-      <Button onClick={() => saveCurrentFilter("My Custom Filter")}>Save Current Filter</Button>
+      <Button onClick={() => saveCurrentFilter('My Custom Filter')}>Save Current Filter</Button>
       <Button onClick={clearSavedFilter} variant="destructive">
         Clear Saved Filter
       </Button>

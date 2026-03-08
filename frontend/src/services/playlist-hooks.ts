@@ -6,12 +6,12 @@ import {
   PlaylistsResult,
   PlaylistTrack,
   TrackRecommendation,
-} from "@/__generated__/types";
-import { capitalizeEveryWord } from "@/lib/utils";
-import { gql, graffleClient } from "@/services/graffle-client";
-import { queryOptions, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
-import { playlistFragment, trackFragment } from "./fragments";
+} from '@/__generated__/types';
+import { capitalizeEveryWord } from '@/lib/utils';
+import { gql, graffleClient } from '@/services/graffle-client';
+import { queryOptions, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
+import { playlistFragment, trackFragment } from './fragments';
 
 // GraphQL Queries and Mutations
 const GET_PLAYLISTS = gql`
@@ -242,7 +242,7 @@ const UPDATE_PLAYLIST_SORTING = gql`
 
 const queryKeys = {
   playlists: (search?: string, verifyTrackId?: string) =>
-    ["playlists", search, verifyTrackId] as const,
+    ['playlists', search, verifyTrackId] as const,
 };
 
 /** Query options for use in loaders with queryClient.ensureQueryData (dedupes preload + load). */
@@ -254,13 +254,13 @@ export const playlistsQueryOptions = (search?: string, verifyTrackId?: string) =
 
 export const favoritePlaylistQueryOptions = () =>
   queryOptions({
-    queryKey: ["favoritePlaylist"] as const,
+    queryKey: ['favoritePlaylist'] as const,
     queryFn: () => fetchFavoritePlaylist(),
   });
 
 export const playlistRecommendationsQueryOptions = (playlistId: string, limit = 50) =>
   queryOptions({
-    queryKey: ["playlistRecommendations", playlistId, limit] as const,
+    queryKey: ['playlistRecommendations', playlistId, limit] as const,
     queryFn: () => fetchPlaylistRecommendations(playlistId, limit),
   });
 
@@ -279,7 +279,7 @@ export const fetchPlaylists = async (
     .then((data) => data.me.playlists.items);
 };
 
-export const fetchPlaylist = async (id: string, userId: string = "default"): Promise<Playlist> => {
+export const fetchPlaylist = async (id: string, userId: string = 'default'): Promise<Playlist> => {
   const data = await graffleClient.request<{ node: Playlist }>(GET_PLAYLIST, {
     id,
     userId,
@@ -328,7 +328,7 @@ export interface SyncResult {
 
 const syncPlaylistToYouTube = async (
   playlistId: string,
-  userId: string = "default",
+  userId: string = 'default',
 ): Promise<SyncResult> => {
   const data = await graffleClient.request<{
     syncPlaylistToYouTube: SyncResult;
@@ -345,7 +345,7 @@ const getYouTubeAuthUrl = async (): Promise<string> => {
 
 const authenticateYouTube = async (
   code: string,
-  userId: string = "default",
+  userId: string = 'default',
 ): Promise<{ success: boolean; message?: string }> => {
   const data = await graffleClient.request<{
     authenticateYouTube: { success: boolean; message?: string };
@@ -355,7 +355,7 @@ const authenticateYouTube = async (
 
 const syncPlaylistToTidal = async (
   playlistId: string,
-  userId: string = "default",
+  userId: string = 'default',
 ): Promise<SyncResult> => {
   const data = await graffleClient.request<{
     syncPlaylistToTidal: SyncResult;
@@ -376,7 +376,7 @@ const getTidalAuthUrl = async (): Promise<{
 const authenticateTidal = async (
   code: string,
   codeVerifier: string,
-  userId: string = "default",
+  userId: string = 'default',
 ): Promise<{ success: boolean; message?: string }> => {
   const data = await graffleClient.request<{
     authenticateTidal: { success: boolean; message?: string };
@@ -386,7 +386,7 @@ const authenticateTidal = async (
 
 const syncPlaylistToSpotify = async (
   playlistId: string,
-  userId: string = "default",
+  userId: string = 'default',
 ): Promise<SyncResult> => {
   const data = await graffleClient.request<{
     syncPlaylistToSpotify: SyncResult;
@@ -407,7 +407,7 @@ const getSpotifyAuthUrl = async (): Promise<{
 const authenticateSpotify = async (
   code: string,
   codeVerifier: string,
-  userId: string = "default",
+  userId: string = 'default',
 ): Promise<{ success: boolean; message?: string }> => {
   const data = await graffleClient.request<{
     authenticateSpotify: { success: boolean; message?: string };
@@ -498,8 +498,8 @@ const updatePlaylistPositions = async (
 };
 
 interface UpdatePlaylistSortingInput {
-  sortingKey: "position" | "addedAt";
-  sortingDirection: "asc" | "desc";
+  sortingKey: 'position' | 'addedAt';
+  sortingDirection: 'asc' | 'desc';
 }
 
 const updatePlaylistSorting = async (
@@ -567,9 +567,9 @@ export function usePlaylists(search?: string, verifyTrackId?: string) {
       queryClient.invalidateQueries({
         queryKey: queryKeys.playlists(search, verifyTrackId),
       });
-      queryClient.invalidateQueries({ queryKey: ["playlist", playlistId] });
+      queryClient.invalidateQueries({ queryKey: ['playlist', playlistId] });
       queryClient.invalidateQueries({
-        queryKey: ["playlistRecommendations", playlistId, 50],
+        queryKey: ['playlistRecommendations', playlistId, 50],
       });
       const trackName = ` ${data?.track?.title} by ${data?.track?.artist}`;
       toast.success(`Track added to playlist`, {
@@ -594,7 +594,7 @@ export function usePlaylists(search?: string, verifyTrackId?: string) {
       queryClient.invalidateQueries({
         queryKey: queryKeys.playlists(search, verifyTrackId),
       });
-      queryClient.invalidateQueries({ queryKey: ["playlist", playlistId] });
+      queryClient.invalidateQueries({ queryKey: ['playlist', playlistId] });
     },
   });
 
@@ -617,30 +617,30 @@ export function usePlaylists(search?: string, verifyTrackId?: string) {
   };
 }
 
-export function usePlaylist(id: string, userId: string = "default") {
+export function usePlaylist(id: string, userId: string = 'default') {
   const queryClient = useQueryClient();
 
   const syncToYouTubeMutation = useMutation({
     mutationFn: () => syncPlaylistToYouTube(id, userId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["playlists"] });
-      queryClient.invalidateQueries({ queryKey: ["playlist", id] });
+      queryClient.invalidateQueries({ queryKey: ['playlists'] });
+      queryClient.invalidateQueries({ queryKey: ['playlist', id] });
     },
   });
 
   const syncToTidalMutation = useMutation({
     mutationFn: () => syncPlaylistToTidal(id, userId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["playlists"] });
-      queryClient.invalidateQueries({ queryKey: ["playlist", id] });
+      queryClient.invalidateQueries({ queryKey: ['playlists'] });
+      queryClient.invalidateQueries({ queryKey: ['playlist', id] });
     },
   });
 
   const syncToSpotifyMutation = useMutation({
     mutationFn: () => syncPlaylistToSpotify(id, userId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["playlists"] });
-      queryClient.invalidateQueries({ queryKey: ["playlist", id] });
+      queryClient.invalidateQueries({ queryKey: ['playlists'] });
+      queryClient.invalidateQueries({ queryKey: ['playlist', id] });
     },
   });
 
@@ -657,7 +657,7 @@ export function usePlaylist(id: string, userId: string = "default") {
   };
 }
 
-export function useYouTubeAuth(userId: string = "default") {
+export function useYouTubeAuth(userId: string = 'default') {
   const getAuthUrlMutation = useMutation({
     mutationFn: getYouTubeAuthUrl,
   });
@@ -675,7 +675,7 @@ export function useYouTubeAuth(userId: string = "default") {
   };
 }
 
-export function useTidalAuth(userId: string = "default") {
+export function useTidalAuth(userId: string = 'default') {
   const getAuthUrlMutation = useMutation({
     mutationFn: getTidalAuthUrl,
   });
@@ -694,7 +694,7 @@ export function useTidalAuth(userId: string = "default") {
   };
 }
 
-export function useSpotifyAuth(userId: string = "default") {
+export function useSpotifyAuth(userId: string = 'default') {
   const getAuthUrlMutation = useMutation({
     mutationFn: getSpotifyAuthUrl,
   });
@@ -715,7 +715,7 @@ export function useSpotifyAuth(userId: string = "default") {
 
 export function useFavoritePlaylist() {
   const { data, isLoading, error, refetch } = useQuery({
-    queryKey: ["favoritePlaylist"],
+    queryKey: ['favoritePlaylist'],
     queryFn: () => fetchFavoritePlaylist(),
   });
   return {
@@ -771,7 +771,7 @@ export function useDeletePlaylist() {
     },
     onError: (error: any) => {
       const errorMessage =
-        error?.response?.errors?.[0]?.message || error?.message || "Failed to delete playlist";
+        error?.response?.errors?.[0]?.message || error?.message || 'Failed to delete playlist';
       console.error(errorMessage);
       toast.error(errorMessage, {
         duration: 3000,
@@ -786,7 +786,7 @@ export function useExportPlaylistToM3U() {
   });
 }
 
-export function useAddTrackToPlaylist(userId: string = "default") {
+export function useAddTrackToPlaylist(userId: string = 'default') {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -802,7 +802,7 @@ export function useAddTrackToPlaylist(userId: string = "default") {
       title: string;
     }) => addTrackToPlaylist(playlistId, input, artist, title),
     onSuccess: async (data, { playlistId }) => {
-      queryClient.invalidateQueries({ queryKey: ["playlists"] });
+      queryClient.invalidateQueries({ queryKey: ['playlists'] });
       await queryClient.invalidateQueries({
         queryKey: playlistsQueryOptions(undefined, undefined).queryKey,
       });
@@ -811,10 +811,10 @@ export function useAddTrackToPlaylist(userId: string = "default") {
         queryKey: playlistsQueryOptions(undefined, undefined).queryKey,
       });
       queryClient.invalidateQueries({
-        queryKey: ["playlist", playlistId, userId],
+        queryKey: ['playlist', playlistId, userId],
       });
       queryClient.invalidateQueries({
-        queryKey: ["playlistRecommendations", playlistId, 50],
+        queryKey: ['playlistRecommendations', playlistId, 50],
       });
       const trackName = ` ${data?.track?.title} by ${data?.track?.artist}`;
       toast.success(`Track added to playlist`, {
@@ -825,7 +825,7 @@ export function useAddTrackToPlaylist(userId: string = "default") {
       const errorMessage =
         error?.response?.errors?.[0]?.message ||
         error?.message ||
-        "Failed to add track to playlist";
+        'Failed to add track to playlist';
       console.error(errorMessage);
       toast.error(errorMessage, {
         duration: 3000,
@@ -850,8 +850,8 @@ export function useRemoveTrackFromPlaylist() {
       title: string;
     }) => removeTrackFromPlaylist(playlistId, trackId, artist, title),
     onSuccess: (_, { playlistId }) => {
-      queryClient.invalidateQueries({ queryKey: ["playlists"] });
-      queryClient.invalidateQueries({ queryKey: ["playlist", playlistId] });
+      queryClient.invalidateQueries({ queryKey: ['playlists'] });
+      queryClient.invalidateQueries({ queryKey: ['playlist', playlistId] });
     },
   });
 }
@@ -862,7 +862,7 @@ export function usePlaylistRecommendations(
   excludeTrackIds?: string[],
 ) {
   const { data, isLoading, error, refetch } = useQuery({
-    queryKey: ["playlistRecommendations", playlistId, limit],
+    queryKey: ['playlistRecommendations', playlistId, limit],
     queryFn: () => fetchPlaylistRecommendations(playlistId, limit, excludeTrackIds),
     enabled: !!playlistId,
     staleTime: 5 * 60 * 1000, // 5 minutes - recommendations can change
@@ -887,21 +887,21 @@ export function useUpdatePlaylistPositions() {
       positions: UpdatePlaylistPositionInput[];
     }) => updatePlaylistPositions(playlistId, positions),
     onSuccess: (_, { playlistId }) => {
-      queryClient.invalidateQueries({ queryKey: ["playlists"] });
-      queryClient.invalidateQueries({ queryKey: ["playlist", playlistId] });
-      toast.success("Playlist positions updated successfully");
+      queryClient.invalidateQueries({ queryKey: ['playlists'] });
+      queryClient.invalidateQueries({ queryKey: ['playlist', playlistId] });
+      toast.success('Playlist positions updated successfully');
     },
     onError: (error: any) => {
       const errorMessage =
         error?.response?.errors?.[0]?.message ||
         error?.message ||
-        "Failed to update playlist positions";
+        'Failed to update playlist positions';
       console.error(errorMessage);
     },
   });
 }
 
-export function useUpdatePlaylistSorting(_userId: string = "default") {
+export function useUpdatePlaylistSorting(_userId: string = 'default') {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -913,14 +913,14 @@ export function useUpdatePlaylistSorting(_userId: string = "default") {
       input: UpdatePlaylistSortingInput;
     }) => updatePlaylistSorting(playlistId, input),
     onSuccess: (_, { playlistId }) => {
-      queryClient.invalidateQueries({ queryKey: ["playlists"] });
-      queryClient.invalidateQueries({ queryKey: ["playlist", playlistId] });
+      queryClient.invalidateQueries({ queryKey: ['playlists'] });
+      queryClient.invalidateQueries({ queryKey: ['playlist', playlistId] });
     },
     onError: (error: any) => {
       const errorMessage =
         error?.response?.errors?.[0]?.message ||
         error?.message ||
-        "Failed to update playlist sorting";
+        'Failed to update playlist sorting';
       console.error(errorMessage);
     },
   });

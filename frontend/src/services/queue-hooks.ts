@@ -2,12 +2,12 @@ import {
   QueueItem,
   RemoveTrackFromQueueResponse,
   UpdateQueuePositionsInput,
-} from "@/__generated__/types";
-import { capitalizeEveryWord } from "@/lib/utils";
-import { trackFragment } from "@/services/fragments";
-import { gql, graffleClient } from "@/services/graffle-client";
-import { QueryClient, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
+} from '@/__generated__/types';
+import { capitalizeEveryWord } from '@/lib/utils';
+import { trackFragment } from '@/services/fragments';
+import { gql, graffleClient } from '@/services/graffle-client';
+import { QueryClient, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 
 // GraphQL Queries and Mutations
 const GET_QUEUE = gql`
@@ -145,8 +145,8 @@ const updateQueuePositions = async (
 
 // Query keys
 export const queueQueryKeys = {
-  all: ["queue"] as const,
-  queue: () => [...queueQueryKeys.all, "items"] as const,
+  all: ['queue'] as const,
+  queue: () => [...queueQueryKeys.all, 'items'] as const,
 };
 
 // Hooks
@@ -164,12 +164,12 @@ export function useResetQueue() {
     mutationFn: resetQueue,
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: queueQueryKeys.all });
-      toast.success("Queue reset", {
+      toast.success('Queue reset', {
         duration: 2000,
       });
     },
     onError: () => {
-      toast.error("Failed to reset queue", {
+      toast.error('Failed to reset queue', {
         duration: 3000,
       });
     },
@@ -177,10 +177,10 @@ export function useResetQueue() {
 }
 
 const addTrackToQueueSuccessToast = (data: QueueItem, queryClient: QueryClient) => {
-  const trackName = `${data.track?.title || "track"} by ${data.track?.artist || "artist"}`;
+  const trackName = `${data.track?.title || 'track'} by ${data.track?.artist || 'artist'}`;
   queryClient.invalidateQueries({ queryKey: queueQueryKeys.all });
   toast.success(`Added track to queue`, {
-    description: capitalizeEveryWord(trackName || "track"),
+    description: capitalizeEveryWord(trackName || 'track'),
     duration: 2000,
   });
 };
@@ -194,10 +194,10 @@ export function useAddTrackToQueue() {
     },
     onError: (error: any) => {
       const errorMessage =
-        error?.response?.errors?.[0]?.message || error?.message || "Failed to add track to queue";
+        error?.response?.errors?.[0]?.message || error?.message || 'Failed to add track to queue';
 
-      if (errorMessage.includes("already in the queue")) {
-        toast.error("Track is already in the queue", {
+      if (errorMessage.includes('already in the queue')) {
+        toast.error('Track is already in the queue', {
           duration: 2000,
         });
       } else {
@@ -221,7 +221,7 @@ export function useAddTracksToQueue() {
     },
     onError: (error: any) => {
       const errorMessage =
-        error?.response?.errors?.[0]?.message || error?.message || "Failed to add tracks to queue";
+        error?.response?.errors?.[0]?.message || error?.message || 'Failed to add tracks to queue';
       toast.error(errorMessage, {
         duration: 3000,
       });
@@ -240,7 +240,7 @@ export function useRemoveTrackFromQueue() {
         duration: 2000,
         description: capitalizeEveryWord(`${data.title} by ${data.artist}`),
         action: {
-          label: "Undo",
+          label: 'Undo',
           onClick: () => {
             addTrackToQueue(data.trackId).then((data) => {
               addTrackToQueueSuccessToast(data, queryClient);
@@ -253,7 +253,7 @@ export function useRemoveTrackFromQueue() {
       const errorMessage =
         error?.response?.errors?.[0]?.message ||
         error?.message ||
-        "Failed to remove track from queue";
+        'Failed to remove track from queue';
       toast.error(errorMessage, {
         duration: 3000,
       });
@@ -268,7 +268,7 @@ export function useUpdateQueuePositions() {
     mutationFn: updateQueuePositions,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queueQueryKeys.all });
-      toast.success("Queue order updated", {
+      toast.success('Queue order updated', {
         duration: 2000,
       });
     },
@@ -276,7 +276,7 @@ export function useUpdateQueuePositions() {
       const errorMessage =
         error?.response?.errors?.[0]?.message ||
         error?.message ||
-        "Failed to update queue positions";
+        'Failed to update queue positions';
       toast.error(errorMessage, {
         duration: 3000,
       });

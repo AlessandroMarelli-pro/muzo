@@ -1,9 +1,9 @@
-import { FavoriteList } from "@/components/favorites/favortite-list";
+import { FavoriteList } from '@/components/favorites/favortite-list';
 import {
   favoritePlaylistQueryOptions,
   playlistRecommendationsQueryOptions,
-} from "@/services/playlist-hooks";
-import { createFileRoute } from "@tanstack/react-router";
+} from '@/services/playlist-hooks';
+import { createFileRoute } from '@tanstack/react-router';
 
 function FavoritesPage() {
   const handleRefresh = async () => {
@@ -18,17 +18,17 @@ function FavoritesPage() {
       sortOrder="asc"
       filterStatus="all"
       searchQuery=""
-      onViewModeChange={(mode) => console.log("View mode changed:", mode)}
-      onSortChange={(sortBy) => console.log("Sort changed:", sortBy)}
-      onSortOrderChange={(order) => console.log("Sort order changed:", order)}
-      onFilterChange={(status) => console.log("Filter changed:", status)}
-      onSearchChange={(query) => console.log("Search changed:", query)}
+      onViewModeChange={(mode) => console.log('View mode changed:', mode)}
+      onSortChange={(sortBy) => console.log('Sort changed:', sortBy)}
+      onSortOrderChange={(order) => console.log('Sort order changed:', order)}
+      onFilterChange={(status) => console.log('Filter changed:', status)}
+      onSearchChange={(query) => console.log('Search changed:', query)}
       onRefresh={handleRefresh}
     />
   );
 }
 
-export const Route = createFileRoute("/favorites")({
+export const Route = createFileRoute('/favorites')({
   component: FavoritesPage,
   loader: async ({ context }) => {
     const favoritePlaylist = await context.queryClient.ensureQueryData(

@@ -1,18 +1,18 @@
-import { Button } from "@/components/ui/button";
+import { Button } from '@/components/ui/button';
 import {
   useAudioPlayerActions,
   useAudioPlayerContext,
   useCurrentTrack,
   useIsPlaying,
-} from "@/contexts/audio-player-context";
-import { cn } from "@/lib/utils";
-import { useWaveformData } from "@/services/music-player-hooks";
-import { useQueue } from "@/services/queue-hooks";
-import { useNavigate } from "@tanstack/react-router";
-import { Brain, Heart, Pause, Play, Shuffle, SkipBack, SkipForward } from "lucide-react";
-import React, { useEffect, useRef, useState } from "react";
-import { TrackMoreMenu } from "../track/track-more-menu";
-import { WaveformVisualizer } from "./waveform-visualizer";
+} from '@/contexts/audio-player-context';
+import { cn } from '@/lib/utils';
+import { useWaveformData } from '@/services/music-player-hooks';
+import { useQueue } from '@/services/queue-hooks';
+import { useNavigate } from '@tanstack/react-router';
+import { Brain, Heart, Pause, Play, Shuffle, SkipBack, SkipForward } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import { TrackMoreMenu } from '../track/track-more-menu';
+import { WaveformVisualizer } from './waveform-visualizer';
 
 interface MusicTrack {
   id: string;
@@ -30,7 +30,7 @@ interface EnhancedMusicPlayerProps {
   className?: string;
   showVisualizations?: boolean;
 }
-export const MUSIC_PLAYER_HEIGHT = "8vh";
+export const MUSIC_PLAYER_HEIGHT = '8vh';
 export const MUSIC_PLAYER_HEIGHT_CSS = `var(--music-player-height)`;
 
 export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
@@ -59,7 +59,7 @@ export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
 
   const actions = useAudioPlayerActions();
   const isPlaying = useIsPlaying();
-  const formattedImage = currentTrack?.imagePath || "Unknown Image";
+  const formattedImage = currentTrack?.imagePath || 'Unknown Image';
   // Get full playback state from context
   const { state: playbackState } = useAudioPlayerContext();
   // Update audio element when track changes - reload the audio source
@@ -78,7 +78,7 @@ export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
         // Only play if the playback state matches the current track
         // Use a promise to handle potential play() errors
         audioRef.current.play().catch((error) => {
-          console.error("Error playing audio:", error);
+          console.error('Error playing audio:', error);
         });
       } else {
         audioRef.current.pause();
@@ -88,7 +88,7 @@ export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
 
   // Queries for visualizations
   const { data: waveformData = [...Array(200)].map(() => 0.05) } = useWaveformData(
-    currentTrack?.id || "",
+    currentTrack?.id || '',
   );
 
   // Audio element event handlers
@@ -101,10 +101,10 @@ export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
       actions.next();
     };
 
-    audio.addEventListener("ended", handleEnded);
+    audio.addEventListener('ended', handleEnded);
 
     return () => {
-      audio.removeEventListener("ended", handleEnded);
+      audio.removeEventListener('ended', handleEnded);
     };
   }, [actions]);
 
@@ -140,14 +140,14 @@ export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
     <div
       style={
         {
-          "--music-player-height": MUSIC_PLAYER_HEIGHT,
+          '--music-player-height': MUSIC_PLAYER_HEIGHT,
         } as React.CSSProperties
       }
       className={cn(
         `fixed bottom-0 left-0 right-0 bg-background border-t border-border z-[999] h-(--music-player-height)`,
-        "flex flex-col",
+        'flex flex-col',
         className,
-        "bg-background shadow-lg",
+        'bg-background shadow-lg',
       )}
     >
       {currentTrack && (
@@ -173,10 +173,10 @@ export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
           {currentTrack && (
             <div className=" flex-1 w-[45%]">
               <p className="text-xs font-medium truncate capitalize">
-                {currentTrack.title || "Unknown Title"}
+                {currentTrack.title || 'Unknown Title'}
               </p>
               <p className="text-xs text-muted-foreground truncate capitalize">
-                {currentTrack.artist || "Unknown Artist"}
+                {currentTrack.artist || 'Unknown Artist'}
               </p>
             </div>
           )}
@@ -225,8 +225,8 @@ export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
               >
                 <Heart
                   className={cn(
-                    "h-4 w-4",
-                    playbackState?.isFavorite ? "fill-red-500 text-red-500" : "",
+                    'h-4 w-4',
+                    playbackState?.isFavorite ? 'fill-red-500 text-red-500' : '',
                   )}
                 />
               </Button>
@@ -239,9 +239,9 @@ export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
                 <Brain className="h-4 w-4" />
               </Button>
               <TrackMoreMenu
-                trackId={currentTrack?.id || ""}
-                artist={currentTrack?.artist || ""}
-                title={currentTrack?.title || ""}
+                trackId={currentTrack?.id || ''}
+                artist={currentTrack?.artist || ''}
+                title={currentTrack?.title || ''}
               />
             </div>
             {/* Visualizations */}
@@ -266,7 +266,7 @@ export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
           src={
             currentTrack ? `http://localhost:3000/api/audio/stream/${currentTrack.id}` : undefined
           }
-          style={{ display: "none" }}
+          style={{ display: 'none' }}
         />
       )}
     </div>

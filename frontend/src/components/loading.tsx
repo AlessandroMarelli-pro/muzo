@@ -1,5 +1,5 @@
-import { RefreshCw } from "lucide-react";
-import { Button } from "./ui/button";
+import { RefreshCw } from 'lucide-react';
+import { Button } from './ui/button';
 
 export const Loading = () => {
   return (

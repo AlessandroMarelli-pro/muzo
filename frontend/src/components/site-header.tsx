@@ -1,17 +1,17 @@
-import { QueueDrawer } from "@/components/queue/queue-sidebar";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
-import { SidebarTrigger } from "@/components/ui/sidebar";
-import { useQueue } from "@/services/queue-hooks";
-import { useLocation } from "@tanstack/react-router";
+import { QueueDrawer } from '@/components/queue/queue-sidebar';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
+import { SidebarTrigger } from '@/components/ui/sidebar';
+import { useQueue } from '@/services/queue-hooks';
+import { useLocation } from '@tanstack/react-router';
 
-import { ListMusic, Moon, Sun } from "lucide-react";
-import { useTheme } from "next-themes";
-import { useEffect, useState } from "react";
+import { ListMusic, Moon, Sun } from 'lucide-react';
+import { useTheme } from 'next-themes';
+import { useEffect, useState } from 'react';
 
-import { Switch } from "@/components/ui/switch";
-import { ScanProgress } from "./scan-progress";
+import { Switch } from '@/components/ui/switch';
+import { ScanProgress } from './scan-progress';
 
 interface SiteHeaderProps {}
 
@@ -21,7 +21,7 @@ export function SiteHeader(_props: SiteHeaderProps) {
   const { setTheme, resolvedTheme } = useTheme();
   const { data: queueItems = [] } = useQueue();
 
-  const isDark = resolvedTheme === "dark";
+  const isDark = resolvedTheme === 'dark';
 
   // Keyboard shortcut: CMD+J (Mac) or Ctrl+J (Windows/Linux) to toggle theme
   useEffect(() => {
@@ -36,32 +36,32 @@ export function SiteHeader(_props: SiteHeaderProps) {
       }
 
       // Check for CMD+J (Mac) or Ctrl+J (Windows/Linux)
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "j") {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'j') {
         event.preventDefault();
-        setTheme(isDark ? "light" : "dark");
+        setTheme(isDark ? 'light' : 'dark');
       }
     };
 
-    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener('keydown', handleKeyDown);
     return () => {
-      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener('keydown', handleKeyDown);
     };
   }, [isDark, setTheme]);
 
   // Get the current page title from the pathname
   const getPageTitle = (pathname: string) => {
-    if (pathname === "/") return "Home";
-    if (pathname === "/music") return "Music";
-    if (pathname === "/categories") return "Categories";
-    if (pathname === "/libraries") return "Libraries";
-    if (pathname.startsWith("/libraries/")) return "Library Dashboard";
-    if (pathname === "/playlists") return "Playlists";
-    if (pathname.startsWith("/playlists/")) return "Playlist Details";
-    if (pathname === "/favorites") return "Favorites";
-    if (pathname === "/settings") return "Settings";
-    if (pathname === "/research") return "Research";
-    if (pathname.startsWith("/research/")) return "Research";
-    return "Muzo";
+    if (pathname === '/') return 'Home';
+    if (pathname === '/music') return 'Music';
+    if (pathname === '/categories') return 'Categories';
+    if (pathname === '/libraries') return 'Libraries';
+    if (pathname.startsWith('/libraries/')) return 'Library Dashboard';
+    if (pathname === '/playlists') return 'Playlists';
+    if (pathname.startsWith('/playlists/')) return 'Playlist Details';
+    if (pathname === '/favorites') return 'Favorites';
+    if (pathname === '/settings') return 'Settings';
+    if (pathname === '/research') return 'Research';
+    if (pathname.startsWith('/research/')) return 'Research';
+    return 'Muzo';
   };
 
   return (
@@ -78,7 +78,7 @@ export function SiteHeader(_props: SiteHeaderProps) {
             <ScanProgress />
             <Switch
               checked={isDark}
-              onCheckedChange={(checked: boolean) => setTheme(checked ? "dark" : "light")}
+              onCheckedChange={(checked: boolean) => setTheme(checked ? 'dark' : 'light')}
               aria-label="Toggle night mode"
             >
               {isDark ? (
@@ -89,7 +89,7 @@ export function SiteHeader(_props: SiteHeaderProps) {
             </Switch>
           </div>
         </div>
-        <Separator orientation="vertical" className="mx-2 data-[orientation=vertical]:h-4" />{" "}
+        <Separator orientation="vertical" className="mx-2 data-[orientation=vertical]:h-4" />{' '}
         <Button
           variant="ghost"
           size="icon"

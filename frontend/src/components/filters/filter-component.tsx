@@ -1,15 +1,15 @@
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import MultiSelect from "@/components/ui/multi-select";
-import { Slider } from "@/components/ui/slider";
-import { useFilters } from "@/contexts/filter-context";
-import { useFilterOptionsData } from "@/hooks/useFilterOptions";
-import { cn } from "@/lib/utils";
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import MultiSelect from '@/components/ui/multi-select';
+import { Slider } from '@/components/ui/slider';
+import { useFilters } from '@/contexts/filter-context';
+import { useFilterOptionsData } from '@/hooks/useFilterOptions';
+import { cn } from '@/lib/utils';
 
-import { FunnelX } from "lucide-react";
-import { useEffect } from "react";
-import { Field, FieldGroup, FieldLabel } from "../ui/field";
-import { Input } from "../ui/input";
+import { FunnelX } from 'lucide-react';
+import { useEffect } from 'react';
+import { Field, FieldGroup, FieldLabel } from '../ui/field';
+import { Input } from '../ui/input';
 
 export const SliderComponent = ({
   handleChange,
@@ -41,7 +41,7 @@ export const SliderComponent = ({
     </div>
 
     <Slider
-      id={id + "-slider"}
+      id={id + '-slider'}
       min={rangeMinValue}
       max={rangeMaxValue}
       step={step}
@@ -74,9 +74,9 @@ export const FilterComponent = ({
   const handleSaveFilter = async () => {
     try {
       //await saveCurrentFilter();
-      console.log("filters", filters);
+      console.log('filters', filters);
     } catch (error) {
-      console.error("Failed to save filter:", error);
+      console.error('Failed to save filter:', error);
     }
   };
   useEffect(() => {
@@ -88,36 +88,36 @@ export const FilterComponent = ({
   }, [options.isLoading]);
 
   const handleGenreChange = (selected: string[]) => {
-    updateFilter("genres", selected);
+    updateFilter('genres', selected);
   };
 
   const handleSubgenreChange = (selected: string[]) => {
-    updateFilter("subgenres", selected);
+    updateFilter('subgenres', selected);
   };
 
   const handleKeyChange = (selected: string[]) => {
-    updateFilter("keyIds", selected);
+    updateFilter('keyIds', selected);
   };
 
   const handleTempoChange = (value: number[]) => {
-    updateFilter("tempo", { min: value[0], max: value[1] });
+    updateFilter('tempo', { min: value[0], max: value[1] });
   };
 
   const handleAtmosphereChange = (selected: string[]) => {
-    updateFilter("atmosphereIds", selected);
+    updateFilter('atmosphereIds', selected);
   };
 
   const handleArtistChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    updateFilter("artist", value);
+    updateFilter('artist', value);
   };
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    updateFilter("title", value);
+    updateFilter('title', value);
   };
 
   return (
-    <div className={cn("flex flex-col gap-2 py-6 w-full  ", className)}>
+    <div className={cn('flex flex-col gap-2 py-6 w-full  ', className)}>
       <FieldGroup className="grid  grid-cols-2">
         <Field>
           <FieldLabel htmlFor="input-artist">Artist</FieldLabel>

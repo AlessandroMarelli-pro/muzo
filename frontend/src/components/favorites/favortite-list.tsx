@@ -1,34 +1,34 @@
-import { Track } from "@/__generated__/types";
-import { Badge } from "@/components/ui/badge";
-import { useAudioPlayerActions, useAudioPlayerContext } from "@/contexts/audio-player-context";
-import { Route } from "@/routes/favorites";
-import { AnalysisStatus } from "@/services/api-hooks";
-import { useRouter } from "@tanstack/react-router";
-import { Music, Search, Sparkles } from "lucide-react";
-import React, { useEffect } from "react";
-import { NoData } from "../no-data";
-import { TrackRecommendations } from "../playlist/track-recommendations";
-import { HorizontalMusicCardList } from "../track/music-card";
-import { Input } from "../ui/input";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
+import { Track } from '@/__generated__/types';
+import { Badge } from '@/components/ui/badge';
+import { useAudioPlayerActions, useAudioPlayerContext } from '@/contexts/audio-player-context';
+import { Route } from '@/routes/favorites';
+import { AnalysisStatus } from '@/services/api-hooks';
+import { useRouter } from '@tanstack/react-router';
+import { Music, Search, Sparkles } from 'lucide-react';
+import React, { useEffect } from 'react';
+import { NoData } from '../no-data';
+import { TrackRecommendations } from '../playlist/track-recommendations';
+import { HorizontalMusicCardList } from '../track/music-card';
+import { Input } from '../ui/input';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 
 interface TrackListProps {
-  viewMode?: "grid" | "list";
-  sortBy?: "title" | "artist" | "album" | "duration" | "added";
-  sortOrder?: "asc" | "desc";
-  filterStatus?: AnalysisStatus | "all";
+  viewMode?: 'grid' | 'list';
+  sortBy?: 'title' | 'artist' | 'album' | 'duration' | 'added';
+  sortOrder?: 'asc' | 'desc';
+  filterStatus?: AnalysisStatus | 'all';
   searchQuery?: string;
-  onViewModeChange: (mode: "grid" | "list") => void;
-  onSortChange: (sortBy: "title" | "artist" | "album" | "duration" | "added") => void;
-  onSortOrderChange: (order: "asc" | "desc") => void;
-  onFilterChange: (status: AnalysisStatus | "all") => void;
+  onViewModeChange: (mode: 'grid' | 'list') => void;
+  onSortChange: (sortBy: 'title' | 'artist' | 'album' | 'duration' | 'added') => void;
+  onSortOrderChange: (order: 'asc' | 'desc') => void;
+  onFilterChange: (status: AnalysisStatus | 'all') => void;
   onSearchChange: (query: string) => void;
   onRefresh: () => void;
 }
 
 export const FavoriteList: React.FC<TrackListProps> = ({
-  viewMode: _viewMode = "grid",
-  searchQuery = "",
+  viewMode: _viewMode = 'grid',
+  searchQuery = '',
   onSearchChange,
 }) => {
   const { playlist, recommendations } = Route.useLoaderData();
@@ -60,9 +60,9 @@ export const FavoriteList: React.FC<TrackListProps> = ({
         Icon={Music}
         title="No Tracks Found"
         subtitle={
-          searchQuery ? `No tracks match "${searchQuery}"` : "No tracks available in this library"
+          searchQuery ? `No tracks match "${searchQuery}"` : 'No tracks available in this library'
         }
-        buttonAction={searchQuery ? () => onSearchChange("") : undefined}
+        buttonAction={searchQuery ? () => onSearchChange('') : undefined}
         buttonLabel="Clear Search"
       />
     );
@@ -99,7 +99,7 @@ export const FavoriteList: React.FC<TrackListProps> = ({
         numberOfCards={8}
       />
       {/* Tabs */}
-      <Tabs value={"recommendations"} onValueChange={() => {}}>
+      <Tabs value={'recommendations'} onValueChange={() => {}}>
         <TabsList>
           <TabsTrigger value="recommendations">
             <Sparkles className="h-4 w-4 " />
@@ -109,7 +109,7 @@ export const FavoriteList: React.FC<TrackListProps> = ({
 
         <TabsContent value="recommendations" className="space-y-4">
           <TrackRecommendations
-            playlistId={playlist?.id ?? ""}
+            playlistId={playlist?.id ?? ''}
             onTrackAdded={addTrackToFavorite}
             recommendations={recommendations}
           />

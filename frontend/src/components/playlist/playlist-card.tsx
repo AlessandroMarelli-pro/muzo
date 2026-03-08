@@ -1,19 +1,19 @@
-import { Playlist } from "@/__generated__/types";
-import { cn } from "@/lib/utils";
-import { useDeletePlaylist, useExportPlaylistToM3U } from "@/services/playlist-hooks";
-import { useRouter } from "@tanstack/react-router";
-import { Eye, MoreHorizontal } from "lucide-react";
-import { AnimatePresence, motion } from "motion/react";
-import { useState } from "react";
-import { Button } from "../ui/button";
-import { Card, CardContent } from "../ui/card";
+import { Playlist } from '@/__generated__/types';
+import { cn } from '@/lib/utils';
+import { useDeletePlaylist, useExportPlaylistToM3U } from '@/services/playlist-hooks';
+import { useRouter } from '@tanstack/react-router';
+import { Eye, MoreHorizontal } from 'lucide-react';
+import { AnimatePresence, motion } from 'motion/react';
+import { useState } from 'react';
+import { Button } from '../ui/button';
+import { Card, CardContent } from '../ui/card';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "../ui/dropdown-menu";
-import { Skeleton } from "../ui/skeleton";
+} from '../ui/dropdown-menu';
+import { Skeleton } from '../ui/skeleton';
 // Note: This app uses custom view state instead of routing
 // Navigation should be handled by parent component
 
@@ -27,7 +27,7 @@ export const PlaylistCardSkeleton = () => {
   return (
     <Card className="flex flex-col p-0 gap-0 ">
       <div className=" flex justify-center items-center flex-wrap p-0 max-w-60 max-h-60 min-w-60 min-h-60 rounded-t-md">
-        <Skeleton className={cn("w-full h-full rounded-none rounded-t-md")} />
+        <Skeleton className={cn('w-full h-full rounded-none rounded-t-md')} />
       </div>
       <CardContent className="p-2 h-full w-full  border-none gap-0">
         <div className="flex flex-col h-full space-around gap-2">
@@ -65,13 +65,13 @@ export function PlaylistCard({ playlist, onViewDetails, onCardClick }: PlaylistC
       });
       await refetch();
     } catch (error) {
-      console.error("Failed to delete playlist:", error);
+      console.error('Failed to delete playlist:', error);
     }
   };
 
   const handlePlay = () => {
     // TODO: Implement playlist playback
-    console.log("Playing playlist:", playlist.id);
+    console.log('Playing playlist:', playlist.id);
   };
 
   const handleEdit = () => {
@@ -83,18 +83,18 @@ export function PlaylistCard({ playlist, onViewDetails, onCardClick }: PlaylistC
       const m3uContent = await exportPlaylistMutation.mutateAsync(playlist.id);
 
       // Create a blob and download the file
-      const blob = new Blob([m3uContent], { type: "audio/mpegurl" });
+      const blob = new Blob([m3uContent], { type: 'audio/mpegurl' });
       const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
+      const link = document.createElement('a');
       link.href = url;
-      link.download = `${playlist.name.replace(/[^a-z0-9]/gi, "_")}.m3u`;
+      link.download = `${playlist.name.replace(/[^a-z0-9]/gi, '_')}.m3u`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
     } catch (error) {
-      console.error("Failed to export playlist:", error);
-      alert("Failed to export playlist. Please try again.");
+      console.error('Failed to export playlist:', error);
+      alert('Failed to export playlist. Please try again.');
     }
   };
   const images = playlist.stats?.images?.slice(0, 4) || [];
@@ -107,8 +107,8 @@ export function PlaylistCard({ playlist, onViewDetails, onCardClick }: PlaylistC
     <Card
       key={playlist.id}
       className={cn(
-        "flex flex-col   rounded-none p-0 border-none bg-background gap-2 shadow-none ",
-        onCardClick && "cursor-pointer",
+        'flex flex-col   rounded-none p-0 border-none bg-background gap-2 shadow-none ',
+        onCardClick && 'cursor-pointer',
       )}
       onClick={handleCardClick}
     >
@@ -128,7 +128,7 @@ export function PlaylistCard({ playlist, onViewDetails, onCardClick }: PlaylistC
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.3, ease: "easeInOut" }}
+              transition={{ duration: 0.3, ease: 'easeInOut' }}
             >
               <div className="absolute top-0 left-0 h-full w-full mask-t-from-0% mask-t-to-50% transition-[opacity,transform] duration-300 bg-background/90  rounded-t-md " />
               <Button
@@ -172,9 +172,9 @@ export function PlaylistCard({ playlist, onViewDetails, onCardClick }: PlaylistC
                 width={120}
                 height={120}
                 className={cn(
-                  "w-full h-full object-cover  ",
-                  index === 0 && "rounded-tl-md",
-                  index === 1 && "rounded-tr-md",
+                  'w-full h-full object-cover  ',
+                  index === 0 && 'rounded-tl-md',
+                  index === 1 && 'rounded-tr-md',
                 )}
               />
             </div>
@@ -186,7 +186,7 @@ export function PlaylistCard({ playlist, onViewDetails, onCardClick }: PlaylistC
               alt="Album Art"
               width={240}
               height={240}
-              className={cn("w-full h-full object-cover  rounded-t-md")}
+              className={cn('w-full h-full object-cover  rounded-t-md')}
             />
           </div>
         )}

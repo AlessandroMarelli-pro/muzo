@@ -1,7 +1,7 @@
-import { flexRender, type Table as TanstackTable } from "@tanstack/react-table";
-import type * as React from "react";
+import { flexRender, type Table as TanstackTable } from '@tanstack/react-table';
+import type * as React from 'react';
 
-import { DataTablePagination } from "@/components/data-table/data-table-pagination";
+import { DataTablePagination } from '@/components/data-table/data-table-pagination';
 import {
   Table,
   TableBody,
@@ -9,12 +9,12 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { getCommonPinningStyles } from "@/lib/data-table";
-import { cn } from "@/lib/utils";
-import { Loading } from "../loading";
+} from '@/components/ui/table';
+import { getCommonPinningStyles } from '@/lib/data-table';
+import { cn } from '@/lib/utils';
+import { Loading } from '../loading';
 
-interface DataTableProps<TData> extends React.ComponentProps<"div"> {
+interface DataTableProps<TData> extends React.ComponentProps<'div'> {
   table: TanstackTable<TData>;
   actionBar?: React.ReactNode;
   isLoading?: boolean;
@@ -31,7 +31,7 @@ export function DataTable<TData>({
   return (
     <div
       className={cn(
-        "flex w-full flex-col gap-2.5 overflow-auto justify-center items-center",
+        'flex w-full flex-col gap-2.5 overflow-auto justify-center items-center',
         className,
       )}
       {...props}
@@ -63,7 +63,7 @@ export function DataTable<TData>({
               table.getRowModel().rows.map((row) => (
                 <TableRow
                   key={row.id}
-                  data-state={row.getIsSelected() && "selected"}
+                  data-state={row.getIsSelected() && 'selected'}
                   className="[content-visibility:auto] [contain-intrinsic-size:0_2.5rem]"
                 >
                   {row.getVisibleCells().map((cell) => (
@@ -81,7 +81,7 @@ export function DataTable<TData>({
             ) : (
               <TableRow>
                 <TableCell colSpan={table.getAllColumns().length} className="h-24 text-center">
-                  {isLoading ? <Loading /> : "No results."}
+                  {isLoading ? <Loading /> : 'No results.'}
                 </TableCell>
               </TableRow>
             )}

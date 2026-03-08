@@ -1,12 +1,12 @@
-import { Track } from "@/__generated__/types";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { useTracks } from "@/services/api-hooks";
-import { ListFilter } from "lucide-react";
-import { useEffect, useState } from "react";
-import { useInView } from "react-intersection-observer";
-import { FilterComponent } from "../filters/filter-component";
-import MusicCard from "../track/music-card";
-import { Button } from "../ui/button";
+import { Track } from '@/__generated__/types';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { useTracks } from '@/services/api-hooks';
+import { ListFilter } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { useInView } from 'react-intersection-observer';
+import { FilterComponent } from '../filters/filter-component';
+import MusicCard from '../track/music-card';
+import { Button } from '../ui/button';
 
 interface AddTrackDrawer {
   open: boolean;
@@ -20,7 +20,7 @@ export function AddTrackDrawer({ open, onOpenChange, addTrackToPlaylist }: AddTr
 
   const { data, isFetchingNextPage, hasNextPage, fetchNextPage } = useTracks({
     pagination: {
-      direction: "AFTER",
+      direction: 'AFTER',
       size: 50,
     },
   });
@@ -59,10 +59,10 @@ export function AddTrackDrawer({ open, onOpenChange, addTrackToPlaylist }: AddTr
         <div className="w-full flex flex-row gap-4">
           {shouldDisplayFilter && <FilterComponent className="w-full min-w-[300px]" />}
           <div className="max-h-[80vh] overflow-y-scroll">
-            <div className={"flex flex-wrap  justify-center gap-5    py-4 min-w-[600px]"}>
+            <div className={'flex flex-wrap  justify-center gap-5    py-4 min-w-[600px]'}>
               {tracks?.map((track) => (
                 <MusicCard
-                  key={track?.id || ""}
+                  key={track?.id || ''}
                   track={track as Track}
                   onAdd={addTrackToPlaylist}
                   width="235"
@@ -78,7 +78,7 @@ export function AddTrackDrawer({ open, onOpenChange, addTrackToPlaylist }: AddTr
                 onClick={() => fetchNextPage()}
                 disabled={!hasNextPage || isFetchingNextPage}
               >
-                {isFetchingNextPage ? "Loading more…" : hasNextPage ? "Load More" : null}
+                {isFetchingNextPage ? 'Loading more…' : hasNextPage ? 'Load More' : null}
               </Button>
             </div>
           </div>

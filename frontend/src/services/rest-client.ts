@@ -1,18 +1,18 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery } from '@tanstack/react-query';
 
 // REST API client for non-GraphQL endpoints
 class RestClient {
   private baseUrl: string;
 
-  constructor(baseUrl: string = "http://localhost:3000") {
+  constructor(baseUrl: string = 'http://localhost:3000') {
     this.baseUrl = baseUrl;
   }
 
   async post<T = any>(endpoint: string, data?: any): Promise<T> {
     const response = await fetch(`${this.baseUrl}${endpoint}`, {
-      method: "POST",
+      method: 'POST',
       headers: {
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
       },
       body: data ? JSON.stringify(data) : undefined,
     });
@@ -36,7 +36,7 @@ class RestClient {
 
   async delete<T = any>(endpoint: string): Promise<T> {
     const response = await fetch(`${this.baseUrl}${endpoint}`, {
-      method: "DELETE",
+      method: 'DELETE',
     });
 
     if (!response.ok) {
@@ -52,7 +52,7 @@ export const restClient = new RestClient();
 // Scan progress operations
 export const useActiveScanSessions = () => {
   return useQuery({
-    queryKey: ["scan-sessions", "active"],
+    queryKey: ['scan-sessions', 'active'],
     queryFn: async () => {
       const response = await restClient.get<{
         data: Array<{
@@ -68,7 +68,7 @@ export const useActiveScanSessions = () => {
           completedAt: string;
           overallProgress: number;
         }>;
-      }>("/scan-progress/active");
+      }>('/scan-progress/active');
       return response.data;
     },
     refetchInterval: 10000, // Refetch every 10 seconds to catch new sessions
@@ -77,7 +77,7 @@ export const useActiveScanSessions = () => {
 
 export const useCompletedScanSessions = () => {
   return useQuery({
-    queryKey: ["scan-sessions", "completed"],
+    queryKey: ['scan-sessions', 'completed'],
     queryFn: async () => {
       const response = await restClient.get<{
         data: Array<{
@@ -93,7 +93,7 @@ export const useCompletedScanSessions = () => {
           completedAt: string;
           overallProgress: number;
         }>;
-      }>("/scan-progress/completed");
+      }>('/scan-progress/completed');
       return response.data;
     },
   });

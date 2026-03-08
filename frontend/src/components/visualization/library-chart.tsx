@@ -1,9 +1,9 @@
-import type { Track } from "@/__generated__/types";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { AnalysisStatus } from "@/services/api-hooks";
-import { BarChart3, Calendar, Music, PieChart as PieChartIcon, TrendingUp } from "lucide-react";
-import React from "react";
+import type { Track } from '@/__generated__/types';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { AnalysisStatus } from '@/services/api-hooks';
+import { BarChart3, Calendar, Music, PieChart as PieChartIcon, TrendingUp } from 'lucide-react';
+import React from 'react';
 import {
   Bar,
   BarChart,
@@ -17,8 +17,8 @@ import {
   Tooltip,
   XAxis,
   YAxis,
-} from "recharts";
-import { NoData } from "../no-data";
+} from 'recharts';
+import { NoData } from '../no-data';
 
 interface LibraryChartProps {
   tracks: Track[];
@@ -38,7 +38,7 @@ const ChartCard: React.FC<ChartCardProps> = ({
   description,
   icon,
   children,
-  className = "",
+  className = '',
 }) => (
   <Card className={className}>
     <CardHeader>
@@ -53,16 +53,16 @@ const ChartCard: React.FC<ChartCardProps> = ({
 );
 
 const COLORS = [
-  "#0088FE",
-  "#00C49F",
-  "#FFBB28",
-  "#FF8042",
-  "#8884D8",
-  "#82CA9D",
-  "#FFC658",
-  "#FF7C7C",
-  "#8DD1E1",
-  "#D084D0",
+  '#0088FE',
+  '#00C49F',
+  '#FFBB28',
+  '#FF8042',
+  '#8884D8',
+  '#82CA9D',
+  '#FFC658',
+  '#FF7C7C',
+  '#8DD1E1',
+  '#D084D0',
 ];
 
 const getAnalysisStatusData = (tracks: Track[]) => {
@@ -93,7 +93,7 @@ const getGenreData = (tracks: Track[]) => {
         genreCounts[genre] = (genreCounts[genre] || 0) + 1;
       });
     } else {
-      genreCounts["Unknown"] = (genreCounts["Unknown"] || 0) + 1;
+      genreCounts['Unknown'] = (genreCounts['Unknown'] || 0) + 1;
     }
   });
 

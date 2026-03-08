@@ -1,11 +1,11 @@
-import { Track } from "@/__generated__/types";
-import { TrackList } from "@/components/track/track-list";
-import { useFilters } from "@/contexts/filter-context";
-import { useFilterOptionsData } from "@/hooks/useFilterOptions";
-import { ExtendedColumnSort } from "@/types/data-table";
-import { createFileRoute } from "@tanstack/react-router";
-import { useMemo } from "react";
-import { z } from "zod";
+import { Track } from '@/__generated__/types';
+import { TrackList } from '@/components/track/track-list';
+import { useFilters } from '@/contexts/filter-context';
+import { useFilterOptionsData } from '@/hooks/useFilterOptions';
+import { ExtendedColumnSort } from '@/types/data-table';
+import { createFileRoute } from '@tanstack/react-router';
+import { useMemo } from 'react';
+import { z } from 'zod';
 
 function MusicPage() {
   const { page, perPage, sort } = Route.useSearch();
@@ -49,31 +49,31 @@ const productSearchSchema = z.object({
     .array(
       z.object({
         id: z.enum([
-          "title",
-          "artist",
-          "album",
-          "duration",
-          "createdAt",
-          "listeningCount",
-          "tempo",
-          "danceabilityFeeling",
-          "arousalMood",
-          "valenceMood",
-          "libraryId",
-          "genre",
-          "subgenre",
-          "favorite",
-          "lastPlayed",
-          "lastScannedAt",
-          "fileCreatedAt",
-          "key",
+          'title',
+          'artist',
+          'album',
+          'duration',
+          'createdAt',
+          'listeningCount',
+          'tempo',
+          'danceabilityFeeling',
+          'arousalMood',
+          'valenceMood',
+          'libraryId',
+          'genre',
+          'subgenre',
+          'favorite',
+          'lastPlayed',
+          'lastScannedAt',
+          'fileCreatedAt',
+          'key',
         ]),
         desc: z.boolean(),
       }),
     )
-    .default([{ id: "fileCreatedAt", desc: true }]),
+    .default([{ id: 'fileCreatedAt', desc: true }]),
 });
-export const Route = createFileRoute("/music")({
+export const Route = createFileRoute('/music')({
   component: MusicPage,
   validateSearch: productSearchSchema,
 });

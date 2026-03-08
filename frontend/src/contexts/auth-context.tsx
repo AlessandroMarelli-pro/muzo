@@ -1,6 +1,6 @@
-import { User } from "@/__generated__/types";
-import { useUser } from "@/services/user-hooks";
-import { createContext, useContext } from "react";
+import { User } from '@/__generated__/types';
+import { useUser } from '@/services/user-hooks';
+import { createContext, useContext } from 'react';
 
 export const AuthContext = createContext<
   { user: User | undefined; isLoading: boolean } | undefined
@@ -19,7 +19,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error("useAuth must be used within a AuthProvider");
+    throw new Error('useAuth must be used within a AuthProvider');
   }
   return context;
 };

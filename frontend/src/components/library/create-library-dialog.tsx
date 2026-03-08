@@ -1,7 +1,7 @@
-import type { CreateLibraryInput } from "@/__generated__/types";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import type { CreateLibraryInput } from '@/__generated__/types';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
   Sheet,
   SheetContent,
@@ -9,12 +9,12 @@ import {
   SheetFooter,
   SheetHeader,
   SheetTitle,
-} from "@/components/ui/sheet";
-import { useCreateLibrary } from "@/services/api-hooks";
-import { useRouter } from "@tanstack/react-router";
-import { FolderOpen, Settings } from "lucide-react";
-import React, { useState } from "react";
-import { Field, FieldLabel } from "../ui/field";
+} from '@/components/ui/sheet';
+import { useCreateLibrary } from '@/services/api-hooks';
+import { useRouter } from '@tanstack/react-router';
+import { FolderOpen, Settings } from 'lucide-react';
+import React, { useState } from 'react';
+import { Field, FieldLabel } from '../ui/field';
 
 interface CreateLibraryDialogProps {
   open: boolean;
@@ -30,12 +30,12 @@ export const CreateLibraryDialog: React.FC<CreateLibraryDialogProps> = ({
   const createLibraryMutation = useCreateLibrary();
   const router = useRouter();
   const [formData, setFormData] = useState<CreateLibraryInput>({
-    name: "",
-    rootPath: "",
+    name: '',
+    rootPath: '',
     autoScan: true,
     scanInterval: 24,
     includeSubdirectories: true,
-    supportedFormats: ["MP3", "FLAC", "WAV", "AAC", "OGG", "OPUS", "M4A"],
+    supportedFormats: ['MP3', 'FLAC', 'WAV', 'AAC', 'OGG', 'OPUS', 'M4A'],
     maxFileSize: 100 * 1024 * 1024, // 100MB
   });
 
@@ -45,7 +45,7 @@ export const CreateLibraryDialog: React.FC<CreateLibraryDialogProps> = ({
     setFormData((prev) => ({ ...prev, [field]: value }));
     // Clear error when user starts typing
     if (errors[field]) {
-      setErrors((prev) => ({ ...prev, [field]: "" }));
+      setErrors((prev) => ({ ...prev, [field]: '' }));
     }
   };
 
@@ -53,19 +53,20 @@ export const CreateLibraryDialog: React.FC<CreateLibraryDialogProps> = ({
     const newErrors: Record<string, string> = {};
 
     if (!formData.name.trim()) {
-      newErrors.name = "Library name is required. Enter a name for your library.";
+      newErrors.name = 'Library name is required. Enter a name for your library.';
     }
 
     if (!formData.rootPath.trim()) {
-      newErrors.rootPath = "Root path is required. Enter the folder path where your music is stored.";
+      newErrors.rootPath =
+        'Root path is required. Enter the folder path where your music is stored.';
     }
 
     if (formData.scanInterval && formData.scanInterval < 1) {
-      newErrors.scanInterval = "Scan interval must be at least 1 hour";
+      newErrors.scanInterval = 'Scan interval must be at least 1 hour';
     }
 
     if (formData.maxFileSize && formData.maxFileSize < 1024 * 1024) {
-      newErrors.maxFileSize = "Max file size must be at least 1MB";
+      newErrors.maxFileSize = 'Max file size must be at least 1MB';
     }
 
     setErrors(newErrors);
@@ -96,7 +97,7 @@ export const CreateLibraryDialog: React.FC<CreateLibraryDialogProps> = ({
       onOpenChange(false);
       await router.invalidate();
     } catch (error) {
-      console.error("Failed to create library:", error);
+      console.error('Failed to create library:', error);
     }
   };
 
@@ -134,12 +135,12 @@ export const CreateLibraryDialog: React.FC<CreateLibraryDialogProps> = ({
                     type="text"
                     autoComplete="off"
                     value={formData.name}
-                    onChange={(e) => handleInputChange("name", e.target.value)}
+                    onChange={(e) => handleInputChange('name', e.target.value)}
                     placeholder="My Music Library"
                     disabled={createLibraryMutation.isPending}
                     className="w-xs"
                     aria-invalid={!!errors.name}
-                    aria-describedby={errors.name ? "name-error" : undefined}
+                    aria-describedby={errors.name ? 'name-error' : undefined}
                   />
                 </Field>
                 {errors.name && (
@@ -158,20 +159,20 @@ export const CreateLibraryDialog: React.FC<CreateLibraryDialogProps> = ({
                     type="text"
                     autoComplete="off"
                     value={formData.rootPath}
-                    onChange={(e) => handleInputChange("rootPath", e.target.value)}
+                    onChange={(e) => handleInputChange('rootPath', e.target.value)}
                     placeholder="/path/to/your/music"
                     disabled={createLibraryMutation.isPending}
                     className="w-xs"
                     aria-invalid={!!errors.rootPath}
-                    aria-describedby={errors.rootPath ? "rootPath-error" : undefined}
+                    aria-describedby={errors.rootPath ? 'rootPath-error' : undefined}
                   />
                 </Field>
 
                 {errors.rootPath && (
-                <p id="rootPath-error" className="text-sm text-red-600" role="alert">
-                  {errors.rootPath}
-                </p>
-              )}
+                  <p id="rootPath-error" className="text-sm text-red-600" role="alert">
+                    {errors.rootPath}
+                  </p>
+                )}
               </div>
             </div>
 
@@ -191,7 +192,7 @@ export const CreateLibraryDialog: React.FC<CreateLibraryDialogProps> = ({
                     min="1"
                     value={formData.scanInterval || 0}
                     onChange={(e) =>
-                      handleInputChange("scanInterval", parseInt(e.target.value) || 0)
+                      handleInputChange('scanInterval', parseInt(e.target.value) || 0)
                     }
                     disabled={createLibraryMutation.isPending}
                     className="w-xs"
@@ -219,9 +220,9 @@ export const CreateLibraryDialog: React.FC<CreateLibraryDialogProps> = ({
                   id="maxFileSize"
                   type="number"
                   min="1"
-                  value={formData.maxFileSize ? formData.maxFileSize / (1024 * 1024) : ""}
+                  value={formData.maxFileSize ? formData.maxFileSize / (1024 * 1024) : ''}
                   onChange={(e) =>
-                    handleInputChange("maxFileSize", (parseInt(e.target.value) || 0) * 1024 * 1024)
+                    handleInputChange('maxFileSize', (parseInt(e.target.value) || 0) * 1024 * 1024)
                   }
                   disabled={createLibraryMutation.isPending}
                   className="w-xs"
@@ -234,8 +235,8 @@ export const CreateLibraryDialog: React.FC<CreateLibraryDialogProps> = ({
             {createLibraryMutation.isError && (
               <div className="p-4 bg-red-50 border border-red-200 rounded-md">
                 <p className="text-sm text-red-600">
-                  Failed to create library:{" "}
-                  {createLibraryMutation.error?.message || "Unknown error"}
+                  Failed to create library:{' '}
+                  {createLibraryMutation.error?.message || 'Unknown error'}
                 </p>
               </div>
             )}
@@ -258,7 +259,7 @@ export const CreateLibraryDialog: React.FC<CreateLibraryDialogProps> = ({
                 !formData.rootPath.trim()
               }
             >
-              {createLibraryMutation.isPending ? "Creating…" : "Create Library"}
+              {createLibraryMutation.isPending ? 'Creating…' : 'Create Library'}
             </Button>
           </SheetFooter>
         </form>

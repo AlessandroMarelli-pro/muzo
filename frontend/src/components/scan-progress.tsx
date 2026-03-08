@@ -1,14 +1,14 @@
-import { Progress } from "@/components/ui/progress";
-import { useScanSessionContext } from "@/contexts/scan-session.context";
-import { useScanProgress } from "@/services/sse-service";
-import { formatDate, formatDuration, intervalToDuration } from "date-fns";
-import { Loader } from "lucide-react";
-import React, { useEffect, useRef, useState } from "react";
-import { ExternalToast, toast } from "sonner";
-import { Field, FieldLabel } from "./ui/field";
+import { Progress } from '@/components/ui/progress';
+import { useScanSessionContext } from '@/contexts/scan-session.context';
+import { useScanProgress } from '@/services/sse-service';
+import { formatDate, formatDuration, intervalToDuration } from 'date-fns';
+import { Loader } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import { ExternalToast, toast } from 'sonner';
+import { Field, FieldLabel } from './ui/field';
 const toastOptions: ExternalToast = {
   duration: 5000,
-  position: "bottom-right",
+  position: 'bottom-right',
 };
 
 export const ScanProgress = React.memo(() => {
@@ -34,7 +34,7 @@ export const ScanProgress = React.memo(() => {
 
   // Handle scan.complete event
   useEffect(() => {
-    if (scanProgress?.type === "scan.complete") {
+    if (scanProgress?.type === 'scan.complete') {
       const eventKey = `scan.complete-${scanProgress.timestamp}`;
       if (!processedEvents.current.has(eventKey)) {
         const durationSec = scanProgress.data?.duration || 0;
@@ -43,14 +43,14 @@ export const ScanProgress = React.memo(() => {
         toast.success(`Scan completed in ${formatDuration(duration)}`, toastOptions);
       }
     }
-    if (scanProgress?.type === "scan.started") {
+    if (scanProgress?.type === 'scan.started') {
       const eventKey = `scan.started-${scanProgress.timestamp}`;
       if (!processedEvents.current.has(eventKey)) {
         processedEvents.current.add(eventKey);
-        toast.info("Scan started", toastOptions);
+        toast.info('Scan started', toastOptions);
       }
     }
-    if (scanProgress?.type === "track.complete" && scanProgress.data) {
+    if (scanProgress?.type === 'track.complete' && scanProgress.data) {
       const eventKey = `track.complete-${scanProgress.timestamp}-${scanProgress.data.trackIndex}`;
       if (!processedEvents.current.has(eventKey)) {
         processedEvents.current.add(eventKey);
@@ -77,7 +77,7 @@ export const ScanProgress = React.memo(() => {
       {!scanProgress && lastScanCompletedAt && duration && (
         <div className="flex items-center justify-end gap-2 w-full">
           <span>
-            Last scan completed: {formatDate(new Date(lastScanCompletedAt), "MM/dd/yyyy HH:mm")} in{" "}
+            Last scan completed: {formatDate(new Date(lastScanCompletedAt), 'MM/dd/yyyy HH:mm')} in{' '}
             {formatDuration(duration)}
           </span>
         </div>

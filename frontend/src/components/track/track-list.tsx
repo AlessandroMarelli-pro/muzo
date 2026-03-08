@@ -1,11 +1,11 @@
-import { Track } from "@/__generated__/types";
-import { StaticFilterOptionsData } from "@/hooks/useFilterOptions";
-import { FilterState } from "@/hooks/useFiltering";
-import { useTracksList } from "@/services/api-hooks";
-import { ExtendedColumnSort } from "@/types/data-table";
-import React from "react";
-import { DataTableSkeleton } from "../data-table/data-table-skeleton";
-import { MusicTable } from "./music-table";
+import { Track } from '@/__generated__/types';
+import { StaticFilterOptionsData } from '@/hooks/useFilterOptions';
+import { FilterState } from '@/hooks/useFiltering';
+import { useTracksList } from '@/services/api-hooks';
+import { ExtendedColumnSort } from '@/types/data-table';
+import React from 'react';
+import { DataTableSkeleton } from '../data-table/data-table-skeleton';
+import { MusicTable } from './music-table';
 
 interface TrackListProps {
   page: number;
@@ -25,21 +25,21 @@ export const TrackList = React.memo<TrackListProps>(
     // Map frontend sort field names to backend field names
     const mapSortField = React.useCallback((frontendSort: string): string => {
       const sortMapping: Record<string, string> = {
-        title: "originalTitle",
-        artist: "originalArtist",
-        album: "originalAlbum",
-        duration: "duration",
-        added: "createdAt",
-        createdAt: "createdAt",
-        listeningCount: "listeningCount",
-        tempo: "tempo",
-        danceabilityFeeling: "danceabilityFeeling",
-        arousalMood: "arousalMood",
-        valenceMood: "valenceMood",
-        libraryId: "libraryId",
-        favorite: "isFavorite",
-        lastPlayed: "lastPlayedAt",
-        lastScannedAt: "lastScannedAt",
+        title: 'originalTitle',
+        artist: 'originalArtist',
+        album: 'originalAlbum',
+        duration: 'duration',
+        added: 'createdAt',
+        createdAt: 'createdAt',
+        listeningCount: 'listeningCount',
+        tempo: 'tempo',
+        danceabilityFeeling: 'danceabilityFeeling',
+        arousalMood: 'arousalMood',
+        valenceMood: 'valenceMood',
+        libraryId: 'libraryId',
+        favorite: 'isFavorite',
+        lastPlayed: 'lastPlayedAt',
+        lastScannedAt: 'lastScannedAt',
       };
       return sortMapping[frontendSort] || frontendSort;
     }, []);
@@ -50,15 +50,15 @@ export const TrackList = React.memo<TrackListProps>(
         const firstSort = sort[0];
         const result = {
           orderBy: mapSortField(firstSort.id),
-          orderDirection: firstSort.desc ? "desc" : ("asc" as "asc" | "desc"),
+          orderDirection: firstSort.desc ? 'desc' : ('asc' as 'asc' | 'desc'),
         };
 
         return result;
       }
 
       const defaultResult = {
-        orderBy: "fileCreatedAt",
-        orderDirection: "asc" as "asc" | "desc",
+        orderBy: 'fileCreatedAt',
+        orderDirection: 'asc' as 'asc' | 'desc',
       };
       return defaultResult;
     }, [sort, mapSortField]);
@@ -83,16 +83,16 @@ export const TrackList = React.memo<TrackListProps>(
             rowCount={10}
             filterCount={18}
             cellWidths={[
-              "100px",
-              "100px",
-              "100px",
-              "100px",
-              "100px",
-              "100px",
-              "100px",
-              "100px",
-              "100px",
-              "100px",
+              '100px',
+              '100px',
+              '100px',
+              '100px',
+              '100px',
+              '100px',
+              '100px',
+              '100px',
+              '100px',
+              '100px',
             ]}
             withViewOptions={true}
             withPagination={true}

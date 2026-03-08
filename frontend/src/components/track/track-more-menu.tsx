@@ -1,13 +1,13 @@
-import { useAddTrackToQueue } from "@/services/queue-hooks";
-import { MoreHorizontal } from "lucide-react";
-import { SelectPlaylistTrigger } from "../playlist/select-playlist-dialog";
-import { Button } from "../ui/button";
+import { useAddTrackToQueue } from '@/services/queue-hooks';
+import { MoreHorizontal } from 'lucide-react';
+import { SelectPlaylistTrigger } from '../playlist/select-playlist-dialog';
+import { Button } from '../ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "../ui/dropdown-menu";
+} from '../ui/dropdown-menu';
 
 export const TrackMoreMenu = ({
   trackId,

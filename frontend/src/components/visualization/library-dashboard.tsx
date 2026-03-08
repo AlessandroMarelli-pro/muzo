@@ -1,7 +1,7 @@
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { useLibrary, useLibraryTracks } from "@/services/api-hooks";
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useLibrary, useLibraryTracks } from '@/services/api-hooks';
 import {
   BarChart3,
   Download,
@@ -11,13 +11,13 @@ import {
   Settings,
   Share2,
   TrendingUp,
-} from "lucide-react";
-import React, { useEffect, useState } from "react";
-import { useInView } from "react-intersection-observer";
-import MusicCard from "../track/music-card";
-import { LibraryChart } from "./library-chart";
-import { LibraryInsights } from "./library-insights";
-import { LibraryStats } from "./library-stats";
+} from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { useInView } from 'react-intersection-observer';
+import MusicCard from '../track/music-card';
+import { LibraryChart } from './library-chart';
+import { LibraryInsights } from './library-insights';
+import { LibraryStats } from './library-stats';
 
 interface LibraryDashboardProps {
   libraryId: string;
@@ -26,7 +26,7 @@ interface LibraryDashboardProps {
   onShareLibrary?: () => void;
 }
 
-type DashboardView = "overview" | "analytics" | "insights";
+type DashboardView = 'overview' | 'analytics' | 'insights';
 
 export const LibraryDashboard: React.FC<LibraryDashboardProps> = ({
   libraryId,
@@ -39,7 +39,7 @@ export const LibraryDashboard: React.FC<LibraryDashboardProps> = ({
   const { data, isLoading, isFetchingNextPage, hasNextPage, fetchNextPage } = useLibraryTracks(
     libraryId,
     {
-      direction: "AFTER",
+      direction: 'AFTER',
       size: 40,
       cursor: null,
     },
@@ -50,7 +50,7 @@ export const LibraryDashboard: React.FC<LibraryDashboardProps> = ({
 
   const { data: library, isLoading: isLibraryLoading } = useLibrary(libraryId);
 
-  const [activeView, setActiveView] = useState<DashboardView>("overview");
+  const [activeView, setActiveView] = useState<DashboardView>('overview');
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const handleRefresh = async () => {
@@ -64,32 +64,32 @@ export const LibraryDashboard: React.FC<LibraryDashboardProps> = ({
 
   const views = [
     {
-      id: "overview" as DashboardView,
-      label: "Overview",
+      id: 'overview' as DashboardView,
+      label: 'Overview',
       icon: <BarChart3 className="h-4 w-4" />,
-      description: "Key statistics and metrics",
+      description: 'Key statistics and metrics',
     },
     {
-      id: "analytics" as DashboardView,
-      label: "Analytics",
+      id: 'analytics' as DashboardView,
+      label: 'Analytics',
       icon: <TrendingUp className="h-4 w-4" />,
-      description: "Charts and visualizations",
+      description: 'Charts and visualizations',
     },
     {
-      id: "insights" as DashboardView,
-      label: "Insights",
+      id: 'insights' as DashboardView,
+      label: 'Insights',
       icon: <Lightbulb className="h-4 w-4" />,
-      description: "AI recommendations",
+      description: 'AI recommendations',
     },
   ];
 
   const renderActiveView = () => {
     switch (activeView) {
-      case "overview":
+      case 'overview':
         return <LibraryStats library={library} tracks={tracks} isLoading={isLoading} />;
-      case "analytics":
+      case 'analytics':
         return <LibraryChart tracks={tracks} isLoading={isLoading} />;
-      case "insights":
+      case 'insights':
         return (
           <LibraryInsights
             library={library}
@@ -129,7 +129,7 @@ export const LibraryDashboard: React.FC<LibraryDashboardProps> = ({
         <div>
           <h1 className="text-3xl font-bold">{library?.name} Dashboard</h1>
           <p className="text-muted-foreground">
-            {library?.totalTracks} tracks • {library?.scanStatus} • Last updated{" "}
+            {library?.totalTracks} tracks • {library?.scanStatus} • Last updated{' '}
             {new Date(library?.lastScanAt).toLocaleDateString()}
           </p>
         </div>
@@ -138,7 +138,7 @@ export const LibraryDashboard: React.FC<LibraryDashboardProps> = ({
             {library?.scanStatus}
           </Badge>
           <Button variant="outline" size="sm" onClick={handleRefresh} disabled={isRefreshing}>
-            <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? "animate-spin" : ""}`} />
+            <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
         </div>
@@ -236,7 +236,7 @@ export const LibraryDashboard: React.FC<LibraryDashboardProps> = ({
             {views.map((view) => (
               <Button
                 key={view.id}
-                variant={activeView === view.id ? "default" : "ghost"}
+                variant={activeView === view.id ? 'default' : 'ghost'}
                 size="sm"
                 onClick={() => setActiveView(view.id)}
                 className="flex items-center space-x-2"
@@ -252,7 +252,7 @@ export const LibraryDashboard: React.FC<LibraryDashboardProps> = ({
       {/* Active View Content */}
       <div className="min-h-[600px]">{renderActiveView()}</div>
 
-      <div className={"flex flex-wrap  justify-center gap-3  overflow-y-auto"}>
+      <div className={'flex flex-wrap  justify-center gap-3  overflow-y-auto'}>
         {tracks?.map((track) => (
           <MusicCard key={track.id} track={track} />
         ))}
@@ -264,7 +264,7 @@ export const LibraryDashboard: React.FC<LibraryDashboardProps> = ({
           onClick={() => fetchNextPage()}
           disabled={!hasNextPage || isFetchingNextPage}
         >
-          {isFetchingNextPage ? "Loading more…" : hasNextPage ? "Load More" : null}
+          {isFetchingNextPage ? 'Loading more…' : hasNextPage ? 'Load More' : null}
         </Button>
       </div>
       {/* Footer Actions */}
@@ -280,7 +280,7 @@ export const LibraryDashboard: React.FC<LibraryDashboardProps> = ({
                 Filter Data
               </Button>
               <Button variant="outline" size="sm" onClick={handleRefresh}>
-                <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? "animate-spin" : ""}`} />
+                <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
                 Refresh All
               </Button>
             </div>

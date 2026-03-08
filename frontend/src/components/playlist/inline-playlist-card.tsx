@@ -1,7 +1,7 @@
-import { Playlist } from "@/__generated__/types";
-import { cn } from "@/lib/utils";
-import { Card, CardContent } from "../ui/card";
-import { Skeleton } from "../ui/skeleton";
+import { Playlist } from '@/__generated__/types';
+import { cn } from '@/lib/utils';
+import { Card, CardContent } from '../ui/card';
+import { Skeleton } from '../ui/skeleton';
 // Note: This app uses custom view state instead of routing
 // Navigation should be handled by parent component
 
@@ -14,7 +14,7 @@ export const InlinePlaylistCardSkeleton = () => {
   return (
     <Card className="flex flex-col p-0 gap-0 ">
       <div className=" flex justify-center items-center flex-wrap p-0 max-w-60 max-h-60 min-w-60 min-h-60 rounded-t-md">
-        <Skeleton className={cn("w-full h-full rounded-none rounded-t-md")} />
+        <Skeleton className={cn('w-full h-full rounded-none rounded-t-md')} />
       </div>
       <CardContent className="p-2 h-full w-full  border-none gap-0">
         <div className="flex flex-col h-full space-around gap-2">
@@ -45,9 +45,9 @@ export function InlinePlaylistCard({ playlist, onCardClick }: InlinePlaylistCard
     <Card
       key={playlist.id}
       className={cn(
-        "flex flex-row  bg-background  p-2 border-none  gap-4 shadow-none ",
-        onCardClick && "cursor-pointer",
-        disabled ? " cursor-not-allowed opacity-50" : " hover:bg-accent",
+        'flex flex-row  bg-background  p-2 border-none  gap-4 shadow-none ',
+        onCardClick && 'cursor-pointer',
+        disabled ? ' cursor-not-allowed opacity-50' : ' hover:bg-accent',
       )}
       onClick={handleCardClick}
     >
@@ -62,11 +62,11 @@ export function InlinePlaylistCard({ playlist, onCardClick }: InlinePlaylistCard
                 src={`http://localhost:3000/api/images/serve?imagePath=${image}`}
                 alt="Album Art"
                 className={cn(
-                  "w-full h-full object-cover  ",
-                  index === 0 && "rounded-tl-md",
-                  index === 1 && "rounded-tr-md",
-                  index === 2 && "rounded-bl-md",
-                  index === 3 && "rounded-br-md",
+                  'w-full h-full object-cover  ',
+                  index === 0 && 'rounded-tl-md',
+                  index === 1 && 'rounded-tr-md',
+                  index === 2 && 'rounded-bl-md',
+                  index === 3 && 'rounded-br-md',
                 )}
               />
             </div>
@@ -76,7 +76,7 @@ export function InlinePlaylistCard({ playlist, onCardClick }: InlinePlaylistCard
             <img
               src={`http://localhost:3000/api/images/serve?imagePath=${images[0]}`}
               alt="Album Art"
-              className={cn("w-full h-full object-cover  rounded-md")}
+              className={cn('w-full h-full object-cover  rounded-md')}
             />
           </div>
         )}

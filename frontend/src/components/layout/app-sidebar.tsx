@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import { DogIcon, LucideIcon } from "lucide-react";
-import * as React from "react";
+import { DogIcon, LucideIcon } from 'lucide-react';
+import * as React from 'react';
 
-import { NavMain } from "@/components/nav-main";
+import { NavMain } from '@/components/nav-main';
 import {
   Sidebar,
   SidebarContent,
@@ -11,16 +11,16 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-} from "@/components/ui/sidebar";
-import { useAuth } from "@/contexts/auth-context";
-import { NavUser } from "../nav-user";
+} from '@/components/ui/sidebar';
+import { useAuth } from '@/contexts/auth-context';
+import { NavUser } from '../nav-user';
 
 export interface NavMainItem {
   title: string;
   url: string;
   icon: LucideIcon;
   isActive?: boolean;
-  preload?: "render" | "intent" | false | "viewport" | undefined;
+  preload?: 'render' | 'intent' | false | 'viewport' | undefined;
   items?: {
     title: string;
     url: string;
@@ -68,9 +68,9 @@ export function AppSidebar({
         <NavMain items={data.navMain} />
         <NavUser
           user={{
-            name: user?.firstName + " " + user?.lastName,
-            email: user?.email ?? "",
-            avatar: "",
+            name: user?.firstName + ' ' + user?.lastName,
+            email: user?.email ?? '',
+            avatar: '',
           }}
         />
       </SidebarContent>

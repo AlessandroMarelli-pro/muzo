@@ -1,13 +1,13 @@
-import type { Library } from "@/__generated__/types";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { useScanSessionContext } from "@/contexts/scan-session.context";
-import { LibraryScanStatus } from "@/services/api-hooks";
-import { useScanProgress } from "@/services/sse-service";
-import { StopIcon } from "@radix-ui/react-icons";
-import { BarChart3, Loader, Play, Trash } from "lucide-react";
-import React, { useEffect, useState } from "react";
+import type { Library } from '@/__generated__/types';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useScanSessionContext } from '@/contexts/scan-session.context';
+import { LibraryScanStatus } from '@/services/api-hooks';
+import { useScanProgress } from '@/services/sse-service';
+import { StopIcon } from '@radix-ui/react-icons';
+import { BarChart3, Loader, Play, Trash } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
 
 interface LibraryCardProps {
   library: Library;
@@ -25,16 +25,16 @@ interface LibraryCardProps {
 
 const getScanStatusColor = (status: LibraryScanStatus) => {
   switch (status) {
-    case "IDLE":
-      return "bg-green-100 text-green-800";
-    case "SCANNING":
-      return "bg-blue-100 text-blue-800";
-    case "ANALYZING":
-      return "bg-yellow-100 text-yellow-800";
-    case "ERROR":
-      return "bg-red-100 text-red-800";
+    case 'IDLE':
+      return 'bg-green-100 text-green-800';
+    case 'SCANNING':
+      return 'bg-blue-100 text-blue-800';
+    case 'ANALYZING':
+      return 'bg-yellow-100 text-yellow-800';
+    case 'ERROR':
+      return 'bg-red-100 text-red-800';
     default:
-      return "bg-gray-100 text-gray-800";
+      return 'bg-gray-100 text-gray-800';
   }
 };
 
@@ -62,15 +62,15 @@ export const LibraryCard: React.FC<LibraryCardProps> = ({
       setScanStatus(scanProgress.data.status as LibraryScanStatus);
     }
   }, [scanProgress?.overallProgress, library.totalTracks, library.analyzedTracks]);
-  const analysisCompleted = scanProgress?.type === "scan.complete";
+  const analysisCompleted = scanProgress?.type === 'scan.complete';
   // Use real-time scan progress if available, otherwise calculate from tracks
 
   const formatDate = (dateString?: string) => {
-    if (!dateString) return "Never";
+    if (!dateString) return 'Never';
     return new Date(dateString).toLocaleDateString();
   };
 
-  const isScanning = !analysisCompleted && (session?.status === "SCANNING" || isScanningProp);
+  const isScanning = !analysisCompleted && (session?.status === 'SCANNING' || isScanningProp);
   const totalTracks = library.totalTracks;
   const handleDelete = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
@@ -90,7 +90,7 @@ export const LibraryCard: React.FC<LibraryCardProps> = ({
   const handleStopScan = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
     e.preventDefault();
-    onStopScan(e, library.id, session?.sessionId ?? "");
+    onStopScan(e, library.id, session?.sessionId ?? '');
   };
   return (
     <Card
@@ -101,13 +101,13 @@ export const LibraryCard: React.FC<LibraryCardProps> = ({
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2 flex-row">
             <CardTitle className="text-lg flex items-center gap-2">
-              {library.name}{" "}
+              {library.name}{' '}
               <Badge variant="outline" className="text-sm">
                 {totalTracks}
               </Badge>
             </CardTitle>
           </div>
-          {scanStatus === "SCANNING" ? (
+          {scanStatus === 'SCANNING' ? (
             <>
               <Badge className={`text-xs ${getScanStatusColor(scanStatus as LibraryScanStatus)} `}>
                 {scanStatus}
@@ -141,14 +141,14 @@ export const LibraryCard: React.FC<LibraryCardProps> = ({
             variant="outline"
             className="w-full"
             size="sm"
-            onClick={scanStatus === "SCANNING" ? handleStopScan : handleScan}
+            onClick={scanStatus === 'SCANNING' ? handleStopScan : handleScan}
           >
-            {scanStatus === "SCANNING" ? (
+            {scanStatus === 'SCANNING' ? (
               <StopIcon className="h-4 w-4 " />
             ) : (
               <BarChart3 className="h-4 w-4 " />
             )}
-            {isScanning ? "Scanning…" : "Scan"}
+            {isScanning ? 'Scanning…' : 'Scan'}
           </Button>
           <Button variant="outline" size="sm" className="w-full" onClick={handlePlay}>
             <Play className="h-4 w-4" /> Play

@@ -1,6 +1,6 @@
-import { useMutation } from "@tanstack/react-query";
-import { parse } from "graphql";
-import { graffleClient } from "./graffle-client";
+import { useMutation } from '@tanstack/react-query';
+import { parse } from 'graphql';
+import { graffleClient } from './graffle-client';
 
 export const useStartLibraryScan = () => {
   return useMutation({

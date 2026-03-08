@@ -1,11 +1,11 @@
-"use client";
+'use client';
 
-import type { Column } from "@tanstack/react-table";
-import { PlusCircle, XCircle } from "lucide-react";
-import * as React from "react";
+import type { Column } from '@tanstack/react-table';
+import { PlusCircle, XCircle } from 'lucide-react';
+import * as React from 'react';
 
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
   Command,
   CommandEmpty,
@@ -14,12 +14,12 @@ import {
   CommandItem,
   CommandList,
   CommandSeparator,
-} from "@/components/ui/command";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Separator } from "@/components/ui/separator";
-import { cn } from "@/lib/utils";
-import type { Option } from "@/types/data-table";
-import { CheckIcon } from "@radix-ui/react-icons";
+} from '@/components/ui/command';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Separator } from '@/components/ui/separator';
+import { cn } from '@/lib/utils';
+import type { Option } from '@/types/data-table';
+import { CheckIcon } from '@radix-ui/react-icons';
 
 interface DataTableFacetedFilterProps<TData, TValue> {
   column?: Column<TData, TValue>;
@@ -131,8 +131,8 @@ export function DataTableFacetedFilter<TData, TValue>({
                   <CommandItem key={option.value} onSelect={() => onItemSelect(option, isSelected)}>
                     <div
                       className={cn(
-                        "flex size-4 items-center justify-center rounded-sm border border-primary",
-                        isSelected ? "bg-primary" : "opacity-50 [&_svg]:invisible",
+                        'flex size-4 items-center justify-center rounded-sm border border-primary',
+                        isSelected ? 'bg-primary' : 'opacity-50 [&_svg]:invisible',
                       )}
                     >
                       <CheckIcon />

@@ -1,6 +1,6 @@
-import { HomeMetrics } from "@/__generated__/types";
-import { queryOptions } from "@tanstack/react-query";
-import { gql, graffleClient } from "../services/graffle-client";
+import { HomeMetrics } from '@/__generated__/types';
+import { queryOptions } from '@tanstack/react-query';
+import { gql, graffleClient } from '../services/graffle-client';
 
 // Define the metrics types based on the GraphQL schema
 export interface GenreDistribution {
@@ -64,7 +64,7 @@ export interface LibraryMetrics {
 
 // Query Keys
 export const metricsQueryKeys = {
-  libraryMetrics: ["libraryMetrics"] as const,
+  libraryMetrics: ['libraryMetrics'] as const,
 };
 
 /** Query options for loaders (ensureQueryData dedupes preload + load). */

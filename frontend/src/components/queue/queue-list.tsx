@@ -1,11 +1,11 @@
-import { Loading } from "@/components/loading";
-import { Card, CardContent } from "@/components/ui/card";
+import { Loading } from '@/components/loading';
+import { Card, CardContent } from '@/components/ui/card';
 import {
   QueueItem,
   useQueue,
   useRemoveTrackFromQueue,
   useUpdateQueuePositions,
-} from "@/services/queue-hooks";
+} from '@/services/queue-hooks';
 import {
   DndContext,
   KeyboardSensor,
@@ -15,18 +15,18 @@ import {
   useSensor,
   useSensors,
   type DragEndEvent,
-} from "@dnd-kit/core";
-import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
+} from '@dnd-kit/core';
+import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
 import {
   SortableContext,
   arrayMove,
   useSortable,
   verticalListSortingStrategy,
-} from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
-import { Clock } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
-import { QueueItemCard } from "./queue-item-card";
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import { Clock } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { QueueItemCard } from './queue-item-card';
 
 export function QueueList() {
   const { data: queueItems = [], isLoading, error } = useQueue();
@@ -53,7 +53,7 @@ export function QueueList() {
     try {
       await removeTrackMutation.mutateAsync(trackId);
     } catch (error) {
-      console.error("Failed to remove track:", error);
+      console.error('Failed to remove track:', error);
     } finally {
       setRemovingTrackId(null);
     }
@@ -78,7 +78,7 @@ export function QueueList() {
           }));
           await updatePositionsMutation.mutateAsync(positions);
         } catch (error) {
-          console.error("Failed to update queue positions:", error);
+          console.error('Failed to update queue positions:', error);
           // Revert on error
           setLocalQueue(queueItems);
         }

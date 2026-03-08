@@ -1,11 +1,11 @@
-import { TrackRecommendation } from "@/__generated__/types";
-import { Card, CardContent } from "@/components/ui/card";
-import { useAddTrackToPlaylist } from "@/services/playlist-hooks";
-import { useRouter } from "@tanstack/react-router";
+import { TrackRecommendation } from '@/__generated__/types';
+import { Card, CardContent } from '@/components/ui/card';
+import { useAddTrackToPlaylist } from '@/services/playlist-hooks';
+import { useRouter } from '@tanstack/react-router';
 import {
   TrackRecommendationsCard,
   TrackRecommendationsCardSkeleton,
-} from "./track-recommendations-card";
+} from './track-recommendations-card';
 
 interface TrackRecommendationsProps {
   playlistId: string;
@@ -49,7 +49,7 @@ export function TrackRecommendations({
   onTrackAdded,
   recommendations,
 }: TrackRecommendationsProps) {
-  const addTrackMutation = useAddTrackToPlaylist("default");
+  const addTrackMutation = useAddTrackToPlaylist('default');
   const router = useRouter();
   const refetchRecommendations = () => {
     router.invalidate();
@@ -67,7 +67,7 @@ export function TrackRecommendations({
       // Remove the added track from recommendations
       refetchRecommendations();
     } catch (error) {
-      console.error("Failed to add track:", error);
+      console.error('Failed to add track:', error);
     } finally {
     }
   };

@@ -1,7 +1,7 @@
-import { Track } from "@/__generated__/types";
-import { useRegisterPlayedTrack, useToggleFavorite } from "@/services/music-player-hooks";
-import { useQueue } from "@/services/queue-hooks";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { Track } from '@/__generated__/types';
+import { useRegisterPlayedTrack, useToggleFavorite } from '@/services/music-player-hooks';
+import { useQueue } from '@/services/queue-hooks';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 export interface AudioPlayerState {
   trackId: string | null;
@@ -124,7 +124,7 @@ export function useAudioPlayer(options: UseAudioPlayerOptions = {}) {
           isFavorite: result.isFavorite,
         }));
       } catch (error) {
-        console.error("Failed to toggle favorite:", error);
+        console.error('Failed to toggle favorite:', error);
       }
     },
     [toggleFavoriteMutation],
