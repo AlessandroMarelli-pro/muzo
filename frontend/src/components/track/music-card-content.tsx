@@ -1,8 +1,8 @@
 import { Track } from '@/__generated__/types';
-import { Badge } from '@/components/ui/badge';
 import { CardContent } from '@/components/ui/card';
 import { AnimatePresence, motion } from 'motion/react';
 import { useState } from 'react';
+import { GenresBadge } from './genres-badge';
 
 interface MusicCardContentProps {
   track: Track;
@@ -21,9 +21,8 @@ export function MusicCardContent({
 
   const formattedTitle = track.title || 'Unknown Title';
   const formattedArtist = track.artist || 'Unknown Artist';
-  const formattedGenres = track.genres && track.genres.length > 0 ? track.genres : 'Unknown Genre';
-  const formattedSubgenres =
-    track.subgenres && track.subgenres.length > 0 ? track.subgenres : 'Unknown Subgenre';
+  const genres = track.genres && track.genres.length > 0 ? track.genres : [];
+  const subgenres = track.subgenres && track.subgenres.length > 0 ? track.subgenres : [];
   const formattedImage = track.imagePath || 'Unknown Image';
   const trackId = track.id;
   return (
@@ -91,30 +90,8 @@ export function MusicCardContent({
             </p>
           </div>
           {/* Genre and Subgenre */}
-          <div className="flex flex-row  gap-2 max-w-full overflow-x-scroll min-h-5">
-            {formattedGenres !== 'Unknown Genre' &&
-              formattedGenres.map((genre) => (
-                <Badge
-                  variant="secondary"
-                  className="text-xs capitalize"
-                  key={`${trackId}-genre-${genre}`}
-                >
-                  {genre}
-                </Badge>
-              ))}
-          </div>
-          <div className="flex flex-row  gap-2 truncate ">
-            {formattedSubgenres !== 'Unknown Subgenre' &&
-              formattedSubgenres.map((subgenre) => (
-                <Badge
-                  variant="outline"
-                  className="text-xs capitalize border-none"
-                  key={`${trackId}-subgenre-${subgenre}`}
-                >
-                  {subgenre}
-                </Badge>
-              ))}
-          </div>
+          <GenresBadge genres={genres} variant="secondary" />
+          <GenresBadge genres={subgenres} variant="outline" />
         </div>
       </div>
     </CardContent>

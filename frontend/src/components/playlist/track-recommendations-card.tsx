@@ -4,13 +4,15 @@ import {
   useCurrentTrack,
   useIsPlaying,
 } from '@/contexts/audio-player-context';
-import { cn, formatDuration } from '@/lib/utils';
+import { cn } from '@/lib/utils';
 import { useNavigate } from '@tanstack/react-router';
-import { Brain, Pause, Play, Plus } from 'lucide-react';
+import { Brain, InfoIcon, Pause, Play, Plus } from 'lucide-react';
+import { GenresBadge } from '../track/genres-badge';
 import { TrackMoreMenu } from '../track/track-more-menu';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
 import { Skeleton } from '../ui/skeleton';
+import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip';
 
 export const TrackRecommendationsCardSkeleton = ({ index }: { index: number }) => {
   return (
@@ -96,7 +98,7 @@ export const TrackRecommendationsCard = ({
     <div
       key={recommendation.track.id}
       className={cn(
-        'flex items-center gap-4 p-4 hover:bg-muted/50 transition-colors group',
+        'flex items-center gap-2 p-2 hover:bg-muted/50 transition-colors group',
         isThisTrackPlaying && 'bg-muted/80  ',
         isThisTrackPlaying && index === 0 && 'border-l-2 border-l-primary rounded-t-xl',
         isCurrentTrack &&
@@ -111,58 +113,48 @@ export const TrackRecommendationsCard = ({
       <img
         src={`http://localhost:3000/api/images/serve?imagePath=${formattedImage}`}
         alt="Album Art"
-        className="w-15 h-15 object-cover rounded-md"
+        className="w-10 h-10 object-cover rounded-full"
       />
       {/* Track Info */}
       <div className="flex-1 min-w-0">
-        <div className="flex text-foreground truncate capitalize gap-2">
-          <span className="max-w-md truncate">
-            {track?.artist || 'Unknown Artist'} - {track?.title || 'Unknown Track'}{' '}
+        <div className="flex text-foreground truncate capitalize gap-2 text-sm">
+          <span className="max-w-md truncate capitalize">
+            {track?.artist?.toLowerCase() || 'Unknown Artist'} -{' '}
+            {track?.title?.toLowerCase() || 'Unknown Track'}{' '}
           </span>
           <Badge variant="outline" className="text-xs border-none">
             {track.mfTempo} BPM
           </Badge>
-          <Badge variant="outline" className="text-xs border-none">
-            {formatDuration(track.duration)}
-          </Badge>
+
+          {/* Similarity Reasons */}
+          {recommendation.reasons.length > 0 && (
+            <div className="flex flex-wrap ">
+              <Tooltip>
+                <TooltipTrigger>
+                  <InfoIcon className="w-4 h-4 cursor-pointer" />
+                </TooltipTrigger>
+                <TooltipContent className="max-w-xs bg-background text-foreground">
+                  <div className="flex flex-col gap-2">
+                    {recommendation.reasons.map((reason) => (
+                      <Badge key={reason} variant="accent" className="text-xs">
+                        {reason}
+                      </Badge>
+                    ))}
+                  </div>
+                </TooltipContent>
+              </Tooltip>
+            </div>
+          )}
         </div>
-
-        {/* Similarity Reasons */}
-        {recommendation.reasons.length > 0 && (
-          <div className="flex flex-wrap gap-2 mt-2">
-            {recommendation.reasons.slice(0, 3).map((reason, i) => (
-              <Badge key={i} variant="accent" className="text-xs">
-                {reason}
-              </Badge>
-            ))}
-          </div>
-        )}
       </div>
-
       {/* Track Details */}
       <div className="hidden md:flex items-center gap-2 text-sm text-muted-foreground">
-        <div className="flex flex-col gap-2 justify-end items-end">
+        <div className="flex flex-row gap-2 justify-end items-end">
           <div className="flex flex-wrap gap-2">
-            {track?.genres && track.genres.length > 0 && (
-              <>
-                {track.genres.map((genre, i) => (
-                  <Badge key={i} variant="outline" className="text-xs capitalize border-none">
-                    {genre}
-                  </Badge>
-                ))}
-              </>
-            )}
+            <GenresBadge genres={track.genres || []} variant="secondary" />
           </div>
           <div className="flex flex-wrap gap-2">
-            {track?.subgenres && track.subgenres.length > 0 && (
-              <>
-                {track.subgenres.map((subgenre, i) => (
-                  <Badge key={i} variant="accent" className="text-xs capitalize">
-                    {subgenre}
-                  </Badge>
-                ))}
-              </>
-            )}
+            <GenresBadge genres={track.subgenres || []} variant="outline" />
           </div>
         </div>
 

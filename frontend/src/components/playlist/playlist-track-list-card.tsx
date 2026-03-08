@@ -1,5 +1,4 @@
 import { PlaylistTrack, Track } from '@/__generated__/types';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
   useAudioPlayerActions,
@@ -11,6 +10,7 @@ import { useAddTrackToQueue } from '@/services/queue-hooks';
 import { Link } from '@tanstack/react-router';
 import { Brain, GripVertical, ListMusic, Pause, Play, Trash2 } from 'lucide-react';
 import { memo } from 'react';
+import { GenresBadge } from '../track/genres-badge';
 import { Skeleton } from '../ui/skeleton';
 export const PlaylistTrackListCardSkeleton = ({ position }: { position: number }) => {
   return (
@@ -69,7 +69,7 @@ export const PlaylistTrackListCard = memo(
       <div
         key={playlistTrack.id}
         className={cn(
-          'flex items-center gap-4 p-4 hover:bg-muted/50 transition-colors group',
+          'flex items-center gap-2 p-2 hover:bg-muted/50 transition-colors group',
           isThisTrackPlaying && 'bg-muted/80  ',
           isThisTrackPlaying && index === 0 && 'border-l-2 border-l-primary rounded-t-xl',
           isCurrentTrack &&
@@ -103,30 +103,19 @@ export const PlaylistTrackListCard = memo(
         />
         {/* Track Info */}
         <div className="flex-1 min-w-0">
-          <div className="font-medium truncate capitalize">
-            {playlistTrack.track?.title || playlistTrack.track?.artist}
-          </div>
-          <div className="text-sm text-muted-foreground truncate capitalize">
-            {playlistTrack.track?.artist || 'Unknown Artist'}
+          <div className="text-sm font-medium truncate capitalize">
+            {playlistTrack.track?.title?.toLowerCase() ||
+              playlistTrack.track?.artist?.toLowerCase()}{' '}
+            - {playlistTrack.track?.artist?.toLowerCase() || 'Unknown Artist'.toLowerCase()}
           </div>
         </div>
 
         {/* Genre */}
         <div className="hidden md:flex flex-row gap-2">
-          {playlistTrack.track?.genres &&
-            playlistTrack.track?.genres.map((genre) => (
-              <Badge variant="secondary" className="text-xs capitalize">
-                {genre}
-              </Badge>
-            ))}
+          <GenresBadge genres={playlistTrack.track?.genres || []} variant="secondary" />
         </div>
         <div className="hidden md:flex flex-row gap-2">
-          {playlistTrack.track?.subgenres &&
-            playlistTrack.track?.subgenres.map((subgenre) => (
-              <Badge variant="outline" className="text-xs capitalize">
-                {subgenre}
-              </Badge>
-            ))}
+          <GenresBadge genres={playlistTrack.track?.subgenres || []} variant="outline" />
         </div>
         <div className="hidden md:block text-xs text-muted-foreground">
           {playlistTrack.track?.mfTempo || 'Unknown'} BPM
