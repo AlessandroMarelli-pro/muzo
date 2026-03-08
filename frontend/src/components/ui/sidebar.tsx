@@ -94,7 +94,7 @@ const SidebarProvider = React.forwardRef<
     // Helper to toggle the sidebar.
     const toggleSidebar = React.useCallback(() => {
       localStorage.setItem('sidebar_state', open ? 'collapsed' : 'expanded');
-      return isMobile ? setOpenMobile((open) => !open) : setOpen((open) => !open);
+      return isMobile ? setOpenMobile((prev) => !prev) : setOpen((prev) => !prev);
     }, [isMobile, setOpen, setOpenMobile]);
 
     // Adds a keyboard shortcut to toggle the sidebar.

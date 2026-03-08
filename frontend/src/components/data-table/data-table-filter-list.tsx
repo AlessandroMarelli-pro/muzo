@@ -296,7 +296,7 @@ function DataTableFilterItem<TData>({
   const [showOperatorSelector, setShowOperatorSelector] = React.useState(false);
   const [showValueSelector, setShowValueSelector] = React.useState(false);
 
-  const column = columns.find((column) => column.id === filter.id);
+  const column = columns.find((col) => col.id === filter.id);
 
   const joinOperatorListboxId = `${filterItemId}-join-operator-listbox`;
   const fieldListboxId = `${filterItemId}-field-listbox`;
@@ -354,9 +354,9 @@ function DataTableFilterItem<TData>({
                 position="popper"
                 className="min-w-(--radix-select-trigger-width) lowercase"
               >
-                {dataTableConfig.joinOperators.map((joinOperator) => (
-                  <SelectItem key={joinOperator} value={joinOperator}>
-                    {joinOperator}
+                {dataTableConfig.joinOperators.map((op) => (
+                  <SelectItem key={op} value={op}>
+                    {op}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -374,7 +374,7 @@ function DataTableFilterItem<TData>({
               className="w-32 justify-between rounded font-normal"
             >
               <span className="truncate">
-                {columns.find((column) => column.id === filter.id)?.columnDef.meta?.label ??
+                {columns.find((col) => col.id === filter.id)?.columnDef.meta?.label ??
                   'Select field'}
               </span>
               <CaretSortIcon className="opacity-50" />
@@ -390,16 +390,16 @@ function DataTableFilterItem<TData>({
               <CommandList>
                 <CommandEmpty>No fields found.</CommandEmpty>
                 <CommandGroup>
-                  {columns.map((column) => (
+                  {columns.map((col) => (
                     <CommandItem
-                      key={column.id}
-                      value={column.id}
+                      key={col.id}
+                      value={col.id}
                       onSelect={(value) => {
                         onFilterUpdate(filter.filterId, {
                           id: value as Extract<keyof TData, string>,
-                          variant: column.columnDef.meta?.variant ?? 'text',
+                          variant: col.columnDef.meta?.variant ?? 'text',
                           operator: getDefaultFilterOperator(
-                            column.columnDef.meta?.variant ?? 'text',
+                            col.columnDef.meta?.variant ?? 'text',
                           ),
                           value: '',
                         });
@@ -407,11 +407,11 @@ function DataTableFilterItem<TData>({
                         setShowFieldSelector(false);
                       }}
                     >
-                      <span className="truncate">{column.columnDef.meta?.label}</span>
+                      <span className="truncate">{col.columnDef.meta?.label}</span>
                       <CheckIcon
                         className={cn(
                           'ml-auto',
-                          column.id === filter.id ? 'opacity-100' : 'opacity-0',
+                          col.id === filter.id ? 'opacity-100' : 'opacity-0',
                         )}
                       />
                     </CommandItem>

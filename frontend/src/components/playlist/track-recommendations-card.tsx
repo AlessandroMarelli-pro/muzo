@@ -29,8 +29,8 @@ export const TrackRecommendationsCardSkeleton = ({ index }: { index: number }) =
 
         {/* Similarity Reasons */}
         <div className="flex flex-wrap gap-2 mt-2">
-          {Array.from({ length: 3 }).map((_, index) => (
-            <Skeleton key={index + '-skeleton-similarity-reason'} className="w-30 h-6" />
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Skeleton key={i + '-skeleton-similarity-reason'} className="w-30 h-6" />
           ))}
         </div>
       </div>
@@ -130,8 +130,8 @@ export const TrackRecommendationsCard = ({
         {/* Similarity Reasons */}
         {recommendation.reasons.length > 0 && (
           <div className="flex flex-wrap gap-2 mt-2">
-            {recommendation.reasons.slice(0, 3).map((reason, index) => (
-              <Badge key={index} variant="accent" className="text-xs">
+            {recommendation.reasons.slice(0, 3).map((reason, i) => (
+              <Badge key={i} variant="accent" className="text-xs">
                 {reason}
               </Badge>
             ))}
@@ -145,8 +145,8 @@ export const TrackRecommendationsCard = ({
           <div className="flex flex-wrap gap-2">
             {track?.genres && track.genres.length > 0 && (
               <>
-                {track.genres.map((genre, index) => (
-                  <Badge key={index} variant="outline" className="text-xs capitalize border-none">
+                {track.genres.map((genre, i) => (
+                  <Badge key={i} variant="outline" className="text-xs capitalize border-none">
                     {genre}
                   </Badge>
                 ))}
@@ -156,8 +156,8 @@ export const TrackRecommendationsCard = ({
           <div className="flex flex-wrap gap-2">
             {track?.subgenres && track.subgenres.length > 0 && (
               <>
-                {track.subgenres.map((subgenre, index) => (
-                  <Badge key={index} variant="accent" className="text-xs capitalize">
+                {track.subgenres.map((subgenre, i) => (
+                  <Badge key={i} variant="accent" className="text-xs capitalize">
                     {subgenre}
                   </Badge>
                 ))}

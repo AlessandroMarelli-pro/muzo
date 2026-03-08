@@ -35,7 +35,7 @@ const chartConfig = {
 export function ChartRadar({
   data,
   title,
-  description,
+  description: chartDescription,
   angleKey,
   dataKey,
   color,
@@ -51,7 +51,7 @@ export function ChartRadar({
     <Card className="w-full shadow-xs">
       <CardHeader className="items-center pb-4">
         <CardTitle>{title}</CardTitle>
-        <CardDescription>{description}</CardDescription>
+        <CardDescription>{chartDescription}</CardDescription>
       </CardHeader>
       <CardContent className="pb-0 w-full">
         <ChartContainer config={chartConfig} className="mx-auto aspect-square max-h-[250px] w-full">

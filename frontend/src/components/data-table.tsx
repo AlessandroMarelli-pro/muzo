@@ -371,10 +371,10 @@ export function DataTable({ data: initialData }: { data: z.infer<typeof schema>[
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
     if (active && over && active.id !== over.id) {
-      setData((data) => {
+      setData((prevData) => {
         const oldIndex = dataIds.indexOf(active.id);
         const newIndex = dataIds.indexOf(over.id);
-        return arrayMove(data, oldIndex, newIndex);
+        return arrayMove(prevData, oldIndex, newIndex);
       });
     }
   }

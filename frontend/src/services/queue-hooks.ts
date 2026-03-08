@@ -242,8 +242,8 @@ export function useRemoveTrackFromQueue() {
         action: {
           label: 'Undo',
           onClick: () => {
-            addTrackToQueue(data.trackId).then((data) => {
-              addTrackToQueueSuccessToast(data, queryClient);
+            addTrackToQueue(data.trackId).then((result) => {
+              addTrackToQueueSuccessToast(result, queryClient);
             });
           },
         },

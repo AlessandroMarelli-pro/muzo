@@ -96,15 +96,15 @@ export function TidalSync({ onSync, disabled = false }: TidalSyncProps) {
   const handleStartAuth = async () => {
     try {
       console.log('Getting TIDAL auth URL (PKCE flow)...');
-      const { authUrl: url, codeVerifier } = await getAuthUrl();
+      const { authUrl: url, codeVerifier: verifier } = await getAuthUrl();
       console.log('TIDAL auth URL received:', url);
 
-      if (!url || !codeVerifier) {
+      if (!url || !verifier) {
         throw new Error('No authorization URL or code verifier received');
       }
 
       setAuthUrl(url);
-      setCodeVerifier(codeVerifier);
+      setCodeVerifier(verifier);
       setIsAuthDialogOpen(true);
       console.log('TIDAL auth dialog opened (PKCE flow)');
     } catch (error: any) {

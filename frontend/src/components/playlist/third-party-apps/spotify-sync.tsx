@@ -100,15 +100,15 @@ export function SpotifySync({ onSync, disabled = false }: SpotifySyncProps) {
   const handleStartAuth = async () => {
     try {
       console.log('Getting Spotify auth URL (PKCE flow)...');
-      const { authUrl: url, codeVerifier } = await getAuthUrl();
+      const { authUrl: url, codeVerifier: verifier } = await getAuthUrl();
       console.log('Spotify auth URL received:', url);
 
-      if (!url || !codeVerifier) {
+      if (!url || !verifier) {
         throw new Error('No authorization URL or code verifier received');
       }
 
       setAuthUrl(url);
-      setCodeVerifier(codeVerifier);
+      setCodeVerifier(verifier);
       setIsAuthDialogOpen(true);
       console.log('Spotify auth dialog opened (PKCE flow)');
     } catch (error: any) {

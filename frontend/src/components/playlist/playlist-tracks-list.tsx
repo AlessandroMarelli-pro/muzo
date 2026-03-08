@@ -66,7 +66,7 @@ export function PlaylistTracksList({
   const trackIds = useMemo(() => localTracks.map((track) => track.id), [localTracks]);
 
   const handleRemoveTrack = async (trackId: string) => {
-    const track = localTracks.find((track) => track.track?.id === trackId);
+    const track = localTracks.find((t) => t.track?.id === trackId);
 
     const trackName = `${track?.track?.title} by ${track?.track?.artist}`;
     setRemovingTrackId(trackId);

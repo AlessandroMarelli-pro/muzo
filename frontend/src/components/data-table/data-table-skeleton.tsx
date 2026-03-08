@@ -72,9 +72,9 @@ export function DataTableSkeleton({
       <div className="rounded-md border">
         <Table>
           <TableHeader>
-            {Array.from({ length: 1 }).map((_, i) => (
+            {Array.from({ length: 1 }).map((_row, i) => (
               <TableRow key={i} className="hover:bg-transparent">
-                {Array.from({ length: columnCount }).map((_, j) => (
+                {Array.from({ length: columnCount }).map((_col, j) => (
                   <TableHead
                     key={j}
                     style={{
@@ -89,9 +89,9 @@ export function DataTableSkeleton({
             ))}
           </TableHeader>
           <TableBody>
-            {Array.from({ length: rowCount }).map((_, i) => (
+            {Array.from({ length: rowCount }).map((_row, i) => (
               <TableRow key={i} className="hover:bg-transparent">
-                {Array.from({ length: columnCount }).map((_, j) => (
+                {Array.from({ length: columnCount }).map((_col, j) => (
                   <TableCell
                     key={j}
                     style={{

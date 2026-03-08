@@ -8,108 +8,109 @@
 // You should NOT make any changes in this file as it will be overwritten.
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
-import { Route as rootRouteImport } from './routes/__root';
-import { Route as SettingsRouteImport } from './routes/settings';
-import { Route as MusicRouteImport } from './routes/music';
-import { Route as FavoritesRouteImport } from './routes/favorites';
-import { Route as IndexRouteImport } from './routes/index';
-import { Route as SwipeIndexRouteImport } from './routes/swipe.index';
-import { Route as PlaylistsIndexRouteImport } from './routes/playlists.index';
-import { Route as LibrariesIndexRouteImport } from './routes/libraries.index';
-import { Route as ResearchChar123TrackIdChar125RouteImport } from './routes/research.{-$trackId}';
-import { Route as PlaylistsPlaylistIdRouteImport } from './routes/playlists.$playlistId';
-import { Route as LibrariesLibraryIdRouteImport } from './routes/libraries.$libraryId';
+import { Route as rootRouteImport } from './routes/__root'
+import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as MusicRouteImport } from './routes/music'
+import { Route as FavoritesRouteImport } from './routes/favorites'
+import { Route as IndexRouteImport } from './routes/index'
+import { Route as SwipeIndexRouteImport } from './routes/swipe.index'
+import { Route as PlaylistsIndexRouteImport } from './routes/playlists.index'
+import { Route as LibrariesIndexRouteImport } from './routes/libraries.index'
+import { Route as ResearchChar123TrackIdChar125RouteImport } from './routes/research.{-$trackId}'
+import { Route as PlaylistsPlaylistIdRouteImport } from './routes/playlists.$playlistId'
+import { Route as LibrariesLibraryIdRouteImport } from './routes/libraries.$libraryId'
 
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const MusicRoute = MusicRouteImport.update({
   id: '/music',
   path: '/music',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const FavoritesRoute = FavoritesRouteImport.update({
   id: '/favorites',
   path: '/favorites',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const SwipeIndexRoute = SwipeIndexRouteImport.update({
   id: '/swipe/',
   path: '/swipe/',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const PlaylistsIndexRoute = PlaylistsIndexRouteImport.update({
   id: '/playlists/',
   path: '/playlists/',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const LibrariesIndexRoute = LibrariesIndexRouteImport.update({
   id: '/libraries/',
   path: '/libraries/',
   getParentRoute: () => rootRouteImport,
-} as any);
-const ResearchChar123TrackIdChar125Route = ResearchChar123TrackIdChar125RouteImport.update({
-  id: '/research/{-$trackId}',
-  path: '/research/{-$trackId}',
-  getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
+const ResearchChar123TrackIdChar125Route =
+  ResearchChar123TrackIdChar125RouteImport.update({
+    id: '/research/{-$trackId}',
+    path: '/research/{-$trackId}',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const PlaylistsPlaylistIdRoute = PlaylistsPlaylistIdRouteImport.update({
   id: '/playlists/$playlistId',
   path: '/playlists/$playlistId',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const LibrariesLibraryIdRoute = LibrariesLibraryIdRouteImport.update({
   id: '/libraries/$libraryId',
   path: '/libraries/$libraryId',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute;
-  '/favorites': typeof FavoritesRoute;
-  '/music': typeof MusicRoute;
-  '/settings': typeof SettingsRoute;
-  '/libraries/$libraryId': typeof LibrariesLibraryIdRoute;
-  '/playlists/$playlistId': typeof PlaylistsPlaylistIdRoute;
-  '/research/{-$trackId}': typeof ResearchChar123TrackIdChar125Route;
-  '/libraries/': typeof LibrariesIndexRoute;
-  '/playlists/': typeof PlaylistsIndexRoute;
-  '/swipe/': typeof SwipeIndexRoute;
+  '/': typeof IndexRoute
+  '/favorites': typeof FavoritesRoute
+  '/music': typeof MusicRoute
+  '/settings': typeof SettingsRoute
+  '/libraries/$libraryId': typeof LibrariesLibraryIdRoute
+  '/playlists/$playlistId': typeof PlaylistsPlaylistIdRoute
+  '/research/{-$trackId}': typeof ResearchChar123TrackIdChar125Route
+  '/libraries/': typeof LibrariesIndexRoute
+  '/playlists/': typeof PlaylistsIndexRoute
+  '/swipe/': typeof SwipeIndexRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute;
-  '/favorites': typeof FavoritesRoute;
-  '/music': typeof MusicRoute;
-  '/settings': typeof SettingsRoute;
-  '/libraries/$libraryId': typeof LibrariesLibraryIdRoute;
-  '/playlists/$playlistId': typeof PlaylistsPlaylistIdRoute;
-  '/research/{-$trackId}': typeof ResearchChar123TrackIdChar125Route;
-  '/libraries': typeof LibrariesIndexRoute;
-  '/playlists': typeof PlaylistsIndexRoute;
-  '/swipe': typeof SwipeIndexRoute;
+  '/': typeof IndexRoute
+  '/favorites': typeof FavoritesRoute
+  '/music': typeof MusicRoute
+  '/settings': typeof SettingsRoute
+  '/libraries/$libraryId': typeof LibrariesLibraryIdRoute
+  '/playlists/$playlistId': typeof PlaylistsPlaylistIdRoute
+  '/research/{-$trackId}': typeof ResearchChar123TrackIdChar125Route
+  '/libraries': typeof LibrariesIndexRoute
+  '/playlists': typeof PlaylistsIndexRoute
+  '/swipe': typeof SwipeIndexRoute
 }
 export interface FileRoutesById {
-  __root__: typeof rootRouteImport;
-  '/': typeof IndexRoute;
-  '/favorites': typeof FavoritesRoute;
-  '/music': typeof MusicRoute;
-  '/settings': typeof SettingsRoute;
-  '/libraries/$libraryId': typeof LibrariesLibraryIdRoute;
-  '/playlists/$playlistId': typeof PlaylistsPlaylistIdRoute;
-  '/research/{-$trackId}': typeof ResearchChar123TrackIdChar125Route;
-  '/libraries/': typeof LibrariesIndexRoute;
-  '/playlists/': typeof PlaylistsIndexRoute;
-  '/swipe/': typeof SwipeIndexRoute;
+  __root__: typeof rootRouteImport
+  '/': typeof IndexRoute
+  '/favorites': typeof FavoritesRoute
+  '/music': typeof MusicRoute
+  '/settings': typeof SettingsRoute
+  '/libraries/$libraryId': typeof LibrariesLibraryIdRoute
+  '/playlists/$playlistId': typeof PlaylistsPlaylistIdRoute
+  '/research/{-$trackId}': typeof ResearchChar123TrackIdChar125Route
+  '/libraries/': typeof LibrariesIndexRoute
+  '/playlists/': typeof PlaylistsIndexRoute
+  '/swipe/': typeof SwipeIndexRoute
 }
 export interface FileRouteTypes {
-  fileRoutesByFullPath: FileRoutesByFullPath;
+  fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
     | '/favorites'
@@ -120,8 +121,8 @@ export interface FileRouteTypes {
     | '/research/{-$trackId}'
     | '/libraries/'
     | '/playlists/'
-    | '/swipe/';
-  fileRoutesByTo: FileRoutesByTo;
+    | '/swipe/'
+  fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/favorites'
@@ -132,7 +133,7 @@ export interface FileRouteTypes {
     | '/research/{-$trackId}'
     | '/libraries'
     | '/playlists'
-    | '/swipe';
+    | '/swipe'
   id:
     | '__root__'
     | '/'
@@ -144,94 +145,94 @@ export interface FileRouteTypes {
     | '/research/{-$trackId}'
     | '/libraries/'
     | '/playlists/'
-    | '/swipe/';
-  fileRoutesById: FileRoutesById;
+    | '/swipe/'
+  fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute;
-  FavoritesRoute: typeof FavoritesRoute;
-  MusicRoute: typeof MusicRoute;
-  SettingsRoute: typeof SettingsRoute;
-  LibrariesLibraryIdRoute: typeof LibrariesLibraryIdRoute;
-  PlaylistsPlaylistIdRoute: typeof PlaylistsPlaylistIdRoute;
-  ResearchChar123TrackIdChar125Route: typeof ResearchChar123TrackIdChar125Route;
-  LibrariesIndexRoute: typeof LibrariesIndexRoute;
-  PlaylistsIndexRoute: typeof PlaylistsIndexRoute;
-  SwipeIndexRoute: typeof SwipeIndexRoute;
+  IndexRoute: typeof IndexRoute
+  FavoritesRoute: typeof FavoritesRoute
+  MusicRoute: typeof MusicRoute
+  SettingsRoute: typeof SettingsRoute
+  LibrariesLibraryIdRoute: typeof LibrariesLibraryIdRoute
+  PlaylistsPlaylistIdRoute: typeof PlaylistsPlaylistIdRoute
+  ResearchChar123TrackIdChar125Route: typeof ResearchChar123TrackIdChar125Route
+  LibrariesIndexRoute: typeof LibrariesIndexRoute
+  PlaylistsIndexRoute: typeof PlaylistsIndexRoute
+  SwipeIndexRoute: typeof SwipeIndexRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
     '/settings': {
-      id: '/settings';
-      path: '/settings';
-      fullPath: '/settings';
-      preLoaderRoute: typeof SettingsRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/music': {
-      id: '/music';
-      path: '/music';
-      fullPath: '/music';
-      preLoaderRoute: typeof MusicRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
+      id: '/music'
+      path: '/music'
+      fullPath: '/music'
+      preLoaderRoute: typeof MusicRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/favorites': {
-      id: '/favorites';
-      path: '/favorites';
-      fullPath: '/favorites';
-      preLoaderRoute: typeof FavoritesRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
+      id: '/favorites'
+      path: '/favorites'
+      fullPath: '/favorites'
+      preLoaderRoute: typeof FavoritesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
-      id: '/';
-      path: '/';
-      fullPath: '/';
-      preLoaderRoute: typeof IndexRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/swipe/': {
-      id: '/swipe/';
-      path: '/swipe';
-      fullPath: '/swipe/';
-      preLoaderRoute: typeof SwipeIndexRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
+      id: '/swipe/'
+      path: '/swipe'
+      fullPath: '/swipe/'
+      preLoaderRoute: typeof SwipeIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/playlists/': {
-      id: '/playlists/';
-      path: '/playlists';
-      fullPath: '/playlists/';
-      preLoaderRoute: typeof PlaylistsIndexRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
+      id: '/playlists/'
+      path: '/playlists'
+      fullPath: '/playlists/'
+      preLoaderRoute: typeof PlaylistsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/libraries/': {
-      id: '/libraries/';
-      path: '/libraries';
-      fullPath: '/libraries/';
-      preLoaderRoute: typeof LibrariesIndexRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
+      id: '/libraries/'
+      path: '/libraries'
+      fullPath: '/libraries/'
+      preLoaderRoute: typeof LibrariesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/research/{-$trackId}': {
-      id: '/research/{-$trackId}';
-      path: '/research/{-$trackId}';
-      fullPath: '/research/{-$trackId}';
-      preLoaderRoute: typeof ResearchChar123TrackIdChar125RouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
+      id: '/research/{-$trackId}'
+      path: '/research/{-$trackId}'
+      fullPath: '/research/{-$trackId}'
+      preLoaderRoute: typeof ResearchChar123TrackIdChar125RouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/playlists/$playlistId': {
-      id: '/playlists/$playlistId';
-      path: '/playlists/$playlistId';
-      fullPath: '/playlists/$playlistId';
-      preLoaderRoute: typeof PlaylistsPlaylistIdRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
+      id: '/playlists/$playlistId'
+      path: '/playlists/$playlistId'
+      fullPath: '/playlists/$playlistId'
+      preLoaderRoute: typeof PlaylistsPlaylistIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/libraries/$libraryId': {
-      id: '/libraries/$libraryId';
-      path: '/libraries/$libraryId';
-      fullPath: '/libraries/$libraryId';
-      preLoaderRoute: typeof LibrariesLibraryIdRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
+      id: '/libraries/$libraryId'
+      path: '/libraries/$libraryId'
+      fullPath: '/libraries/$libraryId'
+      preLoaderRoute: typeof LibrariesLibraryIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -246,7 +247,7 @@ const rootRouteChildren: RootRouteChildren = {
   LibrariesIndexRoute: LibrariesIndexRoute,
   PlaylistsIndexRoute: PlaylistsIndexRoute,
   SwipeIndexRoute: SwipeIndexRoute,
-};
+}
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
-  ._addFileTypes<FileRouteTypes>();
+  ._addFileTypes<FileRouteTypes>()

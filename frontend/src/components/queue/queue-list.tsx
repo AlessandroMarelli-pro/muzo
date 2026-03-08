@@ -52,8 +52,8 @@ export function QueueList() {
     setRemovingTrackId(trackId);
     try {
       await removeTrackMutation.mutateAsync(trackId);
-    } catch (error) {
-      console.error('Failed to remove track:', error);
+    } catch (err) {
+      console.error('Failed to remove track:', err);
     } finally {
       setRemovingTrackId(null);
     }
@@ -77,8 +77,8 @@ export function QueueList() {
             position: index + 1,
           }));
           await updatePositionsMutation.mutateAsync(positions);
-        } catch (error) {
-          console.error('Failed to update queue positions:', error);
+        } catch (err) {
+          console.error('Failed to update queue positions:', err);
           // Revert on error
           setLocalQueue(queueItems);
         }

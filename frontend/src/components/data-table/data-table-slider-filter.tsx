@@ -70,14 +70,14 @@ export function DataTableSliderFilter<TData>({ column, title }: DataTableSliderF
     }
 
     const rangeSize = maxValue - minValue;
-    const step =
+    const stepSize =
       rangeSize <= 20
         ? 1
         : rangeSize <= 100
           ? Math.ceil(rangeSize / 20)
           : Math.ceil(rangeSize / 50);
 
-    return { min: minValue, max: maxValue, step };
+    return { min: minValue, max: maxValue, step: stepSize };
   }, [column, defaultRange]);
 
   const range = React.useMemo((): RangeValue => {
