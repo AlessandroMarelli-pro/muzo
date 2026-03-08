@@ -9,7 +9,7 @@ export interface DatabaseConfig {
 export default registerAs(
   'database',
   (): DatabaseConfig => ({
-    url: process.env.DATABASE_URL || 'file:./muzo.db',
+    url: process.env.DATABASE_URL || 'file:./prisma/muzo.db',
     logging: process.env.DATABASE_LOGGING === 'true',
     generateEngine: process.env.PRISMA_GENERATE_ENGINE === 'true',
   }),
