@@ -1,8 +1,8 @@
-import { Track } from "@/__generated__/types";
-import { Badge } from "@/components/ui/badge";
-import { CardContent } from "@/components/ui/card";
-import { AnimatePresence, motion } from "motion/react";
-import { useState } from "react";
+import { Track } from '@/__generated__/types';
+import { Badge } from '@/components/ui/badge';
+import { CardContent } from '@/components/ui/card';
+import { AnimatePresence, motion } from 'motion/react';
+import { useState } from 'react';
 
 interface MusicCardContentProps {
   track: Track;
@@ -19,15 +19,15 @@ export function MusicCardContent({
 }: MusicCardContentProps) {
   const [isHovered, setIsHovered] = useState(false);
 
-  const formattedTitle = track.title || "Unknown Title";
-  const formattedArtist = track.artist || "Unknown Artist";
-  const formattedGenres = track.genres && track.genres.length > 0 ? track.genres : "Unknown Genre";
+  const formattedTitle = track.title || 'Unknown Title';
+  const formattedArtist = track.artist || 'Unknown Artist';
+  const formattedGenres = track.genres && track.genres.length > 0 ? track.genres : 'Unknown Genre';
   const formattedSubgenres =
-    track.subgenres && track.subgenres.length > 0 ? track.subgenres : "Unknown Subgenre";
-  const formattedImage = track.imagePath || "Unknown Image";
+    track.subgenres && track.subgenres.length > 0 ? track.subgenres : 'Unknown Subgenre';
+  const formattedImage = track.imagePath || 'Unknown Image';
   const trackId = track.id;
   return (
-    <CardContent className={`p-0 ${className || ""} h-full`} key={`${trackId}-card-content`}>
+    <CardContent className={`p-0 ${className || ''} h-full`} key={`${trackId}-card-content`}>
       {/* Track Info */}
       <div className="flex flex-col h-full space-around">
         <div className="z-0 absolute  w-full h-full opacity-50 ">
@@ -38,7 +38,7 @@ export function MusicCardContent({
           />
         </div>
         <div
-          className=" flex-1 h-5/8 backdrop-blur-md rounded-t-md"
+          className=" flex-1 h-5/9 backdrop-blur-md rounded-t-md"
           onMouseEnter={() => {
             setIsHovered(true);
           }}
@@ -54,7 +54,7 @@ export function MusicCardContent({
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  transition={{ duration: 0.3, ease: "easeInOut" }}
+                  transition={{ duration: 0.3, ease: 'easeInOut' }}
                 >
                   <div className="absolute top-0 left-0 h-full w-full mask-t-from-0% mask-t-to-50%  duration-300 bg-background/90  rounded-t-md" />
                   {playButton}
@@ -71,7 +71,7 @@ export function MusicCardContent({
             />
           </div>
         </div>
-        <div className=" space-y-2 p-2 z-1 bg-card rounded-b-md flex flex-col justify-between  h-3/8">
+        <div className=" space-y-2 p-2 z-1 bg-card rounded-b-md flex flex-col justify-between  h-4/9">
           <div className="px-1">
             <h3
               className="font-semibold text-sm leading-tight line-clamp-1 capitalize"
@@ -88,7 +88,7 @@ export function MusicCardContent({
           </div>
           {/* Genre and Subgenre */}
           <div className="flex flex-row  gap-2 max-w-full overflow-x-scroll min-h-5">
-            {formattedGenres !== "Unknown Genre" &&
+            {formattedGenres !== 'Unknown Genre' &&
               formattedGenres.map((genre) => (
                 <Badge
                   variant="secondary"
@@ -100,7 +100,7 @@ export function MusicCardContent({
               ))}
           </div>
           <div className="flex flex-row  gap-2 truncate ">
-            {formattedSubgenres !== "Unknown Subgenre" &&
+            {formattedSubgenres !== 'Unknown Subgenre' &&
               formattedSubgenres.map((subgenre) => (
                 <Badge
                   variant="outline"
