@@ -1,11 +1,11 @@
-import { FilterCriteriaInput } from "@/__generated__/types";
+import { FilterCriteriaInput } from '@/__generated__/types';
 import {
   useCreateActiveFilter,
   useCurrentFilter,
   useDeleteActiveFilter,
   useUpdateActiveFilter,
-} from "@/services/filter-hooks";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+} from '@/services/filter-hooks';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 const SAVE_DEBOUNCE_MS = 400;
 
@@ -70,14 +70,14 @@ const defaultFilterState: FilterState = {
   instrumentalness: { min: 0, max: 1 },
   liveness: { min: 0, max: 1 },
   acousticness: { min: 0, max: 1 },
-  artist: "",
-  title: "",
+  artist: '',
+  title: '',
   library: [],
   atmosphereIds: [],
 };
 
 const toFilterCriteriaInput = (filters: FilterState): FilterCriteriaInput => {
-  console.log("toFilterCriteriaInput", filters);
+  console.log('toFilterCriteriaInput', filters);
   return {
     genreIds: filters.genres,
     subgenreIds: filters.subgenres,
@@ -108,7 +108,7 @@ export const useFiltering = (options: UseFilteringOptions = {}) => {
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const resetFilters = () => {
-    console.log("resetFilters", filters.id);
+    console.log('resetFilters', filters.id);
     if (filters.id) {
       deleteActiveFilter.mutate(filters.id);
       setFilters(defaultFilterState);
@@ -127,12 +127,12 @@ export const useFiltering = (options: UseFilteringOptions = {}) => {
 
   const updateFilters = useCallback(
     (values: Record<string, any>) => {
-      console.log("updateFilters", values);
+      console.log('updateFilters', values);
       for (const [key, value] of Object.entries(values)) {
-        const isString = typeof value === "string";
-        const isStringArray = Array.isArray(value) && value.every((v) => typeof v === "string");
+        const isString = typeof value === 'string';
+        const isStringArray = Array.isArray(value) && value.every((v) => typeof v === 'string');
         const isMinMaxRange =
-          Array.isArray(value) && value.length === 2 && value.every((v) => typeof v === "number");
+          Array.isArray(value) && value.length === 2 && value.every((v) => typeof v === 'number');
 
         if (value === null) {
           updateFilter(key as keyof FilterState, value);
@@ -156,7 +156,6 @@ export const useFiltering = (options: UseFilteringOptions = {}) => {
 
   useEffect(() => {
     if (currentFilter.data) {
-      console.log("currentFilter", currentFilter.data);
       setFilters({
         ...currentFilter.data.criteria,
         id: currentFilter.data.id,
@@ -209,8 +208,8 @@ export const useFiltering = (options: UseFilteringOptions = {}) => {
       filters.liveness.max !== 1 ||
       filters.acousticness.min !== 0 ||
       filters.acousticness.max !== 1 ||
-      filters.artist !== "" ||
-      filters.title !== "" ||
+      filters.artist !== '' ||
+      filters.title !== '' ||
       filters.library.length > 0 ||
       filters.atmosphereIds.length > 0;
 

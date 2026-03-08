@@ -193,11 +193,21 @@ export function useDataTable<TData>(props: UseDataTableProps<TData>) {
       // Find the column to determine the expected filter type
       const column = columns.find((col) => col.id === key);
       const isMultiSelect = column?.meta?.variant === "multiSelect";
+      const isRangeObject =
+        typeof value === "object" &&
+        value !== null &&
+        "min" in value &&
+        "max" in value &&
+        typeof (value as { min: number; max: number }).min === "number" &&
+        typeof (value as { min: number; max: number }).max === "number";
 
       // Process the value based on column type
       let processedValue: string | string[] | number | boolean;
 
-      if (Array.isArray(value)) {
+      if (isRangeObject) {
+        const range = value as { min: number; max: number };
+        processedValue = [String(range.min), String(range.max)];
+      } else if (Array.isArray(value)) {
         // Filter out empty strings from arrays
         const filtered = value.filter((v) => v !== "" && v !== null && v !== undefined);
         // Skip if array becomes empty after filtering

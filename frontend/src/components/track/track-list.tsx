@@ -107,7 +107,7 @@ export const TrackList = React.memo<TrackListProps>(
     return (
       <div className="p-6  flex flex-col z-0" key="track-list">
         <MusicTable
-          data={tracks || []}
+          data={(tracks || []).map((t) => ({ ...t, tempo: t.mfTempo ?? null }))}
           pageCount={totalPages}
           staticFilterOptions={staticFilterOptions}
           initialPageSize={perPage}

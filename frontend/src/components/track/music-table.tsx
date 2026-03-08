@@ -1,30 +1,30 @@
-"use client";
+'use client';
 
-import { Track } from "@/__generated__/types";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-import { ColumnDef, Row } from "@tanstack/react-table";
-import { Brain, Heart, Pause, Play } from "lucide-react";
-import * as React from "react";
+import { Track } from '@/__generated__/types';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+import { ColumnDef, Row } from '@tanstack/react-table';
+import { Brain, Heart, Pause, Play } from 'lucide-react';
+import * as React from 'react';
 
-import { DataTable } from "@/components/data-table/data-table";
-import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
-import { DataTableSortList } from "@/components/data-table/data-table-sort-list";
-import { DataTableToolbar } from "@/components/data-table/data-table-toolbar";
+import { DataTable } from '@/components/data-table/data-table';
+import { DataTableColumnHeader } from '@/components/data-table/data-table-column-header';
+import { DataTableSortList } from '@/components/data-table/data-table-sort-list';
+import { DataTableToolbar } from '@/components/data-table/data-table-toolbar';
 import {
   useAudioPlayerActions,
   useCurrentTrack,
   useIsPlaying,
-} from "@/contexts/audio-player-context";
-import { useDataTable } from "@/hooks/use-data-table";
-import { AudioPlayerActions } from "@/hooks/useAudioPlayer";
-import { FilterState } from "@/hooks/useFiltering";
-import { StaticFilterOptionsData } from "@/hooks/useFilterOptions";
-import { Link } from "@tanstack/react-router";
-import { format } from "date-fns";
-import { DataTablePagination } from "../data-table/data-table-pagination";
-import { TrackMoreMenu } from "./track-more-menu";
+} from '@/contexts/audio-player-context';
+import { useDataTable } from '@/hooks/use-data-table';
+import { AudioPlayerActions } from '@/hooks/useAudioPlayer';
+import { FilterState } from '@/hooks/useFiltering';
+import { StaticFilterOptionsData } from '@/hooks/useFilterOptions';
+import { Link } from '@tanstack/react-router';
+import { format } from 'date-fns';
+import { DataTablePagination } from '../data-table/data-table-pagination';
+import { TrackMoreMenu } from './track-more-menu';
 
 interface MusicTableProps {
   data: Track[];
@@ -37,56 +37,56 @@ interface MusicTableProps {
   isLoading: boolean;
 }
 const danceabilityFeelingOptions = [
-  { label: "Highly Danceable", value: "highly-danceable" },
-  { label: "Danceable", value: "danceable" },
-  { label: "Moderately Danceable", value: "moderately-danceable" },
-  { label: "Slightly Danceable", value: "slightly-danceable" },
-  { label: "Minimally Danceable", value: "minimally-danceable" },
-  { label: "Ambient", value: "ambient" },
-  { label: "Experimental", value: "experimental" },
+  { label: 'Highly Danceable', value: 'highly-danceable' },
+  { label: 'Danceable', value: 'danceable' },
+  { label: 'Moderately Danceable', value: 'moderately-danceable' },
+  { label: 'Slightly Danceable', value: 'slightly-danceable' },
+  { label: 'Minimally Danceable', value: 'minimally-danceable' },
+  { label: 'Ambient', value: 'ambient' },
+  { label: 'Experimental', value: 'experimental' },
 ];
 const arousalMoodOptions = [
-  { label: "Very Calm", value: "very calm" },
-  { label: "Calm", value: "calm" },
-  { label: "Moderate Energy", value: "moderate energy" },
-  { label: "Energetic", value: "energetic" },
-  { label: "Very Energetic", value: "very energetic" },
+  { label: 'Very Calm', value: 'very calm' },
+  { label: 'Calm', value: 'calm' },
+  { label: 'Moderate Energy', value: 'moderate energy' },
+  { label: 'Energetic', value: 'energetic' },
+  { label: 'Very Energetic', value: 'very energetic' },
 ];
 const valenceMoodOptions = [
-  { label: "Very Positive", value: "very positive" },
-  { label: "Positive", value: "positive" },
-  { label: "Neutral", value: "neutral" },
-  { label: "Negative", value: "negative" },
-  { label: "Very Negative", value: "very negative" },
+  { label: 'Very Positive', value: 'very positive' },
+  { label: 'Positive', value: 'positive' },
+  { label: 'Neutral', value: 'neutral' },
+  { label: 'Negative', value: 'negative' },
+  { label: 'Very Negative', value: 'very negative' },
 ];
 
 const CamelotKeyOptions = [
   // Major keys (inner circle)
-  { label: "C major", value: "8B", color: "rgba(221, 160, 221,0.5)" }, // Plum/Lavender
-  { label: "G major", value: "9B", color: "rgba(128, 0, 128,0.5)" }, // Purple
-  { label: "D major", value: "10B", color: "rgba(0, 0, 139,0.5)" }, // Dark Blue
-  { label: "A major", value: "11B", color: "rgba(0, 0, 255,0.5)" }, // Blue
-  { label: "E major", value: "12B", color: "rgba(0, 128, 128,0.5)" }, // Teal
-  { label: "B major", value: "1B", color: "rgba(0, 255, 255,0.5)" }, // Cyan
-  { label: "F# major", value: "2B", color: "rgba(144, 238, 144,0.5)" }, // Light Green
-  { label: "C# major", value: "3B", color: "rgba(0, 128, 0,0.5)" }, // Green
-  { label: "G# major", value: "4B", color: "rgba(255, 215, 0,0.5)" }, // Gold
-  { label: "D# major", value: "5B", color: "rgba(255, 165, 0,0.5)" }, // Orange
-  { label: "A# major", value: "6B", color: "rgba(255, 69, 0,0.5)" }, // Orange Red
-  { label: "F major", value: "7B", color: "rgba(255, 20, 147,0.5)" }, // Deep Pink
+  { label: 'C major', value: '8B', color: 'rgba(221, 160, 221,0.5)' }, // Plum/Lavender
+  { label: 'G major', value: '9B', color: 'rgba(128, 0, 128,0.5)' }, // Purple
+  { label: 'D major', value: '10B', color: 'rgba(0, 0, 139,0.5)' }, // Dark Blue
+  { label: 'A major', value: '11B', color: 'rgba(0, 0, 255,0.5)' }, // Blue
+  { label: 'E major', value: '12B', color: 'rgba(0, 128, 128,0.5)' }, // Teal
+  { label: 'B major', value: '1B', color: 'rgba(0, 255, 255,0.5)' }, // Cyan
+  { label: 'F# major', value: '2B', color: 'rgba(144, 238, 144,0.5)' }, // Light Green
+  { label: 'C# major', value: '3B', color: 'rgba(0, 128, 0,0.5)' }, // Green
+  { label: 'G# major', value: '4B', color: 'rgba(255, 215, 0,0.5)' }, // Gold
+  { label: 'D# major', value: '5B', color: 'rgba(255, 165, 0,0.5)' }, // Orange
+  { label: 'A# major', value: '6B', color: 'rgba(255, 69, 0,0.5)' }, // Orange Red
+  { label: 'F major', value: '7B', color: 'rgba(255, 20, 147,0.5)' }, // Deep Pink
   // Minor keys (outer circle)
-  { label: "A minor", value: "8A", color: "rgba(221, 160, 221,0.5)" }, // Plum/Lavender
-  { label: "E minor", value: "9A", color: "rgba(128, 0, 128,0.5)" }, // Purple
-  { label: "B minor", value: "10A", color: "rgba(0, 0, 139,0.5)" }, // Dark Blue
-  { label: "F# minor", value: "11A", color: "rgba(0, 0, 255,0.5)" }, // Blue
-  { label: "C# minor", value: "12A", color: "rgba(0, 128, 128,0.5)" }, // Teal
-  { label: "G# minor", value: "1A", color: "rgba(0, 255, 255,0.5)" }, // Cyan
-  { label: "D# minor", value: "2A", color: "rgba(144, 238, 144,0.5)" }, // Light Green
-  { label: "A# minor", value: "3A", color: "rgba(0, 128, 0,0.5)" }, // Green
-  { label: "F minor", value: "4A", color: "rgba(255, 215, 0,0.5)" }, // Gold
-  { label: "C minor", value: "5A", color: "rgba(255, 165, 0,0.5)" }, // Orange
-  { label: "G minor", value: "6A", color: "rgba(255, 69, 0,0.5)" }, // Orange Red
-  { label: "D minor", value: "7A", color: "rgba(255, 20, 147,0.5)" }, // Deep Pink
+  { label: 'A minor', value: '8A', color: 'rgba(221, 160, 221,0.5)' }, // Plum/Lavender
+  { label: 'E minor', value: '9A', color: 'rgba(128, 0, 128,0.5)' }, // Purple
+  { label: 'B minor', value: '10A', color: 'rgba(0, 0, 139,0.5)' }, // Dark Blue
+  { label: 'F# minor', value: '11A', color: 'rgba(0, 0, 255,0.5)' }, // Blue
+  { label: 'C# minor', value: '12A', color: 'rgba(0, 128, 128,0.5)' }, // Teal
+  { label: 'G# minor', value: '1A', color: 'rgba(0, 255, 255,0.5)' }, // Cyan
+  { label: 'D# minor', value: '2A', color: 'rgba(144, 238, 144,0.5)' }, // Light Green
+  { label: 'A# minor', value: '3A', color: 'rgba(0, 128, 0,0.5)' }, // Green
+  { label: 'F minor', value: '4A', color: 'rgba(255, 215, 0,0.5)' }, // Gold
+  { label: 'C minor', value: '5A', color: 'rgba(255, 165, 0,0.5)' }, // Orange
+  { label: 'G minor', value: '6A', color: 'rgba(255, 69, 0,0.5)' }, // Orange Red
+  { label: 'D minor', value: '7A', color: 'rgba(255, 20, 147,0.5)' }, // Deep Pink
 ];
 
 const ActionCells = ({
@@ -129,7 +129,7 @@ const ActionCells = ({
           <Brain className="h-4 w-4" aria-hidden />
         </Link>
       </Button>
-      <TrackMoreMenu trackId={track.id} artist={track.artist || ""} title={track.title || ""} />
+      <TrackMoreMenu trackId={track.id} artist={track.artist || ''} title={track.title || ''} />
     </div>
   );
 };
@@ -141,12 +141,12 @@ const columns = (
   React.useMemo<ColumnDef<Track>[]>(
     () => [
       {
-        id: "library",
-        accessorKey: "libraryId",
+        id: 'library',
+        accessorKey: 'libraryId',
         header: () => null,
         cell: ({ row }) => {
           const track = row.original;
-          const imagePath = track.imagePath || "Unknown Image";
+          const imagePath = track.imagePath || 'Unknown Image';
 
           return (
             <div className="flex items-center justify-center h-5 w-8">
@@ -160,17 +160,17 @@ const columns = (
         },
         enableColumnFilter: true,
         meta: {
-          label: "Libray",
-          variant: "multiSelect",
+          label: 'Libray',
+          variant: 'multiSelect',
           options: staticFilterOptions.libraries,
         },
       },
       {
-        id: "artist",
-        accessorKey: "artist",
+        id: 'artist',
+        accessorKey: 'artist',
         header: ({ column }) => <DataTableColumnHeader column={column} title="Artist" />,
         cell: ({ row }) => {
-          const artist = row.getValue("artist") as string;
+          const artist = row.getValue('artist') as string;
 
           return (
             <div className="max-w-[100px] truncate font-medium capitalize" title={artist}>
@@ -179,19 +179,19 @@ const columns = (
           );
         },
         meta: {
-          label: "Artist",
-          placeholder: "Search artist...",
-          variant: "text",
+          label: 'Artist',
+          placeholder: 'Search artist...',
+          variant: 'text',
         },
         enableColumnFilter: true,
       },
       {
-        id: "title",
-        accessorKey: "title",
+        id: 'title',
+        accessorKey: 'title',
 
         header: ({ column }) => <DataTableColumnHeader column={column} title="Title" />,
         cell: ({ row }) => {
-          const title = row.getValue("title") as string;
+          const title = row.getValue('title') as string;
 
           return (
             <div className="max-w-[150px] truncate capitalize" title={title}>
@@ -202,22 +202,22 @@ const columns = (
         enableColumnFilter: true,
         width: 200,
         meta: {
-          label: "Title",
-          placeholder: "Search title...",
-          variant: "text",
+          label: 'Title',
+          placeholder: 'Search title...',
+          variant: 'text',
         },
       },
       {
-        id: "duration",
-        accessorKey: "duration",
+        id: 'duration',
+        accessorKey: 'duration',
         header: ({ column }) => <DataTableColumnHeader column={column} title="Duration" />,
         cell: ({ row }) => {
-          const duration = row.getValue("duration") as number;
+          const duration = row.getValue('duration') as number;
           const minutes = Math.floor(duration / 60);
           const seconds = Math.floor(duration % 60);
           return (
             <div className="max-w-[50px] text-right font-mono">
-              {minutes}:{seconds.toString().padStart(2, "0")}
+              {minutes}:{seconds.toString().padStart(2, '0')}
             </div>
           );
         },
@@ -225,22 +225,22 @@ const columns = (
         enableColumnFilter: true,
       },
       {
-        id: "listeningCount",
-        accessorKey: "listeningCount",
+        id: 'listeningCount',
+        accessorKey: 'listeningCount',
         header: ({ column }) => <DataTableColumnHeader column={column} title="Plays" />,
         cell: ({ row }) => {
-          const count = row.getValue("listeningCount") as number;
+          const count = row.getValue('listeningCount') as number;
           return <div className="max-w-[25px] text-right">{count.toLocaleString()}</div>;
         },
         enableColumnFilter: true,
       },
 
       {
-        id: "aiAtmosphereKeywords",
-        accessorKey: "aiAtmosphereKeywords",
+        id: 'aiAtmosphereKeywords',
+        accessorKey: 'aiAtmosphereKeywords',
         header: ({ column }) => <DataTableColumnHeader column={column} title="Atmosphere" />,
         cell: ({ row }) => {
-          const atmosphereKeywords = (row.getValue("aiAtmosphereKeywords") || []) as string[];
+          const atmosphereKeywords = (row.getValue('aiAtmosphereKeywords') || []) as string[];
 
           return (
             <div className="flex  gap-1">
@@ -258,8 +258,8 @@ const columns = (
           );
         },
         meta: {
-          label: "Atmosphere",
-          variant: "multiSelect",
+          label: 'Atmosphere',
+          variant: 'multiSelect',
           options: staticFilterOptions.atmospheres,
           hidden: true,
         },
@@ -268,11 +268,11 @@ const columns = (
         enableHiding: true,
       },
       {
-        id: "genres",
-        accessorKey: "genres",
+        id: 'genres',
+        accessorKey: 'genres',
         header: ({ column }) => <DataTableColumnHeader column={column} title="Genre" />,
         cell: ({ row }) => {
-          const genres = row.getValue("genres") as string[];
+          const genres = row.getValue('genres') as string[];
 
           return (
             <div className="flex  gap-1">
@@ -290,18 +290,18 @@ const columns = (
           );
         },
         meta: {
-          label: "Genre",
-          variant: "multiSelect",
+          label: 'Genre',
+          variant: 'multiSelect',
           options: staticFilterOptions.genres,
         },
         enableColumnFilter: true,
       },
       {
-        id: "subgenres",
-        accessorKey: "subgenres",
+        id: 'subgenres',
+        accessorKey: 'subgenres',
         header: ({ column }) => <DataTableColumnHeader column={column} title="Subgenre" />,
         cell: ({ row }) => {
-          const subgenres = row.getValue("subgenres") as string[];
+          const subgenres = row.getValue('subgenres') as string[];
 
           return (
             <div className="flex  gap-1">
@@ -319,43 +319,44 @@ const columns = (
           );
         },
         meta: {
-          label: "Subgenre",
-          variant: "multiSelect",
+          label: 'Subgenre',
+          variant: 'multiSelect',
           options: staticFilterOptions.subgenres,
         },
         enableColumnFilter: true,
       },
       {
-        id: "mfTempo",
-        accessorKey: "mfTempo",
+        id: 'tempo',
+        accessorKey: 'tempo',
         header: ({ column }) => <DataTableColumnHeader column={column} title="Tempo" />,
         cell: ({ row }) => {
-          const tempo = row.getValue("mfTempo") as number;
+          const tempo = row.getValue('tempo') as number;
 
           return (
             <div className="max-w-[50px] text-right font-mono">
-              {tempo >= 0 ? `${Math.round(tempo)} BPM` : "N/A"}
+              {tempo >= 0 ? `${Math.round(tempo)} BPM` : 'N/A'}
             </div>
           );
         },
+
         meta: {
-          label: "Tempo",
-          unit: "BPM",
-          variant: "range",
+          label: 'Tempo',
+          unit: 'BPM',
+          variant: 'range',
           range: [0, 200],
         },
         enableColumnFilter: true,
       },
       {
-        id: "mfKey",
-        accessorKey: "mfKey",
+        id: 'mfKey',
+        accessorKey: 'mfKey',
         header: ({ column }) => <DataTableColumnHeader column={column} title="Key" />,
         cell: ({ row }) => {
           const key = row.original.mfKey as string;
           return (
             <Badge
               variant="outline"
-              className={cn("max-w-[70px] text-center font-mono")}
+              className={cn('max-w-[70px] text-center font-mono')}
               size="xs"
               style={{
                 backgroundColor: CamelotKeyOptions.find(
@@ -365,136 +366,132 @@ const columns = (
             >
               {CamelotKeyOptions.find(
                 (option) => option.label?.toLowerCase() === key?.toLowerCase(),
-              )?.label || "N/A"}
+              )?.label || 'N/A'}
             </Badge>
           );
         },
         meta: {
-          label: "Key",
-          variant: "multiSelect",
+          label: 'Key',
+          variant: 'multiSelect',
           options: staticFilterOptions.keys,
         },
         enableColumnFilter: true,
       },
 
       {
-        id: "mfDanceabilityFeeling",
-        accessorKey: "mfDanceabilityFeeling",
+        id: 'mfDanceabilityFeeling',
+        accessorKey: 'mfDanceabilityFeeling',
         header: ({ column }) => <DataTableColumnHeader column={column} title="Danceability" />,
         cell: ({ row }) => {
-          const danceabilityFeeling = row.getValue("mfDanceabilityFeeling") as string;
+          const danceabilityFeeling = row.getValue('mfDanceabilityFeeling') as string;
 
           return (
-            <Badge variant="outline" className={cn("text-center font-mono")} size="xs">
+            <Badge variant="outline" className={cn('text-center font-mono')} size="xs">
               {danceabilityFeelingOptions.find((option) => option.value === danceabilityFeeling)
-                ?.label || "N/A"}
+                ?.label || 'N/A'}
             </Badge>
           );
         },
         meta: {
-          label: "Danceability",
-          variant: "multiSelect",
+          label: 'Danceability',
+          variant: 'multiSelect',
           options: danceabilityFeelingOptions,
         },
         enableColumnFilter: true,
       },
       {
-        id: "mfArousalMood",
-        accessorKey: "mfArousalMood",
+        id: 'mfArousalMood',
+        accessorKey: 'mfArousalMood',
         header: ({ column }) => <DataTableColumnHeader column={column} title="Arousal" />,
         cell: ({ row }) => {
-          const arousalMood = row.getValue("mfArousalMood") as string;
+          const arousalMood = row.getValue('mfArousalMood') as string;
 
           return (
-            <Badge variant="outline" className={cn("text-center font-mono")} size="xs">
-              {arousalMoodOptions.find((option) => option.value === arousalMood)?.label || "N/A"}
+            <Badge variant="outline" className={cn('text-center font-mono')} size="xs">
+              {arousalMoodOptions.find((option) => option.value === arousalMood)?.label || 'N/A'}
             </Badge>
           );
         },
         meta: {
-          label: "Mood",
-          variant: "multiSelect",
+          label: 'Mood',
+          variant: 'multiSelect',
           options: arousalMoodOptions,
         },
         enableColumnFilter: true,
       },
       {
-        id: "mfValenceMood",
-        accessorKey: "mfValenceMood",
+        id: 'mfValenceMood',
+        accessorKey: 'mfValenceMood',
         header: ({ column }) => <DataTableColumnHeader column={column} title="Mood" />,
         cell: ({ row }) => {
-          const valenceMood = row.getValue("mfValenceMood") as string;
+          const valenceMood = row.getValue('mfValenceMood') as string;
 
           return (
-            <Badge variant="outline" className={cn("text-center font-mono")} size="xs">
-              {valenceMoodOptions.find((option) => option.value === valenceMood)?.label || "N/A"}
+            <Badge variant="outline" className={cn('text-center font-mono')} size="xs">
+              {valenceMoodOptions.find((option) => option.value === valenceMood)?.label || 'N/A'}
             </Badge>
           );
         },
         meta: {
-          label: "Valence",
-          variant: "multiSelect",
+          label: 'Valence',
+          variant: 'multiSelect',
           options: valenceMoodOptions,
         },
         enableColumnFilter: true,
       },
       {
-        id: "isFavorite",
-        accessorKey: "isFavorite",
+        id: 'isFavorite',
+        accessorKey: 'isFavorite',
         header: ({ column }) => <DataTableColumnHeader column={column} title="Favorite" />,
         cell: ({ row }) => {
-          const isFavorite = row.getValue("isFavorite") as boolean;
+          const isFavorite = row.getValue('isFavorite') as boolean;
 
           return (
             <div className="flex items-center justify-center">
               <Heart
                 className={cn(
-                  "h-4 w-4",
-                  isFavorite ? "fill-red-500 text-red-500" : "text-muted-foreground",
+                  'h-4 w-4',
+                  isFavorite ? 'fill-red-500 text-red-500' : 'text-muted-foreground',
                 )}
               />
             </div>
           );
         },
         meta: {
-          label: "Favorite",
-          variant: "boolean",
+          label: 'Favorite',
+          variant: 'boolean',
         },
         enableColumnFilter: true,
       },
       {
-        id: "lastScannedAt",
-        accessorKey: "lastScannedAt",
+        id: 'lastScannedAt',
+        accessorKey: 'lastScannedAt',
         header: ({ column }) => <DataTableColumnHeader column={column} title="Last Scanned At" />,
         cell: ({ row }) => {
-          const lastScannedAt = row.getValue("lastScannedAt") as string;
-          return <div className="text-right">{format(lastScannedAt, "MM/dd/yyyy HH:mm")}</div>;
+          const lastScannedAt = row.getValue('lastScannedAt') as string;
+          return <div className="text-right">{format(lastScannedAt, 'MM/dd/yyyy HH:mm')}</div>;
         },
         enableColumnFilter: true,
       },
       {
-        id: "fileCreatedAt",
-        accessorKey: "fileCreatedAt",
+        id: 'fileCreatedAt',
+        accessorKey: 'fileCreatedAt',
         header: ({ column }) => <DataTableColumnHeader column={column} title="Created At" />,
         cell: ({ row }) => {
-          const fileCreatedAt = row.getValue("fileCreatedAt") as string;
+          const fileCreatedAt = row.getValue('fileCreatedAt') as string;
           return (
             <div className="text-right">
-              {fileCreatedAt && format(new Date(fileCreatedAt), "MM/dd/yyyy HH:mm")}
+              {fileCreatedAt && format(new Date(fileCreatedAt), 'MM/dd/yyyy HH:mm')}
             </div>
           );
         },
         enableColumnFilter: true,
       },
       {
-        id: "actions",
+        id: 'actions',
         enableHiding: false,
         cell: ({ row }) => (
-          <ActionCells
-            row={row}
-            actions={actions}
-            setCurrentTrack={setCurrentTrack}
-          />
+          <ActionCells row={row} actions={actions} setCurrentTrack={setCurrentTrack} />
         ),
       },
     ],
@@ -519,8 +516,8 @@ export const MusicTable = React.memo<MusicTableProps>(
       columns: columns(staticFilterOptions, actions, setCurrentTrack),
       pageCount: pageCount,
       initialState: {
-        sorting: [{ id: "title", desc: false }],
-        columnPinning: { right: ["actions"] },
+        sorting: [{ id: 'title', desc: false }],
+        columnPinning: { right: ['actions'] },
         pagination: {
           pageIndex: 0,
           pageSize: initialPageSize,
