@@ -1,15 +1,13 @@
-import { RouterProvider } from "@tanstack/react-router";
+import { RouterProvider } from '@tanstack/react-router';
+import { useEffect } from 'react';
 //import './App.css';
-import { Toaster } from "./components/ui/sonner";
-import { AuthProvider, useAuth } from "./contexts/auth-context";
-import { router } from "./router";
+import { Toaster } from './components/ui/sonner';
+import { AuthProvider, useAuth } from './contexts/auth-context';
+import { router } from './router';
 
 function InnerApp() {
   const user = useAuth();
 
-  if (!user || user.isLoading) {
-    return <div>Loading…</div>;
-  }
   return (
     <>
       <RouterProvider router={router} context={user} />
@@ -18,7 +16,9 @@ function InnerApp() {
   );
 }
 function App() {
-  sessionStorage.removeItem("isLoaded");
+  useEffect(() => {
+    sessionStorage.removeItem('isLoaded');
+  }, []);
   return (
     <AuthProvider>
       <InnerApp />

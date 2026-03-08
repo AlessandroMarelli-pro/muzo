@@ -14,6 +14,7 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from '@/components/ui/chart';
+import { useCachedSessionStorage } from '@/hooks/use-cached-storage';
 import { Route } from '@/routes/index';
 import { BookHeadphones, ListMusic, Sparkles } from 'lucide-react';
 import { Skeleton } from '../ui/skeleton';
@@ -96,7 +97,7 @@ const StatsCard = ({
   isDuration?: boolean;
   featured?: boolean;
 }) => {
-  const isLoaded = sessionStorage.getItem('isLoaded');
+  const isLoaded = useCachedSessionStorage('isLoaded');
 
   if (isLoading) return <StatsCardSkeleton featured={featured} />;
   return (
@@ -173,7 +174,7 @@ export function Home() {
   const hasRecentTracks = (recentlyPlayed?.length ?? 0) > 0;
 
   return (
-    <main className="p-4 flex flex-col gap-4">
+    <main className="p-6 flex flex-col gap-4">
       {/* Hero */}
       <section aria-labelledby="home-heading" className="flex flex-col gap-4">
         <p className="text-muted-foreground max-w-xl text-pretty">

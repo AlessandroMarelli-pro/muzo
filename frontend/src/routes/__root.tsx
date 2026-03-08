@@ -105,6 +105,9 @@ function RootContent() {
     console.log("Toggle shuffle");
   }, []);
   const { resolvedTheme } = useTheme();
+  const [sidebarDefaultOpen] = React.useState(() =>
+    typeof window !== "undefined" ? localStorage.getItem("sidebar_state") === "expanded" : false,
+  );
 
   React.useEffect(() => {
     document.documentElement.style.colorScheme = resolvedTheme === "dark" ? "dark" : "light";
@@ -112,9 +115,7 @@ function RootContent() {
 
   return (
     <>
-      <SidebarProvider
-        defaultOpen={localStorage.getItem("sidebar_state") === "expanded" ? true : false}
-      >
+      <SidebarProvider defaultOpen={sidebarDefaultOpen}>
         <AppSidebar
           data={{
             ...navigationData,
