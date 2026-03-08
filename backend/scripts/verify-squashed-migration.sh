@@ -47,9 +47,10 @@ rm -f "$VERIFY_DB"
 DATABASE_URL="file:$(pwd)/$VERIFY_DB" npx prisma migrate deploy
 
 # 4. Diff: DB (after applying init) vs current schema. Should be empty or only a comment.
+# Prisma v7: use --from-config-datasource; DATABASE_URL must point to the verify DB.
 echo "→ Checking that applied migration matches schema.prisma..."
-DIFF=$(npx prisma migrate diff \
-  --from-url "file:$(pwd)/$VERIFY_DB" \
+DIFF=$(DATABASE_URL="file:$(pwd)/$VERIFY_DB" npx prisma migrate diff \
+  --from-config-datasource \
   --to-schema-datamodel "$PRISMA_DIR/schema.prisma" \
   --script 2>/dev/null || true)
 # Prisma may output "-- This is an empty migration." when there is no diff; treat as success
