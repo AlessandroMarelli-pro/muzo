@@ -45,10 +45,9 @@ export const SelectPlaylistTrigger = ({
           Add to Playlist
         </DropdownMenuItem>
       ) : (
-        <Button onClick={handleOpen} variant="outline" size="sm">
+        <Button onClick={handleOpen} variant="ghost" size="sm">
           {' '}
           <ListPlus className="w-4 h-4" />
-          Add to Playlist
         </Button>
       )}
       <SelectPlaylistDialog

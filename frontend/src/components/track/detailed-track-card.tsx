@@ -8,7 +8,21 @@ import {
   useIsPlaying,
 } from '@/contexts/audio-player-context';
 import { cn } from '@/lib/utils';
-import { Activity, Clock, Heart, Music, Pause, Play, Shuffle, Zap } from 'lucide-react';
+import {
+  Activity,
+  Angry,
+  Clock,
+  Dices,
+  Frown,
+  Heart,
+  Laugh,
+  Meh,
+  Music,
+  Pause,
+  Play,
+  Smile,
+  Zap,
+} from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { SelectPlaylistTrigger } from '../playlist/select-playlist-dialog';
 import { Skeleton } from '../ui/skeleton';
@@ -18,6 +32,21 @@ interface DetailedTrackCardProps {
   refetch: () => void;
   isLoading: boolean;
 }
+
+const getValenceIcon = (valence?: string | null) => {
+  switch (valence?.toLowerCase()) {
+    case 'very positive':
+      return Laugh;
+    case 'very negative':
+      return Angry;
+    case 'positive':
+      return Smile;
+    case 'negative':
+      return Frown;
+    default:
+      return Meh;
+  }
+};
 
 function DetailedTrackCardSkeleton() {
   return (
@@ -154,30 +183,27 @@ export function DetailedTrackCard({ track, refetch, isLoading }: DetailedTrackCa
         )}
         {/* Metadata Grid */}
         <div className="flex flex-row gap-2">
-          <Badge variant="outline" className="flex items-center gap-2  " size="xs">
-            <Clock size={64} />
-            <span>{formatDuration(track.duration)}</span>
-          </Badge>
-          <Badge variant="outline" className="flex items-center gap-2  " size="xs">
-            <Activity className="w-4 h-4" />
-            <span>{track.listeningCount} plays</span>
-          </Badge>
-          <Badge variant="outline" className="flex items-center gap-2  " size="xs">
-            <Music className="w-4 h-4" />
-            <span>{formatBPM(track.mfTempo || 0)} BPM</span>
-          </Badge>
-          <Badge variant="outline" className="flex items-center gap-2  " size="xs">
-            <Zap className="w-4 h-4" />
-            <span className="capitalize">{track.mfArousalMood}</span>
-          </Badge>
-          <Badge variant="outline" className="flex items-center gap-2  " size="xs">
-            <Activity className="w-4 h-4" />
-            <span className="capitalize">{track.mfDanceabilityFeeling}</span>
-          </Badge>{' '}
-          <Badge variant="outline" className="flex items-center gap-2  " size="xs">
-            <Activity className="w-4 h-4" />
-            <span className="capitalize">{track.mfValenceMood}</span>
-          </Badge>
+          {[
+            { icon: Clock, label: formatDuration(track.duration) },
+            { icon: Activity, label: `${track.listeningCount} plays` },
+            { icon: Music, label: `${formatBPM(track.mfTempo || 0)} BPM` },
+            { icon: Zap, label: track.mfArousalMood },
+            { icon: Activity, label: track.mfDanceabilityFeeling },
+            {
+              icon: getValenceIcon(track.mfValenceMood),
+              label: track.mfValenceMood,
+            },
+          ].map((item, index) => (
+            <Badge
+              key={index}
+              variant="secondary"
+              className="flex items-center gap-2 border-none capitalize"
+              size="xs"
+            >
+              <item.icon size={64} />
+              <span>{item.label}</span>
+            </Badge>
+          ))}
         </div>
       </CardHeader>
       <CardContent className="px-4">
@@ -210,30 +236,28 @@ export function DetailedTrackCard({ track, refetch, isLoading }: DetailedTrackCa
             </div>
 
             {track?.aiContextBackgrounds && (
-              <div className="text-sm text-muted-foreground  ">{track?.aiContextBackgrounds}</div>
+              <div className="text-xs text-muted-foreground  ">{track?.aiContextBackgrounds}</div>
             )}
             {track?.aiContextImpacts && (
-              <div className="text-sm text-muted-foreground  ">{track?.aiContextImpacts}</div>
+              <div className="text-xs text-muted-foreground  ">{track?.aiContextImpacts}</div>
             )}
           </div>
           {/* Action Buttons */}
           <div className="flex flex-col items-end justify-center gap-2">
             <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={refetch}>
+                <Dices className="w-4 h-4" />
+                Next random
+              </Button>{' '}
+              <Button variant="ghost" size="sm" onClick={handleToggleFavorite}>
+                <Heart className={cn('w-4 h-4', isFavorite ? 'fill-red-500 text-red-500' : '')} />
+              </Button>{' '}
               <SelectPlaylistTrigger
                 trackId={track.id}
                 isDropdownMenuItem={false}
                 artist={track.artist || ''}
                 title={track.title || ''}
               />
-
-              <Button variant="destructive" size="sm" onClick={handleToggleFavorite}>
-                <Heart className={cn('w-4 h-4', isFavorite ? 'fill-red-500 text-red-500' : '')} />
-                {isFavorite ? 'Favorite' : 'Add to favorite'}
-              </Button>
-              <Button variant="outline" size="sm" onClick={refetch}>
-                <Shuffle className="w-4 h-4" />
-                Next Track
-              </Button>
             </div>
           </div>
         </div>
@@ -251,7 +275,7 @@ export function DetailedTrackCard({ track, refetch, isLoading }: DetailedTrackCa
         {track?.aiAtmosphereKeywords && (
           <div className="flex flex-wrap gap-2">
             {track?.aiAtmosphereKeywords?.map((tag) => (
-              <Badge key={tag} variant="outline" size="xs" className="border-none">
+              <Badge key={tag} variant="outline" size="xs" className="border-none capitalize">
                 {tag}
               </Badge>
             ))}
