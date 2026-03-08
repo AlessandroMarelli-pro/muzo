@@ -14,7 +14,7 @@ import { MusicLibraryRepository } from 'src/adapters/persistence/repositories/mu
 import { MusicTrackRepository } from 'src/adapters/persistence/repositories/music-track/music-track.repository';
 import { ScanSessionRepository } from 'src/adapters/persistence/repositories/scan-session/scan-session.repository';
 import { models } from 'src/kernel/types/models';
-import { setupIntegrationDb } from '../_test-utils/integration-db';
+import { createIntegrationPrismaClient, setupIntegrationDb } from '../_test-utils/integration-db';
 import { makeLibrary } from '../_test-utils/make-library';
 
 const LIBRARY_ID = models.musicLibrary.id('lib-1');
@@ -50,9 +50,7 @@ describe('ProcessEndLibraryScanUseCase', () => {
     const loggerFactory = { createLogger: vi.fn(() => logger) };
 
     const dbUrl = process.env.DATABASE_URL ?? 'file:./muzo.db';
-    const testPrisma = new PrismaClient({
-      datasources: { db: { url: dbUrl } },
-    });
+    const testPrisma = createIntegrationPrismaClient(dbUrl);
     await testPrisma.$connect();
 
     const module = await Test.createTestingModule({

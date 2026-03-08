@@ -22,7 +22,7 @@ import { extractModelId } from 'src/kernel/ids/factory';
 import { models } from 'src/kernel/types/models';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { makeContextUser } from '../../../../_test-utils/make-context-user';
-import { setupIntegrationDb } from '../_test-utils/integration-db';
+import { createIntegrationPrismaClient, setupIntegrationDb } from '../_test-utils/integration-db';
 import { makeLibrary } from '../_test-utils/make-library';
 
 const LIBRARY_ID = models.musicLibrary.id('lib-1');
@@ -92,9 +92,7 @@ describe('ProcessBatchAudioScanUseCase', () => {
     const loggerFactory = { createLogger: vi.fn(() => logger) };
 
     const dbUrl = process.env.DATABASE_URL ?? 'file:./muzo.db';
-    const testPrisma = new PrismaClient({
-      datasources: { db: { url: dbUrl } },
-    });
+    const testPrisma = createIntegrationPrismaClient(dbUrl);
     await testPrisma.$connect();
 
     const module = await Test.createTestingModule({

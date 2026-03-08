@@ -21,7 +21,7 @@ export function playlistWithTracksInclude(sortingOpts: PlaylistWithTracksInclude
       ? ({ position: sortingOpts.sortingDirection } as const)
       : ({ addedAt: sortingOpts.sortingDirection } as const);
 
-  return Prisma.validator<Prisma.PlaylistInclude>()({
+  return {
     sorting: true,
     tracks: {
       include: {
@@ -31,5 +31,5 @@ export function playlistWithTracksInclude(sortingOpts: PlaylistWithTracksInclude
       },
       orderBy,
     },
-  });
+  } satisfies Prisma.PlaylistInclude;
 }

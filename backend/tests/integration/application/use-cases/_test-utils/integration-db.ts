@@ -2,6 +2,16 @@ import { execSync } from 'child_process';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
+import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3';
+import { PrismaClient } from '@prisma/client';
+
+/**
+ * Creates a PrismaClient connected to the given SQLite URL (Prisma v7 adapter).
+ */
+export function createIntegrationPrismaClient(dbUrl: string): PrismaClient {
+  const adapter = new PrismaBetterSqlite3({ url: dbUrl });
+  return new PrismaClient({ adapter });
+}
 
 /**
  * Sets up a temporary SQLite database file and runs Prisma migrations.
