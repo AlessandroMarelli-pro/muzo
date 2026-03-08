@@ -148,7 +148,7 @@ export const LibraryCard: React.FC<LibraryCardProps> = ({
             ) : (
               <BarChart3 className="h-4 w-4 " />
             )}
-            {isScanning ? "Scanning..." : "Scan"}
+            {isScanning ? "Scanning…" : "Scan"}
           </Button>
           <Button variant="outline" size="sm" className="w-full" onClick={handlePlay}>
             <Play className="h-4 w-4" /> Play

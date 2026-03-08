@@ -34,6 +34,8 @@ export function MusicCardContent({
           <img
             src={`http://localhost:3000/api/images/serve?imagePath=${formattedImage}`}
             alt="Album Art"
+            width={300}
+            height={300}
             className=" object-fit rounded-md w-full h-full"
           />
         </div>
@@ -67,6 +69,8 @@ export function MusicCardContent({
             <img
               src={`http://localhost:3000/api/images/serve?imagePath=${formattedImage}`}
               alt="Album Art"
+              width={200}
+              height={200}
               className="w-2/3 h-2/3 object-cover rounded-md z-1"
             />
           </div>

@@ -44,9 +44,14 @@ export function QueueDrawer({ open, onOpenChange }: QueueDrawerProps) {
                 <span className="ml-2 text-sm font-normal text-muted-foreground">
                   ({queueItems.length})
                 </span>
-                <Button variant="ghost" size="iconSm" onClick={handleResetQueue}>
-                  <RefreshCcwIcon className="h-4 w-4" />
-                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="iconSm"
+                                  onClick={handleResetQueue}
+                                  aria-label="Clear queue"
+                                >
+                                  <RefreshCcwIcon className="h-4 w-4" aria-hidden />
+                                </Button>
               </div>
             )}
           </SheetTitle>
@@ -54,7 +59,7 @@ export function QueueDrawer({ open, onOpenChange }: QueueDrawerProps) {
             Playback queue with drag-and-drop reordering
           </SheetDescription>
         </SheetHeader>
-        <div className="pb-38 h-full overflow-y-auto p-4">
+        <div className="pb-38 h-full overflow-y-auto overscroll-contain p-4">
           <QueueList />
         </div>
       </SheetContent>

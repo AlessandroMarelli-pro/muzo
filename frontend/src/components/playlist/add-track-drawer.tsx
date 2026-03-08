@@ -78,7 +78,7 @@ export function AddTrackDrawer({ open, onOpenChange, addTrackToPlaylist }: AddTr
                 onClick={() => fetchNextPage()}
                 disabled={!hasNextPage || isFetchingNextPage}
               >
-                {isFetchingNextPage ? "Loading more..." : hasNextPage ? "Load More" : null}
+                {isFetchingNextPage ? "Loading more…" : hasNextPage ? "Load More" : null}
               </Button>
             </div>
           </div>

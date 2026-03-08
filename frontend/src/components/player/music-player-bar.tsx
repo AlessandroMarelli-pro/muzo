@@ -84,6 +84,8 @@ export function MusicPlayerBar({
                 <img
                   src={currentTrack.artCover}
                   alt={`${currentTrack.artist} - ${currentTrack.title}`}
+                  width={40}
+                  height={40}
                   className="w-full h-full rounded-md object-cover"
                 />
               ) : (
@@ -94,8 +96,14 @@ export function MusicPlayerBar({
               <p className="text-sm font-medium truncate">{currentTrack.title}</p>
               <p className="text-xs text-muted-foreground truncate">{currentTrack.artist}</p>
             </div>
-            <Button variant="ghost" size="sm" onClick={onToggleFavorite} className="h-8 w-8 p-0">
-              <Heart className="h-4 w-4" />
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onToggleFavorite}
+              className="h-8 w-8 p-0"
+              aria-label="Toggle favorite"
+            >
+              <Heart className="h-4 w-4" aria-hidden />
             </Button>
           </>
         ) : (
@@ -113,25 +121,54 @@ export function MusicPlayerBar({
       {/* Player Controls */}
       <div className="flex flex-col items-center gap-1 flex-1 max-w-md order-2 sm:order-2">
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" onClick={onToggleShuffle} className="h-8 w-8 p-0">
-            <Shuffle className="h-4 w-4" />
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onToggleShuffle}
+            className="h-8 w-8 p-0"
+            aria-label="Toggle shuffle"
+          >
+            <Shuffle className="h-4 w-4" aria-hidden />
           </Button>
-          <Button variant="ghost" size="sm" onClick={onSkipBack} className="h-8 w-8 p-0">
-            <SkipBack className="h-4 w-4" />
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onSkipBack}
+            className="h-8 w-8 p-0"
+            aria-label="Previous track"
+          >
+            <SkipBack className="h-4 w-4" aria-hidden />
           </Button>
           <Button
             variant="default"
             size="sm"
             onClick={isPlaying ? onPause : onPlay}
             className="h-8 w-8 p-0"
+            aria-label={isPlaying ? "Pause" : "Play"}
           >
-            {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+            {isPlaying ? (
+              <Pause className="h-4 w-4" aria-hidden />
+            ) : (
+              <Play className="h-4 w-4" aria-hidden />
+            )}
           </Button>
-          <Button variant="ghost" size="sm" onClick={onSkipForward} className="h-8 w-8 p-0">
-            <SkipForward className="h-4 w-4" />
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onSkipForward}
+            className="h-8 w-8 p-0"
+            aria-label="Next track"
+          >
+            <SkipForward className="h-4 w-4" aria-hidden />
           </Button>
-          <Button variant="ghost" size="sm" onClick={onToggleRepeat} className="h-8 w-8 p-0">
-            <Repeat className="h-4 w-4" />
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onToggleRepeat}
+            className="h-8 w-8 p-0"
+            aria-label="Toggle repeat"
+          >
+            <Repeat className="h-4 w-4" aria-hidden />
           </Button>
         </div>
         <div className="flex items-center gap-2 w-full">
@@ -171,8 +208,14 @@ export function MusicPlayerBar({
             }}
           />
         </div>
-        <Button variant="ghost" size="sm" onClick={onMoreOptions} className="h-8 w-8 p-0">
-          <MoreHorizontal className="h-4 w-4" />
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onMoreOptions}
+          className="h-8 w-8 p-0"
+          aria-label="More options"
+        >
+          <MoreHorizontal className="h-4 w-4" aria-hidden />
         </Button>
       </div>
     </div>

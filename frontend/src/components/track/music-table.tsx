@@ -21,7 +21,7 @@ import { useDataTable } from "@/hooks/use-data-table";
 import { AudioPlayerActions } from "@/hooks/useAudioPlayer";
 import { FilterState } from "@/hooks/useFiltering";
 import { StaticFilterOptionsData } from "@/hooks/useFilterOptions";
-import { useNavigate, UseNavigateResult } from "@tanstack/react-router";
+import { Link } from "@tanstack/react-router";
 import { format } from "date-fns";
 import { DataTablePagination } from "../data-table/data-table-pagination";
 import { TrackMoreMenu } from "./track-more-menu";
@@ -91,12 +91,10 @@ const CamelotKeyOptions = [
 
 const ActionCells = ({
   row,
-  navigate,
   actions,
   setCurrentTrack,
 }: {
   row: Row<Track>;
-  navigate: UseNavigateResult<string>;
   actions: AudioPlayerActions;
   setCurrentTrack: (track: Track) => void;
 }) => {
@@ -126,8 +124,10 @@ const ActionCells = ({
       <Button variant="ghost" size="sm" onClick={playMusic}>
         {isThisTrackPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
       </Button>
-      <Button size="sm" onClick={() => navigate({ to: `/research/${track.id}` })} variant="ghost">
-        <Brain className="h-4 w-4 " />
+      <Button asChild size="sm" variant="ghost">
+        <Link to="/research/$trackId" params={{ trackId: track.id }} preload="intent">
+          <Brain className="h-4 w-4" aria-hidden />
+        </Link>
       </Button>
       <TrackMoreMenu trackId={track.id} artist={track.artist || ""} title={track.title || ""} />
     </div>
@@ -135,7 +135,6 @@ const ActionCells = ({
 };
 const columns = (
   staticFilterOptions: StaticFilterOptionsData,
-  navigate: UseNavigateResult<string>,
   actions: AudioPlayerActions,
   setCurrentTrack: (track: Track) => void,
 ) =>
@@ -493,14 +492,13 @@ const columns = (
         cell: ({ row }) => (
           <ActionCells
             row={row}
-            navigate={navigate}
             actions={actions}
             setCurrentTrack={setCurrentTrack}
           />
         ),
       },
     ],
-    [staticFilterOptions, navigate, actions, setCurrentTrack],
+    [staticFilterOptions, actions, setCurrentTrack],
   );
 
 export const MusicTable = React.memo<MusicTableProps>(
@@ -513,13 +511,12 @@ export const MusicTable = React.memo<MusicTableProps>(
     handleFilterChange,
     isLoading,
   }: MusicTableProps) => {
-    const navigate = useNavigate();
     const actions = useAudioPlayerActions();
     const { setCurrentTrack } = useCurrentTrack();
 
     const { table } = useDataTable({
       data,
-      columns: columns(staticFilterOptions, navigate, actions, setCurrentTrack),
+      columns: columns(staticFilterOptions, actions, setCurrentTrack),
       pageCount: pageCount,
       initialState: {
         sorting: [{ id: "title", desc: false }],

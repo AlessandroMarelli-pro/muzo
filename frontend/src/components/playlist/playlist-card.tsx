@@ -119,7 +119,7 @@ export function PlaylistCard({ playlist, onViewDetails, onCardClick }: PlaylistC
         onMouseLeave={() => {
           setIsHovered(false);
         }}
-        className="  flex justify-center items-center flex-wrap gap-0 p-0 max-w-65 max-h-60 min-w-65 min-h-60 shadow-md rounded-t-md hover:scale-105 transition-all duration-300"
+        className="  flex justify-center items-center flex-wrap gap-0 p-0 max-w-65 max-h-60 min-w-65 min-h-60 shadow-md rounded-t-md hover:scale-105 transition-[opacity,transform] duration-300"
       >
         <AnimatePresence initial={false}>
           {isHovered && (
@@ -130,19 +130,20 @@ export function PlaylistCard({ playlist, onViewDetails, onCardClick }: PlaylistC
               exit={{ opacity: 0 }}
               transition={{ duration: 0.3, ease: "easeInOut" }}
             >
-              <div className="absolute top-0 left-0 h-full w-full mask-t-from-0% mask-t-to-50% transition-all duration-300 bg-background/90  rounded-t-md " />
+              <div className="absolute top-0 left-0 h-full w-full mask-t-from-0% mask-t-to-50% transition-[opacity,transform] duration-300 bg-background/90  rounded-t-md " />
               <Button
                 size="icon"
                 variant="outline"
                 className="z-1000 absolute bottom-2 left-2 border-none"
                 onClick={handleEdit}
+                aria-label="View playlist"
               >
-                <Eye className="h-5 w-5" />
+                <Eye className="h-5 w-5" aria-hidden />
               </Button>
               <DropdownMenu modal={false}>
                 <DropdownMenuTrigger asChild className="z-1000 absolute bottom-2 right-2">
-                  <Button variant="ghost" size="icon">
-                    <MoreHorizontal className="h-5 w-5" />
+                  <Button variant="ghost" size="icon" aria-label="Playlist options">
+                    <MoreHorizontal className="h-5 w-5" aria-hidden />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="start" className="z-1000 " side="bottom">
@@ -168,6 +169,8 @@ export function PlaylistCard({ playlist, onViewDetails, onCardClick }: PlaylistC
               <img
                 src={`http://localhost:3000/api/images/serve?imagePath=${image}`}
                 alt="Album Art"
+                width={120}
+                height={120}
                 className={cn(
                   "w-full h-full object-cover  ",
                   index === 0 && "rounded-tl-md",
@@ -181,6 +184,8 @@ export function PlaylistCard({ playlist, onViewDetails, onCardClick }: PlaylistC
             <img
               src={`http://localhost:3000/api/images/serve?imagePath=${images[0]}`}
               alt="Album Art"
+              width={240}
+              height={240}
               className={cn("w-full h-full object-cover  rounded-t-md")}
             />
           </div>

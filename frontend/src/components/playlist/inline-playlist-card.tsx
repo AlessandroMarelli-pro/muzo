@@ -51,7 +51,7 @@ export function InlinePlaylistCard({ playlist, onCardClick }: InlinePlaylistCard
       )}
       onClick={handleCardClick}
     >
-      <div className="  flex justify-center items-center flex-wrap gap-0 p-0 max-w-16 max-h-16 min-w-16 min-h-16 shadow-md  hover:scale-105 transition-all duration-300">
+      <div className="  flex justify-center items-center flex-wrap gap-0 p-0 max-w-16 max-h-16 min-w-16 min-h-16 shadow-md  hover:scale-105 transition-[transform,opacity] duration-300">
         {images.length === 4 ? (
           images.map((image, index) => (
             <div

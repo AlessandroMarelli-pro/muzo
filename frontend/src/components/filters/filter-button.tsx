@@ -1,4 +1,4 @@
-import { FilterSheet } from "@/components/filters";
+import { FilterSheet } from "@/components/filters/filter-sheet";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useFilters } from "@/contexts/filter-context";

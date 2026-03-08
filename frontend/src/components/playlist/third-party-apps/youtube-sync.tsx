@@ -141,7 +141,7 @@ export function YouTubeSync({ onSync, disabled = false }: YouTubeSyncProps) {
     <>
       <DropdownMenuItem onClick={handleSync} disabled={disabled || isSyncing}>
         <Youtube className="h-4 w-4 mr-2" />
-        {isSyncing ? "Syncing..." : "Sync to YouTube"}
+        {isSyncing ? "Syncing…" : "Sync to YouTube"}
       </DropdownMenuItem>
 
       {/* YouTube Authentication Dialog */}
@@ -175,7 +175,7 @@ export function YouTubeSync({ onSync, disabled = false }: YouTubeSyncProps) {
                     className="w-full"
                     variant="outline"
                   >
-                    {isGettingAuthUrl ? "Loading..." : "Open YouTube Authorization"}
+                    {isGettingAuthUrl ? "Loading…" : "Open YouTube Authorization"}
                   </Button>
                   <p className="text-xs text-muted-foreground mt-2">
                     Or{" "}
@@ -195,7 +195,7 @@ export function YouTubeSync({ onSync, disabled = false }: YouTubeSyncProps) {
                 </>
               ) : (
                 <Button disabled className="w-full" variant="outline">
-                  {isGettingAuthUrl ? "Loading authorization URL..." : "No URL available"}
+                  {isGettingAuthUrl ? "Loading authorization URL…" : "No URL available"}
                 </Button>
               )}
             </div>
@@ -223,7 +223,7 @@ export function YouTubeSync({ onSync, disabled = false }: YouTubeSyncProps) {
               Cancel
             </Button>
             <Button onClick={handleCompleteAuth} disabled={!authCode.trim() || isAuthenticating}>
-              {isAuthenticating ? "Authenticating..." : "Complete Authentication"}
+              {isAuthenticating ? "Authenticating…" : "Complete Authentication"}
             </Button>
           </DialogFooter>
         </DialogContent>

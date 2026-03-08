@@ -192,6 +192,16 @@ Retrieved 2026-01-14, License - CC BY-SA 4.0
   ::after {
     @apply border-border;
   }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    ::before,
+    ::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
 }
 
 [data-description] {

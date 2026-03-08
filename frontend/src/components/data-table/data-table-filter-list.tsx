@@ -386,7 +386,7 @@ function DataTableFilterItem<TData>({
             className="w-40 origin-[var(--radix-popover-content-transform-origin)] p-0"
           >
             <Command>
-              <CommandInput placeholder="Search fields..." />
+              <CommandInput placeholder="Search fields…" />
               <CommandList>
                 <CommandEmpty>No fields found.</CommandEmpty>
                 <CommandGroup>
@@ -542,7 +542,7 @@ function onFilterInputRender<TData>({
           aria-label={`${columnMeta?.label} filter value`}
           aria-describedby={`${inputId}-description`}
           inputMode={isNumber ? "numeric" : undefined}
-          placeholder={columnMeta?.placeholder ?? "Enter a value..."}
+          placeholder={columnMeta?.placeholder ?? "Enter a value…"}
           className="h-8 w-full rounded"
           defaultValue={typeof filter.value === "string" ? filter.value : undefined}
           onChange={(event) =>
@@ -622,7 +622,7 @@ function onFilterInputRender<TData>({
             >
               <FacetedBadgeList
                 options={columnMeta?.options}
-                placeholder={columnMeta?.placeholder ?? `Select option${multiple ? "s" : ""}...`}
+                placeholder={columnMeta?.placeholder ?? `Select option${multiple ? "s" : ""}…`}
               />
             </Button>
           </FacetedTrigger>
@@ -632,7 +632,7 @@ function onFilterInputRender<TData>({
           >
             <FacetedInput
               aria-label={`Search ${columnMeta?.label} options`}
-              placeholder={columnMeta?.placeholder ?? "Search options..."}
+              placeholder={columnMeta?.placeholder ?? "Search options…"}
             />
             <FacetedList>
               <FacetedEmpty>No options found.</FacetedEmpty>

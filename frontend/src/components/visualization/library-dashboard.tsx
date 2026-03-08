@@ -114,7 +114,7 @@ export const LibraryDashboard: React.FC<LibraryDashboardProps> = ({
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold">Library Dashboard</h1>
-            <p className="text-muted-foreground">Loading library data...</p>
+            <p className="text-muted-foreground">Loading library data…</p>
           </div>
         </div>
         <div className="h-96 bg-gray-100 rounded-lg animate-pulse" />
@@ -264,7 +264,7 @@ export const LibraryDashboard: React.FC<LibraryDashboardProps> = ({
           onClick={() => fetchNextPage()}
           disabled={!hasNextPage || isFetchingNextPage}
         >
-          {isFetchingNextPage ? "Loading more..." : hasNextPage ? "Load More" : null}
+          {isFetchingNextPage ? "Loading more…" : hasNextPage ? "Load More" : null}
         </Button>
       </div>
       {/* Footer Actions */}

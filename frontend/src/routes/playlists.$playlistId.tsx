@@ -1,4 +1,4 @@
-import { PlaylistDetail } from "@/components/playlist";
+import { PlaylistDetail } from "@/components/playlist/playlist-detail";
 import { fetchPlaylist, fetchPlaylistRecommendations } from "@/services/playlist-hooks";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 

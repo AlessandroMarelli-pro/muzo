@@ -49,15 +49,15 @@ export const CreateLibraryDialog: React.FC<CreateLibraryDialogProps> = ({
     }
   };
 
-  const validateForm = (): boolean => {
+  const validateForm = (): string | null => {
     const newErrors: Record<string, string> = {};
 
     if (!formData.name.trim()) {
-      newErrors.name = "Library name is required";
+      newErrors.name = "Library name is required. Enter a name for your library.";
     }
 
     if (!formData.rootPath.trim()) {
-      newErrors.rootPath = "Root path is required";
+      newErrors.rootPath = "Root path is required. Enter the folder path where your music is stored.";
     }
 
     if (formData.scanInterval && formData.scanInterval < 1) {
@@ -69,32 +69,34 @@ export const CreateLibraryDialog: React.FC<CreateLibraryDialogProps> = ({
     }
 
     setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    const firstKey = Object.keys(newErrors)[0] ?? null;
+    return firstKey;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (validateForm()) {
-      try {
-        // Convert form data to CreateLibraryInput format
-        const createLibraryInput: CreateLibraryInput = {
-          name: formData.name,
-          rootPath: formData.rootPath,
-          autoScan: formData.autoScan,
-          scanInterval: formData.scanInterval,
-          includeSubdirectories: formData.includeSubdirectories,
-          supportedFormats: formData.supportedFormats,
-          maxFileSize: formData.maxFileSize,
-        };
+    const firstErrorField = validateForm();
+    if (firstErrorField) {
+      setTimeout(() => document.getElementById(firstErrorField)?.focus(), 0);
+      return;
+    }
+    try {
+      const createLibraryInput: CreateLibraryInput = {
+        name: formData.name,
+        rootPath: formData.rootPath,
+        autoScan: formData.autoScan,
+        scanInterval: formData.scanInterval,
+        includeSubdirectories: formData.includeSubdirectories,
+        supportedFormats: formData.supportedFormats,
+        maxFileSize: formData.maxFileSize,
+      };
 
-        await createLibraryMutation.mutateAsync(createLibraryInput);
-        onSuccess?.();
-        onOpenChange(false);
-        await router.invalidate();
-      } catch (error) {
-        console.error("Failed to create library:", error);
-        // Error handling is managed by the mutation
-      }
+      await createLibraryMutation.mutateAsync(createLibraryInput);
+      onSuccess?.();
+      onOpenChange(false);
+      await router.invalidate();
+    } catch (error) {
+      console.error("Failed to create library:", error);
     }
   };
 
@@ -128,15 +130,23 @@ export const CreateLibraryDialog: React.FC<CreateLibraryDialogProps> = ({
                   <FieldLabel htmlFor="name">Library Name *</FieldLabel>
                   <Input
                     id="name"
+                    name="library-name"
                     type="text"
+                    autoComplete="off"
                     value={formData.name}
                     onChange={(e) => handleInputChange("name", e.target.value)}
                     placeholder="My Music Library"
                     disabled={createLibraryMutation.isPending}
                     className="w-xs"
+                    aria-invalid={!!errors.name}
+                    aria-describedby={errors.name ? "name-error" : undefined}
                   />
                 </Field>
-                {errors.name && <p className="text-sm text-red-600">{errors.name}</p>}
+                {errors.name && (
+                  <p id="name-error" className="text-sm text-red-600" role="alert">
+                    {errors.name}
+                  </p>
+                )}
               </div>
 
               <div className="grid gap-2">
@@ -144,16 +154,24 @@ export const CreateLibraryDialog: React.FC<CreateLibraryDialogProps> = ({
                   <FieldLabel htmlFor="rootPath">Root Path *</FieldLabel>
                   <Input
                     id="rootPath"
+                    name="library-root-path"
                     type="text"
+                    autoComplete="off"
                     value={formData.rootPath}
                     onChange={(e) => handleInputChange("rootPath", e.target.value)}
                     placeholder="/path/to/your/music"
                     disabled={createLibraryMutation.isPending}
                     className="w-xs"
+                    aria-invalid={!!errors.rootPath}
+                    aria-describedby={errors.rootPath ? "rootPath-error" : undefined}
                   />
                 </Field>
 
-                {errors.rootPath && <p className="text-sm text-red-600">{errors.rootPath}</p>}
+                {errors.rootPath && (
+                <p id="rootPath-error" className="text-sm text-red-600" role="alert">
+                  {errors.rootPath}
+                </p>
+              )}
               </div>
             </div>
 
@@ -240,7 +258,7 @@ export const CreateLibraryDialog: React.FC<CreateLibraryDialogProps> = ({
                 !formData.rootPath.trim()
               }
             >
-              {createLibraryMutation.isPending ? "Creating..." : "Create Library"}
+              {createLibraryMutation.isPending ? "Creating…" : "Create Library"}
             </Button>
           </SheetFooter>
         </form>

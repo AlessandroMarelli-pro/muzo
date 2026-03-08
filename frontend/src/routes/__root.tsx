@@ -21,7 +21,7 @@ import {
   Settings,
   Sparkles,
 } from "lucide-react";
-import { ThemeProvider } from "next-themes";
+import { ThemeProvider, useTheme } from "next-themes";
 import * as React from "react";
 
 interface RouterContext {
@@ -100,44 +100,55 @@ const navigationData: Omit<AppSidebarProps["data"], "user"> = {
     },
   ],
 };
-const RootComponent = React.memo(function RootComponent() {
-  // Memoize callback to prevent re-renders
+function RootContent() {
   const handleToggleShuffle = React.useCallback(() => {
     console.log("Toggle shuffle");
   }, []);
+  const { resolvedTheme } = useTheme();
 
+  React.useEffect(() => {
+    document.documentElement.style.colorScheme = resolvedTheme === "dark" ? "dark" : "light";
+  }, [resolvedTheme]);
+
+  return (
+    <>
+      <SidebarProvider
+        defaultOpen={localStorage.getItem("sidebar_state") === "expanded" ? true : false}
+      >
+        <AppSidebar
+          data={{
+            ...navigationData,
+            user: {
+              name: "John Doe",
+              email: "john.doe@example.com",
+              avatar: "https://github.com/shadcn.png",
+            },
+          }}
+        />
+
+        <SidebarInset>
+          <MusicPlayerInset>
+            <SiteHeader />
+            <Outlet />
+          </MusicPlayerInset>
+        </SidebarInset>
+      </SidebarProvider>
+      <EnhancedMusicPlayer
+        onToggleShuffle={handleToggleShuffle}
+        showVisualizations={true}
+      />
+    </>
+  );
+}
+
+const RootComponent = React.memo(function RootComponent() {
   return (
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
       <QueryClientProvider client={queryClient}>
         <ScanSessionProvider>
           <FilterProvider>
             <AudioPlayerProvider>
-              <SidebarProvider
-                defaultOpen={localStorage.getItem("sidebar_state") === "expanded" ? true : false}
-              >
-                <AppSidebar
-                  data={{
-                    ...navigationData,
-                    user: {
-                      name: "John Doe",
-                      email: "john.doe@example.com",
-                      avatar: "https://github.com/shadcn.png",
-                    },
-                  }}
-                />
-
-                <SidebarInset>
-                  <MusicPlayerInset>
-                    <SiteHeader />
-                    <Outlet />
-                  </MusicPlayerInset>
-                </SidebarInset>
-              </SidebarProvider>
-              {/* Enhanced Music Player - fixed at bottom, outside SidebarInset */}
-              <EnhancedMusicPlayer
-                onToggleShuffle={handleToggleShuffle}
-                showVisualizations={true}
-              />
+              <RootContent />
             </AudioPlayerProvider>
           </FilterProvider>
         </ScanSessionProvider>

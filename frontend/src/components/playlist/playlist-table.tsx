@@ -136,7 +136,7 @@ const ActionCells = ({
         </DropdownMenuItem>
         <DropdownMenuItem onClick={handleExport} disabled={isExporting}>
           <Download className="mr-2 h-4 w-4" />
-          {isExporting ? "Exporting..." : "Export"}
+          {isExporting ? "Exporting…" : "Export"}
         </DropdownMenuItem>
         <DropdownMenuItem
           onClick={handleDelete}

@@ -152,7 +152,7 @@ export function TidalSync({ onSync, disabled = false }: TidalSyncProps) {
     <>
       <DropdownMenuItem onClick={handleSync} disabled={disabled || isSyncing}>
         <Music className="h-4 w-4 mr-2" />
-        {isSyncing ? "Syncing..." : "Sync to TIDAL"}
+        {isSyncing ? "Syncing…" : "Sync to TIDAL"}
       </DropdownMenuItem>
 
       {/* TIDAL Authentication Dialog - PKCE Flow */}
@@ -264,7 +264,7 @@ export function TidalSync({ onSync, disabled = false }: TidalSyncProps) {
                     onClick={handleCompleteAuth}
                     disabled={!authCode.trim() || isAuthenticating || !codeVerifier}
                   >
-                    {isAuthenticating ? "Authenticating..." : "Complete Authentication"}
+                    {isAuthenticating ? "Authenticating…" : "Complete Authentication"}
                   </Button>
                 </DialogFooter>
               </>

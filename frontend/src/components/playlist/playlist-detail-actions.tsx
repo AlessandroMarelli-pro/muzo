@@ -58,7 +58,7 @@ export function PlaylistDetailActions({
         </DropdownMenuItem>
         <DropdownMenuItem onClick={onSetAsQueue} disabled={isDisabled || isSettingAsQueue}>
           <ListMusic className="h-4 w-4 mr-2" />
-          {isSettingAsQueue ? "Setting as Queue..." : "Set as Queue"}
+          {isSettingAsQueue ? "Setting as Queue…" : "Set as Queue"}
         </DropdownMenuItem>
         <DropdownMenuItem onClick={handlePlay} disabled={isDisabled}>
           {isPlaying ? (

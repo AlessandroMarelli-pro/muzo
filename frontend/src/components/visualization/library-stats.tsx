@@ -213,7 +213,7 @@ export const LibraryStats: React.FC<LibraryStatsProps> = ({
             {scanStatus === "SCANNING" && (
               <div className="flex items-center gap-1 text-blue-600">
                 <Loader className="h-4 w-4 animate-spin" />
-                <span className="text-sm font-medium">Scanning...</span>
+                <span className="text-sm font-medium">Scanning…</span>
               </div>
             )}
           </div>

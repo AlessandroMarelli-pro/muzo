@@ -7,7 +7,7 @@ export const Loading = () => {
       <div className="flex items-center justify-between ">
         <Button variant="outline" disabled>
           <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-          Loading...
+          Loading…
         </Button>
       </div>
     </div>

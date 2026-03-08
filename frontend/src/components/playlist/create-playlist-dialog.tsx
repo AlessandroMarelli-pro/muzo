@@ -31,6 +31,7 @@ interface CreatePlaylistDialogProps {
 export function CreatePlaylistDialog({ open, onOpenChange, onSuccess }: CreatePlaylistDialogProps) {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [nameError, setNameError] = useState("");
   const [isPublic, setIsPublic] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const router = useRouter();
@@ -49,10 +50,12 @@ export function CreatePlaylistDialog({ open, onOpenChange, onSuccess }: CreatePl
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     if (!name.trim()) {
+      setNameError("Playlist name is required. Enter a name for your playlist.");
+      setTimeout(() => document.getElementById("playlist-name")?.focus(), 0);
       return;
     }
+    setNameError("");
 
     setIsCreating(true);
     try {
@@ -142,25 +145,40 @@ export function CreatePlaylistDialog({ open, onOpenChange, onSuccess }: CreatePl
 
           <div className="grid gap-4 py-4 ">
             <Field orientation="horizontal">
-              <FieldLabel htmlFor="name">Name *</FieldLabel>
+              <FieldLabel htmlFor="playlist-name">Name *</FieldLabel>
               <Input
-                id="name"
+                id="playlist-name"
+                name="playlist-name"
+                type="text"
+                autoComplete="off"
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={(e) => {
+                  setName(e.target.value);
+                  if (nameError) setNameError("");
+                }}
                 placeholder="My Awesome Playlist"
                 required
                 disabled={isCreating}
                 className="w-xs"
+                aria-invalid={!!nameError}
+                aria-describedby={nameError ? "playlist-name-error" : undefined}
               />
+              {nameError && (
+                <p id="playlist-name-error" className="text-sm text-red-600" role="alert">
+                  {nameError}
+                </p>
+              )}
             </Field>
 
             <Field orientation="horizontal">
               <FieldLabel htmlFor="description">Description</FieldLabel>
               <Textarea
                 id="description"
+                name="playlist-description"
+                autoComplete="off"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="A collection of my favorite songs..."
+                placeholder="A collection of my favorite songs…"
                 disabled={isCreating}
                 className="w-xs"
               />
@@ -192,7 +210,7 @@ export function CreatePlaylistDialog({ open, onOpenChange, onSuccess }: CreatePl
                     options={options.genres || []}
                     value={selectedGenres}
                     onChange={setSelectedGenres}
-                    placeholder="Select genres..."
+                    placeholder="Select genres…"
                     className="w-xs"
                     isLoading={options.isLoading}
                     disabled={isCreating}
@@ -206,7 +224,7 @@ export function CreatePlaylistDialog({ open, onOpenChange, onSuccess }: CreatePl
                     options={options.subgenres || []}
                     value={selectedSubgenres}
                     onChange={setSelectedSubgenres}
-                    placeholder="Select subgenres..."
+                    placeholder="Select subgenres…"
                     className="w-xs"
                     isLoading={options.isLoading}
                     disabled={isCreating}
@@ -246,7 +264,7 @@ export function CreatePlaylistDialog({ open, onOpenChange, onSuccess }: CreatePl
                     options={options.atmospheres || []}
                     value={selectedAtmospheres}
                     onChange={setSelectedAtmospheres}
-                    placeholder="Select atmospheres..."
+                    placeholder="Select atmospheres…"
                     className="w-xs"
                     isLoading={options.isLoading}
                     disabled={isCreating}
@@ -260,7 +278,7 @@ export function CreatePlaylistDialog({ open, onOpenChange, onSuccess }: CreatePl
                     options={options.libraries || []}
                     value={selectedLibraries}
                     onChange={setSelectedLibraries}
-                    placeholder="Select libraries..."
+                    placeholder="Select libraries…"
                     className="w-xs"
                     isLoading={options.isLoading}
                     disabled={isCreating}
@@ -308,7 +326,7 @@ export function CreatePlaylistDialog({ open, onOpenChange, onSuccess }: CreatePl
               Cancel
             </Button>
             <Button type="submit" disabled={isCreating || !name.trim()}>
-              {isCreating ? "Creating..." : "Create Playlist"}
+              {isCreating ? "Creating…" : "Create Playlist"}
             </Button>
           </SheetFooter>
         </form>

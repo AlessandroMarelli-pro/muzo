@@ -172,7 +172,7 @@ export function SwipeView({ track, isLoading, onLike, onDislike, onBanger }: Swi
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-[600px] w-full max-w-md mx-auto">
-        <div className="text-lg">Loading next track...</div>
+        <div className="text-lg">Loading next track…</div>
       </div>
     );
   }

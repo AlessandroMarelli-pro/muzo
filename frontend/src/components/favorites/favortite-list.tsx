@@ -79,7 +79,7 @@ export const FavoriteList: React.FC<TrackListProps> = ({
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
           <Input
             type="text"
-            placeholder="Search tracks..."
+            placeholder="Search tracks…"
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
             className="w-full pl-10 pr-4 py-2 border  rounded-md "

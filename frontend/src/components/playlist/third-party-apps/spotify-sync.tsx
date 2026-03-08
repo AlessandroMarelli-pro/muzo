@@ -156,7 +156,7 @@ export function SpotifySync({ onSync, disabled = false }: SpotifySyncProps) {
     <>
       <DropdownMenuItem onClick={handleSync} disabled={disabled || isSyncing}>
         <Music2 className="h-4 w-4 mr-2" />
-        {isSyncing ? "Syncing..." : "Sync to Spotify"}
+        {isSyncing ? "Syncing…" : "Sync to Spotify"}
       </DropdownMenuItem>
 
       {/* Spotify Authentication Dialog - PKCE Flow */}
@@ -181,7 +181,7 @@ export function SpotifySync({ onSync, disabled = false }: SpotifySyncProps) {
           <div className="space-y-4">
             {isGettingAuthUrl ? (
               <div className="text-center py-4">
-                <p className="text-sm text-muted-foreground">Getting authorization URL...</p>
+                <p className="text-sm text-muted-foreground">Getting authorization URL…</p>
               </div>
             ) : authUrl ? (
               <>
@@ -264,7 +264,7 @@ export function SpotifySync({ onSync, disabled = false }: SpotifySyncProps) {
                     onClick={handleCompleteAuth}
                     disabled={!authCode.trim() || isAuthenticating || !codeVerifier}
                   >
-                    {isAuthenticating ? "Authenticating..." : "Complete Authentication"}
+                    {isAuthenticating ? "Authenticating…" : "Complete Authentication"}
                   </Button>
                 </DialogFooter>
               </>

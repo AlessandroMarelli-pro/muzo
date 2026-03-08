@@ -8,8 +8,9 @@ import {
 } from "@/contexts/audio-player-context";
 import { cn, formatDuration } from "@/lib/utils";
 import { useAddTrackToQueue } from "@/services/queue-hooks";
-import { useNavigate } from "@tanstack/react-router";
+import { Link } from "@tanstack/react-router";
 import { Brain, GripVertical, ListMusic, Pause, Play, Trash2 } from "lucide-react";
+import { memo } from "react";
 import { Skeleton } from "../ui/skeleton";
 export const PlaylistTrackListCardSkeleton = ({ position }: { position: number }) => {
   return (
@@ -25,7 +26,7 @@ export const PlaylistTrackListCardSkeleton = ({ position }: { position: number }
   );
 };
 
-export const PlaylistTrackListCard = ({
+export const PlaylistTrackListCard = memo(function PlaylistTrackListCard({
   playlistTrack,
   handleRemoveTrack,
   removingTrackId: _removingTrackId,
@@ -43,7 +44,6 @@ export const PlaylistTrackListCard = ({
   const { currentTrack, setCurrentTrack } = useCurrentTrack();
   const actions = useAudioPlayerActions();
   const isPlaying = useIsPlaying();
-  const navigate = useNavigate();
   const addToQueueMutation = useAddTrackToQueue();
   // Only check if this specific track is the current track and playing
   const isCurrentTrack = currentTrack?.id === playlistTrack.track?.id;
@@ -96,6 +96,8 @@ export const PlaylistTrackListCard = ({
       <img
         src={`http://localhost:3000/api/images/serve?imagePath=${formattedImage}`}
         alt="Album Art"
+        width={40}
+        height={40}
         className="w-10 h-10 object-cover rounded-md"
       />
       {/* Track Info */}
@@ -157,14 +159,17 @@ export const PlaylistTrackListCard = ({
         >
           <Trash2 className="h-4 w-4 " />
         </Button>
-        <Button
-          size="sm"
-          onClick={() => navigate({ to: `/research/${playlistTrack.track?.id || ""}` })}
-          variant="ghost"
-        >
-          <Brain className="h-4 w-4 " />
+        <Button asChild size="sm" variant="ghost">
+          <Link
+            to="/research/$trackId"
+            params={{ trackId: playlistTrack.track?.id ?? "" }}
+            preload="intent"
+            aria-label="Open research"
+          >
+            <Brain className="h-4 w-4" aria-hidden />
+          </Link>
         </Button>
       </div>
     </div>
   );
-};
+});

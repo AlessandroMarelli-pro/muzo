@@ -29,7 +29,7 @@ export default function MultiSelect({
   options,
   value,
   onChange,
-  placeholder = "Select items...",
+  placeholder = "Select items…",
   className,
   isLoading: _isLoading = false,
   disabled = false,
@@ -122,7 +122,7 @@ export default function MultiSelect({
           align="start"
         >
           <Command>
-            <CommandInput autoFocus={false} placeholder="Search items..." />
+            <CommandInput autoFocus={false} placeholder="Search items…" />
             <ScrollArea className="max-h-[200px] overflow-y-auto">
               <CommandList className="max-h-[200px] overflow-y-auto">
                 <CommandEmpty className="p-0">No items found.</CommandEmpty>

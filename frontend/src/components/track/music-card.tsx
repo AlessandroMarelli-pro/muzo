@@ -165,8 +165,13 @@ function MusicCard({ track, className, onAdd, height = '250', width = '300' }: M
               variant="outline"
               className="z-1000 absolute bottom-2 left-2 border-none"
               onClick={playMusic}
+              aria-label={isThisTrackPlaying ? "Pause" : "Play"}
             >
-              {isThisTrackPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
+              {isThisTrackPlaying ? (
+                <Pause className="h-5 w-5" aria-hidden />
+              ) : (
+                <Play className="h-5 w-5" aria-hidden />
+              )}
             </Button>
             {onAdd && (
               <Button
@@ -177,8 +182,9 @@ function MusicCard({ track, className, onAdd, height = '250', width = '300' }: M
                   e.stopPropagation();
                   onAdd(track.id, track.artist || '', track.title || '');
                 }}
+                aria-label="Add to playlist"
               >
-                <Plus className="h-5 w-5" />
+                <Plus className="h-5 w-5" aria-hidden />
               </Button>
             )}
           </>

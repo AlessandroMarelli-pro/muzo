@@ -82,9 +82,9 @@ export function SiteHeader(_props: SiteHeaderProps) {
               aria-label="Toggle night mode"
             >
               {isDark ? (
-                <Moon className="size-3 text-sidebar-foreground transition-all duration-300" />
+                <Moon className="size-3 text-sidebar-foreground transition-[opacity,transform] duration-300" />
               ) : (
-                <Sun className="size-3 text-sidebar-foreground transition-all duration-300" />
+                <Sun className="size-3 text-sidebar-foreground transition-[opacity,transform] duration-300" />
               )}
             </Switch>
           </div>

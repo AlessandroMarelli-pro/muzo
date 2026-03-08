@@ -25,8 +25,9 @@ export function SwipeControls({
         className={cn("border-none text-white ", disabled && "opacity-50 cursor-not-allowed")}
         onClick={onDislike}
         disabled={disabled}
+        aria-label="Dislike"
       >
-        <ThumbsDown />
+        <ThumbsDown className="h-6 w-6" aria-hidden />
       </Button>
 
       <Button
@@ -38,8 +39,9 @@ export function SwipeControls({
         )}
         onClick={onBanger}
         disabled={disabled}
+        aria-label="Banger"
       >
-        <Flame className="h-10 w-10" />
+        <Flame className="h-10 w-10" aria-hidden />
       </Button>
 
       <Button
@@ -48,8 +50,9 @@ export function SwipeControls({
         className={cn("border-none text-white ", disabled && "opacity-50 cursor-not-allowed")}
         onClick={onLike}
         disabled={disabled}
+        aria-label="Like"
       >
-        <ThumbsUp className="h-8 w-8" />
+        <ThumbsUp className="h-8 w-8" aria-hidden />
       </Button>
     </div>
   );
