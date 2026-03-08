@@ -1,12 +1,13 @@
 import { UseGuards } from '@nestjs/common';
 import { Args, Int, Mutation, Parent, ResolveField, Resolver } from '@nestjs/graphql';
-import { GetTrackRecommendationsUseCase } from 'src/application/use-cases';
+import { GetTrackRecommendationsUseCase, ScheduleSingleTrackScanUseCase } from 'src/application/use-cases';
 import {
   ToggleBangerUseCase,
   ToggleDislikeUseCase,
   ToggleFavoriteUseCase,
   ToggleLikeUseCase,
 } from 'src/application/use-cases/music-track';
+import { SessionId } from 'src/kernel/ids';
 import { parseMusicTrackId } from '../../common/utils/parse-id';
 import { AuthGuard } from '../context/auth.guard';
 import { toTrack } from '../mappers/track.mapper';
@@ -19,6 +20,7 @@ import { Track } from '../schema/track.schema';
 export class MusicTrackResolver {
   constructor(
     private readonly getTrackRecommendationsUseCase: GetTrackRecommendationsUseCase,
+    private readonly scheduleSingleTrackScanUseCase: ScheduleSingleTrackScanUseCase,
     private readonly toggleFavoriteUseCase: ToggleFavoriteUseCase,
     private readonly toggleLikeUseCase: ToggleLikeUseCase,
     private readonly toggleDislikeUseCase: ToggleDislikeUseCase,
@@ -57,5 +59,15 @@ export class MusicTrackResolver {
   @Mutation(() => Track)
   async toggleBanger(@Args('trackId', { type: () => Base64ID }) trackId: string): Promise<Track> {
     return this.toggleBangerUseCase.execute(parseMusicTrackId(trackId)).then(toTrack);
+  }
+
+  @Mutation(() => Base64ID)
+  async scanTrack(
+    @Args('trackId', { type: () => Base64ID }) trackId: string,
+    @Args('force', { type: () => Boolean, nullable: true }) force?: boolean,
+  ): Promise<SessionId> {
+    return this.scheduleSingleTrackScanUseCase
+      .execute(parseMusicTrackId(trackId), force ?? false)
+      .then(({ sessionId }) => sessionId);
   }
 }

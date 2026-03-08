@@ -1,6 +1,7 @@
 import { Progress } from '@/components/ui/progress';
 import { useScanSessionContext } from '@/contexts/scan-session.context';
 import { useScanProgress } from '@/services/sse-service';
+import { useQueryClient } from '@tanstack/react-query';
 import { formatDate, formatDuration, intervalToDuration } from 'date-fns';
 import { Loader } from 'lucide-react';
 import React, { useEffect, useRef, useState } from 'react';
@@ -11,25 +12,41 @@ const toastOptions: ExternalToast = {
   position: 'bottom-right',
 };
 
+/** Pick the most recently added active session so new track scans show up. */
+function getLatestSessionId(activeSessions: Map<string, { sessionId: string }>): string | undefined {
+  const values = [...activeSessions.values()];
+  return values.length ? values[values.length - 1]?.sessionId : undefined;
+}
+
 export const ScanProgress = React.memo(() => {
+  const queryClient = useQueryClient();
   const { activeSessions, completedSessions } = useScanSessionContext();
 
-  const { progress: scanProgress } = useScanProgress(
-    Array.from(activeSessions.values())[0]?.sessionId,
-  );
+  const latestSessionId = getLatestSessionId(activeSessions);
+  const { progress: scanProgress } = useScanProgress(latestSessionId);
   const [progress, setProgress] = useState(
-    activeSessions.values().next().value?.overallProgress || -1,
+    () => [...activeSessions.values()].pop()?.overallProgress ?? -1,
   );
   // Track processed events to prevent duplicate toasts
   const processedEvents = useRef<Set<string>>(new Set());
+
+  // Show progress bar as soon as we have an active session (e.g. new track scan)
+  useEffect(() => {
+    if (latestSessionId) {
+      const session = activeSessions.get(latestSessionId);
+      setProgress((prev) => (session ? session.overallProgress / 100 : Math.max(0, prev)));
+    } else {
+      setProgress(-1);
+    }
+  }, [latestSessionId, activeSessions]);
+
   useEffect(() => {
     const overallProgress = scanProgress?.overallProgress
       ? scanProgress.overallProgress / 100
       : undefined;
-    if (!overallProgress && overallProgress !== 0) {
-      return;
+    if (overallProgress !== undefined && overallProgress !== null) {
+      setProgress(overallProgress);
     }
-    setProgress(overallProgress || 0);
   }, [scanProgress?.overallProgress]);
 
   // Handle scan.complete event
@@ -41,6 +58,8 @@ export const ScanProgress = React.memo(() => {
         const duration = intervalToDuration({ start: 0, end: durationSec });
         processedEvents.current.add(eventKey);
         toast.success(`Scan completed in ${formatDuration(duration)}`, toastOptions);
+        // Refetch all queries now that the async scan has finished
+        void queryClient.invalidateQueries().then(() => queryClient.refetchQueries());
       }
     }
     if (scanProgress?.type === 'scan.started') {

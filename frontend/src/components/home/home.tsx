@@ -174,7 +174,7 @@ export function Home() {
   const hasRecentTracks = (recentlyPlayed?.length ?? 0) > 0;
 
   return (
-    <main className="p-6 flex flex-col gap-4">
+    <main className="px-6 flex flex-col gap-4">
       {/* Hero */}
       <section aria-labelledby="home-heading" className="flex flex-col gap-4">
         <p className="text-muted-foreground max-w-xl text-pretty">

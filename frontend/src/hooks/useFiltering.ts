@@ -127,27 +127,28 @@ export const useFiltering = (options: UseFilteringOptions = {}) => {
 
   const updateFilters = useCallback(
     (values: Record<string, any>) => {
-      console.log('updateFilters', values);
       for (const [key, value] of Object.entries(values)) {
         const isString = typeof value === 'string';
         const isStringArray = Array.isArray(value) && value.every((v) => typeof v === 'string');
         const isMinMaxRange =
-          Array.isArray(value) && value.length === 2 && value.every((v) => typeof v === 'number');
+          Array.isArray(value) &&
+          value.length === 2 &&
+          value.every((v) => typeof v === 'number' || typeof Number(v) === 'number');
 
         if (value === null) {
           updateFilter(key as keyof FilterState, value);
-        } else if (isString) {
-          updateFilter(key as keyof FilterState, value as string);
-        } else if (isStringArray) {
-          updateFilter(key as keyof FilterState, value as string[]);
         } else if (isMinMaxRange) {
           updateFilter(
             key as keyof FilterState,
             {
-              min: value[0],
-              max: value[1],
+              min: Number(value[0]),
+              max: Number(value[1]),
             } as Range,
           );
+        } else if (isStringArray) {
+          updateFilter(key as keyof FilterState, value as string[]);
+        } else if (isString) {
+          updateFilter(key as keyof FilterState, value as string);
         }
       }
     },

@@ -18,6 +18,7 @@ export class ScheduleBatchAudioScanUseCase {
     libraryId: MusicLibraryId,
     sessionId: SessionId,
     incremental: boolean,
+    force?: boolean,
   ): Promise<{ sessionId: string }> {
     this.logger.info(
       `Scheduling batch audio scan for ${audioFiles.length} files in library ${libraryId}`,
@@ -28,6 +29,7 @@ export class ScheduleBatchAudioScanUseCase {
       sessionId,
       getCurrentUser(),
       incremental,
+      force,
     );
     this.logger.info(
       `Successfully scheduled batch audio scan for ${audioFiles.length} files in library ${libraryId}`,

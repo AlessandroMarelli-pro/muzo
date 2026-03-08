@@ -85,6 +85,7 @@ import {
   ResetQueueUseCase,
   ScheduleBatchAudioScanUseCase,
   ScheduleLibraryScanUseCase,
+  ScheduleSingleTrackScanUseCase,
   ServeImageUseCase,
   StopLibraryScanUseCase,
   SyncAllTracksToElasticsearchUseCase,
@@ -241,6 +242,13 @@ const useCasesProviders = [
   ]),
   createUseCaseProvider(ScheduleBatchAudioScanUseCase, [
     AUDIO_SCAN_SCHEDULER_PRODUCER,
+    LOGGER_FACTORY,
+    LOGGER,
+  ]),
+  createUseCaseProvider(ScheduleSingleTrackScanUseCase, [
+    MUSIC_TRACK_REPOSITORY,
+    SCAN_SESSION_REPOSITORY,
+    ScheduleBatchAudioScanUseCase,
     LOGGER_FACTORY,
     LOGGER,
   ]),

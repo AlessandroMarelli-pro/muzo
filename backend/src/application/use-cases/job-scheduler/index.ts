@@ -5,4 +5,5 @@ export * from './ProcessSingleTrackAnalysis';
 export * from './ProcessStartLibraryScan';
 export * from './ScheduleBatchAudioScan';
 export * from './ScheduleLibraryScan';
+export * from './ScheduleSingleTrackScan';
 export * from './StopLibraryScan';

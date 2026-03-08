@@ -31,4 +31,6 @@ export interface AudioScanBatchJobData {
   batchIndex: number;
   libraryId: MusicLibraryId;
   incremental: boolean;
+  /** When true, skip areFilesAnalyzed check and re-analyze all files in the batch */
+  force?: boolean;
 }

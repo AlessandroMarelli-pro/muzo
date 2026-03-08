@@ -561,5 +561,29 @@ export const useDislikeTrack = () => {
   });
 };
 
+export const useScanTrack = () => {
+  return useMutation({
+    mutationFn: async ({
+      trackId,
+      force = false,
+    }: {
+      trackId: string;
+      force?: boolean;
+    }) => {
+      const response = await graffleClient.request<{
+        scanTrack: string;
+      }>(
+        gql`
+          mutation ScanTrack($trackId: Base64ID!, $force: Boolean) {
+            scanTrack(trackId: $trackId, force: $force)
+          }
+        `,
+        { trackId, force },
+      );
+      return response.scanTrack;
+    },
+  });
+};
+
 // Note: playTrack mutation removed as it doesn't exist in the schema
 // export const usePlayTrack = () => { ... };

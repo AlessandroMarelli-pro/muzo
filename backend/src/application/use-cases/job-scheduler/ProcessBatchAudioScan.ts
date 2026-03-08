@@ -29,38 +29,47 @@ export class ProcessBatchAudioScanUseCase {
     createdTracks: MusicTrack[];
   }> {
     this.logger.info('Processing batch audio scan', { data });
-    const { audioFiles, sessionId, batchIndex, libraryId: _libraryId } = data;
+    const { audioFiles, sessionId, batchIndex, libraryId: _libraryId, force } = data;
 
     try {
-      const areFilesAnalyzed = await this.musicTrackRepository.areFilesAnalyzed(
-        audioFiles.map((audioFile) => audioFile.filePath),
-      );
+      let validJobs: AudioFile[];
 
-      const alreadyAnalyzedFiles = areFilesAnalyzed
-        .filter((file) => file.isAnalyzed)
-        .map((file) => file.filePath);
-
-      if (alreadyAnalyzedFiles.length > 0) {
-        this.logger.info(`${alreadyAnalyzedFiles.length} files are already analyzed`, {
-          alreadyAnalyzedFiles,
+      if (force) {
+        validJobs = [...audioFiles];
+        this.logger.info('Force flag set: re-analyzing all files in batch', {
+          count: audioFiles.length,
         });
-        const trackAlreadyAnalyzedEvent: TrackAlreadyAnalyzedEvent = {
-          type: 'tracks.already.analyzed',
-          sessionId,
-          timestamp: new Date().toISOString(),
-          batchIndex,
-          data: {
-            fileName: alreadyAnalyzedFiles.join(', '),
-          },
-        };
-        if (sessionId) {
-          await this.scanProgressPublisher.publishEvent(sessionId, trackAlreadyAnalyzedEvent);
-        }
-      }
+      } else {
+        const areFilesAnalyzed = await this.musicTrackRepository.areFilesAnalyzed(
+          audioFiles.map((audioFile) => audioFile.filePath),
+        );
 
-      const validJobs: AudioFile[] = audioFiles.filter(
-        (file) => !alreadyAnalyzedFiles.includes(file.filePath),
-      );
+        const alreadyAnalyzedFiles = areFilesAnalyzed
+          .filter((file) => file.isAnalyzed)
+          .map((file) => file.filePath);
+
+        if (alreadyAnalyzedFiles.length > 0) {
+          this.logger.info(`${alreadyAnalyzedFiles.length} files are already analyzed`, {
+            alreadyAnalyzedFiles,
+          });
+          const trackAlreadyAnalyzedEvent: TrackAlreadyAnalyzedEvent = {
+            type: 'tracks.already.analyzed',
+            sessionId,
+            timestamp: new Date().toISOString(),
+            batchIndex,
+            data: {
+              fileName: alreadyAnalyzedFiles.join(', '),
+            },
+          };
+          if (sessionId) {
+            await this.scanProgressPublisher.publishEvent(sessionId, trackAlreadyAnalyzedEvent);
+          }
+        }
+
+        validJobs = audioFiles.filter(
+          (file) => !alreadyAnalyzedFiles.includes(file.filePath),
+        );
+      }
 
       if (validJobs.length === 0) {
         this.logger.info('No files to process in batch');
