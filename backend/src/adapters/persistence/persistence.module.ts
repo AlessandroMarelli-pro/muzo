@@ -1,6 +1,7 @@
 import { Global, Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 
+import { DatabaseModule } from 'src/infrastructure/database/database.module';
 import { AUDIO_WAVEFORM_GENERATOR } from 'src/application/ports/infrastructure/IAudioWaveformGenerator';
 import { ID3_READER } from 'src/application/ports/infrastructure/IId3Reader';
 import { IMAGE_FILE_READER } from 'src/application/ports/infrastructure/IImageFileReader';
@@ -18,7 +19,6 @@ import { PLAYLIST_TRACK_REPOSITORY } from 'src/application/ports/repositories/IP
 import { QUEUE_REPOSITORY } from 'src/application/ports/repositories/IQueueRepository';
 import { SAVED_FILTER_REPOSITORY } from 'src/application/ports/repositories/ISavedFilterRepository';
 import { WaveformGenerator } from 'src/infrastructure/audio/waveform-generator';
-import { PRISMA_SERVICE, PrismaService } from '../../infrastructure/database/prisma.service';
 import { Id3ReaderAdapter } from '../../infrastructure/filesystem/id3-reader.adapter';
 import { FileSystemImageReader } from '../../infrastructure/filesystem/image-file.reader';
 import { MetricsQuery } from './queries/metrics/metrics.query';
@@ -85,8 +85,8 @@ const queriesProviders = [
 ];
 @Global()
 @Module({
-  imports: [ConfigModule],
-  providers: [{ provide: PRISMA_SERVICE, useClass: PrismaService }, ...queriesProviders],
+  imports: [ConfigModule, DatabaseModule],
+  providers: queriesProviders,
   exports: queriesProviders.map((provider) => provider.provide),
 })
 export class AdaptersPersistenceModule {}

@@ -1,4 +1,10 @@
-import { ArgumentsHost, Catch, ExceptionFilter, Injectable } from '@nestjs/common';
+import {
+  ArgumentsHost,
+  Catch,
+  ExceptionFilter,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { GqlArgumentsHost, GqlExceptionFilter } from '@nestjs/graphql';
 import { GraphQLError } from 'graphql';
 import { isDomainError, type DomainError } from 'src/kernel/types/errors';
@@ -16,8 +22,9 @@ function domainErrorToGraphQL(exception: DomainError): GraphQLError {
 }
 
 /**
- * Catches domain errors (e.g. NotFoundError) thrown from clean-arch resolvers
+ * Catches domain errors (e.g. NotFoundError) and UnauthorizedException from guards
  * and maps them to GraphQL errors with extensions.code and message.
+ * Sets HTTP 401 for UnauthorizedException so clients get the correct status.
  * Only runs in GraphQL context; other errors are rethrown.
  */
 @Catch()
@@ -29,6 +36,14 @@ export class DomainErrorExceptionFilter implements ExceptionFilter, GqlException
 
     if (type !== 'graphql') {
       throw exception;
+    }
+
+    if (exception instanceof UnauthorizedException) {
+      const ctx = gqlHost.getContext<{ res?: { status: (code: number) => void } }>();
+      if (ctx?.res) ctx.res.status(401);
+      return new GraphQLError(exception.message, {
+        extensions: { code: 'UNAUTHENTICATED' },
+      });
     }
 
     if (isDomainError(exception)) {

@@ -11,7 +11,9 @@
     "outDir": "./dist",
     "baseUrl": "./",
     "paths": {
-      "@prisma/client": ["src/generated/prisma/client"]
+      "@prisma/client": [
+        "src/generated/prisma/client"
+      ],
     },
     "incremental": true,
     "skipLibCheck": true,
@@ -23,8 +25,14 @@
     "resolveJsonModule": true,
     "esModuleInterop": true
   },
-  "include": ["src/**/*", "wdyr.js"],
-  "exclude": ["node_modules", "dist"],
+  "include": [
+    "src/**/*",
+    "wdyr.js"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ],
   "watchOptions": {
     "watchFile": "priorityPollingInterval",
     "watchDirectory": "dynamicPriorityPolling"

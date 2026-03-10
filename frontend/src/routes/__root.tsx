@@ -10,7 +10,7 @@ import { cn } from '@/lib/utils';
 import { queryClient } from '@/query-client';
 import type { QueryClient } from '@tanstack/react-query';
 import { QueryClientProvider } from '@tanstack/react-query';
-import { createRootRouteWithContext, Outlet } from '@tanstack/react-router';
+import { createRootRouteWithContext, Outlet, useRouterState } from '@tanstack/react-router';
 import {
   BookHeadphones,
   Brain,
@@ -101,6 +101,9 @@ const navigationData: Omit<AppSidebarProps['data'], 'user'> = {
   ],
 };
 function RootContent() {
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const isAuthPage = pathname === '/login' || pathname === '/sign-up';
+
   const handleToggleShuffle = React.useCallback(() => {
     console.log('Toggle shuffle');
   }, []);
@@ -112,6 +115,10 @@ function RootContent() {
   React.useEffect(() => {
     document.documentElement.style.colorScheme = resolvedTheme === 'dark' ? 'dark' : 'light';
   }, [resolvedTheme]);
+
+  if (isAuthPage) {
+    return <Outlet />;
+  }
 
   return (
     <>

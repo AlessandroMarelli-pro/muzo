@@ -1,17 +1,23 @@
 import type { ActionContext, RecommendationWeights } from 'src/kernel/types/model-types';
 import { models } from 'src/kernel/types/models';
 
+const ANONYMOUS_ID = models.user.id('anonymous');
+
 export function getAnonymousUser(): ActionContext['user'] {
   return {
-    id: models.user.id('anonymous'),
+    id: ANONYMOUS_ID,
     createdAt: new Date(0),
-    createdById: models.user.id('anonymous'),
+    createdById: ANONYMOUS_ID,
     updatedAt: new Date(0),
     updatedById: undefined,
     email: 'anonymous@example.com' as ActionContext['user']['email'],
     firstName: 'anonymous',
     lastName: 'anonymous',
   } as ActionContext['user'];
+}
+
+export function isAnonymousUser(user: ActionContext['user']): boolean {
+  return user.id === ANONYMOUS_ID;
 }
 
 export const DEFAULT_RECOMMENDATION_WEIGHTS: RecommendationWeights = {

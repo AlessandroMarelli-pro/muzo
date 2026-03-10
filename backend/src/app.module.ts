@@ -23,8 +23,12 @@ import {
   PLAYLIST_TRACK_REPOSITORY,
 } from './application/ports/repositories/IPlaylistTrackRepository';
 import { UseCasesModule } from './application/use-cases/use-cases.module';
+import { AuthModule as NestJsBetterAuthModule } from '@thallesp/nestjs-better-auth';
 import { ConfigModuleSetup, QueueConfig } from './config';
 import { GraphiQLModule } from './graphiql/graphiql.module';
+import { BetterAuthCatchAllMiddleware } from './infrastructure/auth/better-auth-catch-all.middleware';
+import { AuthModule } from './infrastructure/auth/auth.module';
+import { BETTER_AUTH_INSTANCE } from './infrastructure/auth/auth.module';
 import { AiModule } from './infrastructure/external-services/ai/ai.module';
 import { ElasticsearchModule } from './infrastructure/external-services/elasticsearch/elasticsearch.module';
 import { NestjsLoggerModule } from './infrastructure/logging/nestjs-logger.module';
@@ -41,6 +45,13 @@ import { NestjsLoggerModule } from './infrastructure/logging/nestjs-logger.modul
     // Clean architecture modules
     AdaptersPersistenceModule,
     UseCasesModule,
+    AuthModule,
+    NestJsBetterAuthModule.forRootAsync({
+      imports: [AuthModule],
+      useFactory: (auth) => ({ auth }),
+      inject: [BETTER_AUTH_INSTANCE],
+      disableGlobalAuthGuard: true, // Keep current behavior; use @AllowAnonymous() / guard when ready to protect routes
+    }),
 
     // GraphQL module
     NestjsGraphQLModule.forRootAsync<ApolloDriverConfig>({
@@ -106,9 +117,16 @@ import { NestjsLoggerModule } from './infrastructure/logging/nestjs-logger.modul
     JobSchedulersModule,
     NestjsLoggerModule,
   ],
+  providers: [ActionContextMiddleware, BetterAuthCatchAllMiddleware],
 })
 export class AppModule {
   configure(consumer: MiddlewareConsumer): void {
     consumer.apply(ActionContextMiddleware).forRoutes({ path: '*', method: RequestMethod.ALL });
+    // Handle /api/auth and all subpaths (dash, sign-in, etc.); package only registers exact /api/auth
+    // path-to-regexp v6 (Express 5): *path for subpaths; exact path for base
+    consumer.apply(BetterAuthCatchAllMiddleware).forRoutes(
+      { path: 'api/auth', method: RequestMethod.ALL },
+      { path: 'api/auth/*path', method: RequestMethod.ALL },
+    );
   }
 }

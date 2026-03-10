@@ -63,7 +63,7 @@ export class AdminMethodsService {
     ];
     for (const table of tables) {
       await (this.prisma as any)[table].updateMany({
-        data: { createdById: 'anonymous' },
+        data: { createdById: 'V5YEbCI2EpH9poNEuflLsyG17XIImWMJ' },
       });
     }
   }

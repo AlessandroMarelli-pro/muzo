@@ -9,8 +9,10 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SignUpRouteImport } from './routes/sign-up'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as MusicRouteImport } from './routes/music'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as FavoritesRouteImport } from './routes/favorites'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SwipeIndexRouteImport } from './routes/swipe.index'
@@ -20,6 +22,11 @@ import { Route as ResearchChar123TrackIdChar125RouteImport } from './routes/rese
 import { Route as PlaylistsPlaylistIdRouteImport } from './routes/playlists.$playlistId'
 import { Route as LibrariesLibraryIdRouteImport } from './routes/libraries.$libraryId'
 
+const SignUpRoute = SignUpRouteImport.update({
+  id: '/sign-up',
+  path: '/sign-up',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -28,6 +35,11 @@ const SettingsRoute = SettingsRouteImport.update({
 const MusicRoute = MusicRouteImport.update({
   id: '/music',
   path: '/music',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FavoritesRoute = FavoritesRouteImport.update({
@@ -75,8 +87,10 @@ const LibrariesLibraryIdRoute = LibrariesLibraryIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/favorites': typeof FavoritesRoute
+  '/login': typeof LoginRoute
   '/music': typeof MusicRoute
   '/settings': typeof SettingsRoute
+  '/sign-up': typeof SignUpRoute
   '/libraries/$libraryId': typeof LibrariesLibraryIdRoute
   '/playlists/$playlistId': typeof PlaylistsPlaylistIdRoute
   '/research/{-$trackId}': typeof ResearchChar123TrackIdChar125Route
@@ -87,8 +101,10 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/favorites': typeof FavoritesRoute
+  '/login': typeof LoginRoute
   '/music': typeof MusicRoute
   '/settings': typeof SettingsRoute
+  '/sign-up': typeof SignUpRoute
   '/libraries/$libraryId': typeof LibrariesLibraryIdRoute
   '/playlists/$playlistId': typeof PlaylistsPlaylistIdRoute
   '/research/{-$trackId}': typeof ResearchChar123TrackIdChar125Route
@@ -100,8 +116,10 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/favorites': typeof FavoritesRoute
+  '/login': typeof LoginRoute
   '/music': typeof MusicRoute
   '/settings': typeof SettingsRoute
+  '/sign-up': typeof SignUpRoute
   '/libraries/$libraryId': typeof LibrariesLibraryIdRoute
   '/playlists/$playlistId': typeof PlaylistsPlaylistIdRoute
   '/research/{-$trackId}': typeof ResearchChar123TrackIdChar125Route
@@ -114,8 +132,10 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/favorites'
+    | '/login'
     | '/music'
     | '/settings'
+    | '/sign-up'
     | '/libraries/$libraryId'
     | '/playlists/$playlistId'
     | '/research/{-$trackId}'
@@ -126,8 +146,10 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/favorites'
+    | '/login'
     | '/music'
     | '/settings'
+    | '/sign-up'
     | '/libraries/$libraryId'
     | '/playlists/$playlistId'
     | '/research/{-$trackId}'
@@ -138,8 +160,10 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/favorites'
+    | '/login'
     | '/music'
     | '/settings'
+    | '/sign-up'
     | '/libraries/$libraryId'
     | '/playlists/$playlistId'
     | '/research/{-$trackId}'
@@ -151,8 +175,10 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   FavoritesRoute: typeof FavoritesRoute
+  LoginRoute: typeof LoginRoute
   MusicRoute: typeof MusicRoute
   SettingsRoute: typeof SettingsRoute
+  SignUpRoute: typeof SignUpRoute
   LibrariesLibraryIdRoute: typeof LibrariesLibraryIdRoute
   PlaylistsPlaylistIdRoute: typeof PlaylistsPlaylistIdRoute
   ResearchChar123TrackIdChar125Route: typeof ResearchChar123TrackIdChar125Route
@@ -163,6 +189,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/sign-up': {
+      id: '/sign-up'
+      path: '/sign-up'
+      fullPath: '/sign-up'
+      preLoaderRoute: typeof SignUpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/settings': {
       id: '/settings'
       path: '/settings'
@@ -175,6 +208,13 @@ declare module '@tanstack/react-router' {
       path: '/music'
       fullPath: '/music'
       preLoaderRoute: typeof MusicRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/favorites': {
@@ -239,8 +279,10 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   FavoritesRoute: FavoritesRoute,
+  LoginRoute: LoginRoute,
   MusicRoute: MusicRoute,
   SettingsRoute: SettingsRoute,
+  SignUpRoute: SignUpRoute,
   LibrariesLibraryIdRoute: LibrariesLibraryIdRoute,
   PlaylistsPlaylistIdRoute: PlaylistsPlaylistIdRoute,
   ResearchChar123TrackIdChar125Route: ResearchChar123TrackIdChar125Route,

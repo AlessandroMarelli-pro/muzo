@@ -18,6 +18,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from '@/components/ui/sidebar';
+import { cn } from '@/lib/utils';
 
 export function NavUser({
   user,
@@ -29,7 +30,11 @@ export function NavUser({
   };
 }) {
   const { isMobile } = useSidebar();
-
+  const initials = user.name
+    .split(' ')
+    .map((name) => name[0])
+    .join('')
+    .toUpperCase();
   return (
     <SidebarMenu>
       <SidebarMenuItem className="justify-center flex cursor-pointer">
@@ -39,9 +44,16 @@ export function NavUser({
               size="lg"
               className="h-12 data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground "
             >
-              <Avatar className="h-8 w-8 rounded-lg ">
+              <Avatar className="h-8 w-8 rounded-lg bg-primary">
                 <AvatarImage src={user.avatar} alt={user.name} />
-                <AvatarFallback className="">CN </AvatarFallback>
+                <AvatarFallback
+                  className={cn(
+                    'rounded-lg bg-primary text-primary-foreground',
+                    initials.length > 2 ? 'text-xs' : 'text-sm text-primary-foreground',
+                  )}
+                >
+                  {initials}
+                </AvatarFallback>
               </Avatar>
               <div className="grid flex-1 text-left text-xs leading-tight">
                 <span className="truncate font-semibold">{user.name}</span>
@@ -58,9 +70,16 @@ export function NavUser({
           >
             <DropdownMenuLabel className="p-0 font-normal">
               <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
-                <Avatar className="h-8 w-8 rounded-lg">
+                <Avatar className="h-8 w-8 rounded-lg  ">
                   <AvatarImage src={user.avatar} alt={user.name} />
-                  <AvatarFallback className="rounded-lg">CN</AvatarFallback>
+                  <AvatarFallback
+                    className={cn(
+                      'rounded-lg bg-primary text-primary-foreground',
+                      initials.length > 2 ? 'text-xs' : 'text-sm',
+                    )}
+                  >
+                    {initials}
+                  </AvatarFallback>
                 </Avatar>
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-semibold">{user.name}</span>

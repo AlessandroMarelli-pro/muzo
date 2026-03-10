@@ -18,10 +18,12 @@ export const fetchUser = async () => {
   return me;
 };
 
-export const useUser = () => {
+export const useUser = (options?: { enabled?: boolean }) => {
+  const enabled = options?.enabled ?? true;
   const { data: user, isLoading } = useQuery({
     queryKey: ['user'],
     queryFn: fetchUser,
+    enabled,
   });
   return { user, isLoading };
 };

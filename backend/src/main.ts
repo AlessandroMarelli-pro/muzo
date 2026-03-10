@@ -2,17 +2,9 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
-  //app.useLogger(app.get(Logger));
-
-  // Enable validation pipes globally
-  /*   app.useGlobalPipes(
-    new ValidationPipe({
-      transform: true,
-      whitelist: true,
-      forbidNonWhitelisted: true,
-    }),
-  ); */
+  const app = await NestFactory.create(AppModule, {
+    bodyParser: false, // Required for Better Auth; @thallesp/nestjs-better-auth applies body parsing per-route
+  });
 
   // Enable CORS for development
   app.enableCors({

@@ -163,7 +163,7 @@ export class UserResolver {
   }
   @ResolveField(() => Base64ID)
   async randomTrackId(): Promise<string> {
-    return this.getRandomTrackIdUseCase.execute();
+    return this.getRandomTrackIdUseCase.execute() ?? '';
   }
 
   @ResolveField(() => RandomTrackWithStats)
