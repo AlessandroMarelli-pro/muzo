@@ -15,6 +15,7 @@ from loguru import logger
 try:
     from google import genai
     from google.genai import types
+    from google.genai.errors import ClientError as GenAIClientError
 
     GEMINI_AVAILABLE = True
 except ImportError:
@@ -446,6 +447,22 @@ ADDITIONAL CONTEXT FOR METADATA EXTRACTION:
         except Exception as e:
             logger.debug(f"Could not check for existing cache: {e}")
             return None
+
+    def _is_cached_content_not_found_error(self, e: Exception) -> bool:
+        """Return True if the exception indicates the context cache expired or was not found."""
+        if not GEMINI_AVAILABLE:
+            return False
+        try:
+            if not isinstance(e, GenAIClientError):
+                return False
+        except NameError:
+            return False
+        msg = (getattr(e, "message", None) or str(e)).lower()
+        return (
+            "cachedcontent not found" in msg
+            or "cached content not found" in msg
+            or ("permission denied" in msg and "cached" in msg)
+        )
 
     def _ensure_context_cache(self) -> None:
         """
@@ -965,11 +982,40 @@ Return ONLY a JSON array of cleaned filenames in the same order, nothing else. F
                     "Using system instruction for filename cleaning (cache not available)"
                 )
 
-            response = self.client.models.generate_content(
-                model="gemini-2.5-flash-lite",
-                contents=user_content,
-                config=config,
-            )
+            try:
+                response = self.client.models.generate_content(
+                    model="gemini-2.5-flash-lite",
+                    contents=user_content,
+                    config=config,
+                )
+            except Exception as e:
+                if self._is_cached_content_not_found_error(e):
+                    logger.info(
+                        f"Filename cleaning cache expired or not found: {e}. "
+                        "Rebuilding cache and retrying once."
+                    )
+                    self._filename_cleaning_cache_name = None
+                    with (
+                        GeminiMetadataExtractor._class_filename_cleaning_cache_lock
+                    ):
+                        GeminiMetadataExtractor._class_filename_cleaning_cache_name = (
+                            None
+                        )
+                    self._ensure_filename_cleaning_cache()
+                    if self._filename_cleaning_cache_name:
+                        config.cached_content = self._filename_cleaning_cache_name
+                    else:
+                        config.cached_content = None
+                        config.system_instruction = "\n".join(
+                            self.FILENAME_CLEANING_INSTRUCTIONS
+                        )
+                    response = self.client.models.generate_content(
+                        model="gemini-2.5-flash-lite",
+                        contents=user_content,
+                        config=config,
+                    )
+                else:
+                    raise
             # Parse batch response
             if hasattr(response, "text") and response.text:
                 import json
@@ -1243,11 +1289,47 @@ Return ONLY a JSON array of cleaned filenames in the same order, nothing else. F
         if tools and not use_cached_content:
             config.tools = tools
 
-        response = self.client.models.generate_content(
-            model=self.MODEL,
-            contents=user_content,
-            config=config,
-        )
+        try:
+            response = self.client.models.generate_content(
+                model=self.MODEL,
+                contents=user_content,
+                config=config,
+            )
+        except Exception as e:
+            if self._is_cached_content_not_found_error(e):
+                logger.info(
+                    f"Context cache expired or not found: {e}. "
+                    "Rebuilding cache and retrying once."
+                )
+                self._cached_content_name = None
+                with GeminiMetadataExtractor._class_cache_lock:
+                    GeminiMetadataExtractor._class_cache_name = None
+                    GeminiMetadataExtractor._class_cached_tools = []
+                self._ensure_context_cache()
+                config.cached_content = (
+                    self._cached_content_name
+                    if (
+                        self._cached_content_name
+                        and (
+                            not requested_tool_names
+                            or all(
+                                t in self._cached_tools for t in requested_tool_names
+                            )
+                        )
+                    )
+                    else None
+                )
+                if config.cached_content is None:
+                    config.system_instruction = "\n".join(self.INSTRUCTIONS)
+                    if tools:
+                        config.tools = tools
+                response = self.client.models.generate_content(
+                    model=self.MODEL,
+                    contents=user_content,
+                    config=config,
+                )
+            else:
+                raise
 
         # Log context cache usage metadata
         if hasattr(response, "usage_metadata") and response.usage_metadata:
@@ -1479,11 +1561,48 @@ Return ONLY a JSON array of cleaned filenames in the same order, nothing else. F
         logger.info(
             f"Making batch API call for {num_items} items with shared system instruction"
         )
-        response = self.client.models.generate_content(
-            model=self.MODEL,
-            contents=user_content,
-            config=config,
-        )
+        try:
+            response = self.client.models.generate_content(
+                model=self.MODEL,
+                contents=user_content,
+                config=config,
+            )
+        except Exception as e:
+            if self._is_cached_content_not_found_error(e):
+                logger.info(
+                    f"Context cache expired or not found on batch request: {e}. "
+                    "Rebuilding cache and retrying once."
+                )
+                self._cached_content_name = None
+                with GeminiMetadataExtractor._class_cache_lock:
+                    GeminiMetadataExtractor._class_cache_name = None
+                    GeminiMetadataExtractor._class_cached_tools = []
+                self._ensure_context_cache()
+                # Retry with new cache or fallback to system instruction
+                config.cached_content = (
+                    self._cached_content_name
+                    if (
+                        self._cached_content_name
+                        and (
+                            not requested_tool_names
+                            or all(
+                                t in self._cached_tools for t in requested_tool_names
+                            )
+                        )
+                    )
+                    else None
+                )
+                if config.cached_content is None:
+                    config.system_instruction = "\n".join(self.INSTRUCTIONS)
+                    if tools:
+                        config.tools = tools
+                response = self.client.models.generate_content(
+                    model=self.MODEL,
+                    contents=user_content,
+                    config=config,
+                )
+            else:
+                raise
 
         # Log context cache usage metadata
         if hasattr(response, "usage_metadata") and response.usage_metadata:

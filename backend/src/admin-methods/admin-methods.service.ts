@@ -60,6 +60,8 @@ export class AdminMethodsService {
       'hiddenMusicTrack',
       'scanSession',
       'audioFingerprint',
+      'aiAtmosphereTag',
+      'trackAiAtmosphereTag',
     ];
     for (const table of tables) {
       await (this.prisma as any)[table].updateMany({
