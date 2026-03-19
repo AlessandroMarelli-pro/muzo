@@ -162,7 +162,7 @@ export class UserResolver {
       }));
   }
   @ResolveField(() => Base64ID)
-  async randomTrackId(): Promise<string> {
+  async randomTrackId(): Promise<string | null> {
     return this.getRandomTrackIdUseCase.execute() ?? '';
   }
 

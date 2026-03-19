@@ -171,7 +171,7 @@ export function calculateFeatures(tracks: MusicTrack[]): Maybe<AudioFeatures> {
   const defaultMfcc: number[] = Array(26).fill(0);
   const features: Required<AudioFeatures> = {
     trackId: tracks[0].id,
-    tempo: 0,
+    tempo: { min: Infinity, max: 0 },
     energy: 0,
     valence: 0,
     danceability: 0,
@@ -228,7 +228,8 @@ export function calculateFeatures(tracks: MusicTrack[]): Maybe<AudioFeatures> {
 
     if (mf) {
       if (mf.tempo != null && mf.tempo > 0) {
-        features.tempo! += mf.tempo;
+        features.tempo!.min = Math.min(features.tempo!.min, mf.tempo);
+        features.tempo!.max = Math.max(features.tempo!.max, mf.tempo);
         validTracks++;
       }
       if (mf.energy != null && mf.energy !== undefined) {
@@ -302,7 +303,8 @@ export function calculateFeatures(tracks: MusicTrack[]): Maybe<AudioFeatures> {
   features.spectralFeatures = calculateSpectralFeaturesMean(tracks);
   const n = tracks.length;
   if (validTracks > 0) {
-    features.tempo = features.tempo! / validTracks;
+    features.tempo!.min = features.tempo!.min - 5;
+    features.tempo!.max = features.tempo!.max + 5;
   }
   if (n > 0) {
     features.energy = features.energy! / n;
@@ -321,7 +323,7 @@ export function calculateFeatures(tracks: MusicTrack[]): Maybe<AudioFeatures> {
   features.subgenres = Object.keys(subgenreCounts)
     .filter((subgenre) => subgenreCounts[subgenre] > 0)
     .sort((a, b) => subgenreCounts[b] - subgenreCounts[a])
-    .slice(0, 5);
+    .slice(0, 10);
   features.key = findMostCommon(keyCounts);
   features.camelotKey = findMostCommon(camelotKeyCounts);
   features.artist = findMostCommon(artistCounts);

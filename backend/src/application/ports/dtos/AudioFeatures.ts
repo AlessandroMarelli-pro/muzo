@@ -3,7 +3,7 @@ import { AggregationStatistics } from 'src/kernel/types';
 
 export type AudioFeatures = {
   trackId: MusicTrackId;
-  tempo?: number;
+  tempo?: { min: number; max: number };
   key?: string;
   camelotKey?: string;
   energy?: number;

@@ -106,7 +106,7 @@ export const buildMusicTrackFilterWhereClause = (
 
     if (criteria.tempo && (criteria.tempo?.min !== 0 || criteria.tempo?.max !== 200)) {
       fingerprintWhere.tempo = {};
-      if (criteria.tempo.min !== undefined && criteria.tempo.max !== 200) {
+      if (criteria.tempo.min !== undefined && criteria.tempo.min !== 200) {
         fingerprintWhere.tempo.gte = criteria.tempo.min;
       }
       if (criteria.tempo.max !== undefined && criteria.tempo.max !== 200) {

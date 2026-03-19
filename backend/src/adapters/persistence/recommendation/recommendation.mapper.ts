@@ -4,7 +4,10 @@ import { MusicTrack } from 'src/kernel/types';
 export const toAudioFeatures = (track: MusicTrack): AudioFeatures => {
   return {
     trackId: track.id,
-    tempo: track.features?.musicalFeatures?.tempo ?? 0,
+    tempo: {
+      min: track.features?.musicalFeatures?.tempo ?? 0,
+      max: track.features?.musicalFeatures?.tempo ?? 0,
+    },
     key: track.features?.musicalFeatures?.key ?? '',
     camelotKey: track.features?.musicalFeatures?.camelotKey ?? '',
     energy: track.features?.musicalFeatures?.energy ?? 0,

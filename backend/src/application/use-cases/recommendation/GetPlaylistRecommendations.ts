@@ -22,7 +22,7 @@ export class GetPlaylistRecommendationsUseCase {
       playlistId,
       {
         sortingKey: 'addedAt',
-        sortingDirection: 'desc',
+        sortingDirection: 'asc',
       },
     );
 

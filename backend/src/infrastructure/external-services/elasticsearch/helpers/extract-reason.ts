@@ -24,15 +24,15 @@ const generateAudioFeatureReasons = (
   if (trackSource.musical_audio_features?.tempo != null && playlistFeatures.tempo != null) {
     const trackTempo = trackSource.musical_audio_features.tempo;
     const seedTempo = playlistFeatures.tempo;
-    const diffExact = Math.abs(trackTempo - seedTempo);
-    const secondaryBpm = seedTempo > 120 ? seedTempo / 2 : seedTempo * 2;
+    const diffExact = Math.abs(trackTempo - seedTempo.min);
+    const secondaryBpm = seedTempo.min > 120 ? seedTempo.min / 2 : seedTempo.min * 2;
     const diffHalfDouble = Math.abs(trackTempo - secondaryBpm);
     const threshold = 12; // align with gauss scale in recommendation-query.builder
     if (diffExact <= threshold) {
-      reasons.push(`Similar tempo: ${Math.round(trackTempo)} BPM`);
+      reasons.push(`Similar tempo: ${Math.round(seedTempo.min)} BPM`);
     } else if (diffHalfDouble <= threshold) {
       reasons.push(
-        `Similar tempo (${seedTempo > 120 ? 'half-time' : 'double-time'}): ${Math.round(trackTempo)} BPM`,
+        `Similar tempo (${seedTempo.min > 120 ? 'half-time' : 'double-time'}): ${Math.round(seedTempo.min)} BPM`,
       );
     }
   }

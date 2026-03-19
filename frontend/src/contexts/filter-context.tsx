@@ -20,12 +20,6 @@ const FilterContext = createContext<{
   updateFilters: (values: Record<string, any>) => void;
   resetFilters: () => void;
   hasActiveFilters: boolean;
-  // Server persistence actions
-  /* 	saveCurrentFilter: (name?: string) => Promise<void>;
-	loadSavedFilter: () => Promise<void>;
-	clearSavedFilter: () => Promise<void>;
-	isLoading: boolean;
-	error: Error | null; */
 } | null>(null);
 
 const FilterOptionsContext = createContext<{

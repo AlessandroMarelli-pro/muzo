@@ -103,8 +103,7 @@ export const buildElasticsearchRecommendationQuery = (
                 },
               },
             })),
-            minimum_should_match:
-              playlistFeatures.genres.length > 3 ? 2 : playlistFeatures.genres.length,
+            minimum_should_match: Math.max(playlistFeatures.genres.length, 1),
 
             boost: weights.genreSimilarity * 30.0,
           },
@@ -124,48 +123,11 @@ export const buildElasticsearchRecommendationQuery = (
                 },
               },
             })),
-            minimum_should_match:
-              playlistFeatures.subgenres.length > 3 ? 2 : playlistFeatures.subgenres.length,
+            minimum_should_match: Math.max(playlistFeatures.subgenres.length, 1),
             boost: weights.genreSimilarity * 40.0,
           },
         }
       : null;
-
-  const tempoOrigin = playlistFeatures.tempo ?? 120;
-  const secondaryTempoOrigin = tempoOrigin > 120 ? tempoOrigin / 2 : tempoOrigin * 2;
-  const tempoDecayParams = {
-    scale: 12,
-    decay: 0.5,
-    offset: 3,
-  };
-
-  const shouldTempo = {
-    function_score: {
-      query: { match_all: {} },
-      functions: [
-        {
-          gauss: {
-            'musical_audio_features.tempo': {
-              origin: tempoOrigin,
-              ...tempoDecayParams,
-            },
-          },
-          weight: 30,
-        },
-        {
-          gauss: {
-            'musical_audio_features.tempo': {
-              origin: secondaryTempoOrigin,
-              ...tempoDecayParams,
-            },
-          },
-          weight: 30,
-        },
-      ],
-      score_mode: 'max' as const,
-      boost_mode: 'multiply' as const,
-    },
-  };
 
   const shouldAtmosphere =
     weights.aiMetadataSimilarity > 0 &&
@@ -222,9 +184,8 @@ export const buildElasticsearchRecommendationQuery = (
   const should = [
     shouldGenre,
     shouldSubgenre,
-    shouldTempo,
-    shouldAtmosphere,
-    shouldTags,
+    //shouldAtmosphere,
+    //shouldTags,
     ...shouldSpectral,
   ].filter((s) => s !== null);
 
@@ -242,6 +203,16 @@ export const buildElasticsearchRecommendationQuery = (
     query: {
       bool: {
         must_not: [{ terms: { trackId: excludeTrackIds } }],
+        must: [
+          {
+            range: {
+              'musical_audio_features.tempo': {
+                gte: playlistFeatures.tempo?.min ?? 0,
+                lte: playlistFeatures.tempo?.max ?? 200,
+              },
+            },
+          },
+        ],
         should,
         minimum_should_match: minimumShouldMatch,
       },
