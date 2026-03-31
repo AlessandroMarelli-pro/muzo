@@ -7,6 +7,7 @@ import { AUDIO_WAVEFORM_GENERATOR } from '../ports/infrastructure/IAudioWaveform
 import { FILE_MANAGER } from '../ports/infrastructure/IFileManager';
 import { ID3_READER } from '../ports/infrastructure/IId3Reader';
 import { IMAGE_FILE_READER } from '../ports/infrastructure/IImageFileReader';
+import { COPY_AUDIO_WITH_METADATA } from '../ports/infrastructure/ICopyAudioWithMetadata';
 import { LIBRARY_SCAN_SCHEDULER_PRODUCER } from '../ports/infrastructure/ILibraryScanSchedulerProducer';
 import { LOGGER } from '../ports/infrastructure/ILogger';
 import { LOGGER_FACTORY } from '../ports/infrastructure/ILoggerFactory';
@@ -47,6 +48,7 @@ import {
   DeleteLibraryUseCase,
   DeletePlaylistUseCase,
   DeleteSavedFilterUseCase,
+  DownloadPlaylistToFolderUseCase,
   ExportPlaylistToM3UUseCase,
   GetActiveFiltersUseCase,
   GetCurrentFilterUseCase,
@@ -154,6 +156,13 @@ const useCasesProviders = [
   createUseCaseProvider(ExportPlaylistToM3UUseCase, [
     PLAYLIST_REPOSITORY,
     PLAYLIST_SORTING_REPOSITORY,
+  ]),
+  createUseCaseProvider(DownloadPlaylistToFolderUseCase, [
+    PLAYLIST_REPOSITORY,
+    PLAYLIST_SORTING_REPOSITORY,
+    COPY_AUDIO_WITH_METADATA,
+    LOGGER_FACTORY,
+    LOGGER,
   ]),
   createUseCaseProvider(UpdatePlaylistSortingUseCase, [PLAYLIST_SORTING_REPOSITORY]),
   createUseCaseProvider(UpdatePlaylistTracksPositionsUseCase, [

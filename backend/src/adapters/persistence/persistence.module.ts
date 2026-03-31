@@ -5,6 +5,9 @@ import { DatabaseModule } from 'src/infrastructure/database/database.module';
 import { AUDIO_WAVEFORM_GENERATOR } from 'src/application/ports/infrastructure/IAudioWaveformGenerator';
 import { ID3_READER } from 'src/application/ports/infrastructure/IId3Reader';
 import { IMAGE_FILE_READER } from 'src/application/ports/infrastructure/IImageFileReader';
+import { WAV_CONVERTER_WITH_METADATA } from 'src/application/ports/infrastructure/IWavConverterWithMetadata';
+import { M4A_CONVERTER_WITH_METADATA_AND_ARTWORK } from 'src/application/ports/infrastructure/IM4AConverterWithMetadataAndArtwork';
+import { COPY_AUDIO_WITH_METADATA } from 'src/application/ports/infrastructure/ICopyAudioWithMetadata';
 import { METRICS_QUERY } from 'src/application/ports/queries/IMetricsQuery';
 import { PLAYLIST_STATS_QUERY } from 'src/application/ports/queries/IPlaylistStatsQuery';
 import { RECOMMENDATION_DATA_PORT } from 'src/application/ports/queries/IRecommendationDataPort';
@@ -18,9 +21,12 @@ import { PLAYLIST_SORTING_REPOSITORY } from 'src/application/ports/repositories/
 import { PLAYLIST_TRACK_REPOSITORY } from 'src/application/ports/repositories/IPlaylistTrackRepository';
 import { QUEUE_REPOSITORY } from 'src/application/ports/repositories/IQueueRepository';
 import { SAVED_FILTER_REPOSITORY } from 'src/application/ports/repositories/ISavedFilterRepository';
+import { WavConverterWithMetadata } from 'src/infrastructure/audio/wav-converter-with-metadata.adapter';
 import { WaveformGenerator } from 'src/infrastructure/audio/waveform-generator';
 import { Id3ReaderAdapter } from '../../infrastructure/filesystem/id3-reader.adapter';
 import { FileSystemImageReader } from '../../infrastructure/filesystem/image-file.reader';
+import { M4aConverterWithMetadataAndArtwork } from 'src/infrastructure/audio/m4a-converter-with-metadata-and-artwork.adapter';
+import { CopyAudioWithMetadata } from 'src/infrastructure/audio/copy-audio-with-metadata.adapter';
 import { MetricsQuery } from './queries/metrics/metrics.query';
 import { PlaylistStatsQuery } from './queries/playlist/playlist-stats.query';
 import { SavedFilterQuery } from './queries/saved-filter/saved-filter.query';
@@ -82,6 +88,9 @@ const queriesProviders = [
   { provide: SCAN_SESSION_REPOSITORY, useClass: ScanSessionRepository },
   { provide: SCAN_PROGRESS_PUBLISHER, useClass: ScanProgressPubSubAdapter },
   { provide: SCAN_PROGRESS_SUBSCRIBER, useClass: ScanProgressPubSubAdapter },
+  { provide: WAV_CONVERTER_WITH_METADATA, useClass: WavConverterWithMetadata },
+  { provide: M4A_CONVERTER_WITH_METADATA_AND_ARTWORK, useClass: M4aConverterWithMetadataAndArtwork },
+  { provide: COPY_AUDIO_WITH_METADATA, useClass: CopyAudioWithMetadata },
 ];
 @Global()
 @Module({

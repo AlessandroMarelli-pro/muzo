@@ -5,6 +5,7 @@ import {
   CreatePlaylistUseCase,
   DeletePlaylistUseCase,
   ExportPlaylistToM3UUseCase,
+  DownloadPlaylistToFolderUseCase,
   GetPlaylistRecommendationsUseCase,
   GetPlaylistSortingByPlaylistIdUseCase,
   UpdatePlaylistUseCase,
@@ -35,6 +36,7 @@ export class PlaylistResolver {
     private readonly deletePlaylistUseCase: DeletePlaylistUseCase,
     private readonly getPlaylistSortingByPlaylistIdUseCase: GetPlaylistSortingByPlaylistIdUseCase,
     private readonly exportPlaylistToM3UUseCase: ExportPlaylistToM3UUseCase,
+    private readonly downloadPlaylistToFolderUseCase: DownloadPlaylistToFolderUseCase,
     private readonly updatePlaylistSortingUseCase: UpdatePlaylistSortingUseCase,
     private readonly getPlaylistRecommendationsUseCase: GetPlaylistRecommendationsUseCase,
   ) {}
@@ -127,6 +129,13 @@ export class PlaylistResolver {
   @Mutation(() => String)
   async exportPlaylistToM3U(@Args('playlistId', { type: () => Base64ID }) playlistId: string) {
     return this.exportPlaylistToM3UUseCase.execute(parsePlaylistId(playlistId));
+  }
+
+  @Mutation(() => Boolean)
+  async downloadPlaylistToFolder(
+    @Args('playlistId', { type: () => Base64ID }) playlistId: string,
+  ): Promise<boolean> {
+    return this.downloadPlaylistToFolderUseCase.execute(parsePlaylistId(playlistId));
   }
 
   @Mutation(() => PlaylistSorting)

@@ -1,6 +1,10 @@
 import { Playlist } from '@/__generated__/types';
 import { cn } from '@/lib/utils';
-import { useDeletePlaylist, useExportPlaylistToM3U } from '@/services/playlist-hooks';
+import {
+  useDeletePlaylist,
+  useDownloadPlaylistToFolder,
+  useExportPlaylistToM3U,
+} from '@/services/playlist-hooks';
 import { useRouter } from '@tanstack/react-router';
 import { Eye, MoreHorizontal } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
@@ -49,7 +53,9 @@ export const PlaylistCardSkeleton = () => {
 export function PlaylistCard({ playlist, onViewDetails, onCardClick }: PlaylistCardProps) {
   const deletePlaylistMutation = useDeletePlaylist();
   const exportPlaylistMutation = useExportPlaylistToM3U();
+  const downloadPlaylistMutation = useDownloadPlaylistToFolder();
   const [isHovered, setIsHovered] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
 
   const router = useRouter();
   const refetch = async () => router.invalidate();
@@ -95,6 +101,25 @@ export function PlaylistCard({ playlist, onViewDetails, onCardClick }: PlaylistC
     } catch (error) {
       console.error('Failed to export playlist:', error);
       alert('Failed to export playlist. Please try again.');
+    }
+  };
+
+  const handleDownloadFolder = async () => {
+    setIsDownloading(true);
+    try {
+      const ok = await downloadPlaylistMutation.mutateAsync(playlist.id);
+      if (ok) {
+        alert(
+          'Playlist exported by copying audio files. Check /Users/alessandro/Music/playlists-exports on the server.',
+        );
+      } else {
+        alert('Failed to export playlist.');
+      }
+    } catch (error) {
+      console.error('Failed to export playlist:', error);
+      alert('Failed to export playlist. Please try again.');
+    } finally {
+      setIsDownloading(false);
     }
   };
   const images = playlist.stats?.images?.slice(0, 4) || [];
@@ -149,6 +174,9 @@ export function PlaylistCard({ playlist, onViewDetails, onCardClick }: PlaylistC
                 <DropdownMenuContent align="start" className="z-1000 " side="bottom">
                   <DropdownMenuItem onClick={handlePlay}>Add to Queue</DropdownMenuItem>
                   <DropdownMenuItem onClick={handleExport}>Export Playlist</DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleDownloadFolder} disabled={isDownloading}>
+                    Export (copy) folder
+                  </DropdownMenuItem>
                   <DropdownMenuItem
                     className="text-destructive focus:text-destructive"
                     onClick={handleDelete}

@@ -28,7 +28,11 @@ import { DataTableColumnHeader } from '@/components/data-table/data-table-column
 import { DataTableSortList } from '@/components/data-table/data-table-sort-list';
 import { DataTableToolbar } from '@/components/data-table/data-table-toolbar';
 import { useDataTable } from '@/hooks/use-data-table';
-import { useDeletePlaylist, useExportPlaylistToM3U } from '@/services/playlist-hooks';
+import {
+  useDeletePlaylist,
+  useDownloadPlaylistToFolder,
+  useExportPlaylistToM3U,
+} from '@/services/playlist-hooks';
 import { format } from 'date-fns';
 
 interface PlaylistTableProps {
@@ -61,8 +65,10 @@ const ActionCells = ({
 }) => {
   const [isDeleting, setIsDeleting] = React.useState(false);
   const [isExporting, setIsExporting] = React.useState(false);
+  const [isDownloading, setIsDownloading] = React.useState(false);
   const deletePlaylistMutation = useDeletePlaylist();
   const exportPlaylistMutation = useExportPlaylistToM3U();
+  const downloadPlaylistMutation = useDownloadPlaylistToFolder();
 
   const playlist = row.original;
 
@@ -117,6 +123,25 @@ const ActionCells = ({
     }
   };
 
+  const handleDownloadFolder = async () => {
+    setIsDownloading(true);
+    try {
+      const ok = await downloadPlaylistMutation.mutateAsync(playlist.id);
+      if (ok) {
+        alert(
+          'Playlist exported by copying audio files. Check /Users/alessandro/Music/playlists-exports on the server.',
+        );
+      } else {
+        alert('Failed to export playlist.');
+      }
+    } catch (error) {
+      console.error('Failed to export playlist:', error);
+      alert('Failed to export playlist. Please try again.');
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -137,6 +162,10 @@ const ActionCells = ({
         <DropdownMenuItem onClick={handleExport} disabled={isExporting}>
           <Download className="mr-2 h-4 w-4" />
           {isExporting ? 'Exporting…' : 'Export'}
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={handleDownloadFolder} disabled={isDownloading}>
+          <Download className="mr-2 h-4 w-4" />
+          {isDownloading ? 'Exporting…' : 'Export (copy)'}
         </DropdownMenuItem>
         <DropdownMenuItem
           onClick={handleDelete}

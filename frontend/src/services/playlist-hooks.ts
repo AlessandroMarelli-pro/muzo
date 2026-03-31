@@ -96,6 +96,12 @@ const EXPORT_PLAYLIST_TO_M3U = gql`
   }
 `;
 
+const DOWNLOAD_PLAYLIST_TO_FOLDER = gql`
+  mutation DownloadPlaylistToFolder($playlistId: Base64ID!) {
+    downloadPlaylistToFolder(playlistId: $playlistId)
+  }
+`;
+
 const SYNC_PLAYLIST_TO_YOUTUBE = gql`
   mutation SyncPlaylistToYouTube($playlistId: ID!, $userId: String!) {
     syncPlaylistToYouTube(playlistId: $playlistId, userId: $userId) {
@@ -315,6 +321,14 @@ const exportPlaylistToM3U = async (playlistId: string): Promise<string> => {
     { playlistId },
   );
   return data.exportPlaylistToM3U;
+};
+
+const downloadPlaylistToFolder = async (playlistId: string): Promise<boolean> => {
+  const data = await graffleClient.request<{ downloadPlaylistToFolder: boolean }>(
+    DOWNLOAD_PLAYLIST_TO_FOLDER,
+    { playlistId },
+  );
+  return data.downloadPlaylistToFolder;
 };
 
 export interface SyncResult {
@@ -783,6 +797,12 @@ export function useDeletePlaylist() {
 export function useExportPlaylistToM3U() {
   return useMutation({
     mutationFn: (playlistId: string) => exportPlaylistToM3U(playlistId),
+  });
+}
+
+export function useDownloadPlaylistToFolder() {
+  return useMutation({
+    mutationFn: (playlistId: string) => downloadPlaylistToFolder(playlistId),
   });
 }
 
