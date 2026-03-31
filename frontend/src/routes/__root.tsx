@@ -3,6 +3,7 @@ import { AppSidebar, AppSidebarProps } from '@/components/layout/app-sidebar';
 import { EnhancedMusicPlayer } from '@/components/player/enhanced-music-player';
 import { SiteHeader } from '@/components/site-header';
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
+import { AuthProvider, useAuth } from '@/contexts/auth-context';
 import { AudioPlayerProvider, useCurrentTrack } from '@/contexts/audio-player-context';
 import { FilterProvider } from '@/contexts/filter-context';
 import { ScanSessionProvider } from '@/contexts/scan-session.context';
@@ -10,7 +11,12 @@ import { cn } from '@/lib/utils';
 import { queryClient } from '@/query-client';
 import type { QueryClient } from '@tanstack/react-query';
 import { QueryClientProvider } from '@tanstack/react-query';
-import { createRootRouteWithContext, Outlet, useRouterState } from '@tanstack/react-router';
+import {
+  createRootRouteWithContext,
+  Outlet,
+  useNavigate,
+  useRouterState,
+} from '@tanstack/react-router';
 import {
   BookHeadphones,
   Brain,
@@ -102,6 +108,8 @@ const navigationData: Omit<AppSidebarProps['data'], 'user'> = {
 };
 function RootContent() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const navigate = useNavigate();
+  const { isAuthenticated, isLoading } = useAuth();
   const isAuthPage = pathname === '/login' || pathname === '/sign-up';
 
   const handleToggleShuffle = React.useCallback(() => {
@@ -115,6 +123,20 @@ function RootContent() {
   React.useEffect(() => {
     document.documentElement.style.colorScheme = resolvedTheme === 'dark' ? 'dark' : 'light';
   }, [resolvedTheme]);
+
+  React.useEffect(() => {
+    if (!isLoading && !isAuthenticated && !isAuthPage) {
+      void navigate({ to: '/login' });
+    }
+  }, [isLoading, isAuthenticated, isAuthPage, navigate]);
+
+  if (isLoading && !isAuthPage) {
+    return null;
+  }
+
+  if (!isAuthenticated && !isAuthPage) {
+    return null;
+  }
 
   if (isAuthPage) {
     return <Outlet />;
@@ -152,9 +174,11 @@ const RootComponent = React.memo(function RootComponent() {
       <QueryClientProvider client={queryClient}>
         <ScanSessionProvider>
           <FilterProvider>
-            <AudioPlayerProvider>
-              <RootContent />
-            </AudioPlayerProvider>
+            <AuthProvider>
+              <AudioPlayerProvider>
+                <RootContent />
+              </AudioPlayerProvider>
+            </AuthProvider>
           </FilterProvider>
         </ScanSessionProvider>
         {/* <TanStackRouterDevtools position="top-right" initialIsOpen={false} /> */}
