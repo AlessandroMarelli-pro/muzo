@@ -131,9 +131,7 @@ export const useFiltering = (options: UseFilteringOptions = {}) => {
         const isString = typeof value === 'string';
         const isStringArray = Array.isArray(value) && value.every((v) => typeof v === 'string');
         const isMinMaxRange =
-          Array.isArray(value) &&
-          value.length === 2 &&
-          value.every((v) => typeof v === 'number' || typeof Number(v) === 'number');
+          Array.isArray(value) && value.length === 2 && value.every((v) => !isNaN(Number(v)));
 
         if (value === null) {
           updateFilter(key as keyof FilterState, value);

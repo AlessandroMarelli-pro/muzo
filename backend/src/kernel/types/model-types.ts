@@ -102,6 +102,7 @@ export type MusicTrack = Readonly<ModelBase<MusicTrackId>> & {
   artist: MaybeUndefined<string>;
   title: MaybeUndefined<string>;
   imagePath?: string;
+  hqAudioPath?: string;
   libraryId: MusicLibraryId;
   stats: MaybeUndefined<MusicTrackStats>;
   fileInfo: AudioFileInfo;

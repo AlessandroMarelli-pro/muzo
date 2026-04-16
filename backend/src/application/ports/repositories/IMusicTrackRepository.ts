@@ -18,6 +18,7 @@ import { AudioAnalysisResponse } from '../dtos/AudioAnalysis';
 export const MUSIC_TRACK_REPOSITORY = createToken<IMusicTrackRepository>('MUSIC_TRACK_REPOSITORY');
 
 export type MusicTrackUpdateData = {
+  hqAudioPath?: string;
   stats?: {
     isFavorite?: boolean;
     isBanger?: boolean;

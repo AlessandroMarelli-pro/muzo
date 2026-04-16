@@ -159,9 +159,9 @@ type Mutation {
   scanTrack(force: Boolean, trackId: Base64ID!): Base64ID!
   startLibraryScan(incremental: Boolean, libraryId: Base64ID!): Base64ID!
   stopLibraryScan(libraryId: Base64ID!, sessionId: Base64ID!): Boolean!
-  syncPlaylistToSpotify(playlistId: ID!, userId: String!): ThirdPartySyncResult!
-  syncPlaylistToTidal(playlistId: ID!, userId: String!): ThirdPartySyncResult!
-  syncPlaylistToYouTube(playlistId: ID!, userId: String!): ThirdPartySyncResult!
+  syncPlaylistToSpotify(playlistId: Base64ID!, userId: String!): ThirdPartySyncResult!
+  syncPlaylistToTidal(playlistId: Base64ID!, userId: String!): ThirdPartySyncResult!
+  syncPlaylistToYouTube(playlistId: Base64ID!, userId: String!): ThirdPartySyncResult!
   toggleBanger(trackId: Base64ID!): Track!
   toggleDislike(trackId: Base64ID!): Boolean!
   toggleFavorite(trackId: Base64ID!): Track!
@@ -374,6 +374,7 @@ type Track implements Node {
   fileSize: Float!
   format: String
   genres: [String!]
+  hqAudioPath: String
   id: Base64ID!
   imagePath: String
   isBanger: Boolean!

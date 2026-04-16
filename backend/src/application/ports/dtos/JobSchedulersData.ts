@@ -1,5 +1,5 @@
 import { FileInfo } from 'src/application/ports/dtos/FileInfo';
-import { MusicLibraryId, SessionId } from 'src/kernel/ids';
+import { MusicLibraryId, MusicTrackId, SessionId } from 'src/kernel/ids';
 import { ActionContext } from 'src/kernel/types';
 
 export interface LibraryScanJobData {
@@ -33,4 +33,9 @@ export interface AudioScanBatchJobData {
   incremental: boolean;
   /** When true, skip areFilesAnalyzed check and re-analyze all files in the batch */
   force?: boolean;
+}
+
+export interface HqAudioAcquireJobData {
+  trackId: MusicTrackId;
+  contextUser: ActionContext['user'];
 }

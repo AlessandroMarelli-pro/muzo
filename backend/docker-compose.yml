@@ -17,9 +17,30 @@ services:
       retries: 3
     networks:
       - muzo-network
+  slskd:
+    environment:
+      - SLSKD_REMOTE_CONFIGURATION=true
+      - SLSKD_SLSK_USERNAME=maestropolis75
+      - SLSKD_SLSK_PASSWORD=Musorga75&
+    image: slskd/slskd:latest
+    container_name: muzo-slskd
+    ports:
+      - '5030:5030'
+      - '5031:5031'
+      - '50300:50300'
+    volumes:
+      - slskd_app:/app
+      - slskd_downloads:/downloads
+    restart: unless-stopped
+    networks:
+      - muzo-network
 
 volumes:
   redis_data:
+    driver: local
+  slskd_app:
+    driver: local
+  slskd_downloads:
     driver: local
 
 networks:

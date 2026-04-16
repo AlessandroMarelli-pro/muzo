@@ -103,7 +103,7 @@ const DOWNLOAD_PLAYLIST_TO_FOLDER = gql`
 `;
 
 const SYNC_PLAYLIST_TO_YOUTUBE = gql`
-  mutation SyncPlaylistToYouTube($playlistId: ID!, $userId: String!) {
+  mutation SyncPlaylistToYouTube($playlistId: Base64ID!, $userId: String!) {
     syncPlaylistToYouTube(playlistId: $playlistId, userId: $userId) {
       success
       playlistId
@@ -133,7 +133,7 @@ const AUTHENTICATE_YOUTUBE = gql`
 `;
 
 const SYNC_PLAYLIST_TO_TIDAL = gql`
-  mutation SyncPlaylistToTidal($playlistId: ID!, $userId: String!) {
+  mutation SyncPlaylistToTidal($playlistId: Base64ID!, $userId: String!) {
     syncPlaylistToTidal(playlistId: $playlistId, userId: $userId) {
       success
       playlistId
@@ -164,7 +164,7 @@ const AUTHENTICATE_TIDAL = gql`
 `;
 
 const SYNC_PLAYLIST_TO_SPOTIFY = gql`
-  mutation SyncPlaylistToSpotify($playlistId: ID!, $userId: String!) {
+  mutation SyncPlaylistToSpotify($playlistId: Base64ID!, $userId: String!) {
     syncPlaylistToSpotify(playlistId: $playlistId, userId: $userId) {
       success
       playlistId

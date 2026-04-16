@@ -17,9 +17,24 @@ services:
       retries: 3
     networks:
       - muzo-dev-network
+  slskd-dev:
+    image: slskd/slskd:latest
+    container_name: muzo-slskd-dev
+    ports:
+      - '5030:5030'
+    volumes:
+      - slskd_dev_app:/app
+      - slskd_dev_downloads:/downloads
+    restart: unless-stopped
+    networks:
+      - muzo-dev-network
 
 volumes:
   redis_dev_data:
+    driver: local
+  slskd_dev_app:
+    driver: local
+  slskd_dev_downloads:
     driver: local
 
 networks:

@@ -44,6 +44,9 @@ export class Track {
   @Field(() => String)
   filePath: string;
 
+  @Field(() => String, { nullable: true })
+  hqAudioPath?: string;
+
   @Field(() => String)
   fileName: string;
 

@@ -16,25 +16,26 @@ export class OAuthTokenRepository implements IOAuthTokenRepository {
   constructor(@Inject(PRISMA_SERVICE) private readonly prisma: PrismaService) {}
 
   async getToken(userId: string, provider: ThirdPartyProvider): Promise<OAuthTokenRecord | null> {
+    console.log('getToken', userId, provider);
     const row = await this.prisma.thirdPartyOAuthToken.findUnique({
       where: {
-        userId_provider: { userId, provider },
+        createdById_provider: { createdById: userId, provider },
       },
     });
     if (!row) return null;
-    return this.toRecord(row);
+    return this.toRecord({ ...row, userId: row.createdById });
   }
 
   async saveToken(record: OAuthTokenRecord): Promise<void> {
     await this.prisma.thirdPartyOAuthToken.upsert({
       where: {
-        userId_provider: {
-          userId: record.userId,
+        createdById_provider: {
+          createdById: record.userId,
           provider: record.provider,
         },
       },
       create: {
-        userId: record.userId,
+        createdById: record.userId,
         provider: record.provider,
         accessToken: record.accessToken,
         refreshToken: record.refreshToken ?? null,
@@ -60,7 +61,7 @@ export class OAuthTokenRepository implements IOAuthTokenRepository {
   ): Promise<void> {
     await this.prisma.thirdPartyOAuthToken.update({
       where: {
-        userId_provider: { userId, provider },
+        createdById_provider: { createdById: userId, provider },
       },
       data: {
         accessToken: data.accessToken,

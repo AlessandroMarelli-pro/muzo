@@ -104,9 +104,8 @@ export const PlaylistTrackListCard = memo(
         {/* Track Info */}
         <div className="flex-1 min-w-0">
           <div className="text-sm font-medium truncate capitalize">
-            {playlistTrack.track?.title?.toLowerCase() ||
-              playlistTrack.track?.artist?.toLowerCase()}{' '}
-            - {playlistTrack.track?.artist?.toLowerCase() || 'Unknown Artist'.toLowerCase()}
+            {playlistTrack.track?.artist?.toLowerCase()} -{' '}
+            {playlistTrack.track?.title?.toLowerCase() || 'Unknown Title'.toLowerCase()}
           </div>
         </div>
 

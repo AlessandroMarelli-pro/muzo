@@ -223,6 +223,7 @@ export const toDomain: ToDomain = (row) => {
     libraryId: models.musicLibrary.id(row.libraryId),
     title: row.originalTitle ?? undefined,
     artist: row.originalArtist ?? undefined,
+    hqAudioPath: row.hqAudioPath ?? undefined,
     stats: toMusicTrackStats(row),
     fileInfo: toAudioFileInfo(row),
     technicalInfo: toAudioTechnical(row),
@@ -255,6 +256,7 @@ export const toPrisma: ToPrisma = (domainModel) => {
     hasDiscogs: false,
     libraryId: extractModelId(domainModel.libraryId).dbId,
     filePath: domainModel.fileInfo?.filePath,
+    hqAudioPath: domainModel.hqAudioPath ?? null,
     fileName: domainModel.fileInfo?.fileName ?? null,
     fileSize: domainModel.fileInfo?.fileSize ?? null,
     format: domainModel.technicalInfo?.format ?? '',
@@ -303,6 +305,7 @@ export const toPrismaUpdate: ToPrismaUpdate = (data) => {
     format: data.format ?? undefined,
     fileCreatedAt: data.fileCreatedAt ?? undefined,
     filePath: data.filePath ?? undefined,
+    hqAudioPath: data.hqAudioPath ?? undefined,
     fileName: data.fileName ?? undefined,
     fileSize: data.fileSize ?? undefined,
   };

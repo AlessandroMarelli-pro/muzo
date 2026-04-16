@@ -27,6 +27,15 @@ export interface QueueConfig {
       removeOnComplete: boolean;
       removeOnFail: boolean;
     };
+    hqAudioAcquire: {
+      attempts: number;
+      backoff: {
+        type: string;
+        delay: number;
+      };
+      removeOnComplete: boolean;
+      removeOnFail: boolean;
+    };
   };
 }
 
@@ -55,6 +64,15 @@ export default registerAs(
         backoff: {
           type: 'exponential',
           delay: parseInt(process.env.AUDIO_SCAN_BACKOFF_DELAY || '1000', 10),
+        },
+        removeOnComplete: false,
+        removeOnFail: false,
+      },
+      hqAudioAcquire: {
+        attempts: parseInt(process.env.HQ_AUDIO_ACQUIRE_ATTEMPTS || '2', 10),
+        backoff: {
+          type: 'exponential',
+          delay: parseInt(process.env.HQ_AUDIO_ACQUIRE_BACKOFF_DELAY || '3000', 10),
         },
         removeOnComplete: false,
         removeOnFail: false,

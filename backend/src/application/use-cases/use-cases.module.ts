@@ -1,7 +1,10 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ThirdPartySyncInfrastructureModule } from 'src/infrastructure/external-services/third-party-sync/third-party-sync.module';
+import { HqAudioInfrastructureModule } from 'src/infrastructure/hq-audio/hq-audio.module';
 import { AUDIO_ANALYSIS_STRUCTURE } from '../ports/infrastructure/IAudioAnalysisStructure';
+import { HQ_AUDIO_ACQUIRER } from '../ports/infrastructure/IHqAudioAcquirer';
+import { HQ_AUDIO_ACQUIRE_PRODUCER } from '../ports/infrastructure/IHqAudioAcquireProducer';
 import { AUDIO_SCAN_SCHEDULER_PRODUCER } from '../ports/infrastructure/IAudioScanSchedulerProducer';
 import { AUDIO_WAVEFORM_GENERATOR } from '../ports/infrastructure/IAudioWaveformGenerator';
 import { FILE_MANAGER } from '../ports/infrastructure/IFileManager';
@@ -96,6 +99,7 @@ import {
   ToggleDislikeUseCase,
   ToggleFavoriteUseCase,
   ToggleLikeUseCase,
+    AcquireHqAudioUseCase,
   UpdatePlaylistSortingUseCase,
   UpdatePlaylistTracksPositionsUseCase,
   UpdatePlaylistUseCase,
@@ -223,15 +227,22 @@ const useCasesProviders = [
     MUSIC_TRACK_REPOSITORY,
     PLAYLIST_REPOSITORY,
     PLAYLIST_TRACK_REPOSITORY,
+    HQ_AUDIO_ACQUIRE_PRODUCER,
   ]),
-  createUseCaseProvider(ToggleLikeUseCase, [MUSIC_TRACK_REPOSITORY]),
+  createUseCaseProvider(ToggleLikeUseCase, [MUSIC_TRACK_REPOSITORY, HQ_AUDIO_ACQUIRE_PRODUCER]),
+  createUseCaseProvider(AcquireHqAudioUseCase, [
+    MUSIC_TRACK_REPOSITORY,
+    HQ_AUDIO_ACQUIRER,
+    ConfigService,
+    LOGGER,
+  ]),
   createUseCaseProvider(ToggleDislikeUseCase, [
     MUSIC_TRACK_REPOSITORY,
     HIDDEN_MUSIC_TRACK_REPOSITORY,
     LOGGER_FACTORY,
     LOGGER,
   ]),
-  createUseCaseProvider(ToggleBangerUseCase, [MUSIC_TRACK_REPOSITORY]),
+  createUseCaseProvider(ToggleBangerUseCase, [MUSIC_TRACK_REPOSITORY, HQ_AUDIO_ACQUIRE_PRODUCER]),
   createUseCaseProvider(GetRandomTrackWithStatsUseCase, [MUSIC_TRACK_QUERIES]),
   createUseCaseProvider(GetRecentlyPlayedUseCase, [MUSIC_TRACK_REPOSITORY]),
   createUseCaseProvider(RegisterPlayedTrackUseCase, [MUSIC_TRACK_REPOSITORY]),
@@ -338,7 +349,7 @@ const useCasesProviders = [
 ];
 
 @Module({
-  imports: [ConfigModule, ThirdPartySyncInfrastructureModule],
+  imports: [ConfigModule, ThirdPartySyncInfrastructureModule, HqAudioInfrastructureModule],
   providers: useCasesProviders,
   exports: useCasesProviders.map((provider) => provider.provide),
 })

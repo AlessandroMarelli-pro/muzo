@@ -138,6 +138,7 @@ export class TidalSyncAdapter implements ITidalSyncProvider {
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: params.toString(),
     });
+
     if (!response.ok) throw new Error('Failed to refresh TIDAL token');
     const data = await response.json();
     const newAccessToken = data.access_token;
@@ -159,11 +160,14 @@ export class TidalSyncAdapter implements ITidalSyncProvider {
   }
 
   private async makeRequest(
-    userId: string,
+    userIdOrToken: string,
     endpoint: string,
     options: RequestInit = {},
+    optionsConfig: { accessTokenProvided?: boolean } = {},
   ): Promise<unknown> {
-    const accessToken = await this.getAccessToken(userId);
+    const accessToken = optionsConfig.accessTokenProvided
+      ? userIdOrToken
+      : await this.getAccessToken(userIdOrToken);
     const url = `${BASE_URL}${endpoint}`;
     const response = await fetch(url, {
       ...options,
@@ -192,27 +196,87 @@ export class TidalSyncAdapter implements ITidalSyncProvider {
     limit: number,
   ): Promise<{ id: string; title: string; artist: string; duration: number }[]> {
     await this.delay(200);
-    const response = (await this.makeRequest(
-      userId,
-      `/search?query=${encodeURIComponent(query)}&limit=${limit}&types=tracks`,
-      { method: 'GET' },
-    )) as {
-      data?: Array<{
-        type: string;
-        id: string;
-        attributes?: { title?: string; duration?: string };
-        relationships?: unknown;
-      }>;
-    };
-    if (!response?.data || !Array.isArray(response.data)) return [];
-    return response.data
-      .filter((item: { type: string }) => item.type === 'tracks')
-      .map((item: { id: string; attributes?: { title?: string; duration?: string } }) => ({
-        id: item.id,
-        title: item.attributes?.title || '',
-        artist: 'Unknown Artist',
-        duration: this.parseDuration(item.attributes?.duration || 'PT0S'),
-      }));
+    const accessToken = await this.getAccessToken(userId);
+    const searchQuery = encodeURIComponent(query);
+    console.log('searchQuery', searchQuery);
+    try {
+      // Search v2 endpoint format.
+      const response = (await this.makeRequest(
+        accessToken,
+        `/searchresults/${searchQuery}/relationships/tracks?limit=${limit}`,
+        { method: 'GET' },
+        { accessTokenProvided: true },
+      )) as {
+        data?: Array<{ id: string; type: string }>;
+      };
+
+      const trackIds =
+        response?.data
+          ?.filter((item) => item.type === 'tracks')
+          .map((item) => item.id)
+          .slice(0, limit) ?? [];
+
+      if (trackIds.length === 0) {
+        return [];
+      }
+
+      const tracks = await Promise.all(
+        trackIds.map(async (trackId) => {
+          const trackResponse = (await this.makeRequest(
+            accessToken,
+            `/tracks/${trackId}`,
+            { method: 'GET' },
+            { accessTokenProvided: true },
+          )) as {
+            data?: {
+              id?: string;
+              attributes?: { title?: string; duration?: string };
+            };
+            included?: Array<{
+              type: string;
+              attributes?: { name?: string };
+            }>;
+          };
+
+          const mainArtist =
+            trackResponse?.included?.find((inc) => inc.type === 'artists')?.attributes?.name ??
+            'Unknown Artist';
+          const duration = this.parseDuration(trackResponse?.data?.attributes?.duration || 'PT0S');
+          return {
+            id: trackResponse?.data?.id || trackId,
+            title: trackResponse?.data?.attributes?.title || '',
+            artist: mainArtist,
+            duration,
+          };
+        }),
+      );
+
+      return tracks;
+    } catch (error) {
+      // Backward compatibility fallback for older endpoint shape.
+      const response = (await this.makeRequest(
+        accessToken,
+        `/search?query=${searchQuery}&limit=${limit}&types=tracks`,
+        { method: 'GET' },
+        { accessTokenProvided: true },
+      )) as {
+        data?: Array<{
+          type: string;
+          id: string;
+          attributes?: { title?: string; duration?: string };
+        }>;
+      };
+
+      if (!response?.data || !Array.isArray(response.data)) return [];
+      return response.data
+        .filter((item) => item.type === 'tracks')
+        .map((item) => ({
+          id: item.id,
+          title: item.attributes?.title || '',
+          artist: 'Unknown Artist',
+          duration: this.parseDuration(item.attributes?.duration || 'PT0S'),
+        }));
+    }
   }
 
   private parseDuration(duration: string): number {

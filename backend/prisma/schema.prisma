@@ -47,6 +47,7 @@ model MusicLibrary {
 model MusicTrack {
   id                    String   @id @default(uuid())
   filePath              String   @unique
+  hqAudioPath           String?
   fileName              String
   fileSize              Int
   format                String
@@ -575,7 +576,6 @@ model HiddenMusicTrack {
 
 model ThirdPartyOAuthToken {
   id                String   @id @default(uuid())
-  userId            String
   provider          String   // 'youtube', 'spotify', 'tidal', etc.
   accessToken       String
   refreshToken      String?
@@ -583,12 +583,15 @@ model ThirdPartyOAuthToken {
   scope             String?  // OAuth scopes
   
   // Timestamps
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  createdAt   DateTime @default(now())
+  createdById   String @default("userId")
+  updatedAt   DateTime? @updatedAt
+  updatedById  String?
   
+
   // Indexes
-  @@unique([userId, provider])
-  @@index([userId])
+  @@unique([createdById, provider])
+  @@index([createdById])
   @@index([provider])
   @@map("third_party_oauth_tokens")
 }

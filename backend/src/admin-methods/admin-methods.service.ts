@@ -62,11 +62,14 @@ export class AdminMethodsService {
       'audioFingerprint',
       'aiAtmosphereTag',
       'trackAiAtmosphereTag',
+      'thirdPartyOAuthToken',
     ];
     for (const table of tables) {
-      await (this.prisma as any)[table].updateMany({
+      console.log('table', table);
+      const result = await (this.prisma as any)[table].updateMany({
         data: { createdById: 'V5YEbCI2EpH9poNEuflLsyG17XIImWMJ' },
       });
+      console.log('result.count', result.count);
     }
   }
 }

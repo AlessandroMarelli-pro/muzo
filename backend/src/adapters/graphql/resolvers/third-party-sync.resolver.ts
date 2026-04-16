@@ -1,4 +1,4 @@
-import { Args, ID, Mutation, Query, Resolver } from '@nestjs/graphql';
+import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
 import {
   ExchangeSpotifyCodeUseCase,
   ExchangeTidalCodeUseCase,
@@ -11,6 +11,7 @@ import {
   SyncPlaylistToYouTubeUseCase,
 } from 'src/application/use-cases/third-party-sync';
 import { parsePlaylistId } from '../../common/utils/parse-id';
+import { Base64ID } from '../scalars/base64-id.scalar';
 import {
   SpotifyAuthResult,
   SpotifyAuthUrl,
@@ -61,7 +62,7 @@ export class ThirdPartySyncResolver {
 
   @Mutation(() => ThirdPartySyncResult)
   async syncPlaylistToYouTube(
-    @Args('playlistId', { type: () => ID }) playlistId: string,
+    @Args('playlistId', { type: () => Base64ID }) playlistId: string,
     @Args('userId') userId: string,
   ): Promise<ThirdPartySyncResult> {
     const id = parsePlaylistId(playlistId);
@@ -94,7 +95,7 @@ export class ThirdPartySyncResolver {
 
   @Mutation(() => ThirdPartySyncResult)
   async syncPlaylistToTidal(
-    @Args('playlistId', { type: () => ID }) playlistId: string,
+    @Args('playlistId', { type: () => Base64ID }) playlistId: string,
     @Args('userId') userId: string,
   ): Promise<ThirdPartySyncResult> {
     const id = parsePlaylistId(playlistId);
@@ -128,7 +129,7 @@ export class ThirdPartySyncResolver {
 
   @Mutation(() => ThirdPartySyncResult)
   async syncPlaylistToSpotify(
-    @Args('playlistId', { type: () => ID }) playlistId: string,
+    @Args('playlistId', { type: () => Base64ID }) playlistId: string,
     @Args('userId') userId: string,
   ): Promise<ThirdPartySyncResult> {
     const id = parsePlaylistId(playlistId);
