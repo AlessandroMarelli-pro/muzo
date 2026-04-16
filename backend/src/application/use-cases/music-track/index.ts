@@ -1,6 +1,7 @@
 export * from './GetRandomTrackId';
 export * from './GetRandomTrackWithStats';
 export * from './GetRecentlyPlayed';
+export * from './GetPendingTracks';
 export * from './GetTrack';
 export * from './GetTracks';
 export * from './GetTracksWithCursorPagination';

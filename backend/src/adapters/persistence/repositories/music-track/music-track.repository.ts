@@ -234,6 +234,59 @@ export class MusicTrackRepository implements IMusicTrackRepository {
       });
   }
 
+  async getPendingTracksWithPagination(
+    criteria: Maybe<FilterCriteria>,
+    pagination: WithPagination,
+  ): Promise<PaginationResult<MusicTrack>> {
+    const { limit = 50, offset = 0, orderBy, orderDirection } = pagination.pagination;
+    const where = buildMusicTrackFilterWhereClause(criteria, 'exact');
+    const hiddenTrackFilePaths = await this.prisma.hiddenMusicTrack
+      .findMany({
+        where: {
+          createdById: getCurrentUserId(),
+        },
+        select: {
+          filePath: true,
+        },
+      })
+      .then((rows) => rows.map((row) => row.filePath));
+    const pendingWhere = {
+      ...where,
+      createdById: getCurrentUserId(),
+      isLiked: false,
+      isBanger: false,
+      filePath: {
+        notIn: hiddenTrackFilePaths,
+      },
+    };
+    const count = await this.prisma.musicTrack.count({ where: pendingWhere });
+    return this.prisma.musicTrack
+      .findMany({
+        where: pendingWhere,
+        take: limit ?? undefined,
+        skip: offset ?? undefined,
+        orderBy: buildMusicTrackSortingOrderClause({ orderBy, orderDirection }),
+        include: musicTracksIncludes,
+      })
+      .then((rows) => {
+        if (rows.length === 0) {
+          return { items: [], total: 0, page: 0, limit: 0, pages: 0 };
+        }
+        const page = Math.floor(offset / limit) + 1;
+        return {
+          items: rows.map(toDomain),
+          total: count,
+          page,
+          limit: limit ?? 0,
+          pages: Math.ceil(count / limit),
+        };
+      })
+      .catch((e: unknown) => {
+        console.error('Error in getPendingTracksWithPagination', e);
+        throw e;
+      });
+  }
+
   async getManyByCriteriaWithCursorPagination(
     criteria: FilterCriteria,
     pagination: WithCursorPagination<MusicTrack>,

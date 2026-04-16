@@ -20,6 +20,7 @@ import {
 import {
   BookHeadphones,
   Brain,
+  Clock3,
   Heart,
   Home,
   Library,
@@ -82,6 +83,12 @@ const navigationData: Omit<AppSidebarProps['data'], 'user'> = {
       title: 'Swipe',
       url: '/swipe',
       icon: Sparkles,
+      preload: false,
+    },
+    {
+      title: 'Pending',
+      url: '/pending',
+      icon: Clock3,
       preload: false,
     },
     {

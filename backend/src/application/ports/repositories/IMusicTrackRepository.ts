@@ -59,6 +59,10 @@ export interface IMusicTrackRepository {
     criteria: Maybe<FilterCriteria>,
     pagination: WithPagination,
   ): Promise<PaginationResult<MusicTrack>>;
+  getPendingTracksWithPagination(
+    criteria: Maybe<FilterCriteria>,
+    pagination: WithPagination,
+  ): Promise<PaginationResult<MusicTrack>>;
   getManyByCriteriaWithCursorPagination(
     criteria: Maybe<FilterCriteria>,
     pagination: WithCursorPagination<MusicTrack>,

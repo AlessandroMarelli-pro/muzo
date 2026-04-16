@@ -67,6 +67,7 @@ import {
   GetPlaylistTracksUseCase,
   GetPlaylistTracksWithDetailUseCase,
   GetPlaylistUseCase,
+  GetPendingTracksUseCase,
   GetQueueUseCase,
   GetRandomTrackIdUseCase,
   GetRandomTrackWithStatsUseCase,
@@ -219,6 +220,7 @@ const useCasesProviders = [
     MUSIC_TRACK_REPOSITORY,
     SAVED_FILTER_REPOSITORY,
   ]),
+  createUseCaseProvider(GetPendingTracksUseCase, [MUSIC_TRACK_REPOSITORY, SAVED_FILTER_REPOSITORY]),
   createUseCaseProvider(GetTracksWithCursorPaginationUseCase, [
     MUSIC_TRACK_REPOSITORY,
     SAVED_FILTER_REPOSITORY,

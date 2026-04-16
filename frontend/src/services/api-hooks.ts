@@ -46,6 +46,12 @@ export const queryKeys = {
       'tracksList',
       { libraryId, status, isFavorite, limit, offset, orderBy, orderDirection },
     ] as const,
+  pendingTracks: (
+    limit?: number,
+    offset?: number,
+    orderBy?: string,
+    orderDirection?: 'asc' | 'desc',
+  ) => ['pendingTracks', { limit, offset, orderBy, orderDirection }] as const,
 
   recentlyPlayed: (limit?: number) => ['tracks', 'recently-played', { limit }] as const,
 
@@ -348,6 +354,53 @@ export const useTracksList = ({
   });
 };
 
+export const usePendingTracks = ({
+  limit = 20,
+  offset = 0,
+  orderBy = 'createdAt',
+  orderDirection = 'desc',
+}: {
+  limit?: number;
+  offset?: number;
+  orderBy?: string;
+  orderDirection?: 'asc' | 'desc';
+}) => {
+  return useQuery({
+    queryKey: queryKeys.pendingTracks(limit, offset, orderBy, orderDirection),
+    queryFn: async () => {
+      const response = await graffleClient.request<{
+        me: { pendingTracks: PaginatedTracks };
+      }>(
+        gql`
+          ${trackFragment}
+          query GetPendingTracks($pagination: PaginationArgs) {
+            me {
+              pendingTracks(pagination: $pagination) {
+                items {
+                  ...TrackFragment
+                }
+                total
+                page
+                limit
+                pages
+              }
+            }
+          }
+        `,
+        {
+          pagination: {
+            limit,
+            offset,
+            orderBy,
+            orderDirection,
+          },
+        },
+      );
+      return response.me.pendingTracks;
+    },
+  });
+};
+
 // Static Filters Query
 export const useStaticFilters = () => {
   return useQuery({
@@ -504,6 +557,9 @@ export const useLikeTrack = () => {
       queryClient.invalidateQueries({
         queryKey: queryKeys.randomTrackWithStats(),
       });
+      queryClient.invalidateQueries({
+        queryKey: ['pendingTracks'],
+      });
     },
   });
 };
@@ -532,6 +588,9 @@ export const useBangerTrack = () => {
       queryClient.invalidateQueries({
         queryKey: queryKeys.randomTrackWithStats(),
       });
+      queryClient.invalidateQueries({
+        queryKey: ['pendingTracks'],
+      });
     },
   });
 };
@@ -556,6 +615,9 @@ export const useDislikeTrack = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: queryKeys.randomTrackWithStats(),
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['pendingTracks'],
       });
     },
   });

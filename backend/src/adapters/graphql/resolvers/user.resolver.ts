@@ -5,6 +5,7 @@ import { Args, Query, ResolveField, Resolver } from '@nestjs/graphql';
 import {
   GetFavoriteUseCase,
   GetPlaylistsUseCase,
+  GetPendingTracksUseCase,
   GetQueueUseCase,
   GetRandomTrackIdUseCase,
   GetRecentlyPlayedUseCase,
@@ -55,6 +56,7 @@ export class UserResolver {
     private readonly getRandomTrackIdUseCase: GetRandomTrackIdUseCase,
     private readonly getLibrariesUseCase: GetLibrariesUseCase,
     private readonly getTracksPaginatedUseCase: GetTracksWithPaginationUseCase,
+    private readonly getPendingTracksUseCase: GetPendingTracksUseCase,
     private readonly getRandomTrackWithStatsUseCase: GetRandomTrackWithStatsUseCase,
     private readonly getTracksWithCursorPaginationUseCase: GetTracksWithCursorPaginationUseCase,
     private readonly getFavoriteUseCase: GetFavoriteUseCase,
@@ -148,6 +150,26 @@ export class UserResolver {
     pagination: PaginationArgs,
   ): Promise<IPaginatedType<Track>> {
     return this.getTracksPaginatedUseCase
+      .execute({
+        pagination: {
+          limit: pagination.limit,
+          offset: pagination.offset,
+          orderBy: pagination.orderBy ?? 'createdAt',
+          orderDirection: pagination.orderDirection ?? 'desc',
+        },
+      })
+      .then((tracks) => ({
+        ...tracks,
+        items: tracks.items.map(toTrack),
+      }));
+  }
+
+  @ResolveField(() => PaginatedTracks)
+  async pendingTracks(
+    @Args('pagination', { type: () => PaginationArgs, nullable: true })
+    pagination: PaginationArgs,
+  ): Promise<IPaginatedType<Track>> {
+    return this.getPendingTracksUseCase
       .execute({
         pagination: {
           limit: pagination.limit,

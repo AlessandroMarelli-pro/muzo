@@ -46,4 +46,7 @@ export class User {
 
   @Field(() => PaginatedTracks)
   paginatedTracks: IPaginatedType<Track>;
+
+  @Field(() => PaginatedTracks)
+  pendingTracks: IPaginatedType<Track>;
 }

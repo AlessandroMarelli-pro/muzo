@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SignUpRouteImport } from './routes/sign-up'
 import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as PendingRouteImport } from './routes/pending'
 import { Route as MusicRouteImport } from './routes/music'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as FavoritesRouteImport } from './routes/favorites'
@@ -30,6 +31,11 @@ const SignUpRoute = SignUpRouteImport.update({
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PendingRoute = PendingRouteImport.update({
+  id: '/pending',
+  path: '/pending',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MusicRoute = MusicRouteImport.update({
@@ -89,6 +95,7 @@ export interface FileRoutesByFullPath {
   '/favorites': typeof FavoritesRoute
   '/login': typeof LoginRoute
   '/music': typeof MusicRoute
+  '/pending': typeof PendingRoute
   '/settings': typeof SettingsRoute
   '/sign-up': typeof SignUpRoute
   '/libraries/$libraryId': typeof LibrariesLibraryIdRoute
@@ -103,6 +110,7 @@ export interface FileRoutesByTo {
   '/favorites': typeof FavoritesRoute
   '/login': typeof LoginRoute
   '/music': typeof MusicRoute
+  '/pending': typeof PendingRoute
   '/settings': typeof SettingsRoute
   '/sign-up': typeof SignUpRoute
   '/libraries/$libraryId': typeof LibrariesLibraryIdRoute
@@ -118,6 +126,7 @@ export interface FileRoutesById {
   '/favorites': typeof FavoritesRoute
   '/login': typeof LoginRoute
   '/music': typeof MusicRoute
+  '/pending': typeof PendingRoute
   '/settings': typeof SettingsRoute
   '/sign-up': typeof SignUpRoute
   '/libraries/$libraryId': typeof LibrariesLibraryIdRoute
@@ -134,6 +143,7 @@ export interface FileRouteTypes {
     | '/favorites'
     | '/login'
     | '/music'
+    | '/pending'
     | '/settings'
     | '/sign-up'
     | '/libraries/$libraryId'
@@ -148,6 +158,7 @@ export interface FileRouteTypes {
     | '/favorites'
     | '/login'
     | '/music'
+    | '/pending'
     | '/settings'
     | '/sign-up'
     | '/libraries/$libraryId'
@@ -162,6 +173,7 @@ export interface FileRouteTypes {
     | '/favorites'
     | '/login'
     | '/music'
+    | '/pending'
     | '/settings'
     | '/sign-up'
     | '/libraries/$libraryId'
@@ -177,6 +189,7 @@ export interface RootRouteChildren {
   FavoritesRoute: typeof FavoritesRoute
   LoginRoute: typeof LoginRoute
   MusicRoute: typeof MusicRoute
+  PendingRoute: typeof PendingRoute
   SettingsRoute: typeof SettingsRoute
   SignUpRoute: typeof SignUpRoute
   LibrariesLibraryIdRoute: typeof LibrariesLibraryIdRoute
@@ -201,6 +214,13 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pending': {
+      id: '/pending'
+      path: '/pending'
+      fullPath: '/pending'
+      preLoaderRoute: typeof PendingRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/music': {
@@ -281,6 +301,7 @@ const rootRouteChildren: RootRouteChildren = {
   FavoritesRoute: FavoritesRoute,
   LoginRoute: LoginRoute,
   MusicRoute: MusicRoute,
+  PendingRoute: PendingRoute,
   SettingsRoute: SettingsRoute,
   SignUpRoute: SignUpRoute,
   LibrariesLibraryIdRoute: LibrariesLibraryIdRoute,
