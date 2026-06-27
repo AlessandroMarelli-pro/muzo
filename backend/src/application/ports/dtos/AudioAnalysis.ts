@@ -101,10 +101,15 @@ interface AudioFeatures {
     energy_by_band: number[];
     energy_ratios: number[];
     mfcc_mean: number[];
+    mfcc_std?: number[];
+    spectral_contrasts?: AggregationStatistics;
+    dynamic_range?: number;
+    bass_presence?: number;
   };
   rhythm_fingerprint: {
     zcr_mean: number;
     zcr_std: number;
+    onset_density?: number;
   };
   melodic_fingerprint: {
     chroma: {

@@ -20,19 +20,23 @@ const generateAudioFeatureReasons = (
     reasons.push(`Harmonic key match: ${trackSource.musical_audio_features.camelot_key}`);
   }
 
-  // Tempo: same as query (exact or half/double when seed > 120 or <= 120)
+  // Tempo: compare to playlist center BPM (soft scoring in query builder)
   if (trackSource.musical_audio_features?.tempo != null && playlistFeatures.tempo != null) {
     const trackTempo = trackSource.musical_audio_features.tempo;
     const seedTempo = playlistFeatures.tempo;
-    const diffExact = Math.abs(trackTempo - seedTempo.min);
-    const secondaryBpm = seedTempo.min > 120 ? seedTempo.min / 2 : seedTempo.min * 2;
+    const seedCenter =
+      playlistFeatures.tempoCenter != null && Number.isFinite(playlistFeatures.tempoCenter)
+        ? playlistFeatures.tempoCenter
+        : (seedTempo.min + seedTempo.max) / 2;
+    const diffExact = Math.abs(trackTempo - seedCenter);
+    const secondaryBpm = seedCenter > 120 ? seedCenter / 2 : seedCenter * 2;
     const diffHalfDouble = Math.abs(trackTempo - secondaryBpm);
-    const threshold = 12; // align with gauss scale in recommendation-query.builder
+    const threshold = 12;
     if (diffExact <= threshold) {
-      reasons.push(`Similar tempo: ${Math.round(seedTempo.min)} BPM`);
+      reasons.push(`Similar tempo: ${Math.round(seedCenter)} BPM`);
     } else if (diffHalfDouble <= threshold) {
       reasons.push(
-        `Similar tempo (${seedTempo.min > 120 ? 'half-time' : 'double-time'}): ${Math.round(seedTempo.min)} BPM`,
+        `Similar tempo (${seedCenter > 120 ? 'half-time' : 'double-time'}): ${Math.round(seedCenter)} BPM`,
       );
     }
   }

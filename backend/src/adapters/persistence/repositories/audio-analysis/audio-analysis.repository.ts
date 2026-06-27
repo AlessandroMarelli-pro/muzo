@@ -25,17 +25,31 @@ export class AudioAnalysisRepository implements IAudioAnalysisRepository {
     const melodicFingerprint = features?.melodic_fingerprint;
     const spectralFeatures = features?.spectral_features;
     const musicalFeatures = features?.musical_features;
+    const rhythmFingerprint = features?.rhythm_fingerprint;
     const fingerprint = analysisResult.fingerprint;
+    const mfccMean = spectralFeatures?.mfcc_mean ?? [];
+    const mfccStd = spectralFeatures?.mfcc_std ?? [];
+    const mfccStored =
+      Array.isArray(mfccStd) && mfccStd.length > 0
+        ? JSON.stringify({ mean: mfccMean, std: mfccStd })
+        : JSON.stringify(mfccMean);
+    const mfccStdColumn =
+      Array.isArray(mfccStd) && mfccStd.length === 13 ? JSON.stringify(mfccStd) : '[]';
     const fingerprintData = {
-      mfcc: JSON.stringify(spectralFeatures?.mfcc_mean || []),
+      mfcc: mfccStored,
+      mfccStd: mfccStdColumn,
       spectralCentroid: JSON.stringify(spectralFeatures?.spectral_centroids || {}),
       spectralRolloff: JSON.stringify(spectralFeatures?.spectral_rolloffs || {}),
-      spectralContrast: JSON.stringify([]),
+      spectralContrast: JSON.stringify(spectralFeatures?.spectral_contrasts || {}),
       chroma: JSON.stringify(melodicFingerprint?.chroma || {}),
       spectralSpread: JSON.stringify(spectralFeatures?.spectral_spreads || {}),
       spectralBandwith: JSON.stringify(spectralFeatures?.spectral_bandwidths || {}),
       spectralFlatness: JSON.stringify(spectralFeatures?.spectral_flatnesses || {}),
       zeroCrossingRate: JSON.stringify(spectralFeatures?.zero_crossing_rate || {}),
+      rms: JSON.stringify(spectralFeatures?.rms || {}),
+      energyByBand: JSON.stringify(spectralFeatures?.energy_by_band || []),
+      energyComment: musicalFeatures?.energy_comment ?? '',
+      energyKeywords: JSON.stringify(musicalFeatures?.energy_keywords ?? []),
       tempo: musicalFeatures?.tempo || 0,
       key: musicalFeatures?.key || '',
 
@@ -64,6 +78,11 @@ export class AudioAnalysisRepository implements IAudioAnalysisRepository {
       modeWeight: musicalFeatures?.mood_calculation?.mode_weight || 0,
       tempoFactor: musicalFeatures?.mood_calculation?.tempo_factor || 0,
       brightnessFactor: musicalFeatures?.mood_calculation?.brightness_factor || 0,
+      harmonicFactor: musicalFeatures?.mood_calculation?.harmonic_factor || 0,
+      spectralBalance: musicalFeatures?.mood_calculation?.spectral_balance || 0,
+      beatStrength: musicalFeatures?.mood_calculation?.beat_strength ?? 0,
+      onsetDensity: rhythmFingerprint?.onset_density ?? 0,
+      dynamicRange: spectralFeatures?.dynamic_range ?? 0,
     };
 
     await this.prisma.audioFingerprint.upsert({

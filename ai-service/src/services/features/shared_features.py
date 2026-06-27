@@ -1,4 +1,5 @@
 import audioflux as af
+import librosa
 import numpy as np
 from audioflux.type import NoveltyType, SpectralDataType, SpectralFilterBankScaleType
 from loguru import logger
@@ -76,12 +77,16 @@ class SharedFeatures:
             "spectral_bandwidths": default_spectral_values,
             "spectral_spreads": default_spectral_values,
             "spectral_flatnesses": default_spectral_values,
+            "spectral_contrasts": default_spectral_values,
             "zero_crossing_rate": default_aggregate_values,
             "rms": default_aggregate_values,
             "chroma": default_chroma_values,
             "tonnetz": default_tonnetz_values,
             "mfcc_mean": default_mfcc_values,
+            "mfcc_std": default_mfcc_values,
             "energy_by_band": [0.0, 0.0, 0.0],
+            "dynamic_range": 0.0,
+            "onset_density": 0.0,
         }
 
     @monitor_performance("_set_mel_spectrum")
@@ -526,11 +531,14 @@ class SharedFeatures:
                 spectral_flatnesses, spec_arr_h
             )
 
-            # MFCC from both samples averaged
-            mfcc_mean_h = self._get_mfcc_from_sample(y_harmonic, sr)
-            mfcc_mean_p = self._get_mfcc_from_sample(y_percussive, sr)
+            # MFCC mean/std from both samples averaged
+            mfcc_mean_h, mfcc_std_h = self._get_mfcc_mean_std_from_sample(y_harmonic, sr)
+            mfcc_mean_p, mfcc_std_p = self._get_mfcc_mean_std_from_sample(y_percussive, sr)
             self.features["mfcc_mean"] = [
                 (h + p) / 2 for h, p in zip(mfcc_mean_h, mfcc_mean_p)
+            ]
+            self.features["mfcc_std"] = [
+                (h + p) / 2 for h, p in zip(mfcc_std_h, mfcc_std_p)
             ]
 
             # === PERCUSSIVE FEATURES (from percussive sample) ===
@@ -545,6 +553,25 @@ class SharedFeatures:
                 temporal_features["zcr_arr"]
             )
             self.features["rms"] = self._aggregate(temporal_features["rms_arr"])
+            rms_arr = temporal_features["rms_arr"]
+            if len(rms_arr) > 0:
+                self.features["dynamic_range"] = float(
+                    np.percentile(rms_arr, 95) - np.percentile(rms_arr, 5)
+                )
+            else:
+                self.features["dynamic_range"] = 0.0
+
+            duration_sec = float(len(y_percussive)) / float(sr) if sr else 1.0
+            try:
+                onset_times = librosa.onset.onset_detect(
+                    y=y_percussive, sr=sr, units="time"
+                )
+                self.features["onset_density"] = (
+                    float(len(onset_times) / duration_sec) if duration_sec > 0 else 0.0
+                )
+            except Exception as onset_err:
+                logger.debug("onset_density fallback: %s", onset_err)
+                self.features["onset_density"] = 0.0
 
             # Energy by frequency bands from percussive sample
             freqs = bft_obj_p.y_coords()
@@ -558,6 +585,24 @@ class SharedFeatures:
             chroma = af.chroma_linear(y_harmonic, samplate=sr)
             self.features["chroma"] = self._aggregate_chroma(chroma)
             self.features["tonnetz"] = self._compute_tonnetz_from_chroma(chroma)
+
+            try:
+                contrast = librosa.feature.spectral_contrast(
+                    y=y_harmonic.astype(np.float32), sr=sr, n_bands=6
+                )
+                frame_contrast = np.mean(contrast, axis=0).astype(float)
+                self.features["spectral_contrasts"] = self._aggregate(frame_contrast)
+            except Exception as contrast_err:
+                logger.debug("spectral_contrast fallback: %s", contrast_err)
+                self.features["spectral_contrasts"] = {
+                    "mean": 0.0,
+                    "std": 0.0,
+                    "median": 0.0,
+                    "max": 0.0,
+                    "min": 0.0,
+                    "p25": 0.0,
+                    "p75": 0.0,
+                }
 
             logger.debug(
                 "Shared features extracted successfully from both harmonic and percussive samples"
@@ -604,16 +649,16 @@ class SharedFeatures:
             "p75": (agg_h["p75"] + agg_p["p75"]) / 2,
         }
 
-    def _get_mfcc_from_sample(self, y: np.ndarray, sr: int) -> list:
+    def _get_mfcc_mean_std_from_sample(self, y: np.ndarray, sr: int) -> tuple[list, list]:
         """
-        Extract MFCC from a specific audio sample.
+        Extract MFCC mean and per-coefficient std from a specific audio sample.
 
         Args:
             y: Audio sample
             sr: Sample rate
 
         Returns:
-            List of MFCC coefficients
+            Tuple of (mean coefficients, std coefficients), each length 13.
         """
         bft_obj = af.BFT(
             num=128,
@@ -629,5 +674,6 @@ class SharedFeatures:
         xxcc_obj = af.XXCC(bft_obj.num)
         xxcc_obj.set_time_length(time_length=spec_dB_arr.shape[1])
         mfcc_arr = xxcc_obj.xxcc(spec_dB_arr)[:13]
-        mfcc_mean = np.mean(mfcc_arr, axis=1)
-        return mfcc_mean.tolist()
+        mfcc_mean = np.mean(mfcc_arr, axis=1).tolist()
+        mfcc_std = np.std(mfcc_arr, axis=1).tolist()
+        return mfcc_mean, mfcc_std

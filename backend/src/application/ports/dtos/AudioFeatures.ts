@@ -4,6 +4,8 @@ import { AggregationStatistics } from 'src/kernel/types';
 export type AudioFeatures = {
   trackId: MusicTrackId;
   tempo?: { min: number; max: number };
+  /** Center BPM for soft tempo scoring; typically `(tempo.min + tempo.max) / 2`. */
+  tempoCenter?: number;
   key?: string;
   camelotKey?: string;
   energy?: number;
@@ -25,6 +27,13 @@ export type AudioFeatures = {
   contextBackgrounds?: string; // Aggregated context backgrounds
   contextImpacts?: string; // Aggregated context impacts
   spectralFeatures?: SpectralFeatures;
+  /** Dominant pitch class 0–11 from chroma (aggregated from seed tracks). */
+  chromaDominantPitch?: number;
+  onsetDensity?: number;
+  dynamicRange?: number;
+  bassPresence?: number;
+  energyByBand?: [number, number, number];
+  energyRatios?: [number, number, number];
 };
 
 export type SpectralFeatures = {
@@ -34,5 +43,8 @@ export type SpectralFeatures = {
   spectralBandwidthMean?: AggregationStatistics;
   spectralFlatnessMean?: AggregationStatistics;
   zeroCrossingRateMean?: AggregationStatistics;
+  spectralContrastMean?: AggregationStatistics;
   mfccMean?: number[];
+  /** Per-coefficient MFCC std (13); timbral variability. */
+  mfccStd?: number[];
 };

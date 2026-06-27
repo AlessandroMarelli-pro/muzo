@@ -1,8 +1,51 @@
 import { MusicTrack } from 'src/kernel/types';
 import { ElasticsearchTrackDocument } from '../types/elasticsearch-track-document';
 
+const MFCC_DIM = 13;
+
+function sliceMfccVector(values: number[] | undefined): number[] {
+  if (!values || values.length === 0) {
+    return Array(MFCC_DIM).fill(0);
+  }
+  const out = Array(MFCC_DIM).fill(0);
+  for (let i = 0; i < MFCC_DIM; i += 1) {
+    const v = values[i];
+    out[i] = typeof v === 'number' && Number.isFinite(v) ? v : 0;
+  }
+  return out;
+}
+
+function buildEnergyByBand(
+  bands: number[] | undefined,
+): { bass: number; mid: number; high: number } | undefined {
+  if (!bands || bands.length !== 3) {
+    return undefined;
+  }
+  const [bass, mid, high] = bands;
+  if (![bass, mid, high].every((v) => typeof v === 'number' && Number.isFinite(v))) {
+    return undefined;
+  }
+  return { bass, mid, high };
+}
+
+function buildEnergyRatios(bands: number[] | undefined): { bass: number; mid: number; high: number } | undefined {
+  if (!bands || bands.length !== 3) {
+    return undefined;
+  }
+  const total = bands[0] + bands[1] + bands[2];
+  if (!(total > 0)) {
+    return { bass: 0, mid: 0, high: 0 };
+  }
+  return {
+    bass: bands[0] / total,
+    mid: bands[1] / total,
+    high: bands[2] / total,
+  };
+}
+
 export const toElasticsearchTrackDocument = (dto: MusicTrack): ElasticsearchTrackDocument => {
   const date = dto.metadata?.date;
+  const energyBands = dto.features?.musicalFeatures?.calculationFeatures?.energyByBand;
   const doc: ElasticsearchTrackDocument = {
     trackId: dto.id,
     duration: dto.technicalInfo?.duration ?? 0,
@@ -18,10 +61,12 @@ export const toElasticsearchTrackDocument = (dto: MusicTrack): ElasticsearchTrac
     atmosphere_tags: dto.aiMetadata?.atmosphereTags ?? [],
     context_background: dto.aiMetadata?.contextBackground ?? '',
     context_impact: dto.aiMetadata?.contextImpact ?? '',
+    chroma_dominant_pitch: dto.features?.melodicFeatures?.chroma?.dominant_pitch,
     musical_audio_features: {
       tempo: dto.features?.musicalFeatures?.tempo ?? 0,
       key: dto.features?.musicalFeatures?.key ?? '',
       camelot_key: dto.features?.musicalFeatures?.camelotKey ?? '',
+      energy: dto.features?.musicalFeatures?.energy ?? 0,
       valence: dto.features?.musicalFeatures?.valence ?? 0,
       valence_mood: dto.features?.musicalFeatures?.valenceMood ?? '',
       arousal: dto.features?.musicalFeatures?.arousal ?? 0,
@@ -36,6 +81,14 @@ export const toElasticsearchTrackDocument = (dto: MusicTrack): ElasticsearchTrac
       spectral_bandwidth: dto.features?.spectralFeatures?.spectralBandwith,
       spectral_flatness: dto.features?.spectralFeatures?.spectralFlatness,
       zero_crossing_rate: dto.features?.spectralFeatures?.zeroCrossingRate,
+      spectral_contrast: dto.features?.spectralFeatures?.spectralContrast,
+      mfcc_mean: sliceMfccVector(dto.features?.spectralFeatures?.mfcc),
+      mfcc_std: sliceMfccVector(dto.features?.spectralFeatures?.mfccStd),
+      onset_density: dto.features?.spectralFeatures?.onsetDensity,
+      dynamic_range: dto.features?.spectralFeatures?.dynamicRange,
+      bass_presence: dto.features?.musicalFeatures?.calculationFeatures?.bassPresence,
+      energy_by_band: buildEnergyByBand(energyBands),
+      energy_ratios: buildEnergyRatios(energyBands),
     },
   };
   return doc;
@@ -79,6 +132,7 @@ export const toMusicTrack = (
         tempo: document.musical_audio_features.tempo,
         key: document.musical_audio_features.key,
         camelotKey: document.musical_audio_features.camelot_key,
+        energy: document.musical_audio_features.energy,
         valence: document.musical_audio_features.valence,
         valenceMood: document.musical_audio_features.valence_mood,
         arousal: document.musical_audio_features.arousal,

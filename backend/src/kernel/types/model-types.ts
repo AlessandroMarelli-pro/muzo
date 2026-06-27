@@ -157,9 +157,17 @@ export type AudioFileSpectralFeatures = {
   spectralRolloff: AggregationStatistics;
   zeroCrossingRate: AggregationStatistics;
   mfcc: number[];
+  /** Per-coefficient MFCC std (13) when present from analysis. */
+  mfccStd?: number[];
   spectralSpread: AggregationStatistics;
   spectralBandwith: AggregationStatistics;
   spectralFlatness: AggregationStatistics;
+  spectralContrast: AggregationStatistics;
+  rms: AggregationStatistics;
+  /** Onsets per second (rhythmic activity). */
+  onsetDensity?: number;
+  /** RMS p95 − p5 loudness spread. */
+  dynamicRange?: number;
 };
 
 export type MelodicFeatures = {
@@ -201,6 +209,9 @@ type CalculationFeatures = {
   bassPresence: number;
   tempoRegularity: number;
   tempoAppropriateness: number;
+  energyComment?: string;
+  energyKeywords?: string[];
+  energyByBand?: number[];
 };
 export type AudioFileMusicalFeatures = {
   tempo: number;

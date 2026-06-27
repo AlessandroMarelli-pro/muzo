@@ -68,6 +68,20 @@ class SimpleFeatureExtractor:
         energy_by_band = self.shared_features.features["energy_by_band"]
         rms = self.shared_features.features["rms"]
         mfcc_mean = self.shared_features.features["mfcc_mean"]
+        mfcc_std = self.shared_features.features.get("mfcc_std", [0.0] * 13)
+        spectral_contrasts = self.shared_features.features.get(
+            "spectral_contrasts",
+            {
+                "mean": 0.0,
+                "std": 0.0,
+                "median": 0.0,
+                "min": 0.0,
+                "max": 0.0,
+                "p25": 0.0,
+                "p75": 0.0,
+            },
+        )
+        dynamic_range = float(self.shared_features.features.get("dynamic_range", 0.0))
 
         # Perceptual energy: combines all frequency bands for comprehensive energy
         # Captures both "brightness" (high freq) and "fullness" (bass) + mid presence
@@ -90,6 +104,9 @@ class SimpleFeatureExtractor:
             "energy_by_band": energy_by_band,
             "energy_ratios": energy_ratios,
             "mfcc_mean": mfcc_mean,
+            "mfcc_std": mfcc_std,
+            "spectral_contrasts": spectral_contrasts,
+            "dynamic_range": dynamic_range,
         }
 
     @monitor_performance("_get_energy_band_comment")
@@ -351,9 +368,11 @@ class SimpleFeatureExtractor:
         """
         # Use shared features if available, otherwise extract zero crossing rate
         zcr = self.shared_features.features["zero_crossing_rate"]
+        onset_density = float(self.shared_features.features.get("onset_density", 0.0))
         return {
             "zcr_mean": zcr["mean"],
             "zcr_std": zcr["std"],
+            "onset_density": onset_density,
         }
 
     @monitor_performance("get_melodic_fingerprint")
@@ -443,6 +462,12 @@ class SimpleFeatureExtractor:
                 spectral_features,
                 tonnetz_mode,
             )
+
+            bass_presence = float(
+                musical_features.get("danceability_calculation", {}).get("bass_presence")
+                or 0.0
+            )
+            spectral_features["bass_presence"] = bass_presence
 
             rhythm_fingerprint = self._get_rhythm_fingerprint()
             melodic_fingerprint = self._get_melodic_fingerprint()

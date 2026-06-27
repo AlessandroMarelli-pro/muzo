@@ -12,6 +12,15 @@ const aggregationStatisticsMapping: MappingProperty = {
     min: { type: 'float' },
   },
 };
+
+const energyBandMapping: MappingProperty = {
+  properties: {
+    bass: { type: 'float' },
+    mid: { type: 'float' },
+    high: { type: 'float' },
+  },
+};
+
 export const trackIndexMapping: {
   mappings: MappingTypeMapping;
 } = {
@@ -31,12 +40,13 @@ export const trackIndexMapping: {
       atmosphere_tags: { type: 'keyword' },
       context_background: { type: 'text' },
       context_impact: { type: 'text' },
-      // AudioFingerprint fields
+      chroma_dominant_pitch: { type: 'integer' },
       musical_audio_features: {
         properties: {
           tempo: { type: 'float' },
           key: { type: 'keyword' },
           camelot_key: { type: 'keyword' },
+          energy: { type: 'float' },
           valence: { type: 'float' },
           valence_mood: { type: 'keyword' },
           arousal: { type: 'float' },
@@ -53,7 +63,23 @@ export const trackIndexMapping: {
           spectral_bandwidth: aggregationStatisticsMapping,
           spectral_flatness: aggregationStatisticsMapping,
           zero_crossing_rate: aggregationStatisticsMapping,
-          mfcc_mean: { type: 'keyword' },
+          spectral_contrast: aggregationStatisticsMapping,
+          mfcc_mean: {
+            type: 'dense_vector',
+            dims: 13,
+            index: true,
+            similarity: 'cosine',
+          },
+          mfcc_std: {
+            type: 'dense_vector',
+            dims: 13,
+            index: false,
+          },
+          onset_density: { type: 'float' },
+          dynamic_range: { type: 'float' },
+          bass_presence: { type: 'float' },
+          energy_by_band: energyBandMapping,
+          energy_ratios: energyBandMapping,
         } as Record<keyof ElasticsearchTrackDocument['spectral_features'], MappingProperty>,
       },
     } as Record<keyof ElasticsearchTrackDocument, MappingProperty>,

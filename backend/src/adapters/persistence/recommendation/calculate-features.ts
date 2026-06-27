@@ -8,8 +8,29 @@ function findMostCommon(counts: Record<string, number>): string {
 }
 function calculateMean(values?: (number | undefined)[]): number {
   const filteredValues = values?.filter((value) => value !== undefined) ?? [];
-  if (!filteredValues) return 0;
+  if (!filteredValues.length) {
+    return 0;
+  }
   return filteredValues.reduce((a, b) => a + b, 0) / filteredValues.length;
+}
+
+const MFCC_DIM = 13;
+
+function calculateMfccAggregate(
+  tracks: MusicTrack[],
+  getVec: (track: MusicTrack) => number[] | undefined,
+): number[] {
+  const vecs = tracks
+    .map(getVec)
+    .filter((v): v is number[] => Array.isArray(v) && v.length >= MFCC_DIM);
+  if (vecs.length === 0) {
+    return [];
+  }
+  const out: number[] = [];
+  for (let i = 0; i < MFCC_DIM; i += 1) {
+    out.push(calculateMean(vecs.map((v) => v[i])));
+  }
+  return out;
 }
 function calculateSpectralFeaturesMean(tracks: MusicTrack[]) {
   const _numberOfTracks = tracks.length;
@@ -152,7 +173,31 @@ function calculateSpectralFeaturesMean(tracks: MusicTrack[]) {
         tracks.map((track) => track.features?.spectralFeatures?.zeroCrossingRate.median),
       ),
     },
-    mfccMean: [],
+    spectralContrastMean: {
+      mean: calculateMean(
+        tracks.map((track) => track.features?.spectralFeatures?.spectralContrast?.mean),
+      ),
+      std: calculateMean(
+        tracks.map((track) => track.features?.spectralFeatures?.spectralContrast?.std),
+      ),
+      max: calculateMean(
+        tracks.map((track) => track.features?.spectralFeatures?.spectralContrast?.max),
+      ),
+      min: calculateMean(
+        tracks.map((track) => track.features?.spectralFeatures?.spectralContrast?.min),
+      ),
+      p25: calculateMean(
+        tracks.map((track) => track.features?.spectralFeatures?.spectralContrast?.p25),
+      ),
+      p75: calculateMean(
+        tracks.map((track) => track.features?.spectralFeatures?.spectralContrast?.p75),
+      ),
+      median: calculateMean(
+        tracks.map((track) => track.features?.spectralFeatures?.spectralContrast?.median),
+      ),
+    },
+    mfccMean: calculateMfccAggregate(tracks, (track) => track.features?.spectralFeatures?.mfcc),
+    mfccStd: calculateMfccAggregate(tracks, (track) => track.features?.spectralFeatures?.mfccStd),
   };
 }
 export function calculateFeatures(tracks: MusicTrack[]): Maybe<AudioFeatures> {
@@ -168,10 +213,11 @@ export function calculateFeatures(tracks: MusicTrack[]): Maybe<AudioFeatures> {
     p75: 0,
     median: 0,
   };
-  const defaultMfcc: number[] = Array(26).fill(0);
+  const defaultMfcc: number[] = Array(MFCC_DIM).fill(0);
   const features: Required<AudioFeatures> = {
     trackId: tracks[0].id,
     tempo: { min: Infinity, max: 0 },
+    tempoCenter: 0,
     energy: 0,
     valence: 0,
     danceability: 0,
@@ -191,6 +237,12 @@ export function calculateFeatures(tracks: MusicTrack[]): Maybe<AudioFeatures> {
     atmosphereKeywords: [],
     contextBackgrounds: '',
     contextImpacts: '',
+    chromaDominantPitch: 0,
+    onsetDensity: 0,
+    dynamicRange: 0,
+    bassPresence: 0,
+    energyByBand: [0, 0, 0],
+    energyRatios: [0, 0, 0],
     spectralFeatures: {
       spectralCentroidMean: defaultAggregationStatistics,
       spectralRolloffMean: defaultAggregationStatistics,
@@ -198,7 +250,9 @@ export function calculateFeatures(tracks: MusicTrack[]): Maybe<AudioFeatures> {
       spectralBandwidthMean: defaultAggregationStatistics,
       spectralFlatnessMean: defaultAggregationStatistics,
       zeroCrossingRateMean: defaultAggregationStatistics,
+      spectralContrastMean: defaultAggregationStatistics,
       mfccMean: defaultMfcc,
+      mfccStd: defaultMfcc,
     },
   };
 
@@ -218,6 +272,7 @@ export function calculateFeatures(tracks: MusicTrack[]): Maybe<AudioFeatures> {
   const atmosphereKeywords: string[] = [];
   const contextBackgrounds: string[] = [];
   const contextImpacts: string[] = [];
+  const dominantPitchCounts: Record<number, number> = {};
 
   let validTracks = 0;
 
@@ -298,13 +353,45 @@ export function calculateFeatures(tracks: MusicTrack[]): Maybe<AudioFeatures> {
     if (aiMetadata?.contextImpact) {
       contextImpacts.push(aiMetadata.contextImpact);
     }
+    const domPitch = track.features?.melodicFeatures?.chroma?.dominant_pitch;
+    if (typeof domPitch === 'number' && Number.isFinite(domPitch)) {
+      dominantPitchCounts[domPitch] = (dominantPitchCounts[domPitch] || 0) + 1;
+    }
   });
 
   features.spectralFeatures = calculateSpectralFeaturesMean(tracks);
+  features.onsetDensity = calculateMean(
+    tracks.map((track) => track.features?.spectralFeatures?.onsetDensity),
+  );
+  features.dynamicRange = calculateMean(
+    tracks.map((track) => track.features?.spectralFeatures?.dynamicRange),
+  );
+  features.bassPresence = calculateMean(
+    tracks.map((track) => track.features?.musicalFeatures?.calculationFeatures?.bassPresence),
+  );
+  const band0 = calculateMean(
+    tracks.map((track) => track.features?.musicalFeatures?.calculationFeatures?.energyByBand?.[0]),
+  );
+  const band1 = calculateMean(
+    tracks.map((track) => track.features?.musicalFeatures?.calculationFeatures?.energyByBand?.[1]),
+  );
+  const band2 = calculateMean(
+    tracks.map((track) => track.features?.musicalFeatures?.calculationFeatures?.energyByBand?.[2]),
+  );
+  features.energyByBand = [band0, band1, band2];
+  const bandTotal = band0 + band1 + band2;
+  if (bandTotal > 0) {
+    features.energyRatios = [band0 / bandTotal, band1 / bandTotal, band2 / bandTotal];
+  }
+  const pitchEntries = Object.entries(dominantPitchCounts).sort((a, b) => b[1] - a[1]);
+  if (pitchEntries.length > 0) {
+    features.chromaDominantPitch = Number.parseInt(pitchEntries[0][0], 10);
+  }
   const n = tracks.length;
   if (validTracks > 0) {
     features.tempo!.min = features.tempo!.min - 5;
     features.tempo!.max = features.tempo!.max + 5;
+    features.tempoCenter = (features.tempo!.min + features.tempo!.max) / 2;
   }
   if (n > 0) {
     features.energy = features.energy! / n;

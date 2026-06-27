@@ -23,7 +23,6 @@ export class RecommendationSearchAdapter implements IRecommendationSearchPort {
     features: AudioFeatures[],
     criteria: RecommendationCriteria,
   ): Promise<RecommendationMatch[]> {
-    console.log('features', features);
     const query = buildElasticsearchRecommendationQuery(
       features[0],
       criteria,

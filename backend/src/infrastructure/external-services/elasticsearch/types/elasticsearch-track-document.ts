@@ -22,10 +22,14 @@ export interface ElasticsearchTrackDocument {
   context_background: string;
   context_impact: string;
 
+  chroma_dominant_pitch?: number;
+
   musical_audio_features: {
     tempo: number;
     key: string;
     camelot_key: string;
+    /** Normalized loudness / energy factor (0–1) for similarity. */
+    energy: number;
     valence: number;
     valence_mood: string;
     arousal: number;
@@ -40,6 +44,22 @@ export interface ElasticsearchTrackDocument {
     spectral_bandwidth?: AggregationStatistics;
     spectral_flatness?: AggregationStatistics;
     zero_crossing_rate?: AggregationStatistics;
+    spectral_contrast?: AggregationStatistics;
     mfcc_mean?: number[];
+    /** 13 MFCC coefficient std values (timbral variability). */
+    mfcc_std?: number[];
+    onset_density?: number;
+    dynamic_range?: number;
+    bass_presence?: number;
+    energy_by_band?: {
+      bass: number;
+      mid: number;
+      high: number;
+    };
+    energy_ratios?: {
+      bass: number;
+      mid: number;
+      high: number;
+    };
   };
 }

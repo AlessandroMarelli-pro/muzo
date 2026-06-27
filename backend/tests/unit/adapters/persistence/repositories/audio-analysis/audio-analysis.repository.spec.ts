@@ -120,6 +120,9 @@ function makeAnalysisResult(overrides: Partial<AudioAnalysisResponse> = {}): Aud
         rms: { mean: 0, std: 0, median: 0, min: 0, max: 0, p25: 0, p75: 0 },
         energy_by_band: [],
         energy_ratios: [],
+        spectral_contrasts: { mean: 1, std: 0, median: 1, min: 0, max: 2, p25: 0, p75: 2 },
+        mfcc_std: Array.from({ length: 13 }, (_, i) => i * 0.01),
+        dynamic_range: 0.05,
       },
       melodic_fingerprint: {
         chroma: {
@@ -138,7 +141,7 @@ function makeAnalysisResult(overrides: Partial<AudioAnalysisResponse> = {}): Aud
           overall_std: 0,
         },
       },
-      rhythm_fingerprint: { zcr_mean: 0, zcr_std: 0 },
+      rhythm_fingerprint: { zcr_mean: 0, zcr_std: 0, onset_density: 3.2 },
     },
     fingerprint: {
       audio_hash: 'audio-hash-1',
@@ -214,16 +217,30 @@ describe('AudioAnalysisRepository', () => {
       const mel = f.melodic_fingerprint;
       const fp = analysisResult.fingerprint;
 
+      const mfccMean = sf.mfcc_mean ?? [];
+      const mfccStd = sf.mfcc_std ?? [];
+      const mfccStored =
+        Array.isArray(mfccStd) && mfccStd.length > 0
+          ? JSON.stringify({ mean: mfccMean, std: mfccStd })
+          : JSON.stringify(mfccMean);
+      const mfccStdColumn =
+        Array.isArray(mfccStd) && mfccStd.length === 13 ? JSON.stringify(mfccStd) : '[]';
+      const rhythm = f.rhythm_fingerprint;
       const expectedData = {
-        mfcc: JSON.stringify(sf.mfcc_mean ?? []),
+        mfcc: mfccStored,
+        mfccStd: mfccStdColumn,
         spectralCentroid: JSON.stringify(sf.spectral_centroids ?? {}),
         spectralRolloff: JSON.stringify(sf.spectral_rolloffs ?? {}),
-        spectralContrast: JSON.stringify([]),
+        spectralContrast: JSON.stringify(sf.spectral_contrasts ?? {}),
         chroma: JSON.stringify(mel.chroma ?? {}),
         spectralSpread: JSON.stringify(sf.spectral_spreads ?? {}),
         spectralBandwith: JSON.stringify(sf.spectral_bandwidths ?? {}),
         spectralFlatness: JSON.stringify(sf.spectral_flatnesses ?? {}),
         zeroCrossingRate: JSON.stringify(sf.zero_crossing_rate ?? {}),
+        rms: JSON.stringify(sf.rms || {}),
+        energyByBand: JSON.stringify(sf.energy_by_band || []),
+        energyComment: mf.energy_comment ?? '',
+        energyKeywords: JSON.stringify(mf.energy_keywords ?? []),
         tempo: mf.tempo ?? 0,
         key: mf.key ?? '',
         valence: mf.valence ?? 0,
@@ -251,6 +268,11 @@ describe('AudioAnalysisRepository', () => {
         modeWeight: mf.mood_calculation?.mode_weight ?? 0,
         tempoFactor: mf.mood_calculation?.tempo_factor ?? 0,
         brightnessFactor: mf.mood_calculation?.brightness_factor ?? 0,
+        harmonicFactor: mf.mood_calculation?.harmonic_factor ?? 0,
+        spectralBalance: mf.mood_calculation?.spectral_balance ?? 0,
+        beatStrength: mf.mood_calculation?.beat_strength ?? 0,
+        onsetDensity: rhythm?.onset_density ?? 0,
+        dynamicRange: sf.dynamic_range ?? 0,
       };
 
       expect(prismaMock.audioFingerprint.upsert).toHaveBeenCalledWith({

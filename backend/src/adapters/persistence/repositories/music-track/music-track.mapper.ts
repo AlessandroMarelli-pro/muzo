@@ -103,8 +103,45 @@ export const toAggregationStatistics = (row: string): AggregationStatistics => {
   return JSON.parse(row) as AggregationStatistics;
 };
 
+const parseMfccStored = (
+  raw: string,
+): { coefficients: number[]; std: number[] } => {
+  try {
+    const parsed: unknown = JSON.parse(raw || '[]');
+    if (Array.isArray(parsed)) {
+      const coefficients = parsed.map((n) => Number(n)).slice(0, 13);
+      return { coefficients, std: [] };
+    }
+    if (
+      parsed &&
+      typeof parsed === 'object' &&
+      'mean' in parsed &&
+      Array.isArray((parsed as { mean: unknown }).mean)
+    ) {
+      const o = parsed as { mean: number[]; std?: number[] };
+      return {
+        coefficients: o.mean.map((n) => Number(n)).slice(0, 13),
+        std: (o.std ?? []).map((n) => Number(n)).slice(0, 13),
+      };
+    }
+  } catch {
+    /* invalid JSON */
+  }
+  return { coefficients: [], std: [] };
+};
+
 export const toAudioFileFeatures: ToAudioFileFeatures = (row) => {
   if (!row) return undefined;
+  const { coefficients, std } = parseMfccStored(row.mfcc);
+  const mfccStdFromColumn = (() => {
+    try {
+      const s = JSON.parse(row.mfccStd || '[]') as unknown;
+      return Array.isArray(s) ? s.map((n) => Number(n)).slice(0, 13) : [];
+    } catch {
+      return [];
+    }
+  })();
+  const mfccStd = mfccStdFromColumn.length > 0 ? mfccStdFromColumn : std;
   return {
     spectralFeatures: {
       spectralCentroid: toAggregationStatistics(row.spectralCentroid),
@@ -113,11 +150,12 @@ export const toAudioFileFeatures: ToAudioFileFeatures = (row) => {
       spectralBandwith: toAggregationStatistics(row.spectralBandwith),
       spectralFlatness: toAggregationStatistics(row.spectralFlatness),
       spectralContrast: toAggregationStatistics(row.spectralContrast),
-      chroma: toAggregationStatistics(row.chroma),
-      tonnetz: toAggregationStatistics(row.tonnetz),
       zeroCrossingRate: toAggregationStatistics(row.zeroCrossingRate),
       rms: toAggregationStatistics(row.rms),
-      mfcc: JSON.parse(row.mfcc) as number[],
+      mfcc: coefficients,
+      ...(mfccStd.length > 0 ? { mfccStd } : {}),
+      onsetDensity: row.onsetDensity,
+      dynamicRange: row.dynamicRange,
     },
     melodicFeatures: {
       chroma: JSON.parse(row.chroma) as MelodicFeatures & {
