@@ -605,11 +605,9 @@ class BaseMetadataExtractor(ABC):
             )
 
             try:
-                print(chunk, batch_filename_cleaning)
                 chunk_results = self._extract_metadata_single_api_call(
                     chunk, batch_filename_cleaning
                 )
-                print(chunk_results)
                 # Validate chunk results length matches chunk size
                 if len(chunk_results) != len(chunk):
                     logger.warning(
@@ -727,10 +725,8 @@ class BaseMetadataExtractor(ABC):
         # Combine all messages
         batch_content = "\n\n---\n\n".join(batch_messages)
         batch_content += "\n\nReturn a JSON object with a 'results' array containing metadata for each track in the same order. Format: {\"results\": [{...}, {...}, ...]}"
-        print(batch_content)
         # Make single API call with all items
         response = self._make_batch_api_call(batch_content, all_urls, len(items))
-        print(response)
         # Parse batch response
         batch_metadata = self._parse_batch_response(response, len(items))
 
@@ -974,8 +970,13 @@ class BaseMetadataExtractor(ABC):
             if not extracted_urls:
                 base_message += "\n\nUse ID3 tags as PRIMARY source for artist, title, year, genre. Enrich with music databases."
 
-        base_message += "\n\nReturn ONLY a JSON object with these exact fields: artist, title, mix, year, country, label, genre, style, audioFeatures (with vocals, atmosphere), context (with background, impact), tags."
-        base_message += "\nDo NOT include any other fields like album, release_year, track_number, format, duration, albumArt, credits, availability, etc."
+        # Providers with strict structured outputs (e.g. Gemini's response_schema) already
+        # enforce the exact field set, so the verbose field-list reminder is pure redundancy
+        # and just inflates every request. Only emit it for providers that rely on looser
+        # JSON modes (e.g. OpenAI's json_object).
+        if not getattr(self, "uses_strict_schema", False):
+            base_message += "\n\nReturn ONLY a JSON object with these exact fields: artist, title, mix, year, country, label, genre, style, audioFeatures (with vocals, atmosphere), context (with background, impact), tags."
+            base_message += "\nDo NOT include any other fields like album, release_year, track_number, format, duration, albumArt, credits, availability, etc."
 
         return base_message, extracted_urls
 

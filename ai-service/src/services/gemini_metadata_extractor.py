@@ -39,6 +39,10 @@ class GeminiMetadataExtractor(BaseMetadataExtractor):
     # Note: For context caching, use versioned model names (e.g., "gemini-2.5-flash-001")
     MODEL = os.getenv("GEMINI_MODEL", "gemini-3-flash-preview")
 
+    # Gemini uses response_schema (strict structured output), which enforces the exact
+    # field set. This lets the base prompt builder skip the verbose field-list reminder.
+    uses_strict_schema = True
+
     # Class-level cache storage to share cache across instances
     # This prevents recreating the cache on each service instantiation
     _class_cache_name: Optional[str] = None
@@ -805,14 +809,52 @@ Filename to clean: "{filename}"
 
 Return ONLY the cleaned filename, nothing else. No explanations, no markdown, just the cleaned filename."""
 
-            # Use a fast model for this lightweight task
-            response = self.client.models.generate_content(
-                model=self.MODEL,
-                contents=cleaning_prompt,
-                config=types.GenerateContentConfig(
-                    temperature=0.0,  # Deterministic output
-                ),
+            # Use a fast, cheap model for this lightweight task (matches batch cleaning path)
+            config = types.GenerateContentConfig(
+                temperature=0.0,  # Deterministic output
             )
+
+            # Reuse the filename-cleaning context cache if available (90% discount on
+            # cached system-instruction tokens). Falls back to inline system instruction.
+            cache_to_use = (
+                self._filename_cleaning_cache_name
+                or GeminiMetadataExtractor._class_filename_cleaning_cache_name
+            )
+            if cache_to_use:
+                config.cached_content = cache_to_use
+                if not self._filename_cleaning_cache_name:
+                    self._filename_cleaning_cache_name = cache_to_use
+            else:
+                config.system_instruction = "\n".join(
+                    self.FILENAME_CLEANING_INSTRUCTIONS
+                )
+
+            try:
+                response = self.client.models.generate_content(
+                    model="gemini-2.5-flash-lite",
+                    contents=cleaning_prompt,
+                    config=config,
+                )
+            except Exception as e:
+                if self._is_cached_content_not_found_error(e):
+                    logger.info(
+                        f"Filename cleaning cache expired or not found: {e}. "
+                        "Falling back to inline system instruction."
+                    )
+                    self._filename_cleaning_cache_name = None
+                    with GeminiMetadataExtractor._class_filename_cleaning_cache_lock:
+                        GeminiMetadataExtractor._class_filename_cleaning_cache_name = None
+                    config.cached_content = None
+                    config.system_instruction = "\n".join(
+                        self.FILENAME_CLEANING_INSTRUCTIONS
+                    )
+                    response = self.client.models.generate_content(
+                        model="gemini-2.5-flash-lite",
+                        contents=cleaning_prompt,
+                        config=config,
+                    )
+                else:
+                    raise
 
             # Extract cleaned filename from response
             if hasattr(response, "text") and response.text:

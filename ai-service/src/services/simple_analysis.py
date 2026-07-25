@@ -8,6 +8,7 @@ using soundfile for fast loading and avoiding redundant operations.
 import gc
 import os
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
 from loguru import logger
@@ -112,6 +113,20 @@ class SimpleAnalysisService:
         # Memory management: track analysis count for periodic cleanup
         self.analysis_count = 0
         self.gc_interval = 10  # Force GC every 10 analyses
+
+        # Parallelism for per-file audio analysis within a batch.
+        # librosa/numpy release the GIL during heavy numeric work, so a small thread pool
+        # gives real speedup. Kept conservative by default to avoid memory blow-up from
+        # multiple concurrent audio decodes. Override via BATCH_AUDIO_WORKERS env var.
+        try:
+            self.batch_audio_workers = max(
+                1, int(os.getenv("BATCH_AUDIO_WORKERS", "4"))
+            )
+        except ValueError:
+            logger.warning(
+                "Invalid BATCH_AUDIO_WORKERS value, falling back to 4 workers"
+            )
+            self.batch_audio_workers = 4
 
     @monitor_performance("filename_parsing")
     def parse_filename_for_metadata(self, filename: str) -> Dict[str, str]:
@@ -481,6 +496,206 @@ class SimpleAnalysisService:
                         f"Failed to clean up converted WAV file {converted_wav_path}: {e}"
                     )
 
+    def _analyze_single_file_in_batch(
+        self,
+        idx: int,
+        file_path: str,
+        original_filename: str,
+        ai_metadata: Dict[str, Any],
+        total_files: int,
+        sample_duration: float,
+        skip_intro: float,
+        session_id: Optional[str],
+        batch_index: Optional[int],
+        progress_publisher: Optional[Any],
+    ) -> Tuple[Dict[str, Any], bool]:
+        """
+        Run the audio-analysis portion (decode, technical, features, fingerprint, ID3) for a
+        single file in a batch. Self-contained so it can run safely on a worker thread:
+        it performs its own M4A conversion and cleans up any converted WAV before returning.
+
+        Args:
+            idx: Index of this file within the batch (for progress events / ordering)
+            file_path: Path to the (temp) audio file
+            original_filename: Original filename for reporting
+            ai_metadata: Pre-fetched AI metadata for this file (may be empty)
+            total_files: Total files in the batch
+            sample_duration: Audio sample duration in seconds
+            skip_intro: Seconds to skip from the start
+            session_id, batch_index, progress_publisher: Progress reporting context
+
+        Returns:
+            Tuple of (file_result dict, success flag)
+        """
+        file_start_time = time.time()
+        converted_wav_path = None
+        original_filepath = file_path
+
+        # Publish track.processing event
+        if progress_publisher and session_id:
+            progress_publisher.publish_event(
+                session_id,
+                "track.processing",
+                {
+                    "trackIndex": idx,
+                    "totalTracks": total_files,
+                    "fileName": original_filename,
+                },
+                batchIndex=batch_index,
+            )
+
+        try:
+            logger.info(f"Processing file {idx + 1}/{total_files}: {original_filename}")
+
+            # Handle M4A conversion if needed
+            if file_path.endswith(".m4a"):
+                converted_wav_path = self.convert_m4a_to_wav(file_path)
+                file_path = converted_wav_path
+
+            # Load audio samples for efficient analysis
+            (
+                y_harmonic,
+                y_percussive,
+                y_bpm,
+                sr,
+                harmonic_metadata,
+                percussive_metadata,
+                bpm_metadata,
+            ) = self.smart_audio_sample_loading(
+                file_path,
+                sample_duration,
+                skip_intro,
+            )
+
+            # Extract all information
+            file_metadata = self.extract_file_metadata(file_path)
+            file_metadata["file_info"]["filename"] = original_filename
+
+            technical_info = self.extract_audio_technical(file_path)
+
+            # Extract AI BPM and key if available
+            ai_bpm = ai_metadata.get("audioFeatures", {}).get("bpm", None)
+            ai_key = ai_metadata.get("audioFeatures", {}).get("key", None)
+
+            # Publish audio.analysis progress (25%)
+            if progress_publisher and session_id:
+                progress_publisher.publish_track_progress(
+                    session_id,
+                    batch_index or 0,
+                    idx,
+                    total_files,
+                    original_filename,
+                    25,
+                )
+
+            # Extract features
+            basic_features = self.extract_basic_features(
+                y_harmonic,
+                y_percussive,
+                y_bpm,
+                bpm_metadata,
+                sr,
+                file_path,
+                ai_bpm,
+                ai_key,
+            )
+
+            # Publish audio.analysis progress (50%)
+            if progress_publisher and session_id:
+                progress_publisher.publish_track_progress(
+                    session_id,
+                    batch_index or 0,
+                    idx,
+                    total_files,
+                    original_filename,
+                    50,
+                )
+
+            # Generate fingerprint
+            fingerprint = self.generate_simple_fingerprint(file_path, y_harmonic, sr)
+
+            # Publish audio.analysis progress (75%)
+            if progress_publisher and session_id:
+                progress_publisher.publish_track_progress(
+                    session_id,
+                    batch_index or 0,
+                    idx,
+                    total_files,
+                    original_filename,
+                    75,
+                )
+
+            # Extract ID3 tags
+            id3_tags = self.extract_id3_tags(original_filepath, original_filename)
+
+            # Combine all results
+            file_result = {
+                "status": "success",
+                "message": "Audio analysis completed successfully",
+                "processing_time": round(time.time() - file_start_time, 3),
+                "processing_mode": "simple",
+                "filename": original_filename,
+                **file_metadata,
+                **technical_info,
+                **basic_features,
+                **fingerprint,
+                **id3_tags,
+            }
+
+            # Add AI metadata if available
+            if ai_metadata:
+                file_result["ai_metadata"] = ai_metadata
+
+            # Publish audio.analysis progress (100% - complete)
+            if progress_publisher and session_id:
+                progress_publisher.publish_track_progress(
+                    session_id,
+                    batch_index or 0,
+                    idx,
+                    total_files,
+                    original_filename,
+                    100,
+                )
+
+            # Explicitly release audio arrays from memory
+            del y_harmonic
+            del y_percussive
+            del y_bpm
+
+            logger.info(
+                f"✅ File {idx + 1}/{total_files} completed in "
+                f"{file_result['processing_time']:.3f}s"
+            )
+
+            return file_result, True
+
+        except Exception as e:
+            logger.error(
+                f"❌ Failed to analyze file {idx + 1}/{total_files} "
+                f"({original_filename}): {e}"
+            )
+            return (
+                {
+                    "status": "error",
+                    "message": f"Analysis failed: {str(e)}",
+                    "processing_mode": "simple",
+                    "filename": original_filename,
+                    "processing_time": round(time.time() - file_start_time, 3),
+                },
+                False,
+            )
+
+        finally:
+            # Clean up converted WAV file if created
+            if converted_wav_path and os.path.exists(converted_wav_path):
+                try:
+                    os.unlink(converted_wav_path)
+                except Exception as cleanup_error:
+                    logger.warning(
+                        f"Failed to clean up converted WAV file "
+                        f"{converted_wav_path}: {cleanup_error}"
+                    )
+
     @monitor_performance("simple_analysis_batch")
     def analyze_audio_batch(
         self,
@@ -594,191 +809,59 @@ class SimpleAnalysisService:
                 )
                 ai_metadata_list = [{}] * total_files
 
-            # Step 2: Process each file for audio analysis
-            for idx, (file_path, original_filename) in enumerate(file_items):
-                file_start_time = time.time()
-                converted_wav_path = None
+            # Step 2: Process each file for audio analysis.
+            # The CPU-bound audio work (decode, features, fingerprint) for each file is
+            # independent now that AI metadata has been fetched batch-up-front, so we run
+            # files across a small thread pool. librosa/numpy release the GIL during the
+            # heavy numeric work, giving real speedup. Results are reassembled in input order.
+            # Each worker handles its own M4A conversion + WAV cleanup, so no shared
+            # converted-path bookkeeping is needed here.
+            results = [None] * total_files
+            max_workers = min(self.batch_audio_workers, total_files) or 1
 
-                # Publish track.processing event
-                if progress_publisher and session_id:
-                    progress_publisher.publish_event(
-                        session_id,
-                        "track.processing",
-                        {
-                            "trackIndex": idx,
-                            "totalTracks": total_files,
-                            "fileName": original_filename,
-                        },
-                        batchIndex=batch_index,
-                    )
-
-                try:
-                    logger.info(
-                        f"Processing file {idx + 1}/{total_files}: {original_filename}"
-                    )
-                    original_filepath = file_path
-                    # Handle M4A conversion if needed
-                    if file_path.endswith(".m4a"):
-                        converted_wav_path = self.convert_m4a_to_wav(file_path)
-                        converted_wav_paths.append(converted_wav_path)
-                        file_path = converted_wav_path
-
-                    # Get AI metadata for this file (matched by order)
-                    ai_metadata = (
-                        ai_metadata_list[idx] if idx < len(ai_metadata_list) else {}
-                    )
-
-                    # Load audio samples for efficient analysis
-                    (
-                        y_harmonic,
-                        y_percussive,
-                        y_bpm,
-                        sr,
-                        harmonic_metadata,
-                        percussive_metadata,
-                        bpm_metadata,
-                    ) = self.smart_audio_sample_loading(
+            with ThreadPoolExecutor(
+                max_workers=max_workers, thread_name_prefix="batch_audio"
+            ) as executor:
+                future_to_idx = {
+                    executor.submit(
+                        self._analyze_single_file_in_batch,
+                        idx,
                         file_path,
+                        original_filename,
+                        ai_metadata_list[idx] if idx < len(ai_metadata_list) else {},
+                        total_files,
                         sample_duration,
                         skip_intro,
-                    )
+                        session_id,
+                        batch_index,
+                        progress_publisher,
+                    ): idx
+                    for idx, (file_path, original_filename) in enumerate(file_items)
+                }
 
-                    # Extract all information
-                    file_metadata = self.extract_file_metadata(file_path)
-                    file_metadata["file_info"]["filename"] = original_filename
-
-                    technical_info = self.extract_audio_technical(file_path)
-
-                    # Extract AI BPM and key if available
-                    ai_bpm = ai_metadata.get("audioFeatures", {}).get("bpm", None)
-                    ai_key = ai_metadata.get("audioFeatures", {}).get("key", None)
-
-                    # Publish audio.analysis progress (25%)
-                    if progress_publisher and session_id:
-                        progress_publisher.publish_track_progress(
-                            session_id,
-                            batch_index or 0,
-                            idx,
-                            total_files,
-                            original_filename,
-                            25,
+                for future in as_completed(future_to_idx):
+                    idx = future_to_idx[future]
+                    try:
+                        file_result, ok = future.result()
+                    except Exception as e:
+                        # Defensive: the worker catches its own errors, but guard anyway
+                        # so one bad file never aborts the whole batch.
+                        logger.error(
+                            f"❌ Unexpected error analyzing file {idx + 1}/{total_files}: {e}"
                         )
-
-                    # Extract features
-                    basic_features = self.extract_basic_features(
-                        y_harmonic,
-                        y_percussive,
-                        y_bpm,
-                        bpm_metadata,
-                        sr,
-                        file_path,
-                        ai_bpm,
-                        ai_key,
-                    )
-
-                    # Publish audio.analysis progress (50%)
-                    if progress_publisher and session_id:
-                        progress_publisher.publish_track_progress(
-                            session_id,
-                            batch_index or 0,
-                            idx,
-                            total_files,
-                            original_filename,
-                            50,
-                        )
-
-                    # Generate fingerprint
-                    fingerprint = self.generate_simple_fingerprint(
-                        file_path, y_harmonic, sr
-                    )
-
-                    # Publish audio.analysis progress (75%)
-                    if progress_publisher and session_id:
-                        progress_publisher.publish_track_progress(
-                            session_id,
-                            batch_index or 0,
-                            idx,
-                            total_files,
-                            original_filename,
-                            75,
-                        )
-
-                    # Extract ID3 tags
-                    id3_tags = self.extract_id3_tags(
-                        original_filepath, original_filename
-                    )
-
-                    # Combine all results
-                    file_result = {
-                        "status": "success",
-                        "message": "Audio analysis completed successfully",
-                        "processing_time": round(time.time() - file_start_time, 3),
-                        "processing_mode": "simple",
-                        "filename": original_filename,
-                        **file_metadata,
-                        **technical_info,
-                        **basic_features,
-                        **fingerprint,
-                        **id3_tags,
-                    }
-
-                    # Add AI metadata if available
-                    if ai_metadata:
-                        file_result["ai_metadata"] = ai_metadata
-
-                    results.append(file_result)
-                    successful += 1
-
-                    # Publish audio.analysis progress (100% - complete)
-                    if progress_publisher and session_id:
-                        progress_publisher.publish_track_progress(
-                            session_id,
-                            batch_index or 0,
-                            idx,
-                            total_files,
-                            original_filename,
-                            100,
-                        )
-
-                    # Explicitly release audio arrays from memory
-                    del y_harmonic
-                    del y_percussive
-                    del y_bpm
-
-                    logger.info(
-                        f"✅ File {idx + 1}/{total_files} completed in {file_result['processing_time']:.3f}s"
-                    )
-
-                except Exception as e:
-                    logger.error(
-                        f"❌ Failed to analyze file {idx + 1}/{total_files} "
-                        f"({original_filename}): {e}"
-                    )
-                    failed += 1
-
-                    # Add error result maintaining order
-                    results.append(
-                        {
+                        file_result = {
                             "status": "error",
                             "message": f"Analysis failed: {str(e)}",
                             "processing_mode": "simple",
-                            "filename": original_filename,
-                            "processing_time": round(time.time() - file_start_time, 3),
+                            "filename": file_items[idx][1],
                         }
-                    )
+                        ok = False
 
-                finally:
-                    # Clean up converted WAV file if created
-                    if converted_wav_path and os.path.exists(converted_wav_path):
-                        try:
-                            os.unlink(converted_wav_path)
-                            if converted_wav_path in converted_wav_paths:
-                                converted_wav_paths.remove(converted_wav_path)
-                        except Exception as cleanup_error:
-                            logger.warning(
-                                f"Failed to clean up converted WAV file "
-                                f"{converted_wav_path}: {cleanup_error}"
-                            )
+                    results[idx] = file_result
+                    if ok:
+                        successful += 1
+                    else:
+                        failed += 1
 
             # Track analysis count and perform periodic garbage collection
             self.analysis_count += total_files
@@ -816,12 +899,16 @@ class SimpleAnalysisService:
             logger.error(f"Batch audio analysis failed: {e}")
             gc.collect()
 
+            # results may have been pre-sized with None placeholders if we failed mid-batch;
+            # drop any unfilled slots so callers never see None entries.
+            partial_results = [r for r in results if r is not None]
+
             return {
                 "status": "error",
                 "total_files": total_files,
                 "successful": successful,
                 "failed": failed,
-                "results": results,
+                "results": partial_results,
                 "message": f"Batch analysis failed: {str(e)}",
                 "processing_time": round(time.time() - start_time, 3),
                 "processing_mode": "simple_batch",
