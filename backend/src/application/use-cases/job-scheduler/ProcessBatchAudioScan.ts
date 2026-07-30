@@ -29,7 +29,14 @@ export class ProcessBatchAudioScanUseCase {
     createdTracks: MusicTrack[];
   }> {
     this.logger.info('Processing batch audio scan', { data });
-    const { audioFiles, sessionId, batchIndex, libraryId: _libraryId, force } = data;
+    const {
+      audioFiles,
+      sessionId,
+      batchIndex,
+      libraryId: _libraryId,
+      force,
+      skipAiMetadata,
+    } = data;
 
     try {
       let validJobs: AudioFile[];
@@ -108,6 +115,8 @@ export class ProcessBatchAudioScanUseCase {
         validJobs.map((jobData) => jobData.filePath),
         sessionId,
         batchIndex,
+        undefined, // skipImageSearch — unrelated flag, not sourced from job data here
+        skipAiMetadata,
       );
       this.logger.debug(`Analyzed ${result.results.length} files in batch`, {
         result,

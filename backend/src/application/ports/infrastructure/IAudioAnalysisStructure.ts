@@ -11,5 +11,6 @@ export interface IAudioAnalysisStructure {
     sessionId?: string,
     batchIndex?: number,
     skipImageSearch?: boolean,
+    skipAiMetadata?: boolean,
   ): Promise<AudioAnalysisBatchResponse>;
 }

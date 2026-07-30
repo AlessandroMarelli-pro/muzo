@@ -34,6 +34,7 @@ export class AudioScanSchedulerProducerAdapter implements IAudioScanSchedulerPro
     contextUser: ActionContext['user'],
     incremental: boolean,
     force?: boolean,
+    skipAiMetadata?: boolean,
   ): Promise<{ sessionId: SessionId }> {
     const batchJobs: {
       name: string;
@@ -67,6 +68,7 @@ export class AudioScanSchedulerProducerAdapter implements IAudioScanSchedulerPro
         libraryId,
         incremental,
         force,
+        skipAiMetadata,
       };
 
       batchJobs.push({

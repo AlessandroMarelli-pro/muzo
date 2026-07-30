@@ -33,6 +33,8 @@ export interface AudioScanBatchJobData {
   incremental: boolean;
   /** When true, skip areFilesAnalyzed check and re-analyze all files in the batch */
   force?: boolean;
+  /** When true, skip Gemini/AI metadata extraction and run DSP-only analysis */
+  skipAiMetadata?: boolean;
 }
 
 export interface HqAudioAcquireJobData {

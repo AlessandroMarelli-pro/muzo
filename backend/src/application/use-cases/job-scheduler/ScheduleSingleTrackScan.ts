@@ -1,23 +1,9 @@
-import { FileInfo } from 'src/application/ports/dtos/FileInfo';
 import { MusicTrackId, SessionId } from 'src/kernel/ids';
-import { MusicTrack } from 'src/kernel/types';
 import { ILogger } from '../../ports/infrastructure/ILogger';
 import { IMusicTrackRepository } from '../../ports/repositories/IMusicTrackRepository';
 import { IScanSessionRepository } from '../../ports/repositories/IScanSessionRepository';
 import { ScheduleBatchAudioScanUseCase } from './ScheduleBatchAudioScan';
-
-function trackToFileInfo(track: MusicTrack): FileInfo {
-  const { filePath, fileName, fileSize, fileCreatedAt } = track.fileInfo;
-  const lastDot = fileName.lastIndexOf('.');
-  const extension = lastDot >= 0 ? fileName.slice(lastDot) : '';
-  return {
-    filePath,
-    fileName,
-    fileSize,
-    extension: extension || '.mp3',
-    lastModified: fileCreatedAt,
-  };
-}
+import { trackToFileInfo } from './track-to-file-info';
 
 export class ScheduleSingleTrackScanUseCase {
   constructor(

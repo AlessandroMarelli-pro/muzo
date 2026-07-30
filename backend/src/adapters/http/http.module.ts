@@ -8,6 +8,7 @@ import { ImageController } from './controllers/image.controller';
 import { OAuthRedirectController } from './controllers/oauth-redirect.controller';
 import { RecommendationController } from './controllers/recommendation.controller';
 import { ScanProgressController } from './controllers/scan-progress.controller';
+import { ScanTracksByCriteriaController } from './controllers/scan-tracks-by-criteria.controller';
 
 @Module({
   imports: [ConfigModule, UseCasesModule],
@@ -17,6 +18,7 @@ import { ScanProgressController } from './controllers/scan-progress.controller';
     RecommendationController,
     HealthController,
     ScanProgressController,
+    ScanTracksByCriteriaController,
     OAuthRedirectController,
   ],
   providers: [HttpAuthGuard],
