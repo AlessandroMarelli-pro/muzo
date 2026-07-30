@@ -63,7 +63,10 @@ class GeminiMetadataResource(Resource):
             if not self.gemini_extractor or not self.gemini_extractor._is_available():
                 return {
                     "error": "Gemini service not available",
-                    "message": "Gemini API key not configured. Set GEMINI_API_KEY environment variable.",
+                    "message": (
+                        "Vertex AI is not configured. Set GOOGLE_CLOUD_PROJECT and ensure "
+                        "Application Default Credentials are available."
+                    ),
                     "status": "error",
                 }, 503
 

@@ -10,6 +10,7 @@ This combines the best of both approaches:
 
 import json
 import os
+import statistics
 import sys
 
 sys.path.append(os.path.join(os.path.dirname(__file__), "src"))
@@ -48,6 +49,14 @@ class EnhancedAdaptiveBPMDetector:
         self.beat_threshold = 0.45
         self.min_bpm = 60
         self.max_bpm = 240
+
+        # STFT parameters for the Rice pipeline (_filterbank_fast /
+        # _smoothing_fast / _comb_filter_fast). These MUST match the
+        # nperseg/noverlap used in _filterbank_fast's spectrogram call --
+        # a mismatched hop here silently produces a BPM off by whatever
+        # factor n_fft/hop_length is wrong by.
+        self.n_fft = 1024
+        self.hop_length = 512
 
     @monitor_performance("enhanced_adaptive_bpm_detection")
     def detect_bpm(self, y: np.ndarray, sr: int) -> Tuple[float, float]:
@@ -133,7 +142,12 @@ class EnhancedAdaptiveBPMDetector:
         """Fast frequency band separation."""
         # Use scipy's spectrogram for efficiency
         freqs, times, stft = signal.spectrogram(
-            y, fs=sr, window="hann", nperseg=1024, noverlap=512, mode="magnitude"
+            y,
+            fs=sr,
+            window="hann",
+            nperseg=self.n_fft,
+            noverlap=self.n_fft - self.hop_length,
+            mode="magnitude",
         )
 
         # Create frequency bands
@@ -163,7 +177,7 @@ class EnhancedAdaptiveBPMDetector:
 
         for band in bands:
             # Simple smoothing using moving average
-            window_size = max(1, int(0.1 * sr / 1024))  # 0.1 second window
+            window_size = max(1, int(0.1 * sr / self.hop_length))  # 0.1 second window
 
             # Ensure window_size is odd and less than signal length
             if window_size % 2 == 0:
@@ -207,8 +221,8 @@ class EnhancedAdaptiveBPMDetector:
         autocorr = autocorr[autocorr.size // 2 :]
 
         # Find peaks in autocorrelation
-        min_lag = int(60 * sr / (self.max_bpm * 1024))  # Convert BPM to lag
-        max_lag = int(60 * sr / (self.min_bpm * 1024))
+        min_lag = int(60 * sr / (self.max_bpm * self.hop_length))  # Convert BPM to lag
+        max_lag = int(60 * sr / (self.min_bpm * self.hop_length))
 
         min_lag = max(min_lag, 1)
         max_lag = min(max_lag, len(autocorr) - 1)
@@ -217,7 +231,7 @@ class EnhancedAdaptiveBPMDetector:
         peaks, properties = signal.find_peaks(
             autocorr[min_lag:max_lag],
             height=np.percentile(autocorr[min_lag:max_lag], 70),
-            distance=max(1, int(sr / (200 * 1024))),
+            distance=max(1, int(sr / (200 * self.hop_length))),
         )
 
         if len(peaks) == 0:
@@ -225,37 +239,49 @@ class EnhancedAdaptiveBPMDetector:
 
         # Convert peak lag to BPM
         peak_lag = peaks[0] + min_lag
-        bpm = 60 * sr / (peak_lag * 1024)
+        bpm = 60 * sr / (peak_lag * self.hop_length)
         bpm = self.normalize_bpm(bpm)
         return float(bpm)
 
-    def normalize_bpm(self, raw_bpm):
+    # Canonical octave-folding range used by BOTH detection branches (FFT and
+    # spectral flux) and by cross-chunk aggregation. Previously the FFT path
+    # used normalize_bpm's non-overlapping 60-200 range tiling (which only
+    # ever divides, and matches on divisor=1 for any input already in 60-200,
+    # so it never actually folds a real half-tempo reading) while the flux
+    # path used a separate 80-160 fold via _check_harmonics_spectral. Two
+    # different conventions meant a branch flip could look like an octave
+    # jump even when both branches "worked". One convention, used everywhere,
+    # removes that failure mode.
+    OCTAVE_FOLD_RANGE = (80, 160)
+
+    def normalize_bpm(self, raw_bpm: float) -> float:
         """
-        Normalize BPM to a reasonable range (60-200) by detecting harmonics.
+        Fold a raw BPM estimate toward the canonical 80-160 range by halving
+        or doubling, trying the direction that lands closest to the range.
+        Unlike the historical divisor-only version, this can also multiply,
+        so a genuine half-tempo detection (e.g. 70 when the true tempo is
+        140) gets corrected instead of passed through unchanged.
         """
-        # Common musical BPM ranges
-        reasonable_ranges = [
-            (60, 80),  # Slow ballads
-            (80, 120),  # Medium tempo
-            (120, 160),  # Up-tempo
-            (160, 200),  # Very fast
-        ]
+        low, high = self.OCTAVE_FOLD_RANGE
+        if low <= raw_bpm <= high:
+            return float(raw_bpm)
 
-        # Try different divisions
-        for divisor in [
-            1,
-            2,
-            4,
-            8,
-        ]:
-            normalized = raw_bpm / divisor
+        candidates = [raw_bpm]
+        bpm = raw_bpm
+        while bpm > high:
+            bpm /= 2
+            candidates.append(bpm)
+        bpm = raw_bpm
+        while bpm < low:
+            bpm *= 2
+            candidates.append(bpm)
 
-            # Check if it falls in a reasonable range
-            for min_bpm, max_bpm in reasonable_ranges:
-                if min_bpm <= normalized <= max_bpm:
-                    return normalized
-
-        # If nothing works, return the original
+        in_range = [c for c in candidates if low <= c <= high]
+        if in_range:
+            # Prefer the in-range candidate closest to the raw value in
+            # octave-distance (fewest halvings/doublings), i.e. the first
+            # one found walking outward from raw_bpm.
+            return float(in_range[0])
         return float(raw_bpm)
 
     def _calculate_beat_confidence_fast(
@@ -285,10 +311,9 @@ class EnhancedAdaptiveBPMDetector:
 
             # 2. Find periodicity strength at expected beat interval
             # Calculate expected lag from BPM
+            hop_length = self.hop_length  # Must match _filterbank_fast's spectrogram hop
             if 60 <= bpm <= 240:
                 expected_beat_interval_sec = 60.0 / bpm
-                # Convert to frames (using hop_length from spectrogram)
-                hop_length = 512  # From _filterbank_fast
                 expected_lag = int(expected_beat_interval_sec * sr / hop_length)
             else:
                 expected_lag = None
@@ -432,8 +457,9 @@ class EnhancedAdaptiveBPMDetector:
             # Use median for robustness
             estimated_bpm = np.median(valid_bpms)
 
-            # Check for harmonics
-            estimated_bpm = self._check_harmonics_spectral(estimated_bpm, valid_bpms)
+            # Fold to the canonical octave range (same policy as the FFT branch,
+            # so a branch flip cannot look like an octave jump).
+            estimated_bpm = self.normalize_bpm(estimated_bpm)
 
             # Calculate beat strength from spectral flux peak heights
             # Similar to autocorr[lag] in FFT detector
@@ -459,37 +485,6 @@ class EnhancedAdaptiveBPMDetector:
         except Exception as e:
             logger.warning(f"Spectral flux BPM detection failed: {e}")
             return 120.0, 0.0
-
-    def _check_harmonics_spectral(
-        self, detected_bpm: float, valid_bpms: np.ndarray
-    ) -> float:
-        """Check for harmonics in spectral flux results."""
-        try:
-            # Check if detected BPM is in common musical range
-            if 80 <= detected_bpm <= 160:
-                return detected_bpm
-
-            # Check for sub-harmonic (half the BPM)
-            sub_harmonic_bpm = detected_bpm / 2
-            if 80 <= sub_harmonic_bpm <= 160:
-                logger.debug(
-                    f"Spectral harmonic check: preferring sub-harmonic {sub_harmonic_bpm:.1f} BPM over {detected_bpm:.1f} BPM"
-                )
-                return sub_harmonic_bpm
-
-            # Check for harmonic (double the BPM)
-            harmonic_bpm = detected_bpm * 2
-            if 80 <= harmonic_bpm <= 160:
-                logger.debug(
-                    f"Spectral harmonic check: preferring harmonic {harmonic_bpm:.1f} BPM over {detected_bpm:.1f} BPM"
-                )
-                return harmonic_bpm
-
-            return detected_bpm
-
-        except Exception as e:
-            logger.warning(f"Spectral harmonic check failed: {e}")
-            return detected_bpm
 
     @monitor_performance("detect_bpm_from_file")
     def detect_bpm_from_file(
@@ -564,65 +559,84 @@ class EnhancedAdaptiveBPMDetector:
             logger.error(f"Enhanced adaptive file-based BPM detection failed: {e}")
             return 120.0, 0.0, []
 
+    # Chunk BPMs within this fraction of each other are considered the same
+    # tempo for aggregation purposes. Exact-float-equality (the historical
+    # behavior) almost never matches across independently-estimated chunks,
+    # which meant aggregation degenerated into "pick the single strongest
+    # chunk" on nearly every track.
+    CHUNK_CLUSTER_TOLERANCE = 0.03
+
     def _get_most_frequent_bpm(
         self, bpm_with_strength_results: List[dict]
     ) -> Tuple[float, float]:
-        bpm_with_strength_results.sort(key=lambda x: x["beat_strength"], reverse=True)
+        """
+        Aggregate per-chunk (bpm, beat_strength) estimates into a single
+        track-level BPM using tolerance-based clustering rather than exact
+        value matching.
 
-        # filter strength == 0
-        bpm_with_strength_results_filtered = [
-            result
-            for result in bpm_with_strength_results
-            if result["beat_strength"] > 0
-        ]
-
-        if len(bpm_with_strength_results_filtered) == 0:
-            bpm_with_strength_results_filtered = bpm_with_strength_results
-        bpm_with_strength_results = bpm_with_strength_results_filtered
-
-        """Get the most frequent BPM from a list of BPM values."""
+        Steps:
+        1. Fold every chunk's BPM to the canonical octave range first, so a
+           chunk that reads 64 and one that reads 128 reinforce each other
+           instead of being counted as disagreeing candidates.
+        2. Group folded BPMs into clusters within CHUNK_CLUSTER_TOLERANCE of
+           each other (a sliding window over sorted values, not just exact
+           equality).
+        3. Pick the largest cluster; ties broken by summed beat_strength.
+        4. Report the cluster's median BPM (from the original, unfolded
+           values of its members) and its strength-weighted mean strength.
+        """
         if not bpm_with_strength_results:
             return 120.0, 0.0
 
-        # Use numpy to find most frequent value
-        unique_values, counts = np.unique(
-            [result["bpm"] for result in bpm_with_strength_results], return_counts=True
+        # Drop zero-strength results (failed chunks) unless everything failed.
+        usable = [r for r in bpm_with_strength_results if r["beat_strength"] > 0]
+        if not usable:
+            usable = bpm_with_strength_results
+
+        folded = [
+            {
+                "bpm": r["bpm"],
+                "folded_bpm": self.normalize_bpm(r["bpm"]),
+                "beat_strength": r["beat_strength"],
+            }
+            for r in usable
+        ]
+        folded.sort(key=lambda x: x["folded_bpm"])
+
+        clusters: List[List[dict]] = []
+        for item in folded:
+            placed = False
+            for cluster in clusters:
+                cluster_center = statistics.median(m["folded_bpm"] for m in cluster)
+                if cluster_center == 0:
+                    continue
+                if (
+                    abs(item["folded_bpm"] - cluster_center) / cluster_center
+                    <= self.CHUNK_CLUSTER_TOLERANCE
+                ):
+                    cluster.append(item)
+                    placed = True
+                    break
+            if not placed:
+                clusters.append([item])
+
+        def cluster_strength(cluster: List[dict]) -> float:
+            return sum(m["beat_strength"] for m in cluster)
+
+        best_cluster = max(clusters, key=lambda c: (len(c), cluster_strength(c)))
+
+        most_frequent_bpm = round(
+            float(statistics.median(m["bpm"] for m in best_cluster)), 1
+        )
+        total_strength = cluster_strength(best_cluster)
+        most_frequent_strength = round(
+            total_strength / len(best_cluster) if best_cluster else 0.0, 3
         )
 
-        if len(unique_values) == len(bpm_with_strength_results):
-            strongest_beat_strength = bpm_with_strength_results[0]
-            return strongest_beat_strength["bpm"], strongest_beat_strength[
-                "beat_strength"
-            ]
-        # highest unique value count
-        most_frequent_count = np.max(counts)
-        # indices from unique values that match the most frequent count
-        most_frequent_indices = np.where(counts == most_frequent_count)[0]
-
-        frequent_bpm_results = []
-        for idx in most_frequent_indices:
-            frequent_bpm = float(unique_values[idx])
-            # strength is first value from bpm_with_strength_results that match the bpm
-            frequent_strength = next(
-                (
-                    result["beat_strength"]
-                    for result in bpm_with_strength_results
-                    if result["bpm"] == frequent_bpm
-                ),
-                0.0,
-            )
-
-            frequent_bpm_results.append(
-                {"bpm": frequent_bpm, "beat_strength": frequent_strength}
-            )
-        frequent_bpm_results.sort(key=lambda x: x["beat_strength"], reverse=True)
-
-        most_frequent_bpm_result = frequent_bpm_results[0]
-        most_frequent_bpm = round(most_frequent_bpm_result["bpm"], 1)
-
-        most_frequent_strength = round(most_frequent_bpm_result["beat_strength"], 3)
         logger.debug(
-            f"Most frequent BPM: {most_frequent_bpm:.1f} (appears {most_frequent_count} times)"
+            f"Most frequent BPM: {most_frequent_bpm:.1f} "
+            f"(cluster of {len(best_cluster)}/{len(usable)} chunks, "
+            f"folded_center={statistics.median(m['folded_bpm'] for m in best_cluster):.1f})"
         )
 
         return most_frequent_bpm, most_frequent_strength

@@ -80,9 +80,14 @@ class BPMDetectionResource(Resource):
 
                 original_filename = audio_file.filename
 
+                sample_duration = float(request.form.get("sample_duration", 10.0))
+                skip_intro = float(request.form.get("skip_intro", 15.0))
+
                 # Detect BPM using selected strategy
                 bpm_result = self._detect_bpm(
                     temp_file_path,
+                    sample_duration=sample_duration,
+                    skip_intro=skip_intro,
                 )
 
                 # Prepare response
@@ -119,6 +124,8 @@ class BPMDetectionResource(Resource):
     def _detect_bpm(
         self,
         file_path: str,
+        sample_duration: float = 10.0,
+        skip_intro: float = 15.0,
     ) -> dict:
         """
         Detect BPM using the specified strategy.
@@ -127,7 +134,6 @@ class BPMDetectionResource(Resource):
             file_path: Path to audio file
             sample_duration: Duration of sample to analyze
             skip_intro: Seconds to skip from beginning
-            skip_outro: Seconds to skip from end
 
         Returns:
             dict: BPM detection results
@@ -137,23 +143,35 @@ class BPMDetectionResource(Resource):
         start_time = time.time()
 
         try:
-            # Use adaptive detector
             from src.services.enhanced_adaptive_bpm_detector import (
                 EnhancedAdaptiveBPMDetector,
             )
+            from src.services.simple_audio_loader import SimpleAudioLoader
 
             adaptive_detector = EnhancedAdaptiveBPMDetector()
 
-            bpm, confidence = adaptive_detector.detect_bpm_from_file(file_path)
+            # detect_bpm_from_file requires bpm_metadata describing which
+            # window of the file to analyze (start_time/duration/score).
+            # smart_audio_sample_loading picks the best-scoring window for
+            # BPM detection instead of blindly using skip_intro directly.
+            audio_loader = SimpleAudioLoader()
+            _, _, _, _, _, _, bpm_metadata = audio_loader.smart_audio_sample_loading(
+                file_path, sample_duration=sample_duration, skip_intro=skip_intro
+            )
+
+            bpm, confidence, all_results = adaptive_detector.detect_bpm_from_file(
+                file_path, bpm_metadata
+            )
 
             return {
                 "bpm": float(bpm),
                 "confidence": float(confidence),
+                "all_results": all_results,
                 "processing_time": time.time() - start_time,
             }
 
         except Exception as e:
-            logger.error(f"BPM detection failed: {e}")
+            logger.exception(f"BPM detection failed for {file_path}")
             return {
                 "bpm": 120.0,
                 "confidence": 0.0,

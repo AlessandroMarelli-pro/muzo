@@ -158,7 +158,7 @@ type Mutation {
   resetQueue: Boolean!
   scanTrack(force: Boolean, trackId: Base64ID!): Base64ID!
   startLibraryScan(incremental: Boolean, libraryId: Base64ID!): Base64ID!
-  stopLibraryScan(libraryId: Base64ID!, sessionId: Base64ID!): Boolean!
+  stopLibraryScan(libraryId: Base64ID!, sessionId: Base64ID): Boolean!
   syncPlaylistToSpotify(playlistId: Base64ID!, userId: String!): ThirdPartySyncResult!
   syncPlaylistToTidal(playlistId: Base64ID!, userId: String!): ThirdPartySyncResult!
   syncPlaylistToYouTube(playlistId: Base64ID!, userId: String!): ThirdPartySyncResult!

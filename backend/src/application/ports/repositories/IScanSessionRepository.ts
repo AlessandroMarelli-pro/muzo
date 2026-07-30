@@ -1,5 +1,5 @@
 import { Maybe } from 'src/kernel/common';
-import { SessionId } from 'src/kernel/ids';
+import { MusicLibraryId, SessionId } from 'src/kernel/ids';
 import { ScanStatus, Session } from 'src/kernel/types/model-types';
 import { createToken } from '../../utils/create-token';
 
@@ -29,4 +29,5 @@ export interface IScanSessionRepository {
   getActiveSessions(): Promise<Session[]>;
   getCompletedSessions(): Promise<Session[]>;
   deleteSession(sessionId: SessionId): Promise<void>;
+  deleteAllSessionsForLibrary(libraryId: MusicLibraryId): Promise<void>;
 }

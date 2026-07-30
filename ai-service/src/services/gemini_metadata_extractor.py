@@ -168,8 +168,13 @@ class GeminiMetadataExtractor(BaseMetadataExtractor):
         """
         Initialize the Gemini metadata extractor service.
 
+        Authentication uses Vertex AI with Application Default Credentials (ADC).
+        Run `gcloud auth application-default login`, or point
+        GOOGLE_APPLICATION_CREDENTIALS at a service account key file.
+
         Args:
-            api_key: Gemini API key. If not provided, will use GEMINI_API_KEY env var.
+            api_key: Deprecated and ignored. Kept only so existing callers such as
+                create_metadata_extractor(api_key=...) keep working.
         """
         logger.info("GeminiMetadataExtractor initializing")
 
@@ -177,10 +182,20 @@ class GeminiMetadataExtractor(BaseMetadataExtractor):
             logger.error(
                 "Google GenAI SDK not available. Install with: pip install google-genai"
             )
-            api_key = None
-        else:
-            # Get API key from parameter or environment
-            api_key = api_key or os.getenv("GEMINI_API_KEY")
+
+        if api_key:
+            logger.warning(
+                "An api_key was passed to GeminiMetadataExtractor but API key auth is no "
+                "longer supported. Ignoring it and using Vertex AI with ADC instead."
+            )
+
+        # Vertex AI configuration. The project must be set for the client to build.
+        self.project_id = os.getenv("GOOGLE_CLOUD_PROJECT")
+        self.location = os.getenv("GOOGLE_CLOUD_LOCATION", "global")
+
+        # Model used for the lightweight filename-cleaning calls. Overridable because
+        # model availability differs per Vertex location.
+        self.cleaning_model = os.getenv("GEMINI_CLEANING_MODEL", "gemini-2.5-flash-lite")
 
         # Rate limiting configuration
         max_requests_per_minute = int(os.getenv("GEMINI_MAX_REQUESTS_PER_MINUTE", "60"))
@@ -217,9 +232,9 @@ class GeminiMetadataExtractor(BaseMetadataExtractor):
             top_k = 1
         seed = int(os.getenv("GEMINI_SEED", "42"))
 
-        # Initialize base class
+        # Initialize base class. api_key stays None: auth is ADC-based.
         super().__init__(
-            api_key=api_key,
+            api_key=None,
             max_requests_per_minute=max_requests_per_minute,
             max_requests_per_day=max_requests_per_day,
             max_retries=max_retries,
@@ -343,17 +358,20 @@ class GeminiMetadataExtractor(BaseMetadataExtractor):
         # This is conservative; actual tokenization may be more efficient
         return len(text) // 4
 
-    def _pad_system_instruction_if_needed(self, system_instruction: str) -> str:
+    def _pad_system_instruction_if_needed(
+        self, system_instruction: str, model_for_caching: Optional[str] = None
+    ) -> str:
         """
         Pad system instruction to meet minimum token requirements for context caching.
 
         Args:
             system_instruction: Original system instruction
+            model_for_caching: Model the cache targets. Defaults to the main model.
 
         Returns:
             Padded system instruction if needed, otherwise original
         """
-        model = self._get_model_for_caching().lower()
+        model = (model_for_caching or self._get_model_for_caching()).lower()
 
         # Determine minimum token requirement based on model type
         if "pro" in model:
@@ -632,7 +650,9 @@ ADDITIONAL CONTEXT FOR METADATA EXTRACTION:
             # Pad if needed to meet minimum token requirements
             # Check current token count first
             current_tokens = self._estimate_token_count(system_instruction)
-            model_for_caching = self._get_model_for_caching()
+            # Must match the model used for the cleaning requests themselves: Vertex AI
+            # rejects a request whose model differs from the cached content's model.
+            model_for_caching = self.cleaning_model
             model_lower = model_for_caching.lower()
 
             # Determine minimum token requirement based on model type
@@ -648,7 +668,7 @@ ADDITIONAL CONTEXT FOR METADATA EXTRACTION:
 
             # Pad if needed
             system_instruction = self._pad_system_instruction_if_needed(
-                system_instruction
+                system_instruction, model_for_caching
             )
 
             # Verify padding worked - add extra padding if needed
@@ -747,24 +767,41 @@ ADDITIONAL CONTEXT FOR METADATA EXTRACTION:
             self._filename_cleaning_cache_name = None
 
     def _initialize_client(self):
-        """Initialize the Gemini API client."""
+        """
+        Initialize the Vertex AI Gemini client using Application Default Credentials.
+
+        Requires GOOGLE_CLOUD_PROJECT to be set and ADC to be available (either
+        `gcloud auth application-default login` or GOOGLE_APPLICATION_CREDENTIALS).
+        """
         if not GEMINI_AVAILABLE:
             return None
-        if not self.api_key:
-            logger.warning(
-                "Gemini API key not found. Set GEMINI_API_KEY environment variable."
+        if not self.project_id:
+            logger.error(
+                "GOOGLE_CLOUD_PROJECT is not set. Gemini metadata extraction is disabled. "
+                "Set it to your Google Cloud project ID."
             )
             return None
         try:
-            client = genai.Client(api_key=self.api_key)
-            logger.info("Gemini client initialized successfully")
+            client = genai.Client(
+                vertexai=True,
+                project=self.project_id,
+                location=self.location,
+            )
+            logger.info(
+                f"Gemini client initialized via Vertex AI "
+                f"(project: {self.project_id}, location: {self.location})"
+            )
             return client
         except Exception as e:
-            logger.error(f"Failed to initialize Gemini client: {e}")
+            logger.error(
+                f"Failed to initialize Vertex AI Gemini client: {e}. "
+                "Check that ADC is configured (`gcloud auth application-default login`) "
+                "and that the Vertex AI API is enabled on the project."
+            )
             return None
 
     def _is_available(self) -> bool:
-        """Check if the service is available (API key configured and SDK available)."""
+        """Check if the service is available (SDK installed and Vertex client built)."""
         return GEMINI_AVAILABLE and self.client is not None
 
     def _clean_filename_with_llm(self, filename: str) -> str:
@@ -831,7 +868,7 @@ Return ONLY the cleaned filename, nothing else. No explanations, no markdown, ju
 
             try:
                 response = self.client.models.generate_content(
-                    model="gemini-2.5-flash-lite",
+                    model=self.cleaning_model,
                     contents=cleaning_prompt,
                     config=config,
                 )
@@ -849,7 +886,7 @@ Return ONLY the cleaned filename, nothing else. No explanations, no markdown, ju
                         self.FILENAME_CLEANING_INSTRUCTIONS
                     )
                     response = self.client.models.generate_content(
-                        model="gemini-2.5-flash-lite",
+                        model=self.cleaning_model,
                         contents=cleaning_prompt,
                         config=config,
                     )
@@ -1026,7 +1063,7 @@ Return ONLY a JSON array of cleaned filenames in the same order, nothing else. F
 
             try:
                 response = self.client.models.generate_content(
-                    model="gemini-2.5-flash-lite",
+                    model=self.cleaning_model,
                     contents=user_content,
                     config=config,
                 )
@@ -1052,7 +1089,7 @@ Return ONLY a JSON array of cleaned filenames in the same order, nothing else. F
                             self.FILENAME_CLEANING_INSTRUCTIONS
                         )
                     response = self.client.models.generate_content(
-                        model="gemini-2.5-flash-lite",
+                        model=self.cleaning_model,
                         contents=user_content,
                         config=config,
                     )

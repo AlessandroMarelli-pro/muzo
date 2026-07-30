@@ -422,7 +422,7 @@ class SimpleMetadataExtractor:
             Dictionary containing ID3 tag information
         """
         try:
-            logger.info(f"Extracting ID3 tags: {file_path}")
+            logger.info(f"Extracting ID3 tags: {original_filename}")
 
             # Initialize audio_file to None in case extraction fails
             audio_file = None

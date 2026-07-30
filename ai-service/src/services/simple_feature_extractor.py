@@ -436,8 +436,19 @@ class SimpleFeatureExtractor:
             tempo, beat_strength, bpm_results = bpm_detector.detect_bpm_from_file(
                 file_path, bpm_metadata
             )
+            tempo_source = "dsp"
             if ai_bpm:
+                # The LLM-provided BPM silently overrides the detector's value.
+                # If AI metadata is only intermittently available, the same
+                # file can report different tempos across runs with no
+                # visible reason -- log it and surface the source downstream
+                # so that's diagnosable instead of invisible.
+                logger.info(
+                    f"Overriding detected tempo {tempo} BPM with AI-provided "
+                    f"tempo {ai_bpm} BPM for {file_path}"
+                )
                 tempo = ai_bpm
+                tempo_source = "ai"
 
             # Use harmonic sample for key detection (key is based on tonal content)
             key, camelot_key, tonnetz_mode = KeyDetector(
@@ -478,6 +489,7 @@ class SimpleFeatureExtractor:
                     "musical_features": {
                         **musical_features,
                         "tempo": tempo,
+                        "tempo_source": tempo_source,
                         "key": key,
                         "camelot_key": camelot_key,
                     },

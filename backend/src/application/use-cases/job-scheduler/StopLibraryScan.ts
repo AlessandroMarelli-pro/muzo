@@ -13,13 +13,21 @@ export class StopLibraryScanUseCase {
     this.logger = loggerFactory.createLogger('StopLibraryScanUseCase');
   }
 
-  async execute(libraryId: MusicLibraryId, sessionId: SessionId): Promise<boolean> {
+  async execute(libraryId: MusicLibraryId, sessionId: SessionId | null): Promise<boolean> {
     this.logger.info(`Stopping library scan for library ${libraryId} with session ${sessionId}`);
     await this.musicLibraryRepository.updateScanStatus(libraryId, 'IDLE');
-    await this.scanSessionRepository.deleteSession(sessionId);
-    this.logger.info(
-      `Successfully stopped library scan for library ${libraryId} with session ${sessionId}`,
-    );
+    if (sessionId) {
+      await this.scanSessionRepository.deleteSession(sessionId);
+      this.logger.info(
+        `Successfully stopped library scan for library ${libraryId} with session ${sessionId}`,
+      );
+    } else {
+      await this.scanSessionRepository.deleteAllSessionsForLibrary(libraryId);
+      this.logger.info(
+        `Successfully stopped library scan for library ${libraryId} with all sessions deleted`,
+      );
+    }
+
     return true;
   }
 }

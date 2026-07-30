@@ -5,7 +5,7 @@ import {
   UpdateScanSessionInput,
 } from 'src/application/ports/repositories/IScanSessionRepository';
 import { PRISMA_SERVICE, PrismaService } from 'src/infrastructure/database/prisma.service';
-import { extractModelId, SessionId } from 'src/kernel/ids';
+import { extractModelId, MusicLibraryId, SessionId } from 'src/kernel/ids';
 import { getCurrentUserId, Maybe, models } from 'src/kernel/types';
 import { ScanStatusEnum, Session } from 'src/kernel/types/model-types';
 import { toDomain, toPrisma, toPrismaUpdate } from './scan-session.mapper';
@@ -127,7 +127,11 @@ export class ScanSessionRepository implements IScanSessionRepository {
           data: updateData,
         });
       })
-      .then((result) => (result ? toDomain(result) : null));
+      .then((result) => (result ? toDomain(result) : null))
+      .catch((error) => {
+        console.error('Error updating session progress', error);
+        return null;
+      });
   }
 
   /**
@@ -186,6 +190,14 @@ export class ScanSessionRepository implements IScanSessionRepository {
     await this.prisma.scanSession.delete({
       where: {
         sessionId: extractModelId(sessionId).dbId,
+        createdById: getCurrentUserId(),
+      },
+    });
+  }
+
+  async deleteAllSessionsForLibrary(_libraryId: MusicLibraryId): Promise<void> {
+    await this.prisma.scanSession.deleteMany({
+      where: {
         createdById: getCurrentUserId(),
       },
     });

@@ -89,11 +89,11 @@ export class MusicLibraryResolver {
   @Mutation(() => Boolean)
   async stopLibraryScan(
     @Args('libraryId', { type: () => Base64ID }) libraryId: string,
-    @Args('sessionId', { type: () => Base64ID }) sessionId: string,
+    @Args('sessionId', { type: () => Base64ID, nullable: true }) sessionId?: string,
   ): Promise<boolean> {
     return this.stopLibraryScanUseCase.execute(
       parseMusicLibraryId(libraryId),
-      parseSessionId(sessionId),
+      sessionId ? parseSessionId(sessionId) : null,
     );
   }
 }
