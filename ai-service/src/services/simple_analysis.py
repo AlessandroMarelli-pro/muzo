@@ -115,18 +115,24 @@ class SimpleAnalysisService:
         self.gc_interval = 10  # Force GC every 10 analyses
 
         # Parallelism for per-file audio analysis within a batch.
-        # librosa/numpy release the GIL during heavy numeric work, so a small thread pool
-        # gives real speedup. Kept conservative by default to avoid memory blow-up from
-        # multiple concurrent audio decodes. Override via BATCH_AUDIO_WORKERS env var.
+        # Disabled by default (1 = sequential): audioflux's native BFT/Onset/Spectral calls
+        # (used in smart_audio_sample_loading, shared_features, key_detector,
+        # danceability_analyzer, audio_mood_analyzer) are not thread-safe -- audioflux bundles
+        # its own OpenMP runtime plus Apple's Accelerate framework, and calling into it from
+        # multiple Python threads concurrently reproducibly crashes the process with SIGBUS
+        # (confirmed: ~40% crash rate across repeated concurrent runs). Since this service is
+        # already horizontally scaled across multiple instances, cross-batch throughput comes
+        # from running more instances, not from intra-batch threading here. Override via
+        # BATCH_AUDIO_WORKERS only if audioflux calls are made thread-safe (e.g. behind a lock).
         try:
             self.batch_audio_workers = max(
-                1, int(os.getenv("BATCH_AUDIO_WORKERS", "4"))
+                1, int(os.getenv("BATCH_AUDIO_WORKERS", "1"))
             )
         except ValueError:
             logger.warning(
-                "Invalid BATCH_AUDIO_WORKERS value, falling back to 4 workers"
+                "Invalid BATCH_AUDIO_WORKERS value, falling back to 1 (sequential)"
             )
-            self.batch_audio_workers = 4
+            self.batch_audio_workers = 1
 
     @monitor_performance("filename_parsing")
     def parse_filename_for_metadata(self, filename: str) -> Dict[str, str]:

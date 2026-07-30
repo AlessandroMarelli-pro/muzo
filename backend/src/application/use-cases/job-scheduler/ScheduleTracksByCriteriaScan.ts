@@ -32,7 +32,7 @@ export class ScheduleTracksByCriteriaScanUseCase {
     options: ScheduleTracksByCriteriaScanOptions = {},
   ): Promise<{ sessionId: SessionId; matchedTrackCount: number }> {
     const { subgenreSelectionMode = 'exact', skipAiMetadata, force, limit } = options;
-
+    console.log('ScheduleTracksByCriteriaScanUseCase', criteria, options);
     const tracks = await this.musicTrackRepository.getManyByCriteria(
       criteria,
       subgenreSelectionMode,

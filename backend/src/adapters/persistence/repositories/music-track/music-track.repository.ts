@@ -180,6 +180,11 @@ export class MusicTrackRepository implements IMusicTrackRepository {
     options: PaginationAndSortingOptions,
     withIncludes: boolean = true,
   ): Promise<MusicTrack[]> {
+    console.log(
+      'getManyByCriteria',
+      buildMusicTrackFilterWhereClause(criteria, subgenreSelectionMode),
+      getCurrentUserId(),
+    );
     return this.prisma.musicTrack
       .findMany({
         where: {
@@ -339,7 +344,7 @@ export class MusicTrackRepository implements IMusicTrackRepository {
         skip: skip,
         select: { id: true },
       })
-      .then(toMusicTrackId)
+      .then((row) => toMusicTrackId(row as any))
       .catch((e: unknown) => handlePrismaNotFound(e, `No music tracks found`));
   }
 
