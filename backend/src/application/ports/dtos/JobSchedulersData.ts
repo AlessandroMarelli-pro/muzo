@@ -7,6 +7,10 @@ export interface LibraryScanJobData {
   sessionId: SessionId; // Optional for backward compatibility
   incremental: boolean;
   contextUser: ActionContext['user'];
+  /** When true, re-analyze every file in the library, skipping the areFilesAnalyzed check. */
+  force?: boolean;
+  /** When true, skip LLM-based metadata enrichment during analysis. */
+  skipAiMetadata?: boolean;
 }
 
 export interface EndLibraryScanJobData {

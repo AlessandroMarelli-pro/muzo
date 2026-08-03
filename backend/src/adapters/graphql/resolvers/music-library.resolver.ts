@@ -78,9 +78,16 @@ export class MusicLibraryResolver {
   async startLibraryScan(
     @Args('libraryId', { type: () => Base64ID }) libraryId: string,
     @Args('incremental', { nullable: true }) incremental?: boolean,
+    @Args('force', { nullable: true }) force?: boolean,
+    @Args('skipAiMetadata', { nullable: true }) skipAiMetadata?: boolean,
   ): Promise<SessionId> {
     return this.scheduleLibraryScanUseCase
-      .execute(parseMusicLibraryId(libraryId), incremental ?? false)
+      .execute(
+        parseMusicLibraryId(libraryId),
+        incremental ?? false,
+        force ?? false,
+        skipAiMetadata ?? false,
+      )
       .then(({ sessionId }) => sessionId);
   }
 

@@ -19,6 +19,8 @@ export class ScheduleLibraryScanUseCase {
   async execute(
     libraryId: MusicLibraryId,
     incremental: boolean,
+    force = false,
+    skipAiMetadata = false,
   ): Promise<{ sessionId: SessionId; reused: boolean }> {
     const { session, created } =
       await this.scanSessionRepository.getActiveSessionOrCreate(libraryId);
@@ -35,6 +37,8 @@ export class ScheduleLibraryScanUseCase {
       this.logger.info(`Creating session for library ${libraryId}`, {
         libraryId,
         incremental,
+        force,
+        skipAiMetadata,
         sessionId: id,
       });
       await this.libraryScanSchedulerProducer.scheduleLibraryScan(
@@ -42,6 +46,8 @@ export class ScheduleLibraryScanUseCase {
         incremental,
         getCurrentUser(),
         id,
+        force,
+        skipAiMetadata,
       );
       this.logger.info(
         `Successfully scheduled library scan for library ${libraryId} with session ${id}`,

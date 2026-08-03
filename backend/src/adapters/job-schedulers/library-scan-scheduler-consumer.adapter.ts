@@ -30,7 +30,13 @@ export class LibraryScanSchedulerConsumerAdapter
       switch (job.name) {
         case 'start-library-scan':
           await job.updateProgress(0);
-          await this.consumeLibraryScan(libraryId, sessionId, incremental);
+          await this.consumeLibraryScan(
+            libraryId,
+            sessionId,
+            incremental,
+            (job.data as LibraryScanJobData).force,
+            (job.data as LibraryScanJobData).skipAiMetadata,
+          );
           await job.updateProgress(100);
           break;
         case 'end-scan-library':
@@ -48,13 +54,22 @@ export class LibraryScanSchedulerConsumerAdapter
     libraryId: MusicLibraryId,
     sessionId: SessionId,
     incremental: boolean,
+    force?: boolean,
+    skipAiMetadata?: boolean,
   ): Promise<void> {
     const audioFiles = await this.processStartLibraryScanUseCase.execute(libraryId, incremental);
     if (audioFiles.length === 0) {
       await this.processEndLibraryScanUseCase.execute(libraryId, sessionId, incremental);
       return;
     }
-    await this.scheduleBatchAudioScanUseCase.execute(audioFiles, libraryId, sessionId, incremental);
+    await this.scheduleBatchAudioScanUseCase.execute(
+      audioFiles,
+      libraryId,
+      sessionId,
+      incremental,
+      force,
+      skipAiMetadata,
+    );
   }
 
   async consumeEndLibraryScan(data: EndLibraryScanJobData): Promise<void> {

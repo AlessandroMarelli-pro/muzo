@@ -21,12 +21,16 @@ export class LibraryScanSchedulerProducerAdapter implements ILibraryScanSchedule
     incremental: boolean,
     contextUser: ActionContext['user'],
     sessionId: SessionId,
+    force?: boolean,
+    skipAiMetadata?: boolean,
   ): Promise<{ sessionId: SessionId }> {
     await this.libraryScanQueue.add('start-library-scan', {
       libraryId,
       sessionId,
       incremental,
       contextUser,
+      force,
+      skipAiMetadata,
     });
     return { sessionId };
   }

@@ -11,6 +11,8 @@ export interface ILibraryScanSchedulerProducer {
     incremental: boolean,
     contextUser: ActionContext['user'],
     sessionId: SessionId,
+    force?: boolean,
+    skipAiMetadata?: boolean,
   ): Promise<{ sessionId: SessionId }>;
   scheduleEndLibraryScan(
     libraryId: MusicLibraryId,

@@ -58,9 +58,82 @@ describe('LibraryScanSchedulerConsumerAdapter', () => {
         libraryId,
         sessionId,
         incremental,
+        undefined,
+        undefined,
       );
       expect(job.updateProgress).toHaveBeenCalledWith(0);
       expect(job.updateProgress).toHaveBeenCalledWith(100);
+    });
+
+    it('happy path: force flag from job data propagates to ScheduleBatchAudioScan', async () => {
+      const libraryId = 'lib-1' as const;
+      const sessionId = 'session-1' as const;
+      const incremental = false;
+      const contextUser = makeContextUser('user-1');
+      const audioFiles = [
+        {
+          path: '/music/track.mp3',
+          filename: 'track.mp3',
+          extension: '.mp3',
+          size: 1024,
+        },
+      ];
+      processStartLibraryScanUseCase.execute.mockResolvedValueOnce(audioFiles);
+
+      const job = makeJob<LibraryScanJobData>({
+        name: 'start-library-scan',
+        data: { libraryId, sessionId, incremental, contextUser, force: true },
+      });
+
+      await adapter.process(job);
+
+      expect(scheduleBatchAudioScanUseCase.execute).toHaveBeenCalledWith(
+        audioFiles,
+        libraryId,
+        sessionId,
+        incremental,
+        true,
+        undefined,
+      );
+    });
+
+    it('happy path: skipAiMetadata flag from job data propagates to ScheduleBatchAudioScan', async () => {
+      const libraryId = 'lib-1' as const;
+      const sessionId = 'session-1' as const;
+      const incremental = false;
+      const contextUser = makeContextUser('user-1');
+      const audioFiles = [
+        {
+          path: '/music/track.mp3',
+          filename: 'track.mp3',
+          extension: '.mp3',
+          size: 1024,
+        },
+      ];
+      processStartLibraryScanUseCase.execute.mockResolvedValueOnce(audioFiles);
+
+      const job = makeJob<LibraryScanJobData>({
+        name: 'start-library-scan',
+        data: {
+          libraryId,
+          sessionId,
+          incremental,
+          contextUser,
+          force: true,
+          skipAiMetadata: true,
+        },
+      });
+
+      await adapter.process(job);
+
+      expect(scheduleBatchAudioScanUseCase.execute).toHaveBeenCalledWith(
+        audioFiles,
+        libraryId,
+        sessionId,
+        incremental,
+        true,
+        true,
+      );
     });
 
     it('happy path: start-library-scan with no files calls ProcessEndLibraryScan and not ScheduleBatchAudioScan', async () => {

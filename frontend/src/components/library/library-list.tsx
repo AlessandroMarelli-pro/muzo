@@ -11,6 +11,8 @@ import { LibraryCard } from './library-card';
 interface LibraryListProps {
   onCreateLibrary: () => void;
   onScanLibrary: (libraryId: string) => void;
+  onForceScanLibrary: (libraryId: string) => void;
+  onForceScanLibrarySkipAiMetadata: (libraryId: string) => void;
   onStopLibraryScan: (libraryId: string, sessionId: string) => void;
   onViewLibrary: (libraryId: string) => void;
   onPlayLibrary: (libraryId: string) => void;
@@ -20,6 +22,8 @@ interface LibraryListProps {
 export const LibraryList: React.FC<LibraryListProps> = ({
   onCreateLibrary,
   onScanLibrary,
+  onForceScanLibrary,
+  onForceScanLibrarySkipAiMetadata,
   onViewLibrary,
   onPlayLibrary,
   onStopLibraryScan,
@@ -60,6 +64,27 @@ export const LibraryList: React.FC<LibraryListProps> = ({
     e.preventDefault();
     onScanLibrary(libraryId);
   };
+  const handleForceScanLibrary = (e: React.MouseEvent<HTMLButtonElement>, libraryId: string) => {
+    e.stopPropagation();
+    e.preventDefault();
+    const hasConfirmed = confirm(
+      'Force scan will re-analyze every track in this library, even ones already analyzed. This can take a while. Continue?',
+    );
+    if (!hasConfirmed) return;
+    onForceScanLibrary(libraryId);
+  };
+  const handleForceScanLibrarySkipAiMetadata = (
+    e: React.MouseEvent<HTMLButtonElement>,
+    libraryId: string,
+  ) => {
+    e.stopPropagation();
+    e.preventDefault();
+    const hasConfirmed = confirm(
+      'Force scan (skip AI metadata) will re-analyze every track in this library without LLM metadata enrichment. This can take a while. Continue?',
+    );
+    if (!hasConfirmed) return;
+    onForceScanLibrarySkipAiMetadata(libraryId);
+  };
   const handleStopLibraryScan = (
     e: React.MouseEvent<HTMLButtonElement>,
     libraryId: string,
@@ -97,6 +122,8 @@ export const LibraryList: React.FC<LibraryListProps> = ({
             key={library.id}
             library={library}
             onScan={handleScanLibrary}
+            onForceScan={handleForceScanLibrary}
+            onForceScanSkipAiMetadata={handleForceScanLibrarySkipAiMetadata}
             onStopScan={handleStopLibraryScan}
             onView={() => onViewLibrary(library.id)}
             onPlay={() => onPlayLibrary(library.id)}
