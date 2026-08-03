@@ -4,10 +4,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useScanSessionContext } from '@/contexts/scan-session.context';
 import { LibraryScanStatus } from '@/services/api-hooks';
-import { useScanProgress } from '@/services/sse-service';
 import { StopIcon } from '@radix-ui/react-icons';
 import { BarChart3, Loader, Play, Trash } from 'lucide-react';
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 
 interface LibraryCardProps {
   library: Library;
@@ -49,28 +48,17 @@ export const LibraryCard: React.FC<LibraryCardProps> = ({
 }) => {
   const { getSessionForLibrary } = useScanSessionContext();
   const session = getSessionForLibrary(library.id);
-  const { progress: scanProgress } = useScanProgress(session?.sessionId);
-  const [scanStatus, setScanStatus] = useState(library.scanStatus);
-  const [analysisProgress, setAnalysisProgress] = useState(session?.overallProgress ?? 0);
-
-  // Calculate progress from scan progress event or library stats
-  useEffect(() => {
-    if (scanProgress?.overallProgress) {
-      setAnalysisProgress(scanProgress.overallProgress / 100);
-    }
-    if (scanProgress?.data?.status) {
-      setScanStatus(scanProgress.data.status as LibraryScanStatus);
-    }
-  }, [scanProgress?.overallProgress, library.totalTracks, library.analyzedTracks]);
-  const analysisCompleted = scanProgress?.type === 'scan.complete';
-  // Use real-time scan progress if available, otherwise calculate from tracks
+  // ScanSessionContext keeps this session's status/progress live via SSE, so it's the single
+  // source of truth here -- no separate local copy that could drift from it.
+  const scanStatus: LibraryScanStatus = (session?.status as LibraryScanStatus) ?? library.scanStatus;
+  const analysisProgress = (session?.overallProgress ?? 0) / 100;
 
   const formatDate = (dateString?: string) => {
     if (!dateString) return 'Never';
     return new Date(dateString).toLocaleDateString();
   };
 
-  const isScanning = !analysisCompleted && (session?.status === 'SCANNING' || isScanningProp);
+  const isScanning = session?.status === 'SCANNING' || isScanningProp;
   const totalTracks = library.totalTracks;
   const handleDelete = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
@@ -141,6 +129,7 @@ export const LibraryCard: React.FC<LibraryCardProps> = ({
             variant="outline"
             className="w-full"
             size="sm"
+            disabled={isScanningProp}
             onClick={scanStatus === 'SCANNING' ? handleStopScan : handleScan}
           >
             {scanStatus === 'SCANNING' ? (

@@ -92,6 +92,7 @@ describe('AudioScanSchedulerConsumerAdapter', () => {
         data.libraryId,
         false,
         data.contextUser,
+        false,
       );
     });
 
@@ -110,17 +111,45 @@ describe('AudioScanSchedulerConsumerAdapter', () => {
         data.libraryId,
         true,
         data.contextUser,
+        false,
       );
     });
 
-    it('failure: use case throws and error propagates', async () => {
+    it('failure: batch processing throws, error is caught, and ProcessEndBatchAudioScan still runs with batchFailed=true so progress keeps advancing', async () => {
       processBatchAudioScanUseCase.execute.mockRejectedValueOnce(new Error('Batch failed'));
+      const data = makeAudioScanBatchJobData();
       const job = makeJob<AudioScanBatchJobData>({
         name: 'audio-scan-batch',
-        data: makeAudioScanBatchJobData(),
+        data,
       });
 
-      await expect(adapter.process(job)).rejects.toThrow('Batch failed');
+      await expect(adapter.process(job)).resolves.toBeUndefined();
+
+      expect(processEndBatchAudioScanUseCase.execute).toHaveBeenCalledTimes(1);
+      expect(processEndBatchAudioScanUseCase.execute).toHaveBeenCalledWith(
+        data,
+        data.libraryId,
+        false,
+        data.contextUser,
+        true,
+      );
+    });
+
+    it('failure: ProcessEndBatchAudioScan itself throws (e.g. transient DB write conflict), error is caught and job still resolves', async () => {
+      processEndBatchAudioScanUseCase.execute.mockRejectedValueOnce(
+        new Error('SQLITE_BUSY: database is locked'),
+      );
+      const data = makeAudioScanBatchJobData();
+      const job = makeJob<AudioScanBatchJobData>({
+        name: 'audio-scan-batch',
+        data,
+      });
+
+      // Must not propagate -- a throw here previously failed the BullMQ job outright,
+      // which is exactly what let completedBatches permanently fall short of totalBatches
+      // and the scan hang instead of reaching scan.complete.
+      await expect(adapter.process(job)).resolves.toBeUndefined();
+      expect(processEndBatchAudioScanUseCase.execute).toHaveBeenCalledTimes(1);
     });
 
     it('edge case: unknown job name throws', async () => {

@@ -6,8 +6,6 @@ import { IScanSessionRepository } from '../../ports/repositories/IScanSessionRep
 import { ScheduleBatchAudioScanUseCase } from './ScheduleBatchAudioScan';
 import { trackToFileInfo } from './track-to-file-info';
 
-const AUDIO_SCAN_BATCH_SIZE = 10;
-
 export interface ScheduleTracksByCriteriaScanOptions {
   subgenreSelectionMode?: 'exact' | 'contain';
   skipAiMetadata?: boolean;
@@ -30,9 +28,19 @@ export class ScheduleTracksByCriteriaScanUseCase {
   async execute(
     criteria: FilterCriteria,
     options: ScheduleTracksByCriteriaScanOptions = {},
-  ): Promise<{ sessionId: SessionId; matchedTrackCount: number }> {
+  ): Promise<{ sessionId: SessionId; matchedTrackCount: number; reused: boolean }> {
     const { subgenreSelectionMode = 'exact', skipAiMetadata, force, limit } = options;
     console.log('ScheduleTracksByCriteriaScanUseCase', criteria, options);
+
+    const { session: activeOrNewSession, created } =
+      await this.scanSessionRepository.getActiveSessionOrCreate(null);
+    if (!created) {
+      this.logger.info(
+        `User already has an active session ${activeOrNewSession.id}; reusing it instead of starting a new criteria scan`,
+      );
+      return { sessionId: activeOrNewSession.id, matchedTrackCount: 0, reused: true };
+    }
+
     const tracks = await this.musicTrackRepository.getManyByCriteria(
       criteria,
       subgenreSelectionMode,
@@ -40,14 +48,13 @@ export class ScheduleTracksByCriteriaScanUseCase {
       false, // withIncludes: only fileInfo/libraryId are needed here
     );
 
+    const sessionId = activeOrNewSession.id;
+
     if (tracks.length === 0) {
       this.logger.info('No tracks matched criteria; nothing scheduled', { criteria });
-      const session = await this.scanSessionRepository.createSession(null);
-      return { sessionId: session.id, matchedTrackCount: 0 };
+      await this.scanSessionRepository.completeSession(sessionId, true);
+      return { sessionId, matchedTrackCount: 0, reused: false };
     }
-
-    const session = await this.scanSessionRepository.createSession(null);
-    const sessionId = session.id;
 
     // scheduleBatchAudioScan is scoped to a single library per call (the library id is
     // stamped onto every upserted MusicTrack row downstream), so a criteria match spanning
@@ -64,10 +71,8 @@ export class ScheduleTracksByCriteriaScanUseCase {
       { sessionId, skipAiMetadata, force },
     );
 
-    let totalBatches = 0;
     for (const [libraryId, libraryTracks] of tracksByLibrary) {
       const fileInfos = libraryTracks.map(trackToFileInfo);
-      totalBatches += Math.ceil(fileInfos.length / AUDIO_SCAN_BATCH_SIZE);
       await this.scheduleBatchAudioScanUseCase.execute(
         fileInfos,
         libraryId,
@@ -78,20 +83,11 @@ export class ScheduleTracksByCriteriaScanUseCase {
       );
     }
 
-    // scheduleBatchAudioScan's producer overwrites the session's totalTracks/totalBatches on
-    // every call (no increment path exists), so with multiple libraries the last call would
-    // otherwise leave the session reflecting only its own library's totals. This final update
-    // wins as the last write and reflects the true cross-library grand total.
-    await this.scanSessionRepository.updateSession(sessionId, {
-      totalTracks: tracks.length,
-      totalBatches,
-    });
-
     this.logger.info(
       `Scheduled criteria-based scan for ${tracks.length} tracks across ${tracksByLibrary.size} libraries`,
       { sessionId },
     );
 
-    return { sessionId, matchedTrackCount: tracks.length };
+    return { sessionId, matchedTrackCount: tracks.length, reused: false };
   }
 }

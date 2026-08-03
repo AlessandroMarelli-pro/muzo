@@ -11,6 +11,7 @@ class RestClient {
   async post<T = any>(endpoint: string, data?: any): Promise<T> {
     const response = await fetch(`${this.baseUrl}${endpoint}`, {
       method: 'POST',
+      credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
       },
@@ -25,7 +26,9 @@ class RestClient {
   }
 
   async get<T = any>(endpoint: string): Promise<T> {
-    const response = await fetch(`${this.baseUrl}${endpoint}`);
+    const response = await fetch(`${this.baseUrl}${endpoint}`, {
+      credentials: 'include',
+    });
 
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
@@ -37,6 +40,7 @@ class RestClient {
   async delete<T = any>(endpoint: string): Promise<T> {
     const response = await fetch(`${this.baseUrl}${endpoint}`, {
       method: 'DELETE',
+      credentials: 'include',
     });
 
     if (!response.ok) {
@@ -57,6 +61,7 @@ export const useActiveScanSessions = () => {
       const response = await restClient.get<{
         data: Array<{
           sessionId: string;
+          libraryId?: string;
           status: string;
           totalBatches: number;
           completedBatches: number;
@@ -64,8 +69,7 @@ export const useActiveScanSessions = () => {
           completedTracks: number;
           failedTracks: number;
           startedAt: string;
-          updatedAt: string;
-          completedAt: string;
+          completedAt?: string;
           overallProgress: number;
         }>;
       }>('/scan-progress/active');
@@ -82,6 +86,7 @@ export const useCompletedScanSessions = () => {
       const response = await restClient.get<{
         data: Array<{
           sessionId: string;
+          libraryId?: string;
           status: string;
           totalBatches: number;
           completedBatches: number;
@@ -89,8 +94,7 @@ export const useCompletedScanSessions = () => {
           completedTracks: number;
           failedTracks: number;
           startedAt: string;
-          updatedAt: string;
-          completedAt: string;
+          completedAt?: string;
           overallProgress: number;
         }>;
       }>('/scan-progress/completed');

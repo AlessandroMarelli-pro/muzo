@@ -8,12 +8,12 @@ import { makeQueueConfig } from './_test-utils/make-queue-config';
 describe('AudioScanSchedulerProducerAdapter', () => {
   let adapter: AudioScanSchedulerProducerAdapter;
   let queueMock: { addBulk: ReturnType<typeof vi.fn> };
-  let scanSessionRepositoryMock: { updateSession: ReturnType<typeof vi.fn> };
+  let scanSessionRepositoryMock: { incrementSessionTotals: ReturnType<typeof vi.fn> };
 
   beforeEach(() => {
     queueMock = { addBulk: vi.fn().mockResolvedValue([]) };
     scanSessionRepositoryMock = {
-      updateSession: vi.fn().mockResolvedValue({}),
+      incrementSessionTotals: vi.fn().mockResolvedValue({}),
     };
     const configService = {
       get: vi.fn().mockReturnValue(makeQueueConfig()),
@@ -57,8 +57,8 @@ describe('AudioScanSchedulerProducerAdapter', () => {
       );
 
       expect(result).toEqual({ sessionId });
-      expect(scanSessionRepositoryMock.updateSession).toHaveBeenCalledTimes(1);
-      expect(scanSessionRepositoryMock.updateSession).toHaveBeenCalledWith(sessionId, {
+      expect(scanSessionRepositoryMock.incrementSessionTotals).toHaveBeenCalledTimes(1);
+      expect(scanSessionRepositoryMock.incrementSessionTotals).toHaveBeenCalledWith(sessionId, {
         totalBatches: 1,
         totalTracks: 2,
       });
@@ -76,8 +76,10 @@ describe('AudioScanSchedulerProducerAdapter', () => {
       expect(bulkJobs[0].opts).toEqual(makeQueueConfig().queues.audioScan);
     });
 
-    it('failure: scanSessionRepository.updateSession throws and error propagates', async () => {
-      scanSessionRepositoryMock.updateSession.mockRejectedValueOnce(new Error('DB error'));
+    it('failure: scanSessionRepository.incrementSessionTotals throws and error propagates', async () => {
+      scanSessionRepositoryMock.incrementSessionTotals.mockRejectedValueOnce(
+        new Error('DB error'),
+      );
       await expect(
         adapter.scheduleBatchAudioScan(
           [
@@ -109,7 +111,7 @@ describe('AudioScanSchedulerProducerAdapter', () => {
       );
 
       expect(result).toEqual({ sessionId });
-      expect(scanSessionRepositoryMock.updateSession).toHaveBeenCalledWith(sessionId, {
+      expect(scanSessionRepositoryMock.incrementSessionTotals).toHaveBeenCalledWith(sessionId, {
         totalBatches: 0,
         totalTracks: 0,
       });

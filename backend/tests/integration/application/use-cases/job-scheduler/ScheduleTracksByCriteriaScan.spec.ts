@@ -33,7 +33,12 @@ vi.mock('src/kernel/types/context', () => ({
   user: vi.fn(() => ({ id: `User:${TEST_USER_ID}` })),
 }));
 
-/** Fake ScheduleBatchAudioScanUseCase that records calls and returns the given sessionId. */
+/**
+ * Fake ScheduleBatchAudioScanUseCase that records calls and returns the given sessionId.
+ * Also increments the session's totalTracks/totalBatches, mirroring what the real
+ * AudioScanSchedulerProducerAdapter does downstream in production, since the use case
+ * under test relies on that accumulation happening per library.
+ */
 class FakeScheduleBatchAudioScanUseCase {
   readonly calls: Array<{
     audioFiles: FileInfo[];
@@ -44,6 +49,8 @@ class FakeScheduleBatchAudioScanUseCase {
     skipAiMetadata?: boolean;
   }> = [];
 
+  constructor(private readonly scanSessionRepository: ScanSessionRepository) {}
+
   async execute(
     audioFiles: FileInfo[],
     libraryId: MusicLibraryId,
@@ -53,6 +60,10 @@ class FakeScheduleBatchAudioScanUseCase {
     skipAiMetadata?: boolean,
   ): Promise<{ sessionId: string }> {
     this.calls.push({ audioFiles, libraryId, sessionId, incremental, force, skipAiMetadata });
+    await this.scanSessionRepository.incrementSessionTotals(sessionId, {
+      totalBatches: Math.ceil(audioFiles.length / 10),
+      totalTracks: audioFiles.length,
+    });
     return { sessionId };
   }
 }
@@ -69,8 +80,6 @@ describe('ScheduleTracksByCriteriaScanUseCase', () => {
     const { cleanup } = await setupIntegrationDb();
     cleanupDb = cleanup;
 
-    fakeScheduleBatch = new FakeScheduleBatchAudioScanUseCase();
-
     const logger: ILogger = {
       info: vi.fn(),
       warn: vi.fn(),
@@ -82,6 +91,10 @@ describe('ScheduleTracksByCriteriaScanUseCase', () => {
     const dbUrl = process.env.DATABASE_URL ?? 'file:./muzo.db';
     const testPrisma = createIntegrationPrismaClient(dbUrl);
     await testPrisma.$connect();
+
+    fakeScheduleBatch = new FakeScheduleBatchAudioScanUseCase(
+      new ScanSessionRepository(testPrisma as any),
+    );
 
     const module = await Test.createTestingModule({
       providers: [

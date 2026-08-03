@@ -353,5 +353,48 @@ describe('ProcessEndBatchAudioScanUseCase', () => {
         true,
       );
     });
+
+    it('batchFailed=true: still advances completedBatches (counted as failedTracks, not completedTracks) so the scan can still reach completion', async () => {
+      await seedSession({ totalBatches: 2, totalTracks: 4 });
+
+      // First batch succeeds.
+      await useCase.execute(
+        makeBatchData({ totalFiles: 4, totalBatches: 2, batchIndex: 0 }),
+        LIBRARY_ID,
+        false,
+        contextUser,
+      );
+      // Second batch fails (e.g. AI analysis threw) -- must still advance completedBatches,
+      // this is the regression guard for the "scan stalls short of completion" bug.
+      await useCase.execute(
+        makeBatchData({ totalFiles: 4, totalBatches: 2, batchIndex: 1 }),
+        LIBRARY_ID,
+        false,
+        contextUser,
+        true,
+      );
+
+      expect(fakePublishEvent).toHaveBeenNthCalledWith(
+        2,
+        SESSION_ID,
+        expect.objectContaining({
+          type: 'batch.complete',
+          batchIndex: 1,
+          data: {
+            successful: 0,
+            failed: 4,
+            totalTracks: 4,
+          },
+          overallProgress: 10000,
+        }),
+      );
+      // completedBatches reached totalBatches despite the failure -- completion still fires.
+      expect(fakeScheduleEndLibraryScan).toHaveBeenCalledTimes(1);
+
+      const session = await prisma.scanSession.findFirst({ where: { sessionId: 'session-1' } });
+      expect(session?.completedBatches).toBe(2);
+      expect(session?.completedTracks).toBe(2); // only batch 0's 2 files
+      expect(session?.failedTracks).toBe(2); // batch 1's 2 files, marked failed
+    });
   });
 });

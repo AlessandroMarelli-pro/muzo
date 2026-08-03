@@ -84,12 +84,13 @@ describe('StopLibraryScanUseCase', () => {
     await prisma.musicLibrary.deleteMany({});
   });
 
-  async function seedSession(sessionId = 'session-1') {
+  async function seedSession(sessionId = 'session-1', libraryId?: string) {
     await prisma.scanSession.create({
       data: {
         id: sessionId,
         sessionId,
         status: 'SCANNING',
+        libraryId: libraryId ?? null,
         totalBatches: 1,
         completedBatches: 0,
         totalTracks: 2,
@@ -138,6 +139,46 @@ describe('StopLibraryScanUseCase', () => {
       // no session seeded
 
       await expect(useCase.execute(LIBRARY_ID, SESSION_ID)).rejects.toThrow();
+    });
+
+    it('no sessionId supplied: resolves and deletes only the active session for that library, leaving other libraries untouched', async () => {
+      const library1 = makeLibrary({
+        id: 'lib-1',
+        scanInfo: { lastScanAt: null, lastIncrementalScanAt: null, scanStatus: 'SCANNING' },
+      });
+      const library2 = makeLibrary({
+        id: 'lib-2',
+        scanInfo: { lastScanAt: null, lastIncrementalScanAt: null, scanStatus: 'SCANNING' },
+      });
+      await musicLibraryRepository.save(library1);
+      await musicLibraryRepository.save(library2);
+      await seedSession('session-1', 'lib-1');
+      await seedSession('session-2', 'lib-2');
+
+      const result = await useCase.execute(LIBRARY_ID, null);
+
+      expect(result).toBe(true);
+      expect(await prisma.scanSession.count({ where: { sessionId: 'session-1' } })).toBe(0);
+      // The other library's session must survive -- this is the regression guard for the
+      // mass-delete bug where a missing sessionId used to wipe every session for the user.
+      expect(await prisma.scanSession.count({ where: { sessionId: 'session-2' } })).toBe(1);
+    });
+
+    it('no sessionId supplied and no active session for that library: returns false and deletes nothing', async () => {
+      const library1 = makeLibrary({ id: 'lib-1' });
+      const library2 = makeLibrary({
+        id: 'lib-2',
+        scanInfo: { lastScanAt: null, lastIncrementalScanAt: null, scanStatus: 'SCANNING' },
+      });
+      await musicLibraryRepository.save(library1);
+      await musicLibraryRepository.save(library2);
+      // Only an unrelated library has an active session.
+      await seedSession('session-2', 'lib-2');
+
+      const result = await useCase.execute(LIBRARY_ID, null);
+
+      expect(result).toBe(false);
+      expect(await prisma.scanSession.count({ where: { sessionId: 'session-2' } })).toBe(1);
     });
   });
 });

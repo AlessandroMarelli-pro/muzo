@@ -18,8 +18,22 @@ export interface UpdateScanSessionInput {
 }
 
 export interface IScanSessionRepository {
-  createSession(sessionId: SessionId | null): Promise<Session>;
+  /** libraryId: the single library this scan targets, or null for a criteria-scan spanning multiple libraries. */
+  createSession(libraryId: MusicLibraryId | null): Promise<Session>;
+  /**
+   * Returns the user's existing active session if one exists (created: false), otherwise
+   * atomically creates and returns a new one (created: true). Enforces at most one active
+   * scan session per user, globally (not per-library).
+   */
+  getActiveSessionOrCreate(
+    libraryId: MusicLibraryId | null,
+  ): Promise<{ session: Session; created: boolean }>;
   updateSession(sessionId: SessionId, updates: UpdateScanSessionInput): Promise<Session>;
+  /** Atomically adds to totalBatches/totalTracks rather than overwriting them. */
+  incrementSessionTotals(
+    sessionId: SessionId,
+    delta: { totalBatches?: number; totalTracks?: number },
+  ): Promise<Session>;
   updateSessionProgress(
     sessionId: SessionId,
     updates: UpdateScanSessionInput,

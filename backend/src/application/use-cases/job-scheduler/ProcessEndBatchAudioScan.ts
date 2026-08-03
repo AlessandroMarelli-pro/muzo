@@ -23,14 +23,19 @@ export class ProcessEndBatchAudioScanUseCase {
     libraryId: MusicLibraryId,
     incremental: boolean,
     contextUser: ActionContext['user'],
+    batchFailed = false,
   ): Promise<void> {
     const { totalFiles, totalBatches, audioFiles, sessionId, batchIndex } = data;
     const progressPercentage = Math.round((1 / totalBatches!) * 10000);
-    // Update session progress
+    // Update session progress. Even when the batch failed (e.g. AI analysis or a downstream
+    // sync threw), completedBatches must still advance -- otherwise the scan can never reach
+    // totalBatches and stalls forever. Failed batches are counted as failedTracks instead of
+    // completedTracks so the final tally still reflects what actually succeeded.
     const session = await this.scanSessionRepository.updateSessionProgress(sessionId, {
       completedBatches: 1,
       progressPercentage,
-      completedTracks: audioFiles.length,
+      completedTracks: batchFailed ? 0 : audioFiles.length,
+      failedTracks: batchFailed ? audioFiles.length : 0,
     });
     if (!session) {
       this.logger.error(
@@ -52,8 +57,8 @@ export class ProcessEndBatchAudioScanUseCase {
       libraryId,
       batchIndex,
       data: {
-        successful: totalFiles,
-        failed: 0,
+        successful: batchFailed ? 0 : totalFiles,
+        failed: batchFailed ? totalFiles : 0,
         totalTracks: totalFiles,
       },
       overallProgress: isComplete ? 10000 : session.overallProgress,

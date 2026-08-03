@@ -86,7 +86,9 @@ class SSEService {
       console.log('connecting to SSE', sessionId);
       // Use the same base URL as rest-client
       const baseUrl = 'http://localhost:3000';
-      const eventSource = new EventSource(`${baseUrl}/scan-progress/${sessionId}`);
+      const eventSource = new EventSource(`${baseUrl}/scan-progress/${sessionId}`, {
+        withCredentials: true,
+      });
 
       eventSource.onopen = () => {
         console.log(`SSE connection opened for session: ${sessionId}`);

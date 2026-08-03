@@ -388,6 +388,7 @@ export type TrackSimilarity = {
 
 export type Session = Readonly<ModelBase<SessionId>> & {
   status: ScanStatus;
+  libraryId: MaybeUndefined<MusicLibraryId>;
   totalBatches: number;
   completedBatches: number;
   totalTracks: number;

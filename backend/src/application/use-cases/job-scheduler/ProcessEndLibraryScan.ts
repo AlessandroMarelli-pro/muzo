@@ -32,7 +32,7 @@ export class ProcessEndLibraryScanUseCase {
     const session = await this.scanSessionRepository.completeSession(sessionId, true);
     await this.scanProgressPublisher.publishEvent(sessionId, {
       type: 'scan.complete',
-      sessionId: libraryId,
+      sessionId,
       timestamp: new Date().toISOString(),
       libraryId,
       data: {

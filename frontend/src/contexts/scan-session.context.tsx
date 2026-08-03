@@ -5,8 +5,8 @@
  */
 
 import { useActiveScanSessions, useCompletedScanSessions } from '@/services/rest-client';
-import sseService from '@/services/sse-service';
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import sseService, { ScanEvent } from '@/services/sse-service';
+import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 
 interface ScanSession {
   sessionId: string;
@@ -21,7 +21,8 @@ interface ScanSession {
 }
 
 interface ScanSessionContextType {
-  activeSessions: Map<string, ScanSession>; // sessionId -> session
+  /** Keyed only by sessionId. Use getSessionForLibrary to look up by library. */
+  activeSessions: Map<string, ScanSession>;
   addSession: (sessionId: string, libraryId?: string) => void;
   removeSession: (sessionId: string) => void;
   getSessionForLibrary: (libraryId: string) => ScanSession | undefined;
@@ -42,12 +43,19 @@ export const ScanSessionProvider: React.FC<{ children: React.ReactNode }> = ({ c
   useEffect(() => {
     if (activeSessionsFromDB && activeSessionsFromDB.length > 0) {
       setActiveSessions((prev) => {
+        let changed = false;
         const newMap = new Map(prev);
 
-        // Add all active sessions from database
+        // Seed any session the client doesn't already know about (e.g. after a refresh, or a
+        // scan started elsewhere). Never overwrite a session we're already tracking -- SSE
+        // keeps those live and up to date, and this poll response can be up to 10s stale, so
+        // blindly overwriting could regress progress backward.
         activeSessionsFromDB.forEach((session) => {
+          if (newMap.has(session.sessionId)) return;
+
           const scanSession: ScanSession = {
             sessionId: session.sessionId,
+            libraryId: session.libraryId,
             startedAt: session.startedAt,
             status: session.status,
             totalTracks: session.totalTracks,
@@ -57,6 +65,7 @@ export const ScanSessionProvider: React.FC<{ children: React.ReactNode }> = ({ c
             overallProgress: session.overallProgress,
           };
           newMap.set(session.sessionId, scanSession);
+          changed = true;
 
           // Automatically connect to SSE for this session
           if (!sseService.isConnected(session.sessionId)) {
@@ -64,7 +73,7 @@ export const ScanSessionProvider: React.FC<{ children: React.ReactNode }> = ({ c
           }
         });
 
-        return newMap;
+        return changed ? newMap : prev;
       });
     }
   }, [activeSessionsFromDB]);
@@ -87,25 +96,14 @@ export const ScanSessionProvider: React.FC<{ children: React.ReactNode }> = ({ c
         sessionId,
         libraryId,
         startedAt: new Date().toISOString(),
+        status: 'SCANNING',
         totalTracks: 0,
         completedTracks: 0,
         failedTracks: 0,
         completedAt: undefined,
         overallProgress: 0,
       };
-      // Store by sessionId
       newMap.set(sessionId, session);
-
-      // Also store by libraryId if provided
-      if (libraryId) {
-        // Find existing session for this library and remove it
-        for (const [key, value] of newMap.entries()) {
-          if (value.libraryId === libraryId && value.sessionId !== sessionId) {
-            newMap.delete(key);
-          }
-        }
-        newMap.set(libraryId, session);
-      }
 
       // Connect to SSE
       if (!sseService.isConnected(sessionId)) {
@@ -119,10 +117,6 @@ export const ScanSessionProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const removeSession = (sessionId: string) => {
     setActiveSessions((prev) => {
       const newMap = new Map(prev);
-      const session = newMap.get(sessionId);
-      if (session?.libraryId) {
-        newMap.delete(session.libraryId);
-      }
       newMap.delete(sessionId);
 
       // Disconnect from SSE
@@ -133,13 +127,7 @@ export const ScanSessionProvider: React.FC<{ children: React.ReactNode }> = ({ c
   };
 
   const getSessionForLibrary = (libraryId: string): ScanSession | undefined => {
-    // First try to find by libraryId
-    const sessionByLibrary = activeSessions.get(libraryId);
-    if (sessionByLibrary) {
-      return sessionByLibrary;
-    }
-
-    // If not found, search through all sessions
+    console.log('getSessionForLibrary', libraryId, activeSessions);
     for (const session of activeSessions.values()) {
       if (session.libraryId === libraryId) {
         return session;
@@ -148,6 +136,61 @@ export const ScanSessionProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
     return undefined;
   };
+
+  // Keep activeSessions live: subscribe to SSE for every tracked session and merge incoming
+  // progress into the shared map, so progress survives navigation/remounts (not just whatever
+  // component happens to call useScanProgress) and doesn't wait on the 10s DB poll.
+  const unsubscribeFnsRef = useRef(new Map<string, () => void>());
+  useEffect(() => {
+    const subscribed = unsubscribeFnsRef.current;
+    const sessionIds = new Set(activeSessions.keys());
+
+    for (const sessionId of sessionIds) {
+      if (subscribed.has(sessionId)) continue;
+      const unsubscribe = sseService.subscribe(sessionId, (event: ScanEvent) => {
+        if (event.type === 'error') return;
+        setActiveSessions((prev) => {
+          const existing = prev.get(sessionId);
+          if (!existing) return prev;
+          const newMap = new Map(prev);
+
+          if (event.type === 'scan.complete') {
+            // Final, authoritative totals for the whole scan.
+            newMap.set(sessionId, {
+              ...existing,
+              status: 'IDLE',
+              overallProgress: event.overallProgress ?? existing.overallProgress,
+              completedTracks: event.data?.successful ?? existing.completedTracks,
+              failedTracks: event.data?.failed ?? existing.failedTracks,
+              totalTracks: event.data?.totalTracks ?? existing.totalTracks,
+            });
+          } else if (event.type === 'batch.complete') {
+            // Per-batch counts: accumulate onto the running totals.
+            newMap.set(sessionId, {
+              ...existing,
+              overallProgress: event.overallProgress ?? existing.overallProgress,
+              completedTracks: existing.completedTracks + (event.data?.successful ?? 0),
+              failedTracks: existing.failedTracks + (event.data?.failed ?? 0),
+            });
+          } else if (event.overallProgress !== undefined) {
+            newMap.set(sessionId, { ...existing, overallProgress: event.overallProgress });
+          } else {
+            return prev;
+          }
+
+          return newMap;
+        });
+      });
+      subscribed.set(sessionId, unsubscribe);
+    }
+
+    for (const [sessionId, unsubscribe] of subscribed) {
+      if (!sessionIds.has(sessionId)) {
+        unsubscribe();
+        subscribed.delete(sessionId);
+      }
+    }
+  }, [activeSessions]);
 
   // Clean up completed sessions
   useEffect(() => {
@@ -160,9 +203,6 @@ export const ScanSessionProvider: React.FC<{ children: React.ReactNode }> = ({ c
           // Remove if status is IDLE or ERROR (completed)
           if (session.status === 'IDLE' || session.status === 'ERROR') {
             newMap.delete(key);
-            if (session.libraryId) {
-              newMap.delete(session.libraryId);
-            }
             sseService.disconnect(session.sessionId);
             changed = true;
           }

@@ -21,13 +21,22 @@ export class StopLibraryScanUseCase {
       this.logger.info(
         `Successfully stopped library scan for library ${libraryId} with session ${sessionId}`,
       );
-    } else {
-      await this.scanSessionRepository.deleteAllSessionsForLibrary(libraryId);
-      this.logger.info(
-        `Successfully stopped library scan for library ${libraryId} with all sessions deleted`,
-      );
+      return true;
     }
 
+    // No sessionId supplied by the caller: resolve the active session for this specific
+    // library and stop only that one. Never fall back to deleting every session the user has.
+    const activeSessions = await this.scanSessionRepository.getActiveSessions();
+    const target = activeSessions.find((session) => session.libraryId === libraryId);
+    if (!target) {
+      this.logger.warn(`No active session found for library ${libraryId}; nothing to stop`);
+      return false;
+    }
+
+    await this.scanSessionRepository.deleteSession(target.id);
+    this.logger.info(
+      `Successfully stopped library scan for library ${libraryId} with session ${target.id}`,
+    );
     return true;
   }
 }

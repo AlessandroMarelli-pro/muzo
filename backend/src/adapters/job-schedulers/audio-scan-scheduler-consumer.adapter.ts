@@ -58,84 +58,113 @@ export class AudioScanSchedulerConsumerAdapter
       contextUser: data.contextUser,
       jobData: data,
     });
-    const { isBatchComplete, analysisResults, files, createdTracks } =
-      await this.processBatchAudioScanUseCase.execute(data);
-    this.logger.info(`Processed audio scan batch for session ${data.sessionId}`, {
-      sessionId: data.sessionId,
-      contextUser: data.contextUser,
-      jobData: data,
-      isBatchComplete,
-      analysisResults: analysisResults.length,
-      files: files.length,
-      createdTracks: createdTracks.length,
-    });
-    let successCount = 0;
-    let failedCount = 0;
-    if (!isBatchComplete) {
-      await Promise.all(
-        createdTracks.map(async (track, index) => {
-          const analysisResult = analysisResults.find(
-            (result) => result.file_info.filename === track.fileInfo.fileName,
-          );
-          if (!analysisResult) {
-            this.logger.warn(
-              `Analysis result not found for track ${track.id} ${track.fileInfo.fileName}`,
-            );
-            return;
-          }
-          const result = await this.processSingleTrackAnalysisUseCase.execute(
-            track,
-            analysisResult,
-            {
-              trackIndex: index,
-              sessionId: data.sessionId,
-              batchIndex: data.batchIndex,
-              totalTracks: data.totalFiles,
-              libraryId: track.libraryId,
-            },
-          );
-          this.logger.debug(
-            `Processed single track analysis for track ${track.id} ${track.fileInfo.fileName}`,
-            {
-              trackId: track.id,
-              fileName: track.fileInfo.fileName,
-              result,
-            },
-          );
-          if (result.isSuccess) {
-            successCount++;
-          } else {
-            failedCount++;
-          }
-          // Search for image if available
-          if (analysisResult.album_art?.imageUrl || analysisResult.album_art?.imagePath) {
-            await this.addImageSearchRecordUseCase.execute(track.id, {
-              imagePath: analysisResult.album_art.imagePath,
-              imageUrl: analysisResult.album_art.imageUrl,
-              source: analysisResult.album_art.source,
-            });
-          }
 
-          await this.syncTrackToElasticSearchUseCase.execute(track.id);
-        }),
+    let batchFailed = false;
+    try {
+      const { isBatchComplete, analysisResults, files, createdTracks } =
+        await this.processBatchAudioScanUseCase.execute(data);
+      this.logger.info(`Processed audio scan batch for session ${data.sessionId}`, {
+        sessionId: data.sessionId,
+        contextUser: data.contextUser,
+        jobData: data.audioFiles.map((track) => ({
+          name: track.fileName,
+        })),
+        isBatchComplete,
+        analysisResults: analysisResults.length,
+        files: files.length,
+        createdTracks: createdTracks.length,
+      });
+      let successCount = 0;
+      let failedCount = 0;
+      if (!isBatchComplete) {
+        await Promise.all(
+          createdTracks.map(async (track, index) => {
+            const analysisResult = analysisResults.find(
+              (result) => result.file_info.filename === track.fileInfo.fileName,
+            );
+            if (!analysisResult) {
+              this.logger.warn(
+                `Analysis result not found for track ${track.id} ${track.fileInfo.fileName}`,
+              );
+              return;
+            }
+            const result = await this.processSingleTrackAnalysisUseCase.execute(
+              track,
+              analysisResult,
+              {
+                trackIndex: index,
+                sessionId: data.sessionId,
+                batchIndex: data.batchIndex,
+                totalTracks: data.totalFiles,
+                libraryId: track.libraryId,
+              },
+            );
+            this.logger.debug(
+              `Processed single track analysis for track ${track.id} ${track.fileInfo.fileName}`,
+              {
+                trackId: track.id,
+                fileName: track.fileInfo.fileName,
+                result,
+              },
+            );
+            if (result.isSuccess) {
+              successCount++;
+            } else {
+              failedCount++;
+            }
+            // Search for image if available
+            if (analysisResult.album_art?.imageUrl || analysisResult.album_art?.imagePath) {
+              await this.addImageSearchRecordUseCase.execute(track.id, {
+                imagePath: analysisResult.album_art.imagePath,
+                imageUrl: analysisResult.album_art.imageUrl,
+                source: analysisResult.album_art.source,
+              });
+            }
+
+            await this.syncTrackToElasticSearchUseCase.execute(track.id);
+          }),
+        );
+      }
+      this.logger.info(`Processing end batch audio scan for session ${data.sessionId}`, {
+        sessionId: data.sessionId,
+        contextUser: data.contextUser,
+        jobData: data,
+        isBatchComplete,
+        analysisResults: analysisResults.length,
+        files: files.length,
+        createdTracks: createdTracks.length,
+        successCount,
+        failedCount,
+      });
+    } catch (error) {
+      // A failure anywhere above (AI analysis, image search, ES sync) must not prevent
+      // completedBatches from advancing below -- otherwise the scan can never reach
+      // totalBatches and hangs forever just short of completion. Count the whole batch as
+      // failed instead and keep going.
+      batchFailed = true;
+      this.logger.error(
+        `Batch ${data.batchIndex} failed for session ${data.sessionId}; marking as failed and continuing`,
+        { sessionId: data.sessionId, batchIndex: data.batchIndex, error },
       );
     }
-    this.logger.info(`Processing end batch audio scan for session ${data.sessionId}`, {
-      sessionId: data.sessionId,
-      contextUser: data.contextUser,
-      jobData: data,
-      isBatchComplete,
-      analysisResults: analysisResults.length,
-      files: files.length,
-      createdTracks: createdTracks.length,
-      successCount,
-      failedCount,
-    });
-    await this.processEndBatchAudioScanUseCase.execute(
-      data,
-      data.libraryId,
-      data.incremental,
-      data.contextUser,
-    );
+
+    try {
+      await this.processEndBatchAudioScanUseCase.execute(
+        data,
+        data.libraryId,
+        data.incremental,
+        data.contextUser,
+        batchFailed,
+      );
+    } catch (error) {
+      // This call is what advances completedBatches -- a transient failure here (e.g. a
+      // SQLite write conflict from concurrent batches updating the same session row) must
+      // not be allowed to escape and fail the whole job, or completedBatches can permanently
+      // fall short of totalBatches and the scan never reaches scan.complete.
+      this.logger.error(
+        `Failed to finalize batch ${data.batchIndex} for session ${data.sessionId}; progress for this batch may not have advanced`,
+        { sessionId: data.sessionId, batchIndex: data.batchIndex, error },
+      );
+    }
   }
 }

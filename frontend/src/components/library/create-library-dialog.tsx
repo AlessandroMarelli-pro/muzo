@@ -1,4 +1,4 @@
-import type { CreateLibraryInput } from '@/__generated__/types';
+import type { CreateLibraryInput, Library } from '@/__generated__/types';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,7 +19,7 @@ import { Field, FieldLabel } from '../ui/field';
 interface CreateLibraryDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSuccess?: () => void;
+  onSuccess?: (library: Library) => void;
 }
 
 export const CreateLibraryDialog: React.FC<CreateLibraryDialogProps> = ({
@@ -92,8 +92,8 @@ export const CreateLibraryDialog: React.FC<CreateLibraryDialogProps> = ({
         maxFileSize: formData.maxFileSize,
       };
 
-      await createLibraryMutation.mutateAsync(createLibraryInput);
-      onSuccess?.();
+      const library = await createLibraryMutation.mutateAsync(createLibraryInput);
+      onSuccess?.(library);
       onOpenChange(false);
       await router.invalidate();
     } catch (error) {

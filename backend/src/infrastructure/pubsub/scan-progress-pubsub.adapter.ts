@@ -162,12 +162,10 @@ export class ScanProgressPubSubAdapter
   async publishEvent(sessionId: SessionId, event: ScanProgressEvent): Promise<void> {
     try {
       const channel = `${this.channelPrefix}:${sessionId}:events`;
-      // Use setImmediate to avoid blocking the event loop
       this.logger.debug(`Publishing ${event.type} event to channel ${channel}`);
 
       const eventJson = JSON.stringify(event);
       await this.redisPublisher.publish(channel, eventJson);
-      await new Promise((resolve) => setTimeout(resolve, 1000));
     } catch (error) {
       this.logger.error(`Failed to publish event for session ${sessionId}:`, error);
       // Don't throw - event publishing shouldn't break the scan

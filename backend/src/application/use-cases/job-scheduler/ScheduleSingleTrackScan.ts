@@ -19,11 +19,22 @@ export class ScheduleSingleTrackScanUseCase {
   async execute(
     trackId: MusicTrackId,
     force: boolean,
-  ): Promise<{ sessionId: SessionId }> {
+  ): Promise<{ sessionId: SessionId; reused: boolean }> {
     const track = await this.musicTrackRepository.getOneById(trackId);
-    const fileInfo = trackToFileInfo(track);
-    const session = await this.scanSessionRepository.createSession(null);
+
+    const { session, created } = await this.scanSessionRepository.getActiveSessionOrCreate(
+      track.libraryId,
+    );
     const sessionId = session.id;
+
+    if (!created) {
+      this.logger.info(
+        `User already has an active session ${sessionId}; reusing it instead of starting a new scan for track ${trackId}`,
+      );
+      return { sessionId, reused: true };
+    }
+
+    const fileInfo = trackToFileInfo(track);
 
     this.logger.info(`Scheduling single track scan for track ${trackId}`, {
       trackId,
@@ -44,6 +55,6 @@ export class ScheduleSingleTrackScanUseCase {
       sessionId,
     });
 
-    return { sessionId };
+    return { sessionId, reused: false };
   }
 }

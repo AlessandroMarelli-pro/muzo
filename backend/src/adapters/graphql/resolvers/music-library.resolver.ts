@@ -65,10 +65,8 @@ export class MusicLibraryResolver {
 
   @Mutation(() => Library)
   async createLibrary(@Args('input') input: CreateLibraryInput): Promise<Library> {
-    return this.createLibraryUseCase.execute(input).then((library) => {
-      this.scheduleLibraryScanUseCase.execute(parseMusicLibraryId(library.id), false);
-      return toMusicLibrary(library);
-    });
+    const library = await this.createLibraryUseCase.execute(input);
+    return toMusicLibrary(library);
   }
 
   @Mutation(() => Boolean)

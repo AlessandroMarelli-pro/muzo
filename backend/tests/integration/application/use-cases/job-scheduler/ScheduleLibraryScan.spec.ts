@@ -206,5 +206,36 @@ describe('ScheduleLibraryScanUseCase', () => {
     it('failure: propagates when library does not exist (updateScanStatus after producer fails or library missing)', async () => {
       await expect(useCase.execute(LIBRARY_ID, false)).rejects.toThrow();
     });
+
+    it('one session per user: reuses the existing active session for the same library instead of creating a second one', async () => {
+      const library = makeLibrary({ id: 'lib-1' });
+      await musicLibraryRepository.save(library);
+
+      const first = await useCase.execute(LIBRARY_ID, false);
+      const second = await useCase.execute(LIBRARY_ID, false);
+
+      expect(first.reused).toBe(false);
+      expect(second.reused).toBe(true);
+      expect(second.sessionId).toEqual(first.sessionId);
+      // Only one job was scheduled -- the second call must not enqueue a duplicate.
+      expect(fakeProducer.scheduleLibraryScanCalls).toHaveLength(1);
+      expect(await prisma.scanSession.count()).toBe(1);
+    });
+
+    it('one session per user: reuses the active session even when scanning a different library', async () => {
+      const library1 = makeLibrary({ id: 'lib-1' });
+      const library2 = makeLibrary({ id: 'lib-2' });
+      await musicLibraryRepository.save(library1);
+      await musicLibraryRepository.save(library2);
+      const LIBRARY_2_ID = models.musicLibrary.id('lib-2');
+
+      const first = await useCase.execute(LIBRARY_ID, false);
+      const second = await useCase.execute(LIBRARY_2_ID, false);
+
+      expect(second.reused).toBe(true);
+      expect(second.sessionId).toEqual(first.sessionId);
+      expect(fakeProducer.scheduleLibraryScanCalls).toHaveLength(1);
+      expect(await prisma.scanSession.count()).toBe(1);
+    });
   });
 });

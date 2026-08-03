@@ -19,8 +19,18 @@ export class ScheduleLibraryScanUseCase {
   async execute(
     libraryId: MusicLibraryId,
     incremental: boolean,
-  ): Promise<{ sessionId: SessionId }> {
-    const { id } = await this.scanSessionRepository.createSession(null);
+  ): Promise<{ sessionId: SessionId; reused: boolean }> {
+    const { session, created } =
+      await this.scanSessionRepository.getActiveSessionOrCreate(libraryId);
+    const id = session.id;
+
+    if (!created) {
+      this.logger.info(
+        `User already has an active session ${id}; reusing it instead of starting a new scan for library ${libraryId}`,
+      );
+      return { sessionId: id, reused: true };
+    }
+
     try {
       this.logger.info(`Creating session for library ${libraryId}`, {
         libraryId,
@@ -40,9 +50,9 @@ export class ScheduleLibraryScanUseCase {
       this.logger.info(
         `Successfully updated library ${libraryId} scan status to SCANNING with session ${id}`,
       );
-      return { sessionId: id };
+      return { sessionId: id, reused: false };
     } catch (error) {
-      this.logger.error(`Failed to schedule library scan for library ${libraryId}:`, error);
+      this.logger.error(`Failed to schedule library scan for library ${libraryId}:`, { error });
       await this.musicLibraryRepository.updateScanStatus(libraryId, 'IDLE');
       await this.scanSessionRepository.deleteSession(id);
       throw error;
