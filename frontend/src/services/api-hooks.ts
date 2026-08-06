@@ -625,7 +625,13 @@ export const useDislikeTrack = () => {
 
 export const useScanTrack = () => {
   return useMutation({
-    mutationFn: async ({ trackId, force = false }: { trackId: string; force?: boolean }) => {
+    mutationFn: async ({
+      trackId,
+      force = false,
+    }: {
+      trackId: string;
+      force?: boolean;
+    }) => {
       const response = await graffleClient.request<{
         scanTrack: string;
       }>(

@@ -13,9 +13,7 @@ const toastOptions: ExternalToast = {
 };
 
 /** Pick the most recently added active session so new track scans show up. */
-function getLatestSessionId(
-  activeSessions: Map<string, { sessionId: string }>,
-): string | undefined {
+function getLatestSessionId(activeSessions: Map<string, { sessionId: string }>): string | undefined {
   const values = [...activeSessions.values()];
   return values.length ? values[values.length - 1]?.sessionId : undefined;
 }

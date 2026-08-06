@@ -54,8 +54,7 @@ export const LibraryCard: React.FC<LibraryCardProps> = ({
   const session = getSessionForLibrary(library.id);
   // ScanSessionContext keeps this session's status/progress live via SSE, so it's the single
   // source of truth here -- no separate local copy that could drift from it.
-  const scanStatus: LibraryScanStatus =
-    (session?.status as LibraryScanStatus) ?? library.scanStatus;
+  const scanStatus: LibraryScanStatus = (session?.status as LibraryScanStatus) ?? library.scanStatus;
   const analysisProgress = (session?.overallProgress ?? 0) / 100;
 
   const formatDate = (dateString?: string) => {
