@@ -28,7 +28,8 @@ export function PendingTrackCard({ track, onRated }: PendingTrackCardProps) {
   const dislikeMutation = useDislikeTrack();
   const bangerMutation = useBangerTrack();
 
-  const isMutating = likeMutation.isPending || dislikeMutation.isPending || bangerMutation.isPending;
+  const isMutating =
+    likeMutation.isPending || dislikeMutation.isPending || bangerMutation.isPending;
   const progressValue = useMemo(() => {
     if (duration <= 0) {
       return 0;

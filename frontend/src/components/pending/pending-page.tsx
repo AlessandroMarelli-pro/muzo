@@ -44,7 +44,9 @@ export function PendingPage() {
       {isLoading ? (
         <div className="text-sm text-muted-foreground">Loading pending tracks...</div>
       ) : tracks.length === 0 ? (
-        <div className="text-sm text-muted-foreground">No pending tracks match the current filters.</div>
+        <div className="text-sm text-muted-foreground">
+          No pending tracks match the current filters.
+        </div>
       ) : (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
           {tracks.map((track) => (

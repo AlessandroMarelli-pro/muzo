@@ -398,9 +398,7 @@ function DataTableFilterItem<TData>({
                         onFilterUpdate(filter.filterId, {
                           id: value as Extract<keyof TData, string>,
                           variant: col.columnDef.meta?.variant ?? 'text',
-                          operator: getDefaultFilterOperator(
-                            col.columnDef.meta?.variant ?? 'text',
-                          ),
+                          operator: getDefaultFilterOperator(col.columnDef.meta?.variant ?? 'text'),
                           value: '',
                         });
 

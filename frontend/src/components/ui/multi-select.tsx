@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
-import { ScrollArea } from '@radix-ui/react-scroll-area';
+import { ScrollArea } from 'radix-ui';
 import { Check, ChevronsUpDown, X } from 'lucide-react';
 import * as React from 'react';
 
@@ -123,30 +123,32 @@ export default function MultiSelect({
         >
           <Command>
             <CommandInput autoFocus={false} placeholder="Search items…" />
-            <ScrollArea className="max-h-[200px] overflow-y-auto">
-              <CommandList className="max-h-[200px] overflow-y-auto">
-                <CommandEmpty className="p-0">No items found.</CommandEmpty>
-                <CommandGroup>
-                  {options?.map((option) => (
-                    <CommandItem
-                      key={option.label}
-                      value={option.label}
-                      onSelect={() => {
-                        handleSelect(option.value);
-                      }}
-                    >
-                      <Check
-                        className={cn(
-                          'mr-2 h-4 w-4',
-                          value.includes(option.value) ? 'opacity-100' : 'opacity-0',
-                        )}
-                      />
-                      {option.label}
-                    </CommandItem>
-                  ))}
-                </CommandGroup>
-              </CommandList>
-            </ScrollArea>
+            <ScrollArea.Root className="max-h-[200px] overflow-y-auto">
+              <ScrollArea.Viewport className="max-h-[200px]">
+                <CommandList className="max-h-[200px] overflow-y-auto">
+                  <CommandEmpty className="p-0">No items found.</CommandEmpty>
+                  <CommandGroup>
+                    {options?.map((option) => (
+                      <CommandItem
+                        key={option.label}
+                        value={option.label}
+                        onSelect={() => {
+                          handleSelect(option.value);
+                        }}
+                      >
+                        <Check
+                          className={cn(
+                            'mr-2 h-4 w-4',
+                            value.includes(option.value) ? 'opacity-100' : 'opacity-0',
+                          )}
+                        />
+                        {option.label}
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                </CommandList>
+              </ScrollArea.Viewport>
+            </ScrollArea.Root>
           </Command>
         </PopoverContent>
       </Popover>

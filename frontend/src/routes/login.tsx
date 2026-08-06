@@ -52,9 +52,7 @@ function LoginPage() {
       <div className="w-full max-w-sm space-y-6">
         <div className="space-y-2 text-center">
           <h1 className="text-2xl font-semibold">Sign in</h1>
-          <p className="text-muted-foreground text-sm">
-            Enter your email and password to continue
-          </p>
+          <p className="text-muted-foreground text-sm">Enter your email and password to continue</p>
         </div>
 
         <div className="flex flex-col gap-3">
@@ -125,7 +123,10 @@ function LoginPage() {
 
         <p className="text-muted-foreground text-center text-sm">
           Don&apos;t have an account?{' '}
-          <Link to="/sign-up" className="text-primary underline underline-offset-4 hover:no-underline">
+          <Link
+            to="/sign-up"
+            className="text-primary underline underline-offset-4 hover:no-underline"
+          >
             Create account
           </Link>
         </p>

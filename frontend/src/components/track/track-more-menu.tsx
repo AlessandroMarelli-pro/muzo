@@ -52,19 +52,13 @@ export const TrackMoreMenu = ({
       <DropdownMenuContent align="end" className="z-99999">
         <DropdownMenuItem onClick={handleAddToQueue}>Add to Queue</DropdownMenuItem>
         <SelectPlaylistTrigger trackId={trackId} artist={artist} title={title} />
-        <DropdownMenuItem
-          onClick={handleScanTrack(false)}
-          disabled={scanTrackMutation.isPending}
-        >
+        <DropdownMenuItem onClick={handleScanTrack(false)} disabled={scanTrackMutation.isPending}>
           <RefreshCw
             className={scanTrackMutation.isPending ? 'mr-2 h-4 w-4 animate-spin' : 'mr-2 h-4 w-4'}
           />
           Rescan track
         </DropdownMenuItem>
-        <DropdownMenuItem
-          onClick={handleScanTrack(true)}
-          disabled={scanTrackMutation.isPending}
-        >
+        <DropdownMenuItem onClick={handleScanTrack(true)} disabled={scanTrackMutation.isPending}>
           <RefreshCw
             className={scanTrackMutation.isPending ? 'mr-2 h-4 w-4 animate-spin' : 'mr-2 h-4 w-4'}
           />

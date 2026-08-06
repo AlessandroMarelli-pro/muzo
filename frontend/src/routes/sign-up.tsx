@@ -54,9 +54,7 @@ function SignUpPage() {
       <div className="w-full max-w-sm space-y-6">
         <div className="space-y-2 text-center">
           <h1 className="text-2xl font-semibold">Create account</h1>
-          <p className="text-muted-foreground text-sm">
-            Enter your details to get started
-          </p>
+          <p className="text-muted-foreground text-sm">Enter your details to get started</p>
         </div>
 
         <div className="flex flex-col gap-3">
@@ -142,7 +140,10 @@ function SignUpPage() {
 
         <p className="text-muted-foreground text-center text-sm">
           Already have an account?{' '}
-          <Link to="/login" className="text-primary underline underline-offset-4 hover:no-underline">
+          <Link
+            to="/login"
+            className="text-primary underline underline-offset-4 hover:no-underline"
+          >
             Sign in
           </Link>
         </p>
