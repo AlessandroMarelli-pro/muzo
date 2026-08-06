@@ -1,7 +1,7 @@
 import { useScanSessionContext } from '@/contexts/scan-session.context';
-import { useScanTrack } from '@/services/api-hooks';
+import { useDownloadHqAudio, useScanTrack } from '@/services/api-hooks';
 import { useAddTrackToQueue } from '@/services/queue-hooks';
-import { MoreHorizontal, RefreshCw } from 'lucide-react';
+import { Download, MoreHorizontal, RefreshCw } from 'lucide-react';
 import { SelectPlaylistTrigger } from '../playlist/select-playlist-dialog';
 import { Button } from '../ui/button';
 import {
@@ -15,14 +15,17 @@ export const TrackMoreMenu = ({
   trackId,
   artist,
   title,
+  hqAudioPath,
 }: {
   trackId: string;
   artist: string;
   title: string;
+  hqAudioPath?: string | null;
 }) => {
   const { addSession } = useScanSessionContext();
   const addToQueueMutation = useAddTrackToQueue();
   const scanTrackMutation = useScanTrack();
+  const downloadHqAudioMutation = useDownloadHqAudio();
 
   const handleAddToQueue = () => {
     addToQueueMutation.mutate(trackId);
@@ -39,6 +42,10 @@ export const TrackMoreMenu = ({
         },
       },
     );
+  };
+
+  const handleDownloadHqAudio = () => {
+    downloadHqAudioMutation.mutate(trackId);
   };
 
   return (
@@ -69,6 +76,17 @@ export const TrackMoreMenu = ({
             className={scanTrackMutation.isPending ? 'mr-2 h-4 w-4 animate-spin' : 'mr-2 h-4 w-4'}
           />
           Rescan track (force)
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={handleDownloadHqAudio}
+          disabled={!!hqAudioPath || downloadHqAudioMutation.isPending}
+        >
+          <Download
+            className={
+              downloadHqAudioMutation.isPending ? 'mr-2 h-4 w-4 animate-spin' : 'mr-2 h-4 w-4'
+            }
+          />
+          {hqAudioPath ? 'HQ audio available' : 'Download HQ'}
         </DropdownMenuItem>
         <DropdownMenuItem>View Details</DropdownMenuItem>
       </DropdownMenuContent>

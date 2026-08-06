@@ -82,7 +82,11 @@ export class ProcessSingleTrackAnalysisUseCase {
 
       this.logger.info(`Updating track ${fileName} with analysis results`);
       // Update track with AI metadata if available
-      await this.musicTrackRepository.updateTrackWithAnalysis(track.id, analysisResult);
+      await this.musicTrackRepository.updateTrackWithAnalysis(
+        track.id,
+        analysisResult,
+        track.fileInfo.filePath,
+      );
 
       this.logger.info(`Successfully analyzed audio file: ${fileName}`);
 

@@ -14,6 +14,7 @@ export const trackFragment = gql`
     fileName
     fileCreatedAt
     fileSize
+    hqAudioPath
     duration
     genres
     subgenres

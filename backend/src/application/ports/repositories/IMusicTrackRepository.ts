@@ -74,5 +74,6 @@ export interface IMusicTrackRepository {
   updateTrackWithAnalysis(
     trackId: MusicTrackId,
     analysisResult: AudioAnalysisResponse,
+    filePath: string,
   ): Promise<void>;
 }

@@ -3,6 +3,7 @@ import { AppSidebar, AppSidebarProps } from '@/components/layout/app-sidebar';
 import { EnhancedMusicPlayer } from '@/components/player/enhanced-music-player';
 import { SiteHeader } from '@/components/site-header';
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
+import { TooltipProvider } from '@/components/ui/tooltip';
 import { AuthProvider, useAuth } from '@/contexts/auth-context';
 import { AudioPlayerProvider, useCurrentTrack } from '@/contexts/audio-player-context';
 import { FilterProvider } from '@/contexts/filter-context';
@@ -150,7 +151,7 @@ function RootContent() {
   }
 
   return (
-    <>
+    <TooltipProvider delayDuration={0}>
       <SidebarProvider defaultOpen={sidebarDefaultOpen}>
         <AppSidebar
           data={{
@@ -171,7 +172,7 @@ function RootContent() {
         </SidebarInset>
       </SidebarProvider>
       <EnhancedMusicPlayer onToggleShuffle={handleToggleShuffle} showVisualizations={true} />
-    </>
+    </TooltipProvider>
   );
 }
 

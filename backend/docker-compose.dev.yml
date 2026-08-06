@@ -28,6 +28,30 @@ services:
     restart: unless-stopped
     networks:
       - muzo-dev-network
+  sockseek-dev:
+    build:
+      context: ./third_party/sockseek
+    container_name: muzo-sockseek-dev
+    entrypoint:
+      - sockseek
+      - daemon
+      - --server-ip
+      - '0.0.0.0'
+      - --server-port
+      - '5040'
+      - --config
+      - /config/sockseek.conf
+      - -p
+      - /data
+    command: []
+    ports:
+      - '5040:5040'
+    volumes:
+      - sockseek_dev_config:/config
+      - sockseek_dev_data:/data
+    restart: unless-stopped
+    networks:
+      - muzo-dev-network
 
 volumes:
   redis_dev_data:
@@ -35,6 +59,10 @@ volumes:
   slskd_dev_app:
     driver: local
   slskd_dev_downloads:
+    driver: local
+  sockseek_dev_config:
+    driver: local
+  sockseek_dev_data:
     driver: local
 
 networks:

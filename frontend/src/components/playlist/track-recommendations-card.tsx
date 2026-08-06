@@ -7,6 +7,7 @@ import {
 import { cn } from '@/lib/utils';
 import { useNavigate } from '@tanstack/react-router';
 import { Brain, InfoIcon, Pause, Play, Plus } from 'lucide-react';
+import { AudioQualityBadge } from '../track/audio-quality-badge';
 import { GenresBadge } from '../track/genres-badge';
 import { TrackMoreMenu } from '../track/track-more-menu';
 import { Badge } from '../ui/badge';
@@ -125,6 +126,7 @@ export const TrackRecommendationsCard = ({
           <Badge variant="outline" className="text-xs border-none">
             {track.mfTempo} BPM
           </Badge>
+          <AudioQualityBadge format={track.format} hqAudioPath={track.hqAudioPath} />
 
           {/* Similarity Reasons */}
           {recommendation.reasons.length > 0 && (
@@ -179,6 +181,7 @@ export const TrackRecommendationsCard = ({
             trackId={track.id}
             artist={track.artist || 'Unknown Artist'}
             title={track.title || 'Unknown Track'}
+            hqAudioPath={track.hqAudioPath}
           />
         )}
       </div>

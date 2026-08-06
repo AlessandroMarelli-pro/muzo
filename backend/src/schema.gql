@@ -150,6 +150,7 @@ type Mutation {
   deleteLibrary(id: Base64ID!): Boolean!
   deletePlaylist(id: Base64ID!): Boolean!
   deleteSavedFilter(id: Base64ID!): Boolean!
+  downloadHqAudio(trackId: Base64ID!): Boolean!
   downloadPlaylistToFolder(playlistId: Base64ID!): Boolean!
   exportPlaylistToM3U(playlistId: Base64ID!): String!
   registerPlayedTrack(trackId: Base64ID!): Boolean!

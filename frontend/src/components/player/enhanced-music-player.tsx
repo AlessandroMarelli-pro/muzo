@@ -11,6 +11,7 @@ import { useQueue } from '@/services/queue-hooks';
 import { useNavigate } from '@tanstack/react-router';
 import { Brain, Heart, Pause, Play, Shuffle, SkipBack, SkipForward } from 'lucide-react';
 import React, { useEffect, useRef, useState } from 'react';
+import { AudioQualityBadge } from '../track/audio-quality-badge';
 import { TrackMoreMenu } from '../track/track-more-menu';
 import { WaveformVisualizer } from './waveform-visualizer';
 
@@ -172,9 +173,15 @@ export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
           </div>
           {currentTrack && (
             <div className=" flex-1 w-[45%]">
-              <p className="text-xs font-medium truncate capitalize">
-                {currentTrack.title || 'Unknown Title'}
-              </p>
+              <div className="flex items-center gap-2 min-w-0">
+                <p className="text-xs font-medium truncate capitalize">
+                  {currentTrack.title || 'Unknown Title'}
+                </p>
+                <AudioQualityBadge
+                  format={currentTrack.format}
+                  hqAudioPath={currentTrack.hqAudioPath}
+                />
+              </div>
               <p className="text-xs text-muted-foreground truncate capitalize">
                 {currentTrack.artist || 'Unknown Artist'}
               </p>
@@ -242,6 +249,7 @@ export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
                 trackId={currentTrack?.id || ''}
                 artist={currentTrack?.artist || ''}
                 title={currentTrack?.title || ''}
+                hqAudioPath={currentTrack?.hqAudioPath}
               />
             </div>
             {/* Visualizations */}

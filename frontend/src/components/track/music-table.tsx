@@ -24,6 +24,7 @@ import { StaticFilterOptionsData } from '@/hooks/useFilterOptions';
 import { Link } from '@tanstack/react-router';
 import { format } from 'date-fns';
 import { DataTablePagination } from '../data-table/data-table-pagination';
+import { AudioQualityBadge } from './audio-quality-badge';
 import { TrackMoreMenu } from './track-more-menu';
 
 interface MusicTableProps {
@@ -129,7 +130,12 @@ const ActionCells = ({
           <Brain className="h-4 w-4" aria-hidden />
         </Link>
       </Button>
-      <TrackMoreMenu trackId={track.id} artist={track.artist || ''} title={track.title || ''} />
+      <TrackMoreMenu
+        trackId={track.id}
+        artist={track.artist || ''}
+        title={track.title || ''}
+        hqAudioPath={track.hqAudioPath}
+      />
     </div>
   );
 };
@@ -194,8 +200,14 @@ const columns = (
           const title = row.getValue('title') as string;
 
           return (
-            <div className="max-w-[150px] truncate capitalize" title={title}>
-              {title}
+            <div className="flex items-center gap-2 max-w-[180px]">
+              <div className="truncate capitalize" title={title}>
+                {title}
+              </div>
+              <AudioQualityBadge
+                format={row.original.format}
+                hqAudioPath={row.original.hqAudioPath}
+              />
             </div>
           );
         },

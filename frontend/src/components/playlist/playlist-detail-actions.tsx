@@ -11,7 +11,8 @@ import {
   useCurrentTrack,
   useIsPlaying,
 } from '@/contexts/audio-player-context';
-import { ChevronDown, ListMusic, Pause, Play, Plus, Trash2 } from 'lucide-react';
+import { ChevronDown, Copy, ListMusic, Pause, Play, Plus, Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface PlaylistDetailActionsProps {
   playlist: Playlist | undefined;
@@ -41,6 +42,27 @@ export function PlaylistDetailActions({
     setCurrentTrack(playlist?.tracks[0]?.track || undefined);
     actions.play(playlist?.tracks[0]?.track?.id || '');
   };
+
+  const handleCopyList = async () => {
+    if (!playlist?.tracks?.length) return;
+    const escapeCsvField = (value: string) => `"${value.replace(/"/g, '""')}"`;
+    const rows = [
+      ['Artist', 'Title'],
+      ...playlist.tracks.map((playlistTrack) => [
+        playlistTrack.track?.artist || '',
+        playlistTrack.track?.title || '',
+      ]),
+    ];
+    const csv = rows.map((row) => row.map(escapeCsvField).join(',')).join('\n');
+    try {
+      await navigator.clipboard.writeText(csv);
+      toast.success('Playlist copied to clipboard as CSV');
+    } catch (error) {
+      console.error('Failed to copy playlist:', error);
+      toast.error('Failed to copy playlist');
+    }
+  };
+
   const isDisabled = isLoading || !playlist;
 
   return (
@@ -59,6 +81,10 @@ export function PlaylistDetailActions({
         <DropdownMenuItem onClick={onSetAsQueue} disabled={isDisabled || isSettingAsQueue}>
           <ListMusic className="h-4 w-4 mr-2" />
           {isSettingAsQueue ? 'Setting as Queue…' : 'Set as Queue'}
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={handleCopyList} disabled={isDisabled}>
+          <Copy className="h-4 w-4 mr-2" />
+          Copy List
         </DropdownMenuItem>
         <DropdownMenuItem onClick={handlePlay} disabled={isDisabled}>
           {isPlaying ? (

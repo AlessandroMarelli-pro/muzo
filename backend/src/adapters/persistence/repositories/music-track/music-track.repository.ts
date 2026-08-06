@@ -381,6 +381,7 @@ export class MusicTrackRepository implements IMusicTrackRepository {
   async updateTrackWithAnalysis(
     trackId: MusicTrackId,
     analysisResult: AudioAnalysisResponse,
+    filePath: string,
   ): Promise<void> {
     const updateData: any = {};
 
@@ -398,6 +399,15 @@ export class MusicTrackRepository implements IMusicTrackRepository {
     }
     if (analysisResult.audio_technical.sample_rate) {
       updateData.sampleRate = analysisResult.audio_technical.sample_rate;
+    }
+
+    // A file that is itself lossless (flac/wav) already IS the HQ copy —
+    // no need to acquire one separately. Mirrors AcquireHqAudioUseCase's rule.
+    const LOSSLESS_FORMATS = new Set(['flac', 'wav']);
+    const ext = filePath.split('.').pop()?.toLowerCase();
+    const probedFormat = analysisResult.audio_technical.format?.toLowerCase();
+    if ((ext && LOSSLESS_FORMATS.has(ext)) || (probedFormat && LOSSLESS_FORMATS.has(probedFormat))) {
+      updateData.hqAudioPath = filePath;
     }
 
     // Update AI-generated metadata

@@ -6,6 +6,7 @@ import {
   useQueryClient,
 } from '@tanstack/react-query';
 import { parse } from 'graphql';
+import { toast } from 'sonner';
 import type {
   CreateLibraryInput,
   CursorPaginatedTracks,
@@ -643,6 +644,38 @@ export const useScanTrack = () => {
         { trackId, force },
       );
       return response.scanTrack;
+    },
+  });
+};
+
+export const useDownloadHqAudio = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (trackId: string) => {
+      const response = await graffleClient.request<{
+        downloadHqAudio: boolean;
+      }>(
+        gql`
+          mutation DownloadHqAudio($trackId: Base64ID!) {
+            downloadHqAudio(trackId: $trackId)
+          }
+        `,
+        { trackId },
+      );
+      return response.downloadHqAudio;
+    },
+    onSuccess: () => {
+      toast.success('HQ download started', {
+        description: 'Searching for a lossless copy in the background.',
+        duration: 3000,
+      });
+      queryClient.invalidateQueries({ queryKey: ['tracksList'] });
+    },
+    onError: (error: any) => {
+      const errorMessage =
+        error?.response?.errors?.[0]?.message || error?.message || 'Failed to start HQ download';
+      toast.error(errorMessage, { duration: 3000 });
     },
   });
 };

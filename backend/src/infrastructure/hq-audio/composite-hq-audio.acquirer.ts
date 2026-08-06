@@ -6,7 +6,7 @@ import {
 } from 'src/application/ports/infrastructure/IHqAudioAcquirer';
 import { ILogger, LOGGER } from 'src/application/ports/infrastructure/ILogger';
 import { LOGGER_FACTORY } from 'src/application/ports/infrastructure/ILoggerFactory';
-import { SlskdAcquirer } from './slskd.acquirer';
+import { SockseekAcquirer } from './sockseek.acquirer';
 import { TidalDlAcquirer } from './tidal-dl.acquirer';
 
 @Injectable()
@@ -15,7 +15,7 @@ export class CompositeHqAudioAcquirer implements IHqAudioAcquirer {
 
   constructor(
     private readonly tidalDlAcquirer: TidalDlAcquirer,
-    private readonly slskdAcquirer: SlskdAcquirer,
+    private readonly sockseekAcquirer: SockseekAcquirer,
     private readonly configService: ConfigService,
     @Inject(LOGGER_FACTORY)
     loggerFactory: { createLogger: (name: string) => ILogger },
@@ -48,21 +48,21 @@ export class CompositeHqAudioAcquirer implements IHqAudioAcquirer {
         return tidal;
       }
     } catch (error) {
-      this.logger.warn('HQ acquisition via Tidal failed, trying slskd', {
+      this.logger.warn('HQ acquisition via Tidal failed, trying sockseek', {
         artist,
         title,
         error: String(error),
       });
     }
 
-    const soulseek = await this.slskdAcquirer.acquire(
+    const soulseek = await this.sockseekAcquirer.acquire(
       artist,
       title,
       durationSeconds,
       outputDir || this.outputDir,
     );
     if (soulseek) {
-      this.logger.info('HQ acquisition succeeded via slskd', {
+      this.logger.info('HQ acquisition succeeded via sockseek', {
         artist,
         title,
         filePath: soulseek.filePath,

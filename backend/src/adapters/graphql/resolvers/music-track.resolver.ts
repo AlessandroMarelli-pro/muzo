@@ -1,6 +1,10 @@
-import { UseGuards } from '@nestjs/common';
+import { Inject, UseGuards } from '@nestjs/common';
 import { Args, Int, Mutation, Parent, ResolveField, Resolver } from '@nestjs/graphql';
 import { GetTrackRecommendationsUseCase, ScheduleSingleTrackScanUseCase } from 'src/application/use-cases';
+import {
+  HQ_AUDIO_ACQUIRE_PRODUCER,
+  IHqAudioAcquireProducer,
+} from 'src/application/ports/infrastructure/IHqAudioAcquireProducer';
 import {
   ToggleBangerUseCase,
   ToggleDislikeUseCase,
@@ -8,6 +12,7 @@ import {
   ToggleLikeUseCase,
 } from 'src/application/use-cases/music-track';
 import { SessionId } from 'src/kernel/ids';
+import { getCurrentUser } from 'src/kernel/types/context';
 import { parseMusicTrackId } from '../../common/utils/parse-id';
 import { AuthGuard } from '../context/auth.guard';
 import { toTrack } from '../mappers/track.mapper';
@@ -25,6 +30,8 @@ export class MusicTrackResolver {
     private readonly toggleLikeUseCase: ToggleLikeUseCase,
     private readonly toggleDislikeUseCase: ToggleDislikeUseCase,
     private readonly toggleBangerUseCase: ToggleBangerUseCase,
+    @Inject(HQ_AUDIO_ACQUIRE_PRODUCER)
+    private readonly hqAudioAcquireProducer: IHqAudioAcquireProducer,
   ) {}
 
   @ResolveField(() => [TrackRecommendation])
@@ -69,5 +76,11 @@ export class MusicTrackResolver {
     return this.scheduleSingleTrackScanUseCase
       .execute(parseMusicTrackId(trackId), force ?? false)
       .then(({ sessionId }) => sessionId);
+  }
+
+  @Mutation(() => Boolean)
+  async downloadHqAudio(@Args('trackId', { type: () => Base64ID }) trackId: string): Promise<boolean> {
+    await this.hqAudioAcquireProducer.scheduleHqAudioAcquire(parseMusicTrackId(trackId), getCurrentUser());
+    return true;
   }
 }

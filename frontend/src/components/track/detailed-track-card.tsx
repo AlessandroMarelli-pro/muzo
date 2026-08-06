@@ -26,6 +26,7 @@ import {
 import { useEffect, useState } from 'react';
 import { SelectPlaylistTrigger } from '../playlist/select-playlist-dialog';
 import { Skeleton } from '../ui/skeleton';
+import { AudioQualityBadge } from './audio-quality-badge';
 
 interface DetailedTrackCardProps {
   track?: Track;
@@ -229,10 +230,11 @@ export function DetailedTrackCard({ track, refetch, isLoading }: DetailedTrackCa
 
           {/* Track Info */}
           <div className="flex flex-col gap-1 flex-1 min-w-0">
-            <div>
+            <div className="flex items-center gap-2">
               <h1 className="text-lg  text-foreground truncate capitalize max-w-md ">
                 {track.artist} - {track.title}
               </h1>
+              <AudioQualityBadge format={track.format} hqAudioPath={track.hqAudioPath} />
             </div>
 
             {track?.aiContextBackgrounds && (
