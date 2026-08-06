@@ -509,7 +509,8 @@ export const MusicTable = React.memo<MusicTableProps>(
     isLoading,
   }: MusicTableProps) => {
     const actions = useAudioPlayerActions();
-    const { setCurrentTrack } = useCurrentTrack();
+    const { currentTrack, setCurrentTrack } = useCurrentTrack();
+    const isPlaying = useIsPlaying();
 
     const { table } = useDataTable({
       data,
@@ -537,8 +538,75 @@ export const MusicTable = React.memo<MusicTableProps>(
       enableAdvancedFilter: false,
     });
 
+    const playRow = React.useCallback(
+      (track: Track) => {
+        if (currentTrack?.id !== track.id) {
+          setCurrentTrack(track);
+          actions.play(track.id);
+        } else if (!isPlaying) {
+          actions.play(track.id);
+        }
+      },
+      [actions, currentTrack, isPlaying, setCurrentTrack],
+    );
+
+    React.useEffect(() => {
+      const handleKeyDown = (event: KeyboardEvent) => {
+        if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(event.key)) {
+          return;
+        }
+
+        const target = event.target as HTMLElement | null;
+        const isTypingTarget =
+          !!target &&
+          (target.tagName === 'INPUT' ||
+            target.tagName === 'TEXTAREA' ||
+            target.tagName === 'SELECT' ||
+            target.isContentEditable ||
+            !!target.closest('[role="listbox"], [role="dialog"], [role="menu"]'));
+        if (isTypingTarget) {
+          return;
+        }
+
+        const rows = table.getRowModel().rows;
+        if (rows.length === 0) {
+          return;
+        }
+
+        switch (event.key) {
+          case 'ArrowLeft': {
+            event.preventDefault();
+            table.previousPage();
+            break;
+          }
+          case 'ArrowRight': {
+            event.preventDefault();
+            table.nextPage();
+            break;
+          }
+          case 'ArrowDown':
+          case 'ArrowUp': {
+            event.preventDefault();
+            const currentIndex = rows.findIndex((row) => row.original.id === currentTrack?.id);
+            const delta = event.key === 'ArrowDown' ? 1 : -1;
+            const nextIndex =
+              currentIndex === -1
+                ? 0
+                : Math.min(Math.max(currentIndex + delta, 0), rows.length - 1);
+            playRow(rows[nextIndex].original);
+            break;
+          }
+          default:
+            break;
+        }
+      };
+
+      window.addEventListener('keydown', handleKeyDown);
+      return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [currentTrack?.id, playRow, table]);
+
     return (
-      <div className="w-full space-y-4 ">
+      <div className="w-full space-y-4">
         <DataTable table={table} isLoading={isLoading}>
           <DataTableToolbar table={table}>
             <DataTableSortList table={table} />

@@ -37,7 +37,7 @@ class GeminiMetadataExtractor(BaseMetadataExtractor):
     # Can be upgraded to gemini-3-flash for better results (industry standard for metadata resolution)
     # Set GEMINI_MODEL environment variable to override (e.g., "gemini-3-flash")
     # Note: For context caching, use versioned model names (e.g., "gemini-2.5-flash-001")
-    MODEL = os.getenv("GEMINI_MODEL", "gemini-3-flash-preview")
+    MODEL = os.getenv("GEMINI_MODEL", "gemini-3.6-flash")
 
     # Gemini uses response_schema (strict structured output), which enforces the exact
     # field set. This lets the base prompt builder skip the verbose field-list reminder.
@@ -195,7 +195,9 @@ class GeminiMetadataExtractor(BaseMetadataExtractor):
 
         # Model used for the lightweight filename-cleaning calls. Overridable because
         # model availability differs per Vertex location.
-        self.cleaning_model = os.getenv("GEMINI_CLEANING_MODEL", "gemini-2.5-flash-lite")
+        self.cleaning_model = os.getenv(
+            "GEMINI_CLEANING_MODEL", "gemini-2.5-flash-lite"
+        )
 
         # Rate limiting configuration
         max_requests_per_minute = int(os.getenv("GEMINI_MAX_REQUESTS_PER_MINUTE", "60"))
@@ -303,7 +305,7 @@ class GeminiMetadataExtractor(BaseMetadataExtractor):
         """
         Get the model name for context caching.
 
-        According to the official Gemini API docs, preview models (like gemini-3-flash-preview)
+        According to the official Gemini API docs, preview models (like gemini-3.6-flash)
         can be used directly without version suffixes. Stable models may need version suffixes.
 
         Returns:
@@ -880,7 +882,9 @@ Return ONLY the cleaned filename, nothing else. No explanations, no markdown, ju
                     )
                     self._filename_cleaning_cache_name = None
                     with GeminiMetadataExtractor._class_filename_cleaning_cache_lock:
-                        GeminiMetadataExtractor._class_filename_cleaning_cache_name = None
+                        GeminiMetadataExtractor._class_filename_cleaning_cache_name = (
+                            None
+                        )
                     config.cached_content = None
                     config.system_instruction = "\n".join(
                         self.FILENAME_CLEANING_INSTRUCTIONS
@@ -1074,9 +1078,7 @@ Return ONLY a JSON array of cleaned filenames in the same order, nothing else. F
                         "Rebuilding cache and retrying once."
                     )
                     self._filename_cleaning_cache_name = None
-                    with (
-                        GeminiMetadataExtractor._class_filename_cleaning_cache_lock
-                    ):
+                    with GeminiMetadataExtractor._class_filename_cleaning_cache_lock:
                         GeminiMetadataExtractor._class_filename_cleaning_cache_name = (
                             None
                         )
@@ -1414,9 +1416,9 @@ Return ONLY a JSON array of cleaned filenames in the same order, nothing else. F
         if hasattr(response, "usage_metadata") and response.usage_metadata:
             usage = response.usage_metadata
             # Check for cached token usage (indicates context cache was used)
-            cached_token_count = getattr(usage, "cached_content_token_count", 0)
-            prompt_token_count = getattr(usage, "prompt_token_count", 0)
-            total_token_count = getattr(usage, "total_token_count", 0)
+            cached_token_count = getattr(usage, "cached_content_token_count", 0) or 0
+            prompt_token_count = getattr(usage, "prompt_token_count", 0) or 0
+            total_token_count = getattr(usage, "total_token_count", 0) or 0
 
             if cached_token_count > 0:
                 cache_percentage = (
@@ -1687,9 +1689,9 @@ Return ONLY a JSON array of cleaned filenames in the same order, nothing else. F
         if hasattr(response, "usage_metadata") and response.usage_metadata:
             usage = response.usage_metadata
             # Check for cached token usage (indicates context cache was used)
-            cached_token_count = getattr(usage, "cached_content_token_count", 0)
-            prompt_token_count = getattr(usage, "prompt_token_count", 0)
-            total_token_count = getattr(usage, "total_token_count", 0)
+            cached_token_count = getattr(usage, "cached_content_token_count", 0) or 0
+            prompt_token_count = getattr(usage, "prompt_token_count", 0) or 0
+            total_token_count = getattr(usage, "total_token_count", 0) or 0
 
             if cached_token_count > 0:
                 cache_percentage = (
