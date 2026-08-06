@@ -1,4 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { spawn } from 'child_process';
 import * as fs from 'fs/promises';
 import * as path from 'path';
@@ -16,15 +17,19 @@ import { getCurrentUserId } from 'src/kernel/types/context';
 
 @Injectable()
 export class TidalDlAcquirer implements IHqAudioAcquirer {
+  private readonly defaultOutputDir: string;
+
   constructor(
     @Inject(TIDAL_SYNC_PROVIDER)
     private readonly tidalSyncProvider: ITidalSyncProvider,
+    private readonly configService: ConfigService,
     @Inject(LOGGER_FACTORY)
     loggerFactory: { createLogger: (name: string) => ILogger },
     @Inject(LOGGER)
     private readonly logger: ILogger,
   ) {
     this.logger = loggerFactory.createLogger('TidalDlAcquirer');
+    this.defaultOutputDir = this.configService.get<string>('hqAudio.tidal.outputDir') ?? '';
   }
 
   private normalizeForMatch(value: string): string {
@@ -81,14 +86,15 @@ export class TidalDlAcquirer implements IHqAudioAcquirer {
     durationSeconds: number,
     outputDir: string,
   ): Promise<HqAudioAcquireResult | null> {
+    const resolvedOutputDir = outputDir || this.defaultOutputDir;
     const userId = getCurrentUserId();
     const match = await this.tidalSyncProvider.findBestMatch(artist, title, durationSeconds, userId);
     if (!match.trackId) {
       return null;
     }
 
-    await this.runTidalDownload(match.trackId, outputDir);
-    const files = await this.listAudioFiles(outputDir);
+    await this.runTidalDownload(match.trackId, resolvedOutputDir);
+    const files = await this.listAudioFiles(resolvedOutputDir);
     if (files.length === 0) {
       return null;
     }

@@ -10,6 +10,7 @@ import { useAddTrackToQueue } from '@/services/queue-hooks';
 import { Link } from '@tanstack/react-router';
 import { Brain, GripVertical, ListMusic, Pause, Play, Trash2 } from 'lucide-react';
 import { memo } from 'react';
+import { AudioQualityBadge } from '../track/audio-quality-badge';
 import { GenresBadge } from '../track/genres-badge';
 import { Skeleton } from '../ui/skeleton';
 export const PlaylistTrackListCardSkeleton = ({ position }: { position: number }) => {
@@ -102,11 +103,15 @@ export const PlaylistTrackListCard = memo(
           className="w-10 h-10 object-cover rounded-md"
         />
         {/* Track Info */}
-        <div className="flex-1 min-w-0">
+        <div className="flex-1 min-w-0 flex items-center gap-2">
           <div className="text-sm font-medium truncate capitalize">
             {playlistTrack.track?.artist?.toLowerCase()} -{' '}
             {playlistTrack.track?.title?.toLowerCase() || 'Unknown Title'.toLowerCase()}
           </div>
+          <AudioQualityBadge
+            format={playlistTrack.track?.format}
+            hqAudioPath={playlistTrack.track?.hqAudioPath}
+          />
         </div>
 
         {/* Genre */}

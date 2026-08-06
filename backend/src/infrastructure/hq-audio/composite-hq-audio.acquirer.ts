@@ -1,5 +1,4 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import {
   HqAudioAcquireResult,
   IHqAudioAcquirer,
@@ -11,19 +10,15 @@ import { TidalDlAcquirer } from './tidal-dl.acquirer';
 
 @Injectable()
 export class CompositeHqAudioAcquirer implements IHqAudioAcquirer {
-  private readonly outputDir: string;
-
   constructor(
     private readonly tidalDlAcquirer: TidalDlAcquirer,
     private readonly sockseekAcquirer: SockseekAcquirer,
-    private readonly configService: ConfigService,
     @Inject(LOGGER_FACTORY)
     loggerFactory: { createLogger: (name: string) => ILogger },
     @Inject(LOGGER)
     private readonly logger: ILogger,
   ) {
     this.logger = loggerFactory.createLogger('CompositeHqAudioAcquirer');
-    this.outputDir = this.configService.get<string>('hqAudio.outputDir') ?? '/tmp/muzo-hq-audio';
   }
 
   async acquire(
@@ -33,12 +28,7 @@ export class CompositeHqAudioAcquirer implements IHqAudioAcquirer {
     outputDir: string,
   ): Promise<HqAudioAcquireResult | null> {
     try {
-      const tidal = await this.tidalDlAcquirer.acquire(
-        artist,
-        title,
-        durationSeconds,
-        outputDir || this.outputDir,
-      );
+      const tidal = await this.tidalDlAcquirer.acquire(artist, title, durationSeconds, outputDir);
       if (tidal) {
         this.logger.info('HQ acquisition succeeded via Tidal', {
           artist,
@@ -55,12 +45,7 @@ export class CompositeHqAudioAcquirer implements IHqAudioAcquirer {
       });
     }
 
-    const soulseek = await this.sockseekAcquirer.acquire(
-      artist,
-      title,
-      durationSeconds,
-      outputDir || this.outputDir,
-    );
+    const soulseek = await this.sockseekAcquirer.acquire(artist, title, durationSeconds, outputDir);
     if (soulseek) {
       this.logger.info('HQ acquisition succeeded via sockseek', {
         artist,

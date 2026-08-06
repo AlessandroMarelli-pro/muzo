@@ -233,12 +233,7 @@ const useCasesProviders = [
     HQ_AUDIO_ACQUIRE_PRODUCER,
   ]),
   createUseCaseProvider(ToggleLikeUseCase, [MUSIC_TRACK_REPOSITORY, HQ_AUDIO_ACQUIRE_PRODUCER]),
-  createUseCaseProvider(AcquireHqAudioUseCase, [
-    MUSIC_TRACK_REPOSITORY,
-    HQ_AUDIO_ACQUIRER,
-    ConfigService,
-    LOGGER,
-  ]),
+  createUseCaseProvider(AcquireHqAudioUseCase, [MUSIC_TRACK_REPOSITORY, HQ_AUDIO_ACQUIRER, LOGGER]),
   createUseCaseProvider(ToggleDislikeUseCase, [
     MUSIC_TRACK_REPOSITORY,
     HIDDEN_MUSIC_TRACK_REPOSITORY,

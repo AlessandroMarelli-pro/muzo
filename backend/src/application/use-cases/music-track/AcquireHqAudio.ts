@@ -1,5 +1,4 @@
 import { Inject } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import {
   HQ_AUDIO_ACQUIRER,
   IHqAudioAcquirer,
@@ -9,21 +8,13 @@ import { MusicTrackId } from 'src/kernel/ids';
 import { IMusicTrackRepository } from '../../ports/repositories/IMusicTrackRepository';
 
 export class AcquireHqAudioUseCase {
-  private readonly outputDir: string;
-
   constructor(
     private readonly musicTrackRepository: IMusicTrackRepository,
     @Inject(HQ_AUDIO_ACQUIRER)
     private readonly hqAudioAcquirer: IHqAudioAcquirer,
-    private readonly configService: ConfigService,
     @Inject(LOGGER)
     private readonly logger: ILogger,
-  ) {
-    this.outputDir =
-      this.configService.get<string>('hqAudio.outputDir') ??
-      this.configService.get<string>('HQ_AUDIO_OUTPUT_DIR') ??
-      '/tmp/muzo-hq-audio';
-  }
+  ) {}
 
   async execute(trackId: MusicTrackId): Promise<void> {
     const track = await this.musicTrackRepository.getOneById(trackId);
@@ -56,7 +47,7 @@ export class AcquireHqAudioUseCase {
       track.artist,
       track.title,
       track.technicalInfo?.duration ?? 0,
-      this.outputDir,
+      '',
     );
 
     if (!result) {
