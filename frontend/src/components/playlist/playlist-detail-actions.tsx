@@ -11,7 +11,7 @@ import {
   useCurrentTrack,
   useIsPlaying,
 } from '@/contexts/audio-player-context';
-import { ChevronDown, Copy, ListMusic, Pause, Play, Plus, Trash2 } from 'lucide-react';
+import { ChevronDown, Copy, Download, ListMusic, Pause, Play, Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface PlaylistDetailActionsProps {
@@ -22,6 +22,7 @@ interface PlaylistDetailActionsProps {
   onDelete: () => void;
   onSetAsQueue: () => void;
   onAddTrack: () => void;
+  onDownloadAllHq: () => void;
 }
 
 export function PlaylistDetailActions({
@@ -32,6 +33,7 @@ export function PlaylistDetailActions({
   onDelete,
   onSetAsQueue,
   onAddTrack,
+  onDownloadAllHq,
 }: PlaylistDetailActionsProps) {
   const { setCurrentTrack } = useCurrentTrack();
   const actions = useAudioPlayerActions();
@@ -85,6 +87,10 @@ export function PlaylistDetailActions({
         <DropdownMenuItem onClick={handleCopyList} disabled={isDisabled}>
           <Copy className="h-4 w-4 mr-2" />
           Copy List
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={onDownloadAllHq} disabled={isDisabled}>
+          <Download className="h-4 w-4 mr-2" />
+          Download All in HQ
         </DropdownMenuItem>
         <DropdownMenuItem onClick={handlePlay} disabled={isDisabled}>
           {isPlaying ? (

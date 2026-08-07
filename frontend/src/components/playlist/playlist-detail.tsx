@@ -39,6 +39,7 @@ import { AddTrackDrawer } from './add-track-drawer';
 import { PlaylistDetailActions } from './playlist-detail-actions';
 import { PlaylistDetailChart } from './playlist-detail-chart';
 import { PlaylistDetailThirdParties } from './playlist-detail-third-parties';
+import { PlaylistHqBatchDownloadDialog } from './playlist-hq-batch-download-dialog';
 import { PlaylistTracksList } from './playlist-tracks-list';
 import { TrackRecommendations } from './track-recommendations';
 
@@ -109,6 +110,7 @@ export function PlaylistDetail({ id, onBack }: PlaylistDetailProps) {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isSettingAsQueue, setIsSettingAsQueue] = useState(false);
   const [isAddTrackDrawerOpen, setIsAddTrackDrawerOpen] = useState(false);
+  const [isHqBatchDownloadDialogOpen, setIsHqBatchDownloadDialogOpen] = useState(false);
   const { syncToYouTube, syncToTidal, syncToSpotify } = usePlaylist(id, 'default');
   const deletePlaylistMutation = useDeletePlaylist();
   const updatePlaylistSortingMutation = useUpdatePlaylistSorting('default');
@@ -224,6 +226,7 @@ export function PlaylistDetail({ id, onBack }: PlaylistDetailProps) {
             onDelete={handleDelete}
             onSetAsQueue={handleSetAsQueue}
             onAddTrack={() => setIsAddTrackDrawerOpen(true)}
+            onDownloadAllHq={() => setIsHqBatchDownloadDialogOpen(true)}
           />
           <PlaylistDetailThirdParties
             playlist={playlist || undefined}
@@ -327,6 +330,17 @@ export function PlaylistDetail({ id, onBack }: PlaylistDetailProps) {
         onOpenChange={setIsAddTrackDrawerOpen}
         addTrackToPlaylist={addTrackToPlaylist}
         playlistId={id}
+      />
+
+      <PlaylistHqBatchDownloadDialog
+        playlist={playlist || undefined}
+        open={isHqBatchDownloadDialogOpen}
+        onOpenChange={(nextOpen) => {
+          setIsHqBatchDownloadDialogOpen(nextOpen);
+          if (!nextOpen) {
+            refetch();
+          }
+        }}
       />
     </div>
   );

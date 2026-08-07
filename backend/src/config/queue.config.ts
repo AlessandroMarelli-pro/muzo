@@ -36,6 +36,17 @@ export interface QueueConfig {
       removeOnComplete: boolean;
       removeOnFail: boolean;
     };
+    hqAudioBatchAcquire: {
+      /** Documentation only: actual worker concurrency is hardcoded on the @Processor decorator. */
+      concurrency: number;
+      attempts: number;
+      backoff: {
+        type: string;
+        delay: number;
+      };
+      removeOnComplete: boolean;
+      removeOnFail: boolean;
+    };
   };
 }
 
@@ -73,6 +84,16 @@ export default registerAs(
         backoff: {
           type: 'exponential',
           delay: parseInt(process.env.HQ_AUDIO_ACQUIRE_BACKOFF_DELAY || '3000', 10),
+        },
+        removeOnComplete: false,
+        removeOnFail: false,
+      },
+      hqAudioBatchAcquire: {
+        concurrency: parseInt(process.env.HQ_AUDIO_BATCH_ACQUIRE_CONCURRENCY || '5', 10),
+        attempts: parseInt(process.env.HQ_AUDIO_BATCH_ACQUIRE_ATTEMPTS || '2', 10),
+        backoff: {
+          type: 'exponential',
+          delay: parseInt(process.env.HQ_AUDIO_BATCH_ACQUIRE_BACKOFF_DELAY || '3000', 10),
         },
         removeOnComplete: false,
         removeOnFail: false,

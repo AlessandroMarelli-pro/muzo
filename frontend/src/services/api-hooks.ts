@@ -680,5 +680,33 @@ export const useDownloadHqAudio = () => {
   });
 };
 
+export const useDownloadPlaylistHqAudio = () => {
+  return useMutation({
+    mutationFn: async (playlistId: string) => {
+      const response = await graffleClient.request<{
+        downloadPlaylistHqAudio: { batchId: string; totalToDownload: number };
+      }>(
+        gql`
+          mutation DownloadPlaylistHqAudio($playlistId: Base64ID!) {
+            downloadPlaylistHqAudio(playlistId: $playlistId) {
+              batchId
+              totalToDownload
+            }
+          }
+        `,
+        { playlistId },
+      );
+      return response.downloadPlaylistHqAudio;
+    },
+    onError: (error: any) => {
+      const errorMessage =
+        error?.response?.errors?.[0]?.message ||
+        error?.message ||
+        'Failed to start batch HQ download';
+      toast.error(errorMessage, { duration: 3000 });
+    },
+  });
+};
+
 // Note: playTrack mutation removed as it doesn't exist in the schema
 // export const usePlayTrack = () => { ... };

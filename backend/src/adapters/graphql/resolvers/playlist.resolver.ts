@@ -10,6 +10,7 @@ import {
   GetPlaylistSortingByPlaylistIdUseCase,
   UpdatePlaylistUseCase,
 } from 'src/application/use-cases';
+import { StartHqAudioBatchDownloadUseCase } from 'src/application/use-cases/hq-audio-batch/StartHqAudioBatchDownload';
 import { UpdatePlaylistSortingUseCase } from 'src/application/use-cases/playlist-sorting/UpdatePlaylistSorting';
 import { Maybe } from 'src/kernel/common';
 
@@ -19,6 +20,7 @@ import { PlaylistTracksWithTrackLoader } from '../../persistence/repositories/pl
 import { AuthGuard } from '../context/auth.guard';
 import { toTrack } from '../mappers/track.mapper';
 import { Base64ID } from '../scalars/base64-id.scalar';
+import { HqAudioBatchDownload } from '../schema/hq-audio-batch.schema';
 import { UpdatePlaylistSortingInput } from '../schema/playlist-sorting.input';
 import { PlaylistSorting } from '../schema/playlist-sorting.schema';
 import { PlaylistStats } from '../schema/playlist-stats.schema';
@@ -39,6 +41,7 @@ export class PlaylistResolver {
     private readonly downloadPlaylistToFolderUseCase: DownloadPlaylistToFolderUseCase,
     private readonly updatePlaylistSortingUseCase: UpdatePlaylistSortingUseCase,
     private readonly getPlaylistRecommendationsUseCase: GetPlaylistRecommendationsUseCase,
+    private readonly startHqAudioBatchDownloadUseCase: StartHqAudioBatchDownloadUseCase,
   ) {}
 
   @ResolveField(() => PlaylistStats)
@@ -136,6 +139,16 @@ export class PlaylistResolver {
     @Args('playlistId', { type: () => Base64ID }) playlistId: string,
   ): Promise<boolean> {
     return this.downloadPlaylistToFolderUseCase.execute(parsePlaylistId(playlistId));
+  }
+
+  @Mutation(() => HqAudioBatchDownload)
+  async downloadPlaylistHqAudio(
+    @Args('playlistId', { type: () => Base64ID }) playlistId: string,
+  ): Promise<HqAudioBatchDownload> {
+    const { batchId, totalToDownload } = await this.startHqAudioBatchDownloadUseCase.execute(
+      parsePlaylistId(playlistId),
+    );
+    return { batchId, totalToDownload };
   }
 
   @Mutation(() => PlaylistSorting)

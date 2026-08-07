@@ -3,8 +3,11 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ThirdPartySyncInfrastructureModule } from 'src/infrastructure/external-services/third-party-sync/third-party-sync.module';
 import { HqAudioInfrastructureModule } from 'src/infrastructure/hq-audio/hq-audio.module';
 import { AUDIO_ANALYSIS_STRUCTURE } from '../ports/infrastructure/IAudioAnalysisStructure';
-import { HQ_AUDIO_ACQUIRER } from '../ports/infrastructure/IHqAudioAcquirer';
+import { HQ_AUDIO_ACQUIRER, HQ_AUDIO_ACQUIRER_SOCKSEEK_ONLY } from '../ports/infrastructure/IHqAudioAcquirer';
 import { HQ_AUDIO_ACQUIRE_PRODUCER } from '../ports/infrastructure/IHqAudioAcquireProducer';
+import { HQ_AUDIO_BATCH_ACQUIRE_PRODUCER } from '../ports/infrastructure/IHqAudioBatchAcquireProducer';
+import { HQ_AUDIO_BATCH_PROGRESS_PUBLISHER } from '../ports/infrastructure/IHqAudioBatchProgressPublisher';
+import { HQ_AUDIO_BATCH_PROGRESS_SUBSCRIBER } from '../ports/infrastructure/IHqAudioBatchProgressSubscriber';
 import { AUDIO_SCAN_SCHEDULER_PRODUCER } from '../ports/infrastructure/IAudioScanSchedulerProducer';
 import { AUDIO_WAVEFORM_GENERATOR } from '../ports/infrastructure/IAudioWaveformGenerator';
 import { FILE_MANAGER } from '../ports/infrastructure/IFileManager';
@@ -111,6 +114,9 @@ import {
 import { GetActiveSessionsUseCase } from './scan-session/GetActiveSessions';
 import { GetCompleteSessionsUseCase } from './scan-session/GetCompleteSessions';
 import { StreamSessionUseCase } from './scan-session/StreamSession';
+import { AcquireHqAudioViaSockseekUseCase } from './music-track/AcquireHqAudioViaSockseek';
+import { StartHqAudioBatchDownloadUseCase } from './hq-audio-batch/StartHqAudioBatchDownload';
+import { StreamHqAudioBatchProgressUseCase } from './hq-audio-batch/StreamHqAudioBatchProgress';
 import {
   ExchangeSpotifyCodeUseCase,
   ExchangeTidalCodeUseCase,
@@ -234,6 +240,11 @@ const useCasesProviders = [
   ]),
   createUseCaseProvider(ToggleLikeUseCase, [MUSIC_TRACK_REPOSITORY, HQ_AUDIO_ACQUIRE_PRODUCER]),
   createUseCaseProvider(AcquireHqAudioUseCase, [MUSIC_TRACK_REPOSITORY, HQ_AUDIO_ACQUIRER, LOGGER]),
+  createUseCaseProvider(AcquireHqAudioViaSockseekUseCase, [
+    MUSIC_TRACK_REPOSITORY,
+    HQ_AUDIO_ACQUIRER_SOCKSEEK_ONLY,
+    LOGGER,
+  ]),
   createUseCaseProvider(ToggleDislikeUseCase, [
     MUSIC_TRACK_REPOSITORY,
     HIDDEN_MUSIC_TRACK_REPOSITORY,
@@ -321,6 +332,19 @@ const useCasesProviders = [
   createUseCaseProvider(StreamSessionUseCase, [
     SCAN_SESSION_REPOSITORY,
     SCAN_PROGRESS_SUBSCRIBER,
+    LOGGER_FACTORY,
+    LOGGER,
+  ]),
+  createUseCaseProvider(StartHqAudioBatchDownloadUseCase, [
+    PLAYLIST_REPOSITORY,
+    PLAYLIST_SORTING_REPOSITORY,
+    HQ_AUDIO_BATCH_PROGRESS_PUBLISHER,
+    HQ_AUDIO_BATCH_ACQUIRE_PRODUCER,
+    LOGGER_FACTORY,
+    LOGGER,
+  ]),
+  createUseCaseProvider(StreamHqAudioBatchProgressUseCase, [
+    HQ_AUDIO_BATCH_PROGRESS_SUBSCRIBER,
     LOGGER_FACTORY,
     LOGGER,
   ]),

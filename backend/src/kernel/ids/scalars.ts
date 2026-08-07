@@ -36,3 +36,5 @@ export type QueueItemId = Brand<string, 'QueueItemId'>;
 export type HiddenMusicTrackId = Brand<string, 'HiddenMusicTrackId'>;
 
 export type SessionId = Brand<string, 'SessionId'>;
+
+export type HqAudioBatchId = Brand<string, 'HqAudioBatchId'>;

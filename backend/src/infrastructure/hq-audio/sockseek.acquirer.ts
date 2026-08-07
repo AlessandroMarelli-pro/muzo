@@ -35,6 +35,16 @@ type SockseekDownloadStartEvent = {
   data: { username?: string; filename?: string; size?: number; extension?: string };
 };
 
+type NicotinePlusDownloadRow = [
+  username: string,
+  virtualPath: string,
+  folderPath: string,
+  status: string,
+  size: number,
+  currentByteOffset: number,
+  fileAttributes: unknown,
+];
+
 type SockseekDownloadProgressEvent = {
   type: 'download_progress';
   data: { bytesTransferred?: number; totalBytes?: number; percent?: number };
@@ -53,6 +63,7 @@ export class SockseekAcquirer implements IHqAudioAcquirer {
   private readonly configPath: string;
   private readonly timeoutMs: number;
   private readonly defaultOutputDir: string;
+  private readonly nicotinePlusDataDir: string;
   private readonly logger: ILogger;
 
   constructor(
@@ -67,6 +78,8 @@ export class SockseekAcquirer implements IHqAudioAcquirer {
     this.configPath = this.configService.get<string>('hqAudio.sockseek.configPath') ?? '';
     this.timeoutMs = this.configService.get<number>('hqAudio.sockseek.timeoutMs') ?? 360000;
     this.defaultOutputDir = this.configService.get<string>('hqAudio.sockseek.outputDir') ?? '';
+    this.nicotinePlusDataDir =
+      this.configService.get<string>('hqAudio.sockseek.nicotinePlusDataDir') ?? '';
   }
 
   private parseEventLine(line: string): SockseekEvent | null {
@@ -143,6 +156,124 @@ export class SockseekAcquirer implements IHqAudioAcquirer {
     return csvPath;
   }
 
+  private get pendingQueuePath(): string {
+    return path.join(this.nicotinePlusDataDir, 'sockseek-pending-downloads.json');
+  }
+
+  private get nicotinePlusDownloadsJsonPath(): string {
+    return path.join(this.nicotinePlusDataDir, 'downloads.json');
+  }
+
+  private async isNicotinePlusRunning(): Promise<boolean> {
+    return new Promise((resolve) => {
+      const check = spawn('pgrep', ['-x', 'Nicotine+'], { stdio: ['ignore', 'ignore', 'ignore'] });
+      check.on('error', () => resolve(false));
+      check.on('close', (code) => resolve(code === 0));
+    });
+  }
+
+  private async readJsonRows(filePath: string): Promise<NicotinePlusDownloadRow[]> {
+    try {
+      const existing = await fs.readFile(filePath, 'utf-8');
+      const parsed = JSON.parse(existing);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+        return [];
+      }
+      throw error;
+    }
+  }
+
+  private buildNicotinePlusRow(
+    username: string,
+    filename: string,
+    size: number,
+  ): NicotinePlusDownloadRow {
+    const virtualPath = filename.replace(/\\/g, '/');
+    const folderPath = virtualPath.includes('/')
+      ? virtualPath.slice(0, virtualPath.lastIndexOf('/'))
+      : '';
+    return [username, filename, folderPath, 'Paused', size, 0, null];
+  }
+
+  private async addPendingNicotinePlusDownload(
+    username: string,
+    filename: string,
+    size: number,
+    artist: string,
+    title: string,
+  ): Promise<void> {
+    if (!this.nicotinePlusDataDir) {
+      return;
+    }
+    try {
+      const row = this.buildNicotinePlusRow(username, filename, size);
+      const pending = await this.readJsonRows(this.pendingQueuePath);
+      const alreadyPending = pending.some((r) => r[0] === row[0] && r[1] === row[1]);
+      if (!alreadyPending) {
+        pending.push(row);
+        await fs.mkdir(this.nicotinePlusDataDir, { recursive: true });
+        await fs.writeFile(this.pendingQueuePath, JSON.stringify(pending), 'utf-8');
+      }
+      this.logger.info('recorded incomplete sockseek download for Nicotine+ handoff', {
+        artist,
+        title,
+        username,
+        filename,
+      });
+      await this.flushPendingNicotinePlusDownloads();
+    } catch (error) {
+      this.logger.warn('failed to record incomplete sockseek download for Nicotine+ handoff', {
+        artist,
+        title,
+        username,
+        filename,
+        error: String(error),
+      });
+    }
+  }
+
+  async flushPendingNicotinePlusDownloads(): Promise<void> {
+    if (!this.nicotinePlusDataDir) {
+      return;
+    }
+    try {
+      const pending = await this.readJsonRows(this.pendingQueuePath);
+      if (pending.length === 0) {
+        return;
+      }
+      if (await this.isNicotinePlusRunning()) {
+        this.logger.debug(
+          'Nicotine+ is currently running, deferring pending download handoff until it is closed',
+          { pendingCount: pending.length },
+        );
+        return;
+      }
+
+      const rows = await this.readJsonRows(this.nicotinePlusDownloadsJsonPath);
+      let addedCount = 0;
+      for (const row of pending) {
+        const alreadyQueued = rows.some((r) => r[0] === row[0] && r[1] === row[1]);
+        if (!alreadyQueued) {
+          rows.push(row);
+          addedCount++;
+        }
+      }
+
+      await fs.writeFile(this.nicotinePlusDownloadsJsonPath, JSON.stringify(rows), 'utf-8');
+      await fs.writeFile(this.pendingQueuePath, '[]', 'utf-8');
+      this.logger.info('flushed pending sockseek downloads into Nicotine+', {
+        addedCount,
+        totalPending: pending.length,
+      });
+    } catch (error) {
+      this.logger.warn('failed to flush pending sockseek downloads into Nicotine+', {
+        error: String(error),
+      });
+    }
+  }
+
   async acquire(
     artist: string,
     title: string,
@@ -151,6 +282,7 @@ export class SockseekAcquirer implements IHqAudioAcquirer {
   ): Promise<HqAudioAcquireResult | null> {
     const resolvedOutputDir = outputDir || this.defaultOutputDir;
     await fs.mkdir(resolvedOutputDir, { recursive: true });
+    await this.flushPendingNicotinePlusDownloads();
 
     const hasKnownDuration = durationSeconds > 0;
     const queryCsvPath = hasKnownDuration
@@ -180,7 +312,11 @@ export class SockseekAcquirer implements IHqAudioAcquirer {
         args.push('--config', this.configPath);
       }
 
-      const holder: { finalState: SockseekTrackStateEvent['data'] | null } = { finalState: null };
+      const holder: {
+        finalState: SockseekTrackStateEvent['data'] | null;
+        downloadStart: SockseekDownloadStartEvent['data'] | null;
+        timedOut: boolean;
+      } = { finalState: null, downloadStart: null, timedOut: false };
       let stdoutBuffer = '';
       let stderr = '';
 
@@ -192,8 +328,8 @@ export class SockseekAcquirer implements IHqAudioAcquirer {
             title,
             timeoutMs: this.timeoutMs,
           });
+          holder.timedOut = true;
           cmd.kill('SIGTERM');
-          reject(new Error(`sockseek timed out after ${this.timeoutMs}ms`));
         }, this.timeoutMs);
 
         cmd.stdout.on('data', (chunk) => {
@@ -208,6 +344,8 @@ export class SockseekAcquirer implements IHqAudioAcquirer {
             this.logEvent(event, artist, title);
             if (event.type === 'track_state') {
               holder.finalState = (event as SockseekTrackStateEvent).data;
+            } else if (event.type === 'download_start') {
+              holder.downloadStart = (event as SockseekDownloadStartEvent).data;
             }
           }
         });
@@ -242,18 +380,36 @@ export class SockseekAcquirer implements IHqAudioAcquirer {
       });
 
       const finalState = holder.finalState;
+      const succeeded = finalState?.terminalOutcome === 'Succeeded' && !!finalState.downloadPath;
+
+      if (!succeeded && holder.downloadStart?.username && holder.downloadStart?.filename) {
+        await this.addPendingNicotinePlusDownload(
+          holder.downloadStart.username,
+          holder.downloadStart.filename,
+          holder.downloadStart.size ?? 0,
+          artist,
+          title,
+        );
+      }
+
       if (!finalState) {
-        this.logger.warn('sockseek produced no track_state event', { artist, title, stderr });
+        this.logger.warn('sockseek produced no track_state event', {
+          artist,
+          title,
+          stderr,
+          timedOut: holder.timedOut,
+        });
         return null;
       }
 
-      if (finalState.terminalOutcome !== 'Succeeded' || !finalState.downloadPath) {
+      if (!succeeded) {
         this.logger.warn('sockseek did not find a match', {
           artist,
           title,
           terminalOutcome: finalState.terminalOutcome,
           skipReason: finalState.skipReason,
           failureReason: finalState.failureReason,
+          timedOut: holder.timedOut,
         });
         return null;
       }
@@ -269,7 +425,7 @@ export class SockseekAcquirer implements IHqAudioAcquirer {
 
       const format = finalState.extension === 'wav' ? 'wav' : 'flac';
       return {
-        filePath: finalState.downloadPath,
+        filePath: finalState.downloadPath as string,
         format,
       };
     } finally {

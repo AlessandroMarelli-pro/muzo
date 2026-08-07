@@ -1,5 +1,5 @@
 import { FileInfo } from 'src/application/ports/dtos/FileInfo';
-import { MusicLibraryId, MusicTrackId, SessionId } from 'src/kernel/ids';
+import { HqAudioBatchId, MusicLibraryId, MusicTrackId, SessionId } from 'src/kernel/ids';
 import { ActionContext } from 'src/kernel/types';
 
 export interface LibraryScanJobData {
@@ -42,6 +42,12 @@ export interface AudioScanBatchJobData {
 }
 
 export interface HqAudioAcquireJobData {
+  trackId: MusicTrackId;
+  contextUser: ActionContext['user'];
+}
+
+export interface HqAudioBatchAcquireJobData {
+  batchId: HqAudioBatchId;
   trackId: MusicTrackId;
   contextUser: ActionContext['user'];
 }

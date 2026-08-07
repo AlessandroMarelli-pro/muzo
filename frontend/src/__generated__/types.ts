@@ -114,6 +114,12 @@ export type HomeMetrics = {
   totalTracks: Scalars['Int']['output'];
 };
 
+export type HqAudioBatchDownload = {
+  __typename?: 'HqAudioBatchDownload';
+  batchId: Scalars['Base64ID']['output'];
+  totalToDownload: Scalars['Int']['output'];
+};
+
 export type Library = Node & {
   __typename?: 'Library';
   analyzedTracks: Scalars['Float']['output'];
@@ -179,6 +185,7 @@ export type Mutation = {
   deletePlaylist: Scalars['Boolean']['output'];
   deleteSavedFilter: Scalars['Boolean']['output'];
   downloadHqAudio: Scalars['Boolean']['output'];
+  downloadPlaylistHqAudio: HqAudioBatchDownload;
   downloadPlaylistToFolder: Scalars['Boolean']['output'];
   exportPlaylistToM3U: Scalars['String']['output'];
   registerPlayedTrack: Scalars['Boolean']['output'];
@@ -276,6 +283,11 @@ export type MutationDeleteSavedFilterArgs = {
 
 export type MutationDownloadHqAudioArgs = {
   trackId: Scalars['Base64ID']['input'];
+};
+
+
+export type MutationDownloadPlaylistHqAudioArgs = {
+  playlistId: Scalars['Base64ID']['input'];
 };
 
 
@@ -850,6 +862,20 @@ export type ScanTrackMutationVariables = Exact<{
 
 
 export type ScanTrackMutation = { __typename?: 'Mutation', scanTrack: any };
+
+export type DownloadHqAudioMutationVariables = Exact<{
+  trackId: Scalars['Base64ID']['input'];
+}>;
+
+
+export type DownloadHqAudioMutation = { __typename?: 'Mutation', downloadHqAudio: boolean };
+
+export type DownloadPlaylistHqAudioMutationVariables = Exact<{
+  playlistId: Scalars['Base64ID']['input'];
+}>;
+
+
+export type DownloadPlaylistHqAudioMutation = { __typename?: 'Mutation', downloadPlaylistHqAudio: { __typename?: 'HqAudioBatchDownload', batchId: any, totalToDownload: number } };
 
 export type ActiveFiltersQueryVariables = Exact<{ [key: string]: never; }>;
 

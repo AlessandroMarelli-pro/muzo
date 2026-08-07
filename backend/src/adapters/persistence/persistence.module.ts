@@ -42,6 +42,8 @@ import { QueueRepository } from './repositories/queue/queue.repository';
 import { SavedFilterRepository } from './repositories/saved-filter/saved-filter.repository';
 
 import { FILE_MANAGER } from 'src/application/ports/infrastructure/IFileManager';
+import { HQ_AUDIO_BATCH_PROGRESS_PUBLISHER } from 'src/application/ports/infrastructure/IHqAudioBatchProgressPublisher';
+import { HQ_AUDIO_BATCH_PROGRESS_SUBSCRIBER } from 'src/application/ports/infrastructure/IHqAudioBatchProgressSubscriber';
 import { SCAN_PROGRESS_PUBLISHER } from 'src/application/ports/infrastructure/IScanProgressPublisher';
 import { SCAN_PROGRESS_SUBSCRIBER } from 'src/application/ports/infrastructure/IScanProgressSubscriber';
 import { HEALTH_QUERY } from 'src/application/ports/queries/IHealthQuery';
@@ -50,6 +52,7 @@ import { AUDIO_ANALYSIS_REPOSITORY } from 'src/application/ports/repositories/IA
 import { HIDDEN_MUSIC_TRACK_REPOSITORY } from 'src/application/ports/repositories/IHiddenMusicTrackRepository';
 import { SCAN_SESSION_REPOSITORY } from 'src/application/ports/repositories/IScanSessionRepository';
 import { FileManager } from 'src/infrastructure/filesystem/file.manager';
+import { HqAudioBatchProgressPubSubAdapter } from 'src/infrastructure/pubsub/hq-audio-batch-progress-pubsub.adapter';
 import { ScanProgressPubSubAdapter } from 'src/infrastructure/pubsub/scan-progress-pubsub.adapter';
 import { HealthQuery } from './queries/health/health.query';
 import { MusicTrackQuery } from './queries/music-track/music-track.query';
@@ -88,6 +91,8 @@ const queriesProviders = [
   { provide: SCAN_SESSION_REPOSITORY, useClass: ScanSessionRepository },
   { provide: SCAN_PROGRESS_PUBLISHER, useClass: ScanProgressPubSubAdapter },
   { provide: SCAN_PROGRESS_SUBSCRIBER, useClass: ScanProgressPubSubAdapter },
+  { provide: HQ_AUDIO_BATCH_PROGRESS_PUBLISHER, useClass: HqAudioBatchProgressPubSubAdapter },
+  { provide: HQ_AUDIO_BATCH_PROGRESS_SUBSCRIBER, useClass: HqAudioBatchProgressPubSubAdapter },
   { provide: WAV_CONVERTER_WITH_METADATA, useClass: WavConverterWithMetadata },
   { provide: M4A_CONVERTER_WITH_METADATA_AND_ARTWORK, useClass: M4aConverterWithMetadataAndArtwork },
   { provide: COPY_AUDIO_WITH_METADATA, useClass: CopyAudioWithMetadata },

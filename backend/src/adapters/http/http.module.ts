@@ -4,6 +4,7 @@ import { UseCasesModule } from 'src/application/use-cases/use-cases.module';
 import { HttpAuthGuard } from './context/http-auth.guard';
 import { AudioStreamingController } from './controllers/audio-streaming.controller';
 import { HealthController } from './controllers/health.controller';
+import { HqAudioBatchProgressController } from './controllers/hq-audio-batch-progress.controller';
 import { ImageController } from './controllers/image.controller';
 import { OAuthRedirectController } from './controllers/oauth-redirect.controller';
 import { RecommendationController } from './controllers/recommendation.controller';
@@ -18,6 +19,7 @@ import { ScanTracksByCriteriaController } from './controllers/scan-tracks-by-cri
     RecommendationController,
     HealthController,
     ScanProgressController,
+    HqAudioBatchProgressController,
     ScanTracksByCriteriaController,
     OAuthRedirectController,
   ],

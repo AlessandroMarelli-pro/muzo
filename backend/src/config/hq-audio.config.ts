@@ -14,6 +14,7 @@ export interface HqAudioConfig {
     configPath: string;
     timeoutMs: number;
     outputDir: string;
+    nicotinePlusDataDir: string;
   };
   tidal: {
     outputDir: string;
@@ -34,6 +35,8 @@ export default registerAs(
       configPath: process.env.SOCKSEEK_CONFIG_PATH || '',
       timeoutMs: parseInt(process.env.SOCKSEEK_TIMEOUT_MS || '120000', 10),
       outputDir: process.env.SOCKSEEK_OUTPUT_DIR || path.join(os.homedir(), 'Music', 'Soulseek'),
+      nicotinePlusDataDir:
+        process.env.NICOTINE_PLUS_DATA_DIR || path.join(os.homedir(), '.local', 'share', 'nicotine'),
     },
     tidal: {
       outputDir: process.env.TIDAL_OUTPUT_DIR || path.join(os.homedir(), 'Music', 'Tidal'),
