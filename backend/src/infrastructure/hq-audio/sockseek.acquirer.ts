@@ -64,6 +64,8 @@ export class SockseekAcquirer implements IHqAudioAcquirer {
   private readonly timeoutMs: number;
   private readonly defaultOutputDir: string;
   private readonly nicotinePlusDataDir: string;
+  private readonly fastSearch: boolean;
+  private readonly searchTimeoutMs: number;
   private readonly logger: ILogger;
 
   constructor(
@@ -76,10 +78,13 @@ export class SockseekAcquirer implements IHqAudioAcquirer {
     this.logger = loggerFactory.createLogger('SockseekAcquirer');
     this.binaryPath = this.configService.get<string>('hqAudio.sockseek.binaryPath') ?? 'sockseek';
     this.configPath = this.configService.get<string>('hqAudio.sockseek.configPath') ?? '';
-    this.timeoutMs = this.configService.get<number>('hqAudio.sockseek.timeoutMs') ?? 360000;
+    this.timeoutMs = this.configService.get<number>('hqAudio.sockseek.timeoutMs') ?? 240000;
     this.defaultOutputDir = this.configService.get<string>('hqAudio.sockseek.outputDir') ?? '';
     this.nicotinePlusDataDir =
       this.configService.get<string>('hqAudio.sockseek.nicotinePlusDataDir') ?? '';
+    this.fastSearch = this.configService.get<boolean>('hqAudio.sockseek.fastSearch') ?? false;
+    this.searchTimeoutMs =
+      this.configService.get<number>('hqAudio.sockseek.searchTimeoutMs') ?? 30000;
   }
 
   private parseEventLine(line: string): SockseekEvent | null {
@@ -154,6 +159,45 @@ export class SockseekAcquirer implements IHqAudioAcquirer {
     ].join('\n');
     await fs.writeFile(csvPath, csv, 'utf-8');
     return csvPath;
+  }
+
+  private async listIncompleteFiles(dir: string): Promise<string[]> {
+    try {
+      const entries = await fs.readdir(dir);
+      return entries.filter((entry) => entry.endsWith('.incomplete'));
+    } catch {
+      return [];
+    }
+  }
+
+  private async cleanupIncompleteFiles(
+    dir: string,
+    preExisting: Set<string>,
+    artist: string,
+    title: string,
+  ): Promise<void> {
+    const current = await this.listIncompleteFiles(dir);
+    const newIncompleteFiles = current.filter((entry) => !preExisting.has(entry));
+    for (const entry of newIncompleteFiles) {
+      const fullPath = path.join(dir, entry);
+      await fs
+        .unlink(fullPath)
+        .then(() => {
+          this.logger.info('removed orphaned .incomplete file after failed acquisition', {
+            artist,
+            title,
+            path: fullPath,
+          });
+        })
+        .catch((error) => {
+          this.logger.warn('failed to remove orphaned .incomplete file', {
+            artist,
+            title,
+            path: fullPath,
+            error: String(error),
+          });
+        });
+    }
   }
 
   private get pendingQueuePath(): string {
@@ -284,6 +328,8 @@ export class SockseekAcquirer implements IHqAudioAcquirer {
     await fs.mkdir(resolvedOutputDir, { recursive: true });
     await this.flushPendingNicotinePlusDownloads();
 
+    const preExistingIncompleteFiles = new Set(await this.listIncompleteFiles(resolvedOutputDir));
+
     const hasKnownDuration = durationSeconds > 0;
     const queryCsvPath = hasKnownDuration
       ? await this.writeQueryCsv(artist, title, durationSeconds)
@@ -306,8 +352,12 @@ export class SockseekAcquirer implements IHqAudioAcquirer {
         resolvedOutputDir,
         '--pref-format',
         'flac,wav',
-        '--fast-search',
+        '--search-timeout',
+        this.searchTimeoutMs.toString(),
       );
+      if (this.fastSearch) {
+        args.push('--fast-search');
+      }
       if (this.configPath) {
         args.push('--config', this.configPath);
       }
@@ -382,14 +432,18 @@ export class SockseekAcquirer implements IHqAudioAcquirer {
       const finalState = holder.finalState;
       const succeeded = finalState?.terminalOutcome === 'Succeeded' && !!finalState.downloadPath;
 
-      if (!succeeded && holder.downloadStart?.username && holder.downloadStart?.filename) {
-        await this.addPendingNicotinePlusDownload(
-          holder.downloadStart.username,
-          holder.downloadStart.filename,
-          holder.downloadStart.size ?? 0,
-          artist,
-          title,
-        );
+      if (!succeeded) {
+        await this.cleanupIncompleteFiles(resolvedOutputDir, preExistingIncompleteFiles, artist, title);
+
+        if (holder.downloadStart?.username && holder.downloadStart?.filename) {
+          await this.addPendingNicotinePlusDownload(
+            holder.downloadStart.username,
+            holder.downloadStart.filename,
+            holder.downloadStart.size ?? 0,
+            artist,
+            title,
+          );
+        }
       }
 
       if (!finalState) {
