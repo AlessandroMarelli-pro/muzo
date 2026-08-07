@@ -2,7 +2,7 @@ import { createToken } from '../../utils/create-token';
 
 export type HqAudioAcquireResult = {
   filePath: string;
-  format: 'flac' | 'wav';
+  format: 'flac' | 'wav' | 'm4a';
 };
 
 export const HQ_AUDIO_ACQUIRER = createToken<IHqAudioAcquirer>('HQ_AUDIO_ACQUIRER');

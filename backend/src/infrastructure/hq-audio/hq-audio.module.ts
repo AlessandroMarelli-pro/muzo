@@ -14,6 +14,6 @@ import { TidalDlAcquirer } from './tidal-dl.acquirer';
     CompositeHqAudioAcquirer,
     { provide: HQ_AUDIO_ACQUIRER, useExisting: CompositeHqAudioAcquirer },
   ],
-  exports: [HQ_AUDIO_ACQUIRER, SockseekAcquirer],
+  exports: [HQ_AUDIO_ACQUIRER, SockseekAcquirer, TidalDlAcquirer],
 })
 export class HqAudioInfrastructureModule {}

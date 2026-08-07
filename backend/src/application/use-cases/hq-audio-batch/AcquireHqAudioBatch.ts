@@ -2,6 +2,7 @@ import { HqAudioBatchState, HqAudioTrackStatus } from 'src/application/ports/dto
 import { ILogger } from 'src/application/ports/infrastructure/ILogger';
 import { IHqAudioBatchProgressPublisher } from 'src/application/ports/infrastructure/IHqAudioBatchProgressPublisher';
 import { IMusicTrackRepository } from 'src/application/ports/repositories/IMusicTrackRepository';
+import { TidalDlAcquirer } from 'src/infrastructure/hq-audio/tidal-dl.acquirer';
 import {
   SockseekAcquirer,
   SockseekBatchTrackOutcome,
@@ -11,9 +12,17 @@ import { HqAudioBatchId, MusicTrackId } from 'src/kernel/ids';
 
 const CONCURRENT_JOBS = 5;
 
+interface BatchTrackQuery {
+  key: MusicTrackId;
+  artist: string;
+  title: string;
+  durationSeconds: number;
+}
+
 export class AcquireHqAudioBatchUseCase {
   constructor(
     private readonly musicTrackRepository: IMusicTrackRepository,
+    private readonly tidalDlAcquirer: TidalDlAcquirer,
     private readonly sockseekAcquirer: SockseekAcquirer,
     private readonly hqAudioBatchProgressPublisher: IHqAudioBatchProgressPublisher,
     loggerFactory: { createLogger: (name: string) => ILogger },
@@ -26,7 +35,7 @@ export class AcquireHqAudioBatchUseCase {
     const tracks = await this.musicTrackRepository.getManyByIds(trackIds);
     const trackById = new Map(tracks.map((track) => [track.id, track]));
 
-    const queries: SockseekBatchTrackQuery[] = trackIds.flatMap((trackId): SockseekBatchTrackQuery[] => {
+    const queries: BatchTrackQuery[] = trackIds.flatMap((trackId): BatchTrackQuery[] => {
       const track = trackById.get(trackId);
       if (!track?.artist || !track?.title) {
         return [];
@@ -51,7 +60,25 @@ export class AcquireHqAudioBatchUseCase {
       return;
     }
 
-    await this.sockseekAcquirer.acquireBatch(batchId, queries, '', CONCURRENT_JOBS, {
+    const sockseekQueries: SockseekBatchTrackQuery[] = [];
+    for (const query of queries) {
+      await this.updateTrackStatus(batchId, query.key, 'downloading');
+      const tidalResult = await this.tryTidal(query);
+      if (tidalResult) {
+        await this.musicTrackRepository.updateOneById(query.key, {
+          hqAudioPath: tidalResult.filePath,
+        });
+        await this.updateTrackStatus(batchId, query.key, 'succeeded');
+        continue;
+      }
+      sockseekQueries.push(query);
+    }
+
+    if (sockseekQueries.length === 0) {
+      return;
+    }
+
+    await this.sockseekAcquirer.acquireBatch(batchId, sockseekQueries, '', CONCURRENT_JOBS, {
       onTrackSearchStart: (key) => {
         this.updateTrackStatus(batchId, key as MusicTrackId, 'downloading').catch((error) =>
           this.logger.error('Failed to publish downloading status', { batchId, key, error }),
@@ -63,6 +90,23 @@ export class AcquireHqAudioBatchUseCase {
         );
       },
     });
+  }
+
+  private async tryTidal(
+    query: BatchTrackQuery,
+  ): Promise<{ filePath: string } | null> {
+    try {
+      const result = await this.tidalDlAcquirer.acquire(query.artist, query.title, query.durationSeconds, '');
+      return result;
+    } catch (error) {
+      this.logger.warn('Tidal acquisition failed in batch, falling back to sockseek', {
+        trackId: query.key,
+        artist: query.artist,
+        title: query.title,
+        error: String(error),
+      });
+      return null;
+    }
   }
 
   private async handleTrackSettled(

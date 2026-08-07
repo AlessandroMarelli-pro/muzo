@@ -118,6 +118,7 @@ import { AcquireHqAudioBatchUseCase } from './hq-audio-batch/AcquireHqAudioBatch
 import { StartHqAudioBatchDownloadUseCase } from './hq-audio-batch/StartHqAudioBatchDownload';
 import { StreamHqAudioBatchProgressUseCase } from './hq-audio-batch/StreamHqAudioBatchProgress';
 import { SockseekAcquirer } from 'src/infrastructure/hq-audio/sockseek.acquirer';
+import { TidalDlAcquirer } from 'src/infrastructure/hq-audio/tidal-dl.acquirer';
 import {
   ExchangeSpotifyCodeUseCase,
   ExchangeTidalCodeUseCase,
@@ -346,6 +347,7 @@ const useCasesProviders = [
   ]),
   createUseCaseProvider(AcquireHqAudioBatchUseCase, [
     MUSIC_TRACK_REPOSITORY,
+    TidalDlAcquirer,
     SockseekAcquirer,
     HQ_AUDIO_BATCH_PROGRESS_PUBLISHER,
     LOGGER_FACTORY,

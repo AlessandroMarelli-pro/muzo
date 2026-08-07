@@ -49,7 +49,7 @@ export class TidalDlAcquirer implements IHqAudioAcquirer {
           return this.listAudioFiles(entryPath);
         }
         const ext = path.extname(entry.name).toLowerCase();
-        if (ext === '.flac' || ext === '.wav') {
+        if (ext === '.flac' || ext === '.wav' || ext === '.m4a') {
           return [entryPath];
         }
         return [];
@@ -60,7 +60,7 @@ export class TidalDlAcquirer implements IHqAudioAcquirer {
 
   private async runTidalDownload(trackId: string, outputDir: string): Promise<void> {
     const trackUrl = `https://tidal.com/browse/track/${trackId}`;
-    const args = ['dl', trackUrl, '--output-path', outputDir];
+    const args = ['dl', trackUrl];
     await fs.mkdir(outputDir, { recursive: true });
 
     await new Promise<void>((resolve, reject) => {
@@ -88,29 +88,88 @@ export class TidalDlAcquirer implements IHqAudioAcquirer {
   ): Promise<HqAudioAcquireResult | null> {
     const resolvedOutputDir = outputDir || this.defaultOutputDir;
     const userId = getCurrentUserId();
+    this.logger.info('Tidal search starting', { artist, title, durationSeconds });
+
     const match = await this.tidalSyncProvider.findBestMatch(artist, title, durationSeconds, userId);
+    this.logger.info('Tidal search result', {
+      artist,
+      title,
+      trackId: match.trackId,
+      confidence: match.confidence,
+      matchedArtist: match.matchedTrack?.artist,
+      matchedTitle: match.matchedTrack?.title,
+    });
     if (!match.trackId) {
+      this.logger.warn('Tidal search found no match', { artist, title });
       return null;
     }
 
+    const filesBefore = new Set(await this.listAudioFiles(resolvedOutputDir));
+
+    this.logger.info('Tidal download starting', {
+      artist,
+      title,
+      trackId: match.trackId,
+      outputDir: resolvedOutputDir,
+      existingFileCount: filesBefore.size,
+    });
     await this.runTidalDownload(match.trackId, resolvedOutputDir);
+
     const files = await this.listAudioFiles(resolvedOutputDir);
+    const newFiles = files.filter((filePath) => !filesBefore.has(filePath));
+    this.logger.info('Tidal output directory scanned', {
+      artist,
+      title,
+      outputDir: resolvedOutputDir,
+      fileCount: files.length,
+      newFileCount: newFiles.length,
+    });
     if (files.length === 0) {
+      this.logger.warn('tidal-dl-ng reported success but no audio files found in output directory', {
+        artist,
+        title,
+        outputDir: resolvedOutputDir,
+      });
       return null;
     }
 
     const normalizedArtist = this.normalizeForMatch(artist);
     const normalizedTitle = this.normalizeForMatch(title);
-    const bestCandidate = files.find((filePath) => {
+    const matchesArtistAndTitle = (filePath: string): boolean => {
       const normalizedPath = this.normalizeForMatch(filePath);
       return normalizedPath.includes(normalizedArtist) && normalizedPath.includes(normalizedTitle);
-    });
+    };
 
-    const selected = bestCandidate ?? files[files.length - 1];
-    const ext = path.extname(selected).toLowerCase();
+    // Prefer a newly downloaded file (deterministic, scales regardless of library size).
+    // Fall back to a text match across the whole directory only when nothing new appeared,
+    // e.g. tidal-dl-ng skipped because the track was already downloaded in a prior run.
+    const bestCandidate =
+      (newFiles.length === 1 ? newFiles[0] : newFiles.find(matchesArtistAndTitle)) ??
+      files.find(matchesArtistAndTitle);
+
+    if (!bestCandidate) {
+      this.logger.warn('Downloaded via tidal-dl-ng but no matching file found in output directory', {
+        artist,
+        title,
+        outputDir: resolvedOutputDir,
+        scannedFileCount: files.length,
+        newFileCount: newFiles.length,
+      });
+      return null;
+    }
+
+    const ext = path.extname(bestCandidate).toLowerCase();
+    const format = ext === '.wav' ? 'wav' : ext === '.m4a' ? 'm4a' : 'flac';
+    this.logger.info('Tidal acquisition matched file', {
+      artist,
+      title,
+      filePath: bestCandidate,
+      format,
+      resolvedVia: newFiles.includes(bestCandidate) ? 'new-file-diff' : 'text-match-fallback',
+    });
     return {
-      filePath: selected,
-      format: ext === '.wav' ? 'wav' : 'flac',
+      filePath: bestCandidate,
+      format,
     };
   }
 }

@@ -406,7 +406,7 @@ export class SockseekAcquirer implements IHqAudioAcquirer {
         '-p',
         resolvedOutputDir,
         '--pref-format',
-        'flac,wav',
+        'flac,wav,m4a',
         '--search-timeout',
         this.searchTimeoutMs.toString(),
       );
@@ -537,7 +537,8 @@ export class SockseekAcquirer implements IHqAudioAcquirer {
         lockedCount: finalState.lockedCount,
       });
 
-      const format = finalState.extension === 'wav' ? 'wav' : 'flac';
+      const format =
+        finalState.extension === 'wav' ? 'wav' : finalState.extension === 'm4a' ? 'm4a' : 'flac';
       return {
         filePath: finalState.downloadPath as string,
         format,
@@ -628,7 +629,7 @@ export class SockseekAcquirer implements IHqAudioAcquirer {
         '-p',
         resolvedOutputDir,
         '--pref-format',
-        'flac,wav',
+        'flac,wav,m4a',
         '--remove-ft',
         '--search-timeout',
         this.searchTimeoutMs.toString(),
@@ -700,7 +701,7 @@ export class SockseekAcquirer implements IHqAudioAcquirer {
               status: 'succeeded',
               result: {
                 filePath: data.downloadPath as string,
-                format: data.extension === 'wav' ? 'wav' : 'flac',
+                format: data.extension === 'wav' ? 'wav' : data.extension === 'm4a' ? 'm4a' : 'flac',
               },
             });
           } else {
@@ -730,12 +731,25 @@ export class SockseekAcquirer implements IHqAudioAcquirer {
         }, batchTimeoutMs);
 
         cmd.stdout.on('data', (chunk) => {
-          stdoutBuffer += String(chunk);
+          const text = String(chunk);
+          this.logger.debug('DIAG stdout chunk', {
+            bytes: text.length,
+            at: new Date().toISOString(),
+            lineCount: text.split('\n').length,
+          });
+          stdoutBuffer += text;
           const lines = stdoutBuffer.split('\n');
           stdoutBuffer = lines.pop() ?? '';
           for (const line of lines) {
             const event = this.parseEventLine(line);
             if (event) {
+              if (event.type === 'track_state') {
+                this.logger.debug('DIAG track_state received', {
+                  at: new Date().toISOString(),
+                  artist: (event as SockseekTrackStateEvent).data.artist,
+                  title: (event as SockseekTrackStateEvent).data.title,
+                });
+              }
               handleEvent(event);
             }
           }

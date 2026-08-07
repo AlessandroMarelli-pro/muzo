@@ -18,6 +18,7 @@ export class TidalSyncAdapter implements ITidalSyncProvider {
   private readonly clientId: string;
   private readonly clientSecret: string;
   private readonly redirectUri: string;
+  private readonly countryCode: string;
 
   constructor(
     private readonly configService: ConfigService,
@@ -28,6 +29,7 @@ export class TidalSyncAdapter implements ITidalSyncProvider {
     this.clientSecret = this.configService.get<string>('TIDAL_CLIENT_SECRET') || '';
     this.redirectUri =
       this.configService.get<string>('TIDAL_REDIRECT_URI') || 'http://localhost:3000';
+    this.countryCode = this.configService.get<string>('TIDAL_COUNTRY_CODE') || 'FR';
   }
 
   private base64URLEncode(buffer: Buffer): string {
@@ -169,25 +171,40 @@ export class TidalSyncAdapter implements ITidalSyncProvider {
       ? userIdOrToken
       : await this.getAccessToken(userIdOrToken);
     const url = `${BASE_URL}${endpoint}`;
-    const response = await fetch(url, {
-      ...options,
-      headers: {
-        'Content-Type': 'application/vnd.api+json',
-        Authorization: `Bearer ${accessToken}`,
-        ...(options.headers as object),
-      },
-    });
-    if (!response.ok) {
+
+    const MAX_RETRIES = 3;
+    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+      const response = await fetch(url, {
+        ...options,
+        headers: {
+          'Content-Type': 'application/vnd.api+json',
+          Authorization: `Bearer ${accessToken}`,
+          ...(options.headers as object),
+        },
+      });
+
+      if (response.status === 429 && attempt < MAX_RETRIES) {
+        const retryAfterHeader = response.headers.get('Retry-After');
+        const retryAfterSec = retryAfterHeader ? Number(retryAfterHeader) : NaN;
+        const delayMs = Number.isFinite(retryAfterSec) ? retryAfterSec * 1000 : 500 * 2 ** attempt;
+        await this.delay(delayMs);
+        continue;
+      }
+
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(`TIDAL API error: ${response.status} - ${text}`);
+      }
+
       const text = await response.text();
-      throw new Error(`TIDAL API error: ${response.status} - ${text}`);
+      if (!text?.trim()) return null;
+      try {
+        return JSON.parse(text);
+      } catch {
+        return text;
+      }
     }
-    const text = await response.text();
-    if (!text?.trim()) return null;
-    try {
-      return JSON.parse(text);
-    } catch {
-      return text;
-    }
+    throw new Error('TIDAL API error: exhausted retries after 429');
   }
 
   private async searchTracks(
@@ -199,84 +216,70 @@ export class TidalSyncAdapter implements ITidalSyncProvider {
     const accessToken = await this.getAccessToken(userId);
     const searchQuery = encodeURIComponent(query);
     console.log('searchQuery', searchQuery);
-    try {
-      // Search v2 endpoint format.
-      const response = (await this.makeRequest(
+
+    const response = (await this.makeRequest(
+      accessToken,
+      `/searchResults/${searchQuery}/relationships/tracks?limit=${limit}&countryCode=${this.countryCode}`,
+      { method: 'GET' },
+      { accessTokenProvided: true },
+    )) as {
+      data?: Array<{ id: string; type: string }>;
+    };
+
+    const trackIds =
+      response?.data
+        ?.filter((item) => item.type === 'tracks')
+        .map((item) => item.id)
+        .slice(0, limit) ?? [];
+
+    if (trackIds.length === 0) {
+      console.log('no tracks found');
+      return [];
+    }
+    console.log('trackIds', trackIds);
+
+    const fetchTrackDetail = async (trackId: string) => {
+      const trackResponse = (await this.makeRequest(
         accessToken,
-        `/searchresults/${searchQuery}/relationships/tracks?limit=${limit}`,
+        `/tracks/${trackId}?countryCode=${this.countryCode}&include=artists`,
         { method: 'GET' },
         { accessTokenProvided: true },
       )) as {
-        data?: Array<{ id: string; type: string }>;
-      };
-
-      const trackIds =
-        response?.data
-          ?.filter((item) => item.type === 'tracks')
-          .map((item) => item.id)
-          .slice(0, limit) ?? [];
-
-      if (trackIds.length === 0) {
-        return [];
-      }
-
-      const tracks = await Promise.all(
-        trackIds.map(async (trackId) => {
-          const trackResponse = (await this.makeRequest(
-            accessToken,
-            `/tracks/${trackId}`,
-            { method: 'GET' },
-            { accessTokenProvided: true },
-          )) as {
-            data?: {
-              id?: string;
-              attributes?: { title?: string; duration?: string };
-            };
-            included?: Array<{
-              type: string;
-              attributes?: { name?: string };
-            }>;
-          };
-
-          const mainArtist =
-            trackResponse?.included?.find((inc) => inc.type === 'artists')?.attributes?.name ??
-            'Unknown Artist';
-          const duration = this.parseDuration(trackResponse?.data?.attributes?.duration || 'PT0S');
-          return {
-            id: trackResponse?.data?.id || trackId,
-            title: trackResponse?.data?.attributes?.title || '',
-            artist: mainArtist,
-            duration,
-          };
-        }),
-      );
-
-      return tracks;
-    } catch (error) {
-      // Backward compatibility fallback for older endpoint shape.
-      const response = (await this.makeRequest(
-        accessToken,
-        `/search?query=${searchQuery}&limit=${limit}&types=tracks`,
-        { method: 'GET' },
-        { accessTokenProvided: true },
-      )) as {
-        data?: Array<{
+        data?: {
+          id?: string;
+          attributes?: { title?: string; version?: string; duration?: string };
+        };
+        included?: Array<{
           type: string;
-          id: string;
-          attributes?: { title?: string; duration?: string };
+          attributes?: { name?: string };
         }>;
       };
 
-      if (!response?.data || !Array.isArray(response.data)) return [];
-      return response.data
-        .filter((item) => item.type === 'tracks')
-        .map((item) => ({
-          id: item.id,
-          title: item.attributes?.title || '',
-          artist: 'Unknown Artist',
-          duration: this.parseDuration(item.attributes?.duration || 'PT0S'),
-        }));
+      const mainArtist =
+        trackResponse?.included?.find((inc) => inc.type === 'artists')?.attributes?.name ??
+        'Unknown Artist';
+      const duration = this.parseDuration(trackResponse?.data?.attributes?.duration || 'PT0S');
+      const title = trackResponse?.data?.attributes?.title || '';
+      const version = trackResponse?.data?.attributes?.version;
+      return {
+        id: trackResponse?.data?.id || trackId,
+        title: version ? `${title} (${version})` : title,
+        artist: mainArtist,
+        duration,
+      };
+    };
+
+    // Fan out with limited concurrency to avoid bursting Tidal's rate limit (429),
+    // since this runs once per search and again once per batch-downloaded track.
+    const DETAIL_FETCH_CONCURRENCY = 3;
+    const tracks: Awaited<ReturnType<typeof fetchTrackDetail>>[] = [];
+    for (let i = 0; i < trackIds.length; i += DETAIL_FETCH_CONCURRENCY) {
+      const chunk = trackIds.slice(i, i + DETAIL_FETCH_CONCURRENCY);
+      const chunkResults = await Promise.all(chunk.map(fetchTrackDetail));
+      tracks.push(...chunkResults);
     }
+    console.log('tracks', tracks);
+    return tracks;
   }
 
   private parseDuration(duration: string): number {
@@ -292,13 +295,49 @@ export class TidalSyncAdapter implements ITidalSyncProvider {
     return new Promise((r) => setTimeout(r, ms));
   }
 
+  private stripSearchNoise(str: string): string {
+    return (
+      str
+        .replace(/[[(].*?[\])]|(?:lyrics|official)/gi, ' ')
+        // Tidal's search degrades badly on "!" (e.g. "CC:DISCO!" returns unrelated results),
+        // likely treated as query syntax on their end. Strip it; other punctuation is fine.
+        .replace(/!/g, '')
+        .replace(/\s+/g, ' ')
+        .trim()
+    );
+  }
+
+  // Generic words that carry no identifying signal on their own (e.g. "dj" appears in a huge
+  // fraction of unrelated artist names) and must not count as evidence of a real match.
+  private static readonly STOPWORDS = new Set([
+    'dj',
+    'the',
+    'a',
+    'an',
+    'vs',
+    'feat',
+    'ft',
+    'and',
+    'x',
+  ]);
+
+  private meaningfulWords(str: string): string[] {
+    return str
+      .toLowerCase()
+      .replace(/[^\w\s]/g, '')
+      .split(/\s+/)
+      .filter((word) => word.length > 0 && !TidalSyncAdapter.STOPWORDS.has(word));
+  }
+
   async findBestMatch(
     artist: string,
     title: string,
     trackDuration: number,
     userId: string,
   ): Promise<TrackMatchResult> {
-    const tracks = await this.searchTracks(`${artist} - ${title}`, userId, 5);
+    const cleanArtist = this.stripSearchNoise(artist);
+    const cleanTitle = this.stripSearchNoise(title);
+    const tracks = await this.searchTracks(`${cleanArtist} - ${cleanTitle}`, userId, 10);
     if (tracks.length === 0) return { trackId: null, confidence: 'none' };
 
     const normalize = (str: string) =>
@@ -329,25 +368,44 @@ export class TidalSyncAdapter implements ITidalSyncProvider {
       }
     }
 
+    const titleWords = this.meaningfulWords(title);
+    const artistWords = this.meaningfulWords(artist);
+
+    const DURATION_TOLERANCE_SEC = 10;
     let bestMatch: (typeof tracks)[0] | null = null;
     let bestScore = 0;
+    let bestArtistScore = 0;
     for (const track of tracks) {
-      const trackTitle = normalize(track.title);
-      const trackArtist = normalize(track.artist);
-      let score = 0;
-      const titleWords = normalizedTitle.split(/\s+/);
-      score += (titleWords.filter((w) => trackTitle.includes(w)).length / titleWords.length) * 0.5;
-      const artistWords = normalizedArtist.split(/\s+/);
-      score +=
-        (artistWords.filter((w) => trackArtist.includes(w)).length / artistWords.length) * 0.3;
       const durationDiff = Math.abs(track.duration - trackDuration);
+      // Same +/-10s tolerance as sockseek. Skip the check when trackDuration is unknown (0),
+      // since a hard filter would otherwise reject every candidate.
+      if (trackDuration > 0 && durationDiff > DURATION_TOLERANCE_SEC) {
+        continue;
+      }
+
+      const trackTitle = this.meaningfulWords(track.title).join(' ');
+      const trackArtist = this.meaningfulWords(track.artist).join(' ');
+      let score = 0;
+      score += titleWords.length
+        ? (titleWords.filter((w) => trackTitle.includes(w)).length / titleWords.length) * 0.5
+        : 0;
+      const artistScore = artistWords.length
+        ? (artistWords.filter((w) => trackArtist.includes(w)).length / artistWords.length) * 0.3
+        : 0;
+      score += artistScore;
       score += Math.max(0, 0.2 - durationDiff / 100);
       if (score > bestScore) {
         bestScore = score;
+        bestArtistScore = artistScore;
         bestMatch = track;
       }
     }
-    if (bestMatch && bestScore > 0.3) {
+    // Require meaningful artist-name overlap (not just a single generic word like "dj" or "the",
+    // which are already excluded by meaningfulWords): a title-only coincidence must not outscore
+    // a real artist match. Artist score maxes at 0.3, so 0.15 requires roughly half the
+    // meaningful artist-name words to genuinely overlap.
+    const MIN_ARTIST_SCORE = 0.15;
+    if (bestMatch && bestScore > 0.3 && bestArtistScore >= MIN_ARTIST_SCORE) {
       return {
         trackId: bestMatch.id,
         confidence: 'fuzzy',
