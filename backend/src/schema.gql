@@ -149,6 +149,7 @@ type Mutation {
   authenticateTidal(code: String!, codeVerifier: String!, userId: String!): TidalAuthResult!
   authenticateYouTube(code: String!, userId: String!): YouTubeAuthResult!
   caUpdatePlaylist(id: Base64ID!, input: UpdatePlaylistInput!): Playlist!
+  cancelPlaylistHqAudioDownload(batchId: Base64ID!): Boolean!
   createLibrary(input: CreateLibraryInput!): Library!
   createPlaylist(input: CreatePlaylistInput!): Playlist!
   createSavedFilter(input: SavedFilterInput!): FilterCriteriaResult!

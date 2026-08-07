@@ -4,10 +4,17 @@
 
 import { useEffect, useState } from 'react';
 
-export type HqAudioTrackStatus = 'queued' | 'downloading' | 'succeeded' | 'failed' | 'skipped';
+export type HqAudioTrackStatus =
+  | 'queued'
+  | 'downloading'
+  | 'succeeded'
+  | 'failed'
+  | 'skipped'
+  | 'cancelled';
 
 export interface HqAudioBatchTrackState {
   trackId: string;
+  position: number;
   artist: string;
   title: string;
   status: HqAudioTrackStatus;
@@ -23,14 +30,15 @@ export interface HqAudioBatchState {
   succeeded: number;
   failed: number;
   skipped: number;
-  status: 'running' | 'completed';
+  cancelled: number;
+  status: 'running' | 'completed' | 'cancelled';
   startedAt: string;
   updatedAt: string;
   tracks: HqAudioBatchTrackState[];
 }
 
 export interface HqAudioBatchProgressEvent {
-  type: 'batch.state' | 'track.update' | 'batch.complete';
+  type: 'batch.state' | 'track.update' | 'batch.complete' | 'batch.cancelled';
   batchId: string;
   timestamp: string;
   track?: HqAudioBatchTrackState;
@@ -137,7 +145,14 @@ export const useHqAudioBatchProgress = (batchId?: string) => {
 
       const unsubscribe = hqAudioBatchSSEService.subscribe(batchId, (event) => {
         setLatestEvent(event);
-        setState(event.state);
+        setState((current) => {
+          // Guard against an older snapshot arriving after a newer one (e.g. network delivery
+          // jitter) from silently rolling the dialog back to a less-complete state.
+          if (current && event.state.updatedAt < current.updatedAt) {
+            return current;
+          }
+          return event.state;
+        });
       });
 
       const statusInterval = setInterval(() => {
@@ -147,6 +162,7 @@ export const useHqAudioBatchProgress = (batchId?: string) => {
       return () => {
         unsubscribe();
         clearInterval(statusInterval);
+        hqAudioBatchSSEService.disconnect(batchId);
       };
     } else {
       setIsConnected(false);
@@ -154,7 +170,7 @@ export const useHqAudioBatchProgress = (batchId?: string) => {
   }, [batchId]);
 
   useEffect(() => {
-    if (batchId && state?.status === 'completed') {
+    if (batchId && (state?.status === 'completed' || state?.status === 'cancelled')) {
       hqAudioBatchSSEService.disconnect(batchId);
     }
   }, [batchId, state?.status]);

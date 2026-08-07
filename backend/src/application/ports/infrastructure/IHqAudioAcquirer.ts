@@ -7,10 +7,6 @@ export type HqAudioAcquireResult = {
 
 export const HQ_AUDIO_ACQUIRER = createToken<IHqAudioAcquirer>('HQ_AUDIO_ACQUIRER');
 
-export const HQ_AUDIO_ACQUIRER_SOCKSEEK_ONLY = createToken<IHqAudioAcquirer>(
-  'HQ_AUDIO_ACQUIRER_SOCKSEEK_ONLY',
-);
-
 export interface IHqAudioAcquirer {
   acquire(
     artist: string,

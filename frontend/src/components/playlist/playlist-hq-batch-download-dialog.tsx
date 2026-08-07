@@ -10,9 +10,9 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
-import { useDownloadPlaylistHqAudio } from '@/services/api-hooks';
+import { useCancelPlaylistHqAudioDownload, useDownloadPlaylistHqAudio } from '@/services/api-hooks';
 import { useHqAudioBatchProgress } from '@/services/hq-audio-batch-sse-service';
-import { CheckCircle2, Download, Loader2, SkipForward, XCircle } from 'lucide-react';
+import { Ban, CheckCircle2, Download, Loader2, SkipForward, Square, XCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { isHqAudio } from '../track/audio-quality-badge';
 
@@ -34,6 +34,8 @@ function statusIcon(status: string) {
       return <XCircle className="h-4 w-4 text-destructive" />;
     case 'skipped':
       return <SkipForward className="h-4 w-4 text-muted-foreground" />;
+    case 'cancelled':
+      return <Ban className="h-4 w-4 text-muted-foreground" />;
     default:
       return <div className="h-4 w-4 rounded-full border border-muted-foreground/40" />;
   }
@@ -46,6 +48,7 @@ export function PlaylistHqBatchDownloadDialog({
 }: PlaylistHqBatchDownloadDialogProps) {
   const [batchId, setBatchId] = useState<string | undefined>(undefined);
   const downloadPlaylistHqAudio = useDownloadPlaylistHqAudio();
+  const cancelPlaylistHqAudioDownload = useCancelPlaylistHqAudioDownload();
   const { state } = useHqAudioBatchProgress(batchId);
 
   useEffect(() => {
@@ -58,7 +61,7 @@ export function PlaylistHqBatchDownloadDialog({
 
   useEffect(() => {
     if (!playlist?.id || !batchId) return;
-    if (state?.status === 'completed') {
+    if (state?.status === 'completed' || state?.status === 'cancelled') {
       localStorage.removeItem(batchIdStorageKey(playlist.id));
     }
   }, [playlist?.id, batchId, state?.status]);
@@ -74,26 +77,33 @@ export function PlaylistHqBatchDownloadDialog({
     setBatchId(result.batchId);
   };
 
+  const handleCancel = async () => {
+    if (!batchId) return;
+    await cancelPlaylistHqAudioDownload.mutateAsync(batchId);
+  };
+
   const handleOpenChange = (nextOpen: boolean) => {
-    if (!nextOpen && state?.status === 'completed') {
+    if (!nextOpen && (state?.status === 'completed' || state?.status === 'cancelled')) {
       setBatchId(undefined);
     }
     onOpenChange(nextOpen);
   };
 
   const progressValue = state && state.total > 0
-    ? ((state.succeeded + state.failed + state.skipped) / state.total) * 100
+    ? ((state.succeeded + state.failed + state.skipped + state.cancelled) / state.total) * 100
     : 0;
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent>
+      <DialogContent className="sm:max-w-xl overflow-x-hidden">
         <DialogHeader>
           <DialogTitle>Download All in HQ</DialogTitle>
           <DialogDescription>
-            {state
-              ? 'Downloading lossless copies via Soulseek.'
-              : `${tracksNeedingDownload.length} of ${playlist?.tracks?.length ?? 0} tracks need an HQ download.`}
+            {state?.status === 'cancelled'
+              ? 'Download cancelled.'
+              : state
+                ? 'Downloading lossless copies via Soulseek.'
+                : `${tracksNeedingDownload.length} of ${playlist?.tracks?.length ?? 0} tracks need an HQ download.`}
           </DialogDescription>
         </DialogHeader>
 
@@ -108,18 +118,21 @@ export function PlaylistHqBatchDownloadDialog({
           <div className="space-y-4">
             <div className="space-y-2">
               <Progress value={progressValue} />
-              <div className="flex gap-2 text-xs text-muted-foreground">
+              <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
                 <Badge variant="outline">{state.succeeded} succeeded</Badge>
                 <Badge variant="outline">{state.failed} failed</Badge>
                 <Badge variant="outline">{state.skipped} skipped</Badge>
                 <Badge variant="outline">{state.downloading} downloading</Badge>
+                {state.cancelled > 0 && (
+                  <Badge variant="outline">{state.cancelled} cancelled</Badge>
+                )}
               </div>
             </div>
-            <div className="max-h-64 overflow-y-auto space-y-1">
+            <div className="max-h-64 overflow-y-auto overflow-x-hidden space-y-1">
               {state.tracks.map((track) => (
-                <div key={track.trackId} className="flex items-center gap-2 text-sm py-1">
-                  {statusIcon(track.status)}
-                  <span className="truncate">
+                <div key={track.trackId} className="flex items-center gap-2 text-sm py-1 min-w-0">
+                  <span className="shrink-0">{statusIcon(track.status)}</span>
+                  <span className="truncate min-w-0">
                     {track.artist} - {track.title}
                   </span>
                 </div>
@@ -138,7 +151,17 @@ export function PlaylistHqBatchDownloadDialog({
               {downloadPlaylistHqAudio.isPending ? 'Starting…' : 'Start Download'}
             </Button>
           )}
-          {state?.status === 'completed' && (
+          {state?.status === 'running' && (
+            <Button
+              variant="destructive"
+              onClick={handleCancel}
+              disabled={cancelPlaylistHqAudioDownload.isPending}
+            >
+              <Square className="h-4 w-4 mr-2" />
+              {cancelPlaylistHqAudioDownload.isPending ? 'Stopping…' : 'Stop'}
+            </Button>
+          )}
+          {(state?.status === 'completed' || state?.status === 'cancelled') && (
             <Button onClick={() => handleOpenChange(false)}>Done</Button>
           )}
         </DialogFooter>

@@ -178,6 +178,7 @@ export type Mutation = {
   authenticateTidal: TidalAuthResult;
   authenticateYouTube: YouTubeAuthResult;
   caUpdatePlaylist: Playlist;
+  cancelPlaylistHqAudioDownload: Scalars['Boolean']['output'];
   createLibrary: Library;
   createPlaylist: Playlist;
   createSavedFilter: FilterCriteriaResult;
@@ -248,6 +249,11 @@ export type MutationAuthenticateYouTubeArgs = {
 export type MutationCaUpdatePlaylistArgs = {
   id: Scalars['Base64ID']['input'];
   input: UpdatePlaylistInput;
+};
+
+
+export type MutationCancelPlaylistHqAudioDownloadArgs = {
+  batchId: Scalars['Base64ID']['input'];
 };
 
 

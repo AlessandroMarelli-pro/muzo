@@ -43,10 +43,11 @@ export class StartHqAudioBatchDownloadUseCase {
     const trackStates: HqAudioBatchTrackState[] = [];
     const trackIdsToDownload: MusicTrackId[] = [];
 
-    for (const playlistTrack of playlist.tracks) {
+    playlist.tracks.forEach((playlistTrack, position) => {
       const track = playlistTrack.track;
       const trackState: HqAudioBatchTrackState = {
         trackId: track.id,
+        position,
         artist: track.artist ?? '',
         title: track.title ?? '',
         status: isTrackAlreadyHq(track) ? 'skipped' : 'queued',
@@ -55,7 +56,7 @@ export class StartHqAudioBatchDownloadUseCase {
       if (trackState.status === 'queued') {
         trackIdsToDownload.push(track.id);
       }
-    }
+    });
 
     const state: HqAudioBatchState = {
       batchId,
@@ -66,6 +67,7 @@ export class StartHqAudioBatchDownloadUseCase {
       succeeded: 0,
       failed: 0,
       skipped: trackStates.length - trackIdsToDownload.length,
+      cancelled: 0,
       status: trackIdsToDownload.length > 0 ? 'running' : 'completed',
       startedAt: now,
       updatedAt: now,

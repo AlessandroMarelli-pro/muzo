@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { spawn } from 'child_process';
+import { ChildProcessByStdio, spawn } from 'child_process';
 import * as crypto from 'crypto';
 import * as fs from 'fs/promises';
 import * as os from 'os';
@@ -11,10 +11,13 @@ import {
 } from 'src/application/ports/infrastructure/IHqAudioAcquirer';
 import { ILogger, LOGGER } from 'src/application/ports/infrastructure/ILogger';
 import { LOGGER_FACTORY } from 'src/application/ports/infrastructure/ILoggerFactory';
+import type { Readable } from 'stream';
 
 type SockseekTrackStateEvent = {
   type: 'track_state';
   data: {
+    artist?: string;
+    title?: string;
     terminalOutcome?: string;
     skipReason?: string;
     failureReason?: string;
@@ -50,23 +53,55 @@ type SockseekDownloadProgressEvent = {
   data: { bytesTransferred?: number; totalBytes?: number; percent?: number };
 };
 
+type SockseekTrackListEvent = {
+  type: 'track_list';
+  data: {
+    tracks: Array<{ index: number; artist?: string; title?: string }>;
+  };
+};
+
 type SockseekEvent =
   | SockseekTrackStateEvent
   | SockseekSearchStartEvent
   | SockseekDownloadStartEvent
   | SockseekDownloadProgressEvent
+  | SockseekTrackListEvent
   | { type: string; data: unknown };
+
+export interface SockseekBatchTrackQuery {
+  key: string;
+  artist: string;
+  title: string;
+  durationSeconds: number;
+}
+
+export type SockseekBatchTrackOutcome =
+  | { status: 'succeeded'; result: HqAudioAcquireResult }
+  | { status: 'not-found' }
+  | { status: 'interrupted' };
+
+export interface SockseekBatchProgressCallbacks {
+  onTrackSearchStart?: (key: string) => void;
+  onTrackDownloadStart?: (key: string) => void;
+  onTrackSettled?: (key: string, outcome: SockseekBatchTrackOutcome) => void;
+}
 
 @Injectable()
 export class SockseekAcquirer implements IHqAudioAcquirer {
   private readonly binaryPath: string;
   private readonly configPath: string;
   private readonly timeoutMs: number;
+  private readonly batchBaseTimeoutMs: number;
+  private readonly batchPerTrackTimeoutMs: number;
   private readonly defaultOutputDir: string;
   private readonly nicotinePlusDataDir: string;
   private readonly fastSearch: boolean;
   private readonly searchTimeoutMs: number;
   private readonly logger: ILogger;
+  private readonly activeBatchProcesses = new Map<
+    string,
+    ChildProcessByStdio<null, Readable, Readable>
+  >();
 
   constructor(
     private readonly configService: ConfigService,
@@ -79,6 +114,10 @@ export class SockseekAcquirer implements IHqAudioAcquirer {
     this.binaryPath = this.configService.get<string>('hqAudio.sockseek.binaryPath') ?? 'sockseek';
     this.configPath = this.configService.get<string>('hqAudio.sockseek.configPath') ?? '';
     this.timeoutMs = this.configService.get<number>('hqAudio.sockseek.timeoutMs') ?? 240000;
+    this.batchBaseTimeoutMs =
+      this.configService.get<number>('hqAudio.sockseek.batchBaseTimeoutMs') ?? 120000;
+    this.batchPerTrackTimeoutMs =
+      this.configService.get<number>('hqAudio.sockseek.batchPerTrackTimeoutMs') ?? 30000;
     this.defaultOutputDir = this.configService.get<string>('hqAudio.sockseek.outputDir') ?? '';
     this.nicotinePlusDataDir =
       this.configService.get<string>('hqAudio.sockseek.nicotinePlusDataDir') ?? '';
@@ -158,6 +197,22 @@ export class SockseekAcquirer implements IHqAudioAcquirer {
       ].join(','),
     ].join('\n');
     await fs.writeFile(csvPath, csv, 'utf-8');
+    return csvPath;
+  }
+
+  private async writeBatchQueryCsv(tracks: SockseekBatchTrackQuery[]): Promise<string> {
+    const csvPath = path.join(os.tmpdir(), `sockseek-batch-query-${crypto.randomUUID()}.csv`);
+    const rows = [
+      'Artist,Title,Length',
+      ...tracks.map((track) =>
+        [
+          this.escapeCsvField(track.artist),
+          this.escapeCsvField(track.title),
+          Math.round(track.durationSeconds).toString(),
+        ].join(','),
+      ),
+    ];
+    await fs.writeFile(csvPath, rows.join('\n'), 'utf-8');
     return csvPath;
   }
 
@@ -344,7 +399,7 @@ export class SockseekAcquirer implements IHqAudioAcquirer {
 
     try {
       const args = hasKnownDuration
-        ? [queryCsvPath as string, '--input-type', 'csv', '--length-tol', '9']
+        ? [queryCsvPath as string, '--input-type', 'csv', '--length-tol', '9', '--remove-ft']
         : [`${artist} - ${title}`, '-s'];
       args.push(
         '--progress-json',
@@ -433,7 +488,12 @@ export class SockseekAcquirer implements IHqAudioAcquirer {
       const succeeded = finalState?.terminalOutcome === 'Succeeded' && !!finalState.downloadPath;
 
       if (!succeeded) {
-        await this.cleanupIncompleteFiles(resolvedOutputDir, preExistingIncompleteFiles, artist, title);
+        await this.cleanupIncompleteFiles(
+          resolvedOutputDir,
+          preExistingIncompleteFiles,
+          artist,
+          title,
+        );
 
         if (holder.downloadStart?.username && holder.downloadStart?.filename) {
           await this.addPendingNicotinePlusDownload(
@@ -487,5 +547,269 @@ export class SockseekAcquirer implements IHqAudioAcquirer {
         await fs.unlink(queryCsvPath).catch(() => undefined);
       }
     }
+  }
+
+  /**
+   * Acquires multiple tracks in a single sockseek process/login session, relying on
+   * sockseek's own --concurrent-jobs for internal parallelism. Running one sockseek
+   * process per track concurrently is not supported: each process independently tries to
+   * log in to Soulseek and bind the listener port, so concurrent processes fight over the
+   * same account session and port.
+   */
+  async acquireBatch(
+    batchId: string,
+    tracks: SockseekBatchTrackQuery[],
+    outputDir: string,
+    concurrentJobs: number,
+    callbacks: SockseekBatchProgressCallbacks = {},
+  ): Promise<void> {
+    if (tracks.length === 0) {
+      return;
+    }
+
+    const batchTimeoutMs = this.batchBaseTimeoutMs + this.batchPerTrackTimeoutMs * tracks.length;
+    const resolvedOutputDir = outputDir || this.defaultOutputDir;
+    await fs.mkdir(resolvedOutputDir, { recursive: true });
+    await this.flushPendingNicotinePlusDownloads();
+
+    const preExistingIncompleteFiles = new Set(await this.listIncompleteFiles(resolvedOutputDir));
+
+    const normalize = (artist: string, title: string) =>
+      `${artist.trim().toLowerCase()}|${title.trim().toLowerCase()}`;
+
+    // sockseek may normalize artist/title before echoing them back in events (e.g. --remove-ft
+    // strips "feat. X"), so matching events by re-deriving identity from our own pre-normalized
+    // query strings is unreliable. Instead, wait for the one-time `track_list` event, which
+    // reports sockseek's own normalized artist/title per CSV row index (rows are written in
+    // `tracks` order), and build the identity map from *that* so all later events - which use
+    // the same sockseek-side normalization - match correctly.
+    const keyByIndex = new Map<number, string>(tracks.map((track, index) => [index, track.key]));
+    const pendingByIdentity = new Map<string, string[]>();
+    const settledKeys = new Set<string>();
+
+    const registerTrackList = (event: SockseekTrackListEvent) => {
+      for (const entry of event.data.tracks) {
+        const key = keyByIndex.get(entry.index);
+        if (!key || !entry.artist || !entry.title) {
+          continue;
+        }
+        const identity = normalize(entry.artist, entry.title);
+        const queue = pendingByIdentity.get(identity) ?? [];
+        queue.push(key);
+        pendingByIdentity.set(identity, queue);
+      }
+    };
+
+    const resolveKey = (artist?: string, title?: string): string | null => {
+      if (!artist || !title) {
+        return null;
+      }
+      const queue = pendingByIdentity.get(normalize(artist, title));
+      return queue && queue.length > 0 ? queue[0] : null;
+    };
+
+    const queryCsvPath = await this.writeBatchQueryCsv(tracks);
+
+    this.logger.info('sockseek batch acquisition starting', {
+      trackCount: tracks.length,
+      outputDir: resolvedOutputDir,
+      concurrentJobs,
+      batchTimeoutMs,
+    });
+
+    try {
+      const args = [
+        queryCsvPath,
+        '--input-type',
+        'csv',
+        '--length-tol',
+        '9',
+        '--progress-json',
+        '-p',
+        resolvedOutputDir,
+        '--pref-format',
+        'flac,wav',
+        '--remove-ft',
+        '--search-timeout',
+        this.searchTimeoutMs.toString(),
+        '--concurrent-jobs',
+        concurrentJobs.toString(),
+      ];
+      if (this.fastSearch) {
+        args.push('--fast-search');
+      }
+      if (this.configPath) {
+        args.push('--config', this.configPath);
+      }
+
+      let stdoutBuffer = '';
+      let stderr = '';
+      let timedOut = false;
+      let cancelled = false;
+
+      const handleEvent = (event: SockseekEvent) => {
+        if (event.type === 'track_list') {
+          registerTrackList(event as SockseekTrackListEvent);
+          return;
+        }
+
+        if (event.type === 'search_start') {
+          const data = (event as SockseekSearchStartEvent).data;
+          const key = resolveKey(data.artist, data.title);
+          this.logEvent(event, data.artist ?? '', data.title ?? '');
+          if (key) {
+            callbacks.onTrackSearchStart?.(key);
+          }
+          return;
+        }
+
+        if (event.type === 'download_start') {
+          const data = (event as SockseekDownloadStartEvent)
+            .data as SockseekDownloadStartEvent['data'] & {
+            artist?: string;
+            title?: string;
+          };
+          const key = resolveKey(data.artist, data.title);
+          this.logEvent(event, data.artist ?? '', data.title ?? '');
+          if (key) {
+            callbacks.onTrackDownloadStart?.(key);
+          }
+          return;
+        }
+
+        if (event.type === 'track_state') {
+          const data = (event as SockseekTrackStateEvent).data;
+          const key = resolveKey(data.artist, data.title);
+          this.logEvent(event, data.artist ?? '', data.title ?? '');
+          if (!key || settledKeys.has(key)) {
+            return;
+          }
+
+          const queue = pendingByIdentity.get(normalize(data.artist ?? '', data.title ?? ''));
+          queue?.shift();
+          settledKeys.add(key);
+
+          const succeeded = data.terminalOutcome === 'Succeeded' && !!data.downloadPath;
+          if (succeeded) {
+            this.logger.info('sockseek batch track succeeded', {
+              artist: data.artist,
+              title: data.title,
+              downloadPath: data.downloadPath,
+            });
+            callbacks.onTrackSettled?.(key, {
+              status: 'succeeded',
+              result: {
+                filePath: data.downloadPath as string,
+                format: data.extension === 'wav' ? 'wav' : 'flac',
+              },
+            });
+          } else {
+            this.logger.warn('sockseek batch track did not find a match', {
+              artist: data.artist,
+              title: data.title,
+              terminalOutcome: data.terminalOutcome,
+              skipReason: data.skipReason,
+              failureReason: data.failureReason,
+            });
+            callbacks.onTrackSettled?.(key, { status: 'not-found' });
+          }
+        }
+      };
+
+      await new Promise<void>((resolve, reject) => {
+        const cmd = spawn(this.binaryPath, args, { stdio: ['ignore', 'pipe', 'pipe'] });
+        this.activeBatchProcesses.set(batchId, cmd);
+
+        const timer = setTimeout(() => {
+          this.logger.warn('sockseek batch timed out, killing process', {
+            trackCount: tracks.length,
+            timeoutMs: batchTimeoutMs,
+          });
+          timedOut = true;
+          cmd.kill('SIGTERM');
+        }, batchTimeoutMs);
+
+        cmd.stdout.on('data', (chunk) => {
+          stdoutBuffer += String(chunk);
+          const lines = stdoutBuffer.split('\n');
+          stdoutBuffer = lines.pop() ?? '';
+          for (const line of lines) {
+            const event = this.parseEventLine(line);
+            if (event) {
+              handleEvent(event);
+            }
+          }
+        });
+        cmd.stderr.on('data', (chunk) => {
+          const text = String(chunk).trim();
+          stderr += text;
+          if (text) {
+            this.logger.debug('sockseek batch stderr', { line: text });
+          }
+        });
+        cmd.on('error', (error) => {
+          clearTimeout(timer);
+          this.activeBatchProcesses.delete(batchId);
+          this.logger.error('sockseek batch process failed to start', { error: String(error) });
+          reject(error);
+        });
+        cmd.on('close', (code, signal) => {
+          clearTimeout(timer);
+          this.activeBatchProcesses.delete(batchId);
+          cancelled = signal === 'SIGTERM' && !timedOut;
+          const event = this.parseEventLine(stdoutBuffer);
+          if (event) {
+            handleEvent(event);
+          }
+          this.logger.debug('sockseek batch process exited', {
+            exitCode: code,
+            signal,
+            stderr,
+            timedOut,
+            cancelled,
+          });
+          resolve();
+        });
+      });
+
+      await this.cleanupIncompleteFiles(resolvedOutputDir, preExistingIncompleteFiles, '', '');
+
+      if (!cancelled) {
+        for (const track of tracks) {
+          if (!settledKeys.has(track.key)) {
+            if (timedOut) {
+              this.logger.warn('sockseek batch track interrupted by batch timeout', {
+                artist: track.artist,
+                title: track.title,
+              });
+              callbacks.onTrackSettled?.(track.key, { status: 'interrupted' });
+              continue;
+            }
+            this.logger.warn('sockseek batch track produced no track_state event', {
+              artist: track.artist,
+              title: track.title,
+            });
+            callbacks.onTrackSettled?.(track.key, { status: 'not-found' });
+          }
+        }
+      }
+    } finally {
+      this.activeBatchProcesses.delete(batchId);
+      await fs.unlink(queryCsvPath).catch(() => undefined);
+    }
+  }
+
+  /**
+   * Kills the sockseek process for a running batch, if one is active. Returns false if no
+   * process is currently running for the given batchId (already finished or never started).
+   */
+  cancelBatch(batchId: string): boolean {
+    const cmd = this.activeBatchProcesses.get(batchId);
+    if (!cmd) {
+      return false;
+    }
+    this.logger.info('cancelling sockseek batch', { batchId });
+    cmd.kill('SIGTERM');
+    return true;
   }
 }

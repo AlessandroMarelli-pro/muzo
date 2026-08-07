@@ -10,7 +10,9 @@ import {
   GetPlaylistSortingByPlaylistIdUseCase,
   UpdatePlaylistUseCase,
 } from 'src/application/use-cases';
+import { AcquireHqAudioBatchUseCase } from 'src/application/use-cases/hq-audio-batch/AcquireHqAudioBatch';
 import { StartHqAudioBatchDownloadUseCase } from 'src/application/use-cases/hq-audio-batch/StartHqAudioBatchDownload';
+import { HqAudioBatchId } from 'src/kernel/ids';
 import { UpdatePlaylistSortingUseCase } from 'src/application/use-cases/playlist-sorting/UpdatePlaylistSorting';
 import { Maybe } from 'src/kernel/common';
 
@@ -42,6 +44,7 @@ export class PlaylistResolver {
     private readonly updatePlaylistSortingUseCase: UpdatePlaylistSortingUseCase,
     private readonly getPlaylistRecommendationsUseCase: GetPlaylistRecommendationsUseCase,
     private readonly startHqAudioBatchDownloadUseCase: StartHqAudioBatchDownloadUseCase,
+    private readonly acquireHqAudioBatchUseCase: AcquireHqAudioBatchUseCase,
   ) {}
 
   @ResolveField(() => PlaylistStats)
@@ -149,6 +152,13 @@ export class PlaylistResolver {
       parsePlaylistId(playlistId),
     );
     return { batchId, totalToDownload };
+  }
+
+  @Mutation(() => Boolean)
+  async cancelPlaylistHqAudioDownload(
+    @Args('batchId', { type: () => Base64ID }) batchId: string,
+  ): Promise<boolean> {
+    return this.acquireHqAudioBatchUseCase.cancel(batchId as HqAudioBatchId);
   }
 
   @Mutation(() => PlaylistSorting)

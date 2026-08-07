@@ -38,12 +38,18 @@ export class ScanProgressPubSubAdapter
       password: queueConfig.redis.password,
       db: queueConfig.redis.db,
     });
+    this.redisPublisher.on('error', (error) => {
+      this.logger.error('Redis publisher connection error:', error);
+    });
 
     this.redisState = new Redis({
       host: queueConfig.redis.host,
       port: queueConfig.redis.port,
       password: queueConfig.redis.password,
       db: queueConfig.redis.db,
+    });
+    this.redisState.on('error', (error) => {
+      this.logger.error('Redis state connection error:', error);
     });
   }
 
@@ -75,8 +81,11 @@ export class ScanProgressPubSubAdapter
         password: queueConfig?.redis.password,
         db: queueConfig?.redis.db,
       });
+      eventsSubscriber.on('error', (error) => {
+        this.logger.error(`Redis events subscriber connection error for session ${sessionId}:`, error);
+      });
 
-      eventsSubscriber.subscribe(eventsChannel);
+      await eventsSubscriber.subscribe(eventsChannel);
       eventsSubscriber.on('message', (channel, message) => {
         if (channel === eventsChannel) {
           try {
@@ -95,8 +104,11 @@ export class ScanProgressPubSubAdapter
         password: queueConfig?.redis.password,
         db: queueConfig?.redis.db,
       });
+      errorsSubscriber.on('error', (error) => {
+        this.logger.error(`Redis errors subscriber connection error for session ${sessionId}:`, error);
+      });
 
-      errorsSubscriber.subscribe(errorsChannel);
+      await errorsSubscriber.subscribe(errorsChannel);
       errorsSubscriber.on('message', (channel, message) => {
         if (channel === errorsChannel) {
           try {

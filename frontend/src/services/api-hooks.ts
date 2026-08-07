@@ -708,5 +708,30 @@ export const useDownloadPlaylistHqAudio = () => {
   });
 };
 
+export const useCancelPlaylistHqAudioDownload = () => {
+  return useMutation({
+    mutationFn: async (batchId: string) => {
+      const response = await graffleClient.request<{
+        cancelPlaylistHqAudioDownload: boolean;
+      }>(
+        gql`
+          mutation CancelPlaylistHqAudioDownload($batchId: Base64ID!) {
+            cancelPlaylistHqAudioDownload(batchId: $batchId)
+          }
+        `,
+        { batchId },
+      );
+      return response.cancelPlaylistHqAudioDownload;
+    },
+    onError: (error: any) => {
+      const errorMessage =
+        error?.response?.errors?.[0]?.message ||
+        error?.message ||
+        'Failed to cancel batch HQ download';
+      toast.error(errorMessage, { duration: 3000 });
+    },
+  });
+};
+
 // Note: playTrack mutation removed as it doesn't exist in the schema
 // export const usePlayTrack = () => { ... };

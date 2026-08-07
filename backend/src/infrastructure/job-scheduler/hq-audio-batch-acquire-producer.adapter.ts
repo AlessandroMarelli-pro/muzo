@@ -18,11 +18,6 @@ export class HqAudioBatchAcquireProducerAdapter implements IHqAudioBatchAcquireP
     trackIds: MusicTrackId[],
     contextUser: ActionContext['user'],
   ): Promise<void> {
-    await this.queue.addBulk(
-      trackIds.map((trackId) => ({
-        name: 'hq-audio-batch-acquire',
-        data: { batchId, trackId, contextUser },
-      })),
-    );
+    await this.queue.add('hq-audio-batch-acquire', { batchId, trackIds, contextUser });
   }
 }

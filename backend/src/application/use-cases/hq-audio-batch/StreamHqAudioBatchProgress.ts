@@ -15,13 +15,16 @@ export class StreamHqAudioBatchProgressUseCase {
 
   async execute(batchId: HqAudioBatchId): Promise<Observable<{ data: HqAudioBatchProgressEvent }>> {
     try {
+      // Subscribe before reading the snapshot so any event published in between is captured by
+      // the live stream instead of being silently dropped by a client that connected mid-batch.
+      await this.hqAudioBatchProgressSubscriber.subscribeToBatch(batchId);
+
       const currentState = await this.hqAudioBatchProgressSubscriber.getCurrentState(batchId);
       if (!currentState) {
         this.logger.debug(`Batch ${batchId} not found`);
+        await this.hqAudioBatchProgressSubscriber.unsubscribeFromBatch(batchId);
         return EMPTY;
       }
-
-      await this.hqAudioBatchProgressSubscriber.subscribeToBatch(batchId);
 
       const initialEvent: HqAudioBatchProgressEvent = {
         type: 'batch.state',
