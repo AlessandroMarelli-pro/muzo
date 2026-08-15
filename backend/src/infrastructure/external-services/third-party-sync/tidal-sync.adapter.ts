@@ -231,7 +231,6 @@ export class TidalSyncAdapter implements ITidalSyncProvider {
     )) as {
       included?: Array<{ id: string; type: string }>;
     };
-
     const trackIds =
       response?.included
         ?.filter((item) => item.type === 'tracks')
@@ -277,11 +276,13 @@ export class TidalSyncAdapter implements ITidalSyncProvider {
     // since this runs once per search and again once per batch-downloaded track.
     const DETAIL_FETCH_CONCURRENCY = 3;
     const tracks: Awaited<ReturnType<typeof fetchTrackDetail>>[] = [];
+
     for (let i = 0; i < trackIds.length; i += DETAIL_FETCH_CONCURRENCY) {
       const chunk = trackIds.slice(i, i + DETAIL_FETCH_CONCURRENCY);
       const chunkResults = await Promise.all(chunk.map(fetchTrackDetail));
       tracks.push(...chunkResults);
     }
+
     return tracks;
   }
 
@@ -340,8 +341,22 @@ export class TidalSyncAdapter implements ITidalSyncProvider {
   ): Promise<TrackMatchResult> {
     const cleanArtist = this.stripSearchNoise(artist);
     const cleanTitle = this.stripSearchNoise(title);
-    const tracks = await this.searchTracks(`${cleanArtist} - ${cleanTitle}`, userId, 10);
+    // Fetch the full candidate pool TIDAL's search already returns (its `included`
+    // array holds ~20 tracks per query at no extra request cost) rather than an
+    // arbitrary small slice — a flood of same-ish-titled alternate versions
+    // (karaoke, instrumental, covers) can otherwise crowd the real match out of
+    // a too-small pool before scoring ever sees it.
+    const tracks = await this.searchTracks(`${cleanArtist} - ${cleanTitle}`, userId, 20);
     if (tracks.length === 0) return { trackId: null, confidence: 'none' };
+
+    // Candidate titles from Tidal frequently carry qualifiers the source title
+    // doesn't have (e.g. "(Instrumental Version)", "(Originally Performed by X)",
+    // "(Live)", "(Karaoke)"). These extra words never hurt a candidate's score
+    // today because scoring only checks that OUR words appear in THEIRS, never
+    // the reverse — so a padded alternate-version title can score identically to
+    // the genuine original. Track them per-candidate to penalize below.
+    const extraWordCount = (candidateWords: string[], sourceWords: readonly string[]): number =>
+      candidateWords.filter((w) => !sourceWords.includes(w)).length;
 
     // Only compare meaningful words (drops stopwords and, critically, very
     // short fragments like "x" or single letters from abbreviations like
@@ -355,6 +370,13 @@ export class TidalSyncAdapter implements ITidalSyncProvider {
       (term) => term.length >= 3,
     );
 
+    // A genuine exact match shouldn't need more than a couple of extra words
+    // (e.g. a stray "the" our stopword filter kept, or a short suffix) beyond
+    // what we searched for. More than that means the candidate is very likely
+    // a padded alternate version ("(Instrumental Version)", "(Originally
+    // Performed by X)") riding on shared words, not the real match.
+    const MAX_EXTRA_WORDS_FOR_EXACT = 2;
+
     if (searchTerms.length > 0) {
       for (const track of tracks) {
         const trackTerms = this.meaningfulWords(`${track.artist} ${track.title}`);
@@ -367,15 +389,19 @@ export class TidalSyncAdapter implements ITidalSyncProvider {
                 (tt.includes(term) || term.includes(tt))),
           ),
         );
-        if (allTermsMatch) {
-          const durationDiff = Math.abs(track.duration - trackDuration);
-          if (durationDiff <= 10) {
-            return {
-              trackId: track.id,
-              confidence: 'exact',
-              matchedTrack: track,
-            };
-          }
+        if (!allTermsMatch) {
+          continue;
+        }
+        if (extraWordCount(trackTerms, searchTerms) > MAX_EXTRA_WORDS_FOR_EXACT) {
+          continue;
+        }
+        const durationDiff = Math.abs(track.duration - trackDuration);
+        if (durationDiff <= 10) {
+          return {
+            trackId: track.id,
+            confidence: 'exact',
+            matchedTrack: track,
+          };
         }
       }
     }
@@ -396,7 +422,8 @@ export class TidalSyncAdapter implements ITidalSyncProvider {
         continue;
       }
 
-      const trackTitle = this.meaningfulWords(track.title).join(' ');
+      const trackTitleWords = this.meaningfulWords(track.title);
+      const trackTitle = trackTitleWords.join(' ');
       const trackArtist = this.meaningfulWords(track.artist).join(' ');
       let score = 0;
       const titleScore = titleWords.length
@@ -408,6 +435,12 @@ export class TidalSyncAdapter implements ITidalSyncProvider {
         : 0;
       score += artistScore;
       score += Math.max(0, 0.2 - durationDiff / 100);
+      // Penalize extra qualifier words in the candidate title that aren't in
+      // ours (e.g. "instrumental", "karaoke", "live", "originally", "performed").
+      // Without this, "Don't Be Cruel (Mother Earth Version)" and two other
+      // unrelated remixes of the same song score identically to the real
+      // original, since extra words never hurt a candidate otherwise.
+      score -= extraWordCount(trackTitleWords, titleWords) * 0.06;
       if (score > bestScore) {
         bestScore = score;
         bestArtistScore = artistScore;
