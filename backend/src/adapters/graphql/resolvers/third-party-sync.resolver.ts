@@ -66,7 +66,12 @@ export class ThirdPartySyncResolver {
     @Args('userId') userId: string,
   ): Promise<ThirdPartySyncResult> {
     const id = parsePlaylistId(playlistId);
-    return this.syncPlaylistToYouTubeUseCase.execute(id, userId);
+    try {
+      return await this.syncPlaylistToYouTubeUseCase.execute(id, userId);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to sync playlist to YouTube';
+      return { success: false, syncedCount: 0, skippedCount: 0, errors: [message] };
+    }
   }
 
   @Query(() => TidalAuthUrl)
@@ -99,7 +104,12 @@ export class ThirdPartySyncResolver {
     @Args('userId') userId: string,
   ): Promise<ThirdPartySyncResult> {
     const id = parsePlaylistId(playlistId);
-    return this.syncPlaylistToTidalUseCase.execute(id, userId);
+    try {
+      return await this.syncPlaylistToTidalUseCase.execute(id, userId);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to sync playlist to TIDAL';
+      return { success: false, syncedCount: 0, skippedCount: 0, errors: [message] };
+    }
   }
 
   @Query(() => SpotifyAuthUrl)
@@ -133,6 +143,12 @@ export class ThirdPartySyncResolver {
     @Args('userId') userId: string,
   ): Promise<ThirdPartySyncResult> {
     const id = parsePlaylistId(playlistId);
-    return this.syncPlaylistToSpotifyUseCase.execute(id, userId);
+    try {
+      return await this.syncPlaylistToSpotifyUseCase.execute(id, userId);
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Failed to sync playlist to Spotify';
+      return { success: false, syncedCount: 0, skippedCount: 0, errors: [message] };
+    }
   }
 }

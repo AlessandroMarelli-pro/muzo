@@ -6,12 +6,19 @@ import { ISavedFilterRepository } from '../../ports/repositories/ISavedFilterRep
 export class GetTracksWithPaginationUseCase {
   constructor(
     private readonly musicTrackRepository: IMusicTrackRepository,
-
     private readonly savedFilterRepository: ISavedFilterRepository,
   ) {}
 
   async execute(pagination: WithPagination): Promise<PaginationResult<MusicTrack>> {
-    const criteria = await this.savedFilterRepository.getCurrentFilter();
+    let criteria = await this.savedFilterRepository.getCurrentFilter();
+
+    const subgenreIds = await this.musicTrackRepository.getAllSubgenresBySubgenreId(
+      criteria?.criteria.subgenreIds || [],
+    );
+    console.log(subgenreIds);
+    if (criteria && subgenreIds.length > 0) {
+      criteria.criteria = { ...criteria?.criteria, subgenreIds };
+    }
     console.log('criteria', criteria);
     return this.musicTrackRepository.getManyByCriteriaWithPagination(
       criteria?.criteria ?? null,

@@ -1,5 +1,5 @@
 import { Maybe } from 'src/kernel/common';
-import { MusicLibraryId, MusicTrackId } from 'src/kernel/ids';
+import { MusicLibraryId, MusicTrackId, SubgenreId } from 'src/kernel/ids';
 import {
   AudioFileAnalysisStatusEnum,
   FilterCriteria,
@@ -38,6 +38,7 @@ export type MusicTrackUpdateData = {
 };
 
 export interface IMusicTrackRepository {
+  getAllSubgenresBySubgenreId(_subgenreIds: SubgenreId[]): Promise<SubgenreId[]>;
   getManyByLibraryId(libraryId: MusicLibraryId): Promise<MusicTrack[]>;
   getAnalysisStatusForManyByLibraryId(
     libraryId: MusicLibraryId,

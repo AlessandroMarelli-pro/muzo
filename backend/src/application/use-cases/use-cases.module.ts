@@ -2,18 +2,20 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ThirdPartySyncInfrastructureModule } from 'src/infrastructure/external-services/third-party-sync/third-party-sync.module';
 import { HqAudioInfrastructureModule } from 'src/infrastructure/hq-audio/hq-audio.module';
+import { SockseekAcquirer } from 'src/infrastructure/hq-audio/sockseek.acquirer';
+import { TidalDlAcquirer } from 'src/infrastructure/hq-audio/tidal-dl.acquirer';
 import { AUDIO_ANALYSIS_STRUCTURE } from '../ports/infrastructure/IAudioAnalysisStructure';
-import { HQ_AUDIO_ACQUIRER } from '../ports/infrastructure/IHqAudioAcquirer';
+import { AUDIO_SCAN_SCHEDULER_PRODUCER } from '../ports/infrastructure/IAudioScanSchedulerProducer';
+import { AUDIO_WAVEFORM_GENERATOR } from '../ports/infrastructure/IAudioWaveformGenerator';
+import { COPY_AUDIO_WITH_METADATA } from '../ports/infrastructure/ICopyAudioWithMetadata';
+import { FILE_MANAGER } from '../ports/infrastructure/IFileManager';
 import { HQ_AUDIO_ACQUIRE_PRODUCER } from '../ports/infrastructure/IHqAudioAcquireProducer';
+import { HQ_AUDIO_ACQUIRER } from '../ports/infrastructure/IHqAudioAcquirer';
 import { HQ_AUDIO_BATCH_ACQUIRE_PRODUCER } from '../ports/infrastructure/IHqAudioBatchAcquireProducer';
 import { HQ_AUDIO_BATCH_PROGRESS_PUBLISHER } from '../ports/infrastructure/IHqAudioBatchProgressPublisher';
 import { HQ_AUDIO_BATCH_PROGRESS_SUBSCRIBER } from '../ports/infrastructure/IHqAudioBatchProgressSubscriber';
-import { AUDIO_SCAN_SCHEDULER_PRODUCER } from '../ports/infrastructure/IAudioScanSchedulerProducer';
-import { AUDIO_WAVEFORM_GENERATOR } from '../ports/infrastructure/IAudioWaveformGenerator';
-import { FILE_MANAGER } from '../ports/infrastructure/IFileManager';
 import { ID3_READER } from '../ports/infrastructure/IId3Reader';
 import { IMAGE_FILE_READER } from '../ports/infrastructure/IImageFileReader';
-import { COPY_AUDIO_WITH_METADATA } from '../ports/infrastructure/ICopyAudioWithMetadata';
 import { LIBRARY_SCAN_SCHEDULER_PRODUCER } from '../ports/infrastructure/ILibraryScanSchedulerProducer';
 import { LOGGER } from '../ports/infrastructure/ILogger';
 import { LOGGER_FACTORY } from '../ports/infrastructure/ILoggerFactory';
@@ -43,7 +45,11 @@ import { SAVED_FILTER_REPOSITORY } from '../ports/repositories/ISavedFilterRepos
 import { SCAN_SESSION_REPOSITORY } from '../ports/repositories/IScanSessionRepository';
 import { createUseCaseProvider } from './create-use-case.provider';
 import { HealthCheckUseCase } from './health/HealthCheck';
+import { AcquireHqAudioBatchUseCase } from './hq-audio-batch/AcquireHqAudioBatch';
+import { StartHqAudioBatchDownloadUseCase } from './hq-audio-batch/StartHqAudioBatchDownload';
+import { StreamHqAudioBatchProgressUseCase } from './hq-audio-batch/StreamHqAudioBatchProgress';
 import {
+  AcquireHqAudioUseCase,
   AddImageSearchRecordUseCase,
   AddTracksToQueueUseCase,
   AddTrackToPlaylistUseCase,
@@ -62,6 +68,7 @@ import {
   GetHomeMetricsUseCase,
   GetLibrariesUseCase,
   GetLibraryUseCase,
+  GetPendingTracksUseCase,
   GetPlaylistRecommendationsUseCase,
   GetPlaylistSortingByPlaylistIdUseCase,
   GetPlaylistsStatsUseCase,
@@ -70,7 +77,6 @@ import {
   GetPlaylistTracksUseCase,
   GetPlaylistTracksWithDetailUseCase,
   GetPlaylistUseCase,
-  GetPendingTracksUseCase,
   GetQueueUseCase,
   GetRandomTrackIdUseCase,
   GetRandomTrackWithStatsUseCase,
@@ -104,7 +110,6 @@ import {
   ToggleDislikeUseCase,
   ToggleFavoriteUseCase,
   ToggleLikeUseCase,
-    AcquireHqAudioUseCase,
   UpdatePlaylistSortingUseCase,
   UpdatePlaylistTracksPositionsUseCase,
   UpdatePlaylistUseCase,
@@ -114,11 +119,6 @@ import {
 import { GetActiveSessionsUseCase } from './scan-session/GetActiveSessions';
 import { GetCompleteSessionsUseCase } from './scan-session/GetCompleteSessions';
 import { StreamSessionUseCase } from './scan-session/StreamSession';
-import { AcquireHqAudioBatchUseCase } from './hq-audio-batch/AcquireHqAudioBatch';
-import { StartHqAudioBatchDownloadUseCase } from './hq-audio-batch/StartHqAudioBatchDownload';
-import { StreamHqAudioBatchProgressUseCase } from './hq-audio-batch/StreamHqAudioBatchProgress';
-import { SockseekAcquirer } from 'src/infrastructure/hq-audio/sockseek.acquirer';
-import { TidalDlAcquirer } from 'src/infrastructure/hq-audio/tidal-dl.acquirer';
 import {
   ExchangeSpotifyCodeUseCase,
   ExchangeTidalCodeUseCase,

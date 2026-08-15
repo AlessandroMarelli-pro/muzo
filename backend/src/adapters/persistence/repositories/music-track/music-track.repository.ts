@@ -5,7 +5,7 @@ import {
   IMusicTrackRepository,
   MusicTrackUpdateData,
 } from 'src/application/ports/repositories/IMusicTrackRepository';
-import { extractModelId, MusicLibraryId, MusicTrackId } from 'src/kernel/ids';
+import { extractModelId, MusicLibraryId, MusicTrackId, SubgenreId } from 'src/kernel/ids';
 import { Maybe, models } from 'src/kernel/types';
 import { getCurrentUserId } from 'src/kernel/types/context';
 import {
@@ -38,6 +38,57 @@ export class MusicTrackRepository implements IMusicTrackRepository {
         include: musicTracksIncludes,
       })
       .then((rows) => rows.map(toDomain));
+  }
+
+  async getAllSubgenresBySubgenreId(_subgenreIds: SubgenreId[]): Promise<SubgenreId[]> {
+    console.log(
+      _subgenreIds,
+      _subgenreIds?.map((subgenreId) => extractModelId(subgenreId).dbId),
+    );
+    const subgenres = await this.prisma.subgenre.findMany({
+      where: {
+        id: {
+          in: _subgenreIds?.map((subgenreId) => extractModelId(subgenreId).dbId),
+        },
+      },
+    });
+    const hasTrance = subgenres.some((sg) => sg.name.toLocaleLowerCase().includes('trance'));
+    const hasHouse = subgenres.some((sg) => sg.name.toLocaleLowerCase().includes('house'));
+    const hasBalearic = subgenres.some((sg) => sg.name.toLocaleLowerCase().includes('balearic'));
+    console.log(subgenres);
+    console.log(hasTrance);
+    let subgenreIds: SubgenreId[] = [];
+    if (hasTrance) {
+      const allTranceSubgenres = await this.prisma.subgenre.findMany({
+        where: { name: { contains: 'trance' } },
+      });
+      if (allTranceSubgenres?.length > 0) {
+        subgenreIds.concat(
+          allTranceSubgenres.map((ats) => models.subgenre.id(ats.id)) as SubgenreId[],
+        );
+      }
+    }
+    if (hasHouse) {
+      const allTranceSubgenres = await this.prisma.subgenre.findMany({
+        where: { name: { contains: 'house' } },
+      });
+      if (allTranceSubgenres?.length > 0) {
+        subgenreIds.concat(
+          allTranceSubgenres.map((ats) => models.subgenre.id(ats.id)) as SubgenreId[],
+        );
+      }
+    }
+    if (hasBalearic) {
+      const allTranceSubgenres = await this.prisma.subgenre.findMany({
+        where: { name: { contains: 'balearic' } },
+      });
+      if (allTranceSubgenres?.length > 0) {
+        subgenreIds.concat(
+          allTranceSubgenres.map((ats) => models.subgenre.id(ats.id)) as SubgenreId[],
+        );
+      }
+    }
+    return subgenreIds;
   }
 
   async getAnalysisStatusForManyByLibraryId(
@@ -207,7 +258,7 @@ export class MusicTrackRepository implements IMusicTrackRepository {
     pagination: WithPagination,
   ): Promise<PaginationResult<MusicTrack>> {
     const { limit = 50, offset = 0, orderBy, orderDirection } = pagination.pagination;
-    const where = buildMusicTrackFilterWhereClause(criteria, 'exact');
+    const where = buildMusicTrackFilterWhereClause(criteria, 'contain');
     const count = await this.prisma.musicTrack.count({ where });
     return this.prisma.musicTrack
       .findMany({
@@ -406,7 +457,10 @@ export class MusicTrackRepository implements IMusicTrackRepository {
     const LOSSLESS_FORMATS = new Set(['flac', 'wav']);
     const ext = filePath.split('.').pop()?.toLowerCase();
     const probedFormat = analysisResult.audio_technical.format?.toLowerCase();
-    if ((ext && LOSSLESS_FORMATS.has(ext)) || (probedFormat && LOSSLESS_FORMATS.has(probedFormat))) {
+    if (
+      (ext && LOSSLESS_FORMATS.has(ext)) ||
+      (probedFormat && LOSSLESS_FORMATS.has(probedFormat))
+    ) {
       updateData.hqAudioPath = filePath;
     }
 

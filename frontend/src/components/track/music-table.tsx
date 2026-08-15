@@ -564,7 +564,11 @@ export const MusicTable = React.memo<MusicTableProps>(
 
     React.useEffect(() => {
       const handleKeyDown = (event: KeyboardEvent) => {
-        if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(event.key)) {
+        if (
+          !['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'z', 'q', 's', 'd'].includes(
+            event.key,
+          )
+        ) {
           return;
         }
 
@@ -586,21 +590,25 @@ export const MusicTable = React.memo<MusicTableProps>(
         }
 
         switch (event.key) {
+          case 'q':
           case 'ArrowLeft': {
             event.preventDefault();
             table.previousPage();
             break;
           }
+          case 'd':
           case 'ArrowRight': {
             event.preventDefault();
             table.nextPage();
             break;
           }
+          case 'z':
+          case 's':
           case 'ArrowDown':
           case 'ArrowUp': {
             event.preventDefault();
             const currentIndex = rows.findIndex((row) => row.original.id === currentTrack?.id);
-            const delta = event.key === 'ArrowDown' ? 1 : -1;
+            const delta = ['ArrowDown', 's'].includes(event.key) ? 1 : -1;
             const nextIndex =
               currentIndex === -1
                 ? 0

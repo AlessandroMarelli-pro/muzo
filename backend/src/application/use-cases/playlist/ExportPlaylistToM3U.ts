@@ -23,8 +23,8 @@ export class ExportPlaylistToM3UUseCase {
       const displayName = `${track.artist} - ${track.title}`;
       // Add EXTINF line with duration and display name
       m3uContent += `#EXTINF:${duration},${displayName}\n`;
-      // Add file path (absolute path)
-      m3uContent += `${track?.fileInfo?.filePath || ''}\n`;
+      // Add file path (absolute path), preferring the HQ audio file when available
+      m3uContent += `${track?.hqAudioPath || track?.fileInfo?.filePath || ''}\n`;
     }
 
     return m3uContent;

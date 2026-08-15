@@ -39,7 +39,7 @@ export class AudioStreamingController {
     if (!track) {
       throw new NotFoundException(`Track with ID ${trackId} not found`);
     }
-    const filePath = track.fileInfo?.filePath;
+    const filePath = track.hqAudioPath || track.fileInfo?.filePath;
     if (!filePath) {
       throw new BadRequestException(`Track with ID ${trackId} has no file path`);
     }

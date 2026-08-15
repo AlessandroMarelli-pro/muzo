@@ -427,15 +427,26 @@ export class SockseekAcquirer implements IHqAudioAcquirer {
 
       await new Promise<void>((resolve, reject) => {
         const cmd = spawn(this.binaryPath, args, { stdio: ['ignore', 'pipe', 'pipe'] });
-        const timer = setTimeout(() => {
-          this.logger.warn('sockseek timed out, killing process', {
-            artist,
-            title,
-            timeoutMs: this.timeoutMs,
-          });
-          holder.timedOut = true;
-          cmd.kill('SIGTERM');
-        }, this.timeoutMs);
+
+        // `timeoutMs` is an inactivity window, not a hard cap on total
+        // duration: it resets on every event (search progress, download
+        // start, and crucially download_progress), so a large file that is
+        // actively transferring keeps running past timeoutMs, and only a
+        // genuinely stalled/hung process gets killed.
+        let timer: ReturnType<typeof setTimeout>;
+        const armTimer = () => {
+          clearTimeout(timer);
+          timer = setTimeout(() => {
+            this.logger.warn('sockseek stalled (no activity), killing process', {
+              artist,
+              title,
+              timeoutMs: this.timeoutMs,
+            });
+            holder.timedOut = true;
+            cmd.kill('SIGTERM');
+          }, this.timeoutMs);
+        };
+        armTimer();
 
         cmd.stdout.on('data', (chunk) => {
           stdoutBuffer += String(chunk);
@@ -446,6 +457,7 @@ export class SockseekAcquirer implements IHqAudioAcquirer {
             if (!event) {
               continue;
             }
+            armTimer();
             this.logEvent(event, artist, title);
             if (event.type === 'track_state') {
               holder.finalState = (event as SockseekTrackStateEvent).data;
@@ -721,14 +733,24 @@ export class SockseekAcquirer implements IHqAudioAcquirer {
         const cmd = spawn(this.binaryPath, args, { stdio: ['ignore', 'pipe', 'pipe'] });
         this.activeBatchProcesses.set(batchId, cmd);
 
-        const timer = setTimeout(() => {
-          this.logger.warn('sockseek batch timed out, killing process', {
-            trackCount: tracks.length,
-            timeoutMs: batchTimeoutMs,
-          });
-          timedOut = true;
-          cmd.kill('SIGTERM');
-        }, batchTimeoutMs);
+        // `batchTimeoutMs` is an inactivity window, not a hard cap on total
+        // batch duration: it resets on every parsed event (including
+        // download_progress), so a batch with large-but-actively-transferring
+        // files keeps running past batchTimeoutMs, and only a genuinely
+        // stalled/hung process gets killed.
+        let timer: ReturnType<typeof setTimeout>;
+        const armTimer = () => {
+          clearTimeout(timer);
+          timer = setTimeout(() => {
+            this.logger.warn('sockseek batch stalled (no activity), killing process', {
+              trackCount: tracks.length,
+              timeoutMs: batchTimeoutMs,
+            });
+            timedOut = true;
+            cmd.kill('SIGTERM');
+          }, batchTimeoutMs);
+        };
+        armTimer();
 
         cmd.stdout.on('data', (chunk) => {
           const text = String(chunk);
@@ -743,6 +765,7 @@ export class SockseekAcquirer implements IHqAudioAcquirer {
           for (const line of lines) {
             const event = this.parseEventLine(line);
             if (event) {
+              armTimer();
               if (event.type === 'track_state') {
                 this.logger.debug('DIAG track_state received', {
                   at: new Date().toISOString(),

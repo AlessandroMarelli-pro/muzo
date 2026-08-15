@@ -215,28 +215,32 @@ export class TidalSyncAdapter implements ITidalSyncProvider {
     await this.delay(200);
     const accessToken = await this.getAccessToken(userId);
     const searchQuery = encodeURIComponent(query);
-    console.log('searchQuery', searchQuery);
 
+    // The `id` in /searchResults/{id}/relationships/tracks is an opaque
+    // "search results" resource id, NOT the free-text query itself — TIDAL
+    // rejects any raw text there with INVALID_RESOURCE_ID. The real
+    // free-text search entry point is GET /searchResults?filter[query]=...,
+    // which returns a single searchResults resource (with its own id) plus
+    // the matching tracks already embedded in `included` when `include=tracks`
+    // is set, so we can read track ids directly from this one call.
     const response = (await this.makeRequest(
       accessToken,
-      `/searchResults/${searchQuery}/relationships/tracks?limit=${limit}&countryCode=${this.countryCode}`,
+      `/searchResults?${encodeURIComponent('filter[query]')}=${searchQuery}&countryCode=${this.countryCode}&include=tracks`,
       { method: 'GET' },
       { accessTokenProvided: true },
     )) as {
-      data?: Array<{ id: string; type: string }>;
+      included?: Array<{ id: string; type: string }>;
     };
 
     const trackIds =
-      response?.data
+      response?.included
         ?.filter((item) => item.type === 'tracks')
         .map((item) => item.id)
         .slice(0, limit) ?? [];
 
     if (trackIds.length === 0) {
-      console.log('no tracks found');
       return [];
     }
-    console.log('trackIds', trackIds);
 
     const fetchTrackDetail = async (trackId: string) => {
       const trackResponse = (await this.makeRequest(
@@ -278,7 +282,6 @@ export class TidalSyncAdapter implements ITidalSyncProvider {
       const chunkResults = await Promise.all(chunk.map(fetchTrackDetail));
       tracks.push(...chunkResults);
     }
-    console.log('tracks', tracks);
     return tracks;
   }
 
@@ -340,30 +343,39 @@ export class TidalSyncAdapter implements ITidalSyncProvider {
     const tracks = await this.searchTracks(`${cleanArtist} - ${cleanTitle}`, userId, 10);
     if (tracks.length === 0) return { trackId: null, confidence: 'none' };
 
-    const normalize = (str: string) =>
-      str
-        .toLowerCase()
-        .replace(/[^\w\s]/g, '')
-        .trim();
-    const normalizedArtist = normalize(artist);
-    const normalizedTitle = normalize(title);
-    const searchTerms = `${normalizedArtist} ${normalizedTitle}`.split(/\s+/);
+    // Only compare meaningful words (drops stopwords and, critically, very
+    // short fragments like "x" or single letters from abbreviations like
+    // "X. Ypsilon"). A short word (either side) is a substring of almost any
+    // other word (e.g. "x" is contained in "naxos", "in" is contained in
+    // "instrumental"), so containment is only trusted once BOTH the search
+    // term and the candidate track term are long enough that an accidental
+    // substring hit is implausible; below that, only an exact word match counts.
+    const MIN_TERM_LENGTH_FOR_CONTAINMENT = 4;
+    const searchTerms = this.meaningfulWords(`${artist} ${title}`).filter(
+      (term) => term.length >= 3,
+    );
 
-    for (const track of tracks) {
-      const trackTitle = normalize(track.title);
-      const trackArtist = normalize(track.artist);
-      const trackTerms = `${trackArtist} ${trackTitle}`.split(/\s+/);
-      const allTermsMatch = searchTerms.every((term) =>
-        trackTerms.some((tt) => tt.includes(term) || term.includes(tt)),
-      );
-      if (allTermsMatch) {
-        const durationDiff = Math.abs(track.duration - trackDuration);
-        if (durationDiff <= 10) {
-          return {
-            trackId: track.id,
-            confidence: 'exact',
-            matchedTrack: track,
-          };
+    if (searchTerms.length > 0) {
+      for (const track of tracks) {
+        const trackTerms = this.meaningfulWords(`${track.artist} ${track.title}`);
+        const allTermsMatch = searchTerms.every((term) =>
+          trackTerms.some(
+            (tt) =>
+              tt === term ||
+              (term.length >= MIN_TERM_LENGTH_FOR_CONTAINMENT &&
+                tt.length >= MIN_TERM_LENGTH_FOR_CONTAINMENT &&
+                (tt.includes(term) || term.includes(tt))),
+          ),
+        );
+        if (allTermsMatch) {
+          const durationDiff = Math.abs(track.duration - trackDuration);
+          if (durationDiff <= 10) {
+            return {
+              trackId: track.id,
+              confidence: 'exact',
+              matchedTrack: track,
+            };
+          }
         }
       }
     }
@@ -375,6 +387,7 @@ export class TidalSyncAdapter implements ITidalSyncProvider {
     let bestMatch: (typeof tracks)[0] | null = null;
     let bestScore = 0;
     let bestArtistScore = 0;
+    let bestTitleScore = 0;
     for (const track of tracks) {
       const durationDiff = Math.abs(track.duration - trackDuration);
       // Same +/-10s tolerance as sockseek. Skip the check when trackDuration is unknown (0),
@@ -386,9 +399,10 @@ export class TidalSyncAdapter implements ITidalSyncProvider {
       const trackTitle = this.meaningfulWords(track.title).join(' ');
       const trackArtist = this.meaningfulWords(track.artist).join(' ');
       let score = 0;
-      score += titleWords.length
+      const titleScore = titleWords.length
         ? (titleWords.filter((w) => trackTitle.includes(w)).length / titleWords.length) * 0.5
         : 0;
+      score += titleScore;
       const artistScore = artistWords.length
         ? (artistWords.filter((w) => trackArtist.includes(w)).length / artistWords.length) * 0.3
         : 0;
@@ -397,6 +411,7 @@ export class TidalSyncAdapter implements ITidalSyncProvider {
       if (score > bestScore) {
         bestScore = score;
         bestArtistScore = artistScore;
+        bestTitleScore = titleScore;
         bestMatch = track;
       }
     }
@@ -405,7 +420,20 @@ export class TidalSyncAdapter implements ITidalSyncProvider {
     // a real artist match. Artist score maxes at 0.3, so 0.15 requires roughly half the
     // meaningful artist-name words to genuinely overlap.
     const MIN_ARTIST_SCORE = 0.15;
-    if (bestMatch && bestScore > 0.3 && bestArtistScore >= MIN_ARTIST_SCORE) {
+    // Require meaningful title overlap too: without this, an exact artist-name
+    // match on a *different* song by that artist with a similar duration can
+    // clear bestScore > 0.3 purely from artistScore (0.3) + duration proximity
+    // (up to 0.2), with zero title words in common (e.g. matched "2013" when
+    // searching for "La Spirale" by the same artist). Title score maxes at
+    // 0.5, so 0.2 requires roughly 40% of the meaningful title words to
+    // genuinely overlap.
+    const MIN_TITLE_SCORE = 0.2;
+    if (
+      bestMatch &&
+      bestScore > 0.3 &&
+      bestArtistScore >= MIN_ARTIST_SCORE &&
+      bestTitleScore >= MIN_TITLE_SCORE
+    ) {
       return {
         trackId: bestMatch.id,
         confidence: 'fuzzy',

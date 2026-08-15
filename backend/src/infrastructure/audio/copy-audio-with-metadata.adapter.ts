@@ -104,7 +104,40 @@ export class CopyAudioWithMetadata implements ICopyAudioWithMetadata {
     return imagePath;
   }
 
-  private getImageMimeType(imagePath: string): string {
+  // The file extension is not trustworthy: images saved from embedded audio
+  // artwork have been observed with a `.png` extension while actually
+  // containing JPEG bytes. Sniff the magic bytes instead, so the MIME type
+  // written into the picture block matches the real image data.
+  private getImageMimeTypeFromBytes(imageBytes: Buffer): string | null {
+    if (imageBytes.length >= 3 && imageBytes[0] === 0xff && imageBytes[1] === 0xd8 && imageBytes[2] === 0xff) {
+      return 'image/jpeg';
+    }
+    if (
+      imageBytes.length >= 8 &&
+      imageBytes[0] === 0x89 &&
+      imageBytes[1] === 0x50 &&
+      imageBytes[2] === 0x4e &&
+      imageBytes[3] === 0x47
+    ) {
+      return 'image/png';
+    }
+    if (
+      imageBytes.length >= 12 &&
+      imageBytes.toString('ascii', 0, 4) === 'RIFF' &&
+      imageBytes.toString('ascii', 8, 12) === 'WEBP'
+    ) {
+      return 'image/webp';
+    }
+    if (
+      imageBytes.length >= 6 &&
+      (imageBytes.toString('ascii', 0, 6) === 'GIF87a' || imageBytes.toString('ascii', 0, 6) === 'GIF89a')
+    ) {
+      return 'image/gif';
+    }
+    return null;
+  }
+
+  private getImageMimeTypeFromExtension(imagePath: string): string {
     const ext = path.extname(imagePath).toLowerCase();
     if (ext === '.jpg' || ext === '.jpeg') {
       return 'image/jpeg';
@@ -158,7 +191,8 @@ export class CopyAudioWithMetadata implements ICopyAudioWithMetadata {
     try {
       const absolutePath = this.resolveImagePath(imagePath);
       const imageBytes = await fs.readFile(absolutePath);
-      const mimeType = this.getImageMimeType(absolutePath);
+      const mimeType =
+        this.getImageMimeTypeFromBytes(imageBytes) ?? this.getImageMimeTypeFromExtension(absolutePath);
       return this.buildFlacPictureBlockBase64(imageBytes, mimeType);
     } catch (err) {
       this.logger.warn('CopyAudioWithMetadata: failed to read DB image for picture metadata', {

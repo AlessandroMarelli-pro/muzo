@@ -103,6 +103,7 @@ export function DataTableSortList<TData>({ table, ...props }: DataTableSortListP
 
   React.useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
+      return;
       if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) {
         return;
       }
