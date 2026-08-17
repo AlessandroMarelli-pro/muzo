@@ -134,6 +134,7 @@ const ActionCells = ({
         trackId={track.id}
         artist={track.artist || ''}
         title={track.title || ''}
+        format={track.format}
         hqAudioPath={track.hqAudioPath}
       />
     </div>

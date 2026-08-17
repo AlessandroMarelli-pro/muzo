@@ -470,7 +470,7 @@ export class SockseekAcquirer implements IHqAudioAcquirer {
           const text = String(chunk).trim();
           stderr += text;
           if (text) {
-            this.logger.debug('sockseek stderr', { artist, title, line: text });
+            this.logger.debug(`sockseek : ${text}`, { artist, title });
           }
         });
         cmd.on('error', (error) => {
@@ -713,7 +713,8 @@ export class SockseekAcquirer implements IHqAudioAcquirer {
               status: 'succeeded',
               result: {
                 filePath: data.downloadPath as string,
-                format: data.extension === 'wav' ? 'wav' : data.extension === 'm4a' ? 'm4a' : 'flac',
+                format:
+                  data.extension === 'wav' ? 'wav' : data.extension === 'm4a' ? 'm4a' : 'flac',
               },
             });
           } else {

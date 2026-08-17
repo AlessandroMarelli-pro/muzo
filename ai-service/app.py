@@ -17,6 +17,7 @@ from loguru import logger
 load_dotenv()
 
 # Import API resources
+from src.api.audio_enhancement import AudioEnhancementResource
 from src.api.batch_simple_analysis import BatchSimpleAnalysisResource
 from src.api.bpm_detection import BPMDetectionResource
 from src.api.health import HealthResource
@@ -159,6 +160,13 @@ def register_resources(api, app):
     # OpenAI metadata extraction endpoints (always enabled if API key is set)
     api.add_resource(OpenAIMetadataResource, "/audio/metadata/ai")
     logger.info("✅ OpenAI metadata extraction endpoints registered")
+
+    # Audio enhancement (super-resolution) endpoint
+    if os.getenv("ENABLE_AUDIO_ENHANCEMENT", "true") == "true":
+        api.add_resource(AudioEnhancementResource, "/audio/enhance")
+        logger.info("✅ Audio enhancement endpoint registered")
+    else:
+        logger.info("🚫 Audio enhancement endpoint disabled by configuration")
 
     # Hierarchical classification endpoints (if enabled and imported)
     if os.getenv("ENABLE_HIERARCHICAL_CLASSIFICATION") == "true":

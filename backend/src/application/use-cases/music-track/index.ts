@@ -8,6 +8,7 @@ export * from './GetTracksWithCursorPagination';
 export * from './GetTracksWithPagination';
 export * from './GetWaveformData';
 export * from './AcquireHqAudio';
+export * from './EnhanceHqAudio';
 export * from './RegisterPlayedTrack';
 export * from './ToggleBangerTrack';
 export * from './ToggleDislikeTrack';

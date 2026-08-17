@@ -25,6 +25,10 @@ export interface HqAudioConfig {
   tidal: {
     outputDir: string;
   };
+  universr: {
+    outputDir: string;
+    timeoutMs: number;
+  };
 }
 
 export default registerAs(
@@ -53,6 +57,17 @@ export default registerAs(
     },
     tidal: {
       outputDir: process.env.TIDAL_OUTPUT_DIR || path.join(os.homedir(), 'Music', 'Tidal'),
+    },
+    universr: {
+      outputDir: process.env.UNIVERSR_OUTPUT_DIR || path.join(os.homedir(), 'Music', 'Enhanced'),
+      // Real full-length mono tracks (4-5 min) measured ~11-12 min end-to-end
+      // (HF Job cold-start + chunked GPU inference + upload/download). 10min
+      // was too tight and caused the backend to abandon an already-completed
+      // enhancement. Stereo tracks are enhanced per-channel (roughly 2x GPU
+      // time); the ai-service job itself is capped at 30min
+      // (UNIVERSR_JOB_TIMEOUT), so this must exceed that plus upload/download
+      // overhead.
+      timeoutMs: parseInt(process.env.UNIVERSR_TIMEOUT_MS || '2400000', 10),
     },
   }),
 );

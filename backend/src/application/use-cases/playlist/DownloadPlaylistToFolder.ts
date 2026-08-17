@@ -97,7 +97,10 @@ export class DownloadPlaylistToFolderUseCase {
 
     for (const playlistTrack of playlist.tracks) {
       const track = playlistTrack.track;
-      const sourcePath = track.fileInfo.filePath;
+      // Prefer the HQ-acquired audio file (Tidal/Soulseek FLAC/WAV) when present,
+      // falling back to the originally-scanned library file otherwise.
+      const hqPathExists = !!track.hqAudioPath && fs.existsSync(track.hqAudioPath);
+      const sourcePath = hqPathExists ? (track.hqAudioPath as string) : track.fileInfo.filePath;
       if (!fs.existsSync(sourcePath)) {
         // If one track is missing, fail the whole operation
         this.logger.error('DownloadPlaylistToFolder: source file missing', {

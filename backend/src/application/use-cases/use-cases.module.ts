@@ -11,6 +11,7 @@ import { COPY_AUDIO_WITH_METADATA } from '../ports/infrastructure/ICopyAudioWith
 import { FILE_MANAGER } from '../ports/infrastructure/IFileManager';
 import { HQ_AUDIO_ACQUIRE_PRODUCER } from '../ports/infrastructure/IHqAudioAcquireProducer';
 import { HQ_AUDIO_ACQUIRER } from '../ports/infrastructure/IHqAudioAcquirer';
+import { HQ_AUDIO_ENHANCER } from '../ports/infrastructure/IHqAudioEnhancer';
 import { HQ_AUDIO_BATCH_ACQUIRE_PRODUCER } from '../ports/infrastructure/IHqAudioBatchAcquireProducer';
 import { HQ_AUDIO_BATCH_PROGRESS_PUBLISHER } from '../ports/infrastructure/IHqAudioBatchProgressPublisher';
 import { HQ_AUDIO_BATCH_PROGRESS_SUBSCRIBER } from '../ports/infrastructure/IHqAudioBatchProgressSubscriber';
@@ -61,6 +62,7 @@ import {
   DeletePlaylistUseCase,
   DeleteSavedFilterUseCase,
   DownloadPlaylistToFolderUseCase,
+  EnhanceHqAudioUseCase,
   ExportPlaylistToM3UUseCase,
   GetActiveFiltersUseCase,
   GetCurrentFilterUseCase,
@@ -242,6 +244,12 @@ const useCasesProviders = [
   ]),
   createUseCaseProvider(ToggleLikeUseCase, [MUSIC_TRACK_REPOSITORY, HQ_AUDIO_ACQUIRE_PRODUCER]),
   createUseCaseProvider(AcquireHqAudioUseCase, [MUSIC_TRACK_REPOSITORY, HQ_AUDIO_ACQUIRER, LOGGER]),
+  createUseCaseProvider(EnhanceHqAudioUseCase, [
+    MUSIC_TRACK_REPOSITORY,
+    HQ_AUDIO_ENHANCER,
+    LOGGER,
+    ConfigService,
+  ]),
   createUseCaseProvider(ToggleDislikeUseCase, [
     MUSIC_TRACK_REPOSITORY,
     HIDDEN_MUSIC_TRACK_REPOSITORY,

@@ -181,6 +181,7 @@ export const TrackRecommendationsCard = ({
             trackId={track.id}
             artist={track.artist || 'Unknown Artist'}
             title={track.title || 'Unknown Track'}
+            format={track.format}
             hqAudioPath={track.hqAudioPath}
           />
         )}

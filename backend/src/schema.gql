@@ -159,6 +159,7 @@ type Mutation {
   downloadHqAudio(trackId: Base64ID!): Boolean!
   downloadPlaylistHqAudio(playlistId: Base64ID!): HqAudioBatchDownload!
   downloadPlaylistToFolder(playlistId: Base64ID!): Boolean!
+  enhanceHqAudio(trackId: Base64ID!): Boolean!
   exportPlaylistToM3U(playlistId: Base64ID!): String!
   registerPlayedTrack(trackId: Base64ID!): Boolean!
   removeTrackFromPlaylist(playlistId: Base64ID!, trackId: Base64ID!): Boolean!

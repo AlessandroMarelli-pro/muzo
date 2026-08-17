@@ -46,6 +46,11 @@ export interface HqAudioAcquireJobData {
   contextUser: ActionContext['user'];
 }
 
+export interface HqAudioEnhanceJobData {
+  trackId: MusicTrackId;
+  contextUser: ActionContext['user'];
+}
+
 export interface HqAudioBatchAcquireJobData {
   batchId: HqAudioBatchId;
   trackIds: MusicTrackId[];

@@ -680,6 +680,38 @@ export const useDownloadHqAudio = () => {
   });
 };
 
+export const useEnhanceHqAudio = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (trackId: string) => {
+      const response = await graffleClient.request<{
+        enhanceHqAudio: boolean;
+      }>(
+        gql`
+          mutation EnhanceHqAudio($trackId: Base64ID!) {
+            enhanceHqAudio(trackId: $trackId)
+          }
+        `,
+        { trackId },
+      );
+      return response.enhanceHqAudio;
+    },
+    onSuccess: () => {
+      toast.success('Enhance with AI started', {
+        description: 'Running audio super-resolution in the background.',
+        duration: 3000,
+      });
+      queryClient.invalidateQueries({ queryKey: ['tracksList'] });
+    },
+    onError: (error: any) => {
+      const errorMessage =
+        error?.response?.errors?.[0]?.message || error?.message || 'Failed to start enhancement';
+      toast.error(errorMessage, { duration: 3000 });
+    },
+  });
+};
+
 export const useDownloadPlaylistHqAudio = () => {
   return useMutation({
     mutationFn: async (playlistId: string) => {

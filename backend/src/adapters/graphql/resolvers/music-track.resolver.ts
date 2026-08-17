@@ -6,6 +6,10 @@ import {
   IHqAudioAcquireProducer,
 } from 'src/application/ports/infrastructure/IHqAudioAcquireProducer';
 import {
+  HQ_AUDIO_ENHANCE_PRODUCER,
+  IHqAudioEnhanceProducer,
+} from 'src/application/ports/infrastructure/IHqAudioEnhanceProducer';
+import {
   ToggleBangerUseCase,
   ToggleDislikeUseCase,
   ToggleFavoriteUseCase,
@@ -32,6 +36,8 @@ export class MusicTrackResolver {
     private readonly toggleBangerUseCase: ToggleBangerUseCase,
     @Inject(HQ_AUDIO_ACQUIRE_PRODUCER)
     private readonly hqAudioAcquireProducer: IHqAudioAcquireProducer,
+    @Inject(HQ_AUDIO_ENHANCE_PRODUCER)
+    private readonly hqAudioEnhanceProducer: IHqAudioEnhanceProducer,
   ) {}
 
   @ResolveField(() => [TrackRecommendation])
@@ -81,6 +87,12 @@ export class MusicTrackResolver {
   @Mutation(() => Boolean)
   async downloadHqAudio(@Args('trackId', { type: () => Base64ID }) trackId: string): Promise<boolean> {
     await this.hqAudioAcquireProducer.scheduleHqAudioAcquire(parseMusicTrackId(trackId), getCurrentUser());
+    return true;
+  }
+
+  @Mutation(() => Boolean)
+  async enhanceHqAudio(@Args('trackId', { type: () => Base64ID }) trackId: string): Promise<boolean> {
+    await this.hqAudioEnhanceProducer.scheduleHqAudioEnhance(parseMusicTrackId(trackId), getCurrentUser());
     return true;
   }
 }

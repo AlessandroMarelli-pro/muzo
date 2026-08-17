@@ -249,6 +249,7 @@ export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
                 trackId={currentTrack?.id || ''}
                 artist={currentTrack?.artist || ''}
                 title={currentTrack?.title || ''}
+                format={currentTrack?.format}
                 hqAudioPath={currentTrack?.hqAudioPath}
               />
             </div>
