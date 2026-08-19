@@ -1,13 +1,16 @@
-import { HqAudioBatchState, HqAudioTrackStatus } from 'src/application/ports/dtos/HqAudioBatchProgress.types';
-import { ILogger } from 'src/application/ports/infrastructure/ILogger';
+import {
+  HqAudioBatchState,
+  HqAudioTrackStatus,
+} from 'src/application/ports/dtos/HqAudioBatchProgress.types';
 import { IHqAudioBatchProgressPublisher } from 'src/application/ports/infrastructure/IHqAudioBatchProgressPublisher';
+import { ILogger } from 'src/application/ports/infrastructure/ILogger';
 import { IMusicTrackRepository } from 'src/application/ports/repositories/IMusicTrackRepository';
-import { TidalDlAcquirer } from 'src/infrastructure/hq-audio/tidal-dl.acquirer';
 import {
   SockseekAcquirer,
   SockseekBatchTrackOutcome,
   SockseekBatchTrackQuery,
 } from 'src/infrastructure/hq-audio/sockseek.acquirer';
+import { TidalDlAcquirer } from 'src/infrastructure/hq-audio/tidal-dl.acquirer';
 import { HqAudioBatchId, MusicTrackId } from 'src/kernel/ids';
 
 const CONCURRENT_JOBS = 5;
@@ -62,7 +65,7 @@ export class AcquireHqAudioBatchUseCase {
 
     const sockseekQueries: SockseekBatchTrackQuery[] = [];
     for (const query of queries) {
-      await this.updateTrackStatus(batchId, query.key, 'downloading');
+      /*   await this.updateTrackStatus(batchId, query.key, 'downloading');
       const tidalResult = await this.tryTidal(query);
       if (tidalResult) {
         await this.musicTrackRepository.updateOneById(query.key, {
@@ -70,7 +73,7 @@ export class AcquireHqAudioBatchUseCase {
         });
         await this.updateTrackStatus(batchId, query.key, 'succeeded');
         continue;
-      }
+      } */
       sockseekQueries.push(query);
     }
 
@@ -92,11 +95,14 @@ export class AcquireHqAudioBatchUseCase {
     });
   }
 
-  private async tryTidal(
-    query: BatchTrackQuery,
-  ): Promise<{ filePath: string } | null> {
+  private async tryTidal(query: BatchTrackQuery): Promise<{ filePath: string } | null> {
     try {
-      const result = await this.tidalDlAcquirer.acquire(query.artist, query.title, query.durationSeconds, '');
+      const result = await this.tidalDlAcquirer.acquire(
+        query.artist,
+        query.title,
+        query.durationSeconds,
+        '',
+      );
       return result;
     } catch (error) {
       this.logger.warn('Tidal acquisition failed in batch, falling back to sockseek', {
@@ -159,7 +165,8 @@ export class AcquireHqAudioBatchUseCase {
   }
 
   async cancel(batchId: HqAudioBatchId): Promise<boolean> {
-    const nextState: HqAudioBatchState | null = await this.hqAudioBatchProgressPublisher.cancelBatch(batchId);
+    const nextState: HqAudioBatchState | null =
+      await this.hqAudioBatchProgressPublisher.cancelBatch(batchId);
     if (!nextState) {
       return false;
     }

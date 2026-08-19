@@ -62,8 +62,50 @@ TARGET_SR = 48000
 DEFAULT_CHUNK_SECONDS = 10
 
 
-def resolve_input_sr(actual_sr: int) -> int:
-    return min(SUPPORTED_INPUT_SRS, key=lambda sr: abs(sr - actual_sr))
+def detect_bandwidth_hz(
+    wav: torch.Tensor, sr: int, energy_threshold: float = 0.995, max_window_seconds: float = 10.0
+) -> float:
+    """
+    Estimates the real spectral bandwidth of audio, independent of its
+    container sample rate -- a heavily re-encoded/degraded source can be
+    stored at 44.1/48kHz while having almost no real content above e.g.
+    10-12kHz. Returns the frequency below which `energy_threshold` of the
+    signal's spectral energy sits (99.5% by default).
+
+    Uses a mono mix of a representative window (up to max_window_seconds
+    from the middle of the track) rather than the whole file, since a
+    single representative estimate is sufficient -- bandwidth doesn't
+    meaningfully vary within one recording.
+    """
+    mono = wav.mean(dim=0) if wav.dim() > 1 and wav.shape[0] > 1 else wav.reshape(-1)
+
+    window_samples = min(mono.shape[-1], int(max_window_seconds * sr))
+    start = (mono.shape[-1] - window_samples) // 2
+    window = mono[start : start + window_samples]
+
+    spectrum = torch.fft.rfft(window)
+    freqs = torch.fft.rfftfreq(window.shape[-1], d=1.0 / sr)
+    energy = spectrum.abs() ** 2
+    cumulative_energy = torch.cumsum(energy, dim=0)
+    total_energy = cumulative_energy[-1]
+
+    if total_energy <= 0:
+        return float(freqs[-1])
+
+    threshold_idx = torch.searchsorted(cumulative_energy, energy_threshold * total_energy)
+    threshold_idx = min(int(threshold_idx), freqs.shape[-1] - 1)
+    return float(freqs[threshold_idx])
+
+
+def resolve_input_sr(detected_bandwidth_hz: float) -> int:
+    """
+    Picks the smallest UniverSR input_sr bucket whose Nyquist frequency
+    (bucket/2) covers the detected real bandwidth -- matching UniverSR's
+    own documented rule (e.g. content up to 8kHz -> input_sr=16000, not
+    the nearest bucket to the container's sample rate).
+    """
+    candidates = [b for b in SUPPORTED_INPUT_SRS if b / 2 >= detected_bandwidth_hz]
+    return min(candidates) if candidates else max(SUPPORTED_INPUT_SRS)
 
 
 def load_multichannel(path: str) -> tuple[torch.Tensor, int]:
@@ -166,7 +208,8 @@ def main() -> None:
     args = parser.parse_args()
 
     wav, sr = load_multichannel(args.input_path)
-    input_sr = resolve_input_sr(sr)
+    detected_bandwidth_hz = detect_bandwidth_hz(wav, sr)
+    input_sr = resolve_input_sr(detected_bandwidth_hz)
 
     wav48 = (
         wav
@@ -179,9 +222,9 @@ def main() -> None:
     model = UniverSR.from_pretrained(args.model_repo, device=device)
 
     print(
-        f"Enhancing: native_sr={sr}Hz resolved_input_sr={input_sr}Hz "
-        f"channels={wav48.shape[0]} duration={wav48.shape[-1] / TARGET_SR:.1f}s "
-        f"chunk_seconds={args.chunk_seconds}"
+        f"Enhancing: native_sr={sr}Hz detected_bandwidth={detected_bandwidth_hz:.0f}Hz "
+        f"resolved_input_sr={input_sr}Hz channels={wav48.shape[0]} "
+        f"duration={wav48.shape[-1] / TARGET_SR:.1f}s chunk_seconds={args.chunk_seconds}"
     )
     output = enhance_multichannel(
         model,
