@@ -3,19 +3,29 @@ import { Inject } from '@nestjs/common';
 import { Job } from 'bullmq';
 import { EmbeddingBackfillJobData } from 'src/application/ports/dtos/JobSchedulersData';
 import {
-  AUDIO_ANALYSIS_REPOSITORY,
-  IAudioAnalysisRepository,
-} from 'src/application/ports/repositories/IAudioAnalysisRepository';
-import {
   AUDIO_ANALYSIS_STRUCTURE,
   IAudioAnalysisStructure,
 } from 'src/application/ports/infrastructure/IAudioAnalysisStructure';
 import { ILogger, LOGGER } from 'src/application/ports/infrastructure/ILogger';
 import { LOGGER_FACTORY } from 'src/application/ports/infrastructure/ILoggerFactory';
+import {
+  AUDIO_ANALYSIS_REPOSITORY,
+  IAudioAnalysisRepository,
+} from 'src/application/ports/repositories/IAudioAnalysisRepository';
 import { als } from 'src/kernel/types/context';
 
+/**
+ * Every job in this queue calls extractDiscogsEmbedding, which goes through
+ * AiServerPoolAdapter.getAssignedServer('simple') -- a single ai-service instance
+ * pinned for the lifetime of this backend process (see ai-server-pool.adapter.ts),
+ * not round-robined across the multiple `simple` instances configured via
+ * AI_SIMPLE_URLS. So concurrent jobs here don't get real multi-process
+ * parallelism; they share one Flask process's threaded dev server, which can
+ * overlap I/O (audio decode, network) but not truly parallelize CPU-bound work
+ * (GIL). Keep this default modest accordingly.
+ */
 const EMBEDDING_BACKFILL_CONCURRENCY = parseInt(
-  process.env.EMBEDDING_BACKFILL_CONCURRENCY || '8',
+  process.env.EMBEDDING_BACKFILL_CONCURRENCY || '3',
   10,
 );
 

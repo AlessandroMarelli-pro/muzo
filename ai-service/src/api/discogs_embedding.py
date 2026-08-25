@@ -14,15 +14,25 @@ from flask import request
 from flask_restful import Resource
 from loguru import logger
 
-from src.services.simple_analysis import SimpleAnalysisService
+from src.services.features.discogs_embedding_extractor import DiscogsEmbeddingExtractor
+from src.services.simple_audio_loader import SimpleAudioLoader
 from src.utils.performance_optimizer import monitor_performance
 
 
 class DiscogsEmbeddingResource(Resource):
-    """Discogs-effnet embedding extraction endpoint."""
+    """
+    Discogs-effnet embedding extraction endpoint.
+
+    Deliberately avoids SimpleAnalysisService, which also initializes the AI
+    metadata extractor (Gemini/OpenAI client + context cache) on construction
+    -- unnecessary cost for an embedding-only request. Uses SimpleAudioLoader
+    and DiscogsEmbeddingExtractor directly instead, same pattern as
+    BPMDetectionResource.
+    """
 
     def __init__(self):
-        self.simple_analysis = SimpleAnalysisService()
+        self.audio_loader = SimpleAudioLoader()
+        self.embedding_extractor = DiscogsEmbeddingExtractor()
 
     @monitor_performance("discogs_embedding_api")
     def post(self):
@@ -78,10 +88,10 @@ class DiscogsEmbeddingResource(Resource):
                 sample_duration = float(request.form.get("sample_duration", 10.0))
                 skip_intro = float(request.form.get("skip_intro", 15.0))
 
-                y_harmonic, _, _, sr, *_ = self.simple_analysis.smart_audio_sample_loading(
+                y_harmonic, _, _, sr, *_ = self.audio_loader.smart_audio_sample_loading(
                     temp_file_path, sample_duration, skip_intro
                 )
-                embedding = self.simple_analysis.generate_discogs_embedding(y_harmonic, sr)
+                embedding = self.embedding_extractor.extract_from_harmonic_sample(y_harmonic, sr)
 
                 logger.info(
                     f"Discogs embedding extraction completed for: {audio_file.filename} "

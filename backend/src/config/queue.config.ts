@@ -51,7 +51,9 @@ export interface QueueConfig {
       /**
        * Documentation only: actual worker concurrency is read from EMBEDDING_BACKFILL_CONCURRENCY
        * directly in embedding-backfill-consumer.adapter.ts, since @Processor's worker-options
-       * argument is evaluated at class-definition time, before ConfigService is available.
+       * argument is evaluated at class-definition time, before ConfigService is available. Default
+       * kept modest (3) because all jobs share one pinned ai-service instance (see that file for
+       * why), not the full AI_SIMPLE_URLS pool.
        */
       concurrency: number;
       attempts: number;
@@ -114,7 +116,7 @@ export default registerAs(
         removeOnFail: false,
       },
       embeddingBackfill: {
-        concurrency: parseInt(process.env.EMBEDDING_BACKFILL_CONCURRENCY || '8', 10),
+        concurrency: parseInt(process.env.EMBEDDING_BACKFILL_CONCURRENCY || '3', 10),
         attempts: parseInt(process.env.EMBEDDING_BACKFILL_ATTEMPTS || '2', 10),
         backoff: {
           type: 'exponential',

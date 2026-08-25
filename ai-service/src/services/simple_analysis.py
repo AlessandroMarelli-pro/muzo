@@ -17,10 +17,7 @@ if TYPE_CHECKING:
     from src.utils.scan_progress_publisher import ScanProgressPublisher
 
 from src.services.base_metadata_extractor import create_metadata_extractor
-from src.services.features.discogs_embedding_extractor import (
-    EMBEDDING_SAMPLE_RATE,
-    DiscogsEmbeddingExtractor,
-)
+from src.services.features.discogs_embedding_extractor import DiscogsEmbeddingExtractor
 from src.services.simple_audio_loader import SimpleAudioLoader
 from src.services.simple_feature_extractor import SimpleFeatureExtractor
 from src.services.simple_filename_parser import SimpleFilenameParser
@@ -217,25 +214,7 @@ class SimpleAnalysisService:
 
     @monitor_performance("discogs_embedding_generation")
     def generate_discogs_embedding(self, y_harmonic, sr) -> list:
-        """
-        Resample the harmonic sample to the discogs-effnet model's expected
-        16kHz input rate and extract the embedding. Never raises -- returns
-        an empty list on any failure so a broken/unavailable model doesn't
-        fail the overall analysis.
-        """
-        try:
-            import librosa
-            import numpy as np
-
-            audio_16k = (
-                librosa.resample(y_harmonic, orig_sr=sr, target_sr=EMBEDDING_SAMPLE_RATE)
-                if sr != EMBEDDING_SAMPLE_RATE
-                else y_harmonic
-            )
-            return self.embedding_extractor.extract(np.asarray(audio_16k))
-        except Exception as e:
-            logger.error(f"Discogs embedding generation failed: {e}")
-            return []
+        return self.embedding_extractor.extract_from_harmonic_sample(y_harmonic, sr)
 
     def check_performance_bottlenecks(self) -> Dict[str, Any]:
         """

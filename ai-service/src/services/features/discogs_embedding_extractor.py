@@ -52,3 +52,22 @@ class DiscogsEmbeddingExtractor:
         except Exception as e:
             logger.error(f"Discogs embedding extraction failed: {e}")
             return []
+
+    def extract_from_harmonic_sample(self, y_harmonic: np.ndarray, sr: int) -> list:
+        """
+        Resample a harmonic audio sample to the model's expected 16kHz input
+        rate and extract the embedding. Never raises -- returns an empty list
+        on any failure so a broken/unavailable model doesn't fail the caller.
+        """
+        try:
+            import librosa
+
+            audio_16k = (
+                librosa.resample(y_harmonic, orig_sr=sr, target_sr=EMBEDDING_SAMPLE_RATE)
+                if sr != EMBEDDING_SAMPLE_RATE
+                else y_harmonic
+            )
+            return self.extract(np.asarray(audio_16k))
+        except Exception as e:
+            logger.error(f"Discogs embedding generation failed: {e}")
+            return []
