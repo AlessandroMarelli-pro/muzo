@@ -234,8 +234,8 @@ const UPDATE_PLAYLIST_POSITIONS = gql`
 `;
 
 const DISCOVER_SIMILAR_TRACKS_FOR_PLAYLIST = gql`
-  query DiscoverSimilarTracksForPlaylist($playlistId: Base64ID!, $userId: String!, $limit: Int) {
-    discoverSimilarTracksForPlaylist(playlistId: $playlistId, userId: $userId, limit: $limit) {
+  query DiscoverSimilarTracksForPlaylist($playlistId: Base64ID!, $userId: String!) {
+    discoverSimilarTracksForPlaylist(playlistId: $playlistId, userId: $userId) {
       sourceArtist
       artist
       title
@@ -243,6 +243,18 @@ const DISCOVER_SIMILAR_TRACKS_FOR_PLAYLIST = gql`
       externalLink
       videoId
       confidence
+    }
+  }
+`;
+
+const COSINE_RECOMMENDATIONS_FOR_TRACK = gql`
+  query CosineRecommendationsForTrack($trackId: Base64ID!) {
+    cosineRecommendationsForTrack(trackId: $trackId) {
+      artist
+      title
+      score
+      externalLink
+      videoId
     }
   }
 `;
@@ -514,13 +526,43 @@ export interface DiscoveredTrack {
 export const fetchDiscoverSimilarTracksForPlaylist = async (
   playlistId: string,
   userId: string = 'default',
-  limit = 30,
 ): Promise<DiscoveredTrack[]> => {
   const data = await graffleClient.request<{
     discoverSimilarTracksForPlaylist: DiscoveredTrack[];
-  }>(DISCOVER_SIMILAR_TRACKS_FOR_PLAYLIST, { playlistId, userId, limit });
+  }>(DISCOVER_SIMILAR_TRACKS_FOR_PLAYLIST, { playlistId, userId });
   return data.discoverSimilarTracksForPlaylist;
 };
+
+export interface CosineRecommendedTrack {
+  artist: string;
+  title: string;
+  score: number;
+  externalLink?: string | null;
+  videoId?: string | null;
+}
+
+export const fetchCosineRecommendationsForTrack = async (
+  trackId: string,
+): Promise<CosineRecommendedTrack[]> => {
+  const data = await graffleClient.request<{
+    cosineRecommendationsForTrack: CosineRecommendedTrack[];
+  }>(COSINE_RECOMMENDATIONS_FOR_TRACK, { trackId });
+  return data.cosineRecommendationsForTrack;
+};
+
+export function useCosineRecommendationsForTrack(trackId?: string) {
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['cosineRecommendationsForTrack', trackId],
+    queryFn: () => fetchCosineRecommendationsForTrack(trackId!),
+    enabled: !!trackId,
+    staleTime: 5 * 60 * 1000,
+  });
+  return {
+    tracks: data || [],
+    isLoading,
+    error: error?.message,
+  };
+}
 
 interface UpdatePlaylistPositionInput {
   id: string;
@@ -930,14 +972,10 @@ export function usePlaylistRecommendations(
   };
 }
 
-export function useDiscoverSimilarTracksForPlaylist(
-  playlistId: string,
-  userId: string = 'default',
-  limit = 30,
-) {
+export function useDiscoverSimilarTracksForPlaylist(playlistId: string, userId: string = 'default') {
   const { data, isLoading, isFetching, error, refetch } = useQuery({
-    queryKey: ['discoverSimilarTracksForPlaylist', playlistId, userId, limit],
-    queryFn: () => fetchDiscoverSimilarTracksForPlaylist(playlistId, userId, limit),
+    queryKey: ['discoverSimilarTracksForPlaylist', playlistId, userId],
+    queryFn: () => fetchDiscoverSimilarTracksForPlaylist(playlistId, userId),
     enabled: false,
     staleTime: 5 * 60 * 1000,
   });

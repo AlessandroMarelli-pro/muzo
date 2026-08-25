@@ -22,6 +22,7 @@ const run = async () => {
   const audioScanQueue = createQueueMQ('audio-scan');
   const bpmUpdateQueue = createQueueMQ('bpm-update');
   const sockseekBatchQueue = createQueueMQ('sockseek-batch');
+  const embeddingBackfill = createQueueMQ('embedding-backfill');
   const app = express();
 
   const serverAdapter = new ExpressAdapter();
@@ -31,6 +32,7 @@ const run = async () => {
     new BullMQAdapter(audioScanQueue),
     new BullMQAdapter(bpmUpdateQueue),
     new BullMQAdapter(sockseekBatchQueue),
+    new BullMQAdapter(embeddingBackfill),
   ];
 
   createBullBoard({

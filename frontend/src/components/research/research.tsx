@@ -7,6 +7,8 @@ import { useMemo } from 'react';
 import { TrackRecommandationsComponent } from '../playlist/track-recommendations';
 import { DetailedTrackCard } from '../track/detailed-track-card';
 import { Button } from '../ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
+import { CosineRecommendations } from './cosine-recommendations';
 
 const DashedButton = ({
   children,
@@ -87,10 +89,21 @@ export function Research() {
           </DashedButton>
         ))}
       </div>
-      <TrackRecommandationsComponent
-        recommendations={trackRecommendations || []}
-        isLoading={isLoading}
-      />
+      <Tabs defaultValue="recommendations">
+        <TabsList>
+          <TabsTrigger value="recommendations">Recommendations</TabsTrigger>
+          <TabsTrigger value="cosine">Cosine</TabsTrigger>
+        </TabsList>
+        <TabsContent value="recommendations">
+          <TrackRecommandationsComponent
+            recommendations={trackRecommendations || []}
+            isLoading={isLoading}
+          />
+        </TabsContent>
+        <TabsContent value="cosine">
+          <CosineRecommendations trackId={track?.id} />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

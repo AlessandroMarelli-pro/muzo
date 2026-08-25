@@ -19,6 +19,9 @@ export type DiscoveredTrack = {
 
 type ArtistSeed = { artist: string; title: string };
 
+const SIMILAR_TRACKS_PER_SEED_LIMIT = 10;
+const RESULTS_PER_PLAYLIST_TRACK = 10;
+
 export class DiscoverSimilarTracksForPlaylistUseCase {
   constructor(
     private readonly getPlaylistUseCase: GetPlaylistUseCase,
@@ -32,9 +35,10 @@ export class DiscoverSimilarTracksForPlaylistUseCase {
     this.logger = loggerFactory.createLogger('DiscoverSimilarTracksForPlaylistUseCase');
   }
 
-  async execute(playlistId: PlaylistId, _userId: string, limit = 30): Promise<DiscoveredTrack[]> {
+  async execute(playlistId: PlaylistId, _userId: string): Promise<DiscoveredTrack[]> {
     const playlist = await this.getPlaylistUseCase.execute(playlistId);
     const playlistTracks = playlist.tracks ?? [];
+    const limit = playlistTracks.length * RESULTS_PER_PLAYLIST_TRACK;
 
     const seedsByArtist = new Map<string, ArtistSeed>();
     for (const playlistTrack of playlistTracks) {
@@ -92,7 +96,10 @@ export class DiscoverSimilarTracksForPlaylistUseCase {
         cosineTrackId: cosineTrack.id,
       });
 
-      const similarTracks = await this.cosineProvider.getSimilarTracks(cosineTrack.id);
+      const similarTracks = await this.cosineProvider.getSimilarTracks(
+        cosineTrack.id,
+        SIMILAR_TRACKS_PER_SEED_LIMIT,
+      );
       this.logger.debug('Cosine returned similar tracks', {
         artist: seed.artist,
         title: seed.title,

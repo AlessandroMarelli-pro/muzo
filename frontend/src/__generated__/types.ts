@@ -21,6 +21,15 @@ export type AddTrackToPlaylistInput = {
   trackId: Scalars['Base64ID']['input'];
 };
 
+export type CosineRecommendedTrack = {
+  __typename?: 'CosineRecommendedTrack';
+  artist: Scalars['String']['output'];
+  externalLink?: Maybe<Scalars['String']['output']>;
+  score: Scalars['Float']['output'];
+  title: Scalars['String']['output'];
+  videoId?: Maybe<Scalars['String']['output']>;
+};
+
 export type CreateLibraryInput = {
   autoScan?: InputMaybe<Scalars['Boolean']['input']>;
   includeSubdirectories?: InputMaybe<Scalars['Boolean']['input']>;
@@ -515,6 +524,7 @@ export type PlaylistsResult = {
 
 export type Query = {
   __typename?: 'Query';
+  cosineRecommendationsForTrack: Array<CosineRecommendedTrack>;
   discoverSimilarTracksForPlaylist: Array<DiscoveredTrack>;
   getSpotifyAuthUrl: SpotifyAuthUrl;
   getTidalAuthUrl: TidalAuthUrl;
@@ -525,8 +535,12 @@ export type Query = {
 };
 
 
+export type QueryCosineRecommendationsForTrackArgs = {
+  trackId: Scalars['Base64ID']['input'];
+};
+
+
 export type QueryDiscoverSimilarTracksForPlaylistArgs = {
-  limit?: InputMaybe<Scalars['Int']['input']>;
   playlistId: Scalars['Base64ID']['input'];
   userId: Scalars['String']['input'];
 };
@@ -1147,11 +1161,17 @@ export type UpdatePlaylistPositionsMutation = { __typename?: 'Mutation', updateP
 export type DiscoverSimilarTracksForPlaylistQueryVariables = Exact<{
   playlistId: Scalars['Base64ID']['input'];
   userId: Scalars['String']['input'];
-  limit?: InputMaybe<Scalars['Int']['input']>;
 }>;
 
 
 export type DiscoverSimilarTracksForPlaylistQuery = { __typename?: 'Query', discoverSimilarTracksForPlaylist: Array<{ __typename?: 'DiscoveredTrack', sourceArtist: string, artist: string, title: string, matchScore: number, externalLink?: string | null, videoId?: string | null, confidence: string }> };
+
+export type CosineRecommendationsForTrackQueryVariables = Exact<{
+  trackId: Scalars['Base64ID']['input'];
+}>;
+
+
+export type CosineRecommendationsForTrackQuery = { __typename?: 'Query', cosineRecommendationsForTrack: Array<{ __typename?: 'CosineRecommendedTrack', artist: string, title: string, score: number, externalLink?: string | null, videoId?: string | null }> };
 
 export type UpdatePlaylistSortingMutationVariables = Exact<{
   playlistId: Scalars['Base64ID']['input'];

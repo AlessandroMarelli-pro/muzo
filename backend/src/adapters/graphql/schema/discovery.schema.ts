@@ -23,3 +23,21 @@ export class DiscoveredTrack {
   @Field()
   confidence: string;
 }
+
+@ObjectType()
+export class CosineRecommendedTrack {
+  @Field()
+  artist: string;
+
+  @Field()
+  title: string;
+
+  @Field(() => Float)
+  score: number;
+
+  @Field({ nullable: true })
+  externalLink?: string;
+
+  @Field({ nullable: true })
+  videoId?: string;
+}

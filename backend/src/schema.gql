@@ -10,6 +10,14 @@ input AddTrackToPlaylistInput {
 """ID encoded as base64 for transport"""
 scalar Base64ID
 
+type CosineRecommendedTrack {
+  artist: String!
+  externalLink: String
+  score: Float!
+  title: String!
+  videoId: String
+}
+
 input CreateLibraryInput {
   autoScan: Boolean
   includeSubdirectories: Boolean
@@ -269,7 +277,8 @@ type PlaylistsResult {
 }
 
 type Query {
-  discoverSimilarTracksForPlaylist(limit: Int, playlistId: Base64ID!, userId: String!): [DiscoveredTrack!]!
+  cosineRecommendationsForTrack(trackId: Base64ID!): [CosineRecommendedTrack!]!
+  discoverSimilarTracksForPlaylist(playlistId: Base64ID!, userId: String!): [DiscoveredTrack!]!
   getSpotifyAuthUrl: SpotifyAuthUrl!
   getTidalAuthUrl: TidalAuthUrl!
   getYouTubeAuthUrl: YouTubeAuthUrl!
