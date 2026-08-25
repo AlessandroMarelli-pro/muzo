@@ -7,6 +7,7 @@ import { SockseekAcquirer } from 'src/infrastructure/hq-audio/sockseek.acquirer'
 import { TidalDlAcquirer } from 'src/infrastructure/hq-audio/tidal-dl.acquirer';
 import { AUDIO_ANALYSIS_STRUCTURE } from '../ports/infrastructure/IAudioAnalysisStructure';
 import { AUDIO_SCAN_SCHEDULER_PRODUCER } from '../ports/infrastructure/IAudioScanSchedulerProducer';
+import { EMBEDDING_BACKFILL_PRODUCER } from '../ports/infrastructure/IEmbeddingBackfillProducer';
 import { AUDIO_WAVEFORM_GENERATOR } from '../ports/infrastructure/IAudioWaveformGenerator';
 import { COPY_AUDIO_WITH_METADATA } from '../ports/infrastructure/ICopyAudioWithMetadata';
 import { FILE_MANAGER } from '../ports/infrastructure/IFileManager';
@@ -57,6 +58,7 @@ import {
   AddTracksToQueueUseCase,
   AddTrackToPlaylistUseCase,
   AddTrackToQueueUseCase,
+  BackfillTrackEmbeddingsUseCase,
   CreateLibraryUseCase,
   CreatePlaylistUseCase,
   CreateSavedFilterUseCase,
@@ -289,6 +291,12 @@ const useCasesProviders = [
     LOGGER_FACTORY,
     LOGGER,
   ]),
+  createUseCaseProvider(BackfillTrackEmbeddingsUseCase, [
+    MUSIC_TRACK_REPOSITORY,
+    EMBEDDING_BACKFILL_PRODUCER,
+    LOGGER_FACTORY,
+    LOGGER,
+  ]),
   createUseCaseProvider(ScheduleTracksByCriteriaScanUseCase, [
     MUSIC_TRACK_REPOSITORY,
     SCAN_SESSION_REPOSITORY,
@@ -389,6 +397,8 @@ const useCasesProviders = [
     GetPlaylistUseCase,
     COSINE_PROVIDER,
     MUSIC_TRACK_REPOSITORY,
+    LOGGER_FACTORY,
+    LOGGER,
   ]),
   createUseCaseProvider(GetYouTubeAuthUrlUseCase, [YOUTUBE_SYNC_PROVIDER]),
   createUseCaseProvider(ExchangeYouTubeCodeUseCase, [YOUTUBE_SYNC_PROVIDER]),

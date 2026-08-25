@@ -47,6 +47,21 @@ export interface QueueConfig {
       removeOnComplete: boolean;
       removeOnFail: boolean;
     };
+    embeddingBackfill: {
+      /**
+       * Documentation only: actual worker concurrency is read from EMBEDDING_BACKFILL_CONCURRENCY
+       * directly in embedding-backfill-consumer.adapter.ts, since @Processor's worker-options
+       * argument is evaluated at class-definition time, before ConfigService is available.
+       */
+      concurrency: number;
+      attempts: number;
+      backoff: {
+        type: string;
+        delay: number;
+      };
+      removeOnComplete: boolean;
+      removeOnFail: boolean;
+    };
   };
 }
 
@@ -94,6 +109,16 @@ export default registerAs(
         backoff: {
           type: 'exponential',
           delay: parseInt(process.env.HQ_AUDIO_BATCH_ACQUIRE_BACKOFF_DELAY || '3000', 10),
+        },
+        removeOnComplete: false,
+        removeOnFail: false,
+      },
+      embeddingBackfill: {
+        concurrency: parseInt(process.env.EMBEDDING_BACKFILL_CONCURRENCY || '8', 10),
+        attempts: parseInt(process.env.EMBEDDING_BACKFILL_ATTEMPTS || '2', 10),
+        backoff: {
+          type: 'exponential',
+          delay: parseInt(process.env.EMBEDDING_BACKFILL_BACKOFF_DELAY || '2000', 10),
         },
         removeOnComplete: false,
         removeOnFail: false,

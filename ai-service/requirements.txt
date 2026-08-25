@@ -98,6 +98,9 @@ mido>=1.3.0
 cython==3.0.1
 madmom>=0.16.0
 
+# Essentia (TensorFlow-enabled build) for the discogs-effnet audio embedding model
+essentia-tensorflow>=2.1b6.dev1110
+
 # Redis for caching
 redis>=5.0.0
 

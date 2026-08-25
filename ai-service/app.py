@@ -20,6 +20,7 @@ load_dotenv()
 from src.api.audio_enhancement import AudioEnhancementResource
 from src.api.batch_simple_analysis import BatchSimpleAnalysisResource
 from src.api.bpm_detection import BPMDetectionResource
+from src.api.discogs_embedding import DiscogsEmbeddingResource
 from src.api.health import HealthResource
 from src.api.openai_metadata import OpenAIMetadataResource
 from src.api.simple_analysis import SimpleAnalysisResource
@@ -155,6 +156,7 @@ def register_resources(api, app):
 
     # BPM detection endpoints (always enabled)
     api.add_resource(BPMDetectionResource, "/audio/bpm/detect")
+    api.add_resource(DiscogsEmbeddingResource, "/audio/embedding/discogs")
     logger.info("✅ BPM detection endpoints registered")
 
     # OpenAI metadata extraction endpoints (always enabled if API key is set)

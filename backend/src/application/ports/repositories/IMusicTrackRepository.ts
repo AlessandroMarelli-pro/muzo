@@ -49,6 +49,8 @@ export interface IMusicTrackRepository {
   getLastPlayedTrack(): Promise<Maybe<MusicTrack>>;
   getManyByIds(ids: MusicTrackId[]): Promise<MusicTrack[]>;
   getAll(): Promise<MusicTrack[]>;
+  /** Tracks with an existing AudioFingerprint whose embedding hasn't been backfilled yet. */
+  getTracksMissingEmbedding(): Promise<MusicTrack[]>;
   verifyExistence(id: MusicTrackId): Promise<boolean>;
   getManyByCriteria(
     criteria: Maybe<FilterCriteria>,

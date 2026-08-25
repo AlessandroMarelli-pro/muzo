@@ -92,6 +92,15 @@ function isValidMfccVector(vector: number[] | undefined): vector is number[] {
   return vector.every((v) => Number.isFinite(v));
 }
 
+const EMBEDDING_DIM = 1280;
+
+function isValidEmbeddingVector(vector: number[] | undefined): vector is number[] {
+  if (!vector || vector.length !== EMBEDDING_DIM) {
+    return false;
+  }
+  return vector.every((v) => Number.isFinite(v));
+}
+
 function tempoOriginAndScale(playlistFeatures: {
   tempo?: { min: number; max: number };
   tempoCenter?: number;
@@ -405,6 +414,28 @@ export const buildElasticsearchRecommendationQuery = (
     wAudio > 0 &&
     isValidMfccVector(mfccVec) &&
     process.env.ELASTICSEARCH_MFCC_VECTOR_SIMILARITY !== 'false';
+
+  const embeddingVec = spectralFeatures?.embedding;
+  /**
+   * Discogs-effnet embedding scoring requires `spectral_features.discogs_embedding` as a
+   * dense_vector in the index. Older documents (indexed before this field existed) won't have
+   * it; Painless must not throw or the entire search fails. Neutral score 1.0 matches the MFCC
+   * script's degrade behavior.
+   */
+  const embeddingSimilarityScriptSource = `try {
+  def v = doc['spectral_features.discogs_embedding'];
+  if (v.size() != ${EMBEDDING_DIM}) {
+    return 1.0;
+  }
+  return cosineSimilarity(params.queryVector, 'spectral_features.discogs_embedding') + 1.0;
+} catch (Exception e) {
+  return 1.0;
+}`;
+  const useEmbeddingScript =
+    wAudio > 0 &&
+    isValidEmbeddingVector(embeddingVec) &&
+    process.env.ELASTICSEARCH_EMBEDDING_VECTOR_SIMILARITY !== 'false';
+
   const functionScoreQuery: Record<string, unknown> = {
     function_score: {
       query: { bool: baseBool },
@@ -424,6 +455,18 @@ export const buildElasticsearchRecommendationQuery = (
         script: {
           source: mfccSimilarityScriptSource,
           params: { queryVector: mfccVec },
+        },
+        boost: wAudio * 15.0,
+      },
+    });
+  }
+  if (useEmbeddingScript) {
+    outerShould.push({
+      script_score: {
+        query: { match_all: {} },
+        script: {
+          source: embeddingSimilarityScriptSource,
+          params: { queryVector: embeddingVec },
         },
         boost: wAudio * 15.0,
       },

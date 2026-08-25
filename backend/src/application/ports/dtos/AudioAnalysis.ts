@@ -224,6 +224,8 @@ export interface AudioAnalysisResponse {
   processing_mode: string;
   features: AudioFeatures;
   fingerprint: AudioFingerprint;
+  /** 1280-dim discogs-effnet embedding (Essentia); empty when extraction failed/unavailable. */
+  embedding?: number[];
   hierarchical_classification: HierarchicalClassification;
   album_art: AlbumArt;
   file_info: FileInfo;

@@ -130,6 +130,15 @@ const parseMfccStored = (
   return { coefficients: [], std: [] };
 };
 
+const parseEmbeddingStored = (raw: string): number[] => {
+  try {
+    const parsed: unknown = JSON.parse(raw || '[]');
+    return Array.isArray(parsed) ? parsed.map((n) => Number(n)) : [];
+  } catch {
+    return [];
+  }
+};
+
 export const toAudioFileFeatures: ToAudioFileFeatures = (row) => {
   if (!row) return undefined;
   const { coefficients, std } = parseMfccStored(row.mfcc);
@@ -142,6 +151,7 @@ export const toAudioFileFeatures: ToAudioFileFeatures = (row) => {
     }
   })();
   const mfccStd = mfccStdFromColumn.length > 0 ? mfccStdFromColumn : std;
+  const embedding = parseEmbeddingStored(row.embedding);
   return {
     spectralFeatures: {
       spectralCentroid: toAggregationStatistics(row.spectralCentroid),
@@ -154,6 +164,7 @@ export const toAudioFileFeatures: ToAudioFileFeatures = (row) => {
       rms: toAggregationStatistics(row.rms),
       mfcc: coefficients,
       ...(mfccStd.length > 0 ? { mfccStd } : {}),
+      ...(embedding.length > 0 ? { embedding } : {}),
       onsetDensity: row.onsetDensity,
       dynamicRange: row.dynamicRange,
     },

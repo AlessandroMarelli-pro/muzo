@@ -1,34 +1,50 @@
-import { Button } from '@/components/ui/button';
 import { capitalizeEveryWord, cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 import { type DiscoveredTrack, useDiscoverSimilarTracksForPlaylist } from '@/services/playlist-hooks';
 import { Compass, ExternalLink, Play } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 interface PlaylistDiscoveryProps {
   playlistId: string;
 }
 
-function DiscoveredVideoCard({
-  track,
-  isPlaying,
-  onTogglePlay,
-}: {
-  track: DiscoveredTrack;
-  isPlaying: boolean;
-  onTogglePlay: () => void;
-}) {
+const HOVER_PREVIEW_DELAY_MS = 100;
+
+function DiscoveredVideoCard({ track }: { track: DiscoveredTrack }) {
+  const [isPreviewing, setIsPreviewing] = useState(false);
+  const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const clearHoverTimeout = () => {
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+      hoverTimeoutRef.current = null;
+    }
+  };
+
+  const handleMouseEnter = () => {
+    if (!track.videoId) return;
+    clearHoverTimeout();
+    hoverTimeoutRef.current = setTimeout(() => setIsPreviewing(true), HOVER_PREVIEW_DELAY_MS);
+  };
+
+  const handleMouseLeave = () => {
+    clearHoverTimeout();
+    setIsPreviewing(false);
+  };
+
+  useEffect(() => clearHoverTimeout, []);
+
   return (
     <div className="w-full">
-      <button
-        type="button"
-        onClick={track.videoId ? onTogglePlay : undefined}
-        disabled={!track.videoId}
+      <div
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
         className={cn(
           'group relative block aspect-video w-full overflow-hidden rounded-xl bg-muted',
-          track.videoId ? 'cursor-pointer' : 'cursor-default opacity-60',
+          !track.videoId && 'opacity-60',
         )}
       >
-        {isPlaying && track.videoId ? (
+        {isPreviewing && track.videoId ? (
           <iframe
             className="h-full w-full"
             src={`https://www.youtube.com/embed/${track.videoId}?autoplay=1`}
@@ -59,7 +75,7 @@ function DiscoveredVideoCard({
             )}
           </>
         )}
-      </button>
+      </div>
 
       <div className="mt-2 flex items-start justify-between gap-2">
         <div className="min-w-0">
@@ -111,7 +127,6 @@ function DiscoveryGroupSkeleton() {
 
 export function PlaylistDiscovery({ playlistId }: PlaylistDiscoveryProps) {
   const { tracks, isLoading, error, discover } = useDiscoverSimilarTracksForPlaylist(playlistId);
-  const [playingKey, setPlayingKey] = useState<string | null>(null);
 
   const groups = useMemo(() => {
     const bySourceArtist = new Map<string, DiscoveredTrack[]>();
@@ -153,17 +168,9 @@ export function PlaylistDiscovery({ playlistId }: PlaylistDiscoveryProps) {
                 Similar to {capitalizeEveryWord(sourceArtist)}
               </h3>
               <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-                {groupTracks.map((track) => {
-                  const key = `${track.artist}::${track.title}`;
-                  return (
-                    <DiscoveredVideoCard
-                      key={key}
-                      track={track}
-                      isPlaying={playingKey === key}
-                      onTogglePlay={() => setPlayingKey(playingKey === key ? null : key)}
-                    />
-                  );
-                })}
+                {groupTracks.map((track) => (
+                  <DiscoveredVideoCard key={`${track.artist}::${track.title}`} track={track} />
+                ))}
               </div>
             </div>
           ))}

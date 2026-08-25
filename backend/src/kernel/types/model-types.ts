@@ -159,6 +159,8 @@ export type AudioFileSpectralFeatures = {
   mfcc: number[];
   /** Per-coefficient MFCC std (13) when present from analysis. */
   mfccStd?: number[];
+  /** 1280-dim discogs-effnet embedding (Essentia) when present from analysis. */
+  embedding?: number[];
   spectralSpread: AggregationStatistics;
   spectralBandwith: AggregationStatistics;
   spectralFlatness: AggregationStatistics;

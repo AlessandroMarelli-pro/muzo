@@ -48,6 +48,8 @@ export interface ElasticsearchTrackDocument {
     mfcc_mean?: number[];
     /** 13 MFCC coefficient std values (timbral variability). */
     mfcc_std?: number[];
+    /** 1280-dim discogs-effnet embedding (Essentia) for acoustic similarity search. */
+    discogs_embedding?: number[];
     onset_density?: number;
     dynamic_range?: number;
     bass_presence?: number;

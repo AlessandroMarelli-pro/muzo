@@ -1,3 +1,6 @@
+import { Inject } from '@nestjs/common';
+import { ILogger, LOGGER } from 'src/application/ports/infrastructure/ILogger';
+import { LOGGER_FACTORY } from 'src/application/ports/infrastructure/ILoggerFactory';
 import { PlaylistId } from 'src/kernel/ids';
 import type { ICosineProvider } from '../../ports/infrastructure/ICosineProvider';
 import type { IMusicTrackRepository } from '../../ports/repositories/IMusicTrackRepository';
@@ -21,7 +24,13 @@ export class DiscoverSimilarTracksForPlaylistUseCase {
     private readonly getPlaylistUseCase: GetPlaylistUseCase,
     private readonly cosineProvider: ICosineProvider,
     private readonly musicTrackRepository: IMusicTrackRepository,
-  ) {}
+    @Inject(LOGGER_FACTORY)
+    loggerFactory: { createLogger: (name: string) => ILogger },
+    @Inject(LOGGER)
+    private readonly logger: ILogger,
+  ) {
+    this.logger = loggerFactory.createLogger('DiscoverSimilarTracksForPlaylistUseCase');
+  }
 
   async execute(playlistId: PlaylistId, _userId: string, limit = 30): Promise<DiscoveredTrack[]> {
     const playlist = await this.getPlaylistUseCase.execute(playlistId);
@@ -37,6 +46,13 @@ export class DiscoverSimilarTracksForPlaylistUseCase {
         seedsByArtist.set(key, { artist, title });
       }
     }
+
+    this.logger.info('Starting playlist discovery', {
+      playlistId,
+      playlistTrackCount: playlistTracks.length,
+      seedCount: seedsByArtist.size,
+      limit,
+    });
 
     const ownedTracks = await this.musicTrackRepository.getAll();
     const ownedSet = new Set(
@@ -56,18 +72,52 @@ export class DiscoverSimilarTracksForPlaylistUseCase {
     const candidates = new Map<string, Candidate>();
 
     for (const seed of seedsByArtist.values()) {
+      this.logger.debug('Searching Cosine for seed track', {
+        artist: seed.artist,
+        title: seed.title,
+      });
+
       const cosineTrack = await this.cosineProvider.searchTrack(seed.artist, seed.title);
-      if (!cosineTrack) continue;
+      if (!cosineTrack) {
+        this.logger.info('No strict match found for seed track, skipping', {
+          artist: seed.artist,
+          title: seed.title,
+        });
+        continue;
+      }
+
+      this.logger.debug('Seed track matched on Cosine', {
+        artist: seed.artist,
+        title: seed.title,
+        cosineTrackId: cosineTrack.id,
+      });
 
       const similarTracks = await this.cosineProvider.getSimilarTracks(cosineTrack.id);
+      this.logger.debug('Cosine returned similar tracks', {
+        artist: seed.artist,
+        title: seed.title,
+        cosineTrackId: cosineTrack.id,
+        similarTrackCount: similarTracks.length,
+      });
+
+      let addedCount = 0;
+      let ownedSkippedCount = 0;
+      let duplicateSkippedCount = 0;
+
       for (const candidate of similarTracks) {
         if (!candidate.artist || !candidate.title) continue;
 
         const normalizedArtist = normalizeForMatch(candidate.artist);
         const normalizedTitle = normalizeForMatch(candidate.title);
         const key = `${normalizedArtist}::${normalizedTitle}`;
-        if (ownedSet.has(key)) continue;
-        if (candidates.has(key)) continue;
+        if (ownedSet.has(key)) {
+          ownedSkippedCount += 1;
+          continue;
+        }
+        if (candidates.has(key)) {
+          duplicateSkippedCount += 1;
+          continue;
+        }
 
         candidates.set(key, {
           sourceArtist: seed.artist,
@@ -77,10 +127,19 @@ export class DiscoverSimilarTracksForPlaylistUseCase {
           externalLink: candidate.externalLink,
           videoId: candidate.videoId,
         });
+        addedCount += 1;
       }
+
+      this.logger.info('Processed seed track', {
+        artist: seed.artist,
+        title: seed.title,
+        addedCount,
+        ownedSkippedCount,
+        duplicateSkippedCount,
+      });
     }
 
-    return Array.from(candidates.values())
+    const results = Array.from(candidates.values())
       .sort((a, b) => b.matchScore - a.matchScore)
       .slice(0, limit)
       .map((candidate) => ({
@@ -90,7 +149,15 @@ export class DiscoverSimilarTracksForPlaylistUseCase {
         matchScore: candidate.matchScore,
         externalLink: candidate.externalLink,
         videoId: candidate.videoId ?? null,
-        confidence: candidate.videoId ? 'exact' : 'none',
+        confidence: (candidate.videoId ? 'exact' : 'none') as DiscoveredTrack['confidence'],
       }));
+
+    this.logger.info('Finished playlist discovery', {
+      playlistId,
+      totalCandidateCount: candidates.size,
+      returnedCount: results.length,
+    });
+
+    return results;
   }
 }

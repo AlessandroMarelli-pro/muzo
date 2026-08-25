@@ -89,4 +89,35 @@ export class AiAudioAnalysisAdapter implements IAudioAnalysisStructure {
       );
     }
   }
+
+  async extractDiscogsEmbedding(audioFilePath: string): Promise<{ embedding: number[] }> {
+    try {
+      const simpleInstance = this.aiServicePool.getAssignedServer('simple');
+
+      const formData = new FormData();
+      formData.append('audio_file', fs.createReadStream(audioFilePath));
+
+      const response = await firstValueFrom(
+        this.httpService.post(`${simpleInstance.url}/api/v1/audio/embedding/discogs`, formData, {
+          headers: {
+            ...formData.getHeaders(),
+          },
+          timeout: this.aiServiceConfig.timeout,
+        }),
+      );
+
+      return { embedding: response.data.embedding ?? [] };
+    } catch (error) {
+      this.logger.error(`Discogs embedding extraction failed:`, error.message);
+
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
+      throw new HttpException(
+        `Discogs embedding extraction failed: ${error.message}`,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
 }

@@ -192,6 +192,7 @@ model AudioFingerprint {
   onsetDensity        Float  @default(0)
   dynamicRange        Float  @default(0)
   mfccStd             String @default("[]") // JSON array of 13 floats
+  embedding           String @default("[]") // JSON array of 1280 floats (discogs-effnet)
 
   // Timestamps
   // Timestamps

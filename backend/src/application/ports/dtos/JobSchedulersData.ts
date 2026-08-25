@@ -56,3 +56,9 @@ export interface HqAudioBatchAcquireJobData {
   trackIds: MusicTrackId[];
   contextUser: ActionContext['user'];
 }
+
+export interface EmbeddingBackfillJobData {
+  trackId: MusicTrackId;
+  filePath: string;
+  contextUser: ActionContext['user'];
+}

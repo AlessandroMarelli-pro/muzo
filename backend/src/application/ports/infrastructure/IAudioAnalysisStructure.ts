@@ -13,4 +13,6 @@ export interface IAudioAnalysisStructure {
     skipImageSearch?: boolean,
     skipAiMetadata?: boolean,
   ): Promise<AudioAnalysisBatchResponse>;
+
+  extractDiscogsEmbedding(audioFilePath: string): Promise<{ embedding: number[] }>;
 }

@@ -1,3 +1,4 @@
+export * from './BackfillTrackEmbeddings';
 export * from './ProcessBatchAudioScan';
 export * from './ProcessEndBatchAudioScan';
 export * from './ProcessEndLibraryScan';

@@ -15,4 +15,7 @@ export interface IAudioAnalysisRepository {
   upsertTrackGenres(trackId: MusicTrackId, genres: string[]): Promise<void>;
   upsertTrackSubgenres(trackId: MusicTrackId, subgenres: string[]): Promise<void>;
   upsertAiAtmosphereTags(trackId: MusicTrackId, tags: string[]): Promise<void>;
+
+  /** Scalar-only update -- does not touch any other AudioFingerprint column. */
+  updateEmbedding(trackId: MusicTrackId, embedding: number[]): Promise<void>;
 }

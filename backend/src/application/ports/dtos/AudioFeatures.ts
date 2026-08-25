@@ -47,4 +47,6 @@ export type SpectralFeatures = {
   mfccMean?: number[];
   /** Per-coefficient MFCC std (13); timbral variability. */
   mfccStd?: number[];
+  /** 1280-dim discogs-effnet embedding (Essentia) for acoustic similarity search. */
+  embedding?: number[];
 };

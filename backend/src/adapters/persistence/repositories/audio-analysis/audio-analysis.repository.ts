@@ -83,6 +83,7 @@ export class AudioAnalysisRepository implements IAudioAnalysisRepository {
       beatStrength: musicalFeatures?.mood_calculation?.beat_strength ?? 0,
       onsetDensity: rhythmFingerprint?.onset_density ?? 0,
       dynamicRange: spectralFeatures?.dynamic_range ?? 0,
+      embedding: JSON.stringify(analysisResult.embedding ?? []),
     };
 
     await this.prisma.audioFingerprint.upsert({
@@ -96,6 +97,16 @@ export class AudioAnalysisRepository implements IAudioAnalysisRepository {
         trackId: extractModelId(trackId).dbId,
         createdById: getCurrentUserId(),
       },
+    });
+  }
+
+  async updateEmbedding(trackId: MusicTrackId, embedding: number[]): Promise<void> {
+    await this.prisma.audioFingerprint.update({
+      where: {
+        trackId: extractModelId(trackId).dbId,
+        createdById: getCurrentUserId(),
+      },
+      data: { embedding: JSON.stringify(embedding) },
     });
   }
 

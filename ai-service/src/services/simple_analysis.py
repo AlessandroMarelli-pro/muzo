@@ -17,6 +17,10 @@ if TYPE_CHECKING:
     from src.utils.scan_progress_publisher import ScanProgressPublisher
 
 from src.services.base_metadata_extractor import create_metadata_extractor
+from src.services.features.discogs_embedding_extractor import (
+    EMBEDDING_SAMPLE_RATE,
+    DiscogsEmbeddingExtractor,
+)
 from src.services.simple_audio_loader import SimpleAudioLoader
 from src.services.simple_feature_extractor import SimpleFeatureExtractor
 from src.services.simple_filename_parser import SimpleFilenameParser
@@ -44,6 +48,7 @@ class SimpleAnalysisService:
         self.technical_analyzer = SimpleTechnicalAnalyzer()
         self.feature_extractor = SimpleFeatureExtractor()
         self.fingerprint_generator = SimpleFingerprintGenerator()
+        self.embedding_extractor = DiscogsEmbeddingExtractor()
 
         # Initialize AI metadata extractor (default: GEMINI, fallback to OPENAI)
         # Provider can be set via AI_METADATA_PROVIDER env var (GEMINI or OPENAI)
@@ -209,6 +214,28 @@ class SimpleAnalysisService:
     @monitor_performance("fingerprint_generation")
     def generate_simple_fingerprint(self, file_path: str, y, sr) -> Dict[str, Any]:
         return self.fingerprint_generator.generate_simple_fingerprint(file_path, y, sr)
+
+    @monitor_performance("discogs_embedding_generation")
+    def generate_discogs_embedding(self, y_harmonic, sr) -> list:
+        """
+        Resample the harmonic sample to the discogs-effnet model's expected
+        16kHz input rate and extract the embedding. Never raises -- returns
+        an empty list on any failure so a broken/unavailable model doesn't
+        fail the overall analysis.
+        """
+        try:
+            import librosa
+            import numpy as np
+
+            audio_16k = (
+                librosa.resample(y_harmonic, orig_sr=sr, target_sr=EMBEDDING_SAMPLE_RATE)
+                if sr != EMBEDDING_SAMPLE_RATE
+                else y_harmonic
+            )
+            return self.embedding_extractor.extract(np.asarray(audio_16k))
+        except Exception as e:
+            logger.error(f"Discogs embedding generation failed: {e}")
+            return []
 
     def check_performance_bottlenecks(self) -> Dict[str, Any]:
         """
@@ -421,6 +448,7 @@ class SimpleAnalysisService:
             )  # Use optimized samples for features
             # Use harmonic sample for fingerprint (more representative of melody/harmony)
             fingerprint = self.generate_simple_fingerprint(file_path, y_harmonic, sr)
+            embedding = self.generate_discogs_embedding(y_harmonic, sr)
             id3_tags = self.extract_id3_tags(file_path, original_filename)
 
             # Check performance bottlenecks after analysis
@@ -442,6 +470,7 @@ class SimpleAnalysisService:
                 **technical_info,
                 **basic_features,
                 **fingerprint,
+                "embedding": embedding,
                 **id3_tags,
             }
 
@@ -619,6 +648,7 @@ class SimpleAnalysisService:
 
             # Generate fingerprint
             fingerprint = self.generate_simple_fingerprint(file_path, y_harmonic, sr)
+            embedding = self.generate_discogs_embedding(y_harmonic, sr)
 
             # Publish audio.analysis progress (75%)
             if progress_publisher and session_id:
@@ -645,6 +675,7 @@ class SimpleAnalysisService:
                 **technical_info,
                 **basic_features,
                 **fingerprint,
+                "embedding": embedding,
                 **id3_tags,
             }
 

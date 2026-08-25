@@ -1,3 +1,4 @@
 backend/prisma/*.db-wal filter=lfs diff=lfs merge=lfs -text
 backend/prisma/*.db filter=lfs diff=lfs merge=lfs -text
 backend/prisma/*.db-shm filter=lfs diff=lfs merge=lfs -text
+ai-service/models/essentia_cache/*.pb filter=lfs diff=lfs merge=lfs -text

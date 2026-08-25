@@ -197,6 +197,18 @@ export class MusicTrackRepository implements IMusicTrackRepository {
       .then((rows) => rows.map(toDomain));
   }
 
+  async getTracksMissingEmbedding(): Promise<MusicTrack[]> {
+    return this.prisma.musicTrack
+      .findMany({
+        where: {
+          createdById: getCurrentUserId(),
+          audioFingerprint: { is: { embedding: '[]' } },
+        },
+        include: musicTracksIncludes,
+      })
+      .then((rows) => rows.map(toDomain));
+  }
+
   async getManyByIds(ids: MusicTrackId[]): Promise<MusicTrack[]> {
     return this.prisma.musicTrack
       .findMany({

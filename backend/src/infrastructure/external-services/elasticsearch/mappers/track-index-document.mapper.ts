@@ -2,17 +2,29 @@ import { MusicTrack } from 'src/kernel/types';
 import { ElasticsearchTrackDocument } from '../types/elasticsearch-track-document';
 
 const MFCC_DIM = 13;
+const EMBEDDING_DIM = 1280;
 
-function sliceMfccVector(values: number[] | undefined): number[] {
+function sliceVector(values: number[] | undefined, dim: number): number[] {
   if (!values || values.length === 0) {
-    return Array(MFCC_DIM).fill(0);
+    return Array(dim).fill(0);
   }
-  const out = Array(MFCC_DIM).fill(0);
-  for (let i = 0; i < MFCC_DIM; i += 1) {
+  const out = Array(dim).fill(0);
+  for (let i = 0; i < dim; i += 1) {
     const v = values[i];
     out[i] = typeof v === 'number' && Number.isFinite(v) ? v : 0;
   }
   return out;
+}
+
+function sliceMfccVector(values: number[] | undefined): number[] {
+  return sliceVector(values, MFCC_DIM);
+}
+
+function sliceEmbeddingVector(values: number[] | undefined): number[] | undefined {
+  if (!values || values.length === 0) {
+    return undefined;
+  }
+  return sliceVector(values, EMBEDDING_DIM);
 }
 
 function buildEnergyByBand(
@@ -46,6 +58,7 @@ function buildEnergyRatios(bands: number[] | undefined): { bass: number; mid: nu
 export const toElasticsearchTrackDocument = (dto: MusicTrack): ElasticsearchTrackDocument => {
   const date = dto.metadata?.date;
   const energyBands = dto.features?.musicalFeatures?.calculationFeatures?.energyByBand;
+  const embedding = sliceEmbeddingVector(dto.features?.spectralFeatures?.embedding);
   const doc: ElasticsearchTrackDocument = {
     trackId: dto.id,
     duration: dto.technicalInfo?.duration ?? 0,
@@ -84,6 +97,7 @@ export const toElasticsearchTrackDocument = (dto: MusicTrack): ElasticsearchTrac
       spectral_contrast: dto.features?.spectralFeatures?.spectralContrast,
       mfcc_mean: sliceMfccVector(dto.features?.spectralFeatures?.mfcc),
       mfcc_std: sliceMfccVector(dto.features?.spectralFeatures?.mfccStd),
+      ...(embedding && { discogs_embedding: embedding }),
       onset_density: dto.features?.spectralFeatures?.onsetDensity,
       dynamic_range: dto.features?.spectralFeatures?.dynamicRange,
       bass_presence: dto.features?.musicalFeatures?.calculationFeatures?.bassPresence,

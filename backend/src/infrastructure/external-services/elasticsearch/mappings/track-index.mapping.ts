@@ -75,6 +75,12 @@ export const trackIndexMapping: {
             dims: 13,
             index: false,
           },
+          discogs_embedding: {
+            type: 'dense_vector',
+            dims: 1280,
+            index: true,
+            similarity: 'cosine',
+          },
           onset_density: { type: 'float' },
           dynamic_range: { type: 'float' },
           bass_presence: { type: 'float' },
