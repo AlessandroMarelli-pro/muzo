@@ -15,11 +15,9 @@ export class GetTracksWithPaginationUseCase {
     const subgenreIds = await this.musicTrackRepository.getAllSubgenresBySubgenreId(
       criteria?.criteria.subgenreIds || [],
     );
-    console.log(subgenreIds);
     if (criteria && subgenreIds.length > 0) {
       criteria.criteria = { ...criteria?.criteria, subgenreIds };
     }
-    console.log('criteria', criteria);
     return this.musicTrackRepository.getManyByCriteriaWithPagination(
       criteria?.criteria ?? null,
       pagination,

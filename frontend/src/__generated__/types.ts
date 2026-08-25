@@ -53,6 +53,17 @@ export type CursorPaginationArgs = {
   size?: InputMaybe<Scalars['Int']['input']>;
 };
 
+export type DiscoveredTrack = {
+  __typename?: 'DiscoveredTrack';
+  artist: Scalars['String']['output'];
+  confidence: Scalars['String']['output'];
+  externalLink?: Maybe<Scalars['String']['output']>;
+  matchScore: Scalars['Float']['output'];
+  sourceArtist: Scalars['String']['output'];
+  title: Scalars['String']['output'];
+  videoId?: Maybe<Scalars['String']['output']>;
+};
+
 export type FilterCriteriaInput = {
   acousticness?: InputMaybe<RangeInput>;
   arousalMood?: InputMaybe<Array<Scalars['String']['input']>>;
@@ -188,6 +199,7 @@ export type Mutation = {
   downloadHqAudio: Scalars['Boolean']['output'];
   downloadPlaylistHqAudio: HqAudioBatchDownload;
   downloadPlaylistToFolder: Scalars['Boolean']['output'];
+  enhanceHqAudio: Scalars['Boolean']['output'];
   exportPlaylistToM3U: Scalars['String']['output'];
   registerPlayedTrack: Scalars['Boolean']['output'];
   removeTrackFromPlaylist: Scalars['Boolean']['output'];
@@ -299,6 +311,11 @@ export type MutationDownloadPlaylistHqAudioArgs = {
 
 export type MutationDownloadPlaylistToFolderArgs = {
   playlistId: Scalars['Base64ID']['input'];
+};
+
+
+export type MutationEnhanceHqAudioArgs = {
+  trackId: Scalars['Base64ID']['input'];
 };
 
 
@@ -498,12 +515,20 @@ export type PlaylistsResult = {
 
 export type Query = {
   __typename?: 'Query';
+  discoverSimilarTracksForPlaylist: Array<DiscoveredTrack>;
   getSpotifyAuthUrl: SpotifyAuthUrl;
   getTidalAuthUrl: TidalAuthUrl;
   getYouTubeAuthUrl: YouTubeAuthUrl;
   me: User;
   /** Fetch any node by global ID. Use inline fragments (... on Playlist { ... }) to request fields. */
   node?: Maybe<Node>;
+};
+
+
+export type QueryDiscoverSimilarTracksForPlaylistArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  playlistId: Scalars['Base64ID']['input'];
+  userId: Scalars['String']['input'];
 };
 
 
@@ -876,12 +901,26 @@ export type DownloadHqAudioMutationVariables = Exact<{
 
 export type DownloadHqAudioMutation = { __typename?: 'Mutation', downloadHqAudio: boolean };
 
+export type EnhanceHqAudioMutationVariables = Exact<{
+  trackId: Scalars['Base64ID']['input'];
+}>;
+
+
+export type EnhanceHqAudioMutation = { __typename?: 'Mutation', enhanceHqAudio: boolean };
+
 export type DownloadPlaylistHqAudioMutationVariables = Exact<{
   playlistId: Scalars['Base64ID']['input'];
 }>;
 
 
 export type DownloadPlaylistHqAudioMutation = { __typename?: 'Mutation', downloadPlaylistHqAudio: { __typename?: 'HqAudioBatchDownload', batchId: any, totalToDownload: number } };
+
+export type CancelPlaylistHqAudioDownloadMutationVariables = Exact<{
+  batchId: Scalars['Base64ID']['input'];
+}>;
+
+
+export type CancelPlaylistHqAudioDownloadMutation = { __typename?: 'Mutation', cancelPlaylistHqAudioDownload: boolean };
 
 export type ActiveFiltersQueryVariables = Exact<{ [key: string]: never; }>;
 
@@ -1104,6 +1143,15 @@ export type UpdatePlaylistPositionsMutationVariables = Exact<{
 
 
 export type UpdatePlaylistPositionsMutation = { __typename?: 'Mutation', updatePlaylistTracksPositions: boolean };
+
+export type DiscoverSimilarTracksForPlaylistQueryVariables = Exact<{
+  playlistId: Scalars['Base64ID']['input'];
+  userId: Scalars['String']['input'];
+  limit?: InputMaybe<Scalars['Int']['input']>;
+}>;
+
+
+export type DiscoverSimilarTracksForPlaylistQuery = { __typename?: 'Query', discoverSimilarTracksForPlaylist: Array<{ __typename?: 'DiscoveredTrack', sourceArtist: string, artist: string, title: string, matchScore: number, externalLink?: string | null, videoId?: string | null, confidence: string }> };
 
 export type UpdatePlaylistSortingMutationVariables = Exact<{
   playlistId: Scalars['Base64ID']['input'];

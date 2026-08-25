@@ -16,7 +16,6 @@ export class OAuthTokenRepository implements IOAuthTokenRepository {
   constructor(@Inject(PRISMA_SERVICE) private readonly prisma: PrismaService) {}
 
   async getToken(userId: string, provider: ThirdPartyProvider): Promise<OAuthTokenRecord | null> {
-    console.log('getToken', userId, provider);
     const row = await this.prisma.thirdPartyOAuthToken.findUnique({
       where: {
         createdById_provider: { createdById: userId, provider },

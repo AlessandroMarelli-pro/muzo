@@ -41,10 +41,6 @@ export class MusicTrackRepository implements IMusicTrackRepository {
   }
 
   async getAllSubgenresBySubgenreId(_subgenreIds: SubgenreId[]): Promise<SubgenreId[]> {
-    console.log(
-      _subgenreIds,
-      _subgenreIds?.map((subgenreId) => extractModelId(subgenreId).dbId),
-    );
     const subgenres = await this.prisma.subgenre.findMany({
       where: {
         id: {
@@ -55,8 +51,6 @@ export class MusicTrackRepository implements IMusicTrackRepository {
     const hasTrance = subgenres.some((sg) => sg.name.toLocaleLowerCase().includes('trance'));
     const hasHouse = subgenres.some((sg) => sg.name.toLocaleLowerCase().includes('house'));
     const hasBalearic = subgenres.some((sg) => sg.name.toLocaleLowerCase().includes('balearic'));
-    console.log(subgenres);
-    console.log(hasTrance);
     let subgenreIds: SubgenreId[] = [];
     if (hasTrance) {
       const allTranceSubgenres = await this.prisma.subgenre.findMany({
@@ -231,11 +225,6 @@ export class MusicTrackRepository implements IMusicTrackRepository {
     options: PaginationAndSortingOptions,
     withIncludes: boolean = true,
   ): Promise<MusicTrack[]> {
-    console.log(
-      'getManyByCriteria',
-      buildMusicTrackFilterWhereClause(criteria, subgenreSelectionMode),
-      getCurrentUserId(),
-    );
     return this.prisma.musicTrack
       .findMany({
         where: {

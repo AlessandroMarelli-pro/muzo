@@ -44,6 +44,16 @@ input CursorPaginationArgs {
 """Date custom scalar type"""
 scalar Date
 
+type DiscoveredTrack {
+  artist: String!
+  confidence: String!
+  externalLink: String
+  matchScore: Float!
+  sourceArtist: String!
+  title: String!
+  videoId: String
+}
+
 input FilterCriteriaInput {
   acousticness: RangeInput
   arousalMood: [String!]
@@ -259,6 +269,7 @@ type PlaylistsResult {
 }
 
 type Query {
+  discoverSimilarTracksForPlaylist(limit: Int, playlistId: Base64ID!, userId: String!): [DiscoveredTrack!]!
   getSpotifyAuthUrl: SpotifyAuthUrl!
   getTidalAuthUrl: TidalAuthUrl!
   getYouTubeAuthUrl: YouTubeAuthUrl!

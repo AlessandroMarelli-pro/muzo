@@ -20,6 +20,7 @@ import {
   AudioWaveform,
   ChevronDown,
   Clock,
+  Compass,
   Disc3,
   HeartPlus,
   Sparkles,
@@ -39,6 +40,7 @@ import { AddTrackDrawer } from './add-track-drawer';
 import { PlaylistDetailActions } from './playlist-detail-actions';
 import { PlaylistDetailChart } from './playlist-detail-chart';
 import { PlaylistDetailThirdParties } from './playlist-detail-third-parties';
+import { PlaylistDiscovery } from './playlist-discovery';
 import { PlaylistHqBatchDownloadDialog } from './playlist-hq-batch-download-dialog';
 import { PlaylistTracksList } from './playlist-tracks-list';
 import { TrackRecommendations } from './track-recommendations';
@@ -305,6 +307,10 @@ export function PlaylistDetail({ id, onBack }: PlaylistDetailProps) {
             <Sparkles className="h-4 w-4" />
             Recommendations
           </TabsTrigger>
+          <TabsTrigger value="discovery">
+            <Compass className="h-4 w-4" />
+            Discovery
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="tracks" className="space-y-4">
@@ -322,6 +328,10 @@ export function PlaylistDetail({ id, onBack }: PlaylistDetailProps) {
             onTrackAdded={() => refetch()}
             recommendations={recommendations}
           />
+        </TabsContent>
+
+        <TabsContent value="discovery" className="space-y-4">
+          <PlaylistDiscovery playlistId={playlist?.id || ''} />
         </TabsContent>
       </Tabs>
 

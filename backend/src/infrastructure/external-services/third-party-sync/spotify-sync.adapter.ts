@@ -228,7 +228,6 @@ export class SpotifySyncAdapter implements ISpotifySyncProvider {
     try {
       const query = `artist:"${artist}" track:"${title}"`;
       const tracks = await this.searchTracks(query, userId, 10);
-      console.log('tracks', tracks, query);
       if (tracks.length === 0) {
         const fuzzyTracks = await this.searchTracks(`${artist} ${title}`, userId, 10);
         if (fuzzyTracks.length === 0) {

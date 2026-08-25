@@ -269,7 +269,6 @@ export class ScanSessionRepository implements IScanSessionRepository {
    * Get all active scan sessions (SCANNING or ANALYZING)
    */
   async getActiveSessions() {
-    console.log('getActiveSessions', getCurrentUserId());
     return this.prisma.scanSession
       .findMany({
         where: {

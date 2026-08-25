@@ -233,6 +233,20 @@ const UPDATE_PLAYLIST_POSITIONS = gql`
   }
 `;
 
+const DISCOVER_SIMILAR_TRACKS_FOR_PLAYLIST = gql`
+  query DiscoverSimilarTracksForPlaylist($playlistId: Base64ID!, $userId: String!, $limit: Int) {
+    discoverSimilarTracksForPlaylist(playlistId: $playlistId, userId: $userId, limit: $limit) {
+      sourceArtist
+      artist
+      title
+      matchScore
+      externalLink
+      videoId
+      confidence
+    }
+  }
+`;
+
 const UPDATE_PLAYLIST_SORTING = gql`
   mutation UpdatePlaylistSorting($playlistId: Base64ID!, $input: UpdatePlaylistSortingInput!) {
     updatePlaylistSorting(playlistId: $playlistId, input: $input) {
@@ -485,6 +499,27 @@ export const fetchPlaylistRecommendations = async (
     excludeTrackIds,
   });
   return data.node.recommendations;
+};
+
+export interface DiscoveredTrack {
+  sourceArtist: string;
+  artist: string;
+  title: string;
+  matchScore: number;
+  externalLink?: string | null;
+  videoId?: string | null;
+  confidence: string;
+}
+
+export const fetchDiscoverSimilarTracksForPlaylist = async (
+  playlistId: string,
+  userId: string = 'default',
+  limit = 30,
+): Promise<DiscoveredTrack[]> => {
+  const data = await graffleClient.request<{
+    discoverSimilarTracksForPlaylist: DiscoveredTrack[];
+  }>(DISCOVER_SIMILAR_TRACKS_FOR_PLAYLIST, { playlistId, userId, limit });
+  return data.discoverSimilarTracksForPlaylist;
 };
 
 interface UpdatePlaylistPositionInput {
@@ -892,6 +927,25 @@ export function usePlaylistRecommendations(
     isLoading,
     error,
     refetch,
+  };
+}
+
+export function useDiscoverSimilarTracksForPlaylist(
+  playlistId: string,
+  userId: string = 'default',
+  limit = 30,
+) {
+  const { data, isLoading, isFetching, error, refetch } = useQuery({
+    queryKey: ['discoverSimilarTracksForPlaylist', playlistId, userId, limit],
+    queryFn: () => fetchDiscoverSimilarTracksForPlaylist(playlistId, userId, limit),
+    enabled: false,
+    staleTime: 5 * 60 * 1000,
+  });
+  return {
+    tracks: data || [],
+    isLoading: isLoading || isFetching,
+    error: error?.message,
+    discover: refetch,
   };
 }
 

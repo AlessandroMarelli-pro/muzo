@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { CosineInfrastructureModule } from 'src/infrastructure/external-services/cosine/cosine.module';
 import { ThirdPartySyncInfrastructureModule } from 'src/infrastructure/external-services/third-party-sync/third-party-sync.module';
 import { HqAudioInfrastructureModule } from 'src/infrastructure/hq-audio/hq-audio.module';
 import { SockseekAcquirer } from 'src/infrastructure/hq-audio/sockseek.acquirer';
@@ -17,6 +18,7 @@ import { HQ_AUDIO_BATCH_PROGRESS_PUBLISHER } from '../ports/infrastructure/IHqAu
 import { HQ_AUDIO_BATCH_PROGRESS_SUBSCRIBER } from '../ports/infrastructure/IHqAudioBatchProgressSubscriber';
 import { ID3_READER } from '../ports/infrastructure/IId3Reader';
 import { IMAGE_FILE_READER } from '../ports/infrastructure/IImageFileReader';
+import { COSINE_PROVIDER } from '../ports/infrastructure/ICosineProvider';
 import { LIBRARY_SCAN_SCHEDULER_PRODUCER } from '../ports/infrastructure/ILibraryScanSchedulerProducer';
 import { LOGGER } from '../ports/infrastructure/ILogger';
 import { LOGGER_FACTORY } from '../ports/infrastructure/ILoggerFactory';
@@ -61,6 +63,7 @@ import {
   DeleteLibraryUseCase,
   DeletePlaylistUseCase,
   DeleteSavedFilterUseCase,
+  DiscoverSimilarTracksForPlaylistUseCase,
   DownloadPlaylistToFolderUseCase,
   EnhanceHqAudioUseCase,
   ExportPlaylistToM3UUseCase,
@@ -382,6 +385,11 @@ const useCasesProviders = [
     SPOTIFY_SYNC_PROVIDER,
     ID3_READER,
   ]),
+  createUseCaseProvider(DiscoverSimilarTracksForPlaylistUseCase, [
+    GetPlaylistUseCase,
+    COSINE_PROVIDER,
+    MUSIC_TRACK_REPOSITORY,
+  ]),
   createUseCaseProvider(GetYouTubeAuthUrlUseCase, [YOUTUBE_SYNC_PROVIDER]),
   createUseCaseProvider(ExchangeYouTubeCodeUseCase, [YOUTUBE_SYNC_PROVIDER]),
   createUseCaseProvider(GetTidalAuthUrlUseCase, [TIDAL_SYNC_PROVIDER]),
@@ -391,7 +399,12 @@ const useCasesProviders = [
 ];
 
 @Module({
-  imports: [ConfigModule, ThirdPartySyncInfrastructureModule, HqAudioInfrastructureModule],
+  imports: [
+    ConfigModule,
+    ThirdPartySyncInfrastructureModule,
+    HqAudioInfrastructureModule,
+    CosineInfrastructureModule,
+  ],
   providers: useCasesProviders,
   exports: useCasesProviders.map((provider) => provider.provide),
 })

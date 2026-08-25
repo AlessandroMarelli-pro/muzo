@@ -1,3 +1,4 @@
+export * from './discovery';
 export * from './image';
 export * from './job-scheduler';
 export * from './metrics';
