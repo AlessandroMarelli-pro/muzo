@@ -15,25 +15,46 @@ function calculateMean(values?: (number | undefined)[]): number {
 }
 
 const MFCC_DIM = 13;
+const EMBEDDING_DIM = 1280;
+
+function calculateVectorAggregate(
+  tracks: MusicTrack[],
+  getVec: (track: MusicTrack) => number[] | undefined,
+  dim: number,
+): number[] {
+  const vecs = tracks
+    .map(getVec)
+    .filter((v): v is number[] => Array.isArray(v) && v.length >= dim);
+  if (vecs.length === 0) {
+    return [];
+  }
+  const out: number[] = [];
+  for (let i = 0; i < dim; i += 1) {
+    out.push(calculateMean(vecs.map((v) => v[i])));
+  }
+  return out;
+}
 
 function calculateMfccAggregate(
   tracks: MusicTrack[],
   getVec: (track: MusicTrack) => number[] | undefined,
 ): number[] {
-  const vecs = tracks
-    .map(getVec)
-    .filter((v): v is number[] => Array.isArray(v) && v.length >= MFCC_DIM);
-  if (vecs.length === 0) {
-    return [];
-  }
-  const out: number[] = [];
-  for (let i = 0; i < MFCC_DIM; i += 1) {
-    out.push(calculateMean(vecs.map((v) => v[i])));
-  }
-  return out;
+  return calculateVectorAggregate(tracks, getVec, MFCC_DIM);
+}
+
+/** Mean discogs-effnet embedding across seed tracks; undefined when none have one
+ * (single-seed recommendations effectively use that track's own embedding). */
+function calculateEmbeddingAggregate(tracks: MusicTrack[]): number[] | undefined {
+  const vector = calculateVectorAggregate(
+    tracks,
+    (track) => track.features?.spectralFeatures?.embedding,
+    EMBEDDING_DIM,
+  );
+  return vector.length > 0 ? vector : undefined;
 }
 function calculateSpectralFeaturesMean(tracks: MusicTrack[]) {
   const _numberOfTracks = tracks.length;
+  const embedding = calculateEmbeddingAggregate(tracks);
   return {
     spectralCentroidMean: {
       mean: calculateMean(
@@ -198,6 +219,7 @@ function calculateSpectralFeaturesMean(tracks: MusicTrack[]) {
     },
     mfccMean: calculateMfccAggregate(tracks, (track) => track.features?.spectralFeatures?.mfcc),
     mfccStd: calculateMfccAggregate(tracks, (track) => track.features?.spectralFeatures?.mfccStd),
+    ...(embedding && { embedding }),
   };
 }
 export function calculateFeatures(tracks: MusicTrack[]): Maybe<AudioFeatures> {

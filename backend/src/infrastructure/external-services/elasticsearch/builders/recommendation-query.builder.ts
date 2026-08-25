@@ -169,7 +169,11 @@ export const buildElasticsearchRecommendationQuery = (
     });
   }
 
-  if (wAi > 0 && playlistFeatures.atmosphereKeywords && playlistFeatures.atmosphereKeywords.length > 0) {
+  if (
+    wAi > 0 &&
+    playlistFeatures.atmosphereKeywords &&
+    playlistFeatures.atmosphereKeywords.length > 0
+  ) {
     for (const keyword of playlistFeatures.atmosphereKeywords) {
       functions.push({
         filter: { term: { atmosphere_tags: keyword } },
@@ -202,7 +206,9 @@ export const buildElasticsearchRecommendationQuery = (
   if (wAudioFeat > 0 && playlistFeatures.danceabilityFeeling) {
     functions.push({
       filter: {
-        term: { 'musical_audio_features.danceability_feeling': playlistFeatures.danceabilityFeeling },
+        term: {
+          'musical_audio_features.danceability_feeling': playlistFeatures.danceabilityFeeling,
+        },
       },
       weight: wAudioFeat * 12.0,
     });
@@ -223,7 +229,11 @@ export const buildElasticsearchRecommendationQuery = (
     weight: Math.max(wAudio, 0.01) * 14.0,
   });
 
-  if (wAudioFeat > 0 && playlistFeatures.valence != null && Number.isFinite(playlistFeatures.valence)) {
+  if (
+    wAudioFeat > 0 &&
+    playlistFeatures.valence != null &&
+    Number.isFinite(playlistFeatures.valence)
+  ) {
     functions.push({
       gauss: {
         'musical_audio_features.valence': {
@@ -236,7 +246,11 @@ export const buildElasticsearchRecommendationQuery = (
       weight: wAudioFeat * 10.0,
     });
   }
-  if (wAudioFeat > 0 && playlistFeatures.arousal != null && Number.isFinite(playlistFeatures.arousal)) {
+  if (
+    wAudioFeat > 0 &&
+    playlistFeatures.arousal != null &&
+    Number.isFinite(playlistFeatures.arousal)
+  ) {
     functions.push({
       gauss: {
         'musical_audio_features.arousal': {
@@ -266,7 +280,11 @@ export const buildElasticsearchRecommendationQuery = (
       weight: wAudioFeat * 10.0,
     });
   }
-  if (wAudioFeat > 0 && playlistFeatures.energy != null && Number.isFinite(playlistFeatures.energy)) {
+  if (
+    wAudioFeat > 0 &&
+    playlistFeatures.energy != null &&
+    Number.isFinite(playlistFeatures.energy)
+  ) {
     functions.push({
       gauss: {
         'musical_audio_features.energy': {
@@ -291,7 +309,11 @@ export const buildElasticsearchRecommendationQuery = (
     }
   }
 
-  if (wAudio > 0 && playlistFeatures.onsetDensity != null && Number.isFinite(playlistFeatures.onsetDensity)) {
+  if (
+    wAudio > 0 &&
+    playlistFeatures.onsetDensity != null &&
+    Number.isFinite(playlistFeatures.onsetDensity)
+  ) {
     functions.push({
       gauss: {
         'spectral_features.onset_density': {
@@ -304,7 +326,11 @@ export const buildElasticsearchRecommendationQuery = (
       weight: wAudio * 6.0,
     });
   }
-  if (wAudio > 0 && playlistFeatures.dynamicRange != null && Number.isFinite(playlistFeatures.dynamicRange)) {
+  if (
+    wAudio > 0 &&
+    playlistFeatures.dynamicRange != null &&
+    Number.isFinite(playlistFeatures.dynamicRange)
+  ) {
     functions.push({
       gauss: {
         'spectral_features.dynamic_range': {
@@ -317,7 +343,11 @@ export const buildElasticsearchRecommendationQuery = (
       weight: wAudio * 5.0,
     });
   }
-  if (wAudio > 0 && playlistFeatures.bassPresence != null && Number.isFinite(playlistFeatures.bassPresence)) {
+  if (
+    wAudio > 0 &&
+    playlistFeatures.bassPresence != null &&
+    Number.isFinite(playlistFeatures.bassPresence)
+  ) {
     functions.push({
       gauss: {
         'spectral_features.bass_presence': {
@@ -435,7 +465,6 @@ export const buildElasticsearchRecommendationQuery = (
     wAudio > 0 &&
     isValidEmbeddingVector(embeddingVec) &&
     process.env.ELASTICSEARCH_EMBEDDING_VECTOR_SIMILARITY !== 'false';
-
   const functionScoreQuery: Record<string, unknown> = {
     function_score: {
       query: { bool: baseBool },
@@ -461,6 +490,13 @@ export const buildElasticsearchRecommendationQuery = (
     });
   }
   if (useEmbeddingScript) {
+    // Weighted higher than the MFCC script (15.0): a 1280-dim learned discogs-effnet
+    // embedding captures genre/style similarity far more accurately than 13-dim MFCC,
+    // so it dominates the acoustic-similarity portion of the score. Tunable via
+    // ELASTICSEARCH_EMBEDDING_VECTOR_WEIGHT without a redeploy.
+    const embeddingWeightMultiplier = parseFloat(
+      process.env.ELASTICSEARCH_EMBEDDING_VECTOR_WEIGHT || '35.0',
+    );
     outerShould.push({
       script_score: {
         query: { match_all: {} },
@@ -468,7 +504,7 @@ export const buildElasticsearchRecommendationQuery = (
           source: embeddingSimilarityScriptSource,
           params: { queryVector: embeddingVec },
         },
-        boost: wAudio * 15.0,
+        boost: wAudio * embeddingWeightMultiplier,
       },
     });
   }

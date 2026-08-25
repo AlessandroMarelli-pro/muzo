@@ -16,15 +16,31 @@ function sliceVector(values: number[] | undefined, dim: number): number[] {
   return out;
 }
 
-function sliceMfccVector(values: number[] | undefined): number[] {
+/** A zero-magnitude vector makes Elasticsearch's cosine similarity undefined --
+ * indexing one throws and fails the whole bulk request, not just that document. */
+function isZeroVector(vector: number[]): boolean {
+  return vector.every((v) => v === 0);
+}
+
+/** mfcc_std has index:false in the mapping, so it's exempt from the cosine-similarity
+ * zero-vector constraint and can safely keep its zero-fill fallback for missing data. */
+function sliceMfccStdVector(values: number[] | undefined): number[] {
   return sliceVector(values, MFCC_DIM);
+}
+
+/** mfcc_mean is indexed with cosine similarity -- omit rather than zero-fill so a
+ * track with missing/degenerate MFCC data doesn't fail indexing for the whole batch. */
+function sliceMfccMeanVector(values: number[] | undefined): number[] | undefined {
+  const vector = sliceVector(values, MFCC_DIM);
+  return isZeroVector(vector) ? undefined : vector;
 }
 
 function sliceEmbeddingVector(values: number[] | undefined): number[] | undefined {
   if (!values || values.length === 0) {
     return undefined;
   }
-  return sliceVector(values, EMBEDDING_DIM);
+  const vector = sliceVector(values, EMBEDDING_DIM);
+  return isZeroVector(vector) ? undefined : vector;
 }
 
 function buildEnergyByBand(
@@ -59,6 +75,7 @@ export const toElasticsearchTrackDocument = (dto: MusicTrack): ElasticsearchTrac
   const date = dto.metadata?.date;
   const energyBands = dto.features?.musicalFeatures?.calculationFeatures?.energyByBand;
   const embedding = sliceEmbeddingVector(dto.features?.spectralFeatures?.embedding);
+  const mfccMean = sliceMfccMeanVector(dto.features?.spectralFeatures?.mfcc);
   const doc: ElasticsearchTrackDocument = {
     trackId: dto.id,
     duration: dto.technicalInfo?.duration ?? 0,
@@ -95,8 +112,8 @@ export const toElasticsearchTrackDocument = (dto: MusicTrack): ElasticsearchTrac
       spectral_flatness: dto.features?.spectralFeatures?.spectralFlatness,
       zero_crossing_rate: dto.features?.spectralFeatures?.zeroCrossingRate,
       spectral_contrast: dto.features?.spectralFeatures?.spectralContrast,
-      mfcc_mean: sliceMfccVector(dto.features?.spectralFeatures?.mfcc),
-      mfcc_std: sliceMfccVector(dto.features?.spectralFeatures?.mfccStd),
+      ...(mfccMean && { mfcc_mean: mfccMean }),
+      mfcc_std: sliceMfccStdVector(dto.features?.spectralFeatures?.mfccStd),
       ...(embedding && { discogs_embedding: embedding }),
       onset_density: dto.features?.spectralFeatures?.onsetDensity,
       dynamic_range: dto.features?.spectralFeatures?.dynamicRange,

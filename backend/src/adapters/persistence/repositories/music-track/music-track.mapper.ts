@@ -89,18 +89,23 @@ export const toAudioTechnical: ToAudioTechnical = (row) => {
   };
 };
 
+const EMPTY_AGGREGATION_STATISTICS: AggregationStatistics = {
+  mean: 0,
+  std: 0,
+  median: 0,
+  min: 0,
+  max: 0,
+  p25: 0,
+  p75: 0,
+};
+
 export const toAggregationStatistics = (row: string): AggregationStatistics => {
-  if (!row)
-    return {
-      mean: 0,
-      std: 0,
-      median: 0,
-      min: 0,
-      max: 0,
-      p25: 0,
-      p75: 0,
-    };
-  return JSON.parse(row) as AggregationStatistics;
+  if (!row) return EMPTY_AGGREGATION_STATISTICS;
+  try {
+    return JSON.parse(row) as AggregationStatistics;
+  } catch {
+    return EMPTY_AGGREGATION_STATISTICS;
+  }
 };
 
 const parseMfccStored = (
@@ -139,6 +144,15 @@ const parseEmbeddingStored = (raw: string): number[] => {
   }
 };
 
+const safeJsonParse = <T>(raw: string | null | undefined, fallback: T): T => {
+  if (!raw) return fallback;
+  try {
+    return JSON.parse(raw) as T;
+  } catch {
+    return fallback;
+  }
+};
+
 export const toAudioFileFeatures: ToAudioFileFeatures = (row) => {
   if (!row) return undefined;
   const { coefficients, std } = parseMfccStored(row.mfcc);
@@ -169,10 +183,21 @@ export const toAudioFileFeatures: ToAudioFileFeatures = (row) => {
       dynamicRange: row.dynamicRange,
     },
     melodicFeatures: {
-      chroma: JSON.parse(row.chroma) as MelodicFeatures & {
-        dominant_pitch: number;
-      },
-      tonnetz: JSON.parse(row.tonnetz) as MelodicFeatures,
+      chroma: safeJsonParse<MelodicFeatures & { dominant_pitch: number }>(row.chroma, {
+        mean: [],
+        std: [],
+        max: [],
+        overallMean: 0,
+        overallStd: 0,
+        dominant_pitch: 0,
+      }),
+      tonnetz: safeJsonParse<MelodicFeatures>(row.tonnetz, {
+        mean: [],
+        std: [],
+        max: [],
+        overallMean: 0,
+        overallStd: 0,
+      }),
     },
     fingerprint: {
       audioHash: row.audioHash,
@@ -196,7 +221,7 @@ export const toAudioFileFeatures: ToAudioFileFeatures = (row) => {
         beatStrength: row.beatStrength,
         energyComment: row.energyComment,
         energyKeywords: row.energyKeywords.split(','),
-        energyByBand: JSON.parse(row.energyByBand),
+        energyByBand: safeJsonParse<number[]>(row.energyByBand, []),
       },
       camelotKey: row.camelotKey,
       energy: row.energyFactor,
@@ -233,7 +258,7 @@ export const toAudioFileAIMetadata: ToAudioFileAIMetadata = (row) => {
   if (!row) return undefined;
   return {
     description: row.aiDescription ?? undefined,
-    tags: JSON.parse(row.aiTags ?? '[]'),
+    tags: safeJsonParse<string[]>(row.aiTags, []),
     vocalsDesc: row.vocalsDesc ?? undefined,
     atmosphereTags: row.trackAiAtmosphereTags?.map((tag) => tag.aiAtmosphereTag.name) ?? [],
     contextBackground: row.contextBackground ?? undefined,
