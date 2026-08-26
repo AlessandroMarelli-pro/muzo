@@ -141,6 +141,17 @@ export const buildElasticsearchRecommendationQuery = (
   const wAi = weights.aiMetadataSimilarity;
   const wAudioFeat = weights.audioFeatures;
 
+  /**
+   * Temporary scoping: only genres/subgenres, the discogs-effnet embedding, and tempo/BPM
+   * are active for now. Disables camelot key matching, MFCC similarity, mood/AI-metadata term
+   * filters, and every spectral/energy decay clause (centroid, rolloff, spread, bandwidth,
+   * flatness, zero-crossing, contrast, onset density, dynamic range, bass presence, energy
+   * bands/ratios, chroma pitch) regardless of the audioSimilarity/aiMetadataSimilarity/
+   * audioFeatures weights passed in. Remove this flag (and the `!onlyGenreEmbeddingTempo &&`
+   * guards it gates) to restore full multi-signal scoring.
+   */
+  const onlyGenreEmbeddingTempo = true;
+
   const functions: unknown[] = [];
 
   if (wGenre > 0 && playlistFeatures.genres && playlistFeatures.genres.length > 0) {
@@ -162,7 +173,7 @@ export const buildElasticsearchRecommendationQuery = (
   }
 
   const camelotNeighbors = getCamelotNeighbors(playlistFeatures.camelotKey);
-  if (wAudio > 0 && camelotNeighbors.length > 0) {
+  if (!onlyGenreEmbeddingTempo && wAudio > 0 && camelotNeighbors.length > 0) {
     functions.push({
       filter: { terms: { 'musical_audio_features.camelot_key': camelotNeighbors } },
       weight: wAudio * 22.0,
@@ -170,6 +181,7 @@ export const buildElasticsearchRecommendationQuery = (
   }
 
   if (
+    !onlyGenreEmbeddingTempo &&
     wAi > 0 &&
     playlistFeatures.atmosphereKeywords &&
     playlistFeatures.atmosphereKeywords.length > 0
@@ -182,7 +194,12 @@ export const buildElasticsearchRecommendationQuery = (
     }
   }
 
-  if (wAi > 0 && playlistFeatures.aiTags && playlistFeatures.aiTags.length > 0) {
+  if (
+    !onlyGenreEmbeddingTempo &&
+    wAi > 0 &&
+    playlistFeatures.aiTags &&
+    playlistFeatures.aiTags.length > 0
+  ) {
     for (const tag of playlistFeatures.aiTags) {
       functions.push({
         filter: { term: { tags: tag } },
@@ -191,19 +208,19 @@ export const buildElasticsearchRecommendationQuery = (
     }
   }
 
-  if (wAudioFeat > 0 && playlistFeatures.valenceMood) {
+  if (!onlyGenreEmbeddingTempo && wAudioFeat > 0 && playlistFeatures.valenceMood) {
     functions.push({
       filter: { term: { 'musical_audio_features.valence_mood': playlistFeatures.valenceMood } },
       weight: wAudioFeat * 12.0,
     });
   }
-  if (wAudioFeat > 0 && playlistFeatures.arousalMood) {
+  if (!onlyGenreEmbeddingTempo && wAudioFeat > 0 && playlistFeatures.arousalMood) {
     functions.push({
       filter: { term: { 'musical_audio_features.arousal_mood': playlistFeatures.arousalMood } },
       weight: wAudioFeat * 12.0,
     });
   }
-  if (wAudioFeat > 0 && playlistFeatures.danceabilityFeeling) {
+  if (!onlyGenreEmbeddingTempo && wAudioFeat > 0 && playlistFeatures.danceabilityFeeling) {
     functions.push({
       filter: {
         term: {
@@ -230,6 +247,7 @@ export const buildElasticsearchRecommendationQuery = (
   });
 
   if (
+    !onlyGenreEmbeddingTempo &&
     wAudioFeat > 0 &&
     playlistFeatures.valence != null &&
     Number.isFinite(playlistFeatures.valence)
@@ -247,6 +265,7 @@ export const buildElasticsearchRecommendationQuery = (
     });
   }
   if (
+    !onlyGenreEmbeddingTempo &&
     wAudioFeat > 0 &&
     playlistFeatures.arousal != null &&
     Number.isFinite(playlistFeatures.arousal)
@@ -264,6 +283,7 @@ export const buildElasticsearchRecommendationQuery = (
     });
   }
   if (
+    !onlyGenreEmbeddingTempo &&
     wAudioFeat > 0 &&
     playlistFeatures.danceability != null &&
     Number.isFinite(playlistFeatures.danceability)
@@ -281,6 +301,7 @@ export const buildElasticsearchRecommendationQuery = (
     });
   }
   if (
+    !onlyGenreEmbeddingTempo &&
     wAudioFeat > 0 &&
     playlistFeatures.energy != null &&
     Number.isFinite(playlistFeatures.energy)
@@ -299,7 +320,7 @@ export const buildElasticsearchRecommendationQuery = (
   }
 
   const spectralFeatures = playlistFeatures.spectralFeatures;
-  if (wAudio > 0 && spectralFeatures) {
+  if (!onlyGenreEmbeddingTempo && wAudio > 0 && spectralFeatures) {
     for (const { key, esSegment, options } of SPECTRAL_AGG_FEATURES) {
       const stats = spectralFeatures[key];
       if (!stats || typeof stats !== 'object' || Array.isArray(stats)) {
@@ -310,6 +331,7 @@ export const buildElasticsearchRecommendationQuery = (
   }
 
   if (
+    !onlyGenreEmbeddingTempo &&
     wAudio > 0 &&
     playlistFeatures.onsetDensity != null &&
     Number.isFinite(playlistFeatures.onsetDensity)
@@ -327,6 +349,7 @@ export const buildElasticsearchRecommendationQuery = (
     });
   }
   if (
+    !onlyGenreEmbeddingTempo &&
     wAudio > 0 &&
     playlistFeatures.dynamicRange != null &&
     Number.isFinite(playlistFeatures.dynamicRange)
@@ -344,6 +367,7 @@ export const buildElasticsearchRecommendationQuery = (
     });
   }
   if (
+    !onlyGenreEmbeddingTempo &&
     wAudio > 0 &&
     playlistFeatures.bassPresence != null &&
     Number.isFinite(playlistFeatures.bassPresence)
@@ -362,7 +386,7 @@ export const buildElasticsearchRecommendationQuery = (
   }
 
   const bands = playlistFeatures.energyByBand;
-  if (wAudio > 0 && bands && bands.length === 3) {
+  if (!onlyGenreEmbeddingTempo && wAudio > 0 && bands && bands.length === 3) {
     const labels = ['bass', 'mid', 'high'] as const;
     for (let i = 0; i < 3; i += 1) {
       const v = bands[i];
@@ -383,7 +407,7 @@ export const buildElasticsearchRecommendationQuery = (
     }
   }
   const ratios = playlistFeatures.energyRatios;
-  if (wAudio > 0 && ratios && ratios.length === 3) {
+  if (!onlyGenreEmbeddingTempo && wAudio > 0 && ratios && ratios.length === 3) {
     const rlabels = ['bass', 'mid', 'high'] as const;
     for (let i = 0; i < 3; i += 1) {
       const v = ratios[i];
@@ -405,6 +429,7 @@ export const buildElasticsearchRecommendationQuery = (
   }
 
   if (
+    !onlyGenreEmbeddingTempo &&
     wAudio > 0 &&
     playlistFeatures.chromaDominantPitch != null &&
     Number.isInteger(playlistFeatures.chromaDominantPitch)
@@ -441,6 +466,7 @@ export const buildElasticsearchRecommendationQuery = (
   return 1.0;
 }`;
   const useMfccScript =
+    !onlyGenreEmbeddingTempo &&
     wAudio > 0 &&
     isValidMfccVector(mfccVec) &&
     process.env.ELASTICSEARCH_MFCC_VECTOR_SIMILARITY !== 'false';
@@ -474,7 +500,7 @@ export const buildElasticsearchRecommendationQuery = (
       boost: 1,
     },
   };
-
+  console.log('useEmbeddingScript', useEmbeddingScript);
   const outerShould: unknown[] = [functionScoreQuery];
   if (useMfccScript) {
     // `boost` must live inside `script_score`; a sibling `boost` next to `script_score` is invalid JSON for bool.should.

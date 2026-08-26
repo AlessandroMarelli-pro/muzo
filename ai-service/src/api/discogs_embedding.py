@@ -82,6 +82,14 @@ class DiscogsEmbeddingResource(Resource):
 
             audio_file.save(temp_file_path)
 
+            # Essentia's audio reader can't parse M4A/AAC containers directly (same
+            # limitation the full analysis pipeline works around in simple_analysis.py).
+            converted_wav_path = None
+            analysis_path = temp_file_path
+            if temp_file_path.endswith(".m4a"):
+                converted_wav_path = self.audio_loader.convert_m4a_to_wav(temp_file_path)
+                analysis_path = converted_wav_path
+
             try:
                 logger.info(f"Extracting discogs embedding for: {audio_file.filename}")
 
@@ -89,7 +97,7 @@ class DiscogsEmbeddingResource(Resource):
                 skip_intro = float(request.form.get("skip_intro", 15.0))
 
                 y_harmonic, _, _, sr, *_ = self.audio_loader.smart_audio_sample_loading(
-                    temp_file_path, sample_duration, skip_intro
+                    analysis_path, sample_duration, skip_intro
                 )
                 embedding = self.embedding_extractor.extract_from_harmonic_sample(y_harmonic, sr)
 
@@ -102,6 +110,8 @@ class DiscogsEmbeddingResource(Resource):
             finally:
                 if os.path.exists(temp_file_path):
                     os.unlink(temp_file_path)
+                if converted_wav_path and os.path.exists(converted_wav_path):
+                    os.unlink(converted_wav_path)
 
         except Exception as e:
             logger.error(f"Discogs embedding extraction failed: {e}")
