@@ -6,6 +6,8 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 
+import { API_BASE_URL } from '@/lib/api-config';
+
 export interface ScanProgressEvent {
   type:
     | 'state'
@@ -84,9 +86,7 @@ class SSEService {
 
     try {
       console.log('connecting to SSE', sessionId);
-      // Use the same base URL as rest-client
-      const baseUrl = 'http://localhost:3000';
-      const eventSource = new EventSource(`${baseUrl}/scan-progress/${sessionId}`, {
+      const eventSource = new EventSource(`${API_BASE_URL}/scan-progress/${sessionId}`, {
         withCredentials: true,
       });
 

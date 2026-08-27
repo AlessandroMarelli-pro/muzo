@@ -15,11 +15,11 @@ Thumbs.db
 .git
 .gitignore
 README.md
-.eslintrc.js
-.prettierrc
-jest.config.js
-vitest.config.ts
-tsconfig.json
 *.md
 tests
 .cursor
+*.db
+*.db-shm
+*.db-wal
+!prisma/migrations
+prisma/generated

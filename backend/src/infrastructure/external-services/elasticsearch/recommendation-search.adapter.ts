@@ -27,6 +27,7 @@ export class RecommendationSearchAdapter implements IRecommendationSearchPort {
       features[0],
       criteria,
     ) as unknown as SearchRequest['body'];
+    console.log(query);
     const response = await this.elasticsearchClient.search({
       index: 'music_tracks',
       body: query,

@@ -1,5 +1,6 @@
 import { Inject } from '@nestjs/common';
 import * as fs from 'fs';
+import * as os from 'os';
 import * as path from 'path';
 
 import { PlaylistId } from 'src/kernel/ids';
@@ -13,7 +14,8 @@ import type { WavMetadata } from 'src/application/ports/infrastructure/IWavConve
 import { IPlaylistRepository } from '../../ports/repositories/IPlaylistRepository';
 import { IPlaylistSortingRepository } from '../../ports/repositories/IPlaylistSortingRepository';
 
-const EXPORT_ROOT_PATH = '/Users/alessandro/Dropbox/playlists-exports';
+const EXPORT_ROOT_PATH =
+  process.env.PLAYLIST_EXPORT_DIR || path.join(os.homedir(), 'Music', 'muzo-exports');
 
 function sanitizeFileName(input: string): string {
   // Normalize to NFC so visually-identical Unicode strings produce identical filenames.

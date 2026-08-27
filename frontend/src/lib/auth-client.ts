@@ -1,8 +1,6 @@
 import { createAuthClient } from 'better-auth/react';
 
-// Backend URL (Better Auth is mounted on the API server). Same as GraphQL client.
-const baseURL =
-  (import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:3000';
+import { API_BASE_URL as baseURL } from './api-config';
 
 /**
  * Better Auth client for the frontend.

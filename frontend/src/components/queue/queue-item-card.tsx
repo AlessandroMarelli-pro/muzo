@@ -9,6 +9,7 @@ import { QueueItem } from '@/services/queue-hooks';
 import { Link } from '@tanstack/react-router';
 import { Brain, GripVertical, Pause, Play, Trash2 } from 'lucide-react';
 import { memo } from 'react';
+import { apiUrl } from '@/lib/api-config';
 
 interface QueueItemCardProps {
   queueItem: QueueItem;
@@ -86,7 +87,7 @@ export const QueueItemCard = memo(
 
         {/* Album Art */}
         <img
-          src={`http://localhost:3000/api/images/serve?imagePath=${formattedImage}`}
+          src={apiUrl(`/api/images/serve?imagePath=${formattedImage}`)}
           alt="Album Art"
           width={32}
           height={32}

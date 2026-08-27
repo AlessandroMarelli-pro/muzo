@@ -18,6 +18,7 @@ import {
   DropdownMenuTrigger,
 } from '../ui/dropdown-menu';
 import { Skeleton } from '../ui/skeleton';
+import { apiUrl } from '@/lib/api-config';
 // Note: This app uses custom view state instead of routing
 // Navigation should be handled by parent component
 
@@ -195,7 +196,7 @@ export function PlaylistCard({ playlist, onViewDetails, onCardClick }: PlaylistC
               key={playlist.id + index}
             >
               <img
-                src={`http://localhost:3000/api/images/serve?imagePath=${image}`}
+                src={apiUrl(`/api/images/serve?imagePath=${image}`)}
                 alt="Album Art"
                 width={120}
                 height={120}
@@ -210,7 +211,7 @@ export function PlaylistCard({ playlist, onViewDetails, onCardClick }: PlaylistC
         ) : (
           <div className="w-full h-full object-cover rounded-md" key={playlist.id}>
             <img
-              src={`http://localhost:3000/api/images/serve?imagePath=${images[0]}`}
+              src={apiUrl(`/api/images/serve?imagePath=${images[0]}`)}
               alt="Album Art"
               width={240}
               height={240}

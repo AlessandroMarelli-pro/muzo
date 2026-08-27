@@ -27,6 +27,7 @@ import { useEffect, useState } from 'react';
 import { SelectPlaylistTrigger } from '../playlist/select-playlist-dialog';
 import { Skeleton } from '../ui/skeleton';
 import { AudioQualityBadge } from './audio-quality-badge';
+import { apiUrl } from '@/lib/api-config';
 
 interface DetailedTrackCardProps {
   track?: Track;
@@ -214,7 +215,7 @@ export function DetailedTrackCard({ track, refetch, isLoading }: DetailedTrackCa
           <div className="relative ">
             <div className="w-40 h-40 rounded-full overflow-hidden bg-muted flex items-center justify-center shadow-md hover:scale-105  duration-300">
               <img
-                src={`http://localhost:3000/api/images/serve?imagePath=${track.imagePath}`}
+                src={apiUrl(`/api/images/serve?imagePath=${track.imagePath}`)}
                 alt="Album Art"
                 className="w-full h-full object-cover  "
               />

@@ -14,6 +14,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { AudioQualityBadge } from '../track/audio-quality-badge';
 import { TrackMoreMenu } from '../track/track-more-menu';
 import { WaveformVisualizer } from './waveform-visualizer';
+import { apiUrl } from '@/lib/api-config';
 
 interface MusicTrack {
   id: string;
@@ -154,7 +155,7 @@ export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
       {currentTrack && (
         <div className="z-0 absolute top-0 left-0 w-full h-full   opacity-50 ">
           <img
-            src={`http://localhost:3000/api/images/serve?imagePath=${formattedImage}`}
+            src={apiUrl(`/api/images/serve?imagePath=${formattedImage}`)}
             alt="Album Art"
             className="w-full h-full object-cover rounded-md "
           />
@@ -166,7 +167,7 @@ export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
         <div className="z-10 flex  gap-2 sm:gap-3 min-w-0 order-1 sm:order-1 items-center justify-start">
           <div className="w-16 h-16 bg-muted rounded-md  flex items-center justify-center ">
             <img
-              src={`http://localhost:3000/api/images/serve?imagePath=${formattedImage}`}
+              src={apiUrl(`/api/images/serve?imagePath=${formattedImage}`)}
               alt="Album Art"
               className="w-16 h-16 object-cover   "
             />
@@ -273,7 +274,7 @@ export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
           muted
           ref={audioRef}
           src={
-            currentTrack ? `http://localhost:3000/api/audio/stream/${currentTrack.id}` : undefined
+            currentTrack ? apiUrl(`/api/audio/stream/${currentTrack.id}`) : undefined
           }
           style={{ display: 'none' }}
         />

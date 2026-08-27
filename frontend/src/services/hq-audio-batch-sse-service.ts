@@ -4,6 +4,8 @@
 
 import { useEffect, useState } from 'react';
 
+import { API_BASE_URL } from '@/lib/api-config';
+
 export type HqAudioTrackStatus =
   | 'queued'
   | 'downloading'
@@ -55,8 +57,7 @@ class HqAudioBatchSSEService {
     }
 
     try {
-      const baseUrl = 'http://localhost:3000';
-      const eventSource = new EventSource(`${baseUrl}/hq-audio-batch-progress/${batchId}`, {
+      const eventSource = new EventSource(`${API_BASE_URL}/hq-audio-batch-progress/${batchId}`, {
         withCredentials: true,
       });
 

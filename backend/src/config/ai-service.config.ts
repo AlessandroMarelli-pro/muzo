@@ -11,24 +11,10 @@ export default registerAs(
   (): AiServiceConfig => ({
     simpleUrls: process.env.AI_SIMPLE_URLS
       ? process.env.AI_SIMPLE_URLS.split(',')
-      : [
-          'http://localhost:4000',
-          'http://localhost:4001',
-          'http://localhost:4002',
-          'http://localhost:4003',
-          'http://localhost:4004',
-          'http://localhost:4005',
-        ],
+      : [process.env.AI_SERVICE_URL || 'http://localhost:4000'],
     hierarchicalUrls: process.env.AI_HIERARCHICAL_URLS
       ? process.env.AI_HIERARCHICAL_URLS.split(',')
-      : [
-          'http://localhost:4010',
-          'http://localhost:4011',
-          'http://localhost:4012',
-          'http://localhost:4013',
-          'http://localhost:4014',
-          'http://localhost:4015',
-        ],
+      : [process.env.AI_SERVICE_URL || 'http://localhost:4000'],
     timeout: parseInt(process.env.AI_SERVICE_TIMEOUT || '90000', 10), // Reduced to 45s
   }),
 );

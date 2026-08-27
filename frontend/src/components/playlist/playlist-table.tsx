@@ -34,6 +34,7 @@ import {
   useExportPlaylistToM3U,
 } from '@/services/playlist-hooks';
 import { format } from 'date-fns';
+import { apiUrl } from '@/lib/api-config';
 
 interface PlaylistTableProps {
   data: Playlist[];
@@ -201,7 +202,7 @@ export function PlaylistTable({
           return (
             <div className="flex items-center justify-center h-8 w-8">
               <img
-                src={`http://localhost:3000/api/images/serve?imagePath=${imagePath}`}
+                src={apiUrl(`/api/images/serve?imagePath=${imagePath}`)}
                 alt="Album Art"
                 className="h-8 w-8 rounded object-cover"
               />

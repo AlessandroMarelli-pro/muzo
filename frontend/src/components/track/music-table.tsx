@@ -26,6 +26,7 @@ import { format } from 'date-fns';
 import { DataTablePagination } from '../data-table/data-table-pagination';
 import { AudioQualityBadge } from './audio-quality-badge';
 import { TrackMoreMenu } from './track-more-menu';
+import { apiUrl } from '@/lib/api-config';
 
 interface MusicTableProps {
   data: Track[];
@@ -158,7 +159,7 @@ const columns = (
           return (
             <div className="flex items-center justify-center h-5 w-8">
               <img
-                src={`http://localhost:3000/api/images/serve?imagePath=${imagePath}`}
+                src={apiUrl(`/api/images/serve?imagePath=${imagePath}`)}
                 alt="Album Art"
                 className="h-8 w-8 rounded object-cover"
               />

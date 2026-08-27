@@ -3,6 +3,7 @@ import { CardContent } from '@/components/ui/card';
 import { AnimatePresence, motion } from 'motion/react';
 import { useState } from 'react';
 import { GenresBadge } from './genres-badge';
+import { apiUrl } from '@/lib/api-config';
 
 interface MusicCardContentProps {
   track: Track;
@@ -31,7 +32,7 @@ export function MusicCardContent({
       <div className="flex flex-col h-full space-around">
         <div className="z-0 absolute  w-full h-full opacity-50 ">
           <img
-            src={`http://localhost:3000/api/images/serve?imagePath=${formattedImage}`}
+            src={apiUrl(`/api/images/serve?imagePath=${formattedImage}`)}
             alt="Album Art"
             width={300}
             height={300}
@@ -66,7 +67,7 @@ export function MusicCardContent({
 
           <div className="flex items-center justify-center h-full w-full ">
             <img
-              src={`http://localhost:3000/api/images/serve?imagePath=${formattedImage}`}
+              src={apiUrl(`/api/images/serve?imagePath=${formattedImage}`)}
               alt="Album Art"
               width={200}
               height={200}

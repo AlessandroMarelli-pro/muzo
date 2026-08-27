@@ -1,9 +1,10 @@
 import { Playlist } from '@/__generated__/types';
 import { PlaylistList } from '@/components/playlist/playlist-list';
+import { apiUrl } from '@/lib/api-config';
 import { playlistsQueryOptions } from '@/services/playlist-hooks';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 
-const IMAGE_SERVE_BASE = 'http://localhost:3000/api/images/serve';
+const IMAGE_SERVE_BASE = apiUrl('/api/images/serve');
 
 function prefetchPlaylistImages(playlists: Playlist[]) {
   if (typeof window === 'undefined') return;

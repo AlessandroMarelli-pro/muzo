@@ -150,7 +150,7 @@ export const buildElasticsearchRecommendationQuery = (
    * audioFeatures weights passed in. Remove this flag (and the `!onlyGenreEmbeddingTempo &&`
    * guards it gates) to restore full multi-signal scoring.
    */
-  const onlyGenreEmbeddingTempo = true;
+  const onlyGenreEmbeddingTempo = false;
 
   const functions: unknown[] = [];
 
@@ -473,20 +473,17 @@ export const buildElasticsearchRecommendationQuery = (
 
   const embeddingVec = spectralFeatures?.embedding;
   /**
-   * Discogs-effnet embedding scoring requires `spectral_features.discogs_embedding` as a
-   * dense_vector in the index. Older documents (indexed before this field existed) won't have
-   * it; Painless must not throw or the entire search fails. Neutral score 1.0 matches the MFCC
-   * script's degrade behavior.
+   * Virtually every track now has a discogs_embedding (backfilled), so this skips the
+   * try/catch degrade-to-neutral used by mfccSimilarityScriptSource -- straight cosine
+   * similarity. The doc.size() check stays as a one-line guard: a doc still missing the
+   * field (never analyzed / not yet backfilled) would otherwise throw and fail scoring
+   * for the whole query, not just that document.
    */
-  const embeddingSimilarityScriptSource = `try {
-  def v = doc['spectral_features.discogs_embedding'];
-  if (v.size() != ${EMBEDDING_DIM}) {
-    return 1.0;
-  }
-  return cosineSimilarity(params.queryVector, 'spectral_features.discogs_embedding') + 1.0;
-} catch (Exception e) {
+  const embeddingSimilarityScriptSource = `def v = doc['spectral_features.discogs_embedding'];
+if (v.size() != ${EMBEDDING_DIM}) {
   return 1.0;
-}`;
+}
+return cosineSimilarity(params.queryVector, 'spectral_features.discogs_embedding') + 1.0;`;
   const useEmbeddingScript =
     wAudio > 0 &&
     isValidEmbeddingVector(embeddingVec) &&
@@ -500,7 +497,6 @@ export const buildElasticsearchRecommendationQuery = (
       boost: 1,
     },
   };
-  console.log('useEmbeddingScript', useEmbeddingScript);
   const outerShould: unknown[] = [functionScoreQuery];
   if (useMfccScript) {
     // `boost` must live inside `script_score`; a sibling `boost` next to `script_score` is invalid JSON for bool.should.

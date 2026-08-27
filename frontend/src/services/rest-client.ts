@@ -1,10 +1,12 @@
 import { useQuery } from '@tanstack/react-query';
 
+import { API_BASE_URL } from '@/lib/api-config';
+
 // REST API client for non-GraphQL endpoints
 class RestClient {
   private baseUrl: string;
 
-  constructor(baseUrl: string = 'http://localhost:3000') {
+  constructor(baseUrl: string = API_BASE_URL) {
     this.baseUrl = baseUrl;
   }
 

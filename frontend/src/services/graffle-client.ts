@@ -1,8 +1,8 @@
 import { gql, GraphQLClient } from 'graphql-request';
 
-const baseUrl =
-  (import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:3000';
-const graphqlEndpoint = baseUrl.replace(/\/?$/, '') + '/graphql';
+import { API_BASE_URL } from '@/lib/api-config';
+
+const graphqlEndpoint = API_BASE_URL.replace(/\/?$/, '') + '/graphql';
 
 const LOGIN_PATH = '/login';
 const SIGN_UP_PATH = '/sign-up';

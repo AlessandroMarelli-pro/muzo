@@ -8,6 +8,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import { useEffect, useState } from 'react';
 import { Badge } from '../ui/badge';
 import { SwipeControls } from './swipe-controls';
+import { apiUrl } from '@/lib/api-config';
 
 interface SwipeTrackProps {
   track: Track;
@@ -54,7 +55,7 @@ export function SwipeTrack({ track, onLike, onDislike, onBanger }: SwipeTrackPro
       <CardContent className="flex flex-col items-center justify-center h-full w-full relative overflow-hidden   ">
         <div className="z-0 absolute -right-1/4 w-auto h-7/8  blur-lg opacity-40 overflow-hidden   py-4">
           <img
-            src={`http://localhost:3000/api/images/serve?imagePath=${track.imagePath}`}
+            src={apiUrl(`/api/images/serve?imagePath=${track.imagePath}`)}
             alt="Album Art"
             className="   h-full rounded-l-full bg-white"
           />
@@ -104,7 +105,7 @@ export function SwipeTrack({ track, onLike, onDislike, onBanger }: SwipeTrackPro
                       duration: 0.5,
                     },
                   }}
-                  src={`http://localhost:3000/api/images/serve?imagePath=${track.imagePath}`}
+                  src={apiUrl(`/api/images/serve?imagePath=${track.imagePath}`)}
                   alt="Album Art"
                   className="w-full h-full object-cover rounded-md z-1 absolute "
                 />

@@ -6,9 +6,8 @@ async function bootstrap() {
     bodyParser: false, // Required for Better Auth; @thallesp/nestjs-better-auth applies body parsing per-route
   });
 
-  // Enable CORS for development
   app.enableCors({
-    origin: true,
+    origin: process.env.CORS_ORIGIN || 'http://localhost:3001',
     credentials: true,
   });
 

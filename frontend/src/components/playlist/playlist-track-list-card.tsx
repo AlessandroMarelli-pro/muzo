@@ -13,6 +13,7 @@ import { memo } from 'react';
 import { AudioQualityBadge } from '../track/audio-quality-badge';
 import { GenresBadge } from '../track/genres-badge';
 import { Skeleton } from '../ui/skeleton';
+import { apiUrl } from '@/lib/api-config';
 export const PlaylistTrackListCardSkeleton = ({ position }: { position: number }) => {
   return (
     <div className="flex items-center gap-4 p-4 hover:bg-muted/50 transition-colors group h-20">
@@ -96,7 +97,7 @@ export const PlaylistTrackListCard = memo(
           <span>{playlistTrack.position}</span>
         </div>
         <img
-          src={`http://localhost:3000/api/images/serve?imagePath=${formattedImage}`}
+          src={apiUrl(`/api/images/serve?imagePath=${formattedImage}`)}
           alt="Album Art"
           width={40}
           height={40}

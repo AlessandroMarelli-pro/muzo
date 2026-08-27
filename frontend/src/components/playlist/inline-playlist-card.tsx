@@ -2,6 +2,7 @@ import { Playlist } from '@/__generated__/types';
 import { cn } from '@/lib/utils';
 import { Card, CardContent } from '../ui/card';
 import { Skeleton } from '../ui/skeleton';
+import { apiUrl } from '@/lib/api-config';
 // Note: This app uses custom view state instead of routing
 // Navigation should be handled by parent component
 
@@ -59,7 +60,7 @@ export function InlinePlaylistCard({ playlist, onCardClick }: InlinePlaylistCard
               key={playlist.id + index}
             >
               <img
-                src={`http://localhost:3000/api/images/serve?imagePath=${image}`}
+                src={apiUrl(`/api/images/serve?imagePath=${image}`)}
                 alt="Album Art"
                 className={cn(
                   'w-full h-full object-cover  ',
@@ -74,7 +75,7 @@ export function InlinePlaylistCard({ playlist, onCardClick }: InlinePlaylistCard
         ) : (
           <div className="w-full h-full object-cover rounded-md" key={playlist.id}>
             <img
-              src={`http://localhost:3000/api/images/serve?imagePath=${images[0]}`}
+              src={apiUrl(`/api/images/serve?imagePath=${images[0]}`)}
               alt="Album Art"
               className={cn('w-full h-full object-cover  rounded-md')}
             />

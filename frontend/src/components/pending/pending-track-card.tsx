@@ -6,6 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { useBangerTrack, useDislikeTrack, useLikeTrack } from '@/services/api-hooks';
 import { cn } from '@/lib/utils';
 import { useMemo, useRef, useState } from 'react';
+import { apiUrl } from '@/lib/api-config';
 
 interface PendingTrackCardProps {
   track: Track;
@@ -86,7 +87,7 @@ export function PendingTrackCard({ track, onRated }: PendingTrackCardProps) {
       <CardContent className="p-0">
         <div className="relative aspect-video w-full">
           <img
-            src={`http://localhost:3000/api/images/serve?imagePath=${track.imagePath}`}
+            src={apiUrl(`/api/images/serve?imagePath=${track.imagePath}`)}
             alt={`${track.artist} - ${track.title}`}
             className="h-full w-full object-cover"
           />
@@ -126,7 +127,7 @@ export function PendingTrackCard({ track, onRated }: PendingTrackCardProps) {
         </div>
         <audio
           ref={audioRef}
-          src={`http://localhost:3000/api/audio/stream/${track.id}`}
+          src={apiUrl(`/api/audio/stream/${track.id}`)}
           onLoadedMetadata={(event) => setDuration(event.currentTarget.duration || 0)}
           onTimeUpdate={(event) => setCurrentTime(event.currentTarget.currentTime)}
           onEnded={() => setCurrentTime(0)}

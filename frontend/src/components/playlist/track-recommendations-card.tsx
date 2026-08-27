@@ -14,6 +14,7 @@ import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
 import { Skeleton } from '../ui/skeleton';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip';
+import { apiUrl } from '@/lib/api-config';
 
 export const TrackRecommendationsCardSkeleton = ({ index }: { index: number }) => {
   return (
@@ -112,7 +113,7 @@ export const TrackRecommendationsCard = ({
       )}
     >
       <img
-        src={`http://localhost:3000/api/images/serve?imagePath=${formattedImage}`}
+        src={apiUrl(`/api/images/serve?imagePath=${formattedImage}`)}
         alt="Album Art"
         className="w-10 h-10 object-cover rounded-full"
       />
