@@ -123,7 +123,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 COPY --from=essentia-libs /usr/local/lib /usr/local/lib
 COPY --from=essentia-libs /usr/local/include /usr/local/include
-COPY --from=essentia-libs /usr/local/lib/python3.11/dist-packages /usr/local/lib/python3.11/dist-packages
 RUN ldconfig
+
+# essentia-libs' waf install put the Python package under Debian's
+# version-agnostic /usr/local/lib/python3/dist-packages (confirmed from a
+# real build log), not the python3.11-specific dist-packages dir this image's
+# python3.11 searches by default -- point it there via PYTHONPATH.
+ENV PYTHONPATH=/usr/local/lib/python3/dist-packages
 
 RUN python3.11 -c "import essentia; import essentia.standard as es; print('essentia', essentia.__version__, 'OK'); print('TensorflowPredictEffnetDiscogs:', hasattr(es, 'TensorflowPredictEffnetDiscogs'))"
