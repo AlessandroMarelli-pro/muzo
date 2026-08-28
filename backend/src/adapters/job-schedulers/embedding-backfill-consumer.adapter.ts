@@ -12,6 +12,10 @@ import {
   AUDIO_ANALYSIS_REPOSITORY,
   IAudioAnalysisRepository,
 } from 'src/application/ports/repositories/IAudioAnalysisRepository';
+import {
+  IMusicTrackRepository,
+  MUSIC_TRACK_REPOSITORY,
+} from 'src/application/ports/repositories/IMusicTrackRepository';
 import { als } from 'src/kernel/types/context';
 
 /**
@@ -36,6 +40,8 @@ export class EmbeddingBackfillConsumerAdapter extends WorkerHost {
     private readonly audioAnalysisStructure: IAudioAnalysisStructure,
     @Inject(AUDIO_ANALYSIS_REPOSITORY)
     private readonly audioAnalysisRepository: IAudioAnalysisRepository,
+    @Inject(MUSIC_TRACK_REPOSITORY)
+    private readonly musicTrackRepository: IMusicTrackRepository,
     @Inject(LOGGER_FACTORY)
     loggerFactory: { createLogger: (name: string) => ILogger },
     @Inject(LOGGER)
@@ -60,7 +66,25 @@ export class EmbeddingBackfillConsumerAdapter extends WorkerHost {
 
   private async processTrack(trackId: EmbeddingBackfillJobData['trackId'], filePath: string) {
     try {
-      const { embedding } = await this.audioAnalysisStructure.extractDiscogsEmbedding(filePath);
+      // Check current state first so an already-computed embedding/classifiers set isn't
+      // silently overwritten by a re-run of this job (e.g. after a broader backfill sweep
+      // picks up tracks that already have one piece but not the other).
+      const track = await this.musicTrackRepository.getOneById(trackId);
+      const existingEmbedding = track.features?.spectralFeatures?.embedding;
+      const hasEmbedding = Array.isArray(existingEmbedding) && existingEmbedding.length > 0;
+      const hasClassifiers =
+        Array.isArray(track.features?.spectralFeatures?.discogsGenres) &&
+        track.features.spectralFeatures.discogsGenres.length > 0;
+
+      if (hasEmbedding && hasClassifiers) {
+        this.logger.info(`Skipping track ${trackId}: embedding and classifiers already present`, {
+          trackId,
+        });
+        return;
+      }
+
+      const { embedding, discogsClassifiers, discogsTempo } =
+        await this.audioAnalysisStructure.extractDiscogsEmbedding(filePath);
       if (embedding.length === 0) {
         this.logger.warn(`Discogs embedding extraction returned empty for track ${trackId}`, {
           trackId,
@@ -68,7 +92,17 @@ export class EmbeddingBackfillConsumerAdapter extends WorkerHost {
         });
         return;
       }
-      await this.audioAnalysisRepository.updateEmbedding(trackId, embedding);
+
+      if (!hasEmbedding) {
+        await this.audioAnalysisRepository.updateEmbedding(trackId, embedding);
+      }
+      if (!hasClassifiers) {
+        await this.audioAnalysisRepository.updateDiscogsClassifiers(
+          trackId,
+          discogsClassifiers,
+          discogsTempo,
+        );
+      }
     } catch (error) {
       this.logger.error(`Embedding backfill failed for track ${trackId}`, { trackId, error });
     }

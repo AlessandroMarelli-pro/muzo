@@ -216,6 +216,31 @@ interface AlbumArt {
   imagePath: string;
   imageUrl: string;
 }
+export interface DiscogsClassifiers {
+  /** Probability of the "danceable" class (0-1). */
+  danceable?: number;
+  mood_aggressive?: number;
+  mood_happy?: number;
+  mood_party?: number;
+  mood_relaxed?: number;
+  mood_sad?: number;
+  /** Probability of the "voice" class (0-1), from voice_instrumental. */
+  voice?: number;
+  /** Top 5 "Genre---Style" predictions above 10% confidence, from genre_discogs400. */
+  genres?: { genre: string; style: string; confidence: number }[];
+  /** Top 5 instrument predictions above 10% confidence, from mtg_jamendo_instrument. */
+  instruments?: { instrument: string; confidence: number }[];
+  /** Top 5 tag predictions above 10% confidence, from mtg_jamendo_top50tags. */
+  tags?: { tag: string; confidence: number }[];
+}
+
+export interface DiscogsTempo {
+  /** Global tempo estimate in BPM, from TempoCNN. */
+  tempo?: number;
+  /** Mean per-window local tempo probability, as a confidence measure. */
+  confidence?: number;
+}
+
 // Simplified Audio Analysis Response
 export interface AudioAnalysisResponse {
   status: 'success' | 'error';
@@ -226,6 +251,10 @@ export interface AudioAnalysisResponse {
   fingerprint: AudioFingerprint;
   /** 1280-dim discogs-effnet embedding (Essentia); empty when extraction failed/unavailable. */
   embedding?: number[];
+  /** Discogs-effnet classifier heads run on `embedding`; absent when disabled or extraction failed. */
+  discogs_classifiers?: DiscogsClassifiers;
+  /** TempoCNN tempo estimate (separate pipeline, not built on `embedding`); absent when disabled or extraction failed. */
+  discogs_tempo?: DiscogsTempo;
   hierarchical_classification: HierarchicalClassification;
   album_art: AlbumArt;
   file_info: FileInfo;

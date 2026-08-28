@@ -166,6 +166,15 @@ export const toAudioFileFeatures: ToAudioFileFeatures = (row) => {
   })();
   const mfccStd = mfccStdFromColumn.length > 0 ? mfccStdFromColumn : std;
   const embedding = parseEmbeddingStored(row.embedding);
+  const discogsGenres = safeJsonParse<{ genre: string; style: string; confidence: number }[]>(
+    row.discogsGenres,
+    [],
+  );
+  const discogsInstruments = safeJsonParse<{ instrument: string; confidence: number }[]>(
+    row.discogsInstruments,
+    [],
+  );
+  const discogsTags = safeJsonParse<{ tag: string; confidence: number }[]>(row.discogsTags, []);
   return {
     spectralFeatures: {
       spectralCentroid: toAggregationStatistics(row.spectralCentroid),
@@ -181,6 +190,22 @@ export const toAudioFileFeatures: ToAudioFileFeatures = (row) => {
       ...(embedding.length > 0 ? { embedding } : {}),
       onsetDensity: row.onsetDensity,
       dynamicRange: row.dynamicRange,
+      ...(row.discogsDanceability != null ? { discogsDanceability: row.discogsDanceability } : {}),
+      ...(row.discogsMoodAggressive != null
+        ? { discogsMoodAggressive: row.discogsMoodAggressive }
+        : {}),
+      ...(row.discogsMoodHappy != null ? { discogsMoodHappy: row.discogsMoodHappy } : {}),
+      ...(row.discogsMoodParty != null ? { discogsMoodParty: row.discogsMoodParty } : {}),
+      ...(row.discogsMoodRelaxed != null ? { discogsMoodRelaxed: row.discogsMoodRelaxed } : {}),
+      ...(row.discogsMoodSad != null ? { discogsMoodSad: row.discogsMoodSad } : {}),
+      ...(discogsGenres.length > 0 ? { discogsGenres } : {}),
+      ...(row.discogsVoice != null ? { discogsVoice: row.discogsVoice } : {}),
+      ...(discogsInstruments.length > 0 ? { discogsInstruments } : {}),
+      ...(discogsTags.length > 0 ? { discogsTags } : {}),
+      ...(row.discogsTempo != null ? { discogsTempo: row.discogsTempo } : {}),
+      ...(row.discogsTempoConfidence != null
+        ? { discogsTempoConfidence: row.discogsTempoConfidence }
+        : {}),
     },
     melodicFeatures: {
       chroma: safeJsonParse<MelodicFeatures & { dominant_pitch: number }>(row.chroma, {

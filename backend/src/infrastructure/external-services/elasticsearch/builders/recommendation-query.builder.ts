@@ -150,7 +150,7 @@ export const buildElasticsearchRecommendationQuery = (
    * audioFeatures weights passed in. Remove this flag (and the `!onlyGenreEmbeddingTempo &&`
    * guards it gates) to restore full multi-signal scoring.
    */
-  const onlyGenreEmbeddingTempo = false;
+  const onlyGenreEmbeddingTempo = true;
 
   const functions: unknown[] = [];
 

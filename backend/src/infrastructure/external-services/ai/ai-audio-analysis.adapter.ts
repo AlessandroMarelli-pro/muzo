@@ -4,7 +4,11 @@ import { ConfigService } from '@nestjs/config';
 import FormData from 'form-data';
 import fs from 'fs';
 import { firstValueFrom } from 'rxjs';
-import { AudioAnalysisBatchResponse } from 'src/application/ports/dtos/AudioAnalysis';
+import {
+  AudioAnalysisBatchResponse,
+  DiscogsClassifiers,
+  DiscogsTempo,
+} from 'src/application/ports/dtos/AudioAnalysis';
 import {
   AI_SERVICE_POOL,
   IAiServicePool,
@@ -66,7 +70,6 @@ export class AiAudioAnalysisAdapter implements IAudioAnalysisStructure {
       if (batchIndex !== undefined) {
         formData.append('batch_index', batchIndex.toString());
       }
-
       // Make request to batch endpoint
       const response = await firstValueFrom(
         this.httpService.post(`${simpleInstance.url}/api/v1/audio/analyze/batch`, formData, {
@@ -97,7 +100,11 @@ export class AiAudioAnalysisAdapter implements IAudioAnalysisStructure {
     }
   }
 
-  async extractDiscogsEmbedding(audioFilePath: string): Promise<{ embedding: number[] }> {
+  async extractDiscogsEmbedding(audioFilePath: string): Promise<{
+    embedding: number[];
+    discogsClassifiers: DiscogsClassifiers;
+    discogsTempo: DiscogsTempo;
+  }> {
     try {
       const simpleInstance = this.aiServicePool.getAssignedServer('simple');
 
@@ -114,7 +121,11 @@ export class AiAudioAnalysisAdapter implements IAudioAnalysisStructure {
         }),
       );
 
-      return { embedding: response.data.embedding ?? [] };
+      return {
+        embedding: response.data.embedding ?? [],
+        discogsClassifiers: response.data.discogs_classifiers ?? {},
+        discogsTempo: response.data.discogs_tempo ?? {},
+      };
     } catch (error) {
       this.logger.error(`Discogs embedding extraction failed:`, error.message);
 

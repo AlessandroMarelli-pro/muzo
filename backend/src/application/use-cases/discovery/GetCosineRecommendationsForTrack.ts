@@ -4,6 +4,7 @@ import { LOGGER_FACTORY } from 'src/application/ports/infrastructure/ILoggerFact
 import { MusicTrackId } from 'src/kernel/ids';
 import type { CosineSimilarTrack, ICosineProvider } from '../../ports/infrastructure/ICosineProvider';
 import type { IMusicTrackRepository } from '../../ports/repositories/IMusicTrackRepository';
+import type { IYouTubeSyncProvider } from '../../ports/infrastructure/IYouTubeSyncProvider';
 
 const RECOMMENDATIONS_LIMIT = 20;
 
@@ -11,6 +12,7 @@ export class GetCosineRecommendationsForTrackUseCase {
   constructor(
     private readonly musicTrackRepository: IMusicTrackRepository,
     private readonly cosineProvider: ICosineProvider,
+    private readonly youtubeSyncProvider: IYouTubeSyncProvider,
     @Inject(LOGGER_FACTORY)
     loggerFactory: { createLogger: (name: string) => ILogger },
     @Inject(LOGGER)
@@ -19,7 +21,7 @@ export class GetCosineRecommendationsForTrackUseCase {
     this.logger = loggerFactory.createLogger('GetCosineRecommendationsForTrackUseCase');
   }
 
-  async execute(trackId: MusicTrackId): Promise<CosineSimilarTrack[]> {
+  async execute(trackId: MusicTrackId, userId: string): Promise<CosineSimilarTrack[]> {
     const track = await this.musicTrackRepository.getOneById(trackId);
     if (!track.artist || !track.title) {
       this.logger.info('Track missing artist/title, skipping Cosine lookup', { trackId });
@@ -32,9 +34,36 @@ export class GetCosineRecommendationsForTrackUseCase {
       title: track.title,
     });
 
-    const cosineTrack = await this.cosineProvider.searchTrack(track.artist, track.title);
+    let cosineTrack = await this.cosineProvider.searchTrack(track.artist, track.title);
     if (!cosineTrack) {
-      this.logger.info('No strict match found on Cosine for track', {
+      this.logger.info('No strict match found on Cosine for track, trying YouTube fallback', {
+        trackId,
+        artist: track.artist,
+        title: track.title,
+      });
+      try {
+        const match = await this.youtubeSyncProvider.findBestMatch(
+          track.artist,
+          track.title,
+          track.technicalInfo?.duration ?? 0,
+          userId,
+        );
+        if (match.videoId) {
+          cosineTrack = await this.cosineProvider.lookupTrackByUrl(
+            `https://www.youtube.com/watch?v=${match.videoId}`,
+          );
+        }
+      } catch (error) {
+        this.logger.warn('YouTube fallback lookup failed for track', {
+          trackId,
+          artist: track.artist,
+          title: track.title,
+          error: error instanceof Error ? error.message : String(error),
+        });
+      }
+    }
+    if (!cosineTrack) {
+      this.logger.info('No match found on Cosine for track', {
         trackId,
         artist: track.artist,
         title: track.title,

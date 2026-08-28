@@ -17,7 +17,9 @@ if TYPE_CHECKING:
     from src.utils.scan_progress_publisher import ScanProgressPublisher
 
 from src.services.base_metadata_extractor import create_metadata_extractor
+from src.services.features.discogs_classifiers_extractor import DiscogsClassifiersExtractor
 from src.services.features.discogs_embedding_extractor import DiscogsEmbeddingExtractor
+from src.services.features.tempo_cnn_extractor import TempoCnnExtractor
 from src.services.simple_audio_loader import SimpleAudioLoader
 from src.services.simple_feature_extractor import SimpleFeatureExtractor
 from src.services.simple_filename_parser import SimpleFilenameParser
@@ -26,6 +28,13 @@ from src.services.simple_metadata_extractor import SimpleMetadataExtractor
 from src.services.simple_technical_analyzer import SimpleTechnicalAnalyzer
 from src.utils.performance_analyzer import performance_analyzer
 from src.utils.performance_optimizer import monitor_performance
+
+# Gates computation of the discogs-effnet classifier heads (danceability, 5 moods,
+# genre_discogs400). Default-on, opt-out -- same idiom as
+# ELASTICSEARCH_MFCC_VECTOR_SIMILARITY/ELASTICSEARCH_EMBEDDING_VECTOR_SIMILARITY on the
+# backend. Toggle off to compare against the existing hand-computed danceability/mood
+# fields without the new discogs_classifiers values overwriting anything.
+DISCOGS_CLASSIFIERS_ENABLED = os.getenv("DISCOGS_CLASSIFIERS_ENABLED", "true").lower() != "false"
 
 
 class SimpleAnalysisService:
@@ -46,6 +55,8 @@ class SimpleAnalysisService:
         self.feature_extractor = SimpleFeatureExtractor()
         self.fingerprint_generator = SimpleFingerprintGenerator()
         self.embedding_extractor = DiscogsEmbeddingExtractor()
+        self.classifiers_extractor = DiscogsClassifiersExtractor()
+        self.tempo_cnn_extractor = TempoCnnExtractor()
 
         # Initialize AI metadata extractor (default: GEMINI, fallback to OPENAI)
         # Provider can be set via AI_METADATA_PROVIDER env var (GEMINI or OPENAI)
@@ -213,8 +224,94 @@ class SimpleAnalysisService:
         return self.fingerprint_generator.generate_simple_fingerprint(file_path, y, sr)
 
     @monitor_performance("discogs_embedding_generation")
-    def generate_discogs_embedding(self, y_harmonic, sr) -> list:
-        return self.embedding_extractor.extract_from_harmonic_sample(y_harmonic, sr)
+    def generate_discogs_embedding_from_file(self, file_path: str) -> list:
+        """
+        Load the FULL track (not the trimmed harmonic/BPM/spectral analysis
+        window) and extract the discogs-effnet embedding from it. Essentia's own
+        docs recommend `MonoLoader >> TensorflowPredictEffnetDiscogs` on the
+        whole file -- the model internally windows into ~1s patches and mean-
+        pools them, so a short excerpt only samples one part of the song.
+        """
+        try:
+            y_full, sr = self.audio_loader.load_audio_sample(file_path, sample_duration=None)
+            duration_s = len(y_full) / sr if sr else 0
+            embedding = self.embedding_extractor.extract_from_audio(y_full, sr)
+            if embedding:
+                logger.info(
+                    f"Discogs embedding: len={len(embedding)}, "
+                    f"analyzed {duration_s:.1f}s of full track"
+                )
+            else:
+                logger.warning(
+                    f"Discogs embedding extraction returned empty for {file_path} "
+                    f"(track duration {duration_s:.1f}s)"
+                )
+            return embedding
+        except Exception as e:
+            logger.error(f"Failed to load full track for embedding extraction: {e}")
+            return []
+
+    @monitor_performance("discogs_classifiers_generation")
+    def generate_discogs_classifiers(self, embedding: list) -> dict:
+        """
+        Run the discogs-effnet classifier heads (danceability, 5 moods,
+        genre_discogs400) on an already-computed embedding. Gated by
+        DISCOGS_CLASSIFIERS_ENABLED; returns {} when disabled or the embedding is empty.
+        """
+        if not DISCOGS_CLASSIFIERS_ENABLED:
+            logger.debug("Discogs classifiers skipped: DISCOGS_CLASSIFIERS_ENABLED is false")
+            return {}
+        if not embedding:
+            logger.warning("Discogs classifiers skipped: no embedding available")
+            return {}
+
+        result = self.classifiers_extractor.predict_all(embedding)
+        if result:
+            genres = result.get("genres") or []
+            top_genre = (
+                f"{genres[0]['genre']}/{genres[0]['style']} ({genres[0]['confidence']:.0%})"
+                if genres
+                else "none >10%"
+            )
+            logger.info(
+                f"Discogs classifiers: danceable={result.get('danceable', 0):.2f} "
+                f"aggressive={result.get('mood_aggressive', 0):.2f} "
+                f"happy={result.get('mood_happy', 0):.2f} "
+                f"party={result.get('mood_party', 0):.2f} "
+                f"relaxed={result.get('mood_relaxed', 0):.2f} "
+                f"sad={result.get('mood_sad', 0):.2f} "
+                f"top_genre={top_genre} ({len(genres)} genres >10%)"
+            )
+        else:
+            logger.warning("Discogs classifiers returned empty result")
+        return result
+
+    @monitor_performance("tempo_cnn_generation")
+    def generate_tempo_cnn(self, file_path: str) -> dict:
+        """
+        Load the FULL track (separately from the discogs-effnet embedding load,
+        since TempoCNN needs a different sample rate -- 11025 Hz vs 16kHz) and
+        estimate tempo via TempoCNN. Gated by DISCOGS_CLASSIFIERS_ENABLED (same
+        flag as the discogs-effnet classifier heads, for one comparison toggle).
+        Returns {} when disabled or on any failure.
+        """
+        if not DISCOGS_CLASSIFIERS_ENABLED:
+            logger.debug("TempoCNN skipped: DISCOGS_CLASSIFIERS_ENABLED is false")
+            return {}
+        try:
+            y_full, sr = self.audio_loader.load_audio_sample(file_path, sample_duration=None)
+            result = self.tempo_cnn_extractor.extract_from_audio(y_full, sr)
+            if result:
+                logger.info(
+                    f"TempoCNN: tempo={result.get('tempo', 0):.1f} BPM "
+                    f"confidence={result.get('confidence', 0):.2f}"
+                )
+            else:
+                logger.warning(f"TempoCNN returned empty result for {file_path}")
+            return result
+        except Exception as e:
+            logger.error(f"Failed to load full track for TempoCNN extraction: {e}")
+            return {}
 
     def check_performance_bottlenecks(self) -> Dict[str, Any]:
         """
@@ -427,7 +524,9 @@ class SimpleAnalysisService:
             )  # Use optimized samples for features
             # Use harmonic sample for fingerprint (more representative of melody/harmony)
             fingerprint = self.generate_simple_fingerprint(file_path, y_harmonic, sr)
-            embedding = self.generate_discogs_embedding(y_harmonic, sr)
+            embedding = self.generate_discogs_embedding_from_file(file_path)
+            discogs_classifiers = self.generate_discogs_classifiers(embedding)
+            discogs_tempo = self.generate_tempo_cnn(file_path)
             id3_tags = self.extract_id3_tags(file_path, original_filename)
 
             # Check performance bottlenecks after analysis
@@ -450,6 +549,8 @@ class SimpleAnalysisService:
                 **basic_features,
                 **fingerprint,
                 "embedding": embedding,
+                "discogs_classifiers": discogs_classifiers,
+                "discogs_tempo": discogs_tempo,
                 **id3_tags,
             }
 
@@ -627,7 +728,9 @@ class SimpleAnalysisService:
 
             # Generate fingerprint
             fingerprint = self.generate_simple_fingerprint(file_path, y_harmonic, sr)
-            embedding = self.generate_discogs_embedding(y_harmonic, sr)
+            embedding = self.generate_discogs_embedding_from_file(file_path)
+            discogs_classifiers = self.generate_discogs_classifiers(embedding)
+            discogs_tempo = self.generate_tempo_cnn(file_path)
 
             # Publish audio.analysis progress (75%)
             if progress_publisher and session_id:
@@ -655,6 +758,8 @@ class SimpleAnalysisService:
                 **basic_features,
                 **fingerprint,
                 "embedding": embedding,
+                "discogs_classifiers": discogs_classifiers,
+                "discogs_tempo": discogs_tempo,
                 **id3_tags,
             }
 

@@ -2,8 +2,9 @@ import { Inject } from '@nestjs/common';
 import { ILogger, LOGGER } from 'src/application/ports/infrastructure/ILogger';
 import { LOGGER_FACTORY } from 'src/application/ports/infrastructure/ILoggerFactory';
 import { PlaylistId } from 'src/kernel/ids';
-import type { ICosineProvider } from '../../ports/infrastructure/ICosineProvider';
+import type { CosineTrack, ICosineProvider } from '../../ports/infrastructure/ICosineProvider';
 import type { IMusicTrackRepository } from '../../ports/repositories/IMusicTrackRepository';
+import type { IYouTubeSyncProvider } from '../../ports/infrastructure/IYouTubeSyncProvider';
 import type { GetPlaylistUseCase } from '../playlist/GetPlaylist';
 import { normalizeForMatch } from './normalize-string';
 
@@ -17,7 +18,7 @@ export type DiscoveredTrack = {
   confidence: 'exact' | 'fuzzy' | 'none';
 };
 
-type ArtistSeed = { artist: string; title: string };
+type ArtistSeed = { artist: string; title: string; durationSeconds: number };
 
 const SIMILAR_TRACKS_PER_SEED_LIMIT = 10;
 const RESULTS_PER_PLAYLIST_TRACK = 10;
@@ -27,6 +28,7 @@ export class DiscoverSimilarTracksForPlaylistUseCase {
     private readonly getPlaylistUseCase: GetPlaylistUseCase,
     private readonly cosineProvider: ICosineProvider,
     private readonly musicTrackRepository: IMusicTrackRepository,
+    private readonly youtubeSyncProvider: IYouTubeSyncProvider,
     @Inject(LOGGER_FACTORY)
     loggerFactory: { createLogger: (name: string) => ILogger },
     @Inject(LOGGER)
@@ -35,7 +37,68 @@ export class DiscoverSimilarTracksForPlaylistUseCase {
     this.logger = loggerFactory.createLogger('DiscoverSimilarTracksForPlaylistUseCase');
   }
 
-  async execute(playlistId: PlaylistId, _userId: string): Promise<DiscoveredTrack[]> {
+  /**
+   * Falls back to finding the track on YouTube and looking it up on Cosine by that
+   * video URL, for cases where Cosine's own search has no strict artist/title match.
+   */
+  private async findViaYouTubeFallback(
+    seed: ArtistSeed,
+    userId: string,
+  ): Promise<CosineTrack | null> {
+    try {
+      const match = await this.youtubeSyncProvider.findBestMatch(
+        seed.artist,
+        seed.title,
+        seed.durationSeconds,
+        userId,
+      );
+      if (!match.videoId) {
+        this.logger.info('No YouTube match found for seed track fallback', {
+          artist: seed.artist,
+          title: seed.title,
+        });
+        return null;
+      }
+
+      this.logger.debug('Found YouTube match for seed track, looking up on Cosine', {
+        artist: seed.artist,
+        title: seed.title,
+        videoId: match.videoId,
+        confidence: match.confidence,
+      });
+
+      const cosineTrack = await this.cosineProvider.lookupTrackByUrl(
+        `https://www.youtube.com/watch?v=${match.videoId}`,
+      );
+
+      if (!cosineTrack) {
+        this.logger.info('YouTube video not found on Cosine', {
+          artist: seed.artist,
+          title: seed.title,
+          videoId: match.videoId,
+        });
+        return null;
+      }
+
+      this.logger.info('Seed track matched via YouTube fallback', {
+        artist: seed.artist,
+        title: seed.title,
+        videoId: match.videoId,
+        cosineTrackId: cosineTrack.id,
+      });
+
+      return cosineTrack;
+    } catch (error) {
+      this.logger.warn('YouTube fallback lookup failed for seed track', {
+        artist: seed.artist,
+        title: seed.title,
+        error: error instanceof Error ? error.message : String(error),
+      });
+      return null;
+    }
+  }
+
+  async execute(playlistId: PlaylistId, userId: string): Promise<DiscoveredTrack[]> {
     const playlist = await this.getPlaylistUseCase.execute(playlistId);
     const playlistTracks = playlist.tracks ?? [];
     const limit = playlistTracks.length * RESULTS_PER_PLAYLIST_TRACK;
@@ -47,7 +110,11 @@ export class DiscoverSimilarTracksForPlaylistUseCase {
       if (!artist || !title) continue;
       const key = normalizeForMatch(artist);
       if (!seedsByArtist.has(key)) {
-        seedsByArtist.set(key, { artist, title });
+        seedsByArtist.set(key, {
+          artist,
+          title,
+          durationSeconds: playlistTrack.track.technicalInfo?.duration ?? 0,
+        });
       }
     }
 
@@ -81,9 +148,16 @@ export class DiscoverSimilarTracksForPlaylistUseCase {
         title: seed.title,
       });
 
-      const cosineTrack = await this.cosineProvider.searchTrack(seed.artist, seed.title);
+      let cosineTrack = await this.cosineProvider.searchTrack(seed.artist, seed.title);
       if (!cosineTrack) {
-        this.logger.info('No strict match found for seed track, skipping', {
+        this.logger.info('No strict match found for seed track, trying YouTube fallback', {
+          artist: seed.artist,
+          title: seed.title,
+        });
+        cosineTrack = await this.findViaYouTubeFallback(seed, userId);
+      }
+      if (!cosineTrack) {
+        this.logger.info('No match found for seed track, skipping', {
           artist: seed.artist,
           title: seed.title,
         });

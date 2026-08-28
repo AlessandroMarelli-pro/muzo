@@ -16,5 +16,6 @@ export interface CosineSimilarTrack extends CosineTrack {
 
 export interface ICosineProvider {
   searchTrack(artist: string, title: string): Promise<CosineTrack | null>;
+  lookupTrackByUrl(url: string): Promise<CosineTrack | null>;
   getSimilarTracks(trackId: string, limit?: number): Promise<CosineSimilarTrack[]>;
 }

@@ -1,10 +1,16 @@
 """
 Discogs-effnet embedding API endpoint.
 
-Lightweight endpoint that extracts only the discogs-effnet audio embedding,
-skipping the full analysis pipeline (BPM/key/spectral features/AI metadata).
-Intended for backfilling embeddings on tracks that were analyzed before this
-feature existed.
+Lightweight endpoint that extracts the discogs-effnet audio embedding and its
+classifier heads (danceability, mood, genre_discogs400), skipping the full
+analysis pipeline (BPM/key/spectral features/AI metadata). Intended for
+backfilling embeddings/classifiers on tracks that were analyzed before these
+features existed.
+
+Runs on the FULL track, not a trimmed excerpt -- TensorflowPredictEffnetDiscogs
+internally windows the input into ~1s patches and mean-pools them, and
+Essentia's own docs recommend `MonoLoader >> TensorflowPredictEffnetDiscogs` on
+the whole file rather than a short sample.
 """
 
 import os
@@ -14,25 +20,33 @@ from flask import request
 from flask_restful import Resource
 from loguru import logger
 
+from src.services.features.discogs_classifiers_extractor import DiscogsClassifiersExtractor
 from src.services.features.discogs_embedding_extractor import DiscogsEmbeddingExtractor
+from src.services.features.tempo_cnn_extractor import TempoCnnExtractor
 from src.services.simple_audio_loader import SimpleAudioLoader
 from src.utils.performance_optimizer import monitor_performance
+
+# Same gate as SimpleAnalysisService.DISCOGS_CLASSIFIERS_ENABLED, read independently
+# here since this resource deliberately doesn't import SimpleAnalysisService.
+DISCOGS_CLASSIFIERS_ENABLED = os.getenv("DISCOGS_CLASSIFIERS_ENABLED", "true").lower() != "false"
 
 
 class DiscogsEmbeddingResource(Resource):
     """
-    Discogs-effnet embedding extraction endpoint.
+    Discogs-effnet embedding + classifier-heads extraction endpoint.
 
     Deliberately avoids SimpleAnalysisService, which also initializes the AI
     metadata extractor (Gemini/OpenAI client + context cache) on construction
-    -- unnecessary cost for an embedding-only request. Uses SimpleAudioLoader
-    and DiscogsEmbeddingExtractor directly instead, same pattern as
-    BPMDetectionResource.
+    -- unnecessary cost for an embedding-only request. Uses SimpleAudioLoader,
+    DiscogsEmbeddingExtractor, and DiscogsClassifiersExtractor directly instead,
+    same pattern as BPMDetectionResource.
     """
 
     def __init__(self):
         self.audio_loader = SimpleAudioLoader()
         self.embedding_extractor = DiscogsEmbeddingExtractor()
+        self.classifiers_extractor = DiscogsClassifiersExtractor()
+        self.tempo_cnn_extractor = TempoCnnExtractor()
 
     @monitor_performance("discogs_embedding_api")
     def post(self):
@@ -41,11 +55,22 @@ class DiscogsEmbeddingResource(Resource):
 
         Request:
             - audio_file: Audio file (wav, mp3, flac, m4a, aac, ogg, opus)
-            - sample_duration: Duration of sample to analyze (default: 10.0 seconds)
-            - skip_intro: Seconds to skip from beginning (default: 15.0)
+              (the full file is analyzed; no sample_duration/skip_intro needed)
 
         Returns:
-            dict: { "status": "success", "embedding": list[float] (len 1280) }
+            dict: {
+                "status": "success",
+                "embedding": list[float] (len 1280),
+                "discogs_classifiers": {
+                    "danceable": float, "mood_aggressive": float, "mood_happy": float,
+                    "mood_party": float, "mood_relaxed": float, "mood_sad": float,
+                    "voice": float,
+                    "genres": [{"genre": str, "style": str, "confidence": float}, ...],
+                    "instruments": [{"instrument": str, "confidence": float}, ...],
+                    "tags": [{"tag": str, "confidence": float}, ...]
+                },
+                "discogs_tempo": {"tempo": float, "confidence": float}
+            }
         """
         try:
             if "audio_file" not in request.files:
@@ -93,19 +118,70 @@ class DiscogsEmbeddingResource(Resource):
             try:
                 logger.info(f"Extracting discogs embedding for: {audio_file.filename}")
 
-                sample_duration = float(request.form.get("sample_duration", 10.0))
-                skip_intro = float(request.form.get("skip_intro", 15.0))
-
-                y_harmonic, _, _, sr, *_ = self.audio_loader.smart_audio_sample_loading(
-                    analysis_path, sample_duration, skip_intro
+                y_full, sr = self.audio_loader.load_audio_sample(
+                    analysis_path, sample_duration=None
                 )
-                embedding = self.embedding_extractor.extract_from_harmonic_sample(y_harmonic, sr)
+                duration_s = len(y_full) / sr if sr else 0
+                embedding = self.embedding_extractor.extract_from_audio(y_full, sr)
 
-                logger.info(
-                    f"Discogs embedding extraction completed for: {audio_file.filename} "
-                    f"(len={len(embedding)})"
-                )
-                return {"status": "success", "embedding": embedding}, 200
+                if not embedding:
+                    logger.warning(
+                        f"Discogs embedding extraction returned empty for: "
+                        f"{audio_file.filename} (track duration {duration_s:.1f}s)"
+                    )
+                    discogs_classifiers = {}
+                else:
+                    logger.info(
+                        f"Discogs embedding: len={len(embedding)}, "
+                        f"analyzed {duration_s:.1f}s of full track "
+                        f"({audio_file.filename})"
+                    )
+                    if DISCOGS_CLASSIFIERS_ENABLED:
+                        discogs_classifiers = self.classifiers_extractor.predict_all(embedding)
+                        if discogs_classifiers:
+                            genres = discogs_classifiers.get("genres") or []
+                            top_genre = (
+                                f"{genres[0]['genre']}/{genres[0]['style']} "
+                                f"({genres[0]['confidence']:.0%})"
+                                if genres
+                                else "none >10%"
+                            )
+                            logger.info(
+                                f"Discogs classifiers: "
+                                f"danceable={discogs_classifiers.get('danceable', 0):.2f} "
+                                f"aggressive={discogs_classifiers.get('mood_aggressive', 0):.2f} "
+                                f"happy={discogs_classifiers.get('mood_happy', 0):.2f} "
+                                f"party={discogs_classifiers.get('mood_party', 0):.2f} "
+                                f"relaxed={discogs_classifiers.get('mood_relaxed', 0):.2f} "
+                                f"sad={discogs_classifiers.get('mood_sad', 0):.2f} "
+                                f"top_genre={top_genre} ({len(genres)} genres >10%)"
+                            )
+                        else:
+                            logger.warning("Discogs classifiers returned empty result")
+                    else:
+                        logger.debug(
+                            "Discogs classifiers skipped: DISCOGS_CLASSIFIERS_ENABLED is false"
+                        )
+                        discogs_classifiers = {}
+
+                if DISCOGS_CLASSIFIERS_ENABLED:
+                    discogs_tempo = self.tempo_cnn_extractor.extract_from_audio(y_full, sr)
+                    if discogs_tempo:
+                        logger.info(
+                            f"TempoCNN: tempo={discogs_tempo.get('tempo', 0):.1f} BPM "
+                            f"confidence={discogs_tempo.get('confidence', 0):.2f}"
+                        )
+                    else:
+                        logger.warning("TempoCNN returned empty result")
+                else:
+                    discogs_tempo = {}
+
+                return {
+                    "status": "success",
+                    "embedding": embedding,
+                    "discogs_classifiers": discogs_classifiers,
+                    "discogs_tempo": discogs_tempo,
+                }, 200
 
             finally:
                 if os.path.exists(temp_file_path):

@@ -78,6 +78,25 @@ export class CosineAdapter implements ICosineProvider {
     return { id: strictMatch.id, artist: strictMatch.artist, title: strictMatch.track };
   }
 
+  async lookupTrackByUrl(url: string): Promise<CosineTrack | null> {
+    const query = new URLSearchParams({ url });
+    const data = (await this.makeRequest(`/tracks/lookup?${query.toString()}`)) as {
+      data?: { id: string; artist: string; track: string }[];
+    } | null;
+    const results = data?.data ?? [];
+    const firstMatch = results[0];
+
+    this.logger.debug('Cosine URL lookup result', {
+      url,
+      resultCount: results.length,
+      matched: Boolean(firstMatch),
+    });
+
+    if (!firstMatch) return null;
+
+    return { id: firstMatch.id, artist: firstMatch.artist, title: firstMatch.track };
+  }
+
   async getSimilarTracks(trackId: string, limit = 20): Promise<CosineSimilarTrack[]> {
     const query = new URLSearchParams({ limit: limit.toString() });
     const data = (await this.makeRequest(`/tracks/${trackId}/similar?${query.toString()}`)) as {

@@ -170,6 +170,19 @@ export type AudioFileSpectralFeatures = {
   onsetDensity?: number;
   /** RMS p95 − p5 loudness spread. */
   dynamicRange?: number;
+  // Discogs-effnet classifier heads (run on `embedding`; comparison-only for now)
+  discogsDanceability?: number;
+  discogsMoodAggressive?: number;
+  discogsMoodHappy?: number;
+  discogsMoodParty?: number;
+  discogsMoodRelaxed?: number;
+  discogsMoodSad?: number;
+  discogsGenres?: { genre: string; style: string; confidence: number }[];
+  discogsVoice?: number;
+  discogsInstruments?: { instrument: string; confidence: number }[];
+  discogsTags?: { tag: string; confidence: number }[];
+  discogsTempo?: number;
+  discogsTempoConfidence?: number;
 };
 
 export type MelodicFeatures = {

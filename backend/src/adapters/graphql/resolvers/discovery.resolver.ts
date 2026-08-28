@@ -30,9 +30,13 @@ export class DiscoveryResolver {
   @Query(() => [CosineRecommendedTrack])
   async cosineRecommendationsForTrack(
     @Args('trackId', { type: () => Base64ID }) trackId: string,
+    @Args('userId', { nullable: true }) userId?: string,
   ): Promise<CosineRecommendedTrack[]> {
     const id = parseMusicTrackId(trackId);
-    const results = await this.getCosineRecommendationsForTrackUseCase.execute(id);
+    const results = await this.getCosineRecommendationsForTrackUseCase.execute(
+      id,
+      userId ?? 'default',
+    );
     return results.map((result) => ({
       artist: result.artist,
       title: result.title,

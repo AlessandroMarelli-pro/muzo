@@ -193,6 +193,18 @@ model AudioFingerprint {
   dynamicRange        Float  @default(0)
   mfccStd             String @default("[]") // JSON array of 13 floats
   embedding           String @default("[]") // JSON array of 1280 floats (discogs-effnet)
+  discogsDanceability   Float?
+  discogsMoodAggressive Float?
+  discogsMoodHappy      Float?
+  discogsMoodParty      Float?
+  discogsMoodRelaxed    Float?
+  discogsMoodSad        Float?
+  discogsGenres         String @default("[]") // JSON array of {genre, style, confidence} from genre_discogs400
+  discogsVoice          Float?
+  discogsInstruments    String @default("[]") // JSON array of {instrument, confidence} from mtg_jamendo_instrument
+  discogsTags           String @default("[]") // JSON array of {tag, confidence} from mtg_jamendo_top50tags
+  discogsTempo          Float?
+  discogsTempoConfidence Float?
 
   // Timestamps
   // Timestamps

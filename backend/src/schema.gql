@@ -277,7 +277,7 @@ type PlaylistsResult {
 }
 
 type Query {
-  cosineRecommendationsForTrack(trackId: Base64ID!): [CosineRecommendedTrack!]!
+  cosineRecommendationsForTrack(trackId: Base64ID!, userId: String): [CosineRecommendedTrack!]!
   discoverSimilarTracksForPlaylist(playlistId: Base64ID!, userId: String!): [DiscoveredTrack!]!
   getSpotifyAuthUrl: SpotifyAuthUrl!
   getTidalAuthUrl: TidalAuthUrl!

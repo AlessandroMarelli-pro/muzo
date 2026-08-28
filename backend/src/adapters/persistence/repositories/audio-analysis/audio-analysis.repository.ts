@@ -1,5 +1,9 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { AudioAnalysisResponse } from 'src/application/ports/dtos/AudioAnalysis';
+import {
+  AudioAnalysisResponse,
+  DiscogsClassifiers,
+  DiscogsTempo,
+} from 'src/application/ports/dtos/AudioAnalysis';
 import { IAudioAnalysisRepository } from 'src/application/ports/repositories/IAudioAnalysisRepository';
 import { PRISMA_SERVICE, PrismaService } from 'src/infrastructure/database/prisma.service';
 import { extractModelId, MusicTrackId } from 'src/kernel/ids';
@@ -84,6 +88,18 @@ export class AudioAnalysisRepository implements IAudioAnalysisRepository {
       onsetDensity: rhythmFingerprint?.onset_density ?? 0,
       dynamicRange: spectralFeatures?.dynamic_range ?? 0,
       embedding: JSON.stringify(analysisResult.embedding ?? []),
+      discogsDanceability: analysisResult.discogs_classifiers?.danceable ?? null,
+      discogsMoodAggressive: analysisResult.discogs_classifiers?.mood_aggressive ?? null,
+      discogsMoodHappy: analysisResult.discogs_classifiers?.mood_happy ?? null,
+      discogsMoodParty: analysisResult.discogs_classifiers?.mood_party ?? null,
+      discogsMoodRelaxed: analysisResult.discogs_classifiers?.mood_relaxed ?? null,
+      discogsMoodSad: analysisResult.discogs_classifiers?.mood_sad ?? null,
+      discogsGenres: JSON.stringify(analysisResult.discogs_classifiers?.genres ?? []),
+      discogsVoice: analysisResult.discogs_classifiers?.voice ?? null,
+      discogsInstruments: JSON.stringify(analysisResult.discogs_classifiers?.instruments ?? []),
+      discogsTags: JSON.stringify(analysisResult.discogs_classifiers?.tags ?? []),
+      discogsTempo: analysisResult.discogs_tempo?.tempo ?? null,
+      discogsTempoConfidence: analysisResult.discogs_tempo?.confidence ?? null,
     };
 
     await this.prisma.audioFingerprint.upsert({
@@ -107,6 +123,35 @@ export class AudioAnalysisRepository implements IAudioAnalysisRepository {
         createdById: getCurrentUserId(),
       },
       data: { embedding: JSON.stringify(embedding) },
+    });
+  }
+
+  async updateDiscogsClassifiers(
+    trackId: MusicTrackId,
+    classifiers: DiscogsClassifiers,
+    tempo?: DiscogsTempo,
+  ): Promise<void> {
+    await this.prisma.audioFingerprint.update({
+      where: {
+        trackId: extractModelId(trackId).dbId,
+        createdById: getCurrentUserId(),
+      },
+      data: {
+        discogsDanceability: classifiers.danceable ?? null,
+        discogsMoodAggressive: classifiers.mood_aggressive ?? null,
+        discogsMoodHappy: classifiers.mood_happy ?? null,
+        discogsMoodParty: classifiers.mood_party ?? null,
+        discogsMoodRelaxed: classifiers.mood_relaxed ?? null,
+        discogsMoodSad: classifiers.mood_sad ?? null,
+        discogsGenres: JSON.stringify(classifiers.genres ?? []),
+        discogsVoice: classifiers.voice ?? null,
+        discogsInstruments: JSON.stringify(classifiers.instruments ?? []),
+        discogsTags: JSON.stringify(classifiers.tags ?? []),
+        ...(tempo && {
+          discogsTempo: tempo.tempo ?? null,
+          discogsTempoConfidence: tempo.confidence ?? null,
+        }),
+      },
     });
   }
 

@@ -198,11 +198,19 @@ export class MusicTrackRepository implements IMusicTrackRepository {
   }
 
   async getTracksMissingEmbedding(): Promise<MusicTrack[]> {
+    // Targets tracks missing EITHER the embedding OR the discogs-effnet classifier
+    // outputs (they're computed together in one ai-service call, but a track can have
+    // one without the other -- e.g. analyzed before classifiers existed, or a prior
+    // backfill run failed partway). EmbeddingBackfillConsumerAdapter checks per-piece
+    // state again before writing, so this is just the candidate pool, not the final word.
     return this.prisma.musicTrack
       .findMany({
         where: {
           createdById: getCurrentUserId(),
-          audioFingerprint: { is: { embedding: '[]' } },
+          OR: [
+            { audioFingerprint: { is: { embedding: '[]' } } },
+            { audioFingerprint: { is: { discogsGenres: '[]' } } },
+          ],
         },
         include: musicTracksIncludes,
       })

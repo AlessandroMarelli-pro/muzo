@@ -1,6 +1,6 @@
 import { MusicTrackId } from 'src/kernel/ids';
 import { createToken } from '../../utils/create-token';
-import { AudioAnalysisResponse } from '../dtos/AudioAnalysis';
+import { AudioAnalysisResponse, DiscogsClassifiers, DiscogsTempo } from '../dtos/AudioAnalysis';
 
 export const AUDIO_ANALYSIS_REPOSITORY = createToken<IAudioAnalysisRepository>(
   'AUDIO_ANALYSIS_REPOSITORY',
@@ -18,4 +18,11 @@ export interface IAudioAnalysisRepository {
 
   /** Scalar-only update -- does not touch any other AudioFingerprint column. */
   updateEmbedding(trackId: MusicTrackId, embedding: number[]): Promise<void>;
+
+  /** Scalar-only update -- does not touch any other AudioFingerprint column. */
+  updateDiscogsClassifiers(
+    trackId: MusicTrackId,
+    classifiers: DiscogsClassifiers,
+    tempo?: DiscogsTempo,
+  ): Promise<void>;
 }
