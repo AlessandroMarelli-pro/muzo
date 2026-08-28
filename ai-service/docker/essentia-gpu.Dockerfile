@@ -138,3 +138,23 @@ ENV PYTHONPATH=/usr/local/lib/python3/dist-packages
 RUN python3.11 -m pip install --no-cache-dir numpy six
 
 RUN python3.11 -c "import essentia; import essentia.standard as es; print('essentia', essentia.__version__, 'OK'); print('TensorflowPredictEffnetDiscogs:', hasattr(es, 'TensorflowPredictEffnetDiscogs'))"
+
+# The rest of ai-service's dependencies. build-essential/cython/numpy are
+# needed first since madmom has no prebuilt wheel for any platform (source
+# tarball only) and its setup.py imports numpy/cython at build time.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential git \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+COPY requirements.txt .
+# essentia-tensorflow is already built from source above (see essentia-libs);
+# pip would otherwise try and fail to fetch it from PyPI (no Linux wheel).
+RUN grep -v '^essentia-tensorflow' requirements.txt > requirements.docker.txt && \
+    python3.11 -m pip install --no-cache-dir cython==3.0.1 "numpy>=1.26.0" && \
+    python3.11 -m pip install --no-cache-dir -r requirements.docker.txt
+
+COPY . .
+
+EXPOSE 4000
+CMD ["python3.11", "app.py"]
