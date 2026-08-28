@@ -36,8 +36,34 @@ class TestSimpleFeatureExtractor:
             sample_duration=audio_file["bpm_metadata"]["duration"],
             skip_intro=audio_file["bpm_metadata"]["start_time"],
         )
+        # discogs_classifiers/discogs_tempo/discogs_deam/discogs_skey are computed
+        # upstream in SimpleAnalysisService (see simple_analysis.py) and passed in;
+        # a plain unit test of extract_basic_features stubs them with representative
+        # values rather than running the full discogs-effnet/TempoCNN/DEAM/S-KEY
+        # pipelines.
+        discogs_classifiers = {
+            "danceable": 0.75,
+            "mood_happy": 0.6,
+            "mood_sad": 0.1,
+            "mood_relaxed": 0.5,
+            "mood_aggressive": 0.1,
+            "mood_party": 0.3,
+            "voice": 0.0,
+        }
+        discogs_tempo = {"tempo": 122.3, "confidence": 0.8}
+        discogs_deam = {"valence": 0.58, "arousal": 0.6}
+        discogs_skey = {"key": "C# minor", "tonic": "C#", "mode": "minor"}
         features = SimpleFeatureExtractor().extract_basic_features(
-            y_h, y_p, y_bpm, audio_file["bpm_metadata"], sr, audio_file["filename"]
+            y_h,
+            y_p,
+            y_bpm,
+            audio_file["bpm_metadata"],
+            sr,
+            audio_file["filename"],
+            discogs_classifiers,
+            discogs_tempo,
+            discogs_deam,
+            discogs_skey,
         )
 
         features_data = features["features"]
@@ -53,10 +79,11 @@ class TestSimpleFeatureExtractor:
         assert "camelot_key" in musical_features
         assert "valence" in musical_features
         assert "danceability" in musical_features
-        assert "acousticness" in musical_features
+        # acousticness/speechiness/liveness were retired along with the hand-computed
+        # heuristics that produced them (no discogs-effnet equivalent, per explicit
+        # decision -- see the ai-service cleanup plan). instrumentalness now comes
+        # from the voice/instrumental classifier (1 - voice probability) instead.
         assert "instrumentalness" in musical_features
-        assert "speechiness" in musical_features
-        assert "liveness" in musical_features
         assert "energy_comment" in musical_features
         assert "energy_keywords" in musical_features
 

@@ -1,27 +1,20 @@
 # Muzo AI Service
 
-AI-powered audio analysis and classification service for the Muzo project. Built with Flask and Python, this service provides comprehensive audio analysis capabilities including BPM detection, genre classification, key detection, mood analysis, and audio fingerprinting.
+AI-powered audio analysis and classification service for the Muzo project. Built with Flask and Python, this service provides comprehensive audio analysis capabilities including BPM detection, genre classification, key detection, mood analysis, and audio fingerprinting -- backed by Essentia's discogs-effnet embedding and its family of classifier heads (danceability, mood, voice/instrumental, genre, instruments, mood/theme tags) plus dedicated TempoCNN and DEAM arousal-valence models.
 
 ## Features
 
 ### 🎵 Audio Analysis
 
-- **BPM Detection**: Adaptive FFT-based tempo detection with multiple algorithm support (madmom, librosa)
+- **Tempo Detection**: Essentia TempoCNN (deeptemp-k16)
 - **Key Detection**: Musical key and scale identification (major/minor)
-- **Mood Analysis**: Audio mood classification and emotional characteristics
-- **Danceability Analysis**: Rhythm and groove analysis for dance suitability
-
-### 🎭 Genre Classification
-
-- **Hierarchical Classification**: Multi-level genre/subgenre classification using CNN models
-- **HuggingFace Integration**: Pre-trained models downloaded from HuggingFace Hub
-- **Batch Processing**: Process multiple files efficiently
+- **Mood Analysis**: Valence/arousal via the DEAM arousal-valence regression model; danceability via the discogs-effnet `danceable` classifier
+- **Genre/Tags**: `genre_discogs400`, `mtg_jamendo_moodtheme`, `mtg_jamendo_instrument` classifier heads on the discogs-effnet embedding
 
 ### 🔍 Audio Fingerprinting & Metadata
 
 - **Feature Extraction**: MFCC, spectral, rhythm, and melodic features
 - **Metadata Extraction**: ID3 tags, file properties, and technical details
-- **Third-party Integration**: Discogs, MusicBrainz lookups
 
 ### 📊 Supported Formats
 
@@ -49,27 +42,14 @@ pip install -r requirements.txt
 
 ### Running the Service
 
-Use `run_services.py` to start the service with different configurations:
+Use `run_services.py` to start the service:
 
 ```bash
-# Simple Analysis only (audioFlux-based, no threading conflicts)
-python run_services.py --simple-only --port=4001
-
-# Hierarchical Classification only (CNN-based, multithreaded)
-python run_services.py --hierarchical-only --port=4010
-
-# Full service (both features enabled)
 python run_services.py --port=4000
 
 # With debug mode
 python run_services.py --debug --port=4000
 ```
-
-| Mode            | Flag                  | Use Case                                                     |
-| --------------- | --------------------- | ------------------------------------------------------------ |
-| Simple Analysis | `--simple-only`       | audioFlux-based feature extraction, fingerprinting, metadata |
-| Hierarchical    | `--hierarchical-only` | CNN-based genre classification using HuggingFace models      |
-| Full            | (no flag)             | All features enabled                                         |
 
 Additional options: `--host <address>`, `--debug`
 
@@ -97,89 +77,6 @@ curl -X POST -F "audio_file=@track.mp3" http://localhost:4000/api/v1/audio/bpm/d
   "bpm": 128.0,
   "confidence": 0.95,
   "method": "adaptive_fft"
-}
-```
-
-### Hierarchical Classification
-
-Enable with `--hierarchical-only` or full mode.
-
-| Endpoint                               | Method | Description                |
-| -------------------------------------- | ------ | -------------------------- |
-| `/api/v1/audio/analyze/classification` | POST   | Single file classification |
-| `/api/v1/audio/hierarchical/batch`     | POST   | Batch classification       |
-| `/api/v1/audio/hierarchical/status`    | GET    | Service status             |
-| `/api/v1/audio/hierarchical/genres`    | GET    | Available genres           |
-| `/api/v1/audio/hierarchical/health`    | GET    | Health check               |
-| `/api/v1/audio/hierarchical/example`   | GET    | Example response           |
-
-**Example:**
-
-```bash
-curl -X POST -F "audio_file=@track.mp3" http://localhost:4000/api/v1/audio/analyze/classification
-```
-
-**Response:**
-
-```json
-{
-  "success": true,
-  "segment_index": 6,
-  "classification": {
-    "genre": "Electronic",
-    "subgenre": "Downtempo",
-    "confidence": {
-      "genre": 1.0,
-      "subgenre": 1.0,
-      "combined": 1.0,
-      "original_genre": 0.8808,
-      "original_subgenre": 0.9833,
-      "original_combined": 0.8661,
-      "discogs_boost": 1.2
-    }
-  },
-  "processing_time": 0,
-  "aggregation_method": "best_confidence",
-  "segment_count": 7,
-  "model_name": "Hierarchical Music Classification (Segmented)",
-  "file_path": "Africa Caribe - Undeniable Love (Joaquin Joe Claussell Remix).opus",
-  "segmentation": {
-    "used": true,
-    "segment_count": 7,
-    "segment_duration": 60.0,
-    "aggregation_method": "best_confidence"
-  },
-  "musicbrainz_validation": {
-    "enabled": true,
-    "used": false,
-    "genres_found": [],
-    "genre_match": false,
-    "boost_factor": 1.0,
-    "confidence_improvement": {
-      "genre": 0.0,
-      "subgenre": 0.0,
-      "combined": 0.0
-    },
-    "message": "MusicBrainz identification attempted but no genres found"
-  },
-  "discogs_validation": {
-    "enabled": true,
-    "used": true,
-    "genres_found": [
-      "Electronic",
-      "Latin",
-      "Funk / Soul",
-      "Folk, World, & Country"
-    ],
-    "subgenres_found": ["Salsa", "Afro-Cuban", "Latin", "Deep House"],
-    "genre_match": true,
-    "boost_factor": 1.2,
-    "confidence_improvement": {
-      "genre": 0.1192,
-      "subgenre": 0.0167,
-      "combined": 0.1339
-    }
-  }
 }
 ```
 
@@ -417,7 +314,6 @@ curl -X POST -F "audio_file=@track.mp3" http://localhost:4000/api/v1/audio/analy
 | Variable                             | Default | Description                                     |
 | ------------------------------------ | ------- | ----------------------------------------------- |
 | `ENABLE_SIMPLE_ANALYSIS`             | `true`  | Enable simple analysis endpoints                |
-| `ENABLE_HIERARCHICAL_CLASSIFICATION` | `true`  | Enable hierarchical classification              |
 | `PERFORMANCE_MONITORING`             | `true`  | Enable performance monitoring                   |
 | `SLOW_OPERATION_THRESHOLD`           | `1.0`   | Threshold (seconds) for slow operation warnings |
 
@@ -487,20 +383,17 @@ Models are downloaded from HuggingFace Hub and cached locally in `models/hugging
 ```
 ai-service/
 ├── app.py                      # Flask application entry point
-├── run_services.py             # Service runner with configuration flags
+├── run_services.py             # Service runner
 ├── requirements.txt            # Python dependencies
 ├── LICENSE                     # MIT License
 ├── src/
 │   ├── api/                    # API endpoints (Flask-RESTful resources)
 │   │   ├── bpm_detection.py
 │   │   ├── health.py
-│   │   ├── hierarchical_classification.py
 │   │   └── simple_analysis.py
 │   ├── services/               # Business logic and audio processing
-│   │   ├── enhanced_adaptive_bpm_detector.py
-│   │   ├── fft_bpm_detector.py
-│   │   ├── hierarchical_music_classifier.py
 │   │   ├── huggingface_model_manager.py
+│   │   ├── essentia_model_manager.py
 │   │   ├── simple_audio_loader.py
 │   │   ├── simple_feature_extractor.py
 │   │   ├── simple_fingerprint_generator.py
@@ -508,14 +401,13 @@ ai-service/
 │   │   ├── simple_technical_analyzer.py
 │   │   ├── simple_filename_parser.py
 │   │   ├── simple_analysis.py
-│   │   ├── features/           # Audio feature extractors
-│   │   │   ├── audio_mood_analyzer.py
-│   │   │   ├── danceability_analyzer.py
-│   │   │   ├── key_detector.py
-│   │   │   └── shared_features.py
-│   │   └── third_parties/      # External API integrations
-│   │       ├── discogs.py
-│   │       └── musicbrainz.py
+│   │   └── features/           # Audio feature extractors
+│   │       ├── discogs_embedding_extractor.py   # discogs-effnet 1280-dim embedding
+│   │       ├── discogs_classifiers_extractor.py # danceability/mood/voice/genre/instrument/tag heads
+│   │       ├── tempo_cnn_extractor.py           # TempoCNN tempo estimation
+│   │       ├── deam_extractor.py                # DEAM valence/arousal regression
+│   │       ├── key_detector.py
+│   │       └── shared_features.py
 │   ├── scrappers/              # Web scrapers for metadata
 │   │   ├── apple_music_scrapper.py
 │   │   ├── bancamp_scrapper.py
@@ -530,12 +422,9 @@ ai-service/
 │       ├── performance_analyzer.py
 │       ├── performance_optimizer.py
 │       └── redis_cache.py
-├── models/                     # Trained models and HuggingFace cache
+├── models/                     # Trained models and HuggingFace/Essentia cache
 ├── tests/                      # Test suite
-│   ├── unit/
-│   ├── integration/
-│   └── contract/
-└── trainers/                   # Model training scripts
+└── trainers/                   # Model training scripts (e.g. filename parser)
 ```
 
 ## Development

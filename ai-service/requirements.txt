@@ -6,11 +6,6 @@ Flask>=3.0.0
 Flask-CORS>=4.0.0
 Flask-RESTful>=0.3.10
 
-# FastAPI for hierarchical classification API
-fastapi>=0.104.0
-uvicorn[standard]>=0.24.0
-python-multipart>=0.0.6
-
 # Audio processing and analysis
 librosa>=0.10.1
 soundfile>=0.12.1
@@ -28,6 +23,13 @@ pandas>=2.0.0
 torch>=2.0.0
 torchvision>=0.15.0
 torchaudio>=2.0.0
+
+# S-KEY (Deezer, ICASSP 2025) self-supervised musical key detection.
+# Not published on PyPI -- installed directly from GitHub, pinned to a commit
+# for reproducibility. Pulls in nnAudio (HCQT features) and einops.
+skey @ git+https://github.com/deezer/skey.git@918b83d273568d5041569bb8068843d19a335726
+nnAudio==0.3.3
+einops==0.8.*
 
 # HuggingFace Hub for model downloads. Audio enhancement shells out to the
 # `hf` CLI's `buckets`/`jobs` subcommands (see src/services/audio_enhancement.py),
@@ -87,7 +89,6 @@ wheel>=0.41.0
 pylast>=6.0.0
 musicbrainzngs>=0.7.1
 pyacoustid>=1.3.0
-python3-discogs-client>=2.8.0
 
 pydub>=0.25.1
 

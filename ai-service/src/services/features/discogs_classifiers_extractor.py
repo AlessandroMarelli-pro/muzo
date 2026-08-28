@@ -87,8 +87,8 @@ MULTI_LABEL_HEADS = {
         "result_key": "instrument",
     },
     "tags": {
-        "url": "https://essentia.upf.edu/models/classification-heads/mtg_jamendo_top50tags/mtg_jamendo_top50tags-discogs-effnet-1.pb",
-        "json_url": "https://essentia.upf.edu/models/classification-heads/mtg_jamendo_top50tags/mtg_jamendo_top50tags-discogs-effnet-1.json",
+        "url": "https://essentia.upf.edu/models/classification-heads/mtg_jamendo_moodtheme/mtg_jamendo_moodtheme-discogs-effnet-1.pb",
+        "json_url": "https://essentia.upf.edu/models/classification-heads/mtg_jamendo_moodtheme/mtg_jamendo_moodtheme-discogs-effnet-1.json",
         "input": "model/Placeholder",
         "output": "model/Sigmoid",
         "min_confidence": 0.10,
@@ -102,7 +102,7 @@ MULTI_LABEL_HEADS = {
 class DiscogsClassifiersExtractor:
     """
     Runs Essentia's discogs-effnet classifier heads (danceability, moods,
-    voice/instrumental, instruments, genre_discogs400, mtg_jamendo_top50tags) on an
+    voice/instrumental, instruments, genre_discogs400, mtg_jamendo_moodtheme) on an
     already-computed 1280-dim discogs-effnet embedding.
 
     Every model here is a small TensorflowPredict2D head taking the embedding as

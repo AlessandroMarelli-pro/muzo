@@ -17,8 +17,10 @@ if TYPE_CHECKING:
     from src.utils.scan_progress_publisher import ScanProgressPublisher
 
 from src.services.base_metadata_extractor import create_metadata_extractor
+from src.services.features.deam_extractor import DeamExtractor
 from src.services.features.discogs_classifiers_extractor import DiscogsClassifiersExtractor
 from src.services.features.discogs_embedding_extractor import DiscogsEmbeddingExtractor
+from src.services.features.skey_extractor import SkeyExtractor
 from src.services.features.tempo_cnn_extractor import TempoCnnExtractor
 from src.services.simple_audio_loader import SimpleAudioLoader
 from src.services.simple_feature_extractor import SimpleFeatureExtractor
@@ -57,6 +59,8 @@ class SimpleAnalysisService:
         self.embedding_extractor = DiscogsEmbeddingExtractor()
         self.classifiers_extractor = DiscogsClassifiersExtractor()
         self.tempo_cnn_extractor = TempoCnnExtractor()
+        self.deam_extractor = DeamExtractor()
+        self.skey_extractor = SkeyExtractor()
 
         # Initialize AI metadata extractor (default: GEMINI, fallback to OPENAI)
         # Provider can be set via AI_METADATA_PROVIDER env var (GEMINI or OPENAI)
@@ -129,9 +133,9 @@ class SimpleAnalysisService:
 
         # Parallelism for per-file audio analysis within a batch.
         # Disabled by default (1 = sequential): audioflux's native BFT/Onset/Spectral calls
-        # (used in smart_audio_sample_loading, shared_features, key_detector,
-        # danceability_analyzer, audio_mood_analyzer) are not thread-safe -- audioflux bundles
-        # its own OpenMP runtime plus Apple's Accelerate framework, and calling into it from
+        # (used in smart_audio_sample_loading, shared_features, key_detector) are not
+        # thread-safe -- audioflux bundles its own OpenMP runtime plus Apple's Accelerate
+        # framework, and calling into it from
         # multiple Python threads concurrently reproducibly crashes the process with SIGBUS
         # (confirmed: ~40% crash rate across repeated concurrent runs). Since this service is
         # already horizontally scaled across multiple instances, cross-batch throughput comes
@@ -212,11 +216,26 @@ class SimpleAnalysisService:
         bpm_metadata,
         sr,
         file_path: str,
+        discogs_classifiers: dict,
+        discogs_tempo: dict,
+        discogs_deam: dict,
+        discogs_skey: dict,
         ai_bpm: float = None,
         ai_key: str = None,
     ) -> Dict[str, Any]:
         return self.feature_extractor.extract_basic_features(
-            y_harmonic, y_percussive, y_bpm, bpm_metadata, sr, file_path, ai_bpm, ai_key
+            y_harmonic,
+            y_percussive,
+            y_bpm,
+            bpm_metadata,
+            sr,
+            file_path,
+            discogs_classifiers,
+            discogs_tempo,
+            discogs_deam,
+            discogs_skey,
+            ai_bpm,
+            ai_key,
         )
 
     @monitor_performance("fingerprint_generation")
@@ -311,6 +330,60 @@ class SimpleAnalysisService:
             return result
         except Exception as e:
             logger.error(f"Failed to load full track for TempoCNN extraction: {e}")
+            return {}
+
+    @monitor_performance("deam_generation")
+    def generate_deam_mood(self, file_path: str) -> dict:
+        """
+        Load the FULL track and estimate valence/arousal via the DEAM
+        arousal-valence regression model. Unlike the discogs-effnet classifier
+        heads, DEAM runs on a separate MSD-MusiCNN embedding (also 16kHz, so no
+        extra resample beyond what DeamExtractor already does) -- see
+        DeamExtractor's docstring for why this model over emoMusic/MuSe. Gated by
+        DISCOGS_CLASSIFIERS_ENABLED (same flag as the rest of this pipeline's
+        model-driven fields). Returns {} when disabled or on any failure.
+        """
+        if not DISCOGS_CLASSIFIERS_ENABLED:
+            logger.debug("DEAM mood extraction skipped: DISCOGS_CLASSIFIERS_ENABLED is false")
+            return {}
+        try:
+            y_full, sr = self.audio_loader.load_audio_sample(file_path, sample_duration=None)
+            result = self.deam_extractor.extract_from_audio(y_full, sr)
+            if result:
+                logger.info(
+                    f"DEAM mood: valence={result.get('valence', 0):.2f} "
+                    f"arousal={result.get('arousal', 0):.2f}"
+                )
+            else:
+                logger.warning(f"DEAM mood extraction returned empty result for {file_path}")
+            return result
+        except Exception as e:
+            logger.error(f"Failed to load full track for DEAM mood extraction: {e}")
+            return {}
+
+    @monitor_performance("skey_generation")
+    def generate_skey(self, file_path: str) -> dict:
+        """
+        Load the FULL track and estimate musical key via Deezer's S-KEY model,
+        replacing the retired hand-computed KeyFinder/tonnetz-mode heuristic.
+        Gated by DISCOGS_CLASSIFIERS_ENABLED (same flag as the rest of this
+        pipeline's model-driven fields, despite S-KEY not actually being part of
+        the discogs-effnet family -- one comparison toggle for all model-sourced
+        fields). Returns {} when disabled or on any failure.
+        """
+        if not DISCOGS_CLASSIFIERS_ENABLED:
+            logger.debug("S-KEY extraction skipped: DISCOGS_CLASSIFIERS_ENABLED is false")
+            return {}
+        try:
+            y_full, sr = self.audio_loader.load_audio_sample(file_path, sample_duration=None)
+            result = self.skey_extractor.extract_from_audio(y_full, sr)
+            if result:
+                logger.info(f"S-KEY: key={result.get('key')}")
+            else:
+                logger.warning(f"S-KEY extraction returned empty result for {file_path}")
+            return result
+        except Exception as e:
+            logger.error(f"Failed to load full track for S-KEY extraction: {e}")
             return {}
 
     def check_performance_bottlenecks(self) -> Dict[str, Any]:
@@ -512,6 +585,14 @@ class SimpleAnalysisService:
 
             ai_bpm = ai_metadata.get("audioFeatures", {}).get("bpm", None)
             ai_key = ai_metadata.get("audioFeatures", {}).get("key", None)
+            # Computed first: extract_basic_features now sources tempo/danceability/
+            # mood/instrumentalness from these instead of the retired hand-computed
+            # detectors/formulas.
+            embedding = self.generate_discogs_embedding_from_file(file_path)
+            discogs_classifiers = self.generate_discogs_classifiers(embedding)
+            discogs_tempo = self.generate_tempo_cnn(file_path)
+            discogs_deam = self.generate_deam_mood(file_path)
+            discogs_skey = self.generate_skey(file_path)
             basic_features = self.extract_basic_features(
                 y_harmonic,
                 y_percussive,
@@ -519,14 +600,15 @@ class SimpleAnalysisService:
                 bpm_metadata,
                 sr,
                 file_path,
+                discogs_classifiers,
+                discogs_tempo,
+                discogs_deam,
+                discogs_skey,
                 ai_bpm,
                 ai_key,
             )  # Use optimized samples for features
             # Use harmonic sample for fingerprint (more representative of melody/harmony)
             fingerprint = self.generate_simple_fingerprint(file_path, y_harmonic, sr)
-            embedding = self.generate_discogs_embedding_from_file(file_path)
-            discogs_classifiers = self.generate_discogs_classifiers(embedding)
-            discogs_tempo = self.generate_tempo_cnn(file_path)
             id3_tags = self.extract_id3_tags(file_path, original_filename)
 
             # Check performance bottlenecks after analysis
@@ -551,6 +633,8 @@ class SimpleAnalysisService:
                 "embedding": embedding,
                 "discogs_classifiers": discogs_classifiers,
                 "discogs_tempo": discogs_tempo,
+                "discogs_deam": discogs_deam,
+                "discogs_skey": discogs_skey,
                 **id3_tags,
             }
 
@@ -703,6 +787,15 @@ class SimpleAnalysisService:
                     25,
                 )
 
+            # Computed first: extract_basic_features now sources tempo/danceability/
+            # mood/instrumentalness from these instead of the retired hand-computed
+            # detectors/formulas.
+            embedding = self.generate_discogs_embedding_from_file(file_path)
+            discogs_classifiers = self.generate_discogs_classifiers(embedding)
+            discogs_tempo = self.generate_tempo_cnn(file_path)
+            discogs_deam = self.generate_deam_mood(file_path)
+            discogs_skey = self.generate_skey(file_path)
+
             # Extract features
             basic_features = self.extract_basic_features(
                 y_harmonic,
@@ -711,6 +804,10 @@ class SimpleAnalysisService:
                 bpm_metadata,
                 sr,
                 file_path,
+                discogs_classifiers,
+                discogs_tempo,
+                discogs_deam,
+                discogs_skey,
                 ai_bpm,
                 ai_key,
             )
@@ -728,9 +825,6 @@ class SimpleAnalysisService:
 
             # Generate fingerprint
             fingerprint = self.generate_simple_fingerprint(file_path, y_harmonic, sr)
-            embedding = self.generate_discogs_embedding_from_file(file_path)
-            discogs_classifiers = self.generate_discogs_classifiers(embedding)
-            discogs_tempo = self.generate_tempo_cnn(file_path)
 
             # Publish audio.analysis progress (75%)
             if progress_publisher and session_id:
@@ -760,6 +854,8 @@ class SimpleAnalysisService:
                 "embedding": embedding,
                 "discogs_classifiers": discogs_classifiers,
                 "discogs_tempo": discogs_tempo,
+                "discogs_deam": discogs_deam,
+                "discogs_skey": discogs_skey,
                 **id3_tags,
             }
 

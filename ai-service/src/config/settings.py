@@ -27,13 +27,6 @@ class Config:
     SUPPORTED_AUDIO_FORMATS = ["wav", "mp3", "flac", "m4a", "aac", "ogg", "opus"]
     TEMP_AUDIO_DIR = os.environ.get("TEMP_AUDIO_DIR", "/tmp/muzo_audio")
 
-    # Model configuration
-    MODEL_DIR = os.environ.get("MODEL_DIR", "src/models")
-    GENRE_CLASSIFIER_MODEL = os.environ.get("GENRE_CLASSIFIER_MODEL", "music-v1.0.pkl")
-    SUBGENRE_CLASSIFIER_MODEL = os.environ.get(
-        "SUBGENRE_CLASSIFIER_MODEL", "music-v1.0.pkl"
-    )
-
     # Audio analysis configuration
     SAMPLE_RATE = int(os.environ.get("SAMPLE_RATE", 44100))
     HOP_LENGTH = int(os.environ.get("HOP_LENGTH", 512))
@@ -47,9 +40,6 @@ class Config:
     # Service configuration
     ENABLE_SIMPLE_ANALYSIS = (
         os.environ.get("ENABLE_SIMPLE_ANALYSIS", "true").lower() == "true"
-    )
-    ENABLE_HIERARCHICAL_CLASSIFICATION = (
-        os.environ.get("ENABLE_HIERARCHICAL_CLASSIFICATION", "true").lower() == "true"
     )
 
     # Cache configuration

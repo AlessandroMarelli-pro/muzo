@@ -13,8 +13,6 @@ import numpy as np
 from audioflux.type import SpectralFilterBankScaleType
 from loguru import logger
 
-from src.services.features.audio_mood_analyzer import AudioMoodAnalyzer
-from src.services.features.danceability_analyzer import DanceabilityAnalyzer
 from src.services.features.key_detector import KeyDetector
 from src.services.features.shared_features import SharedFeatures
 from src.utils.redis_cache import RedisCache
@@ -31,7 +29,6 @@ try:
 except Exception:
     pass
 
-from src.services.enhanced_adaptive_bpm_detector import EnhancedAdaptiveBPMDetector
 from src.utils.performance_optimizer import monitor_performance
 
 
@@ -210,104 +207,119 @@ class SimpleFeatureExtractor:
                 "keywords": ["mixed", "varied", "complex"],
             }
 
+    # danceability_feeling threshold ladder, reused from the retired DanceabilityAnalyzer
+    # so the label semantics don't change even though the source score does.
+    _DANCEABILITY_FEELING_TIERS = [
+        (0.75, "highly-danceable"),
+        (0.60, "very-danceable"),
+        (0.45, "danceable"),
+        (0.30, "moderately-danceable"),
+        (0.20, "somewhat-danceable"),
+        (0.10, "minimally-danceable"),
+    ]
+
+    # valence_mood / arousal_mood 5-tier ladders, reused from the retired
+    # AudioMoodAnalyzer so label semantics don't change even though the source scores do.
+    _VALENCE_MOOD_TIERS = [
+        (0.75, "very positive"),
+        (0.60, "positive"),
+        (0.40, "neutral"),
+        (0.25, "negative"),
+    ]
+    _AROUSAL_MOOD_TIERS = [
+        (0.80, "very energetic"),
+        (0.60, "energetic"),
+        (0.40, "moderate energy"),
+        (0.20, "calm"),
+    ]
+
+    @staticmethod
+    def _label_from_tiers(value: float, tiers: list, below_label: str) -> str:
+        for threshold, label in tiers:
+            if value >= threshold:
+                return label
+        return below_label
+
     @monitor_performance("get_musical_features")
     def _get_musical_features(
         self,
-        y: np.ndarray,
-        y_bpm: np.ndarray,
-        sr: int,
-        tempo: float,
-        beat_strength: float,
         spectral_features: dict,
+        discogs_classifiers: dict,
+        discogs_deam: dict,
         mode: str = "major",
     ) -> dict:
         """
-        Extract musical characteristics like valence, danceability, etc.
-
-        Enhanced danceability calculation based on Essentia's approach:
-        - Rhythm regularity: Consistency of beat patterns
-        - Beat strength: Prominence and clarity of beats
-        - Tempo appropriateness: How suitable tempo is for dancing
-        - Energy distribution: Overall energy characteristics
+        Derive musical characteristics (valence/arousal, danceability,
+        instrumentalness) from the discogs-effnet classifier outputs and the DEAM
+        arousal-valence regression model, replacing the retired hand-computed
+        AudioMoodAnalyzer/DanceabilityAnalyzer formulas and spectral heuristics.
 
         Args:
-            y: Audio data
-            y_bpm: BPM-optimized audio data
-            sr: Sample rate
-            tempo: Tempo in BPM
-            spectral_features: Dictionary containing spectral features
-            shared_features: Pre-extracted shared features (optional)
+            spectral_features: Dictionary containing spectral features (used only for
+                the energy-band comment/keywords, which have no discogs-effnet analog)
+            discogs_classifiers: Output of DiscogsClassifiersExtractor.predict_all --
+                danceable, mood_happy, mood_sad, mood_relaxed, mood_aggressive,
+                mood_party, voice (all 0-1 or None)
+            discogs_deam: Output of DeamExtractor.extract_from_audio -- valence/
+                arousal (both 0-1, rescaled from DEAM's native [1,9] range), or {}
+                on failure. Chosen over emoMusic/MuSe for best arousal correlation
+                (see DeamExtractor's docstring). Falls back to a neutral 0.5/0.5 if
+                empty rather than deriving from the mood classifiers, since DEAM is
+                a dedicated regression model for this exact task.
+            mode: "major"/"minor" from S-KEY's own key prediction (or from ai_key
+                when the LLM-provided key overrides it)
 
         Returns:
             Dictionary containing musical features
         """
         try:
-            rolloff = spectral_features["spectral_rolloffs"]["mean"]
+            discogs_classifiers = discogs_classifiers or {}
+            discogs_deam = discogs_deam or {}
 
-            # Enhanced valence calculation using multiple musical factors
-            (
-                valence,
-                arousal,
-                valence_mood,
-                arousal_mood,
-                mood_calculation,
-            ) = AudioMoodAnalyzer(self.shared_features).analyze_audio_mood(
-                y,
-                sr,
-                tempo,
-                mode,
-                beat_strength,
+            def _prob(key: str) -> float:
+                value = discogs_classifiers.get(key)
+                return float(value) if value is not None else 0.5
+
+            voice = _prob("voice")
+            danceable = _prob("danceable")
+
+            valence = float(discogs_deam.get("valence", 0.5))
+            valence = min(1.0, max(0.0, valence))
+            valence_mood = self._label_from_tiers(
+                valence, self._VALENCE_MOOD_TIERS, "very negative"
             )
 
-            # Combine all danceability factors with weights
-            # Based on Essentia's approach: rhythm regularity and beat strength are most important
-            # Enhanced danceability (0-1 range)
-            danceability, danceability_feeling, danceability_calculation = (
-                DanceabilityAnalyzer(self.shared_features).calculate_danceability(
-                    beat_strength,
-                    y_bpm,
-                    sr,
-                    tempo,
-                )
+            arousal = float(discogs_deam.get("arousal", 0.5))
+            arousal = min(1.0, max(0.0, arousal))
+            arousal_mood = self._label_from_tiers(
+                arousal, self._AROUSAL_MOOD_TIERS, "very calm"
             )
 
-            # Acousticness: Higher for acoustic instruments, lower for electronic
-            # Use shared features if available to avoid duplicate spectral_centroids call
-            harmonic_content = float(
-                self.shared_features.features["spectral_centroids"]["mean"]
-            )
-            acousticness = min(1.0, max(0.0, 1.0 - (harmonic_content / 3000.0)))
-
-            # Instrumentalness: Fast approximation using spectral rolloff
-            instrumentalness = min(1.0, max(0.0, rolloff / 4000.0))
-
-            # Speechiness: Higher for speech-like content, lower for musical content
-            speechiness = min(
-                1.0, max(0.0, spectral_features["zero_crossing_rate"]["mean"] * 2.0)
+            danceability = danceable
+            danceability_feeling = self._label_from_tiers(
+                danceability, self._DANCEABILITY_FEELING_TIERS, "experimental"
             )
 
-            # Liveness: Higher for live recordings, lower for studio recordings
-            dynamic_range = float(np.std(y) / (np.mean(np.abs(y)) + 1e-8))
-            liveness = min(1.0, max(0.0, dynamic_range * 0.5))
+            # instrumentalness: probability of NOT vocal -- the closest discogs-effnet
+            # analog to the old spectral-rolloff heuristic. acousticness/speechiness/
+            # liveness have no discogs-effnet equivalent and are dropped outright (no
+            # replacement computation, no placeholder) per explicit decision.
+            instrumentalness = 1.0 - voice
 
-            # Generate energy band comment and keywords
+            # Generate energy band comment and keywords (no discogs-effnet analog;
+            # kept as-is, still sourced from spectral features)
             energy_by_band = spectral_features["energy_by_band"]
             energy_ratios = spectral_features["energy_ratios"]
             energy_info = self._get_energy_band_comment(energy_by_band, energy_ratios)
 
             return {
                 "valence": float(round(valence, 3)),
-                "mood_calculation": mood_calculation,
                 "valence_mood": valence_mood,
                 "arousal": float(round(arousal, 3)),
                 "arousal_mood": arousal_mood,
                 "danceability": float(round(danceability, 3)),
                 "danceability_feeling": danceability_feeling,
-                "danceability_calculation": danceability_calculation,
-                "acousticness": float(round(acousticness, 3)),
                 "instrumentalness": float(round(instrumentalness, 3)),
-                "speechiness": float(round(speechiness, 3)),
-                "liveness": float(round(liveness, 3)),
                 "energy_comment": energy_info["comment"],
                 "energy_keywords": energy_info["keywords"],
                 "mode": mode,
@@ -318,33 +330,12 @@ class SimpleFeatureExtractor:
             logger.error(f"Failed to extract musical features: {e}")
             return {
                 "valence": 0.5,
-                "mood_calculation": {
-                    "mode_factor": 0.0,
-                    "tempo_factor": 0.0,
-                    "energy_factor": 0.0,
-                    "brightness_factor": 0.0,
-                    "harmonic_factor": 0.0,
-                    "spectral_balance": 0.0,
-                    "timbre_factor": 0.0,
-                },
                 "valence_mood": "neutral",
                 "arousal": 0.5,
                 "arousal_mood": "neutral",
                 "danceability": 0.5,
-                "danceability_calculation": {
-                    "rhythm_regularity": 0.0,
-                    "beat_strength": 0.0,
-                    "tempo_appropriateness": 0.0,
-                    "energy_factor": 0.0,
-                },
                 "danceability_feeling": "neutral",
-                "attack_time": 0.1,
-                "harmonic_to_noise_ratio": 0.5,
-                "syncopation": 0.3,
-                "acousticness": 0.5,
                 "instrumentalness": 0.5,
-                "speechiness": 0.5,
-                "liveness": 0.5,
                 "energy_comment": "Energy profile unavailable",
                 "energy_keywords": [],
                 "energy_ratios": [0.0, 0.0, 0.0],
@@ -409,6 +400,10 @@ class SimpleFeatureExtractor:
         bpm_metadata: dict,
         sr: int,
         file_path: str,
+        discogs_classifiers: dict,
+        discogs_tempo: dict,
+        discogs_deam: dict,
+        discogs_skey: dict,
         ai_bpm: float = None,
         ai_key: str = None,
     ) -> Dict[str, Any]:
@@ -418,9 +413,24 @@ class SimpleFeatureExtractor:
         Args:
             y_harmonic: Harmonic-rich audio sample (for key, chords, melody)
             y_percussive: Percussive-rich audio sample (for rhythm analysis)
-            y_bpm: BPM-optimized audio sample (regular beat, good energy)
+            y_bpm: BPM-optimized audio sample (unused now that tempo comes from
+                TempoCNN instead of the retired hand-computed BPM detector; kept in
+                the signature since callers/smart_audio_sample_loading still produce it)
             sr: Sample rate
             file_path: Path to audio file (for fallback)
+            discogs_classifiers: Output of DiscogsClassifiersExtractor.predict_all,
+                computed earlier in the same request -- feeds danceability/
+                instrumentalness (replaces DanceabilityAnalyzer/the
+                acousticness-speechiness-liveness heuristics)
+            discogs_tempo: Output of TempoCnnExtractor.extract_from_audio, computed
+                earlier in the same request -- feeds tempo (replaces
+                EnhancedAdaptiveBPMDetector/FFTBPMDetector)
+            discogs_deam: Output of DeamExtractor.extract_from_audio, computed
+                earlier in the same request -- feeds valence/arousal (replaces
+                AudioMoodAnalyzer)
+            discogs_skey: Output of SkeyExtractor.extract_from_audio, computed
+                earlier in the same request -- feeds key/camelot_key (replaces
+                the KeyFinder/tonnetz-mode heuristic)
 
         Returns:
             Dictionary containing basic audio features
@@ -431,14 +441,10 @@ class SimpleFeatureExtractor:
             # Extract shared features from both harmonic and percussive samples
             self.shared_features.extract_shared_features(y_harmonic, y_percussive, sr)
 
-            # Extract individual feature groups using BPM-optimized sample
-            bpm_detector = EnhancedAdaptiveBPMDetector()
-            tempo, beat_strength, bpm_results = bpm_detector.detect_bpm_from_file(
-                file_path, bpm_metadata
-            )
-            tempo_source = "dsp"
+            tempo = float((discogs_tempo or {}).get("tempo") or 0.0)
+            tempo_source = "tempo_cnn"
             if ai_bpm:
-                # The LLM-provided BPM silently overrides the detector's value.
+                # The LLM-provided BPM silently overrides the detected value.
                 # If AI metadata is only intermittently available, the same
                 # file can report different tempos across runs with no
                 # visible reason -- log it and surface the source downstream
@@ -450,35 +456,28 @@ class SimpleFeatureExtractor:
                 tempo = ai_bpm
                 tempo_source = "ai"
 
-            # Use harmonic sample for key detection (key is based on tonal content)
-            key, camelot_key, tonnetz_mode = KeyDetector(
-                self.shared_features
-            ).get_simple_key(y_harmonic, sr)
+            # S-KEY's key string (e.g. "C# minor") uses sharps-only naming, so
+            # the camelot_wheel lookup (keyed on e.g. "C# MINOR") works unchanged.
+            key = (discogs_skey or {}).get("key") or "Unknown"
+            mode = (discogs_skey or {}).get("mode") or "major"
+            camelot_key = KeyDetector.camelot_wheel.get(key.upper(), "Unknown")
             if ai_key:
                 key = ai_key
-                camelot_key = KeyDetector(self.shared_features).camelot_wheel.get(
-                    key.upper(), "Unknown"
-                )
-                tonnetz_mode = "major" if "major" in key.lower() else "minor"
+                camelot_key = KeyDetector.camelot_wheel.get(key.upper(), "Unknown")
+                mode = "major" if "major" in key.lower() else "minor"
             key = key.capitalize()
             spectral_features = self._get_spectral_features()
-            # Use harmonic sample for musical features (mood/valence based on harmony)
 
             musical_features = self._get_musical_features(
-                y_harmonic,
-                y_bpm,
-                sr,
-                tempo,
-                beat_strength,
                 spectral_features,
-                tonnetz_mode,
+                discogs_classifiers,
+                discogs_deam,
+                mode,
             )
 
-            bass_presence = float(
-                musical_features.get("danceability_calculation", {}).get("bass_presence")
-                or 0.0
-            )
-            spectral_features["bass_presence"] = bass_presence
+            # bass_presence had no source besides the retired DanceabilityAnalyzer;
+            # no discogs-effnet equivalent exists, so it defaults to 0.0.
+            spectral_features["bass_presence"] = 0.0
 
             rhythm_fingerprint = self._get_rhythm_fingerprint()
             melodic_fingerprint = self._get_melodic_fingerprint()

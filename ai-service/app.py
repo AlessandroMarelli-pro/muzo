@@ -25,19 +25,6 @@ from src.api.health import HealthResource
 from src.api.openai_metadata import OpenAIMetadataResource
 from src.api.simple_analysis import SimpleAnalysisResource
 
-# Conditionally import hierarchical classification resources
-if os.getenv("ENABLE_HIERARCHICAL_CLASSIFICATION", "true") == "true":
-    from src.api.hierarchical_classification import (
-        HierarchicalBatchClassificationResource,
-        HierarchicalClassificationResource,
-        HierarchicalExampleResource,
-        HierarchicalGenresResource,
-        HierarchicalHealthCheckResource,
-        HierarchicalPerformanceResource,
-        HierarchicalSystemStatusResource,
-        initialize_service,
-    )
-
 # Import configuration
 from src.config.settings import Config
 
@@ -112,30 +99,6 @@ def configure_logging(app):
 
 def initialize_services(app):
     """Initialize application services based on configuration flags."""
-    print("app", os.getenv("ENABLE_HIERARCHICAL_CLASSIFICATION"))
-    # Initialize hierarchical classification service if enabled
-    if os.getenv("ENABLE_HIERARCHICAL_CLASSIFICATION") == "true":
-        try:
-            import asyncio
-
-            logger.info(
-                "🔄 Initializing hierarchical classification service on startup"
-            )
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            hierarchical_service = loop.run_until_complete(initialize_service())
-            app.hierarchical_classifier = hierarchical_service
-            logger.info("✅ Hierarchical classification service initialized on startup")
-        except Exception as e:
-            logger.warning(
-                f"⚠️ Failed to initialize hierarchical classification service on startup: {e}"
-            )
-            logger.warning("Service will be initialized on first request")
-            app.hierarchical_classifier = None
-    else:
-        logger.info("🚫 Hierarchical classification service disabled by configuration")
-        app.hierarchical_classifier = None
-
     logger.info("Services initialized successfully")
 
 
@@ -169,46 +132,6 @@ def register_resources(api, app):
         logger.info("✅ Audio enhancement endpoint registered")
     else:
         logger.info("🚫 Audio enhancement endpoint disabled by configuration")
-
-    # Hierarchical classification endpoints (if enabled and imported)
-    if os.getenv("ENABLE_HIERARCHICAL_CLASSIFICATION") == "true":
-        try:
-            from src.api.hierarchical_classification import (
-                HierarchicalBatchClassificationResource,
-                HierarchicalClassificationResource,
-                HierarchicalExampleResource,
-                HierarchicalGenresResource,
-                HierarchicalHealthCheckResource,
-                HierarchicalPerformanceResource,
-                HierarchicalSystemStatusResource,
-            )
-
-            api.add_resource(
-                HierarchicalClassificationResource, "/audio/analyze/classification"
-            )
-            api.add_resource(
-                HierarchicalBatchClassificationResource, "/audio/hierarchical/batch"
-            )
-            api.add_resource(
-                HierarchicalSystemStatusResource, "/audio/hierarchical/status"
-            )
-            api.add_resource(HierarchicalGenresResource, "/audio/hierarchical/genres")
-            api.add_resource(
-                HierarchicalPerformanceResource, "/audio/hierarchical/performance"
-            )
-            api.add_resource(
-                HierarchicalHealthCheckResource, "/audio/hierarchical/health"
-            )
-            api.add_resource(HierarchicalExampleResource, "/audio/hierarchical/example")
-            logger.info("✅ Hierarchical classification endpoints registered")
-        except NameError:
-            logger.error(
-                "❌ Hierarchical classification resources not imported - check configuration"
-            )
-    else:
-        logger.info(
-            "🚫 Hierarchical classification endpoints disabled by configuration"
-        )
 
     logger.info("API resources registered successfully")
 
@@ -310,20 +233,6 @@ def create_app_with_routes(config_class=Config):
             }
         )
 
-        # Add hierarchical classification endpoints if enabled
-        if os.getenv("ENABLE_HIERARCHICAL_CLASSIFICATION") == "true":
-            endpoints.update(
-                {
-                    "audio_hierarchical": "/api/v1/audio/analyze/classification",
-                    "audio_hierarchical_batch": "/api/v1/audio/hierarchical/batch",
-                    "audio_hierarchical_status": "/api/v1/audio/hierarchical/status",
-                    "audio_hierarchical_genres": "/api/v1/audio/hierarchical/genres",
-                    "audio_hierarchical_performance": "/api/v1/audio/hierarchical/performance",
-                    "audio_hierarchical_health": "/api/v1/audio/hierarchical/health",
-                    "audio_hierarchical_example": "/api/v1/audio/hierarchical/example",
-                }
-            )
-
         return jsonify(
             {
                 "service": "Muzo AI Service",
@@ -331,10 +240,6 @@ def create_app_with_routes(config_class=Config):
                 "description": "AI-powered audio analysis and classification service",
                 "configuration": {
                     "simple_analysis_enabled": os.getenv("ENABLE_SIMPLE_ANALYSIS")
-                    == "true",
-                    "hierarchical_classification_enabled": os.getenv(
-                        "ENABLE_HIERARCHICAL_CLASSIFICATION"
-                    )
                     == "true",
                 },
                 "endpoints": endpoints,
@@ -370,39 +275,8 @@ def create_app_with_routes(config_class=Config):
             "configuration": {
                 "simple_analysis_enabled": os.getenv("ENABLE_SIMPLE_ANALYSIS")
                 == "true",
-                "hierarchical_classification_enabled": os.getenv(
-                    "ENABLE_HIERARCHICAL_CLASSIFICATION"
-                )
-                == "true",
             },
         }
-
-        # Add hierarchical service status if enabled
-        if os.getenv("ENABLE_HIERARCHICAL_CLASSIFICATION") == "true":
-            try:
-                from src.api.hierarchical_classification import (
-                    get_service_instance,
-                    is_service_ready,
-                )
-
-                service = get_service_instance()
-                status["hierarchical_service_ready"] = is_service_ready()
-                status["hierarchical_service_available"] = service is not None
-
-                if service:
-                    try:
-                        import asyncio
-
-                        health = asyncio.run(service.health_check())
-                        status["hierarchical_service_health"] = health
-                    except Exception as e:
-                        status["hierarchical_service_health"] = {"error": str(e)}
-            except ImportError:
-                status["hierarchical_service_error"] = (
-                    "Hierarchical classification module not imported"
-                )
-        else:
-            status["hierarchical_service_enabled"] = False
 
         return jsonify(status)
 
@@ -412,29 +286,6 @@ def create_app_with_routes(config_class=Config):
 def shutdown_handler():
     """Handle application shutdown gracefully."""
     logger.info("🔄 Shutting down Muzo AI Service...")
-
-    # Clean up hierarchical classification service if enabled
-    if os.getenv("ENABLE_HIERARCHICAL_CLASSIFICATION") == "true":
-        try:
-            from src.api.hierarchical_classification import get_service_instance
-
-            service = get_service_instance()
-            if service:
-                logger.info("🔄 Shutting down hierarchical classification service...")
-                import asyncio
-
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
-                loop.run_until_complete(service.shutdown())
-                logger.info("✅ Hierarchical classification service shutdown complete")
-        except ImportError:
-            logger.info(
-                "ℹ️ Hierarchical classification service not imported - skipping shutdown"
-            )
-        except Exception as e:
-            logger.warning(
-                f"⚠️ Error during hierarchical classification service shutdown: {e}"
-            )
 
 
 # Create the application instance
