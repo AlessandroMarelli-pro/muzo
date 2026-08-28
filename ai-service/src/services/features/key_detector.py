@@ -14,8 +14,6 @@ try:
 except Exception:
     pass
 
-from warnings import deprecated
-
 from src.services.features.shared_features import SharedFeatures
 from src.utils.keyfinder import KeyFinder
 from src.utils.performance_optimizer import monitor_performance
