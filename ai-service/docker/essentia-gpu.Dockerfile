@@ -14,15 +14,33 @@
 # AVChannelLayout/ch_layout aren't declared with 4.4.4's headers). So their
 # build steps are inlined here with a newer FFMPEG_VERSION instead of FROM-ing
 # their image directly.
-
-FROM debian:bookworm-slim AS essentia-libs
+#
+# Base OS here MUST match the runtime stage's base OS (both ubuntu:22.04 /
+# glibc 2.35), not just its CUDA version. This stage's .so files (Essentia's
+# C++ core, its Python extension module, and the TensorFlow C library) are
+# copied wholesale into the runtime stage and loaded into the same process as
+# the runtime's own libc -- if the two stages' glibc/libstdc++ ABI versions
+# differ, a malloc()'d-in-one/free()'d-in-another mismatch is possible.
+# Confirmed via a real deployment: using debian:bookworm-slim (glibc 2.36)
+# here against a runtime base of ubuntu:22.04 (glibc 2.35) built and ran fine
+# through model *loading*, then crashed with "malloc(): invalid size
+# (unsorted)" -- a glibc heap-corruption abort, uncatchable from Python --
+# on the very first GPU inference call.
+FROM ubuntu:22.04 AS essentia-libs
 ENV DEBIAN_FRONTEND=noninteractive
 
-# No libavcodec-dev/libavformat-dev/etc here: those are Debian's stock
+# No libavcodec-dev/libavformat-dev/etc here: those are the distro's stock
 # FFmpeg 4.4 dev headers, which is exactly the version essentia's master
 # branch is incompatible with (see header comment) -- FFmpeg is built from
 # source below instead, into /usr/local, ahead of any system FFmpeg on the
 # pkg-config/linker search path.
+#
+# python3.11 explicitly (not the "python3" package, which is 3.10 on
+# 22.04's default archive) -- must match the runtime stage's python3.11
+# exactly, since Essentia's Python bindings compile a CPython extension
+# module tied to a specific interpreter ABI. 22.04's own universe archive
+# already carries a python3.11 package (3.11.0~rc1), same as what the
+# runtime stage installs -- no need for deadsnakes.
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     build-essential \
@@ -32,8 +50,8 @@ RUN apt-get update && \
     libsamplerate0-dev \
     libtag1-dev \
     libchromaprint-dev \
-    python3 \
-    python3-dev \
+    python3.11 \
+    python3.11-dev \
     git \
     ca-certificates \
     wget \
@@ -41,7 +59,9 @@ RUN apt-get update && \
     nasm yasm \
     zlib1g-dev \
     libssl-dev \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+    && update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.11 1 \
+    && curl -sS https://bootstrap.pypa.io/get-pip.py | python3.11
 
 # Essentia's AudioLoader only decodes audio -- it never encodes H.264/VP9/
 # etc. -- so this skips the external encoder libs (libx264/libvpx/...) that
@@ -88,12 +108,10 @@ RUN wget -q https://github.com/ika-rwth-aachen/libtensorflow_cc/releases/downloa
       > /usr/local/lib/pkgconfig/tensorflow.pc && \
     ldconfig
 
-RUN apt-get update && apt-get install -y --no-install-recommends python3-pip \
-    && rm -rf /var/lib/apt/lists/*
-# Debian 12 marks the system Python as externally-managed (PEP 668); this is
-# a throwaway build stage, not a host system, so --break-system-packages is
-# fine here.
-RUN python3 -m pip install --no-cache-dir --break-system-packages numpy pyyaml
+# pip for python3.11 was already bootstrapped via get-pip.py above (not the
+# python3-pip apt package -- on 22.04 that pulls in python3.10 as a
+# dependency instead of targeting the deadsnakes 3.11 we actually want).
+RUN python3 -m pip install --no-cache-dir numpy pyyaml
 
 ARG ESSENTIA_COMMIT=master
 RUN git clone --depth 1 https://github.com/MTG/essentia.git /opt/essentia && \
@@ -109,7 +127,8 @@ RUN python3 waf configure --with-tensorflow --with-python && \
 # ---- runtime -----------------------------------------------------------
 # nvidia/cuda for the GPU runtime libraries the TensorFlow C library needs;
 # Essentia's own build (C++ core + Python bindings) comes from essentia-libs
-# above, which used debian:bookworm-slim's default Python 3 (3.11).
+# above, which now uses the same ubuntu:22.04 base (glibc 2.35) as here --
+# see the essentia-libs stage header comment for why that match matters.
 # TensorFlow 2.13 (the newest libtensorflow_cc GPU build available -- see
 # essentia-libs above) was only tested against CUDA 11.8 + cuDNN 8.6
 # (tensorflow.org/install/source#gpu). It dlopen()s CUDA libraries by exact
@@ -136,11 +155,13 @@ COPY --from=essentia-libs /usr/local/lib /usr/local/lib
 COPY --from=essentia-libs /usr/local/include /usr/local/include
 RUN ldconfig
 
-# essentia-libs' waf install put the Python package under Debian's
-# version-agnostic /usr/local/lib/python3/dist-packages (confirmed from a
-# real build log), not the python3.11-specific dist-packages dir this image's
-# python3.11 searches by default -- point it there via PYTHONPATH.
-ENV PYTHONPATH=/usr/local/lib/python3/dist-packages
+# waf install's Python destination is derived from the build stage's own
+# python3-config/distutils and may land under a version-agnostic
+# dist-packages dir (confirmed on the prior debian-based build stage) or a
+# python3.11-specific one now that the build stage was switched to
+# ubuntu:22.04 + deadsnakes -- list every plausible path so python3.11 finds
+# it regardless of which one waf actually used.
+ENV PYTHONPATH=/usr/local/lib/python3/dist-packages:/usr/local/lib/python3.11/dist-packages:/usr/local/lib/python3.11/site-packages
 
 # essentia's pure-Python layer (essentia/common.py) needs numpy and six at
 # import time; the essentia-libs build stage's pip install doesn't carry
