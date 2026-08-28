@@ -66,5 +66,9 @@ jobs:
 
       - name: Verify essentia imports in the built image
         run: |
-          docker run --rm ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.version }} \
+          # metadata-action already lowercases the image reference correctly
+          # (github.repository preserves original case, which docker run
+          # rejects) -- take the first tag from its own tags output.
+          IMAGE_REF=$(echo "${{ steps.meta.outputs.tags }}" | head -n1)
+          docker run --rm "$IMAGE_REF" \
             python3.11 -c "import essentia; import essentia.standard as es; print('essentia', essentia.__version__); assert hasattr(es, 'TensorflowPredictEffnetDiscogs')"
