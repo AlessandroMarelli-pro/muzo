@@ -5,63 +5,113 @@
 # PyPI's package index directly) and the official mtgupf/essentia-tensorflow
 # Docker image is a dead 2020 Python 3.6 build.
 #
-# Reuses lagmoellertim/essentia:latest-tensorflow-gpu (actively maintained,
-# updated 2025) for the slow part -- FFmpeg + the TensorFlow C library --
-# then builds just Essentia's Python bindings (waf) against those libs with a
-# modern Python.
+# The essentia-libs stage below is adapted from lagmoellertim/essentia-docker
+# (github.com/lagmoellertim/essentia-docker, MIT licensed), which builds
+# FFmpeg + Essentia's C++ core + the TensorFlow C library. Their published
+# image pins FFmpeg 4.4.4, but Essentia's master branch requires FFmpeg 5.0+
+# (see github.com/MTG/essentia commit 1153d55928, "Fix FFmpeg 5.x
+# compatibility issues" -- confirmed against a real build here:
+# AVChannelLayout/ch_layout aren't declared with 4.4.4's headers). So their
+# build steps are inlined here with a newer FFMPEG_VERSION instead of FROM-ing
+# their image directly.
 
-FROM lagmoellertim/essentia:latest-tensorflow-gpu AS essentia-libs
-
-FROM nvidia/cuda:12.2.2-cudnn8-runtime-ubuntu22.04 AS build
+FROM debian:bookworm-slim AS essentia-libs
 ENV DEBIAN_FRONTEND=noninteractive
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    python3.11 python3.11-dev python3-pip \
-    build-essential pkg-config git ca-certificates \
-    libeigen3-dev libyaml-dev libfftw3-dev \
-    libavcodec-dev libavformat-dev libavutil-dev libswresample-dev \
-    libsamplerate0-dev libtag1-dev libchromaprint-dev \
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    build-essential \
+    libeigen3-dev \
+    libyaml-dev \
+    libfftw3-dev \
+    libavcodec-dev \
+    libavformat-dev \
+    libavutil-dev \
+    libswresample-dev \
+    libsamplerate0-dev \
+    libtag1-dev \
+    libchromaprint-dev \
+    python3 \
+    python3-dev \
+    git \
+    ca-certificates \
+    wget \
+    curl \
+    nasm yasm \
+    libx264-dev \
+    libx265-dev \
+    libvpx-dev \
+    libmp3lame-dev \
+    libopus-dev \
+    libvorbis-dev \
+    libass-dev \
+    libfreetype6-dev \
+    zlib1g-dev \
+    libssl-dev \
     && rm -rf /var/lib/apt/lists/*
 
-COPY --from=essentia-libs /usr/local/lib /usr/local/lib
-COPY --from=essentia-libs /usr/local/include /usr/local/include
-COPY --from=essentia-libs /usr/local/lib/pkgconfig /usr/local/lib/pkgconfig
+ARG FFMPEG_VERSION=7.1.1
+WORKDIR /opt
+RUN curl -LO https://ffmpeg.org/releases/ffmpeg-${FFMPEG_VERSION}.tar.xz && \
+    tar xJf ffmpeg-${FFMPEG_VERSION}.tar.xz && \
+    cd ffmpeg-${FFMPEG_VERSION} && \
+    ./configure --prefix=/usr/local \
+    --enable-gpl \
+    --enable-nonfree \
+    --enable-pic \
+    --enable-shared \
+    --disable-static \
+    --enable-libx264 \
+    --enable-libmp3lame \
+    --enable-libopus \
+    --enable-libvpx && \
+    make -j$(nproc) && \
+    make install && \
+    cd /opt && \
+    rm -rf ffmpeg-${FFMPEG_VERSION}*
 RUN ldconfig
 
-# The base image's tensorflow.pc has a broken Cflags (-I/usr/include, which
-# doesn't exist) -- the real headers are nested under
-# /usr/local/include/tensorflow/tensorflow/c/c_api.h. Regenerate it correctly
-# so essentia's waf configure can find the tensorflow pkg-config package.
-RUN printf '%s\n' \
-    'prefix=/usr/local' \
-    'includedir=${prefix}/include/tensorflow' \
-    'libdir=${prefix}/lib' \
-    '' \
-    'Name: TensorFlow' \
-    'Description: TensorFlow C library' \
-    'Version: 2.13.0' \
-    'Libs: -L${libdir} -ltensorflow -ltensorflow_framework' \
-    'Cflags: -I${includedir}' \
-    > /usr/local/lib/pkgconfig/tensorflow.pc
+ARG TENSORFLOW_VERSION=2.13.0
+RUN wget -q https://github.com/ika-rwth-aachen/libtensorflow_cc/releases/download/v${TENSORFLOW_VERSION}/libtensorflow-cc_${TENSORFLOW_VERSION}-gpu_amd64.deb && \
+    dpkg -i libtensorflow-cc_${TENSORFLOW_VERSION}-gpu_amd64.deb && \
+    rm -f libtensorflow-cc_${TENSORFLOW_VERSION}-gpu_amd64.deb && \
+    ln -sf /usr/local/lib/libtensorflow_cc.so /usr/local/lib/libtensorflow.so && \
+    mkdir -p /usr/local/lib/pkgconfig && \
+    printf '%s\n' \
+      'prefix=/usr/local' \
+      'includedir=${prefix}/include/tensorflow' \
+      'libdir=${prefix}/lib' \
+      '' \
+      'Name: TensorFlow' \
+      'Description: TensorFlow C library' \
+      'Version: '"${TENSORFLOW_VERSION}" \
+      'Libs: -L${libdir} -ltensorflow -ltensorflow_framework' \
+      'Cflags: -I${includedir}' \
+      > /usr/local/lib/pkgconfig/tensorflow.pc && \
+    ldconfig
 
-RUN python3.11 -m pip install --no-cache-dir numpy pyyaml
+RUN apt-get update && apt-get install -y --no-install-recommends python3-pip \
+    && rm -rf /var/lib/apt/lists/*
+# Debian 12 marks the system Python as externally-managed (PEP 668); this is
+# a throwaway build stage, not a host system, so --break-system-packages is
+# fine here.
+RUN python3 -m pip install --no-cache-dir --break-system-packages numpy pyyaml
 
 ARG ESSENTIA_COMMIT=master
-WORKDIR /opt
-RUN git clone --depth 1 https://github.com/MTG/essentia.git essentia && \
-    cd essentia && \
-    git fetch --depth 1 origin ${ESSENTIA_COMMIT} && git checkout ${ESSENTIA_COMMIT}
+RUN git clone --depth 1 https://github.com/MTG/essentia.git /opt/essentia && \
+    cd /opt/essentia && \
+    git fetch --depth 1 origin ${ESSENTIA_COMMIT} && \
+    git checkout ${ESSENTIA_COMMIT}
 
 WORKDIR /opt/essentia
-ENV PKG_CONFIG_PATH=/usr/local/lib/pkgconfig
-# Links against the already-built libessentia.so/libtensorflow.so from the
-# base image instead of recompiling the C++ core -- only the Python
-# extension module is actually built here.
-RUN python3.11 waf configure --with-tensorflow --python=python3.11 && \
-    python3.11 waf && \
-    python3.11 waf install
+RUN python3 waf configure --with-tensorflow --with-python && \
+    python3 waf && \
+    python3 waf install
 
 # ---- runtime -----------------------------------------------------------
+# nvidia/cuda for the GPU runtime libraries the TensorFlow C library needs;
+# Essentia's own build (C++ core + Python bindings) comes from essentia-libs
+# above, which used debian:bookworm-slim's default Python 3 (3.11).
 FROM nvidia/cuda:12.2.2-cudnn8-runtime-ubuntu22.04 AS runtime
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -71,9 +121,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libtag1v5 libsamplerate0 \
     && rm -rf /var/lib/apt/lists/*
 
-COPY --from=build /usr/local/lib /usr/local/lib
-COPY --from=build /usr/local/include /usr/local/include
-COPY --from=build /usr/local/lib/python3.11/dist-packages /usr/local/lib/python3.11/dist-packages
+COPY --from=essentia-libs /usr/local/lib /usr/local/lib
+COPY --from=essentia-libs /usr/local/include /usr/local/include
+COPY --from=essentia-libs /usr/local/lib/python3.11/dist-packages /usr/local/lib/python3.11/dist-packages
 RUN ldconfig
 
 RUN python3.11 -c "import essentia; import essentia.standard as es; print('essentia', essentia.__version__, 'OK'); print('TensorflowPredictEffnetDiscogs:', hasattr(es, 'TensorflowPredictEffnetDiscogs'))"
