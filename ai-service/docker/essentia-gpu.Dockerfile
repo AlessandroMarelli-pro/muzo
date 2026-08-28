@@ -115,8 +115,11 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 # Runtime .so packages for every essentia dependency confirmed by its own
 # waf configure checks (eigen3 is header-only, no runtime package needed).
+# python3.11-dev is needed later for madmom, which compiles Cython/C
+# extensions from source at pip-install time (no prebuilt wheel exists for
+# any platform) and needs Python.h.
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    python3.11 python3-pip \
+    python3.11 python3.11-dev python3-pip \
     ffmpeg libsndfile1 libchromaprint-tools libchromaprint1 \
     libtag1v5 libsamplerate0 libyaml-0-2 libfftw3-single3 \
     && rm -rf /var/lib/apt/lists/*
