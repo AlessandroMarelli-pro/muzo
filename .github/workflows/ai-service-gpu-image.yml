@@ -1,0 +1,70 @@
+name: Build ai-service GPU image
+
+# Builds essentia-tensorflow's Python bindings for Linux/amd64 (no wheel has
+# been published to PyPI since Python 3.7 -- see ai-service/docker/essentia-gpu.Dockerfile
+# for details). Runs on a native amd64 GitHub-hosted runner, avoiding the
+# QEMU emulation tax of building this locally on Apple Silicon.
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'ai-service/docker/essentia-gpu.Dockerfile'
+      - 'ai-service/requirements.txt'
+      - '.github/workflows/ai-service-gpu-image.yml'
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}/ai-service-gpu
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Free up runner disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
+          docker image prune -af
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=sha,format=short
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: ai-service
+          file: ai-service/docker/essentia-gpu.Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Verify essentia imports in the built image
+        run: |
+          docker run --rm ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.version }} \
+            python3.11 -c "import essentia; import essentia.standard as es; print('essentia', essentia.__version__); assert hasattr(es, 'TensorflowPredictEffnetDiscogs')"
