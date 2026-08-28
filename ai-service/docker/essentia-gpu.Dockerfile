@@ -131,4 +131,10 @@ RUN ldconfig
 # python3.11 searches by default -- point it there via PYTHONPATH.
 ENV PYTHONPATH=/usr/local/lib/python3/dist-packages
 
+# essentia's pure-Python layer (essentia/common.py) needs numpy and six at
+# import time; the essentia-libs build stage's pip install doesn't carry
+# over since only /usr/local/lib+include are copied, not that stage's
+# separate Python's site-packages.
+RUN python3.11 -m pip install --no-cache-dir numpy six
+
 RUN python3.11 -c "import essentia; import essentia.standard as es; print('essentia', essentia.__version__, 'OK'); print('TensorflowPredictEffnetDiscogs:', hasattr(es, 'TensorflowPredictEffnetDiscogs'))"
