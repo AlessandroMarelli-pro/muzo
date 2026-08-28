@@ -182,9 +182,20 @@ WORKDIR /app
 COPY requirements.txt .
 # essentia-tensorflow is already built from source above (see essentia-libs);
 # pip would otherwise try and fail to fetch it from PyPI (no Linux wheel).
+#
+# --no-build-isolation for madmom specifically: madmom's setup.py does
+# `import Cython` at build time (no prebuilt wheel exists for any platform),
+# but pip's default PEP 517 build isolation builds each package in its own
+# throwaway env that does NOT see the cython/numpy already installed on the
+# line above -- confirmed via CI, "ModuleNotFoundError: No module named
+# 'Cython'" despite cython==3.0.1 being installed and reported as already
+# satisfied immediately beforehand. --no-build-isolation makes madmom's
+# build see the outer environment (where cython/numpy already are) instead.
 RUN grep -v '^essentia-tensorflow' requirements.txt > requirements.docker.txt && \
     python3.11 -m pip install --no-cache-dir cython==3.0.1 "numpy>=1.26.0" && \
-    python3.11 -m pip install --no-cache-dir -r requirements.docker.txt
+    grep -v '^madmom' requirements.docker.txt > requirements.nomadmom.txt && \
+    python3.11 -m pip install --no-cache-dir -r requirements.nomadmom.txt && \
+    python3.11 -m pip install --no-cache-dir --no-build-isolation "$(grep '^madmom' requirements.docker.txt)"
 
 COPY . .
 
