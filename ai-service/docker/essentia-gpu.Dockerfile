@@ -115,10 +115,12 @@ RUN python3 waf configure --with-tensorflow --with-python && \
 FROM nvidia/cuda:12.2.2-cudnn8-runtime-ubuntu22.04 AS runtime
 ENV DEBIAN_FRONTEND=noninteractive
 
+# Runtime .so packages for every essentia dependency confirmed by its own
+# waf configure checks (eigen3 is header-only, no runtime package needed).
 RUN apt-get update && apt-get install -y --no-install-recommends \
     python3.11 python3-pip \
-    ffmpeg libsndfile1 libchromaprint-tools \
-    libtag1v5 libsamplerate0 \
+    ffmpeg libsndfile1 libchromaprint-tools libchromaprint1 \
+    libtag1v5 libsamplerate0 libyaml-0-2 libfftw3-single3 \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=essentia-libs /usr/local/lib /usr/local/lib
