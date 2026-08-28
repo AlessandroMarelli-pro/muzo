@@ -110,7 +110,15 @@ RUN python3 waf configure --with-tensorflow --with-python && \
 # nvidia/cuda for the GPU runtime libraries the TensorFlow C library needs;
 # Essentia's own build (C++ core + Python bindings) comes from essentia-libs
 # above, which used debian:bookworm-slim's default Python 3 (3.11).
-FROM nvidia/cuda:12.2.2-cudnn8-runtime-ubuntu22.04 AS runtime
+# TensorFlow 2.13 (the newest libtensorflow_cc GPU build available -- see
+# essentia-libs above) was only tested against CUDA 11.8 + cuDNN 8.6
+# (tensorflow.org/install/source#gpu). It dlopen()s CUDA libraries by exact
+# SONAME at runtime (libcudart.so.11, not .so.12), so a CUDA 12.x base looks
+# fine at a glance -- libcudart.so.12 exists -- but TF can't find what it's
+# actually looking for and silently falls back to CPU. Confirmed via a real
+# deployment: "Cannot dlopen some GPU libraries... Skipping registering GPU
+# devices" despite running on an actual GPU instance.
+FROM nvidia/cuda:11.8.0-cudnn8-runtime-ubuntu22.04 AS runtime
 ENV DEBIAN_FRONTEND=noninteractive
 
 # Runtime .so packages for every essentia dependency confirmed by its own
