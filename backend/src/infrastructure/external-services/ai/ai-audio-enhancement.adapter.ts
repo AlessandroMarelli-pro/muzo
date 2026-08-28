@@ -13,6 +13,7 @@ import {
   AI_SERVICE_POOL,
   IAiServicePool,
 } from 'src/application/ports/infrastructure/IAiServicePool';
+import { AiServiceConfig } from 'src/config';
 import { HqAudioConfig } from 'src/config/hq-audio.config';
 
 @Injectable()
@@ -20,6 +21,7 @@ export class AiAudioEnhancementAdapter implements IHqAudioEnhancer {
   private readonly logger = new Logger(AiAudioEnhancementAdapter.name);
 
   private readonly hqAudioConfig: HqAudioConfig;
+  private readonly aiServiceConfig: AiServiceConfig;
 
   constructor(
     @Inject(AI_SERVICE_POOL)
@@ -28,6 +30,13 @@ export class AiAudioEnhancementAdapter implements IHqAudioEnhancer {
     private readonly configService: ConfigService,
   ) {
     this.hqAudioConfig = this.configService.get<HqAudioConfig>('hqAudio')!;
+    this.aiServiceConfig = this.configService.get<AiServiceConfig>('aiService')!;
+  }
+
+  private authHeaders(): Record<string, string> {
+    return this.aiServiceConfig.authToken
+      ? { Authorization: `Bearer ${this.aiServiceConfig.authToken}` }
+      : {};
   }
 
   async enhance(inputFilePath: string, outputDir: string): Promise<HqAudioEnhanceResult> {
@@ -43,6 +52,7 @@ export class AiAudioEnhancementAdapter implements IHqAudioEnhancer {
         this.httpService.post(`${instance.url}/api/v1/audio/enhance`, formData, {
           headers: {
             ...formData.getHeaders(),
+            ...this.authHeaders(),
           },
           responseType: 'arraybuffer',
           timeout: this.hqAudioConfig.universr.timeoutMs,

@@ -364,6 +364,9 @@ export class AiServerPoolAdapter implements IAiServicePool {
     try {
       const response = await axios.get(`${instance.url}/api/v1/health`, {
         timeout: 5000,
+        headers: this.aiServiceConfig.authToken
+          ? { Authorization: `Bearer ${this.aiServiceConfig.authToken}` }
+          : undefined,
       });
 
       const wasHealthy = instance.isHealthy;

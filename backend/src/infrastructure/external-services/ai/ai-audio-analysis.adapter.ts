@@ -26,6 +26,12 @@ export class AiAudioAnalysisAdapter implements IAudioAnalysisStructure {
     this.aiServiceConfig = this.configService.get<AiServiceConfig>('aiService')!;
   }
 
+  private authHeaders(): Record<string, string> {
+    return this.aiServiceConfig.authToken
+      ? { Authorization: `Bearer ${this.aiServiceConfig.authToken}` }
+      : {};
+  }
+
   async analyzeAudioBatch(
     audioFilePaths: string[],
     sessionId?: string,
@@ -66,6 +72,7 @@ export class AiAudioAnalysisAdapter implements IAudioAnalysisStructure {
         this.httpService.post(`${simpleInstance.url}/api/v1/audio/analyze/batch`, formData, {
           headers: {
             ...formData.getHeaders(),
+            ...this.authHeaders(),
           },
           timeout: this.aiServiceConfig.timeout * audioFilePaths.length, // Increase timeout for batch
         }),
@@ -101,6 +108,7 @@ export class AiAudioAnalysisAdapter implements IAudioAnalysisStructure {
         this.httpService.post(`${simpleInstance.url}/api/v1/audio/embedding/discogs`, formData, {
           headers: {
             ...formData.getHeaders(),
+            ...this.authHeaders(),
           },
           timeout: this.aiServiceConfig.timeout,
         }),

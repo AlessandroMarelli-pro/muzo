@@ -4,6 +4,8 @@ export interface AiServiceConfig {
   simpleUrls: string[];
   hierarchicalUrls: string[];
   timeout: number;
+  /** Bearer token for authenticated AI service instances (e.g. HF Inference Endpoints). */
+  authToken?: string;
 }
 
 export default registerAs(
@@ -16,5 +18,6 @@ export default registerAs(
       ? process.env.AI_HIERARCHICAL_URLS.split(',')
       : [process.env.AI_SERVICE_URL || 'http://localhost:4000'],
     timeout: parseInt(process.env.AI_SERVICE_TIMEOUT || '90000', 10), // Reduced to 45s
+    authToken: process.env.AI_SERVICE_TOKEN,
   }),
 );
