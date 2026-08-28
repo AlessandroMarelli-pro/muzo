@@ -140,6 +140,24 @@ RUN python3 waf configure --with-tensorflow --with-python && \
 FROM nvidia/cuda:11.8.0-cudnn8-runtime-ubuntu22.04 AS runtime
 ENV DEBIAN_FRONTEND=noninteractive
 
+# Working hypothesis for a crash seen on two real deployments: "malloc():
+# invalid size (unsorted)" -- a fatal glibc heap abort, uncatchable from
+# Python -- on the very first GPU inference call through Essentia's
+# TensorflowPredictEffnetDiscogs, immediately after the "MLIR V1
+# optimization pass is not enabled" log line every time. A glibc/libstdc++
+# ABI mismatch between build stages was ruled out as the (sole) cause -- that
+# fix was real (see essentia-libs stage) but this crash reproduced again
+# after it. Not yet confirmed as the actual fix: disabling TensorFlow's
+# default oneDNN CPU-op optimizations and XLA/MLIR auto-clustering, in case
+# Essentia's frozen graph (exported by an older TF version) doesn't play well
+# with newer XLA auto-clustering decisions on this TF/cuDNN/GPU combination.
+# This graph is small enough that losing these optimizations, if they were
+# even active on this codepath, is not a meaningful performance cost either
+# way. Revert if this doesn't resolve the crash -- see git history for the
+# investigation.
+ENV TF_ENABLE_ONEDNN_OPTS=0
+ENV TF_XLA_FLAGS=--tf_xla_auto_jit=0
+
 # Runtime .so packages for every essentia dependency confirmed by its own
 # waf configure checks (eigen3 is header-only, no runtime package needed).
 # python3.11-dev is needed later for madmom, which compiles Cython/C
