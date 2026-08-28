@@ -9,9 +9,16 @@ import os
 from typing import Dict
 
 from loguru import logger
-from trainers.filename_parser.hybrid_parser import HybridFilenameParser
 
 from src.utils.performance_optimizer import monitor_performance
+
+try:
+    from trainers.filename_parser.hybrid_parser import HybridFilenameParser
+except ImportError:
+    # trainers/ isn't shipped in the deployed ai-service image (training-time
+    # code only); fall back to the parser's own regex-only mode via a
+    # minimal stand-in with the same interface.
+    HybridFilenameParser = None
 
 
 class SimpleFilenameParser:
@@ -23,6 +30,14 @@ class SimpleFilenameParser:
     def __init__(self):
         """Initialize the filename parser service."""
         logger.info("SimpleFilenameParser initialized")
+
+        if HybridFilenameParser is None:
+            # trainers/ not available in this environment (e.g. deployed
+            # ai-service image); parse_filename_for_metadata falls back to
+            # its own minimal filename-based extraction.
+            self.filename_parser = None
+            logger.info("Hybrid filename parser unavailable, using minimal fallback")
+            return
 
         # Initialize the hybrid filename parser
         # Try to load the manually fixed trained model, fallback to regex-only if not available
