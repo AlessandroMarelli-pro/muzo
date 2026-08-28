@@ -18,16 +18,17 @@
 FROM debian:bookworm-slim AS essentia-libs
 ENV DEBIAN_FRONTEND=noninteractive
 
+# No libavcodec-dev/libavformat-dev/etc here: those are Debian's stock
+# FFmpeg 4.4 dev headers, which is exactly the version essentia's master
+# branch is incompatible with (see header comment) -- FFmpeg is built from
+# source below instead, into /usr/local, ahead of any system FFmpeg on the
+# pkg-config/linker search path.
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     build-essential \
     libeigen3-dev \
     libyaml-dev \
     libfftw3-dev \
-    libavcodec-dev \
-    libavformat-dev \
-    libavutil-dev \
-    libswresample-dev \
     libsamplerate0-dev \
     libtag1-dev \
     libchromaprint-dev \
@@ -38,18 +39,18 @@ RUN apt-get update && \
     wget \
     curl \
     nasm yasm \
-    libx264-dev \
-    libx265-dev \
-    libvpx-dev \
-    libmp3lame-dev \
-    libopus-dev \
-    libvorbis-dev \
-    libass-dev \
-    libfreetype6-dev \
     zlib1g-dev \
     libssl-dev \
     && rm -rf /var/lib/apt/lists/*
 
+# Essentia's AudioLoader only decodes audio -- it never encodes H.264/VP9/
+# etc. -- so this skips the external encoder libs (libx264/libvpx/...) that
+# the reference essentia-docker project's Dockerfile enables for its more
+# general-purpose FFmpeg build. FFmpeg's built-in decoders already cover
+# MP3/AAC/FLAC/etc. Avoids a class of "missing .so" runtime errors from
+# encoder libs the runtime stage doesn't install (confirmed via CI:
+# libx264.so.164 missing after fixing the same issue for fftw3f/yaml/
+# chromaprint).
 ARG FFMPEG_VERSION=7.1.1
 WORKDIR /opt
 RUN curl -LO https://ffmpeg.org/releases/ffmpeg-${FFMPEG_VERSION}.tar.xz && \
@@ -57,14 +58,11 @@ RUN curl -LO https://ffmpeg.org/releases/ffmpeg-${FFMPEG_VERSION}.tar.xz && \
     cd ffmpeg-${FFMPEG_VERSION} && \
     ./configure --prefix=/usr/local \
     --enable-gpl \
-    --enable-nonfree \
     --enable-pic \
     --enable-shared \
     --disable-static \
-    --enable-libx264 \
-    --enable-libmp3lame \
-    --enable-libopus \
-    --enable-libvpx && \
+    --disable-doc \
+    --disable-programs && \
     make -j$(nproc) && \
     make install && \
     cd /opt && \
