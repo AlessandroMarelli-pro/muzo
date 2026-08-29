@@ -345,9 +345,7 @@ backend/
 ├── default-images/                # Fallback album art (3 defaults)
 ├── dist/                          # Compiled JavaScript output
 │
-├── docker-compose.yml             # Production Redis configuration
-├── docker-compose.dev.yml         # Development Redis configuration
-├── docker-compose.elasticsearch.yml # Elasticsearch + Kibana
+├── docker-compose.yml             # Postgres, Redis, Elasticsearch, Kibana
 │
 ├── bull-board.js                  # Queue monitoring UI server
 ├── setup-dev.sh                   # Development setup script
@@ -1026,13 +1024,16 @@ Copy `env.template` to `.env` and configure:
 
 ## Docker
 
-### Development
+A single `docker-compose.yml` runs every infra dependency: Postgres, Redis, and Elasticsearch + Kibana. Soulseek downloads go through the local `sockseek` CLI binary directly, not a container.
 
 ```bash
-# Start Redis only (development)
+# Start everything
+docker-compose up -d
+
+# Start just Redis
 npm run redis:up
 
-# Stop Redis
+# Stop just Redis
 npm run redis:down
 
 # View Redis logs
@@ -1040,34 +1041,12 @@ npm run redis:logs
 
 # Access Redis CLI
 npm run redis:cli
-```
 
-### Production
-
-```bash
-# Start production Redis
-docker-compose up -d
-```
-
-### Elasticsearch (Optional)
-
-Required for the recommendation system.
-
-```bash
-# Start Elasticsearch + Kibana
-docker-compose -f docker-compose.elasticsearch.yml up -d
-
-# Access Kibana
+# Access Kibana (once elasticsearch is up)
 open http://localhost:5601
 ```
 
-### Docker Compose Files
-
-| File                               | Contents                           |
-| ---------------------------------- | ---------------------------------- |
-| `docker-compose.yml`               | Production Redis                   |
-| `docker-compose.dev.yml`           | Development Redis (muzo-redis-dev) |
-| `docker-compose.elasticsearch.yml` | Elasticsearch + Kibana             |
+Elasticsearch is required for the recommendation system.
 
 ---
 
@@ -1200,7 +1179,7 @@ Error: connect ECONNREFUSED 127.0.0.1:9200
 **Solution**: Start Elasticsearch or disable recommendations:
 
 ```bash
-docker-compose -f docker-compose.elasticsearch.yml up -d
+docker-compose up -d elasticsearch kibana
 ```
 
 ### Debugging

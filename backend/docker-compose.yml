@@ -36,45 +36,35 @@ services:
       retries: 3
     networks:
       - muzo-network
-  slskd:
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:9.1.1
+    container_name: muzo-elasticsearch
     environment:
-      - SLSKD_REMOTE_CONFIGURATION=true
-      - SLSKD_SLSK_USERNAME=maestropolis75
-      - SLSKD_SLSK_PASSWORD=Musorga75&
-    image: slskd/slskd:latest
-    container_name: muzo-slskd
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - 'ES_JAVA_OPTS=-Xms512m -Xmx512m'
     ports:
-      - '5030:5030'
-      - '5031:5031'
-      - '50300:50300'
+      - '9200:9200'
+      - '9300:9300'
     volumes:
-      - slskd_app:/app
-      - slskd_downloads:/downloads
-    restart: unless-stopped
+      - elasticsearch_data:/usr/share/elasticsearch-muzo/data
     networks:
       - muzo-network
-  sockseek:
-    build:
-      context: ./third_party/sockseek
-    container_name: muzo-sockseek
-    entrypoint:
-      - sockseek
-      - daemon
-      - --server-ip
-      - '0.0.0.0'
-      - --server-port
-      - '5040'
-      - --config
-      - /config/sockseek.conf
-      - -p
-      - /data
-    command: []
+    healthcheck:
+      test: ['CMD-SHELL', 'curl -f http://localhost:9200/_cluster/health || exit 1']
+      interval: 30s
+      timeout: 10s
+      retries: 5
+  kibana:
+    image: docker.elastic.co/kibana/kibana:9.1.1
+    container_name: muzo-kibana
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
     ports:
-      - '5040:5040'
-    volumes:
-      - sockseek_config:/config
-      - sockseek_data:/data
-    restart: unless-stopped
+      - '5601:5601'
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
     networks:
       - muzo-network
 
@@ -83,13 +73,7 @@ volumes:
     driver: local
   redis_data:
     driver: local
-  slskd_app:
-    driver: local
-  slskd_downloads:
-    driver: local
-  sockseek_config:
-    driver: local
-  sockseek_data:
+  elasticsearch_data:
     driver: local
 
 networks:

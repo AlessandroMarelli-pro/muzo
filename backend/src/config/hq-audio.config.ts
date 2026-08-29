@@ -3,12 +3,6 @@ import * as os from 'os';
 import * as path from 'path';
 
 export interface HqAudioConfig {
-  slskd: {
-    url: string;
-    apiKey: string;
-    downloadPath: string;
-    searchTimeoutMs: number;
-  };
   sockseek: {
     binaryPath: string;
     configPath: string;
@@ -34,12 +28,6 @@ export interface HqAudioConfig {
 export default registerAs(
   'hqAudio',
   (): HqAudioConfig => ({
-    slskd: {
-      url: process.env.SLSKD_URL || 'http://localhost:5030',
-      apiKey: process.env.SLSKD_API_KEY || '',
-      downloadPath: process.env.SLSKD_DOWNLOAD_PATH || '',
-      searchTimeoutMs: parseInt(process.env.SLSKD_SEARCH_TIMEOUT_MS || '30000', 10),
-    },
     sockseek: {
       binaryPath: process.env.SOCKSEEK_BINARY_PATH || 'sockseek',
       configPath: process.env.SOCKSEEK_CONFIG_PATH || '',
