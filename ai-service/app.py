@@ -113,9 +113,9 @@ def register_resources(api, app):
     else:
         logger.info("🚫 Simple analysis endpoints disabled by configuration")
 
-    # BPM detection endpoints (always enabled)
+    # Discogs-effnet embedding endpoint (always enabled)
     api.add_resource(DiscogsEmbeddingResource, "/audio/embedding/discogs")
-    logger.info("✅ BPM detection endpoints registered")
+    logger.info("✅ Discogs embedding endpoint registered")
 
     # Audio enhancement (super-resolution) endpoint
     if os.getenv("ENABLE_AUDIO_ENHANCEMENT", "true") == "true":
@@ -207,13 +207,14 @@ def create_app_with_routes(config_class=Config):
             endpoints.update(
                 {
                     "audio_analyze_simple": "/api/v1/audio/analyze/simple",
+                    "audio_analyze_batch": "/api/v1/audio/analyze/batch",
                 }
             )
 
-        # Add BPM detection endpoint (always available)
+        # Add Discogs-effnet embedding endpoint (always available)
         endpoints.update(
             {
-                "audio_bpm_detect": "/api/v1/audio/bpm/detect",
+                "audio_embedding_discogs": "/api/v1/audio/embedding/discogs",
             }
         )
 

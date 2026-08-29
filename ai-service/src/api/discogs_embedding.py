@@ -35,11 +35,10 @@ class DiscogsEmbeddingResource(Resource):
     """
     Discogs-effnet embedding + classifier-heads extraction endpoint.
 
-    Deliberately avoids SimpleAnalysisService, which also initializes the AI
-    metadata extractor (Gemini/OpenAI client + context cache) on construction
-    -- unnecessary cost for an embedding-only request. Uses SimpleAudioLoader,
-    DiscogsEmbeddingExtractor, and DiscogsClassifiersExtractor directly instead,
-    same pattern as BPMDetectionResource.
+    Deliberately avoids SimpleAnalysisService, which also initializes the
+    Gemini filename-cleaning client on construction -- unnecessary cost for an
+    embedding-only request. Uses SimpleAudioLoader, DiscogsEmbeddingExtractor,
+    and DiscogsClassifiersExtractor directly instead.
     """
 
     def __init__(self):

@@ -29,7 +29,6 @@ from src.services.simple_feature_extractor import SimpleFeatureExtractor
 from src.services.simple_filename_parser import SimpleFilenameParser
 from src.services.simple_metadata_extractor import SimpleMetadataExtractor
 from src.services.simple_technical_analyzer import SimpleTechnicalAnalyzer
-from src.utils.performance_analyzer import performance_analyzer
 from src.utils.performance_optimizer import monitor_performance
 
 # Gates computation of the discogs-effnet classifier heads (danceability, 5 moods,
@@ -87,14 +86,6 @@ class SimpleAnalysisService:
                 "Failed to initialize GEMINI filename-cleaning extractor: %s", e
             )
             self.ai_extractor = None
-
-        # Performance monitoring thresholds
-        self.performance_thresholds = {
-            "slow_method_threshold": 1.0,  # 1 second
-            "critical_method_threshold": 5.0,  # 5 seconds
-            "slow_operation_threshold": 2.0,  # 2 seconds
-            "critical_operation_threshold": 10.0,  # 10 seconds
-        }
 
         # Memory management: track analysis count for periodic cleanup
         self.analysis_count = 0
@@ -164,18 +155,23 @@ class SimpleAnalysisService:
         )
 
     @monitor_performance("discogs_embedding_generation")
-    def generate_discogs_embedding_from_file(self, file_path: str) -> list:
+    def generate_discogs_embedding_from_file(self, y_full, sr: int) -> list:
         """
-        Load the FULL track (not the trimmed harmonic/BPM/spectral analysis
-        window) and extract the discogs-effnet embedding from it. Essentia's own
-        docs recommend `MonoLoader >> TensorflowPredictEffnetDiscogs` on the
-        whole file -- the model internally windows into ~1s patches and mean-
-        pools them, so a short excerpt only samples one part of the song.
+        Extract the discogs-effnet embedding from the FULL track (not the
+        trimmed harmonic/BPM/spectral analysis window). Essentia's own docs
+        recommend `MonoLoader >> TensorflowPredictEffnetDiscogs` on the whole
+        file -- the model internally windows into ~1s patches and mean-pools
+        them, so a short excerpt only samples one part of the song.
+
+        Args:
+            y_full: Full-track audio samples at their native sample rate,
+                loaded once by the caller and shared across all of the
+                generate_*/extract_basic_features calls that each need the
+                whole track (embedding, tempo, mood, key) -- avoids re-decoding
+                the same file from disk multiple times per analysis.
+            sr: Native sample rate of y_full.
         """
         try:
-            y_full, sr = self.audio_loader.load_audio_sample(
-                file_path, sample_duration=None
-            )
             duration_s = len(y_full) / sr if sr else 0
             embedding = self.embedding_extractor.extract_from_audio(y_full, sr)
             if embedding:
@@ -185,12 +181,12 @@ class SimpleAnalysisService:
                 )
             else:
                 logger.warning(
-                    f"Discogs embedding extraction returned empty for {file_path} "
+                    f"Discogs embedding extraction returned empty "
                     f"(track duration {duration_s:.1f}s)"
                 )
             return embedding
         except Exception as e:
-            logger.error(f"Failed to load full track for embedding extraction: {e}")
+            logger.error(f"Failed to extract discogs embedding: {e}")
             return []
 
     @monitor_performance("discogs_classifiers_generation")
@@ -231,21 +227,20 @@ class SimpleAnalysisService:
         return result
 
     @monitor_performance("tempo_cnn_generation")
-    def generate_tempo_cnn(self, file_path: str) -> dict:
+    def generate_tempo_cnn(self, y_full, sr: int) -> dict:
         """
-        Load the FULL track (separately from the discogs-effnet embedding load,
-        since TempoCNN needs a different sample rate -- 11025 Hz vs 16kHz) and
-        estimate tempo via TempoCNN. Gated by DISCOGS_CLASSIFIERS_ENABLED (same
-        flag as the discogs-effnet classifier heads, for one comparison toggle).
-        Returns {} when disabled or on any failure.
+        Estimate tempo via TempoCNN from the FULL track. TempoCNN needs its own
+        11025 Hz rate (vs 16kHz for discogs-effnet/DEAM); TempoCnnExtractor
+        resamples internally, so the same natively-loaded y_full/sr the caller
+        passes to every generate_*() method works here too. Gated by
+        DISCOGS_CLASSIFIERS_ENABLED (same flag as the discogs-effnet classifier
+        heads, for one comparison toggle). Returns {} when disabled or on any
+        failure.
         """
         if not DISCOGS_CLASSIFIERS_ENABLED:
             logger.debug("TempoCNN skipped: DISCOGS_CLASSIFIERS_ENABLED is false")
             return {}
         try:
-            y_full, sr = self.audio_loader.load_audio_sample(
-                file_path, sample_duration=None
-            )
             result = self.tempo_cnn_extractor.extract_from_audio(y_full, sr)
             if result:
                 logger.info(
@@ -253,20 +248,20 @@ class SimpleAnalysisService:
                     f"confidence={result.get('confidence', 0):.2f}"
                 )
             else:
-                logger.warning(f"TempoCNN returned empty result for {file_path}")
+                logger.warning("TempoCNN returned empty result")
             return result
         except Exception as e:
-            logger.error(f"Failed to load full track for TempoCNN extraction: {e}")
+            logger.error(f"Failed TempoCNN extraction: {e}")
             return {}
 
     @monitor_performance("deam_generation")
-    def generate_deam_mood(self, file_path: str) -> dict:
+    def generate_deam_mood(self, y_full, sr: int) -> dict:
         """
-        Load the FULL track and estimate valence/arousal via the DEAM
-        arousal-valence regression model. Unlike the discogs-effnet classifier
-        heads, DEAM runs on a separate MSD-MusiCNN embedding (also 16kHz, so no
-        extra resample beyond what DeamExtractor already does) -- see
-        DeamExtractor's docstring for why this model over emoMusic/MuSe. Gated by
+        Estimate valence/arousal via the DEAM arousal-valence regression model
+        from the FULL track. Unlike the discogs-effnet classifier heads, DEAM
+        runs on a separate MSD-MusiCNN embedding (also 16kHz, so no extra
+        resample beyond what DeamExtractor already does) -- see DeamExtractor's
+        docstring for why this model over emoMusic/MuSe. Gated by
         DISCOGS_CLASSIFIERS_ENABLED (same flag as the rest of this pipeline's
         model-driven fields). Returns {} when disabled or on any failure.
         """
@@ -276,9 +271,6 @@ class SimpleAnalysisService:
             )
             return {}
         try:
-            y_full, sr = self.audio_loader.load_audio_sample(
-                file_path, sample_duration=None
-            )
             result = self.deam_extractor.extract_from_audio(y_full, sr)
             if result:
                 logger.info(
@@ -286,18 +278,16 @@ class SimpleAnalysisService:
                     f"arousal={result.get('arousal', 0):.2f}"
                 )
             else:
-                logger.warning(
-                    f"DEAM mood extraction returned empty result for {file_path}"
-                )
+                logger.warning("DEAM mood extraction returned empty result")
             return result
         except Exception as e:
-            logger.error(f"Failed to load full track for DEAM mood extraction: {e}")
+            logger.error(f"Failed DEAM mood extraction: {e}")
             return {}
 
     @monitor_performance("skey_generation")
-    def generate_skey(self, file_path: str) -> dict:
+    def generate_skey(self, y_full, sr: int) -> dict:
         """
-        Load the FULL track and estimate musical key via Deezer's S-KEY model,
+        Estimate musical key via Deezer's S-KEY model from the FULL track,
         replacing the retired hand-computed KeyFinder/tonnetz-mode heuristic.
         Gated by DISCOGS_CLASSIFIERS_ENABLED (same flag as the rest of this
         pipeline's model-driven fields, despite S-KEY not actually being part of
@@ -310,164 +300,15 @@ class SimpleAnalysisService:
             )
             return {}
         try:
-            y_full, sr = self.audio_loader.load_audio_sample(
-                file_path, sample_duration=None
-            )
             result = self.skey_extractor.extract_from_audio(y_full, sr)
             if result:
                 logger.info(f"S-KEY: key={result.get('key')}")
             else:
-                logger.warning(
-                    f"S-KEY extraction returned empty result for {file_path}"
-                )
+                logger.warning("S-KEY extraction returned empty result")
             return result
         except Exception as e:
-            logger.error(f"Failed to load full track for S-KEY extraction: {e}")
+            logger.error(f"Failed S-KEY extraction: {e}")
             return {}
-
-    def check_performance_bottlenecks(self) -> Dict[str, Any]:
-        """
-        Check for current performance bottlenecks during runtime.
-
-        Returns:
-            Dictionary with bottleneck information and recommendations
-        """
-        try:
-            bottlenecks = performance_analyzer.identify_bottlenecks()
-            recommendations = performance_analyzer.get_optimization_recommendations()
-
-            # Filter for critical and high-severity bottlenecks
-            critical_bottlenecks = [
-                b for b in bottlenecks if b.get("severity") in ["high", "critical"]
-            ]
-
-            # Check if any operations exceed thresholds
-            from src.utils.performance_optimizer import performance_monitor
-
-            global_metrics = performance_monitor.get_performance_summary()
-
-            threshold_violations = []
-            for operation, metrics in global_metrics.items():
-                avg_time = metrics["average"]
-                if (
-                    avg_time
-                    > self.performance_thresholds["critical_operation_threshold"]
-                ):
-                    threshold_violations.append(
-                        {
-                            "operation": operation,
-                            "type": "critical_operation",
-                            "avg_time": avg_time,
-                            "threshold": self.performance_thresholds[
-                                "critical_operation_threshold"
-                            ],
-                            "count": metrics["count"],
-                        }
-                    )
-                elif avg_time > self.performance_thresholds["slow_operation_threshold"]:
-                    threshold_violations.append(
-                        {
-                            "operation": operation,
-                            "type": "slow_operation",
-                            "avg_time": avg_time,
-                            "threshold": self.performance_thresholds[
-                                "slow_operation_threshold"
-                            ],
-                            "count": metrics["count"],
-                        }
-                    )
-
-            return {
-                "status": "healthy"
-                if not critical_bottlenecks and not threshold_violations
-                else "warning",
-                "critical_bottlenecks": critical_bottlenecks,
-                "threshold_violations": threshold_violations,
-                "total_bottlenecks": len(bottlenecks),
-                "recommendations": recommendations,
-                "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
-            }
-
-        except Exception as e:
-            logger.error(f"Failed to check performance bottlenecks: {e}")
-            return {
-                "status": "error",
-                "message": f"Bottleneck check failed: {str(e)}",
-                "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
-            }
-
-    def log_performance_status(self):
-        """Log current performance status to console."""
-        try:
-            status = self.check_performance_bottlenecks()
-
-            if status["status"] == "healthy":
-                logger.info(
-                    "✅ Performance Status: HEALTHY - No critical bottlenecks detected"
-                )
-            elif status["status"] == "warning":
-                logger.warning(
-                    "⚠️ Performance Status: WARNING - Performance issues detected"
-                )
-
-                if status["critical_bottlenecks"]:
-                    logger.warning(
-                        f"🚨 Critical Bottlenecks ({len(status['critical_bottlenecks'])}):"
-                    )
-                    for bottleneck in status["critical_bottlenecks"][:3]:  # Show top 3
-                        logger.warning(
-                            f"   - {bottleneck['method']}: {bottleneck['description']}"
-                        )
-
-                if status["threshold_violations"]:
-                    logger.warning(
-                        f"📊 Threshold Violations ({len(status['threshold_violations'])}):"
-                    )
-                    for violation in status["threshold_violations"][:3]:  # Show top 3
-                        logger.warning(
-                            f"   - {violation['operation']}: {violation['avg_time']:.2f}s avg ({violation['count']} calls)"
-                        )
-            else:
-                logger.error(
-                    f"❌ Performance Status: ERROR - {status.get('message', 'Unknown error')}"
-                )
-
-        except Exception as e:
-            logger.error(f"Failed to log performance status: {e}")
-
-    def get_performance_summary(self) -> Dict[str, Any]:
-        """
-        Get a quick performance summary for runtime monitoring.
-
-        Returns:
-            Dictionary with key performance metrics
-        """
-        try:
-            from src.utils.performance_analyzer import get_performance_insights
-
-            insights = get_performance_insights()
-            bottlenecks = self.check_performance_bottlenecks()
-
-            return {
-                "overall_status": insights["status"],
-                "slowest_service": insights.get("slowest_service"),
-                "slowest_method": insights.get("slowest_method"),
-                "total_bottlenecks": insights["total_bottlenecks"],
-                "critical_issues": insights["critical_issues"],
-                "threshold_violations": len(
-                    bottlenecks.get("threshold_violations", [])
-                ),
-                "recommendations_count": insights["recommendations_count"],
-                "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
-            }
-
-        except Exception as e:
-            logger.error(f"Failed to get performance summary: {e}")
-            return {
-                "overall_status": "error",
-                "message": f"Performance summary failed: {str(e)}",
-                "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
-            }
 
     @monitor_performance("simple_analysis_all")
     def analyze_audio(
@@ -515,14 +356,23 @@ class SimpleAnalysisService:
                 file_path
             )  # Use full file for duration
 
+            # Load the full track once and share it across every generate_*()
+            # call below that needs the whole file (embedding, tempo, mood, key)
+            # -- each extractor resamples internally to its own target rate, so
+            # a single native-rate load is enough; re-decoding the same file
+            # from disk 4 times was pure waste.
+            y_full, sr = self.audio_loader.load_audio_sample(
+                file_path, sample_duration=None
+            )
+
             # Computed first: extract_basic_features now sources tempo/danceability/
             # mood/instrumentalness from these instead of the retired hand-computed
             # detectors/formulas.
-            embedding = self.generate_discogs_embedding_from_file(file_path)
+            embedding = self.generate_discogs_embedding_from_file(y_full, sr)
             discogs_classifiers = self.generate_discogs_classifiers(embedding)
-            discogs_tempo = self.generate_tempo_cnn(file_path)
-            discogs_deam = self.generate_deam_mood(file_path)
-            discogs_skey = self.generate_skey(file_path)
+            discogs_tempo = self.generate_tempo_cnn(y_full, sr)
+            discogs_deam = self.generate_deam_mood(y_full, sr)
+            discogs_skey = self.generate_skey(y_full, sr)
             basic_features = self.extract_basic_features(
                 file_path,
                 discogs_classifiers,
@@ -532,21 +382,12 @@ class SimpleAnalysisService:
             )
             id3_tags = self.extract_id3_tags(file_path, original_filename)
 
-            # Check performance bottlenecks after analysis
-            # performance_status = self.check_performance_bottlenecks()
-
-            # Log performance status if there are issues
-            # if performance_status["status"] != "healthy":
-            #     self.log_performance_status()
-
             # Combine all results
             analysis_result = {
                 "status": "success",
                 "message": "Simple audio analysis completed successfully",
                 "processing_time": round(time.time() - start_time, 3),
                 "processing_mode": "simple",
-                # "performance_status": performance_status["status"],
-                # "performance_summary": self.get_performance_summary(),
                 **file_metadata,
                 **technical_info,
                 **basic_features,
@@ -562,14 +403,6 @@ class SimpleAnalysisService:
                 f"Simple audio analysis completed in {analysis_result['processing_time']:.3f}s"
             )
 
-            # Include performance warnings in the result if needed
-            # if performance_status["status"] == "warning":
-            #    analysis_result["performance_warnings"] = {
-            #        "critical_bottlenecks": performance_status["critical_bottlenecks"],
-            #        "threshold_violations": performance_status["threshold_violations"],
-            #        "recommendations": performance_status["recommendations"],
-            #    }
-
             # Track analysis count and perform periodic garbage collection
             self.analysis_count += 1
             if self.analysis_count % self.gc_interval == 0:
@@ -580,8 +413,6 @@ class SimpleAnalysisService:
 
         except Exception as e:
             logger.error(f"Simple audio analysis failed: {e}")
-            local = locals()
-
             gc.collect()
 
             return {
@@ -673,14 +504,23 @@ class SimpleAnalysisService:
                     25,
                 )
 
+            # Load the full track once and share it across every generate_*()
+            # call below that needs the whole file (embedding, tempo, mood, key)
+            # -- each extractor resamples internally to its own target rate, so
+            # a single native-rate load is enough; re-decoding the same file
+            # from disk 4 times was pure waste.
+            y_full, sr = self.audio_loader.load_audio_sample(
+                file_path, sample_duration=None
+            )
+
             # Computed first: extract_basic_features now sources tempo/danceability/
             # mood/instrumentalness from these instead of the retired hand-computed
             # detectors/formulas.
-            embedding = self.generate_discogs_embedding_from_file(file_path)
+            embedding = self.generate_discogs_embedding_from_file(y_full, sr)
             discogs_classifiers = self.generate_discogs_classifiers(embedding)
-            discogs_tempo = self.generate_tempo_cnn(file_path)
-            discogs_deam = self.generate_deam_mood(file_path)
-            discogs_skey = self.generate_skey(file_path)
+            discogs_tempo = self.generate_tempo_cnn(y_full, sr)
+            discogs_deam = self.generate_deam_mood(y_full, sr)
+            discogs_skey = self.generate_skey(y_full, sr)
 
             # Extract features
             basic_features = self.extract_basic_features(
@@ -818,7 +658,6 @@ class SimpleAnalysisService:
         successful = 0
         failed = 0
         results: List[Dict[str, Any]] = []
-        converted_wav_paths: List[str] = []
 
         logger.info(f"Starting batch audio analysis for {total_files} files")
 
@@ -984,15 +823,3 @@ class SimpleAnalysisService:
                 "processing_time": round(time.time() - start_time, 3),
                 "processing_mode": "simple_batch",
             }
-
-        finally:
-            # Clean up any remaining converted WAV files
-            for converted_path in converted_wav_paths:
-                if os.path.exists(converted_path):
-                    try:
-                        os.unlink(converted_path)
-                    except Exception as cleanup_error:
-                        logger.warning(
-                            f"Failed to clean up converted WAV file "
-                            f"{converted_path}: {cleanup_error}"
-                        )

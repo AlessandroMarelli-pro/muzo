@@ -12,9 +12,7 @@ import pytest
 from flask import Flask
 from flask_restful import Api
 
-# from src.api.hierarchical_classification import initialize_service
 from src.api.simple_analysis import SimpleAnalysisResource
-from tabulate import tabulate
 
 
 class TestSimpleAnalysisAPI:
@@ -38,15 +36,6 @@ class TestSimpleAnalysisAPI:
     def test_audio_file(self):
         """Path to the test audio file."""
         return "/Users/alessandro/Music/Youtube/Fiesta/🔴 Geoff Bastow - White Lightning 🇬🇧  1976 UK Jazz Funk.mp3"
-
-    @pytest.fixture(autouse=True)
-    def setup_hierarchical_service(self):
-        """Initialize hierarchical classification service for tests."""
-        # Skip hierarchical service initialization for audioFlux tests to avoid threading conflicts
-        # asyncio.run(initialize_service())
-        yield
-        # Cleanup after test if needed
-        pass
 
     def test_post_method_success_with_image(self, client, test_audio_file):
         """Test successful POST request with audio file."""
@@ -82,20 +71,28 @@ class TestSimpleAnalysisAPI:
             "Should use simple processing mode"
         )
 
-        # Verify required fields are present
+        # Verify required fields are present. fingerprint was retired (dead code,
+        # never read by anything downstream -- see the ai-service cleanup plan).
         required_fields = [
             "features",
-            "fingerprint",
             "file_info",
             "audio_technical",
             "id3_tags",
+            "discogs_classifiers",
+            "discogs_tempo",
+            "discogs_deam",
+            "discogs_skey",
         ]
         for field in required_fields:
             assert field in data, f"Missing required field: {field}"
             assert isinstance(data[field], dict), (
                 f"Field {field} should be a dictionary"
             )
-        assert "album_art" not in data, "Album art should be present"
+        # has_image=true tells the endpoint the client already has album art, so
+        # it skips fetching and never sets this key at all (see simple_analysis.py).
+        assert "album_art" not in data, (
+            "album_art should be absent when has_image=true"
+        )
 
     def test_post_method_success_without_image(self, client, test_audio_file):
         """Test successful POST request with audio file."""
@@ -160,21 +157,18 @@ class TestSimpleAnalysisAPI:
             ):
                 bpm_ok_count += 1
 
-            assert (
-                musical_features["valence_mood"] == test_audio_file["valence_mood"]
-            ), "Valence mood should match"
-            assert (
-                musical_features["arousal_mood"] == test_audio_file["arousal_mood"]
-            ), "Arousal mood should match"
-            assert (
-                musical_features["danceability_feeling"]
-                == test_audio_file["danceability_feeling"]
-            ), "Danceability feeling should match"
-
-            assert (
-                musical_features["danceability_calculation"]["beat_strength"]
-                == test_audio_file["beat_strength"]
-            ), "Beat strength should match"
+            # valence_mood/arousal_mood/danceability_feeling are present but no
+            # longer asserted for exact ground-truth match: the fixture's
+            # ground-truth values predate the switch to DEAM (valence/arousal)
+            # and the discogs-effnet danceable classifier (danceability), which
+            # source these from a materially different model than what the
+            # fixture was originally captured against -- same reasoning as
+            # test_key_detection.py's loose accuracy bound after the S-KEY
+            # switch. danceability_calculation/beat_strength no longer exist
+            # (retired along with DanceabilityAnalyzer).
+            assert "valence_mood" in musical_features
+            assert "arousal_mood" in musical_features
+            assert "danceability_feeling" in musical_features
         assert bpm_ok_count / len(test_audio_files) > 0.9, (
             "More than 90% of BPMs should be correct"
         )
