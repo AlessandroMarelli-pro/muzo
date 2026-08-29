@@ -78,6 +78,14 @@ export class PlaylistRepository implements IPlaylistRepository {
       .catch((e: unknown) => handlePrismaNotFound(e, 'Favorite playlist not found'));
   }
 
+  async findFavorite(): Promise<Maybe<Playlist>> {
+    return this.prisma.playlist
+      .findFirst({
+        where: { createdById: getCurrentUserId(), isFavorite: true },
+      })
+      .then((row) => (row ? toDomain(row) : null));
+  }
+
   async getMany(): Promise<Playlist[]> {
     return this.prisma.playlist
       .findMany({

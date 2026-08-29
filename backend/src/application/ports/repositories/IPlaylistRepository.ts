@@ -29,6 +29,8 @@ export interface IPlaylistRepository {
     sorting: Maybe<PlaylistSortingOptions>,
   ): Promise<PlaylistTrackWithTrackDetailAndSorting>;
   getFavorite(): Promise<PlaylistTrackWithTrackDetailAndSorting>;
+  /** Non-throwing lookup of the favorite playlist; null when the user has none yet. */
+  findFavorite(): Promise<Maybe<Playlist>>;
   getMany(): Promise<Playlist[]>;
   updateOneById(id: PlaylistId, data: PlaylistUpdateData): Promise<Playlist>;
   deleteOneById(id: PlaylistId): Promise<boolean>;

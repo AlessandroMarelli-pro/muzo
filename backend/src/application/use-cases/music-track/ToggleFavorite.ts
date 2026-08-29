@@ -6,7 +6,7 @@ import {
 import { MusicTrackId } from 'src/kernel/ids';
 import { createNotFoundError, models } from 'src/kernel/types';
 import { getCurrentUser } from 'src/kernel/types/context';
-import { MusicTrack } from 'src/kernel/types/model-types';
+import { MusicTrack, Playlist } from 'src/kernel/types/model-types';
 import { IMusicTrackRepository } from '../../ports/repositories/IMusicTrackRepository';
 import { IPlaylistRepository } from '../../ports/repositories/IPlaylistRepository';
 import { IPlaylistTrackRepository } from '../../ports/repositories/IPlaylistTrackRepository';
@@ -28,10 +28,7 @@ export class ToggleFavoriteUseCase {
     if (!track) {
       throw createNotFoundError(`Music track with ID ${id} not found`);
     }
-    const playlist = await this.playlistRepository.getFavorite();
-    if (!playlist) {
-      throw createNotFoundError(`Favorite playlist not found`);
-    }
+    const playlist = await this.getOrCreateFavoritePlaylist();
 
     if (isFavorite) {
       const lastPosition = await this.playlistTrackRepository.getLastPosition(playlist.id);
@@ -52,5 +49,21 @@ export class ToggleFavoriteUseCase {
     });
     await this.hqAudioAcquireProducer.scheduleHqAudioAcquire(id, getCurrentUser());
     return updated;
+  }
+
+  /** The favorite playlist is created lazily on first use rather than seeded per user. */
+  private async getOrCreateFavoritePlaylist(): Promise<Playlist> {
+    const existing = await this.playlistRepository.findFavorite();
+    if (existing) {
+      return existing;
+    }
+    return this.playlistRepository.save(
+      models.playlist.instantiateNew({
+        name: 'Favorites',
+        isPublic: false,
+        description: null,
+        isFavorite: true,
+      }),
+    );
   }
 }
