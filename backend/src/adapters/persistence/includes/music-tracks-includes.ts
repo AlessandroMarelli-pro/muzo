@@ -10,5 +10,4 @@ export const musicTracksIncludes = {
   imageSearches: true,
   trackGenres: { include: { genre: true } },
   trackSubgenres: { include: { subgenre: true } },
-  trackAiAtmosphereTags: { include: { aiAtmosphereTag: true } },
 } satisfies Prisma.MusicTrackInclude;

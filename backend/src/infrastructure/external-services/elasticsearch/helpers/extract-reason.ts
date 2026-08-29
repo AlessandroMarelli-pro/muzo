@@ -124,62 +124,6 @@ const generateRecommendationReasons = (
     }
   }
 
-  if (
-    trackSource.atmosphere_tags &&
-    Array.isArray(trackSource.atmosphere_tags) &&
-    playlistFeatures.atmosphereKeywords &&
-    playlistFeatures.atmosphereKeywords.length > 0
-  ) {
-    const commonAtmosphere = trackSource.atmosphere_tags.filter((keyword) =>
-      playlistFeatures.atmosphereKeywords?.includes(keyword),
-    );
-    if (commonAtmosphere.length > 0) {
-      reasons.push(`Similar atmosphere: ${commonAtmosphere.slice(0, 2).join(', ')}`);
-    }
-  }
-
-  if (trackSource.vocals_desc && playlistFeatures.vocalsDescriptions) {
-    const matchingVocals =
-      trackSource.vocals_desc &&
-      (trackSource.vocals_desc
-        .toLowerCase()
-        .includes(playlistFeatures.vocalsDescriptions.toLowerCase()) ||
-        playlistFeatures.vocalsDescriptions
-          .toLowerCase()
-          .includes(trackSource.vocals_desc.toLowerCase()));
-    if (matchingVocals) {
-      reasons.push('Similar vocal characteristics');
-    }
-  }
-
-  if (trackSource.context_background && playlistFeatures.contextBackgrounds) {
-    const matchingContext =
-      trackSource.context_background &&
-      (trackSource.context_background
-        .toLowerCase()
-        .includes(playlistFeatures.contextBackgrounds.toLowerCase()) ||
-        playlistFeatures.contextBackgrounds
-          .toLowerCase()
-          .includes(trackSource.context_background.toLowerCase()));
-    if (matchingContext) {
-      reasons.push('Similar context background');
-    }
-  }
-
-  if (trackSource.context_impact && playlistFeatures.contextImpacts) {
-    const matchingImpact =
-      trackSource.context_impact &&
-      (trackSource.context_impact
-        .toLowerCase()
-        .includes(playlistFeatures.contextImpacts.toLowerCase()) ||
-        playlistFeatures.contextImpacts
-          .toLowerCase()
-          .includes(trackSource.context_impact.toLowerCase()));
-    if (matchingImpact) {
-      reasons.push('Similar context impact');
-    }
-  }
-
   return reasons;
 };
 /**
@@ -214,40 +158,6 @@ export const extractReasonsFromElasticsearch = (
         `Same subgenre${matchedSubgenres.length > 1 ? 's' : ''}: ${matchedSubgenres.slice(0, 3).join(', ')}`,
       );
     }
-  }
-
-  if (highlights.tags && highlights.tags.length > 0) {
-    const matchedTags = highlights.tags
-      .map((h: string) => h.replace(/<em>|<\/em>/g, ''))
-      .filter((tag: string) => trackSource.tags?.includes(tag));
-    if (matchedTags.length > 0) {
-      reasons.push(`Similar tags: ${matchedTags.slice(0, 3).join(', ')}`);
-    }
-  }
-
-  if (highlights.atmosphere_tags && highlights.atmosphere_tags.length > 0) {
-    const matchedAtmosphere = highlights.atmosphere_tags
-      .map((h: string) => h.replace(/<em>|<\/em>/g, ''))
-      .filter((keyword: string) => trackSource.atmosphere_tags?.includes(keyword));
-    if (matchedAtmosphere.length > 0) {
-      reasons.push(`Similar atmosphere: ${matchedAtmosphere.slice(0, 2).join(', ')}`);
-    }
-  }
-
-  if (highlights.ai_description && highlights.ai_description.length > 0) {
-    reasons.push('Similar AI description');
-  }
-
-  if (highlights.vocals_desc && highlights.vocals_desc.length > 0) {
-    reasons.push('Similar vocal characteristics');
-  }
-
-  if (highlights.context_background && highlights.context_background.length > 0) {
-    reasons.push('Similar context background');
-  }
-
-  if (highlights.context_impact && highlights.context_impact.length > 0) {
-    reasons.push('Similar context impact');
   }
 
   if (

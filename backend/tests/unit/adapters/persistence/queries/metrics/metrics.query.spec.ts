@@ -68,7 +68,11 @@ function setupGetMetricsMock(prismaMock: ReturnType<typeof createMockPrisma>) {
         },
       ]);
     }
-    if (sql.includes('track_count') && sql.includes('total_duration') && sql.includes('aiArtist')) {
+    if (
+      sql.includes('track_count') &&
+      sql.includes('total_duration') &&
+      sql.includes('originalArtist')
+    ) {
       return Promise.resolve([
         { artist: 'Artist A', track_count: BigInt(10), total_duration: 2400 },
         { artist: 'Artist B', track_count: BigInt(5), total_duration: 1200 },
@@ -160,7 +164,7 @@ describe('MetricsQuery', () => {
         const sql = Array.isArray(template) ? template.join('?') : String(args[0]);
         if (
           sql.includes('genreId') ||
-          (sql.includes('track_count') && sql.includes('aiArtist')) ||
+          (sql.includes('track_count') && sql.includes('originalArtist')) ||
           sql.includes('tracks_added')
         ) {
           return Promise.resolve([]);

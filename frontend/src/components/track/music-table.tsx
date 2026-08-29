@@ -250,38 +250,6 @@ const columns = (
       },
 
       {
-        id: 'aiAtmosphereKeywords',
-        accessorKey: 'aiAtmosphereKeywords',
-        header: ({ column }) => <DataTableColumnHeader column={column} title="Atmosphere" />,
-        cell: ({ row }) => {
-          const atmosphereKeywords = (row.getValue('aiAtmosphereKeywords') || []) as string[];
-
-          return (
-            <div className="flex  gap-1">
-              {atmosphereKeywords?.map((atmosphereKeyword, index) => (
-                <Badge
-                  key={`atmosphere-${index}-${atmosphereKeyword}`}
-                  variant="secondary"
-                  className="capitalize"
-                  size="xs"
-                >
-                  {atmosphereKeyword}
-                </Badge>
-              ))}
-            </div>
-          );
-        },
-        meta: {
-          label: 'Atmosphere',
-          variant: 'multiSelect',
-          options: staticFilterOptions.atmospheres,
-          hidden: true,
-        },
-        enableColumnFilter: true,
-        hidden: true,
-        enableHiding: true,
-      },
-      {
         id: 'genres',
         accessorKey: 'genres',
         header: ({ column }) => <DataTableColumnHeader column={column} title="Genre" />,
@@ -538,7 +506,6 @@ export const MusicTable = React.memo<MusicTableProps>(
           pageSize: initialPageSize,
         },
         columnVisibility: {
-          aiAtmosphereKeywords: false,
           mfDanceabilityFeeling: false,
           mfArousalMood: false,
           mfValenceMood: false,

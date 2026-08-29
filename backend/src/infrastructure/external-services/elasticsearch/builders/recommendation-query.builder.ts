@@ -209,8 +209,6 @@ return cosineSimilarity(params.queryVector, 'audio_features.discogs_embedding') 
       fields: {
         genres: {},
         subgenres: {},
-        tags: {},
-        atmosphere_tags: {},
       },
       require_field_match: false,
     },

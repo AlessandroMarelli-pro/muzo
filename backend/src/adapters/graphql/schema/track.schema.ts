@@ -62,27 +62,6 @@ export class Track {
   @Field(() => [String], { nullable: true })
   subgenres?: string[];
 
-  @Field(() => [String], { nullable: true })
-  aiTags?: string[];
-
-  @Field(() => String, { nullable: true })
-  aiVocalsDesc?: string;
-
-  @Field(() => String, { nullable: true })
-  aiDescription?: string;
-
-  @Field(() => String, { nullable: true })
-  aiVocalsDescriptions?: string;
-
-  @Field(() => [String], { nullable: true })
-  aiAtmosphereKeywords?: string[];
-
-  @Field(() => String, { nullable: true })
-  aiContextBackgrounds?: string;
-
-  @Field(() => String, { nullable: true })
-  aiContextImpacts?: string;
-
   @Field(() => Float, { nullable: true })
   mfTempo?: number;
 

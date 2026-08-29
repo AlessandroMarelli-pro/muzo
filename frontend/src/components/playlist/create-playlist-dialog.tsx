@@ -39,7 +39,6 @@ export function CreatePlaylistDialog({ open, onOpenChange, onSuccess }: CreatePl
   // Filter states
   const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
   const [selectedSubgenres, setSelectedSubgenres] = useState<string[]>([]);
-  const [selectedAtmospheres, setSelectedAtmospheres] = useState<string[]>([]);
   const [selectedLibraries, setSelectedLibraries] = useState<string[]>([]);
   const [bpmRange, setBpmRange] = useState<[number, number]>([0, 200]);
   const [maxTracks, setMaxTracks] = useState<number>(100);
@@ -63,14 +62,12 @@ export function CreatePlaylistDialog({ open, onOpenChange, onSuccess }: CreatePl
       const filters =
         selectedGenres.length > 0 ||
         selectedSubgenres.length > 0 ||
-        selectedAtmospheres.length > 0 ||
         selectedLibraries.length > 0 ||
         bpmRange[0] !== 0 ||
         bpmRange[1] !== 200
           ? {
               genreIds: selectedGenres.length > 0 ? selectedGenres : undefined,
               subgenreIds: selectedSubgenres.length > 0 ? selectedSubgenres : undefined,
-              atmospheres: selectedAtmospheres.length > 0 ? selectedAtmospheres : undefined,
               libraryIds: selectedLibraries.length > 0 ? selectedLibraries : undefined,
               tempo:
                 bpmRange[0] !== 0 || bpmRange[1] !== 200
@@ -98,7 +95,6 @@ export function CreatePlaylistDialog({ open, onOpenChange, onSuccess }: CreatePl
       setIsPublic(false);
       setSelectedGenres([]);
       setSelectedSubgenres([]);
-      setSelectedAtmospheres([]);
       setSelectedLibraries([]);
       setBpmRange([0, 200]);
       setMaxTracks(100);
@@ -256,20 +252,6 @@ export function CreatePlaylistDialog({ open, onOpenChange, onSuccess }: CreatePl
                     />
                   </Field>
                 )}
-
-                {/* Atmospheres Filter */}
-                <Field orientation="horizontal">
-                  <FieldLabel htmlFor="atmospheres-filter">Atmospheres</FieldLabel>
-                  <MultiSelect
-                    options={options.atmospheres || []}
-                    value={selectedAtmospheres}
-                    onChange={setSelectedAtmospheres}
-                    placeholder="Select atmospheres…"
-                    className="w-xs"
-                    isLoading={options.isLoading}
-                    disabled={isCreating}
-                  />
-                </Field>
 
                 {/* Libraries Filter */}
                 <Field orientation="horizontal">

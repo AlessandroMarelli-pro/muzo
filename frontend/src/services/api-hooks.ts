@@ -429,10 +429,6 @@ export const useStaticFilters = () => {
                 id
                 name
               }
-              atmospheres {
-                id
-                name
-              }
             }
           }
         }

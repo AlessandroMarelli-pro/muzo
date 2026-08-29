@@ -1,5 +1,4 @@
 import type {
-  AudioFileAIMetadata,
   AudioFileFeatures,
   AudioFileInfo,
   AudioFileMetadata,
@@ -75,29 +74,6 @@ function toTrackMetadata(metadata: MaybeUndefined<AudioFileMetadata>) {
   };
 }
 
-function toTrackAIMetadata(aiMetadata: MaybeUndefined<AudioFileAIMetadata>) {
-  if (!aiMetadata) {
-    return {
-      aiTags: [],
-      aiVocalsDesc: '',
-      aiDescription: '',
-      aiVocalsDescriptions: '',
-      aiAtmosphereKeywords: [],
-      aiContextBackgrounds: '',
-      aiContextImpacts: '',
-    };
-  }
-  return {
-    aiTags: aiMetadata.tags?.length ? aiMetadata.tags : undefined,
-    aiVocalsDesc: aiMetadata.vocalsDesc,
-    aiDescription: aiMetadata.description || undefined,
-    aiVocalsDescriptions: aiMetadata.vocalsDesc,
-    aiAtmosphereKeywords: aiMetadata.atmosphereTags?.length ? aiMetadata.atmosphereTags : [],
-    aiContextBackgrounds: aiMetadata.contextBackground,
-    aiContextImpacts: aiMetadata.contextImpact,
-  };
-}
-
 function toTrackMusicalFeatures(features: MaybeUndefined<AudioFileFeatures>) {
   if (!features?.musicalFeatures) {
     return {
@@ -150,7 +126,6 @@ export function toTrack(domain: MusicTrack): Track {
     hqAudioPath: domain.hqAudioPath,
     ...toTrackTechnicalInfo(domain.technicalInfo),
     ...toTrackMetadata(domain.metadata),
-    ...toTrackAIMetadata(domain.aiMetadata),
     ...toTrackMusicalFeatures(domain.features),
     createdAt: domain.createdAt,
     updatedAt: domain.updatedAt,

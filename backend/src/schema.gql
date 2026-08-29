@@ -65,7 +65,6 @@ type DiscoveredTrack {
 input FilterCriteriaInput {
   arousalMood: [String!]
   artist: String
-  atmosphereIds: [Base64ID!]
   danceabilityFeeling: [String!]
   genreIds: [Base64ID!]
   instrumentalness: RangeInput
@@ -86,7 +85,6 @@ type FilterCriteriaResult {
 type FilterCriteriaType {
   arousalMood: [String!]
   artist: String
-  atmosphereIds: [Base64ID!]
   danceabilityFeeling: [String!]
   genreIds: [Base64ID!]
   instrumentalness: Range
@@ -229,7 +227,6 @@ type Playlist implements Node {
 }
 
 input PlaylistFilterInput {
-  atmospheres: [String!]
   genreIds: [Base64ID!]
   libraryIds: [Base64ID!]
   subgenreIds: [Base64ID!]
@@ -340,7 +337,6 @@ type SpotifyAuthUrl {
 }
 
 type StaticFilterOptions {
-  atmospheres: [FilterWithID!]!
   genres: [FilterWithID!]!
   keys: [FilterWithID!]!
   libraries: [FilterWithID!]!
@@ -378,13 +374,6 @@ type TopGenre {
 }
 
 type Track implements Node {
-  aiAtmosphereKeywords: [String!]
-  aiContextBackgrounds: String
-  aiContextImpacts: String
-  aiDescription: String
-  aiTags: [String!]
-  aiVocalsDesc: String
-  aiVocalsDescriptions: String
   analysisStatus: String
   artist: String
   createdAt: Date

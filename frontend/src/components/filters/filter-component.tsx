@@ -103,10 +103,6 @@ export const FilterComponent = ({
     updateFilter('tempo', { min: value[0], max: value[1] });
   };
 
-  const handleAtmosphereChange = (selected: string[]) => {
-    updateFilter('atmosphereIds', selected);
-  };
-
   const handleArtistChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     updateFilter('artist', value);
@@ -174,18 +170,6 @@ export const FilterComponent = ({
           onChange={handleKeyChange}
           placeholder="Select keys..."
           className="w-full "
-          isLoading={options.isLoading}
-        />
-      </Field>
-      {/* Atmospheres Filter */}
-      <Field>
-        <FieldLabel htmlFor="atmospheres-filter">Atmospheres</FieldLabel>
-        <MultiSelect
-          options={options.atmospheres}
-          value={filters.atmosphereIds}
-          onChange={handleAtmosphereChange}
-          placeholder="Select atmospheres..."
-          className="w-full"
           isLoading={options.isLoading}
         />
       </Field>

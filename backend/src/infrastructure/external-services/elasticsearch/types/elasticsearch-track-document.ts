@@ -15,12 +15,6 @@ export interface ElasticsearchTrackDocument {
   genres: string[];
   subgenres: string[];
 
-  tags: string[];
-  vocals_desc: string;
-  atmosphere_tags: string[];
-  context_background: string;
-  context_impact: string;
-
   musical_audio_features: {
     tempo: number;
     key: string;

@@ -33,7 +33,6 @@ export class ToggleDislikeUseCase {
         libraryId: track.libraryId,
         fileInfo: track.fileInfo,
         technicalInfo: track.technicalInfo ?? undefined,
-        aiMetadata: track.aiMetadata ?? undefined,
       }),
     );
     this.logger.info('Track disliked', {

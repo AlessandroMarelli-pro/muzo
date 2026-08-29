@@ -11,7 +11,6 @@ export interface FilterOptions {
   subgenres: { label: string; value: string }[];
   keys: { label: string; value: string }[];
   libraries: { label: string; value: string }[];
-  atmospheres: { label: string; value: string }[];
 }
 
 const FilterContext = createContext<{
@@ -41,7 +40,6 @@ export function FilterProvider({
     subgenres: [],
     keys: [],
     libraries: [],
-    atmospheres: [],
   });
 
   const filtering = useFiltering(filterOptions);

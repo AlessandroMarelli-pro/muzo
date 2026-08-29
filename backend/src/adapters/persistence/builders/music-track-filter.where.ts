@@ -67,17 +67,11 @@ export const buildMusicTrackFilterWhereClause = (
     const fingerprintWhere: any = {};
 
     if (criteria.artist && criteria.artist.length > 0) {
-      where.OR = [
-        { originalArtist: { contains: criteria.artist } },
-        { userArtist: { contains: criteria.artist } },
-      ];
+      where.originalArtist = { contains: criteria.artist };
     }
 
     if (criteria.title && criteria.title.length > 0) {
-      where.OR = [
-        { originalTitle: { contains: criteria.title } },
-        { userTitle: { contains: criteria.title } },
-      ];
+      where.originalTitle = { contains: criteria.title };
     }
 
     if (criteria.keyIds && criteria.keyIds.length > 0) {
@@ -127,16 +121,6 @@ export const buildMusicTrackFilterWhereClause = (
       };
     }
 
-    if (criteria.atmosphereIds && criteria.atmosphereIds.length > 0) {
-      const atmosphereTagDbIds = criteria.atmosphereIds.map((id) =>
-        id.includes(':') ? id.split(':')[1] : id,
-      );
-      where.trackAiAtmosphereTags = {
-        some: {
-          aiAtmosphereTagId: { in: atmosphereTagDbIds },
-        },
-      };
-    }
     if (Object.keys(fingerprintWhere).length > 0) {
       where.audioFingerprint = fingerprintWhere;
     }

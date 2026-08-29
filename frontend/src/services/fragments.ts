@@ -18,13 +18,6 @@ export const trackFragment = gql`
     duration
     genres
     subgenres
-    aiTags
-    aiVocalsDesc
-    aiDescription
-    aiVocalsDescriptions
-    aiAtmosphereKeywords
-    aiContextBackgrounds
-    aiContextImpacts
     createdAt
     updatedAt
     mfTempo
@@ -122,7 +115,6 @@ export const filterFragment = gql`
       artist
       title
       libraryIds
-      atmosphereIds
     }
   }
 `;

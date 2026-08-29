@@ -52,9 +52,9 @@ export class MetricsQuery implements IMetricsQuery {
 
   private async getArtistCount() {
     const result = await this.prisma.$queryRaw<[{ count: bigint }]>`
-      SELECT COUNT(DISTINCT COALESCE("aiArtist", "originalArtist")) as count
+      SELECT COUNT(DISTINCT "originalArtist") as count
       FROM music_tracks
-      WHERE "createdById" = ${getCurrentUserId()} AND ("aiArtist" IS NOT NULL OR "originalArtist" IS NOT NULL)
+      WHERE "createdById" = ${getCurrentUserId()} AND "originalArtist" IS NOT NULL
     `;
     return Number(result[0].count);
   }
@@ -93,13 +93,13 @@ export class MetricsQuery implements IMetricsQuery {
       }>
     >`
       SELECT
-        COALESCE("aiArtist", "originalArtist") as artist,
+        "originalArtist" as artist,
         COUNT(*) as track_count,
         SUM(duration) as total_duration,
         AVG("aiConfidence") as avg_confidence
       FROM music_tracks
-      WHERE "createdById" = ${getCurrentUserId()} AND ("aiArtist" IS NOT NULL OR "originalArtist" IS NOT NULL)
-      GROUP BY COALESCE("aiArtist", "originalArtist")
+      WHERE "createdById" = ${getCurrentUserId()} AND "originalArtist" IS NOT NULL
+      GROUP BY "originalArtist"
       ORDER BY track_count DESC, total_duration DESC
       LIMIT 20
     `;

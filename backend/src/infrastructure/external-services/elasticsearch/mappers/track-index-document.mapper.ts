@@ -42,11 +42,6 @@ export const toElasticsearchTrackDocument = (dto: MusicTrack): ElasticsearchTrac
     ...(date && { date: date.toISOString() }),
     genres: dto.metadata?.genres ?? [],
     subgenres: dto.metadata?.subgenres ?? [],
-    tags: dto.aiMetadata?.tags ?? [],
-    vocals_desc: dto.aiMetadata?.vocalsDesc ?? '',
-    atmosphere_tags: dto.aiMetadata?.atmosphereTags ?? [],
-    context_background: dto.aiMetadata?.contextBackground ?? '',
-    context_impact: dto.aiMetadata?.contextImpact ?? '',
     musical_audio_features: {
       tempo: dto.features?.musicalFeatures?.tempo ?? 0,
       key: dto.features?.musicalFeatures?.key ?? '',
@@ -96,14 +91,6 @@ export const toMusicTrack = (
       genres: document.genres,
       subgenres: document.subgenres,
       duration: document.duration,
-    },
-    aiMetadata: {
-      tags: document.tags,
-      vocalsDesc: document.vocals_desc,
-      atmosphereTags: document.atmosphere_tags,
-      contextBackground: document.context_background,
-      contextImpact: document.context_impact,
-      description: '',
     },
     features: {
       musicalFeatures: {

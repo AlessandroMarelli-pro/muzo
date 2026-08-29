@@ -72,12 +72,6 @@ export function calculateFeatures(tracks: MusicTrack[]): Maybe<AudioFeatures> {
     subgenres: [],
     artist: '',
     album: '',
-    aiDescriptions: [],
-    aiTags: [],
-    vocalsDescriptions: '',
-    atmosphereKeywords: [],
-    contextBackgrounds: '',
-    contextImpacts: '',
     embedding: [],
   };
 
@@ -91,13 +85,6 @@ export function calculateFeatures(tracks: MusicTrack[]): Maybe<AudioFeatures> {
   const arousalMoodCounts: Record<string, number> = {};
   const danceabilityFeelingCounts: Record<string, number> = {};
 
-  const aiDescriptions: string[] = [];
-  const aiTags: string[] = [];
-  const vocalsDescriptions: string[] = [];
-  const atmosphereKeywords: string[] = [];
-  const contextBackgrounds: string[] = [];
-  const contextImpacts: string[] = [];
-
   let validTracks = 0;
   let instrumentalnessSum = 0;
   let instrumentalnessCount = 0;
@@ -109,7 +96,6 @@ export function calculateFeatures(tracks: MusicTrack[]): Maybe<AudioFeatures> {
   tracks.forEach((track) => {
     const mf = track.features?.musicalFeatures;
     const metadata = track.metadata;
-    const aiMetadata = track.aiMetadata;
 
     if (mf) {
       if (mf.tempo != null && mf.tempo > 0) {
@@ -189,25 +175,6 @@ export function calculateFeatures(tracks: MusicTrack[]): Maybe<AudioFeatures> {
     if (metadata?.album) {
       albumCounts[metadata.album] = (albumCounts[metadata.album] || 0) + 1;
     }
-
-    if (aiMetadata?.description) {
-      aiDescriptions.push(aiMetadata.description);
-    }
-    if (aiMetadata?.tags?.length) {
-      aiTags.push(...aiMetadata.tags);
-    }
-    if (aiMetadata?.vocalsDesc) {
-      vocalsDescriptions.push(aiMetadata.vocalsDesc);
-    }
-    if (aiMetadata?.atmosphereTags?.length) {
-      atmosphereKeywords.push(...aiMetadata.atmosphereTags);
-    }
-    if (aiMetadata?.contextBackground) {
-      contextBackgrounds.push(aiMetadata.contextBackground);
-    }
-    if (aiMetadata?.contextImpact) {
-      contextImpacts.push(aiMetadata.contextImpact);
-    }
   });
 
   const embedding = calculateEmbeddingAggregate(tracks);
@@ -254,64 +221,6 @@ export function calculateFeatures(tracks: MusicTrack[]): Maybe<AudioFeatures> {
   features.valenceMood = findMostCommon(valenceMoodCounts);
   features.arousalMood = findMostCommon(arousalMoodCounts);
   features.danceabilityFeeling = findMostCommon(danceabilityFeelingCounts);
-
-  // Aggregate AI metadata (collect unique values and most common)
-  if (aiDescriptions.length > 0) {
-    features.aiDescriptions = [...new Set(aiDescriptions)];
-  }
-  if (aiTags.length > 0) {
-    const tagCounts: Record<string, number> = {};
-    aiTags.forEach((tag) => {
-      tagCounts[tag] = (tagCounts[tag] || 0) + 1;
-    });
-    features.aiTags = Object.entries(tagCounts)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 10)
-      .map(([tag]) => tag);
-  }
-  if (vocalsDescriptions.length > 0) {
-    // Find the most common vocals description
-    const vocalsCounts: Record<string, number> = {};
-    vocalsDescriptions.forEach((vocals) => {
-      vocalsCounts[vocals] = (vocalsCounts[vocals] || 0) + 1;
-    });
-    const mostCommonVocals = Object.entries(vocalsCounts).sort((a, b) => b[1] - a[1])[0]?.[0];
-    if (mostCommonVocals) {
-      features.vocalsDescriptions = mostCommonVocals;
-    }
-  }
-  if (atmosphereKeywords.length > 0) {
-    const atmosphereCounts: Record<string, number> = {};
-    atmosphereKeywords.forEach((keyword) => {
-      atmosphereCounts[keyword] = (atmosphereCounts[keyword] || 0) + 1;
-    });
-    features.atmosphereKeywords = Object.entries(atmosphereCounts)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 10)
-      .map(([keyword]) => keyword);
-  }
-  if (contextBackgrounds.length > 0) {
-    // Find the most common context background
-    const contextCounts: Record<string, number> = {};
-    contextBackgrounds.forEach((context) => {
-      contextCounts[context] = (contextCounts[context] || 0) + 1;
-    });
-    const mostCommonContext = Object.entries(contextCounts).sort((a, b) => b[1] - a[1])[0]?.[0];
-    if (mostCommonContext) {
-      features.contextBackgrounds = mostCommonContext;
-    }
-  }
-  if (contextImpacts.length > 0) {
-    // Find the most common context impact
-    const impactCounts: Record<string, number> = {};
-    contextImpacts.forEach((impact) => {
-      impactCounts[impact] = (impactCounts[impact] || 0) + 1;
-    });
-    const mostCommonImpact = Object.entries(impactCounts).sort((a, b) => b[1] - a[1])[0]?.[0];
-    if (mostCommonImpact) {
-      features.contextImpacts = mostCommonImpact;
-    }
-  }
 
   return features;
 }

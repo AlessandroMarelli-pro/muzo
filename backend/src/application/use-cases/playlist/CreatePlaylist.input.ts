@@ -4,7 +4,6 @@ import { GenreId, MusicLibraryId, SubgenreId } from 'src/kernel/ids';
 export type PlaylistFilter = {
   genreIds: Maybe<GenreId[]>;
   subgenreIds: Maybe<SubgenreId[]>;
-  atmospheres: Maybe<string[]>;
   libraryIds: Maybe<MusicLibraryId[]>;
   tempo: Maybe<{ min?: number; max?: number }>;
 };

@@ -26,9 +26,6 @@ export type GenreId = Brand<string, 'GenreId'>;
 
 export type SubgenreId = Brand<string, 'SubgenreId'>;
 
-export type AiAtmosphereTagId = Brand<string, 'AiAtmosphereTagId'>;
-export type TrackAiAtmosphereTagId = Brand<string, 'TrackAiAtmosphereTagId'>;
-
 export type SavedFilterId = Brand<string, 'SavedFilterId'>;
 
 export type QueueItemId = Brand<string, 'QueueItemId'>;

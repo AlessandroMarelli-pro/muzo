@@ -1,6 +1,5 @@
 import { Maybe, MaybeUndefined } from '../common';
 import type {
-  AiAtmosphereTagId,
   Brand,
   GenreId,
   HiddenMusicTrackId,
@@ -14,7 +13,6 @@ import type {
   SavedFilterId,
   SessionId,
   SubgenreId,
-  TrackAiAtmosphereTagId,
   TrackGenreId,
   TrackSubgenreId,
   UserId,
@@ -38,8 +36,6 @@ export type Model =
   | Genre
   | TrackSubgenre
   | Subgenre
-  | TrackAiAtmosphereTag
-  | AiAtmosphereTag
   | SavedFilter
   | QueueItem
   | HiddenMusicTrack
@@ -95,7 +91,6 @@ export type HiddenMusicTrack = Readonly<ModelBase<HiddenMusicTrackId>> & {
   libraryId: MusicLibraryId;
   fileInfo: AudioFileInfo;
   technicalInfo: MaybeUndefined<AudioTechnical>;
-  aiMetadata: MaybeUndefined<Omit<AudioFileAIMetadata, 'atmosphereTags'>>;
 };
 
 export type MusicTrack = Readonly<ModelBase<MusicTrackId>> & {
@@ -109,7 +104,6 @@ export type MusicTrack = Readonly<ModelBase<MusicTrackId>> & {
   technicalInfo: MaybeUndefined<AudioTechnical>;
   features: MaybeUndefined<AudioFileFeatures>;
   metadata: MaybeUndefined<AudioFileMetadata>;
-  aiMetadata: MaybeUndefined<AudioFileAIMetadata>;
   analysisInfo: MaybeUndefined<AudioFileAnalysis>;
 };
 
@@ -186,14 +180,6 @@ export type AudioFileMusicalFeatures = {
   moodParty?: number;
 };
 
-export type AudioFileAIMetadata = {
-  description: MaybeUndefined<string>;
-  tags: string[];
-  vocalsDesc: MaybeUndefined<string>;
-  contextBackground: MaybeUndefined<string>;
-  contextImpact: MaybeUndefined<string>;
-  atmosphereTags: string[];
-};
 export enum AudioFileAnalysisStatusEnum {
   PENDING = 'PENDING',
   PROCESSING = 'PROCESSING',
@@ -282,15 +268,6 @@ export type Subgenre = Readonly<ModelBase<SubgenreId>> & {
   genreId: Maybe<GenreId>;
 };
 
-export type AiAtmosphereTag = Readonly<ModelBase<AiAtmosphereTagId>> & {
-  name: string;
-};
-
-export type TrackAiAtmosphereTag = Readonly<ModelBase<TrackAiAtmosphereTagId>> & {
-  trackId: MusicTrackId;
-  aiAtmosphereTagId: AiAtmosphereTagId;
-};
-
 export type SavedFilter = Readonly<ModelBase<SavedFilterId>> & {
   name: string;
   criteria: FilterCriteria;
@@ -309,7 +286,6 @@ export type FilterCriteria = {
   artist: Maybe<string>;
   title: Maybe<string>;
   libraryIds: Maybe<MusicLibraryId[]>;
-  atmosphereIds: Maybe<string[]>;
 };
 
 export type QueueItem = Readonly<ModelBase<QueueItemId>> & {
@@ -323,7 +299,6 @@ export type RecommendationWeights = {
   metadataSimilarity: number; // Artist, album, year patterns
   userBehavior: number; // Listening history, favorites
   audioFeatures: number; // Tempo, key, energy, valence
-  aiMetadataSimilarity: number; // AI description, tags, vocals, atmosphere, context
 };
 
 export type RecommendationCriteria = {

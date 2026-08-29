@@ -26,7 +26,6 @@ export const DEFAULT_RECOMMENDATION_WEIGHTS: RecommendationWeights = {
   metadataSimilarity: 0.2,
   userBehavior: 0.1,
   audioFeatures: 2.0,
-  aiMetadataSimilarity: 0.7,
 };
 
 export const ZERO_RECOMMENDATION_WEIGHTS: RecommendationWeights = {
@@ -35,5 +34,4 @@ export const ZERO_RECOMMENDATION_WEIGHTS: RecommendationWeights = {
   metadataSimilarity: 0,
   userBehavior: 0,
   audioFeatures: 0,
-  aiMetadataSimilarity: 0,
 };

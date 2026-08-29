@@ -20,7 +20,6 @@ export interface FilterState {
   subgenres: string[];
   keyIds: string[];
   library: string[];
-  atmosphereIds: string[];
   tempo: Range;
   instrumentalness: Range;
   artist: string;
@@ -67,7 +66,6 @@ const defaultFilterState: FilterState = {
   artist: '',
   title: '',
   library: [],
-  atmosphereIds: [],
 };
 
 const toFilterCriteriaInput = (filters: FilterState): FilterCriteriaInput => {
@@ -77,7 +75,6 @@ const toFilterCriteriaInput = (filters: FilterState): FilterCriteriaInput => {
     subgenreIds: filters.subgenres,
     keyIds: filters.keyIds,
     libraryIds: filters.library,
-    atmosphereIds: filters.atmosphereIds,
     tempo: filters.tempo,
     valenceMood: filters.valenceMood,
     arousalMood: filters.arousalMood,
@@ -194,8 +191,7 @@ export const useFiltering = (options: UseFilteringOptions = {}) => {
       filters.instrumentalness.max !== 1 ||
       filters.artist !== '' ||
       filters.title !== '' ||
-      filters.library.length > 0 ||
-      filters.atmosphereIds.length > 0;
+      filters.library.length > 0;
 
     return areFiltersActive;
   }, [filters]);

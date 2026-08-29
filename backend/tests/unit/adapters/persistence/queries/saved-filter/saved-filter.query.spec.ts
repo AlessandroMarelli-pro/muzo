@@ -27,7 +27,6 @@ function makeRawRows(overrides: Partial<RawRow>[] = []): RawRow[] {
     { id: 'subgenre-1', name: 'Indie', type: 'subgenres' },
     { id: 'C', name: 'C', type: 'keys' },
     { id: 'lib-1', name: 'My Library', type: 'libraries' },
-    { id: 'atmosphere-tag-uuid-1', name: 'chill', type: 'atmospheres' },
   ];
   if (overrides.length === 0) return defaults;
   return overrides as RawRow[];
@@ -59,12 +58,6 @@ describe('SavedFilterQuery', () => {
         subgenres: [{ id: models.subgenre.id('subgenre-1'), name: 'Indie' }],
         keys: [{ id: 'C', name: 'C' }],
         libraries: [{ id: models.library.id('lib-1'), name: 'My Library' }],
-        atmospheres: [
-          {
-            id: models.aiAtmosphereTag.id('atmosphere-tag-uuid-1'),
-            name: 'chill',
-          },
-        ],
       });
     });
 
@@ -90,7 +83,6 @@ describe('SavedFilterQuery', () => {
       expect(result.keys).toHaveLength(1);
       expect(result.subgenres).toEqual([]);
       expect(result.libraries).toEqual([]);
-      expect(result.atmospheres).toEqual([]);
     });
 
     it('failure: rethrows when Prisma $queryRaw throws', async () => {
@@ -117,7 +109,6 @@ describe('SavedFilterQuery', () => {
         subgenres: [],
         keys: [],
         libraries: [],
-        atmospheres: [],
       });
     });
   });

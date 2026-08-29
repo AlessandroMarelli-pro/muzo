@@ -60,8 +60,6 @@ export class AdminMethodsService {
       'hiddenMusicTrack',
       'scanSession',
       'audioFingerprint',
-      'aiAtmosphereTag',
-      'trackAiAtmosphereTag',
       'thirdPartyOAuthToken',
     ];
     for (const table of tables) {

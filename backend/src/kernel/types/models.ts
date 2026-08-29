@@ -1,5 +1,4 @@
 import {
-  AiAtmosphereTagId,
   GenreId,
   HiddenMusicTrackId,
   ImageSearchId,
@@ -12,7 +11,6 @@ import {
   SavedFilterId,
   SessionId,
   SubgenreId,
-  TrackAiAtmosphereTagId,
   TrackGenreId,
   TrackSubgenreId,
   UserId,
@@ -20,7 +18,6 @@ import {
 import { modelIdFactory } from '../ids/factory';
 import { modelFactory } from './factory';
 import {
-  AiAtmosphereTag,
   Genre,
   HiddenMusicTrack,
   ImageSearch,
@@ -33,7 +30,6 @@ import {
   SavedFilter,
   Session,
   Subgenre,
-  TrackAiAtmosphereTag,
   TrackGenre,
   TrackSubgenre,
   User,
@@ -60,10 +56,4 @@ export const models = {
   session: modelFactory<Session, SessionId>(modelIdFactory('Session')),
   trackGenre: modelFactory<TrackGenre, TrackGenreId>(modelIdFactory('TrackGenre')),
   trackSubgenre: modelFactory<TrackSubgenre, TrackSubgenreId>(modelIdFactory('TrackSubgenre')),
-  aiAtmosphereTag: modelFactory<AiAtmosphereTag, AiAtmosphereTagId>(
-    modelIdFactory('AiAtmosphereTag'),
-  ),
-  trackAiAtmosphereTag: modelFactory<TrackAiAtmosphereTag, TrackAiAtmosphereTagId>(
-    modelIdFactory('TrackAiAtmosphereTag'),
-  ),
 };

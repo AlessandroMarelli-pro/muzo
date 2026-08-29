@@ -8,7 +8,6 @@ export const toFilterState = (filter: FilterCriteriaResult) => {
       subgenres: filter.criteria.subgenreIds ?? [],
       keyIds: filter.criteria.keyIds ?? [],
       library: filter.criteria.libraryIds ?? [],
-      atmosphereIds: filter.criteria.atmosphereIds ?? [],
       tempo: filter.criteria.tempo ?? { min: 0, max: 200 },
       instrumentalness: filter.criteria.instrumentalness ?? { min: 0, max: 1 },
       artist: filter.criteria.artist ?? '',

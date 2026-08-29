@@ -138,7 +138,6 @@ export class MusicTrackRepository implements IMusicTrackRepository {
             },
             features: undefined,
             metadata: undefined,
-            aiMetadata: undefined,
             imagePath: undefined,
             artist: undefined,
             title: undefined,
@@ -473,17 +472,13 @@ export class MusicTrackRepository implements IMusicTrackRepository {
       updateData.hqAudioPath = filePath;
     }
 
-    // aiConfidence/aiSubgenreConfidence used to come from the LLM's
-    // hierarchical_classification, which v2 no longer produces. Repurpose
-    // them from the top Discogs genre/style predictions instead, so the
-    // existing index and any UI sort on these columns keep meaning something.
+    // aiConfidence used to come from the LLM's hierarchical_classification,
+    // which v2 no longer produces. Repurpose it from the top Discogs genre
+    // prediction instead, so the existing index and any UI sort on this
+    // column keep meaning something.
     const topGenre = analysisResult.classifications?.genres?.[0];
-    const topStyle = analysisResult.classifications?.styles?.[0];
     if (topGenre) {
       updateData.aiConfidence = topGenre.confidence;
-    }
-    if (topStyle) {
-      updateData.aiSubgenreConfidence = topStyle.confidence;
     }
 
     // Update original metadata if available

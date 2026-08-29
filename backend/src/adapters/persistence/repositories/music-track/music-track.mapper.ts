@@ -1,11 +1,9 @@
 import {
-  AiAtmosphereTag as PrismaAiAtmosphereTag,
   AudioFingerprint as PrismaAudioFingerprint,
   Genre as PrismaGenre,
   ImageSearch as PrismaImageSearch,
   MusicTrack as PrismaMusicTrack,
   Subgenre as PrismaSubgenre,
-  TrackAiAtmosphereTag as PrismaTrackAiAtmosphereTag,
   TrackGenre as PrismaTrackGenre,
   TrackSubgenre as PrismaTrackSubgenre,
 } from '@prisma/client';
@@ -15,7 +13,6 @@ import { Maybe, MaybeUndefined } from 'src/kernel/common';
 import { MusicTrackId } from 'src/kernel/ids';
 import { extractModelId } from 'src/kernel/ids/factory';
 import {
-  AudioFileAIMetadata,
   AudioFileAnalysis,
   AudioFileAnalysisStatusEnum,
   AudioFileFeatures,
@@ -33,9 +30,6 @@ export type PrismaMusicTrackWithRelations = PrismaMusicTrack & {
   audioFingerprint?: Maybe<PrismaAudioFingerprint>;
   trackGenres?: Maybe<(PrismaTrackGenre & { genre: PrismaGenre })[]>;
   trackSubgenres?: Maybe<(PrismaTrackSubgenre & { subgenre: PrismaSubgenre })[]>;
-  trackAiAtmosphereTags?: Maybe<
-    (PrismaTrackAiAtmosphereTag & { aiAtmosphereTag: PrismaAiAtmosphereTag })[]
-  >;
   imageSearches?: Maybe<PrismaImageSearch[]>;
 };
 
@@ -51,9 +45,6 @@ export type ToAudioFileFeatures = (
 export type ToAudioFileMetadata = (
   row: PrismaMusicTrackWithRelations,
 ) => MaybeUndefined<AudioFileMetadata>;
-export type ToAudioFileAIMetadata = (
-  row: PrismaMusicTrackWithRelations,
-) => MaybeUndefined<AudioFileAIMetadata>;
 export type ToImagePath = (row: PrismaMusicTrackWithRelations) => MaybeUndefined<string>;
 export type ToAudioFileAnalysis = (row: PrismaMusicTrack) => MaybeUndefined<AudioFileAnalysis>;
 
@@ -147,23 +138,11 @@ export const toAudioFileFeatures: ToAudioFileFeatures = (row) => {
 export const toAudioFileMetadata: ToAudioFileMetadata = (row) => {
   if (!row) return undefined;
   return {
-    album: row.aiAlbum ?? undefined,
+    album: row.originalAlbum ?? undefined,
     duration: row.duration ?? undefined,
     date: row.originalDate ?? undefined,
     genres: row.trackGenres?.map((genre) => genre.genre.name) || [],
     subgenres: row.trackSubgenres?.map((subgenre) => subgenre.subgenre.name) || [],
-  };
-};
-
-export const toAudioFileAIMetadata: ToAudioFileAIMetadata = (row) => {
-  if (!row) return undefined;
-  return {
-    description: row.aiDescription ?? undefined,
-    tags: safeJsonParse<string[]>(row.aiTags, []),
-    vocalsDesc: row.vocalsDesc ?? undefined,
-    atmosphereTags: row.trackAiAtmosphereTags?.map((tag) => tag.aiAtmosphereTag.name) ?? [],
-    contextBackground: row.contextBackground ?? undefined,
-    contextImpact: row.contextImpact ?? undefined,
   };
 };
 
@@ -204,7 +183,6 @@ export const toDomain: ToDomain = (row) => {
     technicalInfo: toAudioTechnical(row),
     features: toAudioFileFeatures(row.audioFingerprint),
     metadata: toAudioFileMetadata(row),
-    aiMetadata: toAudioFileAIMetadata(row),
     analysisInfo: toAudioFileAnalysis(row),
     imagePath: toImagePath(row),
   };
@@ -245,20 +223,7 @@ export const toPrisma: ToPrisma = (domainModel) => {
     originalComment: '',
     originalComposer: '',
     originalCopyright: '',
-    aiTitle: domainModel.title ?? null,
-    aiArtist: domainModel.artist ?? null,
-    aiAlbum: domainModel.metadata?.album ?? null,
     aiConfidence: 0,
-    aiSubgenreConfidence: 0,
-    aiDescription: domainModel.aiMetadata?.description ?? null,
-    aiTags: domainModel.aiMetadata?.tags?.join(',') ?? null,
-    vocalsDesc: domainModel.aiMetadata?.vocalsDesc ?? null,
-    contextBackground: domainModel.aiMetadata?.contextBackground ?? null,
-    contextImpact: domainModel.aiMetadata?.contextImpact ?? null,
-    userTitle: domainModel.title ?? null,
-    userArtist: domainModel.artist ?? null,
-    userAlbum: domainModel.metadata?.album ?? null,
-    userTags: domainModel.aiMetadata?.tags?.join(',') ?? null,
     listeningCount: domainModel.stats?.listeningCount ?? 0,
     lastPlayedAt: domainModel.stats?.lastPlayedAt ?? null,
   };

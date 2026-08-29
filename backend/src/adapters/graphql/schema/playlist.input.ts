@@ -12,9 +12,6 @@ export class PlaylistFilterInput {
   @Field(() => [Base64ID], { nullable: true })
   subgenreIds: Maybe<SubgenreId[]>;
 
-  @Field(() => [String], { nullable: true })
-  atmospheres: Maybe<string[]>;
-
   @Field(() => [Base64ID], { nullable: true })
   libraryIds: Maybe<MusicLibraryId[]>;
 

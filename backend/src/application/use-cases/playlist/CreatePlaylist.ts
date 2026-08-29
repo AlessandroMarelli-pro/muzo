@@ -32,7 +32,6 @@ export class CreatePlaylistUseCase {
       filters &&
       (filters.genreIds?.length ||
         filters.subgenreIds?.length ||
-        filters.atmospheres?.length ||
         filters.libraryIds?.length ||
         (filters.tempo && (filters.tempo.min !== undefined || filters.tempo.max !== undefined)))
     ) {
@@ -40,7 +39,6 @@ export class CreatePlaylistUseCase {
         genreIds: filters.genreIds,
         subgenreIds: filters.subgenreIds,
         keyIds: [],
-        atmosphereIds: filters.atmospheres,
         libraryIds: filters.libraryIds,
         tempo: filters.tempo,
         valenceMood: [],

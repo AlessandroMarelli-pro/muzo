@@ -7,7 +7,6 @@ export const toFilterCriteria = (criteria: FilterCriteria): FilterCriteriaType =
     subgenreIds: criteria.subgenreIds ?? [],
     keyIds: criteria.keyIds ?? [],
     libraryIds: criteria.libraryIds ?? [],
-    atmosphereIds: criteria.atmosphereIds ?? [],
     tempo: criteria.tempo ?? undefined,
     valenceMood: criteria.valenceMood ?? undefined,
     arousalMood: criteria.arousalMood ?? undefined,

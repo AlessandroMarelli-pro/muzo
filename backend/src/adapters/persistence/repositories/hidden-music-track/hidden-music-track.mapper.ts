@@ -32,13 +32,6 @@ export const toDomain: ToDomain = (row) => {
       bitrate: row.bitrate ?? undefined,
       sampleRate: row.sampleRate ?? undefined,
     },
-    aiMetadata: {
-      description: row.aiDescription ?? '',
-      tags: row.aiTags && JSON.parse(row.aiTags),
-      vocalsDesc: row.vocalsDesc ?? '',
-      contextBackground: row.contextBackground ?? '',
-      contextImpact: row.contextImpact ?? '',
-    },
   };
 };
 
@@ -67,21 +60,7 @@ export const toPrisma: ToPrisma = (domainModel) => {
     originalComment: '',
     originalComposer: '',
     originalCopyright: '',
-    aiTitle: domainModel.title ?? null,
-    aiArtist: domainModel.artist ?? null,
-    aiAlbum: '',
     aiConfidence: 0,
-    aiSubgenreConfidence: 0,
-    aiDescription: domainModel.aiMetadata?.description ?? null,
-    aiTags:
-      domainModel.aiMetadata?.tags != null ? JSON.stringify(domainModel.aiMetadata.tags) : null,
-    vocalsDesc: domainModel.aiMetadata?.vocalsDesc ?? null,
-    contextBackground: domainModel.aiMetadata?.contextBackground ?? null,
-    contextImpact: domainModel.aiMetadata?.contextImpact ?? null,
-    userTitle: domainModel.title ?? null,
-    userArtist: domainModel.artist ?? null,
-    userAlbum: null,
-    userTags: domainModel.aiMetadata?.tags?.join(',') ?? null,
     listeningCount: 0,
     lastPlayedAt: null,
     isFavorite: false,

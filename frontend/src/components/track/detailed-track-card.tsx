@@ -238,12 +238,6 @@ export function DetailedTrackCard({ track, refetch, isLoading }: DetailedTrackCa
               <AudioQualityBadge format={track.format} hqAudioPath={track.hqAudioPath} />
             </div>
 
-            {track?.aiContextBackgrounds && (
-              <div className="text-xs text-muted-foreground  ">{track?.aiContextBackgrounds}</div>
-            )}
-            {track?.aiContextImpacts && (
-              <div className="text-xs text-muted-foreground  ">{track?.aiContextImpacts}</div>
-            )}
           </div>
           {/* Action Buttons */}
           <div className="flex flex-col items-end justify-center gap-2">
@@ -271,15 +265,6 @@ export function DetailedTrackCard({ track, refetch, isLoading }: DetailedTrackCa
             {track.subgenres.map((subgenre, index) => (
               <Badge key={index} variant="secondary" className="capitalize" size="xs">
                 {subgenre}
-              </Badge>
-            ))}
-          </div>
-        )}
-        {track?.aiAtmosphereKeywords && (
-          <div className="flex flex-wrap gap-2">
-            {track?.aiAtmosphereKeywords?.map((tag) => (
-              <Badge key={tag} variant="outline" size="xs" className="border-none capitalize">
-                {tag}
               </Badge>
             ))}
           </div>

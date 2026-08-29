@@ -28,11 +28,5 @@ export const toAudioFeatures = (track: MusicTrack): AudioFeatures => {
     subgenres: track.metadata?.subgenres ?? [],
     artist: track.artist,
     album: track.metadata?.album ?? '',
-    aiDescriptions: [track.aiMetadata?.description ?? ''],
-    aiTags: track.aiMetadata?.tags ?? [],
-    vocalsDescriptions: track.aiMetadata?.vocalsDesc ?? '',
-    atmosphereKeywords: track.aiMetadata?.atmosphereTags ?? [],
-    contextBackgrounds: track.aiMetadata?.contextBackground ?? '',
-    contextImpacts: track.aiMetadata?.contextImpact ?? '',
   };
 };

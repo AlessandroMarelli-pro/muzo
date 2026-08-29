@@ -15,11 +15,6 @@ export const trackIndexMapping: {
       date: { type: 'date' },
       genres: { type: 'keyword' },
       subgenres: { type: 'keyword' },
-      tags: { type: 'keyword' },
-      vocals_desc: { type: 'text' },
-      atmosphere_tags: { type: 'keyword' },
-      context_background: { type: 'text' },
-      context_impact: { type: 'text' },
       musical_audio_features: {
         properties: {
           tempo: { type: 'float' },

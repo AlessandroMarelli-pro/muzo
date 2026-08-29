@@ -26,9 +26,6 @@ export class StaticFilterOptions {
 
   @Field(() => [FilterWithID<MusicLibraryId>])
   libraries: FilterWithID<MusicLibraryId>[];
-
-  @Field(() => [FilterWithID<string>])
-  atmospheres: FilterWithID<string>[];
 }
 
 @ObjectType()
@@ -44,9 +41,6 @@ export class FilterCriteriaType {
 
   @Field(() => [Base64ID], { nullable: true })
   libraryIds: Maybe<MusicLibraryId[]>;
-
-  @Field(() => [Base64ID], { nullable: true })
-  atmosphereIds: Maybe<string[]>;
 
   @Field(() => Range, { nullable: true })
   tempo?: Maybe<{ min?: number; max?: number }>;
