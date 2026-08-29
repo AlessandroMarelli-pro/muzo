@@ -120,11 +120,17 @@ export class AudioScanSchedulerConsumerAdapter
               failedCount++;
             }
             // Search for image if available
-            if (analysisResult.album_art?.imageUrl || analysisResult.album_art?.imagePath) {
+            if (
+              analysisResult.album_art?.imageBase64 ||
+              analysisResult.album_art?.imageUrl ||
+              analysisResult.album_art?.imagePath
+            ) {
               await this.addImageSearchRecordUseCase.execute(track.id, {
                 imagePath: analysisResult.album_art.imagePath,
                 imageUrl: analysisResult.album_art.imageUrl,
                 source: analysisResult.album_art.source,
+                imageBase64: analysisResult.album_art.imageBase64 ?? undefined,
+                imageMimeType: analysisResult.album_art.imageMimeType ?? undefined,
               });
             }
 

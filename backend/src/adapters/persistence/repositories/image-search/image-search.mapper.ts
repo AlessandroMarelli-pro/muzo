@@ -32,6 +32,8 @@ export function toPrismaCreate(
     status: 'COMPLETED' as const,
     imagePath: data.imagePath ?? null,
     imageUrl: data.imageUrl ?? null,
+    imageData: data.imageData ?? null,
+    imageMimeType: data.imageMimeType ?? null,
     source: data.source ?? null,
     createdById,
   };

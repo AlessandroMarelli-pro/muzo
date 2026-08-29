@@ -1,6 +1,4 @@
 import { Inject } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import * as path from 'path';
 import { ILogger, LOGGER } from 'src/application/ports/infrastructure/ILogger';
 import { LOGGER_FACTORY } from 'src/application/ports/infrastructure/ILoggerFactory';
 import { MusicTrackId } from 'src/kernel/ids';
@@ -14,15 +12,14 @@ export type AddImageSearchRecordData = {
   imagePath: string;
   imageUrl?: string;
   source?: string;
+  /** Optimized cover-art bytes as base64, inlined by the ai-service. */
+  imageBase64?: string;
+  imageMimeType?: string;
 };
-
-const IMAGES_DIR_KEY = 'images.dir';
-const DEFAULT_IMAGES_RELATIVE = '../muzo/images';
 
 export class AddImageSearchRecordUseCase {
   constructor(
     private readonly imageSearchRepository: IImageSearchRepository,
-    private readonly configService: ConfigService,
     @Inject(LOGGER_FACTORY)
     loggerFactory: { createLogger: (name: string) => ILogger },
     @Inject(LOGGER)
@@ -32,20 +29,28 @@ export class AddImageSearchRecordUseCase {
   }
 
   async execute(trackId: MusicTrackId, data: AddImageSearchRecordData): Promise<ImageSearch> {
-    const imagesDir =
-      this.configService.get<string>(IMAGES_DIR_KEY) ??
-      path.join(process.cwd(), DEFAULT_IMAGES_RELATIVE);
-    const searchUrl = data.imageUrl ?? path.join(imagesDir, data.imagePath);
+    // .slice() copies into a fresh ArrayBuffer-backed view, which is the exact
+    // type Prisma's Bytes field expects (Uint8Array<ArrayBuffer>).
+    const imageData = data.imageBase64
+      ? Buffer.from(data.imageBase64, 'base64').slice()
+      : undefined;
 
+    // The ai-service filesystem is not shared with the backend, so imagePath is
+    // only kept as an opaque reference for debugging. searchUrl is the external
+    // source URL when there is one.
     const createData: CreateImageSearchData = {
-      searchUrl,
+      searchUrl: data.imageUrl ?? data.imagePath ?? '',
       imagePath: data.imagePath,
       imageUrl: data.imageUrl,
       source: data.source,
+      imageData,
+      imageMimeType: data.imageMimeType,
     };
     this.logger.debug('Adding image search record', {
       trackId,
-      createData,
+      source: data.source,
+      hasBytes: !!imageData,
+      byteLength: imageData?.length,
     });
     return this.imageSearchRepository.save(trackId, createData);
   }

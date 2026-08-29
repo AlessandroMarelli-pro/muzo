@@ -27,7 +27,7 @@ DEPLOY_ARGS=(
   --accelerator cpu
   --instance-type intel-spr
   --instance-size x4
-  --region us-east-1
+  --region eu-west-1
   --vendor aws
   --custom-image "$IMAGE"
   --health-route /api/v1/health
@@ -37,13 +37,13 @@ DEPLOY_ARGS=(
   # a cold scale-to-zero state the whole burst would queue behind one
   # cold-starting replica (tens of seconds). Keeping 1 warm absorbs the first
   # requests immediately; HF autoscales up to max-replica for the rest.
-  --min-replica 1
+  --min-replica 2
   --max-replica 4
   --scale-to-zero-timeout 15
   # Scale on queued (pending) requests rather than hardware usage -- batch
   # analysis is bursty and a replica looks busy well before CPU saturates.
   --scaling-metric pendingRequests
-  --scaling-threshold 2
+  --scaling-threshold 2.5
   --env ENABLE_SIMPLE_ANALYSIS=true
   # gunicorn worker processes per replica (see ai-service/gunicorn.conf.py).
   # 2 on intel-spr x4 (8 vCPU / 16 GB); each worker loads its own model copy.

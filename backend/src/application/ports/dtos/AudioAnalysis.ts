@@ -22,6 +22,10 @@ interface AlbumArt {
   source: string;
   imagePath: string;
   imageUrl: string;
+  /** Optimized cover-art bytes, base64-encoded. The ai-service filesystem is not
+   *  shared with the backend, so the path fields alone are not resolvable. */
+  imageBase64?: string | null;
+  imageMimeType?: string | null;
 }
 
 // One `features.*` / `discogs_classifiers`-derived value: null when the source

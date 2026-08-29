@@ -1,3 +1,4 @@
+import base64
 import logging
 import os
 import sys
@@ -18,6 +19,59 @@ from src.services.simple_metadata_extractor import SimpleMetadataExtractor
 
 # Configure logger
 logger = get_logger(__name__)
+
+# Backstop against a runaway response payload. optimize_image_in_place keeps
+# covers at 1000x1000 / JPEG-q85 (tens of KB), so this should never trigger.
+_MAX_INLINE_IMAGE_BYTES = 2 * 1024 * 1024
+
+
+def _mime_from_magic(data: bytes) -> str:
+    if data.startswith(b"\x89PNG\r\n\x1a\n"):
+        return "image/png"
+    if data[:3] == b"\xff\xd8\xff":
+        return "image/jpeg"
+    if data[:4] == b"RIFF" and data[8:12] == b"WEBP":
+        return "image/webp"
+    return "image/jpeg"
+
+
+def _attach_image_bytes(result: dict) -> dict:
+    """
+    Read the on-disk image referenced by result["imagePath"] and inline it as
+    base64 so the backend (which does not share this filesystem) can persist it.
+
+    Adds result["imageBase64"] and result["imageMimeType"] on success. On any
+    failure the keys are simply omitted and imagePath/imageUrl are left as-is.
+    """
+    if not result:
+        return result
+
+    image_path = result.get("imagePath")
+    if not image_path or not os.path.exists(image_path):
+        return result
+
+    try:
+        size = os.path.getsize(image_path)
+        if size > _MAX_INLINE_IMAGE_BYTES:
+            logger.warning(
+                f"Image {image_path} is {size} bytes (> {_MAX_INLINE_IMAGE_BYTES}); "
+                "not inlining as base64"
+            )
+            return result
+
+        with open(image_path, "rb") as f:
+            raw = f.read()
+
+        result["imageBase64"] = base64.b64encode(raw).decode("ascii")
+        result["imageMimeType"] = _mime_from_magic(raw)
+        logger.debug(
+            f"Inlined {len(raw)} bytes of image data from {image_path} "
+            f"({result['imageMimeType']})"
+        )
+    except Exception as e:
+        logger.warning(f"Failed to inline image bytes from {image_path}: {e}")
+
+    return result
 
 
 def get_album_art(artist_title: str, file_path: str = None) -> dict:
@@ -85,11 +139,13 @@ def get_album_art(artist_title: str, file_path: str = None) -> dict:
                 except Exception as e:
                     logger.warning(f"Image optimization failed: {e}")
 
-                return {
-                    "source": "embedded",
-                    "imagePath": image_path,
-                    "imageUrl": None,  # Embedded images don't have URLs
-                }
+                return _attach_image_bytes(
+                    {
+                        "source": "embedded",
+                        "imagePath": image_path,
+                        "imageUrl": None,  # Embedded images don't have URLs
+                    }
+                )
             else:
                 logger.debug(
                     "No embedded image found in file, proceeding with external sources"
@@ -105,7 +161,7 @@ def get_album_art(artist_title: str, file_path: str = None) -> dict:
     if result:
         result["source"] = "apple_music"
         logger.info(f"Found album art on Apple Music: {result['imageUrl']}")
-        return result
+        return _attach_image_bytes(result)
     logger.debug("Apple Music scraper returned no results")
 
     # Try Bandcamp second
@@ -114,7 +170,7 @@ def get_album_art(artist_title: str, file_path: str = None) -> dict:
     if result:
         result["source"] = "bandcamp"
         logger.info(f"Found album art on Bandcamp: {result['imageUrl']}")
-        return result
+        return _attach_image_bytes(result)
     logger.debug("Bandcamp scraper returned no results")
 
     # Try Last.fm second
@@ -123,7 +179,7 @@ def get_album_art(artist_title: str, file_path: str = None) -> dict:
     if result:
         result["source"] = "lastfm"
         logger.info(f"Found album art on Last.fm: {result['imageUrl']}")
-        return result
+        return _attach_image_bytes(result)
     logger.debug("Last.fm scraper returned no results")
 
     # Try MusicBrainz last
@@ -132,7 +188,7 @@ def get_album_art(artist_title: str, file_path: str = None) -> dict:
     if result:
         result["source"] = "musicbrainz"
         logger.info(f"Found album art on MusicBrainz: {result['imageUrl']}")
-        return result
+        return _attach_image_bytes(result)
     logger.debug("MusicBrainz scraper returned no results")
 
     # No results found

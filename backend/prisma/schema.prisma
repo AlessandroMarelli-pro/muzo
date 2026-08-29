@@ -264,6 +264,8 @@ model ImageSearch {
   status     ImageSearchStatus @default(PENDING)
   imagePath  String?
   imageUrl   String?
+  imageData     Bytes?   // optimized cover-art bytes from the ai-service (base64-decoded)
+  imageMimeType String?  // e.g. "image/jpeg"
   error      String?
   source     String?
   createdAt   DateTime @default(now())

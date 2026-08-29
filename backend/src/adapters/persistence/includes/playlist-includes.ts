@@ -1,6 +1,7 @@
 // playlist-includes.ts
 import { Prisma } from '@prisma/client';
 import type { PlaylistSortingDirection, PlaylistSortingKey } from 'src/kernel/types/model-types';
+import { imageSearchesLiteSelect } from './music-tracks-includes';
 
 export type PlaylistWithTracksIncludeOptions = {
   sortingKey: PlaylistSortingKey;
@@ -9,7 +10,7 @@ export type PlaylistWithTracksIncludeOptions = {
 
 const trackInclude = {
   audioFingerprint: true,
-  imageSearches: true,
+  imageSearches: { select: imageSearchesLiteSelect },
   trackGenres: { include: { genre: true } },
   trackSubgenres: { include: { subgenre: true } },
 } satisfies Prisma.MusicTrackInclude;

@@ -1,34 +1,20 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import * as fs from 'fs/promises';
-import * as path from 'path';
 import { IImageFileReader } from 'src/application/ports/infrastructure/IImageFileReader';
 
-const IMAGES_DIR_KEY = 'images.dir';
-const DEFAULT_IMAGES_DIR = 'images';
-
+/**
+ * Reads image files from disk. Only used for the bundled default cover images
+ * (default-images/default_{1,2,3}.jpg); the caller passes an absolute path and
+ * isDefault = true. Track cover art is stored in Postgres, not on disk -- see
+ * ServeTrackImageUseCase.
+ */
 @Injectable()
 export class FileSystemImageReader implements IImageFileReader {
   private readonly logger = new Logger(FileSystemImageReader.name);
-  private readonly imagesDir: string;
-  private readonly defaultImagesDir: string;
 
-  constructor(private readonly configService: ConfigService) {
-    this.imagesDir =
-      this.configService.get<string>(IMAGES_DIR_KEY) ??
-      path.join(process.cwd(), '..', 'muzo', DEFAULT_IMAGES_DIR);
-    this.defaultImagesDir = path.join(process.cwd(), 'default-images');
-  }
-
-  async readImage(imagePath: string, isDefault: boolean): Promise<Buffer> {
-    let fullPath = imagePath;
-    if (!isDefault) {
-      fullPath = imagePath.includes(this.imagesDir)
-        ? imagePath
-        : path.join(this.imagesDir, imagePath);
-    }
+  async readImage(imagePath: string, _isDefault: boolean): Promise<Buffer> {
     try {
-      return await fs.readFile(fullPath);
+      return await fs.readFile(imagePath);
     } catch (error) {
       this.logger.error(`Error reading image ${imagePath}:`, error);
       throw error;

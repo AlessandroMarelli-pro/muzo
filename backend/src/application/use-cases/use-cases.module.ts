@@ -111,6 +111,7 @@ import {
   ScheduleSingleTrackScanUseCase,
   ScheduleTracksByCriteriaScanUseCase,
   ServeImageUseCase,
+  ServeTrackImageUseCase,
   StopLibraryScanUseCase,
   SyncAllTracksToElasticsearchUseCase,
   SyncTrackToElasticSearchUseCase,
@@ -144,11 +145,11 @@ const useCasesProviders = [
   createUseCaseProvider(GetTracksUseCase, [MUSIC_TRACK_REPOSITORY]),
   createUseCaseProvider(AddImageSearchRecordUseCase, [
     IMAGE_SEARCH_REPOSITORY,
-    ConfigService,
     LOGGER_FACTORY,
     LOGGER,
   ]),
   createUseCaseProvider(ServeImageUseCase, [IMAGE_FILE_READER]),
+  createUseCaseProvider(ServeTrackImageUseCase, [IMAGE_SEARCH_REPOSITORY]),
   createUseCaseProvider(CreatePlaylistUseCase, [
     PLAYLIST_REPOSITORY,
     MUSIC_TRACK_REPOSITORY,

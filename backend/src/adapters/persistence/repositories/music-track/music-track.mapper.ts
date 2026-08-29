@@ -1,7 +1,6 @@
 import {
   AudioFingerprint as PrismaAudioFingerprint,
   Genre as PrismaGenre,
-  ImageSearch as PrismaImageSearch,
   MusicTrack as PrismaMusicTrack,
   Subgenre as PrismaSubgenre,
   TrackGenre as PrismaTrackGenre,
@@ -26,11 +25,19 @@ import { models } from 'src/kernel/types/models';
 import { toDbModel } from '../db';
 import { toDomainModel } from '../domain';
 
+export type ImageSearchLite = {
+  id: string;
+  imagePath: string | null;
+  imageUrl: string | null;
+  imageMimeType: string | null;
+  source: string | null;
+};
+
 export type PrismaMusicTrackWithRelations = PrismaMusicTrack & {
   audioFingerprint?: Maybe<PrismaAudioFingerprint>;
   trackGenres?: Maybe<(PrismaTrackGenre & { genre: PrismaGenre })[]>;
   trackSubgenres?: Maybe<(PrismaTrackSubgenre & { subgenre: PrismaSubgenre })[]>;
-  imageSearches?: Maybe<PrismaImageSearch[]>;
+  imageSearches?: Maybe<ImageSearchLite[]>;
 };
 
 export type ToDomain = (row: PrismaMusicTrackWithRelations) => MusicTrack;
@@ -162,7 +169,13 @@ export const toMusicTrackId = (row: PrismaMusicTrack): MusicTrackId => {
 
 export const toImagePath: ToImagePath = (row) => {
   if (!row) return undefined;
-  return row.imageSearches?.[0]?.imagePath ?? undefined;
+  // Cover-art bytes are stored in the DB (image_searches.image_data), not on a
+  // filesystem the backend can read. Surface the track id so the client can hit
+  // GET /api/images/serve?imagePath=<trackId>, which serves the bytes from the DB.
+  // imageMimeType is persisted iff imageData (the bytes) is; the lite select
+  // deliberately omits the bytes themselves.
+  const hasStoredImage = row.imageSearches?.some((s) => s.imageMimeType != null) ?? false;
+  return hasStoredImage ? row.id : undefined;
 };
 
 export const toDomain: ToDomain = (row) => {
