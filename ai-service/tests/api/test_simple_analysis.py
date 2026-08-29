@@ -66,6 +66,9 @@ class TestSimpleAnalysisAPI:
             f"Expected success status, got: {data.get('status')}"
         )
         assert data["track"]["filename"] == filename, "Filename should match"
+        assert data["track"]["original_filename"] == filename, (
+            "original_filename should be the exact upload filename, unmodified"
+        )
 
         assert data.get("processing_mode") == "simple", (
             "Should use simple processing mode"

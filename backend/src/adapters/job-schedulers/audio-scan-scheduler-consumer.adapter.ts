@@ -79,8 +79,13 @@ export class AudioScanSchedulerConsumerAdapter
       if (!isBatchComplete) {
         await Promise.all(
           createdTracks.map(async (track, index) => {
+            // Match on original_filename, not filename: the batch endpoint may
+            // LLM-clean `filename` for display (e.g. stripping a "014. "
+            // track-number prefix), but `original_filename` is always the exact
+            // upload filename, unmodified -- the stable key `fileInfo.fileName`
+            // was written from.
             const analysisResult = analysisResults.find(
-              (result) => result.track?.filename === track.fileInfo.fileName,
+              (result) => result.track?.original_filename === track.fileInfo.fileName,
             );
             if (!analysisResult) {
               this.logger.warn(

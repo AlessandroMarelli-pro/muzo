@@ -117,6 +117,11 @@ export interface AudioAnalysisResponse {
   schema_version: number;
   track: {
     filename: string;
+    /** Exact upload filename, never rewritten by LLM filename-cleaning (unlike
+     * `filename`, which the batch endpoint may clean for display, e.g. stripping
+     * a "014. " track-number prefix). Use this to join a batch result back to a
+     * source-of-truth record keyed on the file as-uploaded. */
+    original_filename: string;
     extension: string;
     mime_type: string;
     size_bytes: number;

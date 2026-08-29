@@ -25,6 +25,7 @@ function makeAnalysisResult(overrides: Partial<AudioAnalysisResponse> = {}): Aud
     schema_version: 2,
     track: {
       filename: 'track.mp3',
+      original_filename: 'track.mp3',
       extension: 'mp3',
       mime_type: 'audio/mpeg',
       size_bytes: 1000,

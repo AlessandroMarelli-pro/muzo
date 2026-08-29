@@ -104,3 +104,4 @@ coverage/**
 backend/coverage/**
 frontend/.claude/**
 frontend/.agents/**
+backend/wipe-db.sh

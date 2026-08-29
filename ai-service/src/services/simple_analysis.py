@@ -461,6 +461,13 @@ class SimpleAnalysisService:
             logger.info(f"Starting simple audio analysis: {file_path}")
             start_time = time.time()
 
+            # Preserved through cleaning below so `track.original_filename` in the
+            # response always carries the caller's raw upload name -- callers that
+            # need to join a batch result back to a source-of-truth record (e.g.
+            # a DB row keyed on the file as-uploaded) can't rely on `track.filename`
+            # for that once LLM cleaning has rewritten it.
+            raw_original_filename = original_filename
+
             if file_path.endswith(".m4a"):
                 converted_wav_path = self.convert_m4a_to_wav(file_path)
                 file_path = converted_wav_path
@@ -488,6 +495,7 @@ class SimpleAnalysisService:
             track = file_metadata["file_info"]
             track = {
                 "filename": track["filename"],
+                "original_filename": raw_original_filename or track["filename"],
                 "extension": track["file_extension"],
                 "mime_type": track["mime_type"],
                 "size_bytes": track["file_size_bytes"],
@@ -579,6 +587,7 @@ class SimpleAnalysisService:
         session_id: Optional[str],
         batch_index: Optional[int],
         progress_publisher: Optional[Any],
+        raw_filename: Optional[str] = None,
     ) -> Tuple[Dict[str, Any], bool]:
         """
         Run the audio-analysis portion (decode, technical, features, ID3) for a
@@ -595,6 +604,13 @@ class SimpleAnalysisService:
             sample_duration: Audio sample duration in seconds
             skip_intro: Seconds to skip from the start
             session_id, batch_index, progress_publisher: Progress reporting context
+            raw_filename: The caller's pre-cleaning upload filename, surfaced as
+                `track.original_filename` in the response -- callers that join a
+                batch result back to a source-of-truth record keyed on the file
+                as-uploaded can't rely on `track.filename` for that once LLM
+                cleaning has rewritten it (drops track-number prefixes/extensions,
+                e.g. "014. Some Track.flac" -> "Some Track"). Falls back to
+                `original_filename` when cleaning didn't run.
 
         Returns:
             Tuple of (file_result dict, success flag)
@@ -632,6 +648,7 @@ class SimpleAnalysisService:
             fi = file_metadata["file_info"]
             track = {
                 "filename": fi["filename"],
+                "original_filename": raw_filename or original_filename,
                 "extension": fi["file_extension"],
                 "mime_type": fi["mime_type"],
                 "size_bytes": fi["file_size_bytes"],
@@ -740,7 +757,10 @@ class SimpleAnalysisService:
                 AnalysisResponseBuilder().build_error(
                     message=f"Analysis failed: {str(e)}",
                     processing_time=round(time.time() - file_start_time, 3),
-                    track={"filename": original_filename},
+                    track={
+                        "filename": original_filename,
+                        "original_filename": raw_filename or original_filename,
+                    },
                 ),
                 False,
             )
@@ -876,6 +896,9 @@ class SimpleAnalysisService:
                         session_id,
                         batch_index,
                         progress_publisher,
+                        original_filename,  # raw_filename: file_items' own filename,
+                        # never overwritten by cleaned_filenames -- see
+                        # _analyze_single_file_in_batch's raw_filename docstring.
                     ): idx
                     for idx, (file_path, original_filename) in enumerate(file_items)
                 }
@@ -893,7 +916,10 @@ class SimpleAnalysisService:
                         file_result = AnalysisResponseBuilder().build_error(
                             message=f"Analysis failed: {str(e)}",
                             processing_time=0.0,
-                            track={"filename": file_items[idx][1]},
+                            track={
+                                "filename": file_items[idx][1],
+                                "original_filename": file_items[idx][1],
+                            },
                         )
                         ok = False
 

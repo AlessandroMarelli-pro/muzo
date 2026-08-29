@@ -106,6 +106,7 @@ one, and `warnings` names exactly which model(s) contributed nothing and why
   "schema_version": 2,
   "track": {
     "filename": "Africa Caribe - Undeniable Love (Joaquin Joe Claussell Remix).opus",
+    "original_filename": "014. Africa Caribe - Undeniable Love (Joaquin Joe Claussell Remix).opus",
     "extension": ".opus",
     "mime_type": "audio/opus",
     "size_bytes": 7591095,
@@ -176,6 +177,13 @@ with a fallback value), and an entry like this appears instead:
 ```json
 { "model": "deam", "reason": "failed", "detail": "..." }
 ```
+
+`track.filename` vs `track.original_filename`: on the batch endpoint, `filename`
+may be LLM-cleaned (e.g. a track-number prefix and extension stripped for display
+-- `"014. Track Name.flac"` becomes `"Track Name"`). `original_filename` is always
+the exact filename as uploaded, unmodified, and is the field to key any join back
+to a caller-side record by -- `filename` is a display value, not a stable
+identifier.
 
 ## Configuration
 
