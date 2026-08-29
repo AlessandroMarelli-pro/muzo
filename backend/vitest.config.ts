@@ -17,6 +17,21 @@ export default defineConfig({
     globals: true,
     environment: 'node',
     testTimeout: 10000,
+    // Integration tests each CREATE/DROP a real Postgres database in
+    // beforeAll/afterAll (see tests/.../_test-utils/integration-db.ts).
+    // DROP DATABASE takes an internal barrier lock that every other backend
+    // must acknowledge -- running these files in parallel worker processes
+    // (Vitest's default) causes them to contend on that barrier and can hang
+    // well past any reasonable timeout. Forcing this to a single fork makes
+    // integration test files run one at a time, avoiding the contention
+    // entirely; unit tests (the vast majority of the suite) are unaffected
+    // since they don't touch a real database.
+    hookTimeout: 30000,
+    poolOptions: {
+      forks: {
+        singleFork: true,
+      },
+    },
     setupFiles: ['./tests/setup.ts'],
     include: ['tests/**/*.spec.ts', 'src/**/*.spec.ts'],
     exclude: ['**/node_modules/**', '**/dist/**'],

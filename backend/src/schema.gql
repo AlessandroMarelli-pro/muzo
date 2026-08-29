@@ -247,7 +247,6 @@ type PlaylistSorting {
 
 type PlaylistStats {
   bpmRange: Range!
-  energyRange: Range!
   genresCount: Int!
   images: [String!]!
   numberOfTracks: Int!
