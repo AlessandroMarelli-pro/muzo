@@ -80,7 +80,7 @@ export class AudioScanSchedulerConsumerAdapter
         await Promise.all(
           createdTracks.map(async (track, index) => {
             const analysisResult = analysisResults.find(
-              (result) => result.file_info.filename === track.fileInfo.fileName,
+              (result) => result.track?.filename === track.fileInfo.fileName,
             );
             if (!analysisResult) {
               this.logger.warn(

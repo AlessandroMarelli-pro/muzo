@@ -1,7 +1,6 @@
 import { MusicTrack } from 'src/kernel/types';
 import { ElasticsearchTrackDocument } from '../types/elasticsearch-track-document';
 
-const MFCC_DIM = 13;
 const EMBEDDING_DIM = 1280;
 
 function sliceVector(values: number[] | undefined, dim: number): number[] {
@@ -22,19 +21,6 @@ function isZeroVector(vector: number[]): boolean {
   return vector.every((v) => v === 0);
 }
 
-/** mfcc_std has index:false in the mapping, so it's exempt from the cosine-similarity
- * zero-vector constraint and can safely keep its zero-fill fallback for missing data. */
-function sliceMfccStdVector(values: number[] | undefined): number[] {
-  return sliceVector(values, MFCC_DIM);
-}
-
-/** mfcc_mean is indexed with cosine similarity -- omit rather than zero-fill so a
- * track with missing/degenerate MFCC data doesn't fail indexing for the whole batch. */
-function sliceMfccMeanVector(values: number[] | undefined): number[] | undefined {
-  const vector = sliceVector(values, MFCC_DIM);
-  return isZeroVector(vector) ? undefined : vector;
-}
-
 function sliceEmbeddingVector(values: number[] | undefined): number[] | undefined {
   if (!values || values.length === 0) {
     return undefined;
@@ -43,39 +29,9 @@ function sliceEmbeddingVector(values: number[] | undefined): number[] | undefine
   return isZeroVector(vector) ? undefined : vector;
 }
 
-function buildEnergyByBand(
-  bands: number[] | undefined,
-): { bass: number; mid: number; high: number } | undefined {
-  if (!bands || bands.length !== 3) {
-    return undefined;
-  }
-  const [bass, mid, high] = bands;
-  if (![bass, mid, high].every((v) => typeof v === 'number' && Number.isFinite(v))) {
-    return undefined;
-  }
-  return { bass, mid, high };
-}
-
-function buildEnergyRatios(bands: number[] | undefined): { bass: number; mid: number; high: number } | undefined {
-  if (!bands || bands.length !== 3) {
-    return undefined;
-  }
-  const total = bands[0] + bands[1] + bands[2];
-  if (!(total > 0)) {
-    return { bass: 0, mid: 0, high: 0 };
-  }
-  return {
-    bass: bands[0] / total,
-    mid: bands[1] / total,
-    high: bands[2] / total,
-  };
-}
-
 export const toElasticsearchTrackDocument = (dto: MusicTrack): ElasticsearchTrackDocument => {
   const date = dto.metadata?.date;
-  const energyBands = dto.features?.musicalFeatures?.calculationFeatures?.energyByBand;
-  const embedding = sliceEmbeddingVector(dto.features?.spectralFeatures?.embedding);
-  const mfccMean = sliceMfccMeanVector(dto.features?.spectralFeatures?.mfcc);
+  const embedding = sliceEmbeddingVector(dto.features?.embedding);
   const doc: ElasticsearchTrackDocument = {
     trackId: dto.id,
     duration: dto.technicalInfo?.duration ?? 0,
@@ -91,35 +47,26 @@ export const toElasticsearchTrackDocument = (dto: MusicTrack): ElasticsearchTrac
     atmosphere_tags: dto.aiMetadata?.atmosphereTags ?? [],
     context_background: dto.aiMetadata?.contextBackground ?? '',
     context_impact: dto.aiMetadata?.contextImpact ?? '',
-    chroma_dominant_pitch: dto.features?.melodicFeatures?.chroma?.dominant_pitch,
     musical_audio_features: {
       tempo: dto.features?.musicalFeatures?.tempo ?? 0,
       key: dto.features?.musicalFeatures?.key ?? '',
       camelot_key: dto.features?.musicalFeatures?.camelotKey ?? '',
-      energy: dto.features?.musicalFeatures?.energy ?? 0,
       valence: dto.features?.musicalFeatures?.valence ?? 0,
       valence_mood: dto.features?.musicalFeatures?.valenceMood ?? '',
       arousal: dto.features?.musicalFeatures?.arousal ?? 0,
       arousal_mood: dto.features?.musicalFeatures?.arousalMood ?? '',
       danceability: dto.features?.musicalFeatures?.danceability ?? 0,
       danceability_feeling: dto.features?.musicalFeatures?.danceabilityFeeling ?? '',
+      instrumentalness: dto.features?.musicalFeatures?.instrumentalness ?? 0,
+      voice: dto.features?.musicalFeatures?.voice ?? 0,
+      mood_happy: dto.features?.musicalFeatures?.moodHappy ?? 0,
+      mood_sad: dto.features?.musicalFeatures?.moodSad ?? 0,
+      mood_relaxed: dto.features?.musicalFeatures?.moodRelaxed ?? 0,
+      mood_aggressive: dto.features?.musicalFeatures?.moodAggressive ?? 0,
+      mood_party: dto.features?.musicalFeatures?.moodParty ?? 0,
     },
-    spectral_features: {
-      spectral_centroid: dto.features?.spectralFeatures?.spectralCentroid,
-      spectral_rolloff: dto.features?.spectralFeatures?.spectralRolloff,
-      spectral_spread: dto.features?.spectralFeatures?.spectralSpread,
-      spectral_bandwidth: dto.features?.spectralFeatures?.spectralBandwith,
-      spectral_flatness: dto.features?.spectralFeatures?.spectralFlatness,
-      zero_crossing_rate: dto.features?.spectralFeatures?.zeroCrossingRate,
-      spectral_contrast: dto.features?.spectralFeatures?.spectralContrast,
-      ...(mfccMean && { mfcc_mean: mfccMean }),
-      mfcc_std: sliceMfccStdVector(dto.features?.spectralFeatures?.mfccStd),
+    audio_features: {
       ...(embedding && { discogs_embedding: embedding }),
-      onset_density: dto.features?.spectralFeatures?.onsetDensity,
-      dynamic_range: dto.features?.spectralFeatures?.dynamicRange,
-      bass_presence: dto.features?.musicalFeatures?.calculationFeatures?.bassPresence,
-      energy_by_band: buildEnergyByBand(energyBands),
-      energy_ratios: buildEnergyRatios(energyBands),
     },
   };
   return doc;
@@ -163,17 +110,21 @@ export const toMusicTrack = (
         tempo: document.musical_audio_features.tempo,
         key: document.musical_audio_features.key,
         camelotKey: document.musical_audio_features.camelot_key,
-        energy: document.musical_audio_features.energy,
         valence: document.musical_audio_features.valence,
         valenceMood: document.musical_audio_features.valence_mood,
         arousal: document.musical_audio_features.arousal,
         arousalMood: document.musical_audio_features.arousal_mood,
         danceability: document.musical_audio_features.danceability,
         danceabilityFeeling: document.musical_audio_features.danceability_feeling,
+        instrumentalness: document.musical_audio_features.instrumentalness,
+        voice: document.musical_audio_features.voice,
+        moodHappy: document.musical_audio_features.mood_happy,
+        moodSad: document.musical_audio_features.mood_sad,
+        moodRelaxed: document.musical_audio_features.mood_relaxed,
+        moodAggressive: document.musical_audio_features.mood_aggressive,
+        moodParty: document.musical_audio_features.mood_party,
       },
-      spectralFeatures: undefined,
-      melodicFeatures: undefined,
-      fingerprint: undefined,
+      embedding: document.audio_features.discogs_embedding,
     },
   };
 };

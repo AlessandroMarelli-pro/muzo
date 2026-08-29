@@ -1,96 +1,5 @@
-import type { AudioFeatures, SpectralFeatures } from 'src/application/ports/dtos/AudioFeatures';
-import type { AggregationStatistics, RecommendationCriteria } from 'src/kernel/types/model-types';
-
-import { getCamelotNeighbors } from './camelot-neighbors';
-
-type SpectralDecayOptions = {
-  minScale?: number;
-  fallbackScale: number;
-  offset: number;
-  decay: number;
-};
-
-/** Elasticsearch gauss decay requires scale strictly greater than 0. */
-function ensurePositiveGaussScale(scale: number, fallback: number): number {
-  const fb = Number.isFinite(fallback) && fallback > 0 ? fallback : 1e-6;
-  const raw = Number.isFinite(scale) && scale > 0 ? scale : fb;
-  return Math.max(raw, 1e-6);
-}
-
-function buildSpectralDecayClauses(
-  esFieldPrefix: string,
-  stats: AggregationStatistics,
-  options: SpectralDecayOptions,
-  weightMultiplier: number,
-): unknown[] {
-  const { minScale = 0, fallbackScale, offset, decay } = options;
-  return Object.entries(stats).map(([key, value]) => {
-    const rawScale =
-      key === 'mean' && stats.std != null ? Math.max(stats.std, minScale) : fallbackScale;
-    const scale = ensurePositiveGaussScale(rawScale, fallbackScale);
-    const origin = Number.isFinite(Number(value)) ? Number(value) : 0;
-    return {
-      gauss: {
-        [`${esFieldPrefix}.${key}`]: {
-          origin,
-          scale,
-          decay,
-          offset,
-        },
-      },
-      weight: 3 * weightMultiplier,
-    };
-  });
-}
-
-const SPECTRAL_AGG_FEATURES: ReadonlyArray<{
-  key: keyof SpectralFeatures;
-  esSegment: string;
-  options: SpectralDecayOptions;
-}> = [
-  {
-    key: 'spectralCentroidMean',
-    esSegment: 'spectral_features.spectral_centroid',
-    options: { minScale: 200, fallbackScale: 800, offset: 80, decay: 0.5 },
-  },
-  {
-    key: 'spectralRolloffMean',
-    esSegment: 'spectral_features.spectral_rolloff',
-    options: { minScale: 200, fallbackScale: 1000, offset: 100, decay: 0.5 },
-  },
-  {
-    key: 'spectralSpreadMean',
-    esSegment: 'spectral_features.spectral_spread',
-    options: { minScale: 100, fallbackScale: 500, offset: 50, decay: 0.5 },
-  },
-  {
-    key: 'spectralBandwidthMean',
-    esSegment: 'spectral_features.spectral_bandwidth',
-    options: { minScale: 5000, fallbackScale: 20000, offset: 500, decay: 0.5 },
-  },
-  {
-    key: 'spectralFlatnessMean',
-    esSegment: 'spectral_features.spectral_flatness',
-    options: { fallbackScale: 0.08, offset: 0.01, decay: 0.5 },
-  },
-  {
-    key: 'zeroCrossingRateMean',
-    esSegment: 'spectral_features.zero_crossing_rate',
-    options: { fallbackScale: 0.05, offset: 0.005, decay: 0.5 },
-  },
-  {
-    key: 'spectralContrastMean',
-    esSegment: 'spectral_features.spectral_contrast',
-    options: { fallbackScale: 5, offset: 0.5, decay: 0.5 },
-  },
-];
-
-function isValidMfccVector(vector: number[] | undefined): vector is number[] {
-  if (!vector || vector.length !== 13) {
-    return false;
-  }
-  return vector.every((v) => Number.isFinite(v));
-}
+import type { AudioFeatures } from 'src/application/ports/dtos/AudioFeatures';
+import type { RecommendationCriteria } from 'src/kernel/types/model-types';
 
 const EMBEDDING_DIM = 1280;
 
@@ -99,6 +8,13 @@ function isValidEmbeddingVector(vector: number[] | undefined): vector is number[
     return false;
   }
   return vector.every((v) => Number.isFinite(v));
+}
+
+/** Elasticsearch gauss decay requires scale strictly greater than 0. */
+function ensurePositiveGaussScale(scale: number, fallback: number): number {
+  const fb = Number.isFinite(fallback) && fallback > 0 ? fallback : 1e-6;
+  const raw = Number.isFinite(scale) && scale > 0 ? scale : fb;
+  return Math.max(raw, 1e-6);
 }
 
 function tempoOriginAndScale(playlistFeatures: {
@@ -126,10 +42,10 @@ function tempoOriginAndScale(playlistFeatures: {
 /**
  * Builds the Elasticsearch body for feature-based recommendations.
  *
- * **Before re-index / re-analyze:** MFCC cosine similarity is wrapped in Painless try/catch so a
- * legacy `keyword` mapping or missing field does not fail the whole query. Set
- * `ELASTICSEARCH_MFCC_VECTOR_SIMILARITY=false` to omit the MFCC script entirely. Gauss decay on
- * optional numeric fields typically degrades gracefully when values are missing on documents.
+ * Scoring signals: genre/subgenre term matches, tempo (gauss decay), mood/voice/
+ * instrumentalness (gauss decay), and the 1280-dim discogs-effnet embedding
+ * (cosine similarity script). This mirrors what the ai-service's v2 pipeline
+ * actually produces -- there is no more spectral/MFCC/chroma data to score on.
  */
 export const buildElasticsearchRecommendationQuery = (
   playlistFeatures: AudioFeatures,
@@ -138,19 +54,7 @@ export const buildElasticsearchRecommendationQuery = (
   const { weights, excludeTrackIds } = criteria;
   const wGenre = weights.genreSimilarity;
   const wAudio = weights.audioSimilarity;
-  const wAi = weights.aiMetadataSimilarity;
   const wAudioFeat = weights.audioFeatures;
-
-  /**
-   * Temporary scoping: only genres/subgenres, the discogs-effnet embedding, and tempo/BPM
-   * are active for now. Disables camelot key matching, MFCC similarity, mood/AI-metadata term
-   * filters, and every spectral/energy decay clause (centroid, rolloff, spread, bandwidth,
-   * flatness, zero-crossing, contrast, onset density, dynamic range, bass presence, energy
-   * bands/ratios, chroma pitch) regardless of the audioSimilarity/aiMetadataSimilarity/
-   * audioFeatures weights passed in. Remove this flag (and the `!onlyGenreEmbeddingTempo &&`
-   * guards it gates) to restore full multi-signal scoring.
-   */
-  const onlyGenreEmbeddingTempo = true;
 
   const functions: unknown[] = [];
 
@@ -172,65 +76,6 @@ export const buildElasticsearchRecommendationQuery = (
     }
   }
 
-  const camelotNeighbors = getCamelotNeighbors(playlistFeatures.camelotKey);
-  if (!onlyGenreEmbeddingTempo && wAudio > 0 && camelotNeighbors.length > 0) {
-    functions.push({
-      filter: { terms: { 'musical_audio_features.camelot_key': camelotNeighbors } },
-      weight: wAudio * 22.0,
-    });
-  }
-
-  if (
-    !onlyGenreEmbeddingTempo &&
-    wAi > 0 &&
-    playlistFeatures.atmosphereKeywords &&
-    playlistFeatures.atmosphereKeywords.length > 0
-  ) {
-    for (const keyword of playlistFeatures.atmosphereKeywords) {
-      functions.push({
-        filter: { term: { atmosphere_tags: keyword } },
-        weight: wAi * 4.0,
-      });
-    }
-  }
-
-  if (
-    !onlyGenreEmbeddingTempo &&
-    wAi > 0 &&
-    playlistFeatures.aiTags &&
-    playlistFeatures.aiTags.length > 0
-  ) {
-    for (const tag of playlistFeatures.aiTags) {
-      functions.push({
-        filter: { term: { tags: tag } },
-        weight: wAi * 4.0,
-      });
-    }
-  }
-
-  if (!onlyGenreEmbeddingTempo && wAudioFeat > 0 && playlistFeatures.valenceMood) {
-    functions.push({
-      filter: { term: { 'musical_audio_features.valence_mood': playlistFeatures.valenceMood } },
-      weight: wAudioFeat * 12.0,
-    });
-  }
-  if (!onlyGenreEmbeddingTempo && wAudioFeat > 0 && playlistFeatures.arousalMood) {
-    functions.push({
-      filter: { term: { 'musical_audio_features.arousal_mood': playlistFeatures.arousalMood } },
-      weight: wAudioFeat * 12.0,
-    });
-  }
-  if (!onlyGenreEmbeddingTempo && wAudioFeat > 0 && playlistFeatures.danceabilityFeeling) {
-    functions.push({
-      filter: {
-        term: {
-          'musical_audio_features.danceability_feeling': playlistFeatures.danceabilityFeeling,
-        },
-      },
-      weight: wAudioFeat * 12.0,
-    });
-  }
-
   const { origin: tempoOriginRaw, scale: tempoScaleRaw } = tempoOriginAndScale(playlistFeatures);
   const tempoOrigin = Number.isFinite(tempoOriginRaw) ? tempoOriginRaw : 120;
   const tempoScale = ensurePositiveGaussScale(tempoScaleRaw, 18);
@@ -246,199 +91,53 @@ export const buildElasticsearchRecommendationQuery = (
     weight: Math.max(wAudio, 0.01) * 14.0,
   });
 
-  if (
-    !onlyGenreEmbeddingTempo &&
-    wAudioFeat > 0 &&
-    playlistFeatures.valence != null &&
-    Number.isFinite(playlistFeatures.valence)
-  ) {
-    functions.push({
-      gauss: {
-        'musical_audio_features.valence': {
-          origin: playlistFeatures.valence,
-          scale: 0.18,
-          offset: 0.04,
-          decay: 0.5,
-        },
-      },
-      weight: wAudioFeat * 10.0,
-    });
-  }
-  if (
-    !onlyGenreEmbeddingTempo &&
-    wAudioFeat > 0 &&
-    playlistFeatures.arousal != null &&
-    Number.isFinite(playlistFeatures.arousal)
-  ) {
-    functions.push({
-      gauss: {
-        'musical_audio_features.arousal': {
-          origin: playlistFeatures.arousal,
-          scale: 0.18,
-          offset: 0.04,
-          decay: 0.5,
-        },
-      },
-      weight: wAudioFeat * 10.0,
-    });
-  }
-  if (
-    !onlyGenreEmbeddingTempo &&
-    wAudioFeat > 0 &&
-    playlistFeatures.danceability != null &&
-    Number.isFinite(playlistFeatures.danceability)
-  ) {
-    functions.push({
-      gauss: {
-        'musical_audio_features.danceability': {
-          origin: playlistFeatures.danceability,
-          scale: 0.18,
-          offset: 0.04,
-          decay: 0.5,
-        },
-      },
-      weight: wAudioFeat * 10.0,
-    });
-  }
-  if (
-    !onlyGenreEmbeddingTempo &&
-    wAudioFeat > 0 &&
-    playlistFeatures.energy != null &&
-    Number.isFinite(playlistFeatures.energy)
-  ) {
-    functions.push({
-      gauss: {
-        'musical_audio_features.energy': {
-          origin: playlistFeatures.energy,
-          scale: 0.2,
-          offset: 0.05,
-          decay: 0.5,
-        },
-      },
-      weight: wAudioFeat * 8.0,
-    });
-  }
-
-  const spectralFeatures = playlistFeatures.spectralFeatures;
-  if (!onlyGenreEmbeddingTempo && wAudio > 0 && spectralFeatures) {
-    for (const { key, esSegment, options } of SPECTRAL_AGG_FEATURES) {
-      const stats = spectralFeatures[key];
-      if (!stats || typeof stats !== 'object' || Array.isArray(stats)) {
-        continue;
-      }
-      functions.push(...buildSpectralDecayClauses(esSegment, stats, options, wAudio));
-    }
-  }
-
-  if (
-    !onlyGenreEmbeddingTempo &&
-    wAudio > 0 &&
-    playlistFeatures.onsetDensity != null &&
-    Number.isFinite(playlistFeatures.onsetDensity)
-  ) {
-    functions.push({
-      gauss: {
-        'spectral_features.onset_density': {
-          origin: playlistFeatures.onsetDensity,
-          scale: 2.5,
-          offset: 0.3,
-          decay: 0.5,
-        },
-      },
-      weight: wAudio * 6.0,
-    });
-  }
-  if (
-    !onlyGenreEmbeddingTempo &&
-    wAudio > 0 &&
-    playlistFeatures.dynamicRange != null &&
-    Number.isFinite(playlistFeatures.dynamicRange)
-  ) {
-    functions.push({
-      gauss: {
-        'spectral_features.dynamic_range': {
-          origin: playlistFeatures.dynamicRange,
-          scale: 0.08,
-          offset: 0.01,
-          decay: 0.5,
-        },
-      },
-      weight: wAudio * 5.0,
-    });
-  }
-  if (
-    !onlyGenreEmbeddingTempo &&
-    wAudio > 0 &&
-    playlistFeatures.bassPresence != null &&
-    Number.isFinite(playlistFeatures.bassPresence)
-  ) {
-    functions.push({
-      gauss: {
-        'spectral_features.bass_presence': {
-          origin: playlistFeatures.bassPresence,
-          scale: 0.2,
-          offset: 0.05,
-          decay: 0.5,
-        },
-      },
-      weight: wAudio * 6.0,
-    });
-  }
-
-  const bands = playlistFeatures.energyByBand;
-  if (!onlyGenreEmbeddingTempo && wAudio > 0 && bands && bands.length === 3) {
-    const labels = ['bass', 'mid', 'high'] as const;
-    for (let i = 0; i < 3; i += 1) {
-      const v = bands[i];
-      if (!Number.isFinite(v)) {
-        continue;
-      }
+  const gaussFeature = (field: string, value: number | undefined, weight: number) => {
+    if (wAudioFeat > 0 && value != null && Number.isFinite(value)) {
       functions.push({
         gauss: {
-          [`spectral_features.energy_by_band.${labels[i]}`]: {
-            origin: v,
-            scale: ensurePositiveGaussScale(Math.abs(v) * 0.35, 5),
-            offset: 2,
+          [`musical_audio_features.${field}`]: {
+            origin: value,
+            scale: 0.18,
+            offset: 0.04,
             decay: 0.5,
           },
         },
-        weight: wAudio * 2.5,
+        weight: wAudioFeat * weight,
       });
     }
-  }
-  const ratios = playlistFeatures.energyRatios;
-  if (!onlyGenreEmbeddingTempo && wAudio > 0 && ratios && ratios.length === 3) {
-    const rlabels = ['bass', 'mid', 'high'] as const;
-    for (let i = 0; i < 3; i += 1) {
-      const v = ratios[i];
-      if (!Number.isFinite(v)) {
-        continue;
-      }
-      functions.push({
-        gauss: {
-          [`spectral_features.energy_ratios.${rlabels[i]}`]: {
-            origin: v,
-            scale: 0.12,
-            offset: 0.02,
-            decay: 0.5,
-          },
-        },
-        weight: wAudio * 4.0,
-      });
-    }
-  }
+  };
 
-  if (
-    !onlyGenreEmbeddingTempo &&
-    wAudio > 0 &&
-    playlistFeatures.chromaDominantPitch != null &&
-    Number.isInteger(playlistFeatures.chromaDominantPitch)
-  ) {
+  gaussFeature('valence', playlistFeatures.valence, 10.0);
+  gaussFeature('arousal', playlistFeatures.arousal, 10.0);
+  gaussFeature('danceability', playlistFeatures.danceability, 10.0);
+  gaussFeature('instrumentalness', playlistFeatures.instrumentalness, 6.0);
+  gaussFeature('voice', playlistFeatures.voice, 6.0);
+  gaussFeature('mood_happy', playlistFeatures.moodHappy, 4.0);
+  gaussFeature('mood_sad', playlistFeatures.moodSad, 4.0);
+  gaussFeature('mood_relaxed', playlistFeatures.moodRelaxed, 4.0);
+  gaussFeature('mood_aggressive', playlistFeatures.moodAggressive, 4.0);
+  gaussFeature('mood_party', playlistFeatures.moodParty, 4.0);
+
+  if (wAudioFeat > 0 && playlistFeatures.valenceMood) {
+    functions.push({
+      filter: { term: { 'musical_audio_features.valence_mood': playlistFeatures.valenceMood } },
+      weight: wAudioFeat * 12.0,
+    });
+  }
+  if (wAudioFeat > 0 && playlistFeatures.arousalMood) {
+    functions.push({
+      filter: { term: { 'musical_audio_features.arousal_mood': playlistFeatures.arousalMood } },
+      weight: wAudioFeat * 12.0,
+    });
+  }
+  if (wAudioFeat > 0 && playlistFeatures.danceabilityFeeling) {
     functions.push({
       filter: {
-        term: { chroma_dominant_pitch: playlistFeatures.chromaDominantPitch },
+        term: {
+          'musical_audio_features.danceability_feeling': playlistFeatures.danceabilityFeeling,
+        },
       },
-      weight: wAudio * 8.0,
+      weight: wAudioFeat * 12.0,
     });
   }
 
@@ -450,40 +149,18 @@ export const buildElasticsearchRecommendationQuery = (
     must: [{ match_all: {} }],
   };
 
-  const mfccVec = spectralFeatures?.mfccMean;
+  const embeddingVec = playlistFeatures.embedding;
   /**
-   * MFCC vector scoring requires `spectral_features.mfcc_mean` as a dense_vector in the index.
-   * Before re-index/re-analyze, the field may be missing or a different type; Painless must not
-   * throw or the entire search fails. Neutral score 1.0 matches the previous branch behavior.
+   * Virtually every track now has a discogs_embedding (backfilled), so this is a
+   * straight cosine similarity. The doc.size() check stays as a one-line guard: a
+   * doc still missing the field (never analyzed / not yet backfilled) would
+   * otherwise throw and fail scoring for the whole query, not just that document.
    */
-  const mfccSimilarityScriptSource = `try {
-  def v = doc['spectral_features.mfcc_mean'];
-  if (v.size() != 13) {
-    return 1.0;
-  }
-  return cosineSimilarity(params.queryVector, 'spectral_features.mfcc_mean') + 1.0;
-} catch (Exception e) {
-  return 1.0;
-}`;
-  const useMfccScript =
-    !onlyGenreEmbeddingTempo &&
-    wAudio > 0 &&
-    isValidMfccVector(mfccVec) &&
-    process.env.ELASTICSEARCH_MFCC_VECTOR_SIMILARITY !== 'false';
-
-  const embeddingVec = spectralFeatures?.embedding;
-  /**
-   * Virtually every track now has a discogs_embedding (backfilled), so this skips the
-   * try/catch degrade-to-neutral used by mfccSimilarityScriptSource -- straight cosine
-   * similarity. The doc.size() check stays as a one-line guard: a doc still missing the
-   * field (never analyzed / not yet backfilled) would otherwise throw and fail scoring
-   * for the whole query, not just that document.
-   */
-  const embeddingSimilarityScriptSource = `def v = doc['spectral_features.discogs_embedding'];
+  const embeddingSimilarityScriptSource = `def v = doc['audio_features.discogs_embedding'];
 if (v.size() != ${EMBEDDING_DIM}) {
   return 1.0;
 }
-return cosineSimilarity(params.queryVector, 'spectral_features.discogs_embedding') + 1.0;`;
+return cosineSimilarity(params.queryVector, 'audio_features.discogs_embedding') + 1.0;`;
   const useEmbeddingScript =
     wAudio > 0 &&
     isValidEmbeddingVector(embeddingVec) &&
@@ -498,23 +175,11 @@ return cosineSimilarity(params.queryVector, 'spectral_features.discogs_embedding
     },
   };
   const outerShould: unknown[] = [functionScoreQuery];
-  if (useMfccScript) {
-    // `boost` must live inside `script_score`; a sibling `boost` next to `script_score` is invalid JSON for bool.should.
-    outerShould.push({
-      script_score: {
-        query: { match_all: {} },
-        script: {
-          source: mfccSimilarityScriptSource,
-          params: { queryVector: mfccVec },
-        },
-        boost: wAudio * 15.0,
-      },
-    });
-  }
   if (useEmbeddingScript) {
-    // Weighted higher than the MFCC script (15.0): a 1280-dim learned discogs-effnet
-    // embedding captures genre/style similarity far more accurately than 13-dim MFCC,
-    // so it dominates the acoustic-similarity portion of the score. Tunable via
+    // Weighted higher (35.0 default) than the term/gauss signals above: a
+    // 1280-dim learned discogs-effnet embedding captures genre/style similarity
+    // far more accurately than hand-picked scalar features, so it dominates the
+    // acoustic-similarity portion of the score. Tunable via
     // ELASTICSEARCH_EMBEDDING_VECTOR_WEIGHT without a redeploy.
     const embeddingWeightMultiplier = parseFloat(
       process.env.ELASTICSEARCH_EMBEDDING_VECTOR_WEIGHT || '35.0',

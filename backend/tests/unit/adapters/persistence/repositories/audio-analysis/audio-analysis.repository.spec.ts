@@ -4,7 +4,7 @@ import { PRISMA_SERVICE } from 'src/infrastructure/database/prisma.service';
 import { AudioAnalysisRepository } from 'src/adapters/persistence/repositories/audio-analysis/audio-analysis.repository';
 import { createMockPrisma } from '../_test-utils/prisma-mock';
 import { models } from 'src/kernel/types/models';
-import type { AudioAnalysisResponse } from 'src/application/ports/dtos/AudioAnalysis';
+import type { AnalysisClassifications, AudioAnalysisResponse } from 'src/application/ports/dtos/AudioAnalysis';
 import { MusicTrackId } from 'src/kernel/ids';
 
 const TEST_USER_ID = 'test-user-id';
@@ -21,145 +21,56 @@ function makeAnalysisResult(overrides: Partial<AudioAnalysisResponse> = {}): Aud
   return {
     status: 'success',
     processing_time: 0,
-    processing_mode: 'single',
+    processing_mode: 'simple',
+    schema_version: 2,
+    track: {
+      filename: 'track.mp3',
+      extension: 'mp3',
+      mime_type: 'audio/mpeg',
+      size_bytes: 1000,
+      size_mb: 0.001,
+    },
+    audio: {
+      sample_rate: 44100,
+      duration_s: 180,
+      format: 'mp3',
+      bitrate: 320,
+      channels: 2,
+      samples: 7938000,
+      bit_depth: 16,
+      subtype: 'PCM_16',
+    },
+    tags: {},
     features: {
-      musical_features: {
-        tempo: 120,
-        key: 'C',
-        camelot_key: '8B',
-        valence: 0.5,
-        valence_mood: 'neutral',
-        arousal: 0.5,
-        arousal_mood: 'neutral',
-        danceability: 0.7,
-        danceability_feeling: 'groovy',
-        acousticness: 0.3,
-        instrumentalness: 0.2,
-        speechiness: 0.1,
-        liveness: 0.1,
-        energy_comment: '',
-        energy_keywords: [],
-        mood_calculation: {
-          mode_factor: 0.5,
-          mode_confidence: 0.8,
-          mode_weight: 0.5,
-          tempo_factor: 0.5,
-          energy_factor: 0.5,
-          brightness_factor: 0.5,
-          harmonic_factor: 0.5,
-          spectral_balance: 0.5,
-          beat_strength: 0.5,
-          syncopation: 0.5,
-        },
-        danceability_calculation: {
-          rhythm_stability: 0.8,
-          bass_presence: 0.6,
-          tempo_regularity: 0.7,
-          tempo_appropriateness: 0.7,
-          energy_factor: 0.6,
-          syncopation: 0.2,
-          beat_strength: 0.5,
-        },
-      },
-      spectral_features: {
-        mfcc_mean: [0, 0],
-        spectral_centroids: {
-          mean: 0,
-          std: 0,
-          median: 0,
-          min: 0,
-          max: 0,
-          p25: 0,
-          p75: 0,
-        },
-        spectral_rolloffs: {
-          mean: 0,
-          std: 0,
-          median: 0,
-          min: 0,
-          max: 0,
-          p25: 0,
-          p75: 0,
-        },
-        spectral_spreads: {
-          mean: 0,
-          std: 0,
-          median: 0,
-          min: 0,
-          max: 0,
-          p25: 0,
-          p75: 0,
-        },
-        spectral_bandwidths: {
-          mean: 0,
-          std: 0,
-          median: 0,
-          min: 0,
-          max: 0,
-          p25: 0,
-          p75: 0,
-        },
-        spectral_flatnesses: {
-          mean: 0,
-          std: 0,
-          median: 0,
-          min: 0,
-          max: 0,
-          p25: 0,
-          p75: 0,
-        },
-        zero_crossing_rate: {
-          mean: 0,
-          std: 0,
-          median: 0,
-          min: 0,
-          max: 0,
-          p25: 0,
-          p75: 0,
-        },
-        rms: { mean: 0, std: 0, median: 0, min: 0, max: 0, p25: 0, p75: 0 },
-        energy_by_band: [],
-        energy_ratios: [],
-        spectral_contrasts: { mean: 1, std: 0, median: 1, min: 0, max: 2, p25: 0, p75: 2 },
-        mfcc_std: Array.from({ length: 13 }, (_, i) => i * 0.01),
-        dynamic_range: 0.05,
-      },
-      melodic_fingerprint: {
-        chroma: {
-          mean: [],
-          std: [],
-          max: [],
-          overall_mean: 0,
-          overall_std: 0,
-          dominant_pitch: 0,
-        },
-        tonnetz: {
-          mean: [],
-          std: [],
-          max: [],
-          overall_mean: 0,
-          overall_std: 0,
-        },
-      },
-      rhythm_fingerprint: { zcr_mean: 0, zcr_std: 0, onset_density: 3.2 },
+      tempo: { value: 120, confidence: 0.9, source: 'tempo_cnn' },
+      key: { value: 'C', confidence: null, source: 'skey' },
+      camelot_key: { value: '8B', confidence: null, source: 'skey' },
+      mode: { value: 'major', confidence: null, source: 'skey' },
+      valence: { value: 0.5, confidence: null, source: 'deam' },
+      arousal: { value: 0.5, confidence: null, source: 'deam' },
+      danceability: { value: 0.7, confidence: null, source: 'discogs_effnet' },
+      instrumentalness: { value: 0.2, confidence: null, source: 'discogs_effnet' },
+      mood_happy: { value: 0.4, confidence: null, source: 'discogs_effnet' },
+      mood_sad: { value: 0.1, confidence: null, source: 'discogs_effnet' },
+      mood_relaxed: { value: 0.3, confidence: null, source: 'discogs_effnet' },
+      mood_aggressive: { value: 0.2, confidence: null, source: 'discogs_effnet' },
+      mood_party: { value: 0.5, confidence: null, source: 'discogs_effnet' },
+      voice: { value: 0.8, confidence: null, source: 'discogs_effnet' },
     },
-    fingerprint: {
-      audio_hash: 'audio-hash-1',
-      file_hash: 'file-hash-1',
-      method: 'test',
+    labels: {
+      valence_mood: 'neutral',
+      arousal_mood: 'neutral',
+      danceability_feeling: 'groovy',
     },
-    hierarchical_classification: {} as AudioAnalysisResponse['hierarchical_classification'],
-    album_art: {} as AudioAnalysisResponse['album_art'],
-    file_info: {} as AudioAnalysisResponse['file_info'],
-    audio_technical: {} as AudioAnalysisResponse['audio_technical'],
-    id3_tags: {} as AudioAnalysisResponse['id3_tags'],
-    ai_metadata: {
-      artist: '',
-      title: '',
-      genre: [],
-      style: [],
-      tags: [],
+    classifications: {
+      genre_styles: [{ genre: 'Rock', style: 'Indie Rock', confidence: 0.6 }],
+      genres: [{ genre: 'Rock', confidence: 0.6 }],
+      styles: [{ style: 'Indie Rock', genre: 'Rock', confidence: 0.6 }],
+      instruments: [{ instrument: 'guitar', confidence: 0.7 }],
+      tags: [{ tag: 'energetic', confidence: 0.5 }],
     },
+    embedding: { vector: [0.1, 0.2], dim: 2, source: 'discogs_effnet' },
+    warnings: [],
     ...overrides,
   };
 }
@@ -211,68 +122,31 @@ describe('AudioAnalysisRepository', () => {
 
       await repo.upsertAudioFingerprint(trackId, analysisResult);
 
-      const f = analysisResult.features;
-      const mf = f.musical_features;
-      const sf = f.spectral_features;
-      const mel = f.melodic_fingerprint;
-      const fp = analysisResult.fingerprint;
-
-      const mfccMean = sf.mfcc_mean ?? [];
-      const mfccStd = sf.mfcc_std ?? [];
-      const mfccStored =
-        Array.isArray(mfccStd) && mfccStd.length > 0
-          ? JSON.stringify({ mean: mfccMean, std: mfccStd })
-          : JSON.stringify(mfccMean);
-      const mfccStdColumn =
-        Array.isArray(mfccStd) && mfccStd.length === 13 ? JSON.stringify(mfccStd) : '[]';
-      const rhythm = f.rhythm_fingerprint;
       const expectedData = {
-        mfcc: mfccStored,
-        mfccStd: mfccStdColumn,
-        spectralCentroid: JSON.stringify(sf.spectral_centroids ?? {}),
-        spectralRolloff: JSON.stringify(sf.spectral_rolloffs ?? {}),
-        spectralContrast: JSON.stringify(sf.spectral_contrasts ?? {}),
-        chroma: JSON.stringify(mel.chroma ?? {}),
-        spectralSpread: JSON.stringify(sf.spectral_spreads ?? {}),
-        spectralBandwith: JSON.stringify(sf.spectral_bandwidths ?? {}),
-        spectralFlatness: JSON.stringify(sf.spectral_flatnesses ?? {}),
-        zeroCrossingRate: JSON.stringify(sf.zero_crossing_rate ?? {}),
-        rms: JSON.stringify(sf.rms || {}),
-        energyByBand: JSON.stringify(sf.energy_by_band || []),
-        energyComment: mf.energy_comment ?? '',
-        energyKeywords: JSON.stringify(mf.energy_keywords ?? []),
-        tempo: mf.tempo ?? 0,
-        key: mf.key ?? '',
-        valence: mf.valence ?? 0,
-        danceability: mf.danceability ?? 0,
-        arousal: mf.arousal ?? 0,
-        acousticness: mf.acousticness ?? 0,
-        instrumentalness: mf.instrumentalness ?? 0,
-        speechiness: mf.speechiness ?? 0,
-        liveness: mf.liveness ?? 0,
-        audioHash: fp.audio_hash ?? '',
-        fileHash: fp.file_hash ?? '',
-        tonnetz: JSON.stringify(mel.tonnetz ?? {}),
-        camelotKey: mf.camelot_key ?? '',
-        valenceMood: mf.valence_mood ?? '',
-        arousalMood: mf.arousal_mood ?? '',
-        danceabilityFeeling: mf.danceability_feeling ?? '',
-        rhythmStability: mf.danceability_calculation?.rhythm_stability ?? 0,
-        bassPresence: mf.danceability_calculation?.bass_presence ?? 0,
-        tempoRegularity: mf.danceability_calculation?.tempo_regularity ?? 0,
-        tempoAppropriateness: mf.danceability_calculation?.tempo_appropriateness ?? 0,
-        energyFactor: mf.danceability_calculation?.energy_factor ?? 0,
-        syncopation: mf.danceability_calculation?.syncopation ?? 0,
-        modeFactor: mf.mood_calculation?.mode_factor ?? 0,
-        modeConfidence: mf.mood_calculation?.mode_confidence ?? 0,
-        modeWeight: mf.mood_calculation?.mode_weight ?? 0,
-        tempoFactor: mf.mood_calculation?.tempo_factor ?? 0,
-        brightnessFactor: mf.mood_calculation?.brightness_factor ?? 0,
-        harmonicFactor: mf.mood_calculation?.harmonic_factor ?? 0,
-        spectralBalance: mf.mood_calculation?.spectral_balance ?? 0,
-        beatStrength: mf.mood_calculation?.beat_strength ?? 0,
-        onsetDensity: rhythm?.onset_density ?? 0,
-        dynamicRange: sf.dynamic_range ?? 0,
+        tempo: 120,
+        tempoConfidence: 0.9,
+        key: 'C',
+        camelotKey: '8B',
+        mode: 'major',
+        valence: 0.5,
+        arousal: 0.5,
+        danceability: 0.7,
+        instrumentalness: 0.2,
+        moodHappy: 0.4,
+        moodSad: 0.1,
+        moodRelaxed: 0.3,
+        moodAggressive: 0.2,
+        moodParty: 0.5,
+        voice: 0.8,
+        valenceMood: 'neutral',
+        arousalMood: 'neutral',
+        danceabilityFeeling: 'groovy',
+        instruments: JSON.stringify([{ instrument: 'guitar', confidence: 0.7 }]),
+        tags: JSON.stringify([{ tag: 'energetic', confidence: 0.5 }]),
+        embedding: JSON.stringify([0.1, 0.2]),
+        embeddingDim: 2,
+        schemaVersion: 2,
+        warnings: JSON.stringify([]),
       };
 
       expect(prismaMock.audioFingerprint.upsert).toHaveBeenCalledWith({
@@ -283,6 +157,35 @@ describe('AudioAnalysisRepository', () => {
         update: expectedData,
         create: { ...expectedData, trackId: TRACK_DB_ID, createdById: TEST_USER_ID },
       });
+    });
+
+    it('optimal: null features/labels become null columns, not 0/"" placeholders', async () => {
+      const trackId = models.musicTrack.id(TRACK_DB_ID) as MusicTrackId;
+      const analysisResult = makeAnalysisResult({
+        features: {},
+        labels: {},
+        classifications: { genre_styles: [], genres: [], styles: [], instruments: [], tags: [] },
+        embedding: null,
+        warnings: [{ model: 'deam', reason: 'failed', detail: 'timeout' }],
+      });
+      prismaMock.audioFingerprint.upsert.mockResolvedValue({} as never);
+
+      await repo.upsertAudioFingerprint(trackId, analysisResult);
+
+      expect(prismaMock.audioFingerprint.upsert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          update: expect.objectContaining({
+            tempo: null,
+            key: null,
+            valence: null,
+            danceability: null,
+            valenceMood: null,
+            embedding: JSON.stringify([]),
+            embeddingDim: null,
+            warnings: JSON.stringify([{ model: 'deam', reason: 'failed', detail: 'timeout' }]),
+          }),
+        }),
+      );
     });
 
     it('failure: rethrows when Prisma upsert throws', async () => {
@@ -311,245 +214,170 @@ describe('AudioAnalysisRepository', () => {
     });
   });
 
-  describe('upsertTrackGenres', () => {
-    it('optimal: deletes existing track genres, finds or creates genres, creates track-genre links', async () => {
+  describe('upsertTrackGenresFromClassifications', () => {
+    const classifications: AnalysisClassifications = {
+      genre_styles: [
+        { genre: 'Rock', style: 'Indie Rock', confidence: 0.6 },
+        { genre: 'Electronic', style: 'Deep House', confidence: 0.2 },
+      ],
+      genres: [
+        { genre: 'Rock', confidence: 0.6 },
+        { genre: 'Electronic', confidence: 0.2 },
+      ],
+      styles: [
+        { style: 'Indie Rock', genre: 'Rock', confidence: 0.6 },
+        { style: 'Deep House', genre: 'Electronic', confidence: 0.2 },
+      ],
+      instruments: [],
+      tags: [],
+    };
+
+    it('optimal: deletes existing associations, finds or creates genres/subgenres with confidence, links parent genre', async () => {
       const trackId = models.musicTrack.id(TRACK_DB_ID) as MusicTrackId;
-      const genres = ['Rock', 'Indie'];
-      prismaMock.trackGenre.deleteMany.mockResolvedValue({ count: 2 });
+      prismaMock.trackGenre.deleteMany.mockResolvedValue({ count: 1 });
+      prismaMock.trackSubgenre.deleteMany.mockResolvedValue({ count: 1 });
       prismaMock.genre.findUnique
         .mockResolvedValueOnce(makePrismaGenreRow({ id: 'g1', name: 'rock' }))
         .mockResolvedValueOnce(null);
-      prismaMock.genre.create.mockResolvedValue(makePrismaGenreRow({ id: 'g2', name: 'indie' }));
+      prismaMock.genre.create.mockResolvedValue(
+        makePrismaGenreRow({ id: 'g2', name: 'electronic' }),
+      );
       prismaMock.trackGenre.create.mockResolvedValue({} as never);
+      prismaMock.subgenre.findUnique
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce(null);
+      prismaMock.subgenre.create
+        .mockResolvedValueOnce(
+          makePrismaSubgenreRow({ id: 'sg1', name: 'indie rock', genreId: 'g1' }),
+        )
+        .mockResolvedValueOnce(
+          makePrismaSubgenreRow({ id: 'sg2', name: 'deep house', genreId: 'g2' }),
+        );
+      prismaMock.trackSubgenre.create.mockResolvedValue({} as never);
 
-      await repo.upsertTrackGenres(trackId, genres);
+      await repo.upsertTrackGenresFromClassifications(trackId, classifications);
 
       expect(prismaMock.trackGenre.deleteMany).toHaveBeenCalledWith({
-        where: {
-          trackId: TRACK_DB_ID,
-          createdById: TEST_USER_ID,
-        },
+        where: { trackId: TRACK_DB_ID, createdById: TEST_USER_ID },
       });
-      expect(prismaMock.genre.findUnique).toHaveBeenCalledWith({
-        where: { name: 'rock', createdById: TEST_USER_ID },
+      expect(prismaMock.trackSubgenre.deleteMany).toHaveBeenCalledWith({
+        where: { trackId: TRACK_DB_ID, createdById: TEST_USER_ID },
       });
-      expect(prismaMock.genre.findUnique).toHaveBeenCalledWith({
-        where: { name: 'indie', createdById: TEST_USER_ID },
+
+      expect(prismaMock.trackGenre.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({ genreId: 'g1', confidence: 0.6 }),
       });
-      expect(prismaMock.genre.create).toHaveBeenCalledTimes(1);
-      expect(prismaMock.trackGenre.create).toHaveBeenCalledTimes(2);
+      expect(prismaMock.trackGenre.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({ genreId: 'g2', confidence: 0.2 }),
+      });
+
+      // Subgenre for "Indie Rock" (parent "Rock") should be created with genreId 'g1'
+      expect(prismaMock.subgenre.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({ name: 'indie rock', genreId: 'g1' }),
+      });
+      expect(prismaMock.subgenre.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({ name: 'deep house', genreId: 'g2' }),
+      });
+      expect(prismaMock.trackSubgenre.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({ subgenreId: 'sg1', confidence: 0.6 }),
+      });
+      expect(prismaMock.trackSubgenre.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({ subgenreId: 'sg2', confidence: 0.2 }),
+      });
+    });
+
+    it('optimal: skips empty or whitespace-only names', async () => {
+      const trackId = models.musicTrack.id(TRACK_DB_ID) as MusicTrackId;
+      prismaMock.trackGenre.deleteMany.mockResolvedValue({ count: 0 });
+      prismaMock.trackSubgenre.deleteMany.mockResolvedValue({ count: 0 });
+      prismaMock.genre.findUnique.mockResolvedValue(makePrismaGenreRow({ name: 'valid' }));
+      prismaMock.trackGenre.create.mockResolvedValue({} as never);
+      prismaMock.subgenre.findUnique.mockResolvedValue(null);
+      prismaMock.subgenre.create.mockResolvedValue(makePrismaSubgenreRow({ name: 'valid style' }));
+      prismaMock.trackSubgenre.create.mockResolvedValue({} as never);
+
+      await repo.upsertTrackGenresFromClassifications(trackId, {
+        genre_styles: [],
+        genres: [
+          { genre: '', confidence: 0.5 },
+          { genre: '  ', confidence: 0.5 },
+          { genre: 'Valid', confidence: 0.5 },
+        ],
+        styles: [
+          { style: '', genre: 'Valid', confidence: 0.5 },
+          { style: 'Valid Style', genre: 'Valid', confidence: 0.5 },
+        ],
+        instruments: [],
+        tags: [],
+      });
+
+      expect(prismaMock.genre.findUnique).toHaveBeenCalledTimes(1);
+      expect(prismaMock.trackGenre.create).toHaveBeenCalledTimes(1);
+      expect(prismaMock.subgenre.findUnique).toHaveBeenCalledTimes(1);
+      expect(prismaMock.trackSubgenre.create).toHaveBeenCalledTimes(1);
     });
 
     it('failure: rethrows when Prisma deleteMany throws', async () => {
       const trackId = models.musicTrack.id(TRACK_DB_ID) as MusicTrackId;
       prismaMock.trackGenre.deleteMany.mockRejectedValue(new Error('Connection lost'));
 
-      await expect(repo.upsertTrackGenres(trackId, ['Rock'])).rejects.toThrow('Connection lost');
-    });
-
-    it('createdById scope: deleteMany, findUnique, create use current user id', async () => {
-      const trackId = models.musicTrack.id(TRACK_DB_ID) as MusicTrackId;
-      prismaMock.trackGenre.deleteMany.mockResolvedValue({ count: 0 });
-      prismaMock.genre.findUnique.mockResolvedValue(makePrismaGenreRow({ name: 'rock' }));
-      prismaMock.trackGenre.create.mockResolvedValue({} as never);
-
-      await repo.upsertTrackGenres(trackId, ['Rock']);
-
-      expect(prismaMock.trackGenre.deleteMany).toHaveBeenCalledWith({
-        where: { trackId: TRACK_DB_ID, createdById: TEST_USER_ID },
-      });
-      expect(prismaMock.genre.findUnique).toHaveBeenCalledWith({
-        where: { name: 'rock', createdById: TEST_USER_ID },
-      });
-      expect(prismaMock.trackGenre.create).toHaveBeenCalledWith({
-        data: expect.objectContaining({ createdById: TEST_USER_ID }),
-      });
-    });
-
-    it('optimal: skips empty or whitespace-only genre names', async () => {
-      const trackId = models.musicTrack.id(TRACK_DB_ID) as MusicTrackId;
-      prismaMock.trackGenre.deleteMany.mockResolvedValue({ count: 0 });
-      prismaMock.genre.findUnique.mockResolvedValue(makePrismaGenreRow({ name: 'valid' }));
-      prismaMock.trackGenre.create.mockResolvedValue({} as never);
-
-      await repo.upsertTrackGenres(trackId, ['', '  ', 'Valid']);
-
-      expect(prismaMock.genre.findUnique).toHaveBeenCalledTimes(1);
-      expect(prismaMock.genre.findUnique).toHaveBeenCalledWith({
-        where: { name: 'valid', createdById: TEST_USER_ID },
-      });
-      expect(prismaMock.trackGenre.create).toHaveBeenCalledTimes(1);
+      await expect(
+        repo.upsertTrackGenresFromClassifications(trackId, classifications),
+      ).rejects.toThrow('Connection lost');
     });
   });
 
-  describe('upsertTrackSubgenres', () => {
-    it('optimal: deletes existing track subgenres, finds or creates subgenres, creates track-subgenre links', async () => {
+  describe('updateEmbedding', () => {
+    it('optimal: updates embedding and embeddingDim', async () => {
       const trackId = models.musicTrack.id(TRACK_DB_ID) as MusicTrackId;
-      const subgenres = ['Indie Rock', 'Post-Punk'];
-      prismaMock.trackSubgenre.deleteMany.mockResolvedValue({ count: 0 });
-      prismaMock.subgenre.findUnique.mockResolvedValueOnce(
-        makePrismaSubgenreRow({ id: 'sg1', name: 'indie rock' }),
-      );
-      prismaMock.subgenre.findUnique.mockResolvedValueOnce(null);
-      prismaMock.subgenre.create.mockResolvedValue(
-        makePrismaSubgenreRow({ id: 'sg2', name: 'post-punk' }),
-      );
-      prismaMock.trackSubgenre.create.mockResolvedValue({} as never);
+      prismaMock.audioFingerprint.update.mockResolvedValue({} as never);
 
-      await repo.upsertTrackSubgenres(trackId, subgenres);
+      await repo.updateEmbedding(trackId, [0.1, 0.2, 0.3]);
 
-      expect(prismaMock.trackSubgenre.deleteMany).toHaveBeenCalledWith({
-        where: {
-          trackId: TRACK_DB_ID,
-          createdById: TEST_USER_ID,
-        },
-      });
-      expect(prismaMock.subgenre.findUnique).toHaveBeenCalledWith({
-        where: { name: 'indie rock', createdById: TEST_USER_ID },
-      });
-      expect(prismaMock.subgenre.findUnique).toHaveBeenCalledWith({
-        where: { name: 'post-punk', createdById: TEST_USER_ID },
-      });
-      expect(prismaMock.subgenre.create).toHaveBeenCalledTimes(1);
-      expect(prismaMock.trackSubgenre.create).toHaveBeenCalledTimes(2);
-    });
-
-    it('failure: rethrows when Prisma deleteMany throws', async () => {
-      const trackId = models.musicTrack.id(TRACK_DB_ID) as MusicTrackId;
-      prismaMock.trackSubgenre.deleteMany.mockRejectedValue(new Error('DB error'));
-
-      await expect(repo.upsertTrackSubgenres(trackId, ['Indie'])).rejects.toThrow('DB error');
-    });
-
-    it('createdById scope: deleteMany, findUnique, create use current user id', async () => {
-      const trackId = models.musicTrack.id(TRACK_DB_ID) as MusicTrackId;
-      prismaMock.trackSubgenre.deleteMany.mockResolvedValue({ count: 0 });
-      prismaMock.subgenre.findUnique.mockResolvedValue(makePrismaSubgenreRow({ name: 'indie' }));
-      prismaMock.trackSubgenre.create.mockResolvedValue({} as never);
-
-      await repo.upsertTrackSubgenres(trackId, ['Indie']);
-
-      expect(prismaMock.trackSubgenre.deleteMany).toHaveBeenCalledWith({
+      expect(prismaMock.audioFingerprint.update).toHaveBeenCalledWith({
         where: { trackId: TRACK_DB_ID, createdById: TEST_USER_ID },
-      });
-      expect(prismaMock.subgenre.findUnique).toHaveBeenCalledWith({
-        where: { name: 'indie', createdById: TEST_USER_ID },
-      });
-      expect(prismaMock.trackSubgenre.create).toHaveBeenCalledWith({
-        data: expect.objectContaining({ createdById: TEST_USER_ID }),
+        data: { embedding: JSON.stringify([0.1, 0.2, 0.3]), embeddingDim: 3 },
       });
     });
   });
 
-  describe('upsertAiAtmosphereTags', () => {
-    it('optimal: deletes existing track atmosphere tags, finds or creates tags, creates track-tag links', async () => {
+  describe('updateDiscogsClassifiers', () => {
+    it('optimal: writes classifiers and tempo onto the renamed columns', async () => {
       const trackId = models.musicTrack.id(TRACK_DB_ID) as MusicTrackId;
-      const tags = ['Chill', 'Energetic'];
-      prismaMock.trackAiAtmosphereTag.deleteMany.mockResolvedValue({
-        count: 0,
-      });
-      prismaMock.aiAtmosphereTag.findFirst
-        .mockResolvedValueOnce({
-          id: 'tag-1',
-          name: 'chill',
-          description: null,
-          createdAt: new Date(),
-          createdById: TEST_USER_ID,
-          updatedAt: null,
-          updatedById: null,
-        })
-        .mockResolvedValueOnce(null);
-      prismaMock.aiAtmosphereTag.create.mockResolvedValue({
-        id: 'tag-2',
-        name: 'energetic',
-        description: null,
-        createdAt: new Date(),
-        createdById: TEST_USER_ID,
-        updatedAt: null,
-        updatedById: null,
-      });
-      prismaMock.trackAiAtmosphereTag.create.mockResolvedValue({} as never);
+      prismaMock.audioFingerprint.update.mockResolvedValue({} as never);
 
-      await repo.upsertAiAtmosphereTags(trackId, tags);
+      await repo.updateDiscogsClassifiers(
+        trackId,
+        {
+          danceable: 0.7,
+          mood_aggressive: 0.1,
+          mood_happy: 0.5,
+          mood_party: 0.4,
+          mood_relaxed: 0.3,
+          mood_sad: 0.2,
+          voice: 0.9,
+          instruments: [{ instrument: 'guitar', confidence: 0.6 }],
+          tags: [{ tag: 'chill', confidence: 0.4 }],
+        },
+        { tempo: 128, confidence: 0.85 },
+      );
 
-      expect(prismaMock.trackAiAtmosphereTag.deleteMany).toHaveBeenCalledWith({
-        where: {
-          trackId: TRACK_DB_ID,
-          createdById: TEST_USER_ID,
+      expect(prismaMock.audioFingerprint.update).toHaveBeenCalledWith({
+        where: { trackId: TRACK_DB_ID, createdById: TEST_USER_ID },
+        data: {
+          danceability: 0.7,
+          moodAggressive: 0.1,
+          moodHappy: 0.5,
+          moodParty: 0.4,
+          moodRelaxed: 0.3,
+          moodSad: 0.2,
+          voice: 0.9,
+          instruments: JSON.stringify([{ instrument: 'guitar', confidence: 0.6 }]),
+          tags: JSON.stringify([{ tag: 'chill', confidence: 0.4 }]),
+          tempo: 128,
+          tempoConfidence: 0.85,
         },
       });
-      expect(prismaMock.aiAtmosphereTag.findFirst).toHaveBeenCalledWith({
-        where: { name: 'chill', createdById: TEST_USER_ID },
-      });
-      expect(prismaMock.aiAtmosphereTag.findFirst).toHaveBeenCalledWith({
-        where: { name: 'energetic', createdById: TEST_USER_ID },
-      });
-      expect(prismaMock.aiAtmosphereTag.create).toHaveBeenCalledTimes(1);
-      expect(prismaMock.trackAiAtmosphereTag.create).toHaveBeenCalledTimes(2);
-    });
-
-    it('failure: rethrows when Prisma deleteMany throws', async () => {
-      const trackId = models.musicTrack.id(TRACK_DB_ID) as MusicTrackId;
-      prismaMock.trackAiAtmosphereTag.deleteMany.mockRejectedValue(new Error('DB error'));
-
-      await expect(repo.upsertAiAtmosphereTags(trackId, ['Chill'])).rejects.toThrow('DB error');
-    });
-
-    it('createdById scope: deleteMany, findFirst, create use current user id', async () => {
-      const trackId = models.musicTrack.id(TRACK_DB_ID) as MusicTrackId;
-      prismaMock.trackAiAtmosphereTag.deleteMany.mockResolvedValue({
-        count: 0,
-      });
-      prismaMock.aiAtmosphereTag.findFirst.mockResolvedValue({
-        id: 'tag-1',
-        name: 'chill',
-        description: null,
-        createdAt: new Date(),
-        createdById: TEST_USER_ID,
-        updatedAt: null,
-        updatedById: null,
-      });
-      prismaMock.trackAiAtmosphereTag.create.mockResolvedValue({} as never);
-
-      await repo.upsertAiAtmosphereTags(trackId, ['Chill']);
-
-      expect(prismaMock.trackAiAtmosphereTag.deleteMany).toHaveBeenCalledWith({
-        where: { trackId: TRACK_DB_ID, createdById: TEST_USER_ID },
-      });
-      expect(prismaMock.aiAtmosphereTag.findFirst).toHaveBeenCalledWith({
-        where: { name: 'chill', createdById: TEST_USER_ID },
-      });
-      expect(prismaMock.trackAiAtmosphereTag.create).toHaveBeenCalledWith({
-        data: expect.objectContaining({
-          trackId: TRACK_DB_ID,
-          createdById: TEST_USER_ID,
-        }),
-      });
-    });
-
-    it('optimal: skips empty or whitespace-only tag names', async () => {
-      const trackId = models.musicTrack.id(TRACK_DB_ID) as MusicTrackId;
-      prismaMock.trackAiAtmosphereTag.deleteMany.mockResolvedValue({
-        count: 0,
-      });
-      prismaMock.aiAtmosphereTag.findFirst.mockResolvedValue({
-        id: 'tag-1',
-        name: 'valid',
-        description: null,
-        createdAt: new Date(),
-        createdById: TEST_USER_ID,
-        updatedAt: null,
-        updatedById: null,
-      });
-      prismaMock.trackAiAtmosphereTag.create.mockResolvedValue({} as never);
-
-      await repo.upsertAiAtmosphereTags(trackId, ['', '  ', 'Valid']);
-
-      expect(prismaMock.aiAtmosphereTag.findFirst).toHaveBeenCalledTimes(1);
-      expect(prismaMock.aiAtmosphereTag.findFirst).toHaveBeenCalledWith({
-        where: { name: 'valid', createdById: TEST_USER_ID },
-      });
-      expect(prismaMock.trackAiAtmosphereTag.create).toHaveBeenCalledTimes(1);
     });
   });
 });

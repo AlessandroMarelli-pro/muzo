@@ -31,16 +31,7 @@ export class FilterCriteriaInput {
   tempo: Maybe<{ min?: number; max?: number }>;
 
   @Field(() => RangeInput, { nullable: true })
-  speechiness: Maybe<{ min?: number; max?: number }>;
-
-  @Field(() => RangeInput, { nullable: true })
   instrumentalness: Maybe<{ min?: number; max?: number }>;
-
-  @Field(() => RangeInput, { nullable: true })
-  liveness: Maybe<{ min?: number; max?: number }>;
-
-  @Field(() => RangeInput, { nullable: true })
-  acousticness: Maybe<{ min?: number; max?: number }>;
 
   @Field(() => [String], { nullable: true })
   valenceMood: Maybe<string[]>;

@@ -46,10 +46,7 @@ export class CreatePlaylistUseCase {
         valenceMood: [],
         arousalMood: [],
         danceabilityFeeling: [],
-        speechiness: { min: 0, max: 1 },
         instrumentalness: { min: 0, max: 1 },
-        liveness: { min: 0, max: 1 },
-        acousticness: { min: 0, max: 1 },
         artist: null,
         title: null,
       };

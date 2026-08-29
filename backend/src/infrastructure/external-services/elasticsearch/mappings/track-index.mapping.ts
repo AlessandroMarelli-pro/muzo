@@ -1,26 +1,6 @@
 import { MappingProperty, MappingTypeMapping } from '@elastic/elasticsearch/lib/api/types';
 import { ElasticsearchTrackDocument } from '../types/elasticsearch-track-document';
 
-const aggregationStatisticsMapping: MappingProperty = {
-  properties: {
-    mean: { type: 'float' },
-    std: { type: 'float' },
-    max: { type: 'float' },
-    p25: { type: 'float' },
-    p75: { type: 'float' },
-    median: { type: 'float' },
-    min: { type: 'float' },
-  },
-};
-
-const energyBandMapping: MappingProperty = {
-  properties: {
-    bass: { type: 'float' },
-    mid: { type: 'float' },
-    high: { type: 'float' },
-  },
-};
-
 export const trackIndexMapping: {
   mappings: MappingTypeMapping;
 } = {
@@ -40,53 +20,36 @@ export const trackIndexMapping: {
       atmosphere_tags: { type: 'keyword' },
       context_background: { type: 'text' },
       context_impact: { type: 'text' },
-      chroma_dominant_pitch: { type: 'integer' },
       musical_audio_features: {
         properties: {
           tempo: { type: 'float' },
           key: { type: 'keyword' },
           camelot_key: { type: 'keyword' },
-          energy: { type: 'float' },
           valence: { type: 'float' },
           valence_mood: { type: 'keyword' },
           arousal: { type: 'float' },
           arousal_mood: { type: 'keyword' },
           danceability: { type: 'float' },
           danceability_feeling: { type: 'keyword' },
+          instrumentalness: { type: 'float' },
+          voice: { type: 'float' },
+          mood_happy: { type: 'float' },
+          mood_sad: { type: 'float' },
+          mood_relaxed: { type: 'float' },
+          mood_aggressive: { type: 'float' },
+          mood_party: { type: 'float' },
         } as Record<keyof ElasticsearchTrackDocument['musical_audio_features'], MappingProperty>,
       },
-      spectral_features: {
+      audio_features: {
         properties: {
-          spectral_centroid: aggregationStatisticsMapping,
-          spectral_rolloff: aggregationStatisticsMapping,
-          spectral_spread: aggregationStatisticsMapping,
-          spectral_bandwidth: aggregationStatisticsMapping,
-          spectral_flatness: aggregationStatisticsMapping,
-          zero_crossing_rate: aggregationStatisticsMapping,
-          spectral_contrast: aggregationStatisticsMapping,
-          mfcc_mean: {
-            type: 'dense_vector',
-            dims: 13,
-            index: true,
-            similarity: 'cosine',
-          },
-          mfcc_std: {
-            type: 'dense_vector',
-            dims: 13,
-            index: false,
-          },
+          /** 1280-dim discogs-effnet embedding (Essentia) for acoustic similarity search. */
           discogs_embedding: {
             type: 'dense_vector',
             dims: 1280,
             index: true,
             similarity: 'cosine',
           },
-          onset_density: { type: 'float' },
-          dynamic_range: { type: 'float' },
-          bass_presence: { type: 'float' },
-          energy_by_band: energyBandMapping,
-          energy_ratios: energyBandMapping,
-        } as Record<keyof ElasticsearchTrackDocument['spectral_features'], MappingProperty>,
+        } as Record<keyof ElasticsearchTrackDocument['audio_features'], MappingProperty>,
       },
     } as Record<keyof ElasticsearchTrackDocument, MappingProperty>,
   },

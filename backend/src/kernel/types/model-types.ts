@@ -152,100 +152,38 @@ export type AggregationStatistics = {
   p25: number;
   p75: number;
 };
-export type AudioFileSpectralFeatures = {
-  spectralCentroid: AggregationStatistics;
-  spectralRolloff: AggregationStatistics;
-  zeroCrossingRate: AggregationStatistics;
-  mfcc: number[];
-  /** Per-coefficient MFCC std (13) when present from analysis. */
-  mfccStd?: number[];
-  /** 1280-dim discogs-effnet embedding (Essentia) when present from analysis. */
-  embedding?: number[];
-  spectralSpread: AggregationStatistics;
-  spectralBandwith: AggregationStatistics;
-  spectralFlatness: AggregationStatistics;
-  spectralContrast: AggregationStatistics;
-  rms: AggregationStatistics;
-  /** Onsets per second (rhythmic activity). */
-  onsetDensity?: number;
-  /** RMS p95 − p5 loudness spread. */
-  dynamicRange?: number;
-  // Discogs-effnet classifier heads (run on `embedding`; comparison-only for now)
-  discogsDanceability?: number;
-  discogsMoodAggressive?: number;
-  discogsMoodHappy?: number;
-  discogsMoodParty?: number;
-  discogsMoodRelaxed?: number;
-  discogsMoodSad?: number;
-  discogsGenres?: { genre: string; style: string; confidence: number }[];
-  discogsVoice?: number;
-  discogsInstruments?: { instrument: string; confidence: number }[];
-  discogsTags?: { tag: string; confidence: number }[];
-  discogsTempo?: number;
-  discogsTempoConfidence?: number;
-};
 
-export type MelodicFeatures = {
-  mean: number[];
-  std: number[];
-  max: number[];
-  overallMean: number;
-  overallStd: number;
-};
-export type AudioFileMelodicFeatures = {
-  chroma: MelodicFeatures & {
-    dominant_pitch: number;
-  };
-  tonnetz: MelodicFeatures;
-};
 export type AudioFileFeatures = {
   musicalFeatures: MaybeUndefined<AudioFileMusicalFeatures>;
-  spectralFeatures: MaybeUndefined<AudioFileSpectralFeatures>;
-  melodicFeatures: MaybeUndefined<AudioFileMelodicFeatures>;
-  fingerprint: MaybeUndefined<AudioFileFingerprint>;
-};
-export type AudioFileFingerprint = {
-  fileHash: string;
-  audioHash: string;
+  /** 1280-dim discogs-effnet embedding (Essentia) when present from analysis. */
+  embedding?: number[];
+  embeddingDim?: number;
+  instruments?: { instrument: string; confidence: number }[];
+  tags?: { tag: string; confidence: number }[];
+  /** Names exactly which model produced nothing and why; empty when everything ran. */
+  warnings?: { model: string; reason: 'disabled' | 'failed' | 'empty'; detail: string | null }[];
 };
 
-type CalculationFeatures = {
-  modeFactor: number;
-  modeConfidence: number;
-  modeWeight: number;
-  tempoFactor: number;
-  energyFactor: number;
-  brightnessFactor: number;
-  harmonicFactor: number;
-  spectralBalance: number;
-  beatStrength: number;
-  syncopation: number;
-  rhythmStability: number;
-  bassPresence: number;
-  tempoRegularity: number;
-  tempoAppropriateness: number;
-  energyComment?: string;
-  energyKeywords?: string[];
-  energyByBand?: number[];
-};
 export type AudioFileMusicalFeatures = {
-  tempo: number;
-  key: string;
-  camelotKey: string;
-  energy?: number;
+  tempo?: number;
+  /** The only feature that carries a model confidence today. */
+  tempoConfidence?: number;
+  key?: string;
+  camelotKey?: string;
+  mode?: string;
   valence?: number;
-  valenceMood: string;
-  calculationFeatures?: CalculationFeatures;
+  valenceMood?: string;
   danceability?: number;
-  danceabilityFeeling: string;
+  danceabilityFeeling?: string;
   arousal?: number;
-  arousalMood: string;
-  acousticness?: number;
+  arousalMood?: string;
   instrumentalness?: number;
-  speechiness?: number;
-  liveness?: number;
-  energyComment?: string;
-  energyKeywords?: string[];
+  voice?: number;
+  moodHappy?: number;
+  moodSad?: number;
+  moodRelaxed?: number;
+  moodAggressive?: number;
+  moodParty?: number;
 };
 
 export type AudioFileAIMetadata = {
@@ -324,6 +262,7 @@ export type ImageSearch = Readonly<ModelBase<ImageSearchId>> & {
 export type TrackGenre = Readonly<ModelBase<TrackGenreId>> & {
   trackId: MusicTrackId;
   genreId: GenreId;
+  confidence: Maybe<number>;
 };
 
 export type Genre = Readonly<ModelBase<GenreId>> & {
@@ -334,6 +273,7 @@ export type Genre = Readonly<ModelBase<GenreId>> & {
 export type TrackSubgenre = Readonly<ModelBase<TrackSubgenreId>> & {
   trackId: MusicTrackId;
   subgenreId: SubgenreId;
+  confidence: Maybe<number>;
 };
 
 export type Subgenre = Readonly<ModelBase<SubgenreId>> & {
@@ -365,10 +305,7 @@ export type FilterCriteria = {
   valenceMood: Maybe<string[]>;
   arousalMood: Maybe<string[]>;
   danceabilityFeeling: Maybe<string[]>;
-  speechiness: Maybe<{ min?: number; max?: number }>;
   instrumentalness: Maybe<{ min?: number; max?: number }>;
-  liveness: Maybe<{ min?: number; max?: number }>;
-  acousticness: Maybe<{ min?: number; max?: number }>;
   artist: Maybe<string>;
   title: Maybe<string>;
   libraryIds: Maybe<MusicLibraryId[]>;

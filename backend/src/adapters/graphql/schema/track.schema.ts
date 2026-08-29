@@ -90,6 +90,9 @@ export class Track {
   mfKey?: string;
 
   @Field(() => String, { nullable: true })
+  mfCamelotKey?: string;
+
+  @Field(() => String, { nullable: true })
   mfValenceMood?: string;
 
   @Field(() => String, { nullable: true })
@@ -97,6 +100,30 @@ export class Track {
 
   @Field(() => String, { nullable: true })
   mfDanceabilityFeeling?: string;
+
+  @Field(() => Float, { nullable: true })
+  mfDanceability?: number;
+
+  @Field(() => Float, { nullable: true })
+  mfInstrumentalness?: number;
+
+  @Field(() => Float, { nullable: true })
+  mfVoice?: number;
+
+  @Field(() => Float, { nullable: true })
+  mfMoodHappy?: number;
+
+  @Field(() => Float, { nullable: true })
+  mfMoodSad?: number;
+
+  @Field(() => Float, { nullable: true })
+  mfMoodRelaxed?: number;
+
+  @Field(() => Float, { nullable: true })
+  mfMoodAggressive?: number;
+
+  @Field(() => Float, { nullable: true })
+  mfMoodParty?: number;
 
   @Field({ nullable: true })
   imagePath?: string;

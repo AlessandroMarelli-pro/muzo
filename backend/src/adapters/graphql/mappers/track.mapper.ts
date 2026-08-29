@@ -101,20 +101,38 @@ function toTrackAIMetadata(aiMetadata: MaybeUndefined<AudioFileAIMetadata>) {
 function toTrackMusicalFeatures(features: MaybeUndefined<AudioFileFeatures>) {
   if (!features?.musicalFeatures) {
     return {
-      mfTempo: 0,
-      mfKey: '',
-      mfValenceMood: '',
-      mfArousalMood: '',
-      mfDanceabilityFeeling: '',
+      mfTempo: undefined,
+      mfKey: undefined,
+      mfCamelotKey: undefined,
+      mfValenceMood: undefined,
+      mfArousalMood: undefined,
+      mfDanceabilityFeeling: undefined,
+      mfDanceability: undefined,
+      mfInstrumentalness: undefined,
+      mfVoice: undefined,
+      mfMoodHappy: undefined,
+      mfMoodSad: undefined,
+      mfMoodRelaxed: undefined,
+      mfMoodAggressive: undefined,
+      mfMoodParty: undefined,
     };
   }
   const m = features.musicalFeatures;
   return {
     mfTempo: m.tempo,
     mfKey: m.key,
+    mfCamelotKey: m.camelotKey,
     mfValenceMood: m.valenceMood,
     mfArousalMood: m.arousalMood,
     mfDanceabilityFeeling: m.danceabilityFeeling,
+    mfDanceability: m.danceability,
+    mfInstrumentalness: m.instrumentalness,
+    mfVoice: m.voice,
+    mfMoodHappy: m.moodHappy,
+    mfMoodSad: m.moodSad,
+    mfMoodRelaxed: m.moodRelaxed,
+    mfMoodAggressive: m.moodAggressive,
+    mfMoodParty: m.moodParty,
   };
 }
 

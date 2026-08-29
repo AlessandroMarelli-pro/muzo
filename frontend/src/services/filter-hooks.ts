@@ -1,4 +1,4 @@
-import { FilterCriteriaResult } from '@/__generated__/types';
+import { FilterCriteriaInput, FilterCriteriaResult } from '@/__generated__/types';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toFilterState } from './filter.mapper';
 import { filterFragment } from './fragments';
@@ -11,27 +11,7 @@ export interface Range {
   min: number;
 }
 
-export interface FilterCriteriaInput {
-  danceability?: RangeInput;
-  energy?: RangeInput;
-  genres?: string[];
-  keys?: string[];
-  subgenres?: string[];
-  tempo?: RangeInput;
-  valence?: RangeInput;
-  speechiness?: RangeInput;
-  instrumentalness?: RangeInput;
-  liveness?: RangeInput;
-  acousticness?: RangeInput;
-  artist?: string;
-  title?: string;
-  libraryId?: string[];
-}
-
-export interface RangeInput {
-  max?: number;
-  min?: number;
-}
+export type { FilterCriteriaInput };
 
 // Query Keys
 export const filterQueryKeys = {

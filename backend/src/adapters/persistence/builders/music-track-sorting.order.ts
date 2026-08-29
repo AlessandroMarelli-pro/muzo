@@ -9,13 +9,10 @@ export const buildMusicTrackSortingOrderClause = (options: SortingOptions) => {
   const audioFingerprintFields = [
     'tempo',
     'key',
-    'energy',
     'valence',
     'arousal',
     'danceability',
-    'acousticness',
     'instrumentalness',
-    'speechiness',
   ];
 
   const changedNames = {

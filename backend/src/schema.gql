@@ -63,7 +63,6 @@ type DiscoveredTrack {
 }
 
 input FilterCriteriaInput {
-  acousticness: RangeInput
   arousalMood: [String!]
   artist: String
   atmosphereIds: [Base64ID!]
@@ -72,8 +71,6 @@ input FilterCriteriaInput {
   instrumentalness: RangeInput
   keyIds: [String!]
   libraryIds: [Base64ID!]
-  liveness: RangeInput
-  speechiness: RangeInput
   subgenreIds: [Base64ID!]
   tempo: RangeInput
   title: String
@@ -87,7 +84,6 @@ type FilterCriteriaResult {
 }
 
 type FilterCriteriaType {
-  acousticness: Range
   arousalMood: [String!]
   artist: String
   atmosphereIds: [Base64ID!]
@@ -96,8 +92,6 @@ type FilterCriteriaType {
   instrumentalness: Range
   keyIds: [String!]
   libraryIds: [Base64ID!]
-  liveness: Range
-  speechiness: Range
   subgenreIds: [Base64ID!]
   tempo: Range
   title: String
@@ -414,10 +408,19 @@ type Track implements Node {
   libraryId: Base64ID
   listeningCount: Float!
   mfArousalMood: String
+  mfCamelotKey: String
+  mfDanceability: Float
   mfDanceabilityFeeling: String
+  mfInstrumentalness: Float
   mfKey: String
+  mfMoodAggressive: Float
+  mfMoodHappy: Float
+  mfMoodParty: Float
+  mfMoodRelaxed: Float
+  mfMoodSad: Float
   mfTempo: Float
   mfValenceMood: String
+  mfVoice: Float
   recommendations(limit: Int): [TrackRecommendation!]!
   subgenres: [String!]
   title: String

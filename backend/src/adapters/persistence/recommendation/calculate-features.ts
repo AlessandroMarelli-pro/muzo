@@ -14,7 +14,6 @@ function calculateMean(values?: (number | undefined)[]): number {
   return filteredValues.reduce((a, b) => a + b, 0) / filteredValues.length;
 }
 
-const MFCC_DIM = 13;
 const EMBEDDING_DIM = 1280;
 
 function calculateVectorAggregate(
@@ -35,215 +34,35 @@ function calculateVectorAggregate(
   return out;
 }
 
-function calculateMfccAggregate(
-  tracks: MusicTrack[],
-  getVec: (track: MusicTrack) => number[] | undefined,
-): number[] {
-  return calculateVectorAggregate(tracks, getVec, MFCC_DIM);
-}
-
 /** Mean discogs-effnet embedding across seed tracks; undefined when none have one
  * (single-seed recommendations effectively use that track's own embedding). */
 function calculateEmbeddingAggregate(tracks: MusicTrack[]): number[] | undefined {
   const vector = calculateVectorAggregate(
     tracks,
-    (track) => track.features?.spectralFeatures?.embedding,
+    (track) => track.features?.embedding,
     EMBEDDING_DIM,
   );
   return vector.length > 0 ? vector : undefined;
 }
-function calculateSpectralFeaturesMean(tracks: MusicTrack[]) {
-  const _numberOfTracks = tracks.length;
-  const embedding = calculateEmbeddingAggregate(tracks);
-  return {
-    spectralCentroidMean: {
-      mean: calculateMean(
-        tracks.map((track) => track.features?.spectralFeatures?.spectralCentroid.mean),
-      ),
-      std: calculateMean(
-        tracks.map((track) => track.features?.spectralFeatures?.spectralCentroid.std),
-      ),
-      max: calculateMean(
-        tracks.map((track) => track.features?.spectralFeatures?.spectralCentroid.max),
-      ),
-      min: calculateMean(
-        tracks.map((track) => track.features?.spectralFeatures?.spectralCentroid.min),
-      ),
-      p25: calculateMean(
-        tracks.map((track) => track.features?.spectralFeatures?.spectralCentroid.p25),
-      ),
-      p75: calculateMean(
-        tracks.map((track) => track.features?.spectralFeatures?.spectralCentroid.p75),
-      ),
-      median: calculateMean(
-        tracks.map((track) => track.features?.spectralFeatures?.spectralCentroid.median),
-      ),
-    },
-    spectralRolloffMean: {
-      mean: calculateMean(
-        tracks.map((track) => track.features?.spectralFeatures?.spectralRolloff.mean),
-      ),
-      std: calculateMean(
-        tracks.map((track) => track.features?.spectralFeatures?.spectralRolloff.std),
-      ),
-      max: calculateMean(
-        tracks.map((track) => track.features?.spectralFeatures?.spectralRolloff.max),
-      ),
-      min: calculateMean(
-        tracks.map((track) => track.features?.spectralFeatures?.spectralRolloff.min),
-      ),
-      p25: calculateMean(
-        tracks.map((track) => track.features?.spectralFeatures?.spectralRolloff.p25),
-      ),
-      p75: calculateMean(
-        tracks.map((track) => track.features?.spectralFeatures?.spectralRolloff.p75),
-      ),
-      median: calculateMean(
-        tracks.map((track) => track.features?.spectralFeatures?.spectralRolloff.median),
-      ),
-    },
-    spectralSpreadMean: {
-      mean: calculateMean(
-        tracks.map((track) => track.features?.spectralFeatures?.spectralSpread.mean),
-      ),
-      std: calculateMean(
-        tracks.map((track) => track.features?.spectralFeatures?.spectralSpread.std),
-      ),
-      max: calculateMean(
-        tracks.map((track) => track.features?.spectralFeatures?.spectralSpread.max),
-      ),
-      min: calculateMean(
-        tracks.map((track) => track.features?.spectralFeatures?.spectralSpread.min),
-      ),
-      p25: calculateMean(
-        tracks.map((track) => track.features?.spectralFeatures?.spectralSpread.p25),
-      ),
-      p75: calculateMean(
-        tracks.map((track) => track.features?.spectralFeatures?.spectralSpread.p75),
-      ),
-      median: calculateMean(
-        tracks.map((track) => track.features?.spectralFeatures?.spectralSpread.median),
-      ),
-    },
-    spectralBandwidthMean: {
-      mean: calculateMean(
-        tracks.map((track) => track.features?.spectralFeatures?.spectralBandwith.mean),
-      ),
-      std: calculateMean(
-        tracks.map((track) => track.features?.spectralFeatures?.spectralBandwith.std),
-      ),
-      max: calculateMean(
-        tracks.map((track) => track.features?.spectralFeatures?.spectralBandwith.max),
-      ),
-      min: calculateMean(
-        tracks.map((track) => track.features?.spectralFeatures?.spectralBandwith.min),
-      ),
-      p25: calculateMean(
-        tracks.map((track) => track.features?.spectralFeatures?.spectralBandwith.p25),
-      ),
-      p75: calculateMean(
-        tracks.map((track) => track.features?.spectralFeatures?.spectralBandwith.p75),
-      ),
-      median: calculateMean(
-        tracks.map((track) => track.features?.spectralFeatures?.spectralBandwith.median),
-      ),
-    },
-    spectralFlatnessMean: {
-      mean: calculateMean(
-        tracks.map((track) => track.features?.spectralFeatures?.spectralFlatness.mean),
-      ),
-      std: calculateMean(
-        tracks.map((track) => track.features?.spectralFeatures?.spectralFlatness.std),
-      ),
-      max: calculateMean(
-        tracks.map((track) => track.features?.spectralFeatures?.spectralFlatness.max),
-      ),
-      min: calculateMean(
-        tracks.map((track) => track.features?.spectralFeatures?.spectralFlatness.min),
-      ),
-      p25: calculateMean(
-        tracks.map((track) => track.features?.spectralFeatures?.spectralFlatness.p25),
-      ),
-      p75: calculateMean(
-        tracks.map((track) => track.features?.spectralFeatures?.spectralFlatness.p75),
-      ),
-      median: calculateMean(
-        tracks.map((track) => track.features?.spectralFeatures?.spectralFlatness.median),
-      ),
-    },
-    zeroCrossingRateMean: {
-      mean: calculateMean(
-        tracks.map((track) => track.features?.spectralFeatures?.zeroCrossingRate.mean),
-      ),
-      std: calculateMean(
-        tracks.map((track) => track.features?.spectralFeatures?.zeroCrossingRate.std),
-      ),
-      max: calculateMean(
-        tracks.map((track) => track.features?.spectralFeatures?.zeroCrossingRate.max),
-      ),
-      min: calculateMean(
-        tracks.map((track) => track.features?.spectralFeatures?.zeroCrossingRate.min),
-      ),
-      p25: calculateMean(
-        tracks.map((track) => track.features?.spectralFeatures?.zeroCrossingRate.p25),
-      ),
-      p75: calculateMean(
-        tracks.map((track) => track.features?.spectralFeatures?.zeroCrossingRate.p75),
-      ),
-      median: calculateMean(
-        tracks.map((track) => track.features?.spectralFeatures?.zeroCrossingRate.median),
-      ),
-    },
-    spectralContrastMean: {
-      mean: calculateMean(
-        tracks.map((track) => track.features?.spectralFeatures?.spectralContrast?.mean),
-      ),
-      std: calculateMean(
-        tracks.map((track) => track.features?.spectralFeatures?.spectralContrast?.std),
-      ),
-      max: calculateMean(
-        tracks.map((track) => track.features?.spectralFeatures?.spectralContrast?.max),
-      ),
-      min: calculateMean(
-        tracks.map((track) => track.features?.spectralFeatures?.spectralContrast?.min),
-      ),
-      p25: calculateMean(
-        tracks.map((track) => track.features?.spectralFeatures?.spectralContrast?.p25),
-      ),
-      p75: calculateMean(
-        tracks.map((track) => track.features?.spectralFeatures?.spectralContrast?.p75),
-      ),
-      median: calculateMean(
-        tracks.map((track) => track.features?.spectralFeatures?.spectralContrast?.median),
-      ),
-    },
-    mfccMean: calculateMfccAggregate(tracks, (track) => track.features?.spectralFeatures?.mfcc),
-    mfccStd: calculateMfccAggregate(tracks, (track) => track.features?.spectralFeatures?.mfccStd),
-    ...(embedding && { embedding }),
-  };
-}
+
 export function calculateFeatures(tracks: MusicTrack[]): Maybe<AudioFeatures> {
   if (tracks.length === 0) {
     return null;
   }
-  const defaultAggregationStatistics = {
-    mean: 0,
-    std: 0,
-    max: 0,
-    min: 0,
-    p25: 0,
-    p75: 0,
-    median: 0,
-  };
-  const defaultMfcc: number[] = Array(MFCC_DIM).fill(0);
   const features: Required<AudioFeatures> = {
     trackId: tracks[0].id,
     tempo: { min: Infinity, max: 0 },
     tempoCenter: 0,
-    energy: 0,
     valence: 0,
     danceability: 0,
     arousal: 0,
+    instrumentalness: 0,
+    voice: 0,
+    moodHappy: 0,
+    moodSad: 0,
+    moodRelaxed: 0,
+    moodAggressive: 0,
+    moodParty: 0,
     key: '',
     camelotKey: '',
     valenceMood: '',
@@ -259,35 +78,7 @@ export function calculateFeatures(tracks: MusicTrack[]): Maybe<AudioFeatures> {
     atmosphereKeywords: [],
     contextBackgrounds: '',
     contextImpacts: '',
-    chromaDominantPitch: 0,
-    onsetDensity: 0,
-    dynamicRange: 0,
-    bassPresence: 0,
-    energyByBand: [0, 0, 0],
-    energyRatios: [0, 0, 0],
-    discogsDanceability: 0,
-    discogsMoodAggressive: 0,
-    discogsMoodHappy: 0,
-    discogsMoodParty: 0,
-    discogsMoodRelaxed: 0,
-    discogsMoodSad: 0,
-    discogsGenres: [],
-    discogsVoice: 0,
-    discogsInstruments: [],
-    discogsTags: [],
-    discogsTempo: 0,
-    discogsTempoConfidence: 0,
-    spectralFeatures: {
-      spectralCentroidMean: defaultAggregationStatistics,
-      spectralRolloffMean: defaultAggregationStatistics,
-      spectralSpreadMean: defaultAggregationStatistics,
-      spectralBandwidthMean: defaultAggregationStatistics,
-      spectralFlatnessMean: defaultAggregationStatistics,
-      zeroCrossingRateMean: defaultAggregationStatistics,
-      spectralContrastMean: defaultAggregationStatistics,
-      mfccMean: defaultMfcc,
-      mfccStd: defaultMfcc,
-    },
+    embedding: [],
   };
 
   const genreCounts: Record<string, number> = {};
@@ -306,9 +97,14 @@ export function calculateFeatures(tracks: MusicTrack[]): Maybe<AudioFeatures> {
   const atmosphereKeywords: string[] = [];
   const contextBackgrounds: string[] = [];
   const contextImpacts: string[] = [];
-  const dominantPitchCounts: Record<number, number> = {};
 
   let validTracks = 0;
+  let instrumentalnessSum = 0;
+  let instrumentalnessCount = 0;
+  let voiceSum = 0;
+  let voiceCount = 0;
+  const moodSums = { happy: 0, sad: 0, relaxed: 0, aggressive: 0, party: 0 };
+  const moodCounts = { happy: 0, sad: 0, relaxed: 0, aggressive: 0, party: 0 };
 
   tracks.forEach((track) => {
     const mf = track.features?.musicalFeatures;
@@ -321,17 +117,42 @@ export function calculateFeatures(tracks: MusicTrack[]): Maybe<AudioFeatures> {
         features.tempo!.max = Math.max(features.tempo!.max, mf.tempo);
         validTracks++;
       }
-      if (mf.energy != null && mf.energy !== undefined) {
-        features.energy! += mf.energy;
-      }
-      if (mf.valence != null && mf.valence !== undefined) {
+      if (mf.valence != null) {
         features.valence! += mf.valence;
       }
-      if (mf.danceability != null && mf.danceability !== undefined) {
+      if (mf.danceability != null) {
         features.danceability! += mf.danceability;
       }
-      if (mf.arousal != null && mf.arousal !== undefined) {
+      if (mf.arousal != null) {
         features.arousal! += mf.arousal;
+      }
+      if (mf.instrumentalness != null) {
+        instrumentalnessSum += mf.instrumentalness;
+        instrumentalnessCount++;
+      }
+      if (mf.voice != null) {
+        voiceSum += mf.voice;
+        voiceCount++;
+      }
+      if (mf.moodHappy != null) {
+        moodSums.happy += mf.moodHappy;
+        moodCounts.happy++;
+      }
+      if (mf.moodSad != null) {
+        moodSums.sad += mf.moodSad;
+        moodCounts.sad++;
+      }
+      if (mf.moodRelaxed != null) {
+        moodSums.relaxed += mf.moodRelaxed;
+        moodCounts.relaxed++;
+      }
+      if (mf.moodAggressive != null) {
+        moodSums.aggressive += mf.moodAggressive;
+        moodCounts.aggressive++;
+      }
+      if (mf.moodParty != null) {
+        moodSums.party += mf.moodParty;
+        moodCounts.party++;
       }
       if (mf.key) {
         keyCounts[mf.key] = (keyCounts[mf.key] || 0) + 1;
@@ -387,40 +208,22 @@ export function calculateFeatures(tracks: MusicTrack[]): Maybe<AudioFeatures> {
     if (aiMetadata?.contextImpact) {
       contextImpacts.push(aiMetadata.contextImpact);
     }
-    const domPitch = track.features?.melodicFeatures?.chroma?.dominant_pitch;
-    if (typeof domPitch === 'number' && Number.isFinite(domPitch)) {
-      dominantPitchCounts[domPitch] = (dominantPitchCounts[domPitch] || 0) + 1;
-    }
   });
 
-  features.spectralFeatures = calculateSpectralFeaturesMean(tracks);
-  features.onsetDensity = calculateMean(
-    tracks.map((track) => track.features?.spectralFeatures?.onsetDensity),
-  );
-  features.dynamicRange = calculateMean(
-    tracks.map((track) => track.features?.spectralFeatures?.dynamicRange),
-  );
-  features.bassPresence = calculateMean(
-    tracks.map((track) => track.features?.musicalFeatures?.calculationFeatures?.bassPresence),
-  );
-  const band0 = calculateMean(
-    tracks.map((track) => track.features?.musicalFeatures?.calculationFeatures?.energyByBand?.[0]),
-  );
-  const band1 = calculateMean(
-    tracks.map((track) => track.features?.musicalFeatures?.calculationFeatures?.energyByBand?.[1]),
-  );
-  const band2 = calculateMean(
-    tracks.map((track) => track.features?.musicalFeatures?.calculationFeatures?.energyByBand?.[2]),
-  );
-  features.energyByBand = [band0, band1, band2];
-  const bandTotal = band0 + band1 + band2;
-  if (bandTotal > 0) {
-    features.energyRatios = [band0 / bandTotal, band1 / bandTotal, band2 / bandTotal];
+  const embedding = calculateEmbeddingAggregate(tracks);
+  if (embedding) {
+    features.embedding = embedding;
   }
-  const pitchEntries = Object.entries(dominantPitchCounts).sort((a, b) => b[1] - a[1]);
-  if (pitchEntries.length > 0) {
-    features.chromaDominantPitch = Number.parseInt(pitchEntries[0][0], 10);
-  }
+
+  features.instrumentalness = instrumentalnessCount > 0 ? instrumentalnessSum / instrumentalnessCount : 0;
+  features.voice = voiceCount > 0 ? voiceSum / voiceCount : 0;
+  features.moodHappy = moodCounts.happy > 0 ? moodSums.happy / moodCounts.happy : 0;
+  features.moodSad = moodCounts.sad > 0 ? moodSums.sad / moodCounts.sad : 0;
+  features.moodRelaxed = moodCounts.relaxed > 0 ? moodSums.relaxed / moodCounts.relaxed : 0;
+  features.moodAggressive =
+    moodCounts.aggressive > 0 ? moodSums.aggressive / moodCounts.aggressive : 0;
+  features.moodParty = moodCounts.party > 0 ? moodSums.party / moodCounts.party : 0;
+
   const n = tracks.length;
   if (validTracks > 0) {
     features.tempo!.min = features.tempo!.min - 5;
@@ -428,7 +231,6 @@ export function calculateFeatures(tracks: MusicTrack[]): Maybe<AudioFeatures> {
     features.tempoCenter = (features.tempo!.min + features.tempo!.max) / 2;
   }
   if (n > 0) {
-    features.energy = features.energy! / n;
     features.valence = features.valence! / n;
     features.danceability = features.danceability! / n;
     features.arousal = features.arousal! / n;

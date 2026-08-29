@@ -32,6 +32,7 @@ export const toPrismaTrackGenre = (domain: TrackGenre): PrismaTrackGenre => {
     id: extractModelId(domain.id).dbId,
     trackId: extractModelId(domain.trackId).dbId,
     genreId: extractModelId(domain.genreId).dbId,
+    confidence: domain.confidence ?? null,
   };
 };
 
@@ -51,6 +52,7 @@ export const toPrismaTrackSubgenre = (domain: TrackSubgenre): PrismaTrackSubgenr
     id: extractModelId(domain.id).dbId,
     trackId: extractModelId(domain.trackId).dbId,
     subgenreId: extractModelId(domain.subgenreId).dbId,
+    confidence: domain.confidence ?? null,
   };
 };
 

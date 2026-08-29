@@ -12,10 +12,7 @@ export const toFilterCriteria = (criteria: FilterCriteria): FilterCriteriaType =
     valenceMood: criteria.valenceMood ?? undefined,
     arousalMood: criteria.arousalMood ?? undefined,
     danceabilityFeeling: criteria.danceabilityFeeling ?? undefined,
-    speechiness: criteria.speechiness ?? undefined,
     instrumentalness: criteria.instrumentalness ?? undefined,
-    liveness: criteria.liveness ?? undefined,
-    acousticness: criteria.acousticness ?? undefined,
     artist: criteria.artist ?? undefined,
     title: criteria.title ?? undefined,
   };

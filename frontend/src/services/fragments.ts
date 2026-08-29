@@ -29,9 +29,18 @@ export const trackFragment = gql`
     updatedAt
     mfTempo
     mfKey
+    mfCamelotKey
     mfValenceMood
     mfArousalMood
     mfDanceabilityFeeling
+    mfDanceability
+    mfInstrumentalness
+    mfVoice
+    mfMoodHappy
+    mfMoodSad
+    mfMoodRelaxed
+    mfMoodAggressive
+    mfMoodParty
 
     imagePath
     lastScannedAt
@@ -110,19 +119,7 @@ export const filterFragment = gql`
         max
         min
       }
-      speechiness {
-        max
-        min
-      }
       instrumentalness {
-        max
-        min
-      }
-      liveness {
-        max
-        min
-      }
-      acousticness {
         max
         min
       }

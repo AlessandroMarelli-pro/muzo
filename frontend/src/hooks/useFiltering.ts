@@ -22,10 +22,7 @@ export interface FilterState {
   library: string[];
   atmosphereIds: string[];
   tempo: Range;
-  speechiness: Range;
   instrumentalness: Range;
-  liveness: Range;
-  acousticness: Range;
   artist: string;
   title: string;
   valenceMood: string[];
@@ -66,10 +63,7 @@ const defaultFilterState: FilterState = {
   valenceMood: [],
   arousalMood: [],
   danceabilityFeeling: [],
-  speechiness: { min: 0, max: 1 },
   instrumentalness: { min: 0, max: 1 },
-  liveness: { min: 0, max: 1 },
-  acousticness: { min: 0, max: 1 },
   artist: '',
   title: '',
   library: [],
@@ -88,10 +82,7 @@ const toFilterCriteriaInput = (filters: FilterState): FilterCriteriaInput => {
     valenceMood: filters.valenceMood,
     arousalMood: filters.arousalMood,
     danceabilityFeeling: filters.danceabilityFeeling,
-    speechiness: filters.speechiness,
     instrumentalness: filters.instrumentalness,
-    liveness: filters.liveness,
-    acousticness: filters.acousticness,
     artist: filters.artist,
     title: filters.title,
   };
@@ -199,14 +190,8 @@ export const useFiltering = (options: UseFilteringOptions = {}) => {
       filters.valenceMood.length > 0 ||
       filters.arousalMood.length > 0 ||
       filters.danceabilityFeeling.length > 0 ||
-      filters.speechiness.min !== 0 ||
-      filters.speechiness.max !== 1 ||
       filters.instrumentalness.min !== 0 ||
       filters.instrumentalness.max !== 1 ||
-      filters.liveness.min !== 0 ||
-      filters.liveness.max !== 1 ||
-      filters.acousticness.min !== 0 ||
-      filters.acousticness.max !== 1 ||
       filters.artist !== '' ||
       filters.title !== '' ||
       filters.library.length > 0 ||

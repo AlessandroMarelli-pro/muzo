@@ -209,7 +209,7 @@ export class MusicTrackRepository implements IMusicTrackRepository {
           createdById: getCurrentUserId(),
           OR: [
             { audioFingerprint: { is: { embedding: '[]' } } },
-            { audioFingerprint: { is: { discogsGenres: '[]' } } },
+            { audioFingerprint: { is: { voice: null } } },
           ],
         },
         include: musicTracksIncludes,
@@ -446,26 +446,26 @@ export class MusicTrackRepository implements IMusicTrackRepository {
     const updateData: any = {};
 
     // Update duration if available
-    if (analysisResult.audio_technical.duration_seconds) {
-      updateData.duration = Math.round(analysisResult.audio_technical.duration_seconds);
+    if (analysisResult.audio?.duration_s) {
+      updateData.duration = Math.round(analysisResult.audio.duration_s);
     }
 
     // Update audio format details
-    if (analysisResult.audio_technical.format) {
-      updateData.format = analysisResult.audio_technical.format;
+    if (analysisResult.audio?.format) {
+      updateData.format = analysisResult.audio.format;
     }
-    if (analysisResult.audio_technical.bitrate) {
-      updateData.bitrate = analysisResult.audio_technical.bitrate;
+    if (analysisResult.audio?.bitrate) {
+      updateData.bitrate = analysisResult.audio.bitrate;
     }
-    if (analysisResult.audio_technical.sample_rate) {
-      updateData.sampleRate = analysisResult.audio_technical.sample_rate;
+    if (analysisResult.audio?.sample_rate) {
+      updateData.sampleRate = analysisResult.audio.sample_rate;
     }
 
     // A file that is itself lossless (flac/wav) already IS the HQ copy —
     // no need to acquire one separately. Mirrors AcquireHqAudioUseCase's rule.
     const LOSSLESS_FORMATS = new Set(['flac', 'wav']);
     const ext = filePath.split('.').pop()?.toLowerCase();
-    const probedFormat = analysisResult.audio_technical.format?.toLowerCase();
+    const probedFormat = analysisResult.audio?.format?.toLowerCase();
     if (
       (ext && LOSSLESS_FORMATS.has(ext)) ||
       (probedFormat && LOSSLESS_FORMATS.has(probedFormat))
@@ -473,63 +473,52 @@ export class MusicTrackRepository implements IMusicTrackRepository {
       updateData.hqAudioPath = filePath;
     }
 
-    // Update AI-generated metadata
-    let genreNames: string[] = [];
-    let subgenreNames: string[] = [];
-
-    if (analysisResult.hierarchical_classification?.classification) {
-      if (analysisResult.hierarchical_classification.classification.genre) {
-        genreNames.push(analysisResult.hierarchical_classification.classification.genre);
-      }
-      if (analysisResult.hierarchical_classification.classification.subgenre) {
-        subgenreNames.push(analysisResult.hierarchical_classification.classification.subgenre);
-      }
+    // aiConfidence/aiSubgenreConfidence used to come from the LLM's
+    // hierarchical_classification, which v2 no longer produces. Repurpose
+    // them from the top Discogs genre/style predictions instead, so the
+    // existing index and any UI sort on these columns keep meaning something.
+    const topGenre = analysisResult.classifications?.genres?.[0];
+    const topStyle = analysisResult.classifications?.styles?.[0];
+    if (topGenre) {
+      updateData.aiConfidence = topGenre.confidence;
     }
-
-    if (analysisResult.hierarchical_classification?.classification?.confidence) {
-      updateData.aiConfidence =
-        analysisResult.hierarchical_classification.classification.confidence.genre;
-      updateData.aiSubgenreConfidence =
-        analysisResult.hierarchical_classification.classification.confidence.subgenre;
+    if (topStyle) {
+      updateData.aiSubgenreConfidence = topStyle.confidence;
     }
 
     // Update original metadata if available
-    if (analysisResult.id3_tags) {
-      if (analysisResult.id3_tags.title) {
-        updateData.originalTitle = analysisResult.id3_tags.title;
+    if (analysisResult.tags) {
+      if (analysisResult.tags.title) {
+        updateData.originalTitle = analysisResult.tags.title;
       }
-      if (analysisResult.id3_tags.artist) {
-        updateData.originalArtist = analysisResult.id3_tags.artist;
+      if (analysisResult.tags.artist) {
+        updateData.originalArtist = analysisResult.tags.artist;
       }
-      if (analysisResult.id3_tags.album) {
-        updateData.originalAlbum = analysisResult.id3_tags.album;
+      if (analysisResult.tags.album) {
+        updateData.originalAlbum = analysisResult.tags.album;
       }
-      if (analysisResult.id3_tags.genre) {
-        // Add original genre to the list
-        genreNames.push(analysisResult.id3_tags.genre);
+      if (analysisResult.tags.albumartist) {
+        updateData.originalAlbumartist = analysisResult.tags.albumartist;
       }
-      if (analysisResult.id3_tags.albumartist) {
-        updateData.originalAlbumartist = analysisResult.id3_tags.albumartist;
-      }
-      if (analysisResult.id3_tags.date && isDate(new Date(analysisResult.id3_tags.date))) {
-        updateData.originalDate = new Date(analysisResult.id3_tags.date);
+      if (analysisResult.tags.date && isDate(new Date(analysisResult.tags.date))) {
+        updateData.originalDate = new Date(analysisResult.tags.date);
       }
 
-      if (analysisResult.id3_tags.bpm) {
-        updateData.originalBpm = parseInt(analysisResult.id3_tags.bpm, 10);
+      if (analysisResult.tags.bpm) {
+        updateData.originalBpm = parseInt(analysisResult.tags.bpm, 10);
       }
-      if (analysisResult.id3_tags.track_number) {
-        updateData.originalTrack_number = parseInt(analysisResult.id3_tags.track_number, 10);
+      if (analysisResult.tags.track_number) {
+        updateData.originalTrack_number = parseInt(analysisResult.tags.track_number, 10);
       }
-      if (analysisResult.id3_tags.disc_number) {
-        updateData.originalDisc_number = analysisResult.id3_tags.disc_number;
+      if (analysisResult.tags.disc_number) {
+        updateData.originalDisc_number = analysisResult.tags.disc_number;
       }
 
-      if (analysisResult.id3_tags.year) {
+      if (analysisResult.tags.year) {
         // Parse originalYear to support both YYYY and YYYYMMDD formats
         let parsedOriginalYear: number | null = null;
 
-        const year = analysisResult.id3_tags.year;
+        const year = analysisResult.tags.year;
         if (/^\d{8}$/.test(year)) {
           // Format: YYYYMMDD
           parsedOriginalYear = parseInt(year.substring(0, 4), 10);
@@ -544,65 +533,17 @@ export class MusicTrackRepository implements IMusicTrackRepository {
         updateData.originalYear = parsedOriginalYear;
       }
 
-      if (analysisResult.id3_tags.comment) {
-        updateData.originalComment = analysisResult.id3_tags.comment;
+      if (analysisResult.tags.comment) {
+        updateData.originalComment = analysisResult.tags.comment;
       }
-      if (analysisResult.id3_tags.composer) {
-        updateData.originalComposer = analysisResult.id3_tags.composer;
+      if (analysisResult.tags.composer) {
+        updateData.originalComposer = analysisResult.tags.composer;
       }
-      if (analysisResult.id3_tags.copyright) {
-        updateData.originalCopyright = analysisResult.id3_tags.copyright;
-      }
-    }
-    const metadata = analysisResult.ai_metadata;
-
-    // Update AI-generated metadata fields
-    if (metadata?.artist) {
-      updateData.aiArtist = metadata.artist;
-      updateData.originalArtist = metadata.artist;
-    }
-    if (metadata?.title) {
-      updateData.aiTitle = metadata.title;
-      updateData.originalTitle = metadata.title;
-      if (metadata?.mix) {
-        updateData.originalTitle += ` (${metadata.mix})`;
-        updateData.aiTitle += ` (${metadata.mix})`;
-      }
-    }
-    if (metadata?.description) {
-      updateData.aiDescription = metadata.description;
-    }
-
-    // Parse year if available
-    if (metadata?.year) {
-      const yearStr = String(metadata.year);
-      const yearMatch = yearStr.match(/^\d{4}/);
-      if (yearMatch) {
-        updateData.originalYear = parseInt(yearMatch[0], 10);
+      if (analysisResult.tags.copyright) {
+        updateData.originalCopyright = analysisResult.tags.copyright;
       }
     }
 
-    // Store additional metadata in userTags as JSON (if tags exist)
-    if (metadata?.tags && metadata.tags.length > 0) {
-      updateData.aiTags = JSON.stringify(metadata.tags);
-    }
-
-    // Store audioFeatures data
-    if (metadata?.audioFeatures) {
-      if (metadata.audioFeatures.vocals) {
-        updateData.vocalsDesc = metadata.audioFeatures.vocals;
-      }
-    }
-
-    // Store context data
-    if (metadata?.context) {
-      if (metadata.context.background) {
-        updateData.contextBackground = metadata.context.background;
-      }
-      if (metadata.context.impact) {
-        updateData.contextImpact = metadata.context.impact;
-      }
-    }
     await this.prisma.musicTrack.update({
       where: {
         id: extractModelId(trackId).dbId,

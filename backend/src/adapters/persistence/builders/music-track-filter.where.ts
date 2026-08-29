@@ -61,14 +61,8 @@ export const buildMusicTrackFilterWhereClause = (
     criteria.valenceMood ||
     criteria.arousalMood ||
     criteria.danceabilityFeeling ||
-    criteria.speechiness?.min !== 0 ||
-    criteria.speechiness?.max !== 1 ||
     criteria.instrumentalness?.min !== 0 ||
-    criteria.instrumentalness?.max !== 1 ||
-    criteria.liveness?.min !== 0 ||
-    criteria.liveness?.max !== 1 ||
-    criteria.acousticness?.min !== 0 ||
-    criteria.acousticness?.max !== 1
+    criteria.instrumentalness?.max !== 1
   ) {
     const fingerprintWhere: any = {};
 
@@ -115,19 +109,6 @@ export const buildMusicTrackFilterWhereClause = (
     }
 
     if (
-      criteria.speechiness &&
-      (criteria.speechiness?.min !== 0 || criteria.speechiness?.max !== 1)
-    ) {
-      fingerprintWhere.speechiness = {};
-      if (criteria.speechiness.min !== undefined) {
-        fingerprintWhere.speechiness.gte = criteria.speechiness.min;
-      }
-      if (criteria.speechiness.max !== undefined) {
-        fingerprintWhere.speechiness.lte = criteria.speechiness.max;
-      }
-    }
-
-    if (
       criteria.instrumentalness &&
       (criteria.instrumentalness?.min !== 0 || criteria.instrumentalness?.max !== 1)
     ) {
@@ -140,28 +121,6 @@ export const buildMusicTrackFilterWhereClause = (
       }
     }
 
-    if (criteria.liveness && (criteria.liveness?.min !== 0 || criteria.liveness?.max !== 1)) {
-      fingerprintWhere.liveness = {};
-      if (criteria.liveness.min !== undefined) {
-        fingerprintWhere.liveness.gte = criteria.liveness.min;
-      }
-      if (criteria.liveness.max !== undefined) {
-        fingerprintWhere.liveness.lte = criteria.liveness.max;
-      }
-    }
-
-    if (
-      criteria.acousticness &&
-      (criteria.acousticness?.min !== 0 || criteria.acousticness?.max !== 1)
-    ) {
-      fingerprintWhere.acousticness = {};
-      if (criteria.acousticness.min !== undefined) {
-        fingerprintWhere.acousticness.gte = criteria.acousticness.min;
-      }
-      if (criteria.acousticness.max !== undefined) {
-        fingerprintWhere.acousticness.lte = criteria.acousticness.max;
-      }
-    }
     if (criteria.libraryIds && criteria.libraryIds.length > 0) {
       where.libraryId = {
         in: criteria.libraryIds.map((id) => extractModelId(id).dbId),

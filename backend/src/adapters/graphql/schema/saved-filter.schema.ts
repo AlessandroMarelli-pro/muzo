@@ -61,16 +61,7 @@ export class FilterCriteriaType {
   danceabilityFeeling?: Maybe<string[]>;
 
   @Field(() => Range, { nullable: true })
-  speechiness?: Maybe<{ min?: number; max?: number }>;
-
-  @Field(() => Range, { nullable: true })
   instrumentalness?: Maybe<{ min?: number; max?: number }>;
-
-  @Field(() => Range, { nullable: true })
-  liveness?: Maybe<{ min?: number; max?: number }>;
-
-  @Field(() => Range, { nullable: true })
-  acousticness?: Maybe<{ min?: number; max?: number }>;
 
   @Field(() => String, { nullable: true })
   artist?: Maybe<string>;

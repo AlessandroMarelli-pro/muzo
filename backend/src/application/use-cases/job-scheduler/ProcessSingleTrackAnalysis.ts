@@ -33,51 +33,43 @@ export class ProcessSingleTrackAnalysisUseCase {
     const analysisStatus = analysisResult.status;
     const fileName = track.fileInfo.fileName;
     try {
-      // Validate required fields
-      if (
-        !analysisStatus ||
-        analysisStatus === 'error' ||
-        (!analysisResult?.id3_tags?.artist &&
-          !analysisResult?.id3_tags?.title &&
-          !analysisResult?.ai_metadata?.artist &&
-          !analysisResult?.ai_metadata?.title)
-      ) {
-        this.logger.error(
-          `Skipping audio scan for ${fileName} because it has no artist, title or it failed. Music track deleted.`,
-          { analysisResult },
-        );
-        await this.musicTrackRepository.removeOneById(track.id);
+      // A hard failure from the ai-service (bad file, crashed pipeline) is
+      // the only reason to drop the track record. A track with no ID3
+      // artist/title but a successful audio analysis is a normal outcome
+      // now that the LLM only cleans filenames -- it no longer backfills
+      // metadata -- so it is marked FAILED for a human/rescan to fix rather
+      // than deleted outright.
+      if (!analysisStatus || analysisStatus === 'error') {
+        this.logger.error(`Audio analysis failed for ${fileName}. Marking track as failed.`, {
+          analysisResult,
+        });
+        await this.musicTrackRepository.updateOneById(track.id, {
+          analysisStatus: AudioFileAnalysisStatusEnum.FAILED,
+          analysisError: analysisResult.message ?? 'Audio analysis failed',
+          analysisCompletedAt: new Date(),
+        });
 
-        // Publish track failure event
         await this.sendTrackCompleteEvent(fileName, batchInfo);
 
         return { isSuccess: false };
+      }
+
+      if (analysisResult.warnings && analysisResult.warnings.length > 0) {
+        this.logger.warn(`Audio analysis for ${fileName} had warnings`, {
+          warnings: analysisResult.warnings,
+        });
       }
 
       this.logger.info(`Creating AudioFingerprint record for track ${fileName}`);
       // Create AudioFingerprint record
       await this.audioAnalysisRepository.upsertAudioFingerprint(track.id, analysisResult);
 
-      if (analysisResult.ai_metadata?.genre) {
-        this.logger.info(`Creating TrackGenre record for track ${fileName}`);
-        await this.audioAnalysisRepository.upsertTrackGenres(
+      if (analysisResult.classifications) {
+        this.logger.info(`Creating TrackGenre/TrackSubgenre records for track ${fileName}`);
+        await this.audioAnalysisRepository.upsertTrackGenresFromClassifications(
           track.id,
-          analysisResult.ai_metadata?.genre,
+          analysisResult.classifications,
         );
-      }
-
-      if (analysisResult.ai_metadata?.style) {
-        this.logger.info(`Creating TrackSubgenre record for track ${fileName}`);
-        await this.audioAnalysisRepository.upsertTrackSubgenres(
-          track.id,
-          analysisResult.ai_metadata?.style,
-        );
-      }
-
-      const atmosphereTags = analysisResult.ai_metadata?.audioFeatures?.atmosphere;
-      if (atmosphereTags && atmosphereTags.length > 0) {
-        this.logger.info(`Creating TrackAiAtmosphereTag records for track ${fileName}`);
-        await this.audioAnalysisRepository.upsertAiAtmosphereTags(track.id, atmosphereTags);
       }
 
       this.logger.info(`Updating track ${fileName} with analysis results`);

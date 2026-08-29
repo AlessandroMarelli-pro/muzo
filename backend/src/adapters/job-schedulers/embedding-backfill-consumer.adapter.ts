@@ -70,11 +70,9 @@ export class EmbeddingBackfillConsumerAdapter extends WorkerHost {
       // silently overwritten by a re-run of this job (e.g. after a broader backfill sweep
       // picks up tracks that already have one piece but not the other).
       const track = await this.musicTrackRepository.getOneById(trackId);
-      const existingEmbedding = track.features?.spectralFeatures?.embedding;
+      const existingEmbedding = track.features?.embedding;
       const hasEmbedding = Array.isArray(existingEmbedding) && existingEmbedding.length > 0;
-      const hasClassifiers =
-        Array.isArray(track.features?.spectralFeatures?.discogsGenres) &&
-        track.features.spectralFeatures.discogsGenres.length > 0;
+      const hasClassifiers = track.features?.musicalFeatures?.voice != null;
 
       if (hasEmbedding && hasClassifiers) {
         this.logger.info(`Skipping track ${trackId}: embedding and classifiers already present`, {

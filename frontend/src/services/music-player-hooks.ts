@@ -36,10 +36,8 @@ export interface AudioAnalysisResult {
   mode: 'major' | 'minor';
   danceability: number;
   valence: number;
-  acousticness: number;
   instrumentalness: number;
-  liveness: number;
-  speechiness: number;
+  voice: number;
   duration: number;
   analysisVersion: string;
 }

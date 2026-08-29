@@ -15,7 +15,6 @@ import { Maybe, MaybeUndefined } from 'src/kernel/common';
 import { MusicTrackId } from 'src/kernel/ids';
 import { extractModelId } from 'src/kernel/ids/factory';
 import {
-  AggregationStatistics,
   AudioFileAIMetadata,
   AudioFileAnalysis,
   AudioFileAnalysisStatusEnum,
@@ -23,7 +22,6 @@ import {
   AudioFileInfo,
   AudioFileMetadata,
   AudioTechnical,
-  MelodicFeatures,
   MusicTrack,
   MusicTrackStats,
 } from 'src/kernel/types/model-types';
@@ -89,52 +87,6 @@ export const toAudioTechnical: ToAudioTechnical = (row) => {
   };
 };
 
-const EMPTY_AGGREGATION_STATISTICS: AggregationStatistics = {
-  mean: 0,
-  std: 0,
-  median: 0,
-  min: 0,
-  max: 0,
-  p25: 0,
-  p75: 0,
-};
-
-export const toAggregationStatistics = (row: string): AggregationStatistics => {
-  if (!row) return EMPTY_AGGREGATION_STATISTICS;
-  try {
-    return JSON.parse(row) as AggregationStatistics;
-  } catch {
-    return EMPTY_AGGREGATION_STATISTICS;
-  }
-};
-
-const parseMfccStored = (
-  raw: string,
-): { coefficients: number[]; std: number[] } => {
-  try {
-    const parsed: unknown = JSON.parse(raw || '[]');
-    if (Array.isArray(parsed)) {
-      const coefficients = parsed.map((n) => Number(n)).slice(0, 13);
-      return { coefficients, std: [] };
-    }
-    if (
-      parsed &&
-      typeof parsed === 'object' &&
-      'mean' in parsed &&
-      Array.isArray((parsed as { mean: unknown }).mean)
-    ) {
-      const o = parsed as { mean: number[]; std?: number[] };
-      return {
-        coefficients: o.mean.map((n) => Number(n)).slice(0, 13),
-        std: (o.std ?? []).map((n) => Number(n)).slice(0, 13),
-      };
-    }
-  } catch {
-    /* invalid JSON */
-  }
-  return { coefficients: [], std: [] };
-};
-
 const parseEmbeddingStored = (raw: string): number[] => {
   try {
     const parsed: unknown = JSON.parse(raw || '[]');
@@ -155,115 +107,39 @@ const safeJsonParse = <T>(raw: string | null | undefined, fallback: T): T => {
 
 export const toAudioFileFeatures: ToAudioFileFeatures = (row) => {
   if (!row) return undefined;
-  const { coefficients, std } = parseMfccStored(row.mfcc);
-  const mfccStdFromColumn = (() => {
-    try {
-      const s = JSON.parse(row.mfccStd || '[]') as unknown;
-      return Array.isArray(s) ? s.map((n) => Number(n)).slice(0, 13) : [];
-    } catch {
-      return [];
-    }
-  })();
-  const mfccStd = mfccStdFromColumn.length > 0 ? mfccStdFromColumn : std;
   const embedding = parseEmbeddingStored(row.embedding);
-  const discogsGenres = safeJsonParse<{ genre: string; style: string; confidence: number }[]>(
-    row.discogsGenres,
+  const instruments = safeJsonParse<{ instrument: string; confidence: number }[]>(
+    row.instruments,
     [],
   );
-  const discogsInstruments = safeJsonParse<{ instrument: string; confidence: number }[]>(
-    row.discogsInstruments,
-    [],
-  );
-  const discogsTags = safeJsonParse<{ tag: string; confidence: number }[]>(row.discogsTags, []);
+  const tags = safeJsonParse<{ tag: string; confidence: number }[]>(row.tags, []);
+  const warnings = safeJsonParse<
+    { model: string; reason: 'disabled' | 'failed' | 'empty'; detail: string | null }[]
+  >(row.warnings, []);
   return {
-    spectralFeatures: {
-      spectralCentroid: toAggregationStatistics(row.spectralCentroid),
-      spectralRolloff: toAggregationStatistics(row.spectralRolloff),
-      spectralSpread: toAggregationStatistics(row.spectralSpread),
-      spectralBandwith: toAggregationStatistics(row.spectralBandwith),
-      spectralFlatness: toAggregationStatistics(row.spectralFlatness),
-      spectralContrast: toAggregationStatistics(row.spectralContrast),
-      zeroCrossingRate: toAggregationStatistics(row.zeroCrossingRate),
-      rms: toAggregationStatistics(row.rms),
-      mfcc: coefficients,
-      ...(mfccStd.length > 0 ? { mfccStd } : {}),
-      ...(embedding.length > 0 ? { embedding } : {}),
-      onsetDensity: row.onsetDensity,
-      dynamicRange: row.dynamicRange,
-      ...(row.discogsDanceability != null ? { discogsDanceability: row.discogsDanceability } : {}),
-      ...(row.discogsMoodAggressive != null
-        ? { discogsMoodAggressive: row.discogsMoodAggressive }
-        : {}),
-      ...(row.discogsMoodHappy != null ? { discogsMoodHappy: row.discogsMoodHappy } : {}),
-      ...(row.discogsMoodParty != null ? { discogsMoodParty: row.discogsMoodParty } : {}),
-      ...(row.discogsMoodRelaxed != null ? { discogsMoodRelaxed: row.discogsMoodRelaxed } : {}),
-      ...(row.discogsMoodSad != null ? { discogsMoodSad: row.discogsMoodSad } : {}),
-      ...(discogsGenres.length > 0 ? { discogsGenres } : {}),
-      ...(row.discogsVoice != null ? { discogsVoice: row.discogsVoice } : {}),
-      ...(discogsInstruments.length > 0 ? { discogsInstruments } : {}),
-      ...(discogsTags.length > 0 ? { discogsTags } : {}),
-      ...(row.discogsTempo != null ? { discogsTempo: row.discogsTempo } : {}),
-      ...(row.discogsTempoConfidence != null
-        ? { discogsTempoConfidence: row.discogsTempoConfidence }
-        : {}),
-    },
-    melodicFeatures: {
-      chroma: safeJsonParse<MelodicFeatures & { dominant_pitch: number }>(row.chroma, {
-        mean: [],
-        std: [],
-        max: [],
-        overallMean: 0,
-        overallStd: 0,
-        dominant_pitch: 0,
-      }),
-      tonnetz: safeJsonParse<MelodicFeatures>(row.tonnetz, {
-        mean: [],
-        std: [],
-        max: [],
-        overallMean: 0,
-        overallStd: 0,
-      }),
-    },
-    fingerprint: {
-      audioHash: row.audioHash,
-      fileHash: row.fileHash,
-    },
+    ...(embedding.length > 0 ? { embedding, embeddingDim: row.embeddingDim ?? undefined } : {}),
+    ...(instruments.length > 0 ? { instruments } : {}),
+    ...(tags.length > 0 ? { tags } : {}),
+    ...(warnings.length > 0 ? { warnings } : {}),
     musicalFeatures: {
-      calculationFeatures: {
-        rhythmStability: row.rhythmStability,
-        bassPresence: row.bassPresence,
-        tempoRegularity: row.tempoRegularity,
-        tempoAppropriateness: row.tempoAppropriateness,
-        energyFactor: row.energyFactor,
-        syncopation: row.syncopation,
-        modeFactor: row.modeFactor,
-        modeConfidence: row.modeConfidence,
-        modeWeight: row.modeWeight,
-        tempoFactor: row.tempoFactor,
-        brightnessFactor: row.brightnessFactor,
-        harmonicFactor: row.harmonicFactor,
-        spectralBalance: row.spectralBalance,
-        beatStrength: row.beatStrength,
-        energyComment: row.energyComment,
-        energyKeywords: row.energyKeywords.split(','),
-        energyByBand: safeJsonParse<number[]>(row.energyByBand, []),
-      },
-      camelotKey: row.camelotKey,
-      energy: row.energyFactor,
-      energyComment: row.energyComment,
-      energyKeywords: row.energyKeywords.split(','),
-      tempo: row.tempo,
-      key: row.key,
-      valence: row.valence,
-      valenceMood: row.valenceMood,
-      arousal: row.arousal,
-      arousalMood: row.arousalMood,
-      danceability: row.danceability,
-      danceabilityFeeling: row.danceabilityFeeling,
-      acousticness: row.acousticness,
-      instrumentalness: row.instrumentalness,
-      speechiness: row.speechiness,
-      liveness: row.liveness,
+      tempo: row.tempo ?? undefined,
+      tempoConfidence: row.tempoConfidence ?? undefined,
+      key: row.key ?? undefined,
+      camelotKey: row.camelotKey ?? undefined,
+      mode: row.mode ?? undefined,
+      valence: row.valence ?? undefined,
+      valenceMood: row.valenceMood ?? undefined,
+      arousal: row.arousal ?? undefined,
+      arousalMood: row.arousalMood ?? undefined,
+      danceability: row.danceability ?? undefined,
+      danceabilityFeeling: row.danceabilityFeeling ?? undefined,
+      instrumentalness: row.instrumentalness ?? undefined,
+      voice: row.voice ?? undefined,
+      moodHappy: row.moodHappy ?? undefined,
+      moodSad: row.moodSad ?? undefined,
+      moodRelaxed: row.moodRelaxed ?? undefined,
+      moodAggressive: row.moodAggressive ?? undefined,
+      moodParty: row.moodParty ?? undefined,
     },
   };
 };
@@ -400,6 +276,8 @@ export const toPrismaUpdate: ToPrismaUpdate = (data) => {
     isFavorite: stats?.isFavorite ?? undefined,
     analysisStatus: data.analysisStatus ?? undefined,
     analysisStartedAt: data.analysisStartedAt ?? undefined,
+    analysisCompletedAt: data.analysisCompletedAt ?? undefined,
+    analysisError: data.analysisError ?? undefined,
     duration: data.duration ?? undefined,
     format: data.format ?? undefined,
     fileCreatedAt: data.fileCreatedAt ?? undefined,

@@ -38,15 +38,18 @@ function makeValidAnalysisResult(
   return {
     status: 'success',
     processing_time: 0,
-    processing_mode: 'batch',
-    features: {} as any,
-    fingerprint: { audio_hash: '', file_hash: '', method: '' },
-    hierarchical_classification: {} as any,
-    album_art: {} as any,
-    file_info: {} as any,
-    audio_technical: {
+    processing_mode: 'simple',
+    schema_version: 2,
+    track: {
+      filename: 'track.mp3',
+      extension: 'mp3',
+      mime_type: 'audio/mpeg',
+      size_bytes: 1024,
+      size_mb: 0.001,
+    },
+    audio: {
       sample_rate: 44100,
-      duration_seconds: 120,
+      duration_s: 120,
       format: 'mp3',
       bitrate: 128,
       channels: 2,
@@ -54,15 +57,18 @@ function makeValidAnalysisResult(
       bit_depth: 16,
       subtype: 'mp3',
     },
-    id3_tags: { artist: 'Test Artist', title: 'Test Title' },
-    ai_metadata: {
-      artist: 'Test Artist',
-      title: 'Test Title',
-      genre: ['Pop'],
-      style: ['Indie'],
+    tags: { artist: 'Test Artist', title: 'Test Title' },
+    features: {},
+    labels: {},
+    classifications: {
+      genre_styles: [{ genre: 'Pop', style: 'Indie Pop', confidence: 0.7 }],
+      genres: [{ genre: 'Pop', confidence: 0.7 }],
+      styles: [{ style: 'Indie Pop', genre: 'Pop', confidence: 0.7 }],
+      instruments: [],
       tags: [],
-      audioFeatures: undefined,
     },
+    embedding: null,
+    warnings: [],
     ...overrides,
   };
 }
@@ -208,9 +214,14 @@ describe('ProcessSingleTrackAnalysisUseCase', () => {
           }),
         }),
       );
+
+      const updated = await musicTrackRepository.getOneById(track.id);
+      expect(updated.analysisInfo?.status).toBe(AudioFileAnalysisStatusEnum.COMPLETED);
+      expect(updated.title).toBe('Test Title');
+      expect(updated.artist).toBe('Test Artist');
     });
 
-    it('when analysis has no artist/title: removes track and still publishes track.complete', async () => {
+    it('when the ai-service reports a hard failure: marks track FAILED (not deleted) and still publishes track.complete', async () => {
       const library = makeLibrary({ id: 'lib-1' });
       await musicLibraryRepository.save(library);
       const track = await musicTrackRepository.upsertOne({
@@ -228,8 +239,8 @@ describe('ProcessSingleTrackAnalysisUseCase', () => {
       });
 
       const badAnalysis = makeValidAnalysisResult({
-        id3_tags: {},
-        ai_metadata: undefined,
+        status: 'error',
+        message: 'audio decode failed',
       });
       const batchInfo = {
         trackIndex: 0,
@@ -242,7 +253,9 @@ describe('ProcessSingleTrackAnalysisUseCase', () => {
       const result = await useCase.execute(track, badAnalysis, batchInfo);
 
       expect(result.isSuccess).toBe(false);
-      await expect(musicTrackRepository.getOneById(track.id)).rejects.toThrow();
+      const updated = await musicTrackRepository.getOneById(track.id);
+      expect(updated.analysisInfo?.status).toBe(AudioFileAnalysisStatusEnum.FAILED);
+      expect(updated.analysisInfo?.error).toBe('audio decode failed');
       expect(fakePublishEvent).toHaveBeenCalledTimes(1);
       expect(fakePublishEvent).toHaveBeenCalledWith(
         SESSION_ID,
@@ -251,6 +264,39 @@ describe('ProcessSingleTrackAnalysisUseCase', () => {
           data: expect.objectContaining({ fileName: 'no-meta.mp3' }),
         }),
       );
+    });
+
+    it('when a successful analysis has no ID3 artist/title: still processes and completes (no metadata deletion)', async () => {
+      const library = makeLibrary({ id: 'lib-1' });
+      await musicLibraryRepository.save(library);
+      const track = await musicTrackRepository.upsertOne({
+        filePath: '/music/untagged.mp3',
+        libraryId: LIBRARY_ID,
+        fileName: 'untagged.mp3',
+        fileSize: 1024,
+        analysisStatus: AudioFileAnalysisStatusEnum.PROCESSING,
+        analysisStartedAt: new Date(),
+        duration: 0,
+        format: 'mp3',
+        fileCreatedAt: new Date(),
+        analysisCompletedAt: new Date(),
+        analysisError: '',
+      });
+
+      const analysisResult = makeValidAnalysisResult({ tags: {} });
+      const batchInfo = {
+        trackIndex: 0,
+        sessionId: SESSION_ID,
+        batchIndex: 0,
+        totalTracks: 1,
+        libraryId: LIBRARY_ID,
+      };
+
+      const result = await useCase.execute(track, analysisResult, batchInfo);
+
+      expect(result.isSuccess).toBe(true);
+      const updated = await musicTrackRepository.getOneById(track.id);
+      expect(updated.analysisInfo?.status).toBe(AudioFileAnalysisStatusEnum.COMPLETED);
     });
 
     it('multiple batches: publishEvent receives correct totalTracks, batchIndex, and trackIndex for each track', async () => {
@@ -332,13 +378,13 @@ describe('ProcessSingleTrackAnalysisUseCase', () => {
       });
     });
 
-    it('happy path: when analysis has atmosphere tags, upserts ai atmosphere tags for track', async () => {
+    it('happy path: when analysis has genre/style classifications, upserts TrackGenre/TrackSubgenre for track', async () => {
       const library = makeLibrary({ id: 'lib-1' });
       await musicLibraryRepository.save(library);
       const track = await musicTrackRepository.upsertOne({
-        filePath: '/music/with-atmosphere.mp3',
+        filePath: '/music/with-genres.mp3',
         libraryId: LIBRARY_ID,
-        fileName: 'with-atmosphere.mp3',
+        fileName: 'with-genres.mp3',
         fileSize: 1024,
         analysisStatus: AudioFileAnalysisStatusEnum.PROCESSING,
         analysisStartedAt: new Date(),
@@ -350,15 +396,21 @@ describe('ProcessSingleTrackAnalysisUseCase', () => {
       });
 
       const analysisResult = makeValidAnalysisResult({
-        ai_metadata: {
-          artist: 'Test Artist',
-          title: 'Test Title',
-          genre: ['Pop'],
-          style: ['Indie'],
+        classifications: {
+          genre_styles: [
+            { genre: 'Electronic', style: 'Deep House', confidence: 0.62 },
+            { genre: 'Funk / Soul', style: 'Disco', confidence: 0.18 },
+          ],
+          genres: [
+            { genre: 'Electronic', confidence: 0.62 },
+            { genre: 'Funk / Soul', confidence: 0.18 },
+          ],
+          styles: [
+            { style: 'Deep House', genre: 'Electronic', confidence: 0.62 },
+            { style: 'Disco', genre: 'Funk / Soul', confidence: 0.18 },
+          ],
+          instruments: [],
           tags: [],
-          audioFeatures: {
-            atmosphere: ['Chill', 'Energetic'],
-          },
         },
       });
       const batchInfo = {
@@ -373,13 +425,23 @@ describe('ProcessSingleTrackAnalysisUseCase', () => {
 
       expect(result.isSuccess).toBe(true);
       const trackDbId = extractModelId(track.id).dbId;
-      const trackTags = await prisma.trackAiAtmosphereTag.findMany({
+      const trackGenres = await prisma.trackGenre.findMany({
         where: { trackId: trackDbId },
-        include: { aiAtmosphereTag: true },
+        include: { genre: true },
       });
-      expect(trackTags).toHaveLength(2);
-      const names = trackTags.map((tt) => tt.aiAtmosphereTag.name).sort();
-      expect(names).toEqual(['chill', 'energetic']);
+      const trackSubgenres = await prisma.trackSubgenre.findMany({
+        where: { trackId: trackDbId },
+        include: { subgenre: true },
+      });
+      expect(trackGenres.map((tg) => tg.genre.name).sort()).toEqual(
+        ['electronic', 'funk / soul'].sort(),
+      );
+      expect(trackSubgenres.map((ts) => ts.subgenre.name).sort()).toEqual(
+        ['deep house', 'disco'].sort(),
+      );
+      const deepHouse = trackSubgenres.find((ts) => ts.subgenre.name === 'deep house');
+      const electronicGenre = trackGenres.find((tg) => tg.genre.name === 'electronic');
+      expect(deepHouse?.subgenre.genreId).toBe(electronicGenre?.genreId);
     });
   });
 });
