@@ -18,6 +18,12 @@ export interface QueueConfig {
       };
     };
     audioScan: {
+      /**
+       * Documentation only: actual worker concurrency is read from
+       * AUDIO_SCAN_CONCURRENCY directly in audio-scan-scheduler-consumer.adapter.ts
+       * (the @Processor decorator is evaluated at class-definition time, before
+       * ConfigService is available). This value is never wired to the worker.
+       */
       concurrency: number;
       attempts: number;
       backoff: {
@@ -87,7 +93,8 @@ export default registerAs(
         },
       },
       audioScan: {
-        concurrency: parseInt(process.env.AUDIO_SCAN_CONCURRENCY || '5', 10),
+        // Kept in sync with the real default in audio-scan-scheduler-consumer.adapter.ts.
+        concurrency: parseInt(process.env.AUDIO_SCAN_CONCURRENCY || '3', 10),
         attempts: parseInt(process.env.AUDIO_SCAN_ATTEMPTS || '1', 10),
         backoff: {
           type: 'exponential',

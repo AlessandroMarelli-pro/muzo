@@ -12,7 +12,9 @@ import { ProcessSingleTrackAnalysisUseCase } from 'src/application/use-cases/job
 import { SyncTrackToElasticSearchUseCase } from 'src/application/use-cases/recommendation/SyncTrackToElasticSearch';
 import { als } from 'src/kernel/types/context';
 
-@Processor('audio-scan')
+const AUDIO_SCAN_CONCURRENCY = parseInt(process.env.AUDIO_SCAN_CONCURRENCY || '3', 10);
+
+@Processor('audio-scan', { concurrency: AUDIO_SCAN_CONCURRENCY })
 export class AudioScanSchedulerConsumerAdapter
   extends WorkerHost
   implements IAudioScanSchedulerConsumer

@@ -32,10 +32,22 @@ DEPLOY_ARGS=(
   --custom-image "$IMAGE"
   --health-route /api/v1/health
   --port 4000
-  --min-replica 0
+  # min-replica 1 (not 0): the backend runs the audio-scan queue at
+  # AUDIO_SCAN_CONCURRENCY=4, so a scan fires 4 concurrent batch requests. From
+  # a cold scale-to-zero state the whole burst would queue behind one
+  # cold-starting replica (tens of seconds). Keeping 1 warm absorbs the first
+  # requests immediately; HF autoscales up to max-replica for the rest.
+  --min-replica 1
   --max-replica 4
   --scale-to-zero-timeout 15
+  # Scale on queued (pending) requests rather than hardware usage -- batch
+  # analysis is bursty and a replica looks busy well before CPU saturates.
+  --scaling-metric pendingRequests
+  --scaling-threshold 2
   --env ENABLE_SIMPLE_ANALYSIS=true
+  # gunicorn worker processes per replica (see ai-service/gunicorn.conf.py).
+  # 2 on intel-spr x4 (8 vCPU / 16 GB); each worker loads its own model copy.
+  --env WEB_CONCURRENCY=2
   --type authenticated
 )
 

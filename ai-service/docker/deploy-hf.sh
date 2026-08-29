@@ -22,8 +22,19 @@
 #
 # Endpoint config (accelerator, instance size, env vars, scale-to-zero, etc.)
 # is set once at creation via `hf endpoints deploy` and isn't repeated here --
-# see the deploy command in git history (or `hf endpoints describe
-# muzo-ai-service-cpu`) if you need to recreate the endpoint from scratch.
+# see create-hf-endpoint.sh (or `hf endpoints describe muzo-ai-service-cpu`) if
+# you need to recreate the endpoint from scratch.
+#
+# Changing an EXISTING endpoint's config:
+#   * replica / scaling knobs, no redeploy needed:
+#       hf endpoints update muzo-ai-service-cpu \
+#         --min-replica 1 --max-replica 4 \
+#         --scaling-metric pendingRequests --scaling-threshold 2
+#   * env vars (e.g. WEB_CONCURRENCY for gunicorn worker count) can't be set via
+#     `hf endpoints update` -- delete + re-run create-hf-endpoint.sh, or set the
+#     var in the Docker image / gunicorn.conf.py default instead.
+#   The gunicorn switch itself (this image's CMD) ships with a normal image
+#   redeploy below -- no endpoint config change required.
 
 set -euo pipefail
 

@@ -174,4 +174,9 @@ RUN grep -v '^essentia-tensorflow' requirements.txt > requirements.docker.txt &&
 COPY . .
 
 EXPOSE 4000
-CMD ["python3.11", "app.py"]
+# Run under gunicorn (multiple worker processes) rather than `python app.py`'s
+# single-threaded Werkzeug dev server, so one HF endpoint replica can serve
+# concurrent batch-analysis requests. Worker count / timeout knobs live in
+# gunicorn.conf.py (WEB_CONCURRENCY env). `python3.11 app.py` still works for
+# local dev.
+CMD ["python3.11", "-m", "gunicorn", "-c", "gunicorn.conf.py", "wsgi:app"]

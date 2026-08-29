@@ -218,4 +218,7 @@ RUN grep -v '^essentia-tensorflow' requirements.txt > requirements.docker.txt &&
 COPY . .
 
 EXPOSE 4000
-CMD ["python3.11", "app.py"]
+# See essentia-cpu.Dockerfile for the rationale. Note: on GPU, raising
+# WEB_CONCURRENCY means multiple processes sharing one GPU -- size it against
+# GPU memory, not just host RAM.
+CMD ["python3.11", "-m", "gunicorn", "-c", "gunicorn.conf.py", "wsgi:app"]

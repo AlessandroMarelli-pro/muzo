@@ -6,6 +6,12 @@ Flask>=3.0.0
 Flask-CORS>=4.0.0
 Flask-RESTful>=0.3.10
 
+# Production WSGI server. The Werkzeug dev server behind `python app.py` handles
+# one request at a time, so a single HF Inference Endpoint replica can't overlap
+# concurrent batch-analysis requests. gunicorn runs several worker *processes*
+# (sync worker class -- see gunicorn.conf.py for why not threads).
+gunicorn>=21.2.0
+
 # Audio processing and analysis
 librosa>=0.10.1
 soundfile>=0.12.1
