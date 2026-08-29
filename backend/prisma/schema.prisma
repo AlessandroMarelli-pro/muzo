@@ -101,8 +101,6 @@ model MusicTrack {
   analysisStartedAt     DateTime?
   analysisCompletedAt   DateTime?
   analysisError         String?
-  hasMusicbrainz        Boolean?
-  hasDiscogs            Boolean?
 
   // Timestamps
   createdAt   DateTime @default(now())
@@ -110,14 +108,12 @@ model MusicTrack {
   updatedAt   DateTime? @updatedAt
   updatedById  String?
 
-  
+
   // Relations
   libraryId             String
   library               MusicLibrary @relation(fields: [libraryId], references: [id], onDelete: Cascade)
   audioFingerprint      AudioFingerprint?
 
-  editorSessions        IntelligentEditorSession[]
-  playbackSessions      PlaybackSession[]
   playlistTracks        PlaylistTrack[]
   imageSearches         ImageSearch[]
   trackGenres           TrackGenre[]
@@ -199,54 +195,6 @@ model AudioFingerprint {
 }
 
 
-
-model IntelligentEditorSession {
-  id                    String   @id @default(uuid())
-  trackId               String
-  userId                String?  // For V2 multi-user support
-  sessionStatus         SessionStatus @default(ACTIVE)
-  suggestions           String   // JSON object as string
-  userActions           String   // JSON array as string
-  confidenceThreshold   Float?
-  sessionDuration       Int?     // in seconds
-  
-  // Timestamps
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
-  
-  // Relations
-  track                 MusicTrack @relation(fields: [trackId], references: [id], onDelete: Cascade)
-  
-  // Indexes for query performance
-  @@index([trackId])
-  @@index([sessionStatus])
-  @@map("intelligent_editor_sessions")
-}
-
-model PlaybackSession {
-  id                    String   @id @default(uuid())
-  trackId               String
-  userId                String?  // For V2 multi-user support
-  sessionType           PlaybackType @default(MANUAL)
-  startTime             DateTime
-  endTime               DateTime?
-  duration              Int?     // in seconds
-  volume                Float?   // 0-1
-  quality               String?  // audio quality setting
-  
-  // Timestamps
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
-  
-  // Relations
-  track                 MusicTrack @relation(fields: [trackId], references: [id], onDelete: Cascade)
-  
-  // Indexes for query performance
-  @@index([trackId])
-  @@index([startTime])
-  @@index([sessionType])
-  @@map("playback_sessions")
-}
 
 model UserPreferences {
   id                    String   @id @default(uuid())
@@ -534,19 +482,17 @@ model HiddenMusicTrack {
   analysisStartedAt     DateTime?
   analysisCompletedAt   DateTime?
   analysisError         String?
-  hasMusicbrainz        Boolean?
-  hasDiscogs            Boolean?
 
   // Timestamps
   createdAt   DateTime @default(now())
   createdById   String @default("userId")
   updatedAt   DateTime? @updatedAt
   updatedById  String?
-  
+
   // Relations
   libraryId             String
   library               MusicLibrary @relation(fields: [libraryId], references: [id], onDelete: Cascade)
-  
+
   // Indexes for query performance
   @@index([libraryId])
   @@index([analysisStatus])
@@ -598,19 +544,6 @@ enum AnalysisStatus {
   PROCESSING
   COMPLETED
   FAILED
-}
-
-enum SessionStatus {
-  ACTIVE
-  COMPLETED
-  CANCELLED
-}
-
-enum PlaybackType {
-  MANUAL
-  AUTO_PLAY
-  PLAYLIST
-  RADIO
 }
 
 enum RepeatMode {

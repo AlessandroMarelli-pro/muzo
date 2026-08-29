@@ -91,8 +91,6 @@ export const toPrisma: ToPrisma = (domainModel) => {
     analysisStartedAt: null,
     analysisCompletedAt: null,
     analysisError: null,
-    hasMusicbrainz: false,
-    hasDiscogs: false,
     libraryId: extractModelId(domainModel.libraryId).dbId,
   };
 };

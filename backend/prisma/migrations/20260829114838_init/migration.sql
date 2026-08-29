@@ -68,8 +68,6 @@ CREATE TABLE "music_tracks" (
     "analysisStartedAt" DATETIME,
     "analysisCompletedAt" DATETIME,
     "analysisError" TEXT,
-    "hasMusicbrainz" BOOLEAN,
-    "hasDiscogs" BOOLEAN,
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "createdById" TEXT NOT NULL DEFAULT 'userId',
     "updatedAt" DATETIME,
@@ -111,37 +109,6 @@ CREATE TABLE "audio_fingerprints" (
     "updatedAt" DATETIME,
     "updatedById" TEXT,
     CONSTRAINT "audio_fingerprints_trackId_fkey" FOREIGN KEY ("trackId") REFERENCES "music_tracks" ("id") ON DELETE CASCADE ON UPDATE CASCADE
-);
-
--- CreateTable
-CREATE TABLE "intelligent_editor_sessions" (
-    "id" TEXT NOT NULL PRIMARY KEY,
-    "trackId" TEXT NOT NULL,
-    "userId" TEXT,
-    "sessionStatus" TEXT NOT NULL DEFAULT 'ACTIVE',
-    "suggestions" TEXT NOT NULL,
-    "userActions" TEXT NOT NULL,
-    "confidenceThreshold" REAL,
-    "sessionDuration" INTEGER,
-    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" DATETIME NOT NULL,
-    CONSTRAINT "intelligent_editor_sessions_trackId_fkey" FOREIGN KEY ("trackId") REFERENCES "music_tracks" ("id") ON DELETE CASCADE ON UPDATE CASCADE
-);
-
--- CreateTable
-CREATE TABLE "playback_sessions" (
-    "id" TEXT NOT NULL PRIMARY KEY,
-    "trackId" TEXT NOT NULL,
-    "userId" TEXT,
-    "sessionType" TEXT NOT NULL DEFAULT 'MANUAL',
-    "startTime" DATETIME NOT NULL,
-    "endTime" DATETIME,
-    "duration" INTEGER,
-    "volume" REAL,
-    "quality" TEXT,
-    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" DATETIME NOT NULL,
-    CONSTRAINT "playback_sessions_trackId_fkey" FOREIGN KEY ("trackId") REFERENCES "music_tracks" ("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 -- CreateTable
@@ -346,8 +313,6 @@ CREATE TABLE "hidden_music_tracks" (
     "analysisStartedAt" DATETIME,
     "analysisCompletedAt" DATETIME,
     "analysisError" TEXT,
-    "hasMusicbrainz" BOOLEAN,
-    "hasDiscogs" BOOLEAN,
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "createdById" TEXT NOT NULL DEFAULT 'userId',
     "updatedAt" DATETIME,
@@ -524,21 +489,6 @@ CREATE INDEX "audio_fingerprints_arousal_idx" ON "audio_fingerprints"("arousal")
 
 -- CreateIndex
 CREATE INDEX "audio_fingerprints_instrumentalness_idx" ON "audio_fingerprints"("instrumentalness");
-
--- CreateIndex
-CREATE INDEX "intelligent_editor_sessions_trackId_idx" ON "intelligent_editor_sessions"("trackId");
-
--- CreateIndex
-CREATE INDEX "intelligent_editor_sessions_sessionStatus_idx" ON "intelligent_editor_sessions"("sessionStatus");
-
--- CreateIndex
-CREATE INDEX "playback_sessions_trackId_idx" ON "playback_sessions"("trackId");
-
--- CreateIndex
-CREATE INDEX "playback_sessions_startTime_idx" ON "playback_sessions"("startTime");
-
--- CreateIndex
-CREATE INDEX "playback_sessions_sessionType_idx" ON "playback_sessions"("sessionType");
 
 -- CreateIndex
 CREATE INDEX "playlist_tracks_playlistId_idx" ON "playlist_tracks"("playlistId");

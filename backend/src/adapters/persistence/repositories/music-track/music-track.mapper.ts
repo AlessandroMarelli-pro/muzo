@@ -227,8 +227,6 @@ export const toPrisma: ToPrisma = (domainModel) => {
     analysisStartedAt: domainModel.analysisInfo?.startedAt ?? null,
     analysisCompletedAt: domainModel.analysisInfo?.completedAt ?? null,
     analysisError: domainModel.analysisInfo?.error ?? null,
-    hasMusicbrainz: false,
-    hasDiscogs: false,
     libraryId: extractModelId(domainModel.libraryId).dbId,
     filePath: domainModel.fileInfo?.filePath,
     hqAudioPath: domainModel.hqAudioPath ?? null,
