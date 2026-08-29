@@ -65,29 +65,31 @@ class TestSimpleAnalysisAPI:
         assert data.get("status") == "success", (
             f"Expected success status, got: {data.get('status')}"
         )
-        assert data["file_info"]["filename"] == filename, "Filename should match"
+        assert data["track"]["filename"] == filename, "Filename should match"
 
         assert data.get("processing_mode") == "simple", (
             "Should use simple processing mode"
         )
+        assert "schema_version" in data
 
-        # Verify required fields are present. fingerprint was retired (dead code,
-        # never read by anything downstream -- see the ai-service cleanup plan).
-        required_fields = [
-            "features",
-            "file_info",
-            "audio_technical",
-            "id3_tags",
-            "discogs_classifiers",
-            "discogs_tempo",
-            "discogs_deam",
-            "discogs_skey",
-        ]
+        # Verify required top-level sections of the generic feature envelope are
+        # present. The old flat file_info/audio_technical/id3_tags/discogs_* keys
+        # and the fingerprint dict were retired -- see the ai-service response
+        # redesign plan.
+        required_fields = ["features", "labels", "classifications", "track", "audio", "tags"]
         for field in required_fields:
             assert field in data, f"Missing required field: {field}"
             assert isinstance(data[field], dict), (
                 f"Field {field} should be a dictionary"
             )
+        assert isinstance(data["warnings"], list)
+
+        # Each populated `features` entry follows the {value, confidence, source}
+        # shape -- no bare numbers/strings at the top level anymore.
+        for name, entry in data["features"].items():
+            assert set(entry.keys()) == {"value", "confidence", "source"}, name
+            assert entry["value"] is not None, name
+
         # has_image=true tells the endpoint the client already has album art, so
         # it skips fetching and never sets this key at all (see simple_analysis.py).
         assert "album_art" not in data, (
@@ -144,18 +146,21 @@ class TestSimpleAnalysisAPI:
             assert data.get("status") == "success", (
                 f"Expected success status, got: {data.get('status')}"
             )
-            assert data["file_info"]["filename"] == test_audio_file["filename"], (
+            assert data["track"]["filename"] == test_audio_file["filename"], (
                 "Filename should match"
             )
 
             features = data["features"]
-            musical_features = features["musical_features"]
+            labels = data["labels"]
 
-            if (
-                abs(musical_features["tempo"] - test_audio_file["tempo"]) < 3
-                or abs(musical_features["tempo"] / 2 - test_audio_file["tempo"]) < 3
-            ):
-                bpm_ok_count += 1
+            tempo_entry = features.get("tempo")
+            if tempo_entry is not None:
+                tempo = tempo_entry["value"]
+                if (
+                    abs(tempo - test_audio_file["tempo"]) < 3
+                    or abs(tempo / 2 - test_audio_file["tempo"]) < 3
+                ):
+                    bpm_ok_count += 1
 
             # valence_mood/arousal_mood/danceability_feeling are present but no
             # longer asserted for exact ground-truth match: the fixture's
@@ -164,11 +169,10 @@ class TestSimpleAnalysisAPI:
             # source these from a materially different model than what the
             # fixture was originally captured against -- same reasoning as
             # test_key_detection.py's loose accuracy bound after the S-KEY
-            # switch. danceability_calculation/beat_strength no longer exist
-            # (retired along with DanceabilityAnalyzer).
-            assert "valence_mood" in musical_features
-            assert "arousal_mood" in musical_features
-            assert "danceability_feeling" in musical_features
+            # switch.
+            assert "valence_mood" in labels
+            assert "arousal_mood" in labels
+            assert "danceability_feeling" in labels
         assert bpm_ok_count / len(test_audio_files) > 0.9, (
             "More than 90% of BPMs should be correct"
         )
@@ -181,7 +185,6 @@ class TestSimpleAnalysisAPI:
                 f"Test audio file not found: {test_audio_file['filename']}"
             )
         # Prepare the request
-        bpm_ok_count = 0
         for test_audio_file in test_low_danceability_files:
             with open(test_audio_file["filename"], "rb") as audio_file:
                 response = client.post(
@@ -199,10 +202,9 @@ class TestSimpleAnalysisAPI:
             assert data.get("status") == "success", (
                 f"Expected success status, got: {data.get('status')}"
             )
-            assert data["file_info"]["filename"] == test_audio_file["filename"], (
+            assert data["track"]["filename"] == test_audio_file["filename"], (
                 "Filename should match"
             )
 
             features = data["features"]
-            musical_features = features["musical_features"]
-            print(musical_features)
+            print(features)

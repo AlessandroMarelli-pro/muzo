@@ -16,6 +16,11 @@ from loguru import logger
 if TYPE_CHECKING:
     from src.utils.scan_progress_publisher import ScanProgressPublisher
 
+from src.services.analysis_response import (
+    AnalysisResponseBuilder,
+    build_classifications,
+    feature,
+)
 from src.services.base_metadata_extractor import create_metadata_extractor
 from src.services.features.deam_extractor import DeamExtractor
 from src.services.features.discogs_classifiers_extractor import (
@@ -141,8 +146,6 @@ class SimpleAnalysisService:
         discogs_tempo: dict,
         discogs_deam: dict,
         discogs_skey: dict,
-        ai_bpm: float = None,
-        ai_key: str = None,
     ) -> Dict[str, Any]:
         return self.feature_extractor.extract_basic_features(
             file_path,
@@ -150,12 +153,10 @@ class SimpleAnalysisService:
             discogs_tempo,
             discogs_deam,
             discogs_skey,
-            ai_bpm,
-            ai_key,
         )
 
     @monitor_performance("discogs_embedding_generation")
-    def generate_discogs_embedding_from_file(self, y_full, sr: int) -> list:
+    def generate_discogs_embedding_from_file(self, y_full, sr: int) -> Tuple[list, Optional[dict]]:
         """
         Extract the discogs-effnet embedding from the FULL track (not the
         trimmed harmonic/BPM/spectral analysis window). Essentia's own docs
@@ -170,6 +171,11 @@ class SimpleAnalysisService:
                 whole track (embedding, tempo, mood, key) -- avoids re-decoding
                 the same file from disk multiple times per analysis.
             sr: Native sample rate of y_full.
+
+        Returns:
+            (embedding, warning) -- warning is None on success, else
+            {"model": "discogs_embedding", "reason": "empty"|"failed", "detail": ...}.
+            This model has no ENABLED gate, so "disabled" never occurs here.
         """
         try:
             duration_s = len(y_full) / sr if sr else 0
@@ -179,33 +185,46 @@ class SimpleAnalysisService:
                     f"Discogs embedding: len={len(embedding)}, "
                     f"analyzed {duration_s:.1f}s of full track"
                 )
-            else:
-                logger.warning(
-                    f"Discogs embedding extraction returned empty "
-                    f"(track duration {duration_s:.1f}s)"
-                )
-            return embedding
+                return embedding, None
+            logger.warning(
+                f"Discogs embedding extraction returned empty "
+                f"(track duration {duration_s:.1f}s)"
+            )
+            return [], {"model": "discogs_embedding", "reason": "empty", "detail": None}
         except Exception as e:
             logger.error(f"Failed to extract discogs embedding: {e}")
-            return []
+            return [], {"model": "discogs_embedding", "reason": "failed", "detail": str(e)}
 
     @monitor_performance("discogs_classifiers_generation")
-    def generate_discogs_classifiers(self, embedding: list) -> dict:
+    def generate_discogs_classifiers(self, embedding: list) -> Tuple[dict, Optional[dict]]:
         """
         Run the discogs-effnet classifier heads (danceability, 5 moods,
         genre_discogs400) on an already-computed embedding. Gated by
-        DISCOGS_CLASSIFIERS_ENABLED; returns {} when disabled or the embedding is empty.
+        DISCOGS_CLASSIFIERS_ENABLED.
+
+        Returns:
+            (result, warning) -- {} result when disabled, no embedding, or the
+            extractor produced nothing; warning names which of those it was.
         """
         if not DISCOGS_CLASSIFIERS_ENABLED:
             logger.debug(
                 "Discogs classifiers skipped: DISCOGS_CLASSIFIERS_ENABLED is false"
             )
-            return {}
+            return {}, {"model": "discogs_classifiers", "reason": "disabled", "detail": None}
         if not embedding:
             logger.warning("Discogs classifiers skipped: no embedding available")
-            return {}
+            return {}, {
+                "model": "discogs_classifiers",
+                "reason": "empty",
+                "detail": "no embedding available",
+            }
 
-        result = self.classifiers_extractor.predict_all(embedding)
+        try:
+            result = self.classifiers_extractor.predict_all(embedding)
+        except Exception as e:
+            logger.error(f"Discogs classifiers extraction failed: {e}")
+            return {}, {"model": "discogs_classifiers", "reason": "failed", "detail": str(e)}
+
         if result:
             genres = result.get("genres") or []
             top_genre = (
@@ -222,24 +241,28 @@ class SimpleAnalysisService:
                 f"sad={result.get('mood_sad', 0):.2f} "
                 f"top_genre={top_genre} ({len(genres)} genres >10%)"
             )
-        else:
-            logger.warning("Discogs classifiers returned empty result")
-        return result
+            return result, None
+
+        logger.warning("Discogs classifiers returned empty result")
+        return {}, {"model": "discogs_classifiers", "reason": "empty", "detail": None}
 
     @monitor_performance("tempo_cnn_generation")
-    def generate_tempo_cnn(self, y_full, sr: int) -> dict:
+    def generate_tempo_cnn(self, y_full, sr: int) -> Tuple[dict, Optional[dict]]:
         """
         Estimate tempo via TempoCNN from the FULL track. TempoCNN needs its own
         11025 Hz rate (vs 16kHz for discogs-effnet/DEAM); TempoCnnExtractor
         resamples internally, so the same natively-loaded y_full/sr the caller
         passes to every generate_*() method works here too. Gated by
         DISCOGS_CLASSIFIERS_ENABLED (same flag as the discogs-effnet classifier
-        heads, for one comparison toggle). Returns {} when disabled or on any
-        failure.
+        heads, for one comparison toggle).
+
+        Returns:
+            (result, warning) -- {} result when disabled, failed, or empty;
+            warning names which.
         """
         if not DISCOGS_CLASSIFIERS_ENABLED:
             logger.debug("TempoCNN skipped: DISCOGS_CLASSIFIERS_ENABLED is false")
-            return {}
+            return {}, {"model": "tempo_cnn", "reason": "disabled", "detail": None}
         try:
             result = self.tempo_cnn_extractor.extract_from_audio(y_full, sr)
             if result:
@@ -247,15 +270,15 @@ class SimpleAnalysisService:
                     f"TempoCNN: tempo={result.get('tempo', 0):.1f} BPM "
                     f"confidence={result.get('confidence', 0):.2f}"
                 )
-            else:
-                logger.warning("TempoCNN returned empty result")
-            return result
+                return result, None
+            logger.warning("TempoCNN returned empty result")
+            return {}, {"model": "tempo_cnn", "reason": "empty", "detail": None}
         except Exception as e:
             logger.error(f"Failed TempoCNN extraction: {e}")
-            return {}
+            return {}, {"model": "tempo_cnn", "reason": "failed", "detail": str(e)}
 
     @monitor_performance("deam_generation")
-    def generate_deam_mood(self, y_full, sr: int) -> dict:
+    def generate_deam_mood(self, y_full, sr: int) -> Tuple[dict, Optional[dict]]:
         """
         Estimate valence/arousal via the DEAM arousal-valence regression model
         from the FULL track. Unlike the discogs-effnet classifier heads, DEAM
@@ -263,13 +286,17 @@ class SimpleAnalysisService:
         resample beyond what DeamExtractor already does) -- see DeamExtractor's
         docstring for why this model over emoMusic/MuSe. Gated by
         DISCOGS_CLASSIFIERS_ENABLED (same flag as the rest of this pipeline's
-        model-driven fields). Returns {} when disabled or on any failure.
+        model-driven fields).
+
+        Returns:
+            (result, warning) -- {} result when disabled, failed, or empty;
+            warning names which.
         """
         if not DISCOGS_CLASSIFIERS_ENABLED:
             logger.debug(
                 "DEAM mood extraction skipped: DISCOGS_CLASSIFIERS_ENABLED is false"
             )
-            return {}
+            return {}, {"model": "deam", "reason": "disabled", "detail": None}
         try:
             result = self.deam_extractor.extract_from_audio(y_full, sr)
             if result:
@@ -277,38 +304,147 @@ class SimpleAnalysisService:
                     f"DEAM mood: valence={result.get('valence', 0):.2f} "
                     f"arousal={result.get('arousal', 0):.2f}"
                 )
-            else:
-                logger.warning("DEAM mood extraction returned empty result")
-            return result
+                return result, None
+            logger.warning("DEAM mood extraction returned empty result")
+            return {}, {"model": "deam", "reason": "empty", "detail": None}
         except Exception as e:
             logger.error(f"Failed DEAM mood extraction: {e}")
-            return {}
+            return {}, {"model": "deam", "reason": "failed", "detail": str(e)}
 
     @monitor_performance("skey_generation")
-    def generate_skey(self, y_full, sr: int) -> dict:
+    def generate_skey(self, y_full, sr: int) -> Tuple[dict, Optional[dict]]:
         """
         Estimate musical key via Deezer's S-KEY model from the FULL track,
         replacing the retired hand-computed KeyFinder/tonnetz-mode heuristic.
         Gated by DISCOGS_CLASSIFIERS_ENABLED (same flag as the rest of this
         pipeline's model-driven fields, despite S-KEY not actually being part of
         the discogs-effnet family -- one comparison toggle for all model-sourced
-        fields). Returns {} when disabled or on any failure.
+        fields).
+
+        Returns:
+            (result, warning) -- {} result when disabled, failed, or empty;
+            warning names which.
         """
         if not DISCOGS_CLASSIFIERS_ENABLED:
             logger.debug(
                 "S-KEY extraction skipped: DISCOGS_CLASSIFIERS_ENABLED is false"
             )
-            return {}
+            return {}, {"model": "skey", "reason": "disabled", "detail": None}
         try:
             result = self.skey_extractor.extract_from_audio(y_full, sr)
             if result:
                 logger.info(f"S-KEY: key={result.get('key')}")
-            else:
-                logger.warning("S-KEY extraction returned empty result")
-            return result
+                return result, None
+            logger.warning("S-KEY extraction returned empty result")
+            return {}, {"model": "skey", "reason": "empty", "detail": None}
         except Exception as e:
             logger.error(f"Failed S-KEY extraction: {e}")
-            return {}
+            return {}, {"model": "skey", "reason": "failed", "detail": str(e)}
+
+    def _run_model_pipeline(
+        self, y_full, sr: int, builder: AnalysisResponseBuilder
+    ) -> Dict[str, Any]:
+        """
+        Run every model extractor on one already-decoded full track, recording a
+        warning on `builder` for each that produced nothing, and assemble the
+        `features`/`labels`/`classifications`/`embedding` sections shared by
+        analyze_audio() and _analyze_single_file_in_batch().
+
+        Kept as one shared helper specifically so the two call sites can't drift
+        the way the old flat-dict versions did (different message strings, an
+        extra top-level "filename" key in the batch path, etc).
+        """
+        embedding, warn = self.generate_discogs_embedding_from_file(y_full, sr)
+        if warn:
+            builder.add_warning(**warn)
+
+        discogs_classifiers, warn = self.generate_discogs_classifiers(embedding)
+        if warn:
+            builder.add_warning(**warn)
+
+        discogs_tempo, warn = self.generate_tempo_cnn(y_full, sr)
+        if warn:
+            builder.add_warning(**warn)
+
+        discogs_deam, warn = self.generate_deam_mood(y_full, sr)
+        if warn:
+            builder.add_warning(**warn)
+
+        discogs_skey, warn = self.generate_skey(y_full, sr)
+        if warn:
+            builder.add_warning(**warn)
+
+        basic_features = self.extract_basic_features(
+            "",
+            discogs_classifiers,
+            discogs_tempo,
+            discogs_deam,
+            discogs_skey,
+        )
+        if basic_features is None:
+            # extract_basic_features failed unexpectedly (see its own try/except) --
+            # degrade to empty musical features/labels rather than raising, so one
+            # derivation failure doesn't collapse the whole request into the error
+            # payload (the bug the old `**basic_features` splat had).
+            builder.add_warning(
+                "musical_features", "failed", "feature derivation raised"
+            )
+            musical, labels = {}, {}
+        else:
+            musical, labels = basic_features["musical"], basic_features["labels"]
+
+        features = {
+            "tempo": feature(musical.get("tempo"), "tempo_cnn", musical.get("tempo_confidence")),
+            "key": feature(musical.get("key"), "skey"),
+            "camelot_key": feature(musical.get("camelot_key"), "skey"),
+            "mode": feature(musical.get("mode"), "skey"),
+            "valence": feature(musical.get("valence"), "deam"),
+            "arousal": feature(musical.get("arousal"), "deam"),
+            "danceability": feature(musical.get("danceability"), "discogs_effnet"),
+            "instrumentalness": feature(
+                musical.get("instrumentalness"), "discogs_effnet"
+            ),
+            "mood_happy": feature(
+                discogs_classifiers.get("mood_happy"), "discogs_effnet"
+            ),
+            "mood_sad": feature(discogs_classifiers.get("mood_sad"), "discogs_effnet"),
+            "mood_relaxed": feature(
+                discogs_classifiers.get("mood_relaxed"), "discogs_effnet"
+            ),
+            "mood_aggressive": feature(
+                discogs_classifiers.get("mood_aggressive"), "discogs_effnet"
+            ),
+            "mood_party": feature(
+                discogs_classifiers.get("mood_party"), "discogs_effnet"
+            ),
+            "voice": feature(discogs_classifiers.get("voice"), "discogs_effnet"),
+        }
+        # Drop entries whose source model produced nothing -- `feature()` already
+        # returns None for those; strip the None values so `features` only lists
+        # what's actually present, consistent with `embedding` below.
+        features = {k: v for k, v in features.items() if v is not None}
+
+        response_labels = {
+            "valence_mood": labels.get("valence_mood"),
+            "arousal_mood": labels.get("arousal_mood"),
+            "danceability_feeling": labels.get("danceability_feeling"),
+        }
+        response_labels = {k: v for k, v in response_labels.items() if v is not None}
+
+        classifications = build_classifications(discogs_classifiers)
+
+        embedding_block = (
+            {"vector": embedding, "dim": len(embedding), "source": "discogs_effnet"}
+            if embedding
+            else None
+        )
+
+        return {
+            "features": features,
+            "labels": response_labels,
+            "classifications": classifications,
+            "embedding": embedding_block,
+        }
 
     @monitor_performance("simple_analysis_all")
     def analyze_audio(
@@ -349,12 +485,33 @@ class SimpleAnalysisService:
             elif skip_filename_cleaning:
                 logger.debug("Skipping filename cleaning (skip_filename_cleaning=True)")
 
+            builder = AnalysisResponseBuilder()
+
             # Extract all information
             file_metadata = self.extract_file_metadata(file_path)
+            track = file_metadata["file_info"]
+            track = {
+                "filename": track["filename"],
+                "extension": track["file_extension"],
+                "mime_type": track["mime_type"],
+                "size_bytes": track["file_size_bytes"],
+                "size_mb": track["file_size_mb"],
+            }
 
             technical_info = self.extract_audio_technical(
                 file_path
             )  # Use full file for duration
+            ti = technical_info["audio_technical"]
+            audio = {
+                "sample_rate": ti["sample_rate"],
+                "duration_s": ti["duration_seconds"],
+                "format": ti["format"],
+                "bitrate": ti["bitrate"],
+                "channels": ti["channels"],
+                "samples": ti["samples"],
+                "bit_depth": ti["bit_depth"],
+                "subtype": ti["subtype"],
+            }
 
             # Load the full track once and share it across every generate_*()
             # call below that needs the whole file (embedding, tempo, mood, key)
@@ -365,42 +522,27 @@ class SimpleAnalysisService:
                 file_path, sample_duration=None
             )
 
-            # Computed first: extract_basic_features now sources tempo/danceability/
-            # mood/instrumentalness from these instead of the retired hand-computed
-            # detectors/formulas.
-            embedding = self.generate_discogs_embedding_from_file(y_full, sr)
-            discogs_classifiers = self.generate_discogs_classifiers(embedding)
-            discogs_tempo = self.generate_tempo_cnn(y_full, sr)
-            discogs_deam = self.generate_deam_mood(y_full, sr)
-            discogs_skey = self.generate_skey(y_full, sr)
-            basic_features = self.extract_basic_features(
-                file_path,
-                discogs_classifiers,
-                discogs_tempo,
-                discogs_deam,
-                discogs_skey,
-            )
-            id3_tags = self.extract_id3_tags(file_path, original_filename)
+            pipeline = self._run_model_pipeline(y_full, sr, builder)
 
-            # Combine all results
-            analysis_result = {
-                "status": "success",
-                "message": "Simple audio analysis completed successfully",
-                "processing_time": round(time.time() - start_time, 3),
-                "processing_mode": "simple",
-                **file_metadata,
-                **technical_info,
-                **basic_features,
-                "embedding": embedding,
-                "discogs_classifiers": discogs_classifiers,
-                "discogs_tempo": discogs_tempo,
-                "discogs_deam": discogs_deam,
-                "discogs_skey": discogs_skey,
-                **id3_tags,
-            }
+            id3_tags = self.extract_id3_tags(file_path, original_filename)
+            tags = id3_tags["id3_tags"]
+
+            processing_time = round(time.time() - start_time, 3)
+            analysis_result = builder.build(
+                status="success",
+                message="Simple audio analysis completed successfully",
+                processing_time=processing_time,
+                track=track,
+                audio=audio,
+                tags=tags,
+                features=pipeline["features"],
+                labels=pipeline["labels"],
+                classifications=pipeline["classifications"],
+                embedding=pipeline["embedding"],
+            )
 
             logger.info(
-                f"Simple audio analysis completed in {analysis_result['processing_time']:.3f}s"
+                f"Simple audio analysis completed in {processing_time:.3f}s"
             )
 
             # Track analysis count and perform periodic garbage collection
@@ -415,11 +557,10 @@ class SimpleAnalysisService:
             logger.error(f"Simple audio analysis failed: {e}")
             gc.collect()
 
-            return {
-                "status": "error",
-                "message": f"Analysis failed: {str(e)}",
-                "processing_mode": "simple",
-            }
+            return AnalysisResponseBuilder().build_error(
+                message=f"Analysis failed: {str(e)}",
+                processing_time=round(time.time() - start_time, 3),
+            )
         finally:
             # Clean up converted WAV file if we created one
             if converted_wav_path and os.path.exists(converted_wav_path):
@@ -487,11 +628,32 @@ class SimpleAnalysisService:
                 converted_wav_path = self.convert_m4a_to_wav(file_path)
                 file_path = converted_wav_path
 
+            builder = AnalysisResponseBuilder()
+
             # Extract all information
             file_metadata = self.extract_file_metadata(file_path)
             file_metadata["file_info"]["filename"] = original_filename
+            fi = file_metadata["file_info"]
+            track = {
+                "filename": fi["filename"],
+                "extension": fi["file_extension"],
+                "mime_type": fi["mime_type"],
+                "size_bytes": fi["file_size_bytes"],
+                "size_mb": fi["file_size_mb"],
+            }
 
             technical_info = self.extract_audio_technical(file_path)
+            ti = technical_info["audio_technical"]
+            audio = {
+                "sample_rate": ti["sample_rate"],
+                "duration_s": ti["duration_seconds"],
+                "format": ti["format"],
+                "bitrate": ti["bitrate"],
+                "channels": ti["channels"],
+                "samples": ti["samples"],
+                "bit_depth": ti["bit_depth"],
+                "subtype": ti["subtype"],
+            }
 
             # Publish audio.analysis progress (25%)
             if progress_publisher and session_id:
@@ -513,23 +675,7 @@ class SimpleAnalysisService:
                 file_path, sample_duration=None
             )
 
-            # Computed first: extract_basic_features now sources tempo/danceability/
-            # mood/instrumentalness from these instead of the retired hand-computed
-            # detectors/formulas.
-            embedding = self.generate_discogs_embedding_from_file(y_full, sr)
-            discogs_classifiers = self.generate_discogs_classifiers(embedding)
-            discogs_tempo = self.generate_tempo_cnn(y_full, sr)
-            discogs_deam = self.generate_deam_mood(y_full, sr)
-            discogs_skey = self.generate_skey(y_full, sr)
-
-            # Extract features
-            basic_features = self.extract_basic_features(
-                file_path,
-                discogs_classifiers,
-                discogs_tempo,
-                discogs_deam,
-                discogs_skey,
-            )
+            pipeline = self._run_model_pipeline(y_full, sr, builder)
 
             # Publish audio.analysis progress (50%)
             if progress_publisher and session_id:
@@ -555,24 +701,21 @@ class SimpleAnalysisService:
 
             # Extract ID3 tags
             id3_tags = self.extract_id3_tags(original_filepath, original_filename)
+            tags = id3_tags["id3_tags"]
 
-            # Combine all results
-            file_result = {
-                "status": "success",
-                "message": "Audio analysis completed successfully",
-                "processing_time": round(time.time() - file_start_time, 3),
-                "processing_mode": "simple",
-                "filename": original_filename,
-                **file_metadata,
-                **technical_info,
-                **basic_features,
-                "embedding": embedding,
-                "discogs_classifiers": discogs_classifiers,
-                "discogs_tempo": discogs_tempo,
-                "discogs_deam": discogs_deam,
-                "discogs_skey": discogs_skey,
-                **id3_tags,
-            }
+            processing_time = round(time.time() - file_start_time, 3)
+            file_result = builder.build(
+                status="success",
+                message="Simple audio analysis completed successfully",
+                processing_time=processing_time,
+                track=track,
+                audio=audio,
+                tags=tags,
+                features=pipeline["features"],
+                labels=pipeline["labels"],
+                classifications=pipeline["classifications"],
+                embedding=pipeline["embedding"],
+            )
 
             # Publish audio.analysis progress (100% - complete)
             if progress_publisher and session_id:
@@ -587,7 +730,7 @@ class SimpleAnalysisService:
 
             logger.info(
                 f"✅ File {idx + 1}/{total_files} completed in "
-                f"{file_result['processing_time']:.3f}s"
+                f"{processing_time:.3f}s"
             )
 
             return file_result, True
@@ -598,13 +741,11 @@ class SimpleAnalysisService:
                 f"({original_filename}): {e}"
             )
             return (
-                {
-                    "status": "error",
-                    "message": f"Analysis failed: {str(e)}",
-                    "processing_mode": "simple",
-                    "filename": original_filename,
-                    "processing_time": round(time.time() - file_start_time, 3),
-                },
+                AnalysisResponseBuilder().build_error(
+                    message=f"Analysis failed: {str(e)}",
+                    processing_time=round(time.time() - file_start_time, 3),
+                    track={"filename": original_filename},
+                ),
                 False,
             )
 
@@ -759,12 +900,11 @@ class SimpleAnalysisService:
                         logger.error(
                             f"❌ Unexpected error analyzing file {idx + 1}/{total_files}: {e}"
                         )
-                        file_result = {
-                            "status": "error",
-                            "message": f"Analysis failed: {str(e)}",
-                            "processing_mode": "simple",
-                            "filename": file_items[idx][1],
-                        }
+                        file_result = AnalysisResponseBuilder().build_error(
+                            message=f"Analysis failed: {str(e)}",
+                            processing_time=0.0,
+                            track={"filename": file_items[idx][1]},
+                        )
                         ok = False
 
                     results[idx] = file_result

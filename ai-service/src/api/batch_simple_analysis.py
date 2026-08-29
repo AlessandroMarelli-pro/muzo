@@ -58,6 +58,7 @@ class BatchSimpleAnalysisResource(Resource):
 
             if not audio_files or len(audio_files) == 0:
                 return {
+                    "status": "error",
                     "error": "No audio files provided",
                     "message": "Please provide at least one audio file in the request",
                 }, 400
@@ -65,6 +66,7 @@ class BatchSimpleAnalysisResource(Resource):
             # Validate file count (reasonable limit)
             if len(audio_files) > 50:
                 return {
+                    "status": "error",
                     "error": "Too many files",
                     "message": "Maximum 50 files per batch request",
                 }, 400
@@ -73,12 +75,14 @@ class BatchSimpleAnalysisResource(Resource):
             for audio_file in audio_files:
                 if audio_file.filename == "":
                     return {
+                        "status": "error",
                         "error": "Empty filename",
                         "message": "All files must have valid filenames",
                     }, 400
 
                 if not self._is_valid_audio_file(audio_file.filename):
                     return {
+                        "status": "error",
                         "error": "Invalid file type",
                         "message": f"Invalid file type: {audio_file.filename}. "
                         "Please provide valid audio files (wav, mp3, flac, m4a, aac, ogg, opus)",
@@ -86,6 +90,7 @@ class BatchSimpleAnalysisResource(Resource):
 
                 if not self._validate_file_size(audio_file):
                     return {
+                        "status": "error",
                         "error": "File too large",
                         "message": f"File {audio_file.filename} exceeds 100MB limit",
                     }, 413
@@ -147,12 +152,9 @@ class BatchSimpleAnalysisResource(Resource):
                 for idx, file_result in enumerate(result.get("results", [])):
                     if file_result.get("status") == "success":
                         try:
-                            artist = file_result.get("id3_tags", {}).get(
-                                "artist"
-                            ) or file_result.get("ai_metadata", {}).get("artist")
-                            title = file_result.get("id3_tags", {}).get(
-                                "title"
-                            ) or file_result.get("ai_metadata", {}).get("title")
+                            tags = file_result.get("tags") or {}
+                            artist = tags.get("artist")
+                            title = tags.get("title")
                             if artist and title:
                                 # Submit album art fetching to thread pool
                                 album_art_future = (

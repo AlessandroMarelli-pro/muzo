@@ -1,20 +1,25 @@
 """
 Simple audio feature extractor for extracting musical features from audio.
 
-This service provides audio feature extraction including tempo, key, energy,
-and other musical characteristics using audioFlux for optimized performance.
+This service derives interpreted musical characteristics (valence/arousal mood,
+danceability feeling, tempo, key) from the discogs-effnet/DEAM/S-KEY/TempoCNN model
+outputs computed earlier in the same request. It never falls back to a neutral
+placeholder (0.5, 0.0, "Unknown") when a source model produced nothing -- a missing
+input yields a missing output (None), so callers can tell "the model said 0.5" from
+"the model didn't run".
 """
 
 import traceback
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
-import numpy as np
 from loguru import logger
 
 from src.services.features.key_detector import KeyDetector
 from src.utils.redis_cache import RedisCache
 
 # Compatibility shim for madmom
+import numpy as np
+
 try:
     # Restore deprecated numpy aliases for madmom compatibility
     if not hasattr(np, "float"):
@@ -31,8 +36,8 @@ from src.utils.performance_optimizer import monitor_performance
 
 class SimpleFeatureExtractor:
     """
-    Simple audio feature extractor that provides musical feature extraction
-    capabilities using audioFlux for optimized performance.
+    Simple audio feature extractor that derives interpreted musical features
+    (mood/danceability tier labels, tempo, key) from model outputs.
     """
 
     def __init__(self):
@@ -67,7 +72,13 @@ class SimpleFeatureExtractor:
     ]
 
     @staticmethod
-    def _label_from_tiers(value: float, tiers: list, below_label: str) -> str:
+    def _label_from_tiers(
+        value: Optional[float], tiers: list, below_label: str
+    ) -> Optional[str]:
+        """Same tier-ladder lookup as before, but returns None when value is None
+        instead of silently labelling a missing value as if it were the lowest tier."""
+        if value is None:
+            return None
         for threshold, label in tiers:
             if value >= threshold:
                 return label
@@ -78,7 +89,7 @@ class SimpleFeatureExtractor:
         self,
         discogs_classifiers: dict,
         discogs_deam: dict,
-        mode: str = "major",
+        mode: Optional[str],
     ) -> dict:
         """
         Derive musical characteristics (valence/arousal, danceability,
@@ -92,35 +103,43 @@ class SimpleFeatureExtractor:
                 mood_party, voice (all 0-1 or None)
             discogs_deam: Output of DeamExtractor.extract_from_audio -- valence/
                 arousal (both 0-1, rescaled from DEAM's native [1,9] range), or {}
-                on failure. Chosen over emoMusic/MuSe for best arousal correlation
-                (see DeamExtractor's docstring). Falls back to a neutral 0.5/0.5 if
-                empty rather than deriving from the mood classifiers, since DEAM is
-                a dedicated regression model for this exact task.
-            mode: "major"/"minor" from S-KEY's own key prediction (or from ai_key
-                when the LLM-provided key overrides it)
+                on failure/disabled
+            mode: "major"/"minor" from S-KEY's own key prediction, or None when
+                S-KEY produced nothing
 
         Returns:
-            Dictionary containing musical features
+            Dictionary of raw values (valence, arousal, danceability,
+            instrumentalness, mode) and their tier labels (valence_mood,
+            arousal_mood, danceability_feeling). Any entry is None when its source
+            model didn't produce a value -- no neutral placeholders.
         """
         try:
             discogs_classifiers = discogs_classifiers or {}
             discogs_deam = discogs_deam or {}
 
-            def _prob(key: str) -> float:
+            def _prob(key: str) -> Optional[float]:
                 value = discogs_classifiers.get(key)
-                return float(value) if value is not None else 0.5
+                return float(value) if value is not None else None
 
             voice = _prob("voice")
             danceable = _prob("danceable")
 
-            valence = float(discogs_deam.get("valence", 0.5))
-            valence = min(1.0, max(0.0, valence))
+            valence_raw = discogs_deam.get("valence")
+            valence = (
+                min(1.0, max(0.0, float(valence_raw)))
+                if valence_raw is not None
+                else None
+            )
             valence_mood = self._label_from_tiers(
                 valence, self._VALENCE_MOOD_TIERS, "very negative"
             )
 
-            arousal = float(discogs_deam.get("arousal", 0.5))
-            arousal = min(1.0, max(0.0, arousal))
+            arousal_raw = discogs_deam.get("arousal")
+            arousal = (
+                min(1.0, max(0.0, float(arousal_raw)))
+                if arousal_raw is not None
+                else None
+            )
             arousal_mood = self._label_from_tiers(
                 arousal, self._AROUSAL_MOOD_TIERS, "very calm"
             )
@@ -134,16 +153,20 @@ class SimpleFeatureExtractor:
             # analog to the old spectral-rolloff heuristic. acousticness/speechiness/
             # liveness have no discogs-effnet equivalent and are dropped outright (no
             # replacement computation, no placeholder) per explicit decision.
-            instrumentalness = 1.0 - voice
+            instrumentalness = 1.0 - voice if voice is not None else None
 
             return {
-                "valence": float(round(valence, 3)),
+                "valence": round(valence, 3) if valence is not None else None,
                 "valence_mood": valence_mood,
-                "arousal": float(round(arousal, 3)),
+                "arousal": round(arousal, 3) if arousal is not None else None,
                 "arousal_mood": arousal_mood,
-                "danceability": float(round(danceability, 3)),
+                "danceability": round(danceability, 3)
+                if danceability is not None
+                else None,
                 "danceability_feeling": danceability_feeling,
-                "instrumentalness": float(round(instrumentalness, 3)),
+                "instrumentalness": round(instrumentalness, 3)
+                if instrumentalness is not None
+                else None,
                 "mode": mode,
             }
 
@@ -151,13 +174,13 @@ class SimpleFeatureExtractor:
             traceback.print_exc()
             logger.error(f"Failed to extract musical features: {e}")
             return {
-                "valence": 0.5,
-                "valence_mood": "neutral",
-                "arousal": 0.5,
-                "arousal_mood": "neutral",
-                "danceability": 0.5,
-                "danceability_feeling": "neutral",
-                "instrumentalness": 0.5,
+                "valence": None,
+                "valence_mood": None,
+                "arousal": None,
+                "arousal_mood": None,
+                "danceability": None,
+                "danceability_feeling": None,
+                "instrumentalness": None,
                 "mode": mode,
             }
 
@@ -169,14 +192,13 @@ class SimpleFeatureExtractor:
         discogs_tempo: dict,
         discogs_deam: dict,
         discogs_skey: dict,
-        ai_bpm: float = None,
-        ai_key: str = None,
     ) -> Dict[str, Any]:
         """
-        Extract basic audio features.
+        Derive interpreted musical features from the model outputs computed
+        earlier in the same request.
 
         Args:
-            file_path: Path to audio file (for fallback)
+            file_path: Path to audio file (for log context only)
             discogs_classifiers: Output of DiscogsClassifiersExtractor.predict_all,
                 computed earlier in the same request -- feeds danceability/
                 instrumentalness (replaces DanceabilityAnalyzer/the
@@ -191,32 +213,32 @@ class SimpleFeatureExtractor:
                 the KeyFinder/tonnetz-mode heuristic)
 
         Returns:
-            Dictionary containing basic audio features
+            Dict with two top-level keys:
+              - "musical": raw values (tempo, key, camelot_key, valence, arousal,
+                danceability, instrumentalness, mode) -- each None when its source
+                model produced nothing. No neutral placeholders: a missing tempo is
+                None, never 0.0; a missing key is None, never "Unknown".
+              - "labels": interpreted tier labels (valence_mood, arousal_mood,
+                danceability_feeling) -- None when the value they describe is None.
+            Returns None on unexpected failure (caller is responsible for turning
+            that into a warning, not a crash -- see simple_analysis.py).
         """
         try:
-            tempo = float((discogs_tempo or {}).get("tempo") or 0.0)
-            if ai_bpm:
-                # The LLM-provided BPM silently overrides the detected value.
-                # If AI metadata is only intermittently available, the same
-                # file can report different tempos across runs with no
-                # visible reason -- log it so that's diagnosable instead of
-                # invisible.
-                logger.info(
-                    f"Overriding detected tempo {tempo} BPM with AI-provided "
-                    f"tempo {ai_bpm} BPM for {file_path}"
-                )
-                tempo = ai_bpm
+            discogs_tempo = discogs_tempo or {}
+            discogs_skey = discogs_skey or {}
+
+            tempo = discogs_tempo.get("tempo")
+            tempo = float(tempo) if tempo is not None else None
+            tempo_confidence = discogs_tempo.get("confidence")
 
             # S-KEY's key string (e.g. "C# minor") uses sharps-only naming, so
             # the camelot_wheel lookup (keyed on e.g. "C# MINOR") works unchanged.
-            key = (discogs_skey or {}).get("key") or "Unknown"
-            mode = (discogs_skey or {}).get("mode") or "major"
-            camelot_key = KeyDetector.camelot_wheel.get(key.upper(), "Unknown")
-            if ai_key:
-                key = ai_key
-                camelot_key = KeyDetector.camelot_wheel.get(key.upper(), "Unknown")
-                mode = "major" if "major" in key.lower() else "minor"
-            key = key.capitalize()
+            key = discogs_skey.get("key")
+            mode = discogs_skey.get("mode")
+            camelot_key = (
+                KeyDetector.camelot_wheel.get(key.upper()) if key else None
+            )
+            key = key.capitalize() if key else None
 
             musical_features = self._get_musical_features(
                 discogs_classifiers,
@@ -224,24 +246,20 @@ class SimpleFeatureExtractor:
                 mode,
             )
 
-            # Combine all features. spectral_features/rhythm_fingerprint/
-            # melodic_fingerprint (raw audioFlux MFCC/chroma/tonnetz/etc. output,
-            # with no discogs-effnet analog) and tempo_source/key (redundant with
-            # discogs_tempo/discogs_skey, which the caller already has) are no
-            # longer included in the response -- trimmed per explicit decision to
-            # shrink the /audio/analyze/simple response shape.
-            features = {
-                "features": {
-                    "musical_features": {
-                        **musical_features,
-                        "tempo": tempo,
-                        "camelot_key": camelot_key,
-                    },
-                }
+            return {
+                "musical": {
+                    **musical_features,
+                    "tempo": tempo,
+                    "tempo_confidence": tempo_confidence,
+                    "key": key,
+                    "camelot_key": camelot_key,
+                },
+                "labels": {
+                    "valence_mood": musical_features["valence_mood"],
+                    "arousal_mood": musical_features["arousal_mood"],
+                    "danceability_feeling": musical_features["danceability_feeling"],
+                },
             }
-
-            logger.info("audioFlux features extracted successfully")
-            return features
 
         except Exception as e:
             logger.error(f"Failed to extract basic features: {e}")

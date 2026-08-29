@@ -82,6 +82,7 @@ class SimpleAnalysisResource(Resource):
             # Check if file is present in request
             if "audio_file" not in request.files:
                 return {
+                    "status": "error",
                     "error": "No audio file provided",
                     "message": "Please provide an audio file in the request",
                 }, 400
@@ -90,6 +91,7 @@ class SimpleAnalysisResource(Resource):
 
             if audio_file.filename == "":
                 return {
+                    "status": "error",
                     "error": "No file selected",
                     "message": "Please select a valid audio file",
                 }, 400
@@ -97,6 +99,7 @@ class SimpleAnalysisResource(Resource):
             # Validate file type
             if not self._is_valid_audio_file(audio_file.filename):
                 return {
+                    "status": "error",
                     "error": "Invalid file type",
                     "message": "Please provide a valid audio file (wav, mp3, flac, m4a, aac, ogg, opus)",
                 }, 400
@@ -104,6 +107,7 @@ class SimpleAnalysisResource(Resource):
             # Validate file size
             if not self._validate_file_size(audio_file):
                 return {
+                    "status": "error",
                     "error": "File too large",
                     "message": "File size exceeds 100MB limit for simple analysis",
                 }, 413
@@ -147,14 +151,14 @@ class SimpleAnalysisResource(Resource):
                 )
                 # Update filename in result
                 if result.get("status") == "success":
-                    result["file_info"]["filename"] = original_filename
+                    result["track"]["filename"] = original_filename
 
                 # Start album art fetching in parallel (non-blocking)
                 album_art_future = None
                 if not has_image:
                     try:
-                        artist = result["id3_tags"]["artist"]
-                        title = result["id3_tags"]["title"]
+                        artist = result["tags"]["artist"]
+                        title = result["tags"]["title"]
                         if artist and title:
                             # Submit album art fetching to thread pool with timeout
                             album_art_future = _executor.submit(
