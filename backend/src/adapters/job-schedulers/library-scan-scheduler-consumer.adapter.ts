@@ -35,7 +35,6 @@ export class LibraryScanSchedulerConsumerAdapter
             sessionId,
             incremental,
             (job.data as LibraryScanJobData).force,
-            (job.data as LibraryScanJobData).skipAiMetadata,
           );
           await job.updateProgress(100);
           break;
@@ -55,7 +54,6 @@ export class LibraryScanSchedulerConsumerAdapter
     sessionId: SessionId,
     incremental: boolean,
     force?: boolean,
-    skipAiMetadata?: boolean,
   ): Promise<void> {
     const audioFiles = await this.processStartLibraryScanUseCase.execute(libraryId, incremental);
     if (audioFiles.length === 0) {
@@ -68,7 +66,6 @@ export class LibraryScanSchedulerConsumerAdapter
       sessionId,
       incremental,
       force,
-      skipAiMetadata,
     );
   }
 

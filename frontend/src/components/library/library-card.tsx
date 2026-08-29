@@ -5,14 +5,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useScanSessionContext } from '@/contexts/scan-session.context';
 import { LibraryScanStatus } from '@/services/api-hooks';
 import { StopIcon } from '@radix-ui/react-icons';
-import { BarChart3, Loader, Play, RefreshCw, Trash, Zap } from 'lucide-react';
+import { BarChart3, Loader, Play, RefreshCw, Trash } from 'lucide-react';
 import React from 'react';
 
 interface LibraryCardProps {
   library: Library;
   onScan: (e: React.MouseEvent<HTMLButtonElement>, libraryId: string) => void;
   onForceScan: (e: React.MouseEvent<HTMLButtonElement>, libraryId: string) => void;
-  onForceScanSkipAiMetadata: (e: React.MouseEvent<HTMLButtonElement>, libraryId: string) => void;
   onView: (libraryId: string) => void;
   onPlay: (libraryId: string) => void;
   isScanning?: boolean;
@@ -43,7 +42,6 @@ export const LibraryCard: React.FC<LibraryCardProps> = ({
   library,
   onScan,
   onForceScan,
-  onForceScanSkipAiMetadata,
   onView,
   onPlay,
   isScanning: isScanningProp = false,
@@ -78,11 +76,6 @@ export const LibraryCard: React.FC<LibraryCardProps> = ({
     e.stopPropagation();
     e.preventDefault();
     onForceScan(e, library.id);
-  };
-  const handleForceScanSkipAiMetadata = (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.stopPropagation();
-    e.preventDefault();
-    onForceScanSkipAiMetadata(e, library.id);
   };
   const handlePlay = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
@@ -162,16 +155,6 @@ export const LibraryCard: React.FC<LibraryCardProps> = ({
             onClick={handleForceScan}
           >
             <RefreshCw className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="outline"
-            size="iconSm"
-            title="Force scan, skip AI metadata (faster re-analysis)"
-            aria-label="Force scan without AI metadata"
-            disabled={isScanningProp || scanStatus === 'SCANNING'}
-            onClick={handleForceScanSkipAiMetadata}
-          >
-            <Zap className="h-4 w-4" />
           </Button>
           <Button variant="outline" size="sm" className="w-full" onClick={handlePlay}>
             <Play className="h-4 w-4" /> Play

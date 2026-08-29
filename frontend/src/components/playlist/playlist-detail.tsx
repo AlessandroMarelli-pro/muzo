@@ -17,7 +17,6 @@ import {
   ArrowLeft,
   ArrowUp,
   ArrowUpDown,
-  AudioWaveform,
   ChevronDown,
   Clock,
   Compass,
@@ -73,10 +72,6 @@ const PlaylistMetadata = ({
       <Badge variant="outline" className="text-xs ">
         <HeartPlus className="h-4 w-4 " /> BPM: {playlist?.stats?.bpmRange?.min} -{' '}
         {playlist?.stats?.bpmRange?.max}
-      </Badge>
-      <Badge variant="outline" className="text-xs ">
-        <AudioWaveform className="h-4 w-4 " /> Energy: {playlist?.stats?.energyRange?.min} -{' '}
-        {playlist?.stats?.energyRange?.max}
       </Badge>
     </div>
   );

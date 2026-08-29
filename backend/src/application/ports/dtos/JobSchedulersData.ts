@@ -9,8 +9,6 @@ export interface LibraryScanJobData {
   contextUser: ActionContext['user'];
   /** When true, re-analyze every file in the library, skipping the areFilesAnalyzed check. */
   force?: boolean;
-  /** When true, skip LLM-based metadata enrichment during analysis. */
-  skipAiMetadata?: boolean;
 }
 
 export interface EndLibraryScanJobData {
@@ -37,8 +35,6 @@ export interface AudioScanBatchJobData {
   incremental: boolean;
   /** When true, skip areFilesAnalyzed check and re-analyze all files in the batch */
   force?: boolean;
-  /** When true, skip Gemini/AI metadata extraction and run DSP-only analysis */
-  skipAiMetadata?: boolean;
 }
 
 export interface HqAudioAcquireJobData {

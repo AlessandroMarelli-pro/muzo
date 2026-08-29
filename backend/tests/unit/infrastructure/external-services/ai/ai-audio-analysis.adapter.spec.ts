@@ -54,22 +54,15 @@ describe('AiAudioAnalysisAdapter', () => {
     return appendSpy.mock.calls.filter(([name]) => name === field).map(([, value]) => value);
   }
 
-  it('appends skip_ai_metadata=true when skipAiMetadata is true', async () => {
-    await adapter.analyzeAudioBatch(['/music/track1.mp3'], undefined, undefined, undefined, true);
-
-    expect(appendedFieldValues('skip_ai_metadata')).toEqual(['true']);
-  });
-
-  it('does not append skip_ai_metadata when skipAiMetadata is false or omitted', async () => {
+  it('does not append skip_ai_metadata', async () => {
     await adapter.analyzeAudioBatch(['/music/track1.mp3']);
 
     expect(appendedFieldValues('skip_ai_metadata')).toEqual([]);
   });
 
-  it('still appends has_image when skipImageSearch is true, independent of skipAiMetadata', async () => {
-    await adapter.analyzeAudioBatch(['/music/track1.mp3'], undefined, undefined, true, true);
+  it('appends has_image when skipImageSearch is true', async () => {
+    await adapter.analyzeAudioBatch(['/music/track1.mp3'], undefined, undefined, true);
 
     expect(appendedFieldValues('has_image')).toEqual(['true']);
-    expect(appendedFieldValues('skip_ai_metadata')).toEqual(['true']);
   });
 });

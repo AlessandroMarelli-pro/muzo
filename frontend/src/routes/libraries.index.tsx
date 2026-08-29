@@ -53,22 +53,6 @@ function LibrariesPage() {
     );
   };
 
-  const handleForceScanLibrarySkipAiMetadata = (libraryId: string) => {
-    scanLibraryMutation.mutate(
-      { libraryId, incremental: false, force: true, skipAiMetadata: true },
-      {
-        onSuccess: (sessionId) => {
-          if (sessionId) {
-            addSession(sessionId, libraryId);
-          }
-        },
-        onError: (error) => {
-          console.error('Failed to force-scan library (skip AI metadata):', error);
-        },
-      },
-    );
-  };
-
   const handleViewLibrary = (libraryId: string) => {
     navigate({ to: `/libraries/${libraryId}` });
   };
@@ -112,7 +96,6 @@ function LibrariesPage() {
         onCreateLibrary={() => setIsCreateDialogOpen(true)}
         onScanLibrary={handleScanLibrary}
         onForceScanLibrary={handleForceScanLibrary}
-        onForceScanLibrarySkipAiMetadata={handleForceScanLibrarySkipAiMetadata}
         onStopLibraryScan={handleStopLibraryScan}
         onViewLibrary={handleViewLibrary}
         onPlayLibrary={handlePlayLibrary}

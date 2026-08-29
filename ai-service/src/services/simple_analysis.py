@@ -453,7 +453,6 @@ class SimpleAnalysisService:
         sample_duration: float = 10.0,
         original_filename: str = "",
         skip_intro: float = 30.0,
-        skip_filename_cleaning: bool = False,
     ) -> Dict[str, Any]:
         # Track if we converted an M4A file so we can clean it up
         converted_wav_path = None
@@ -470,7 +469,6 @@ class SimpleAnalysisService:
             # before it's used as a fallback source for ID3 tag parsing.
             if (
                 original_filename
-                and not skip_filename_cleaning
                 and self.ai_extractor
                 and self.ai_extractor._is_available()
             ):
@@ -482,8 +480,6 @@ class SimpleAnalysisService:
                         f"Filename cleaned: '{original_filename}' -> '{cleaned_filename}'"
                     )
                     original_filename = cleaned_filename
-            elif skip_filename_cleaning:
-                logger.debug("Skipping filename cleaning (skip_filename_cleaning=True)")
 
             builder = AnalysisResponseBuilder()
 
@@ -766,7 +762,6 @@ class SimpleAnalysisService:
         file_items: List[Tuple[str, str]],
         sample_duration: float = 10.0,
         skip_intro: float = 30.0,
-        skip_filename_cleaning: bool = False,
         session_id: Optional[str] = None,
         batch_index: Optional[int] = None,
         progress_publisher: Optional[Any] = None,
@@ -783,7 +778,6 @@ class SimpleAnalysisService:
             file_items: List of tuples (file_path, original_filename) to process
             sample_duration: Duration of audio sample to analyze in seconds (default: 10.0)
             skip_intro: Seconds to skip from beginning (default: 30.0)
-            skip_filename_cleaning: Whether to skip filename cleaning (default: False)
 
         Returns:
             Dictionary containing:
@@ -807,11 +801,7 @@ class SimpleAnalysisService:
             cleaned_filenames: List[str] = [
                 original_filename for _, original_filename in file_items
             ]
-            if (
-                not skip_filename_cleaning
-                and self.ai_extractor
-                and self.ai_extractor._is_available()
-            ):
+            if self.ai_extractor and self.ai_extractor._is_available():
                 try:
                     # Publish llm.metadata events for all tracks
                     if progress_publisher and session_id:

@@ -40,7 +40,6 @@ class FakeLibraryScanSchedulerProducer implements ILibraryScanSchedulerProducer 
     contextUser: ActionContext['user'];
     sessionId: SessionId;
     force?: boolean;
-    skipAiMetadata?: boolean;
   }> = [];
   private nextError: Error | null = null;
 
@@ -54,7 +53,6 @@ class FakeLibraryScanSchedulerProducer implements ILibraryScanSchedulerProducer 
     contextUser: ActionContext['user'],
     sessionId: SessionId,
     force?: boolean,
-    skipAiMetadata?: boolean,
   ): Promise<{ sessionId: SessionId }> {
     this.scheduleLibraryScanCalls.push({
       libraryId,
@@ -62,7 +60,6 @@ class FakeLibraryScanSchedulerProducer implements ILibraryScanSchedulerProducer 
       contextUser,
       sessionId,
       force,
-      skipAiMetadata,
     });
     if (this.nextError) {
       const err = this.nextError;
@@ -206,19 +203,6 @@ describe('ScheduleLibraryScanUseCase', () => {
       expect(fakeProducer.scheduleLibraryScanCalls[0]).toMatchObject({
         libraryId: LIBRARY_ID,
         force: true,
-      });
-    });
-
-    it('happy path: passes skipAiMetadata true to producer', async () => {
-      const library = makeLibrary({ id: 'lib-1' });
-      await musicLibraryRepository.save(library);
-
-      await useCase.execute(LIBRARY_ID, false, true, true);
-
-      expect(fakeProducer.scheduleLibraryScanCalls[0]).toMatchObject({
-        libraryId: LIBRARY_ID,
-        force: true,
-        skipAiMetadata: true,
       });
     });
 

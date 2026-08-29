@@ -41,7 +41,6 @@ export class AiAudioAnalysisAdapter implements IAudioAnalysisStructure {
     sessionId?: string,
     batchIndex?: number,
     skipImageSearch?: boolean,
-    skipAiMetadata?: boolean,
   ): Promise<AudioAnalysisBatchResponse> {
     try {
       this.logger.log(`Analyzing ${audioFilePaths.length} audio files in batch`);
@@ -57,10 +56,6 @@ export class AiAudioAnalysisAdapter implements IAudioAnalysisStructure {
 
       if (skipImageSearch) {
         formData.append('has_image', 'true');
-      }
-
-      if (skipAiMetadata) {
-        formData.append('skip_ai_metadata', 'true');
       }
 
       // Add session ID and batch index for progress tracking

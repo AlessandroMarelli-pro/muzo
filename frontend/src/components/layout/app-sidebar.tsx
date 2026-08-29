@@ -68,7 +68,7 @@ export function AppSidebar({
         <NavMain items={data.navMain} />
         <NavUser
           user={{
-            name: user?.firstName + ' ' + user?.lastName,
+            name: [user?.firstName, user?.lastName].filter(Boolean).join(' ') || 'Guest',
             email: user?.email ?? '',
             avatar: '',
           }}

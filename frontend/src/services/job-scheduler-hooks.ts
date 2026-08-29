@@ -8,24 +8,22 @@ export const useStartLibraryScan = () => {
       libraryId,
       incremental,
       force,
-      skipAiMetadata,
     }: {
       libraryId: string;
       incremental?: boolean;
       force?: boolean;
-      skipAiMetadata?: boolean;
     }) => {
       const response = await graffleClient.request<{
         startLibraryScan: string;
       }>(
         parse(
           `
-						mutation StartLibraryScan($libraryId: Base64ID!, $incremental: Boolean, $force: Boolean, $skipAiMetadata: Boolean) {
-							startLibraryScan(libraryId: $libraryId, incremental: $incremental, force: $force, skipAiMetadata: $skipAiMetadata)
+						mutation StartLibraryScan($libraryId: Base64ID!, $incremental: Boolean, $force: Boolean) {
+							startLibraryScan(libraryId: $libraryId, incremental: $incremental, force: $force)
 						}
     			    `,
         ),
-        { libraryId, incremental, force, skipAiMetadata },
+        { libraryId, incremental, force },
       );
       return response.startLibraryScan;
     },

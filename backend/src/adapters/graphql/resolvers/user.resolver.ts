@@ -4,8 +4,8 @@ import { UseGuards } from '@nestjs/common';
 import { Args, Query, ResolveField, Resolver } from '@nestjs/graphql';
 import {
   GetFavoriteUseCase,
-  GetPlaylistsUseCase,
   GetPendingTracksUseCase,
+  GetPlaylistsUseCase,
   GetQueueUseCase,
   GetRandomTrackIdUseCase,
   GetRecentlyPlayedUseCase,
@@ -183,7 +183,7 @@ export class UserResolver {
         items: tracks.items.map(toTrack),
       }));
   }
-  @ResolveField(() => Base64ID)
+  @ResolveField(() => Base64ID, { nullable: true })
   async randomTrackId(): Promise<string | null> {
     return this.getRandomTrackIdUseCase.execute() ?? '';
   }

@@ -112,7 +112,7 @@ export class MetricsQuery implements IMetricsQuery {
 
   private async getTopGenres() {
     return this.prisma.$queryRaw<Array<{ genreId: string; count: bigint; name: string }>>`
-      SELECT "genreId", genres.name, COUNT(*) as count FROM track_genres JOIN genres ON track_genres."genreId" = genres.id WHERE track_genres."createdById" = ${getCurrentUserId()} GROUP BY "genreId" ORDER BY count DESC LIMIT 10
+      SELECT "genreId", genres.name, COUNT(*) as count FROM track_genres JOIN genres ON track_genres."genreId" = genres.id WHERE track_genres."createdById" = ${getCurrentUserId()} GROUP BY "genreId", genres.name ORDER BY count DESC LIMIT 10
     `.then((rows) =>
       rows.map((row) => ({
         genre: row.name,

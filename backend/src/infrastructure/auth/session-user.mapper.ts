@@ -16,8 +16,8 @@ export type BetterAuthSessionUser = {
 export function mapBetterAuthUserToContextUser(
   betterAuthUser: BetterAuthSessionUser,
 ): ActionContext['user'] {
-  const parts = (betterAuthUser.name ?? '').trim().split(/\s+/);
-  const firstName = parts[0] ?? 'anonymous';
+  const parts = (betterAuthUser.name ?? '').trim().split(/\s+/).filter(Boolean);
+  const firstName = parts[0] || 'anonymous';
   const lastName = parts.slice(1).join(' ') || 'anonymous';
 
   return {

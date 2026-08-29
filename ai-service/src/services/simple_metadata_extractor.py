@@ -646,13 +646,24 @@ class SimpleMetadataExtractor:
                         id3_tags["bitrate"] = ""
 
                 else:
-                    id3_tags = self.default_id3_tags
+                    # Copy, not alias -- default_id3_tags is a shared class attribute;
+                    # assigning it directly here would let every subsequent request's
+                    # id3_tags mutations (title/artist/filename_parsed/... below) write
+                    # into the one dict every future request also falls back to,
+                    # leaking one file's tags into another's under concurrent batch
+                    # workers (see analyze_audio_batch's ThreadPoolExecutor).
+                    id3_tags = dict(self.default_id3_tags)
             except Exception as e:
                 logger.warning(f"Failed to extract ID3 tags: {e}")
-                id3_tags = self.default_id3_tags
+                id3_tags = dict(self.default_id3_tags)
 
-            # Clean up empty strings
-            if id3_tags.get("title") == "":
+            # Fall back to the (cleaned) filename when no title tag was found at
+            # all -- checking `== ""` here missed this entirely: a title that was
+            # never set is absent from the dict (id3_tags.get("title") is None,
+            # and None == "" is False), not an empty string, since the tag-mapping
+            # loop above only ever does id3_tags[common_name] = safe_value when a
+            # non-empty value was actually found.
+            if not id3_tags.get("title"):
                 id3_tags["title"] = original_filename.lower().strip()
 
             id3_tags = {k: v if v else "" for k, v in id3_tags.items()}
@@ -755,5 +766,8 @@ class SimpleMetadataExtractor:
 
         except Exception as e:
             logger.error(f"Failed to extract ID3 tags: {e}")
-            # Even on error, try filename parsing as last resort
-            return {"id3_tags": self.default_id3_tags}
+            # Copy, not alias -- see the comment on the other default_id3_tags
+            # fallback above; the caller (extract_id3_tags's route-level consumers)
+            # mutates this dict, so handing out the shared class attribute directly
+            # would leak between requests.
+            return {"id3_tags": dict(self.default_id3_tags)}

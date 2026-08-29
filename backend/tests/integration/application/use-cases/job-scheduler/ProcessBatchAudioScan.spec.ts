@@ -261,55 +261,7 @@ describe('ProcessBatchAudioScanUseCase', () => {
       expect(result.analysisResults).toHaveLength(1);
       expect(result.createdTracks).toHaveLength(1);
       expect(result.createdTracks[0].fileInfo.filePath).toBe('/music/track1.mp3');
-      expect(fakeAnalyzeBatch).toHaveBeenCalledWith(
-        ['/music/track1.mp3'],
-        SESSION_ID,
-        0,
-        undefined,
-        undefined,
-      );
-    });
-
-    it('forwards skipAiMetadata from job data to analyzeAudioBatch', async () => {
-      const library = makeLibrary({ id: 'lib-1' });
-      await musicLibraryRepository.save(library);
-
-      const batchResponse: AudioAnalysisBatchResponse = {
-        status: 'completed',
-        total_files: 1,
-        successful: 1,
-        failed: 0,
-        results: [
-          {
-            status: 'success',
-            processing_time: 1,
-            processing_mode: 'simple',
-            schema_version: 2,
-            track: { filename: 'track.mp3', extension: 'mp3', mime_type: 'audio/mpeg', size_bytes: 0, size_mb: 0 },
-            audio: null,
-            tags: {},
-            features: {},
-            labels: {},
-            classifications: { genre_styles: [], genres: [], styles: [], instruments: [], tags: [] },
-            embedding: null,
-            warnings: [],
-          },
-        ],
-        processing_time: 1,
-        processing_mode: 'batch',
-      };
-      fakeAnalyzeBatch.mockResolvedValue(batchResponse);
-
-      const data = makeBatchJobData({ skipAiMetadata: true });
-      await useCase.execute(data);
-
-      expect(fakeAnalyzeBatch).toHaveBeenCalledWith(
-        ['/music/track1.mp3'],
-        SESSION_ID,
-        0,
-        undefined,
-        true,
-      );
+      expect(fakeAnalyzeBatch).toHaveBeenCalledWith(['/music/track1.mp3'], SESSION_ID, 0);
     });
 
     it('edge case: when audioFiles is empty, returns batch complete with empty arrays', async () => {
@@ -410,13 +362,7 @@ describe('ProcessBatchAudioScanUseCase', () => {
       expect(result.files.map((f) => f.filePath)).toEqual([TRACK1_PATH, TRACK2_PATH]);
       expect(result.createdTracks).toHaveLength(2);
       expect(result.analysisResults).toHaveLength(2);
-      expect(fakeAnalyzeBatch).toHaveBeenCalledWith(
-        [TRACK1_PATH, TRACK2_PATH],
-        SESSION_ID,
-        0,
-        undefined,
-        undefined,
-      );
+      expect(fakeAnalyzeBatch).toHaveBeenCalledWith([TRACK1_PATH, TRACK2_PATH], SESSION_ID, 0);
 
       expect(fakePublishEvent).toHaveBeenCalledTimes(1);
       expect(fakePublishEvent).toHaveBeenCalledWith(

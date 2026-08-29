@@ -8,7 +8,6 @@ import { trackToFileInfo } from './track-to-file-info';
 
 export interface ScheduleTracksByCriteriaScanOptions {
   subgenreSelectionMode?: 'exact' | 'contain';
-  skipAiMetadata?: boolean;
   force?: boolean;
   /** Undefined means no cap: schedule every track matching the criteria. */
   limit?: number;
@@ -29,7 +28,7 @@ export class ScheduleTracksByCriteriaScanUseCase {
     criteria: FilterCriteria,
     options: ScheduleTracksByCriteriaScanOptions = {},
   ): Promise<{ sessionId: SessionId; matchedTrackCount: number; reused: boolean }> {
-    const { subgenreSelectionMode = 'exact', skipAiMetadata, force, limit } = options;
+    const { subgenreSelectionMode = 'exact', force, limit } = options;
     console.log('ScheduleTracksByCriteriaScanUseCase', criteria, options);
 
     const { session: activeOrNewSession, created } =
@@ -68,7 +67,7 @@ export class ScheduleTracksByCriteriaScanUseCase {
 
     this.logger.info(
       `Scheduling criteria-based scan for ${tracks.length} tracks across ${tracksByLibrary.size} libraries`,
-      { sessionId, skipAiMetadata, force },
+      { sessionId, force },
     );
 
     for (const [libraryId, libraryTracks] of tracksByLibrary) {
@@ -79,7 +78,6 @@ export class ScheduleTracksByCriteriaScanUseCase {
         sessionId,
         false,
         force,
-        skipAiMetadata,
       );
     }
 

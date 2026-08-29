@@ -31,10 +31,6 @@ const GET_PLAYLISTS = gql`
               min
               max
             }
-            energyRange {
-              min
-              max
-            }
             genresCount
             numberOfTracks
             subgenresCount
@@ -972,7 +968,10 @@ export function usePlaylistRecommendations(
   };
 }
 
-export function useDiscoverSimilarTracksForPlaylist(playlistId: string, userId: string = 'default') {
+export function useDiscoverSimilarTracksForPlaylist(
+  playlistId: string,
+  userId: string = 'default',
+) {
   const { data, isLoading, isFetching, error, refetch } = useQuery({
     queryKey: ['discoverSimilarTracksForPlaylist', playlistId, userId],
     queryFn: () => fetchDiscoverSimilarTracksForPlaylist(playlistId, userId),

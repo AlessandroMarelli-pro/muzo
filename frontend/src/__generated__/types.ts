@@ -353,7 +353,6 @@ export type MutationStartLibraryScanArgs = {
   force?: InputMaybe<Scalars['Boolean']['input']>;
   incremental?: InputMaybe<Scalars['Boolean']['input']>;
   libraryId: Scalars['Base64ID']['input'];
-  skipAiMetadata?: InputMaybe<Scalars['Boolean']['input']>;
 };
 
 

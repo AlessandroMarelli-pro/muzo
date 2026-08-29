@@ -46,7 +46,6 @@ class FakeScheduleBatchAudioScanUseCase {
     sessionId: SessionId;
     incremental: boolean;
     force?: boolean;
-    skipAiMetadata?: boolean;
   }> = [];
 
   constructor(private readonly scanSessionRepository: ScanSessionRepository) {}
@@ -57,9 +56,8 @@ class FakeScheduleBatchAudioScanUseCase {
     sessionId: SessionId,
     incremental: boolean,
     force?: boolean,
-    skipAiMetadata?: boolean,
   ): Promise<{ sessionId: string }> {
-    this.calls.push({ audioFiles, libraryId, sessionId, incremental, force, skipAiMetadata });
+    this.calls.push({ audioFiles, libraryId, sessionId, incremental, force });
     await this.scanSessionRepository.incrementSessionTotals(sessionId, {
       totalBatches: Math.ceil(audioFiles.length / 10),
       totalTracks: audioFiles.length,
@@ -200,7 +198,7 @@ describe('ScheduleTracksByCriteriaScanUseCase', () => {
         atmosphereIds: null,
       };
 
-      const result = await useCase.execute(criteria, { skipAiMetadata: true, force: true });
+      const result = await useCase.execute(criteria, { force: true });
 
       expect(result.matchedTrackCount).toBe(3);
       expect(result.sessionId).toBeDefined();
@@ -216,9 +214,8 @@ describe('ScheduleTracksByCriteriaScanUseCase', () => {
       expect(byLibrary.get(LIBRARY_1_ID)?.sessionId).toEqual(result.sessionId);
       expect(byLibrary.get(LIBRARY_2_ID)?.sessionId).toEqual(result.sessionId);
 
-      // skipAiMetadata/force propagate to every per-library call.
+      // force propagates to every per-library call.
       for (const call of fakeScheduleBatch.calls) {
-        expect(call.skipAiMetadata).toBe(true);
         expect(call.force).toBe(true);
       }
 
@@ -284,7 +281,6 @@ describe('ScheduleTracksByCriteriaScanUseCase', () => {
         libraryId: LIBRARY_1_ID,
         incremental: false,
         force: undefined,
-        skipAiMetadata: undefined,
       });
     });
   });

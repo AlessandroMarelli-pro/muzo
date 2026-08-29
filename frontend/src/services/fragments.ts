@@ -78,10 +78,6 @@ export const playlistFragment = gql`
         min
         max
       }
-      energyRange {
-        min
-        max
-      }
       genresCount
       numberOfTracks
       subgenresCount

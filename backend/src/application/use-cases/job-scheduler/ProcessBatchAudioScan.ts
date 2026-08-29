@@ -35,7 +35,6 @@ export class ProcessBatchAudioScanUseCase {
       batchIndex,
       libraryId: _libraryId,
       force,
-      skipAiMetadata,
     } = data;
 
     try {
@@ -115,8 +114,6 @@ export class ProcessBatchAudioScanUseCase {
         validJobs.map((jobData) => jobData.filePath),
         sessionId,
         batchIndex,
-        undefined, // skipImageSearch — unrelated flag, not sourced from job data here
-        skipAiMetadata,
       );
       this.logger.debug(`Analyzed ${result.results.length} files in batch`, {
         result,

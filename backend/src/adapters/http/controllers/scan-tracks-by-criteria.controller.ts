@@ -8,7 +8,6 @@ import { ActionContext, FilterCriteria } from 'src/kernel/types/model-types';
 export interface ScanTracksByCriteriaRequestBody {
   criteria: FilterCriteria;
   force?: boolean;
-  skipAiMetadata?: boolean;
   subgenreSelectionMode?: 'exact' | 'contain';
   limit?: number;
 }
@@ -36,7 +35,7 @@ export class ScanTracksByCriteriaController {
 
   /**
    * POST /ops/scan-tracks-by-criteria
-   * Body: { criteria: FilterCriteria, force?: boolean, skipAiMetadata?: boolean,
+   * Body: { criteria: FilterCriteria, force?: boolean,
    *         subgenreSelectionMode?: 'exact' | 'contain', limit?: number }
    */
   @Post()
@@ -57,7 +56,6 @@ export class ScanTracksByCriteriaController {
     await als.run(actionContext, () =>
       this.scheduleTracksByCriteriaScanUseCase.execute(body.criteria, {
         force: body.force ?? false,
-        skipAiMetadata: body.skipAiMetadata ?? true,
         subgenreSelectionMode: body.subgenreSelectionMode ?? 'contain',
         limit: body.limit,
       }),
