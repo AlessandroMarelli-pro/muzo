@@ -7,7 +7,6 @@ metadata and audio file ID3 tags with filename parsing fallback.
 
 import base64
 import os
-import time
 from typing import Any, Dict, Optional
 
 from loguru import logger
@@ -88,6 +87,14 @@ class SimpleMetadataExtractor:
                 ".opus": "audio/opus",
             }
 
+            # created_at/modified_at/accessed_at were dropped: file_path here is
+            # always a server-side temp copy of the upload (both the single-file
+            # and batch API routes save to a NamedTemporaryFile before calling
+            # into this pipeline), so os.stat() on it only ever reflects
+            # ~upload/analysis time, never the original track's real filesystem
+            # dates -- those timestamps aren't sent over multipart form data at
+            # all, only the file bytes. Populating them was silently misleading
+            # rather than useful.
             metadata = {
                 "file_info": {
                     "filename": filename,
@@ -96,15 +103,6 @@ class SimpleMetadataExtractor:
                     "mime_type": mime_types.get(file_extension, "audio/unknown"),
                     "file_size_bytes": file_size_bytes,
                     "file_size_mb": round(file_size_mb, 2),
-                    "created_at": time.strftime(
-                        "%Y-%m-%dT%H:%M:%SZ", time.gmtime(stat.st_ctime)
-                    ),
-                    "modified_at": time.strftime(
-                        "%Y-%m-%dT%H:%M:%SZ", time.gmtime(stat.st_mtime)
-                    ),
-                    "accessed_at": time.strftime(
-                        "%Y-%m-%dT%H:%M:%SZ", time.gmtime(stat.st_atime)
-                    ),
                 }
             }
 

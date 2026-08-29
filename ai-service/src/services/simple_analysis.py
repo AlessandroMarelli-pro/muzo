@@ -25,7 +25,6 @@ from src.services.features.tempo_cnn_extractor import TempoCnnExtractor
 from src.services.simple_audio_loader import SimpleAudioLoader
 from src.services.simple_feature_extractor import SimpleFeatureExtractor
 from src.services.simple_filename_parser import SimpleFilenameParser
-from src.services.simple_fingerprint_generator import SimpleFingerprintGenerator
 from src.services.simple_metadata_extractor import SimpleMetadataExtractor
 from src.services.simple_technical_analyzer import SimpleTechnicalAnalyzer
 from src.utils.performance_analyzer import performance_analyzer
@@ -55,7 +54,6 @@ class SimpleAnalysisService:
         self.metadata_extractor = SimpleMetadataExtractor(self.filename_parser)
         self.technical_analyzer = SimpleTechnicalAnalyzer()
         self.feature_extractor = SimpleFeatureExtractor()
-        self.fingerprint_generator = SimpleFingerprintGenerator()
         self.embedding_extractor = DiscogsEmbeddingExtractor()
         self.classifiers_extractor = DiscogsClassifiersExtractor()
         self.tempo_cnn_extractor = TempoCnnExtractor()
@@ -169,10 +167,6 @@ class SimpleAnalysisService:
             ai_bpm,
             ai_key,
         )
-
-    @monitor_performance("fingerprint_generation")
-    def generate_simple_fingerprint(self, file_path: str, y, sr) -> Dict[str, Any]:
-        return self.fingerprint_generator.generate_simple_fingerprint(file_path, y, sr)
 
     @monitor_performance("discogs_embedding_generation")
     def generate_discogs_embedding_from_file(self, file_path: str) -> list:
@@ -540,8 +534,6 @@ class SimpleAnalysisService:
                 discogs_deam,
                 discogs_skey,
             )
-            # Use harmonic sample for fingerprint (more representative of melody/harmony)
-            fingerprint = self.generate_simple_fingerprint(file_path, y_harmonic, sr)
             id3_tags = self.extract_id3_tags(file_path, original_filename)
 
             # Check performance bottlenecks after analysis
@@ -562,7 +554,6 @@ class SimpleAnalysisService:
                 **file_metadata,
                 **technical_info,
                 **basic_features,
-                **fingerprint,
                 "embedding": embedding,
                 "discogs_classifiers": discogs_classifiers,
                 "discogs_tempo": discogs_tempo,
@@ -637,7 +628,7 @@ class SimpleAnalysisService:
         progress_publisher: Optional[Any],
     ) -> Tuple[Dict[str, Any], bool]:
         """
-        Run the audio-analysis portion (decode, technical, features, fingerprint, ID3) for a
+        Run the audio-analysis portion (decode, technical, features, ID3) for a
         single file in a batch. Self-contained so it can run safely on a worker thread:
         it performs its own M4A conversion and cleans up any converted WAV before returning.
 
@@ -741,9 +732,6 @@ class SimpleAnalysisService:
                     50,
                 )
 
-            # Generate fingerprint
-            fingerprint = self.generate_simple_fingerprint(file_path, y_harmonic, sr)
-
             # Publish audio.analysis progress (75%)
             if progress_publisher and session_id:
                 progress_publisher.publish_track_progress(
@@ -768,7 +756,6 @@ class SimpleAnalysisService:
                 **file_metadata,
                 **technical_info,
                 **basic_features,
-                **fingerprint,
                 "embedding": embedding,
                 "discogs_classifiers": discogs_classifiers,
                 "discogs_tempo": discogs_tempo,
@@ -843,7 +830,7 @@ class SimpleAnalysisService:
 
         This method processes multiple files efficiently by:
         1. Cleaning all filenames in a single batch API call (70%+ token savings)
-        2. Processing audio analysis (BPM, features, fingerprint) for each file individually
+        2. Processing audio analysis (BPM, features) for each file individually
         3. Matching cleaned filenames to files by order
 
         Args:
@@ -932,7 +919,7 @@ class SimpleAnalysisService:
                 )
 
             # Step 2: Process each file for audio analysis.
-            # The CPU-bound audio work (decode, features, fingerprint) for each file is
+            # The CPU-bound audio work (decode, features) for each file is
             # independent now that filenames have been cleaned batch-up-front, so we run
             # files across a small thread pool. librosa/numpy release the GIL during the
             # heavy numeric work, giving real speedup. Results are reassembled in input order.
