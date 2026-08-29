@@ -164,11 +164,6 @@ class SimpleFeatureExtractor:
     @monitor_performance("simple_basic_features")
     def extract_basic_features(
         self,
-        y_harmonic: np.ndarray,
-        y_percussive: np.ndarray,
-        y_bpm: np.ndarray,
-        bpm_metadata: dict,
-        sr: int,
         file_path: str,
         discogs_classifiers: dict,
         discogs_tempo: dict,
@@ -178,27 +173,16 @@ class SimpleFeatureExtractor:
         ai_key: str = None,
     ) -> Dict[str, Any]:
         """
-        Extract basic audio features using optimized samples.
+        Extract basic audio features.
 
         Args:
-            y_harmonic: Harmonic-rich audio sample. Unused now that key comes from
-                S-KEY and mood/danceability from discogs-effnet/DEAM instead of the
-                retired audioFlux-based shared-feature extraction; kept in the
-                signature since callers/smart_audio_sample_loading still produce it.
-            y_percussive: Percussive-rich audio sample. Unused for the same reason
-                as y_harmonic.
-            y_bpm: BPM-optimized audio sample (unused now that tempo comes from
-                TempoCNN instead of the retired hand-computed BPM detector; kept in
-                the signature since callers/smart_audio_sample_loading still produce it)
-            sr: Sample rate. Unused for the same reason as y_harmonic/y_percussive.
             file_path: Path to audio file (for fallback)
             discogs_classifiers: Output of DiscogsClassifiersExtractor.predict_all,
                 computed earlier in the same request -- feeds danceability/
                 instrumentalness (replaces DanceabilityAnalyzer/the
                 acousticness-speechiness-liveness heuristics)
             discogs_tempo: Output of TempoCnnExtractor.extract_from_audio, computed
-                earlier in the same request -- feeds tempo (replaces
-                EnhancedAdaptiveBPMDetector/FFTBPMDetector)
+                earlier in the same request -- feeds tempo
             discogs_deam: Output of DeamExtractor.extract_from_audio, computed
                 earlier in the same request -- feeds valence/arousal (replaces
                 AudioMoodAnalyzer)

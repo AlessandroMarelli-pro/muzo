@@ -152,11 +152,6 @@ class SimpleAnalysisService:
     @monitor_performance("feature_extraction")
     def extract_basic_features(
         self,
-        y_harmonic,
-        y_percussive,
-        y_bpm,
-        bpm_metadata,
-        sr,
         file_path: str,
         discogs_classifiers: dict,
         discogs_tempo: dict,
@@ -166,11 +161,6 @@ class SimpleAnalysisService:
         ai_key: str = None,
     ) -> Dict[str, Any]:
         return self.feature_extractor.extract_basic_features(
-            y_harmonic,
-            y_percussive,
-            y_bpm,
-            bpm_metadata,
-            sr,
             file_path,
             discogs_classifiers,
             discogs_tempo,
@@ -544,17 +534,12 @@ class SimpleAnalysisService:
             discogs_deam = self.generate_deam_mood(file_path)
             discogs_skey = self.generate_skey(file_path)
             basic_features = self.extract_basic_features(
-                y_harmonic,
-                y_percussive,
-                y_bpm,
-                bpm_metadata,
-                sr,
                 file_path,
                 discogs_classifiers,
                 discogs_tempo,
                 discogs_deam,
                 discogs_skey,
-            )  # Use optimized samples for features
+            )
             # Use harmonic sample for fingerprint (more representative of melody/harmony)
             fingerprint = self.generate_simple_fingerprint(file_path, y_harmonic, sr)
             id3_tags = self.extract_id3_tags(file_path, original_filename)
@@ -738,11 +723,6 @@ class SimpleAnalysisService:
 
             # Extract features
             basic_features = self.extract_basic_features(
-                y_harmonic,
-                y_percussive,
-                y_bpm,
-                bpm_metadata,
-                sr,
                 file_path,
                 discogs_classifiers,
                 discogs_tempo,

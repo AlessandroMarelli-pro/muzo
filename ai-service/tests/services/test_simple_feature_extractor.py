@@ -5,12 +5,10 @@ This module tests the POST endpoint functionality of the SimpleAnalysisResource
 using a real audio file to ensure proper processing and response format.
 """
 
-from src.services.simple_audio_loader import SimpleAudioLoader
 from src.services.simple_feature_extractor import SimpleFeatureExtractor
 
 
 class TestSimpleFeatureExtractor:
-    audio_loader = SimpleAudioLoader()
     """Test SimpleFeatureExtractor class."""
 
     def test_extract_basic_features(self, test_audio_files):
@@ -18,32 +16,13 @@ class TestSimpleFeatureExtractor:
 
         audio_file = test_audio_files[0]
 
-        # y_harmonic/y_percussive/y_bpm/sr are no longer read by
-        # extract_basic_features (key/mood/danceability/tempo all come from
-        # discogs_skey/discogs_classifiers/discogs_deam/discogs_tempo instead of
-        # the retired audioFlux shared-feature extraction), but the signature
-        # still accepts them since callers/smart_audio_sample_loading still
-        # produce them -- load one real sample to exercise the call faithfully.
-        y_h, sr = self.audio_loader.load_audio_sample(
-            audio_file["filename"],
-            sample_duration=audio_file["harmonic_metadata"]["duration"],
-            skip_intro=audio_file["harmonic_metadata"]["start_time"],
-        )
-        y_p, sr = self.audio_loader.load_audio_sample(
-            audio_file["filename"],
-            sample_duration=audio_file["percussive_metadata"]["duration"],
-            skip_intro=audio_file["percussive_metadata"]["start_time"],
-        )
-        y_bpm, sr = self.audio_loader.load_audio_sample(
-            audio_file["filename"],
-            sample_duration=audio_file["bpm_metadata"]["duration"],
-            skip_intro=audio_file["bpm_metadata"]["start_time"],
-        )
         # discogs_classifiers/discogs_tempo/discogs_deam/discogs_skey are computed
         # upstream in SimpleAnalysisService (see simple_analysis.py) and passed in;
         # a plain unit test of extract_basic_features stubs them with representative
         # values rather than running the full discogs-effnet/TempoCNN/DEAM/S-KEY
-        # pipelines.
+        # pipelines. extract_basic_features no longer takes any raw audio samples --
+        # tempo/key/mood/danceability all come from the discogs_*/ai_* args instead
+        # of the retired audioFlux shared-feature extraction.
         discogs_classifiers = {
             "danceable": 0.75,
             "mood_happy": 0.6,
@@ -57,11 +36,6 @@ class TestSimpleFeatureExtractor:
         discogs_deam = {"valence": 0.58, "arousal": 0.6}
         discogs_skey = {"key": "C# minor", "tonic": "C#", "mode": "minor"}
         features = SimpleFeatureExtractor().extract_basic_features(
-            y_h,
-            y_p,
-            y_bpm,
-            audio_file["bpm_metadata"],
-            sr,
             audio_file["filename"],
             discogs_classifiers,
             discogs_tempo,

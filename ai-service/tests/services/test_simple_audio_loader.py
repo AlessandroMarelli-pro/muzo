@@ -5,14 +5,8 @@ This module tests the POST endpoint functionality of the SimpleAnalysisResource
 using a real audio file to ensure proper processing and response format.
 """
 
-import os
-
 import numpy as np
-from src.services.enhanced_adaptive_bpm_detector import EnhancedAdaptiveBPMDetector
 
-# from src.api.hierarchical_classification import initialize_service
-from src.services.features.shared_features import SharedFeatures
-from src.services.simple_analysis import SimpleAnalysisService
 from src.services.simple_audio_loader import SimpleAudioLoader
 
 
