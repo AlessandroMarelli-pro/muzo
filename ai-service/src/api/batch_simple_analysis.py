@@ -44,7 +44,7 @@ class BatchSimpleAnalysisResource(Resource):
             - audio_files: Multiple audio files (multipart/form-data)
             - sample_duration: Duration of sample to analyze (default: 10.0 seconds)
             - skip_intro: Seconds to skip from beginning (default: 30.0)
-            - skip_ai_metadata: Skip AI metadata extraction (default: false)
+            - skip_ai_metadata: Skip LLM filename cleaning (default: false)
             - has_image: Whether files already have images (default: false)
 
         Returns:
@@ -95,7 +95,7 @@ class BatchSimpleAnalysisResource(Resource):
             # Get parameters with optimized defaults
             sample_duration = float(request.form.get("sample_duration", "10.0"))
             skip_intro = float(request.form.get("skip_intro", "30.0"))
-            skip_ai_metadata = (
+            skip_filename_cleaning = (
                 request.form.get("skip_ai_metadata", "false").lower() == "true"
             )
             has_image = request.form.get("has_image", "false").lower() == "true"
@@ -136,7 +136,7 @@ class BatchSimpleAnalysisResource(Resource):
                 file_items=file_items,
                 sample_duration=sample_duration,
                 skip_intro=skip_intro,
-                skip_ai_metadata=skip_ai_metadata,
+                skip_filename_cleaning=skip_filename_cleaning,
                 session_id=session_id,
                 batch_index=batch_index_int,
                 progress_publisher=self.progress_publisher if session_id else None,

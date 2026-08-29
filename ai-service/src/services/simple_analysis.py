@@ -62,62 +62,25 @@ class SimpleAnalysisService:
         self.deam_extractor = DeamExtractor()
         self.skey_extractor = SkeyExtractor()
 
-        # Initialize AI metadata extractor (default: GEMINI, fallback to OPENAI)
-        # Provider can be set via AI_METADATA_PROVIDER env var (GEMINI or OPENAI)
-        provider = os.getenv("AI_METADATA_PROVIDER", "GEMINI").upper()
-        self.ai_extractor = None
-
+        # Gemini-backed filename cleaner (see GeminiMetadataExtractor's
+        # _clean_filename_with_llm/_clean_filenames_batch), used in analyze_audio/
+        # analyze_audio_batch to clean original_filename before it feeds ID3 tag
+        # parsing. The broader AI "extract and enrich" metadata pipeline
+        # (artist/title/genre/style/tags resolution, ai_bpm/ai_key overrides) has
+        # been removed -- genre/style/tags now come from the discogs-effnet
+        # classifiers, tempo/key from TempoCNN/S-KEY.
         try:
-            # Try to create extractor with specified provider
-            self.ai_extractor = create_metadata_extractor(provider=provider)
+            self.ai_extractor = create_metadata_extractor(provider="GEMINI")
             if self.ai_extractor and self.ai_extractor._is_available():
-                logger.info("%s metadata extractor initialized and available", provider)
+                logger.info("GEMINI filename-cleaning extractor initialized and available")
             else:
-                # Fallback to OPENAI if GEMINI not available and GEMINI was requested
-                if provider == "GEMINI":
-                    logger.info(
-                        "GEMINI metadata extractor not available, trying OPENAI as fallback"
-                    )
-                    try:
-                        self.ai_extractor = create_metadata_extractor(provider="OPENAI")
-                        if self.ai_extractor and self.ai_extractor._is_available():
-                            logger.info(
-                                "OPENAI metadata extractor initialized as fallback"
-                            )
-                        else:
-                            logger.info(
-                                "AI metadata extractor initialized but not available (no API key)"
-                            )
-                    except Exception as fallback_error:
-                        logger.warning(
-                            "Failed to initialize OPENAI fallback: %s", fallback_error
-                        )
-                        self.ai_extractor = None
-                else:
-                    logger.info(
-                        "%s metadata extractor initialized but not available (no API key)",
-                        provider,
-                    )
+                logger.info(
+                    "GEMINI filename-cleaning extractor initialized but not available "
+                    "(no API key)"
+                )
         except Exception as e:
-            logger.warning(
-                "Failed to initialize %s metadata extractor: %s", provider, e
-            )
-            # Try fallback to OPENAI if GEMINI failed
-            if provider == "GEMINI":
-                try:
-                    logger.info("Attempting OPENAI as fallback")
-                    self.ai_extractor = create_metadata_extractor(provider="OPENAI")
-                    if self.ai_extractor and self.ai_extractor._is_available():
-                        logger.info("OPENAI metadata extractor initialized as fallback")
-                    else:
-                        self.ai_extractor = None
-                except Exception as fallback_error:
-                    logger.warning(
-                        "Failed to initialize OPENAI fallback: %s", fallback_error
-                    )
-                    self.ai_extractor = None
-            else:
-                self.ai_extractor = None
+            logger.warning("Failed to initialize GEMINI filename-cleaning extractor: %s", e)
+            self.ai_extractor = None
 
         # Performance monitoring thresholds
         self.performance_thresholds = {
@@ -154,27 +117,6 @@ class SimpleAnalysisService:
     @monitor_performance("filename_parsing")
     def parse_filename_for_metadata(self, filename: str) -> Dict[str, str]:
         return self.filename_parser.parse_filename_for_metadata(filename)
-
-    @monitor_performance("ai_metadata_extraction")
-    def extract_metadata_with_ai(
-        self, filename: str, file_path: Optional[str] = None
-    ) -> Dict[str, Any]:
-        """
-        Extract comprehensive metadata from filename using AI (default: GEMINI, fallback: OPENAI).
-        If file_path is provided, ID3 tags will be extracted and used for more accurate results.
-
-        Args:
-            filename: Audio filename (with or without extension)
-            file_path: Optional path to the audio file for ID3 tag extraction
-
-        Returns:
-            Dictionary containing AI-extracted metadata, or empty dict if unavailable
-        """
-        if self.ai_extractor and self.ai_extractor._is_available():
-            return self.ai_extractor.extract_metadata_from_filename(filename, file_path)
-        else:
-            logger.debug("AI metadata extraction not available, skipping")
-            return {}
 
     @monitor_performance("audio_conversion")
     def convert_m4a_to_wav(self, file_path: str) -> str:
@@ -537,7 +479,7 @@ class SimpleAnalysisService:
         sample_duration: float = 10.0,
         original_filename: str = "",
         skip_intro: float = 30.0,
-        skip_ai_metadata: bool = False,
+        skip_filename_cleaning: bool = False,
     ) -> Dict[str, Any]:
         # Track if we converted an M4A file so we can clean it up
         converted_wav_path = None
@@ -550,16 +492,26 @@ class SimpleAnalysisService:
                 converted_wav_path = self.convert_m4a_to_wav(file_path)
                 file_path = converted_wav_path
 
-            # Extract metadata using OpenAI if available and not skipped
-            ai_metadata = {}
-            if original_filename and not skip_ai_metadata:
-                ai_metadata = self.extract_metadata_with_ai(
-                    original_filename, file_path
+            # Clean the filename via the Gemini filename cleaner (if available)
+            # before it's used as a fallback source for ID3 tag parsing.
+            if (
+                original_filename
+                and not skip_filename_cleaning
+                and self.ai_extractor
+                and self.ai_extractor._is_available()
+            ):
+                cleaned_filename = self.ai_extractor._clean_filename_with_llm(
+                    original_filename
                 )
-                if ai_metadata:
-                    logger.info("AI metadata extracted successfully")
-            elif skip_ai_metadata:
-                logger.debug("Skipping AI metadata extraction (skip_ai_metadata=True)")
+                if cleaned_filename and cleaned_filename != original_filename:
+                    logger.info(
+                        f"Filename cleaned: '{original_filename}' -> '{cleaned_filename}'"
+                    )
+                    original_filename = cleaned_filename
+            elif skip_filename_cleaning:
+                logger.debug(
+                    "Skipping filename cleaning (skip_filename_cleaning=True)"
+                )
 
             # Load audio samples for efficient analysis (harmonic, percussive, and BPM)
             (
@@ -583,8 +535,6 @@ class SimpleAnalysisService:
                 file_path
             )  # Use full file for duration
 
-            ai_bpm = ai_metadata.get("audioFeatures", {}).get("bpm", None)
-            ai_key = ai_metadata.get("audioFeatures", {}).get("key", None)
             # Computed first: extract_basic_features now sources tempo/danceability/
             # mood/instrumentalness from these instead of the retired hand-computed
             # detectors/formulas.
@@ -604,8 +554,6 @@ class SimpleAnalysisService:
                 discogs_tempo,
                 discogs_deam,
                 discogs_skey,
-                ai_bpm,
-                ai_key,
             )  # Use optimized samples for features
             # Use harmonic sample for fingerprint (more representative of melody/harmony)
             fingerprint = self.generate_simple_fingerprint(file_path, y_harmonic, sr)
@@ -637,10 +585,6 @@ class SimpleAnalysisService:
                 "discogs_skey": discogs_skey,
                 **id3_tags,
             }
-
-            # Add OpenAI metadata if available
-            if ai_metadata:
-                analysis_result["ai_metadata"] = ai_metadata
 
             logger.info(
                 f"Simple audio analysis completed in {analysis_result['processing_time']:.3f}s"
@@ -700,7 +644,6 @@ class SimpleAnalysisService:
         idx: int,
         file_path: str,
         original_filename: str,
-        ai_metadata: Dict[str, Any],
         total_files: int,
         sample_duration: float,
         skip_intro: float,
@@ -716,8 +659,9 @@ class SimpleAnalysisService:
         Args:
             idx: Index of this file within the batch (for progress events / ordering)
             file_path: Path to the (temp) audio file
-            original_filename: Original filename for reporting
-            ai_metadata: Pre-fetched AI metadata for this file (may be empty)
+            original_filename: Filename for reporting -- already cleaned by the caller
+                (see analyze_audio_batch's batch filename-cleaning step) if cleaning was
+                enabled and available.
             total_files: Total files in the batch
             sample_duration: Audio sample duration in seconds
             skip_intro: Seconds to skip from the start
@@ -772,10 +716,6 @@ class SimpleAnalysisService:
 
             technical_info = self.extract_audio_technical(file_path)
 
-            # Extract AI BPM and key if available
-            ai_bpm = ai_metadata.get("audioFeatures", {}).get("bpm", None)
-            ai_key = ai_metadata.get("audioFeatures", {}).get("key", None)
-
             # Publish audio.analysis progress (25%)
             if progress_publisher and session_id:
                 progress_publisher.publish_track_progress(
@@ -808,8 +748,6 @@ class SimpleAnalysisService:
                 discogs_tempo,
                 discogs_deam,
                 discogs_skey,
-                ai_bpm,
-                ai_key,
             )
 
             # Publish audio.analysis progress (50%)
@@ -858,10 +796,6 @@ class SimpleAnalysisService:
                 "discogs_skey": discogs_skey,
                 **id3_tags,
             }
-
-            # Add AI metadata if available
-            if ai_metadata:
-                file_result["ai_metadata"] = ai_metadata
 
             # Publish audio.analysis progress (100% - complete)
             if progress_publisher and session_id:
@@ -919,24 +853,24 @@ class SimpleAnalysisService:
         file_items: List[Tuple[str, str]],
         sample_duration: float = 10.0,
         skip_intro: float = 30.0,
-        skip_ai_metadata: bool = False,
+        skip_filename_cleaning: bool = False,
         session_id: Optional[str] = None,
         batch_index: Optional[int] = None,
         progress_publisher: Optional[Any] = None,
     ) -> Dict[str, Any]:
         """
-        Analyze multiple audio files in batch with efficient AI metadata extraction.
+        Analyze multiple audio files in batch with efficient filename cleaning.
 
         This method processes multiple files efficiently by:
-        1. Extracting AI metadata for all files in a single batch API call (70%+ token savings)
+        1. Cleaning all filenames in a single batch API call (70%+ token savings)
         2. Processing audio analysis (BPM, features, fingerprint) for each file individually
-        3. Matching AI metadata results to files by order
+        3. Matching cleaned filenames to files by order
 
         Args:
             file_items: List of tuples (file_path, original_filename) to process
             sample_duration: Duration of audio sample to analyze in seconds (default: 10.0)
             skip_intro: Seconds to skip from beginning (default: 30.0)
-            skip_ai_metadata: Whether to skip AI metadata extraction (default: False)
+            skip_filename_cleaning: Whether to skip filename cleaning (default: False)
 
         Returns:
             Dictionary containing:
@@ -957,10 +891,12 @@ class SimpleAnalysisService:
         logger.info(f"Starting batch audio analysis for {total_files} files")
 
         try:
-            # Step 1: Extract AI metadata for all files in a single batch call
-            ai_metadata_list: List[Dict[str, Any]] = []
+            # Step 1: Clean all filenames in a single batch call
+            cleaned_filenames: List[str] = [
+                original_filename for _, original_filename in file_items
+            ]
             if (
-                not skip_ai_metadata
+                not skip_filename_cleaning
                 and self.ai_extractor
                 and self.ai_extractor._is_available()
             ):
@@ -978,57 +914,46 @@ class SimpleAnalysisService:
                                 batchIndex=batch_index,
                             )
 
-                    # Prepare items for batch metadata extraction: (filename, file_path)
-                    batch_items = [
-                        (original_filename, file_path)
-                        for file_path, original_filename in file_items
+                    filenames_to_clean = [
+                        original_filename for _, original_filename in file_items
+                    ]
+                    file_paths_to_clean = [
+                        file_path for file_path, _ in file_items
                     ]
 
                     logger.info(
-                        f"Extracting AI metadata for {len(batch_items)} files in batch"
+                        f"Cleaning {len(filenames_to_clean)} filenames in batch"
                     )
-                    ai_metadata_list = self.ai_extractor.extract_metadata_batch(
-                        items=batch_items,
-                        batch_filename_cleaning=True,
-                        max_batch_size=10,  # Process in chunks of 10
+                    cleaned_result = self.ai_extractor._clean_filenames_batch(
+                        filenames_to_clean, file_paths_to_clean
                     )
 
-                    # Validate that we got the expected number of results
-                    if len(ai_metadata_list) != total_files:
-                        logger.warning(
-                            f"Batch AI metadata extraction returned {len(ai_metadata_list)} items, "
-                            f"expected {total_files}. Padding with empty metadata."
+                    if isinstance(cleaned_result, list) and len(
+                        cleaned_result
+                    ) == len(filenames_to_clean):
+                        cleaned_filenames = cleaned_result
+                        logger.info(
+                            f"Successfully cleaned {len(cleaned_filenames)} filenames"
                         )
-                        # Pad with empty metadata if needed
-                        while len(ai_metadata_list) < total_files:
-                            ai_metadata_list.append({})
-                        # Truncate if too many (shouldn't happen, but be safe)
-                        ai_metadata_list = ai_metadata_list[:total_files]
-
-                    logger.info(
-                        f"Successfully extracted AI metadata for {len(ai_metadata_list)} files"
-                    )
+                    else:
+                        logger.warning(
+                            f"Batch filename cleaning returned "
+                            f"{len(cleaned_result) if isinstance(cleaned_result, list) else 'non-list'} items, "
+                            f"expected {len(filenames_to_clean)}. Using original filenames."
+                        )
                 except Exception as e:
                     logger.warning(
-                        f"Batch AI metadata extraction failed: {e}. "
-                        "Continuing with individual file analysis."
+                        f"Batch filename cleaning failed: {e}. "
+                        "Continuing with original filenames."
                     )
-                    import traceback
-
-                    logger.debug(
-                        f"Batch extraction error traceback: {traceback.format_exc()}"
-                    )
-                    # If batch fails, create empty metadata for each file
-                    ai_metadata_list = [{}] * total_files
             else:
                 logger.debug(
-                    "Skipping AI metadata extraction (disabled or unavailable)"
+                    "Skipping filename cleaning (disabled or unavailable)"
                 )
-                ai_metadata_list = [{}] * total_files
 
             # Step 2: Process each file for audio analysis.
             # The CPU-bound audio work (decode, features, fingerprint) for each file is
-            # independent now that AI metadata has been fetched batch-up-front, so we run
+            # independent now that filenames have been cleaned batch-up-front, so we run
             # files across a small thread pool. librosa/numpy release the GIL during the
             # heavy numeric work, giving real speedup. Results are reassembled in input order.
             # Each worker handles its own M4A conversion + WAV cleanup, so no shared
@@ -1044,8 +969,9 @@ class SimpleAnalysisService:
                         self._analyze_single_file_in_batch,
                         idx,
                         file_path,
-                        original_filename,
-                        ai_metadata_list[idx] if idx < len(ai_metadata_list) else {},
+                        cleaned_filenames[idx]
+                        if idx < len(cleaned_filenames)
+                        else original_filename,
                         total_files,
                         sample_duration,
                         skip_intro,
