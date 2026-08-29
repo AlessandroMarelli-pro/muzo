@@ -407,7 +407,10 @@ class SimpleMetadataExtractor:
 
     @monitor_performance("simple_id3_tags")
     def extract_id3_tags(
-        self, file_path: str, original_filename: str = ""
+        self,
+        file_path: str,
+        original_filename: str = "",
+        cleaned_filename: str = "",
     ) -> Dict[str, Any]:
         """
         Extract ID3 tags from audio file with filename fallback.
@@ -415,6 +418,10 @@ class SimpleMetadataExtractor:
         Args:
             file_path: Path to audio file
             original_filename: Original filename for fallback parsing
+            cleaned_filename: LLM-cleaned "Artist - Title" filename. When given and
+                it parses to a valid artist + title, it overrides the ID3
+                title/artist tags (which often name a compiler/DJ or carry label
+                junk). Empty string disables the override.
 
         Returns:
             Dictionary containing ID3 tag information
@@ -733,8 +740,37 @@ class SimpleMetadataExtractor:
                                     id3_tags["youtube_artist_corrected"] = True
                                 break
 
+            # LLM-cleaned filename wins: when the caller passed a cleaned
+            # "Artist - Title" and it parses to a valid artist + title, it
+            # overrides the ID3 title/artist tags outright (those often name a
+            # compiler/DJ, e.g. "Off The Shelf DJ", or carry label/catalog junk).
+            cleaned_override_applied = False
+            if cleaned_filename and cleaned_filename.strip() and self.filename_parser:
+                cleaned_metadata = self.filename_parser.parse_filename_for_metadata(
+                    cleaned_filename.strip()
+                )
+                cleaned_artist = cleaned_metadata.get("artist", "").strip()
+                cleaned_title = cleaned_metadata.get("title", "").strip()
+                if cleaned_artist and cleaned_title:
+                    logger.info(
+                        f"LLM-cleaned filename overrides ID3: "
+                        f"'{id3_tags.get('artist', '')}' - '{id3_tags.get('title', '')}' -> "
+                        f"'{cleaned_artist}' - '{cleaned_title}'"
+                    )
+                    id3_tags["artist"] = cleaned_artist.lower()
+                    id3_tags["title"] = cleaned_title.lower()
+                    if not id3_tags.get("year"):
+                        id3_tags["year"] = cleaned_metadata.get("year", "")
+                    if not id3_tags.get("label"):
+                        id3_tags["label"] = cleaned_metadata.get("label", "")
+                    id3_tags["filename_parsed"] = True
+                    id3_tags["cleaned_filename_override"] = True
+                    cleaned_override_applied = True
+
             # Fallback to filename parsing if ID3 tags are missing
-            if id3_tags.get("title") and not id3_tags.get("artist"):
+            if cleaned_override_applied:
+                pass
+            elif id3_tags.get("title") and not id3_tags.get("artist"):
                 logger.info("ID3 tags missing, falling back to filename parsing")
                 filename = id3_tags.get("title")
                 if self.filename_parser:

@@ -156,7 +156,9 @@ class GeminiMetadataExtractor(BaseMetadataExtractor):
         """Check if the service is available (SDK installed and client built)."""
         return GEMINI_AVAILABLE and self.client is not None
 
-    def _clean_filename_with_llm(self, filename: str) -> str:
+    def _clean_filename_with_llm(
+        self, filename: str, id3_hint: Optional[str] = None
+    ) -> str:
         """
         Clean and normalize filename using LLM to extract core artist-title format.
 
@@ -165,6 +167,9 @@ class GeminiMetadataExtractor(BaseMetadataExtractor):
 
         Args:
             filename: Raw filename to clean
+            id3_hint: Optional "artist=...; title=..." string from the file's ID3
+                tags; used only as a fallback when the filename doesn't already
+                contain a clear "Artist - Title" -- never to override a good filename.
 
         Returns:
             Cleaned filename in normalized format (e.g., "Artist - Title")
@@ -173,7 +178,17 @@ class GeminiMetadataExtractor(BaseMetadataExtractor):
             return filename
 
         try:
+            hint_line = (
+                f"\nID3 tags for this file: {id3_hint}\n"
+                "Use these ONLY if the filename doesn't already contain a clear "
+                '"Artist - Title". If the filename is already well-formed, keep it '
+                "as-is and ignore the ID3 tags (they may name a compiler/DJ, not "
+                "the track artist).\n"
+                if id3_hint
+                else ""
+            )
             cleaning_prompt = f"""Clean and normalize this music filename to extract only the core artist and title information.
+{hint_line}
 
 Remove:
 - Country tags in brackets like [nigeria], [uk], [us]
@@ -211,13 +226,22 @@ Return ONLY the cleaned filename, nothing else. No explanations, no markdown, ju
                 config=config,
             )
 
-            if hasattr(response, "text") and response.text:
-                cleaned = response.text.strip()
+            raw_text = response.text if hasattr(response, "text") else None
+            logger.debug(
+                f"LLM filename clean: model={self.cleaning_model} "
+                f"in={filename!r} id3_hint={id3_hint!r} raw_response={raw_text!r}"
+            )
+
+            if raw_text:
+                cleaned = raw_text.strip()
                 cleaned = cleaned.strip('"').strip("'").strip()
                 cleaned = cleaned.replace("```", "").strip()
+                logger.info(f"LLM filename clean: {filename!r} -> {cleaned!r}")
                 return cleaned
             else:
-                logger.warning("Empty response from filename cleaning, using original")
+                logger.warning(
+                    f"Empty LLM response for filename {filename!r}, using original"
+                )
                 return filename
 
         except Exception as e:
@@ -233,7 +257,8 @@ Return ONLY the cleaned filename, nothing else. No explanations, no markdown, ju
         Clean and normalize multiple filenames in a single API call for efficiency.
 
         This batches filename cleaning to reduce API calls and improve throughput.
-        Uses ID3 tags when available to enrich filenames that only contain titles.
+        Every filename is sent to the LLM; ID3 artist/title (when present) are
+        passed alongside as hints the model can use or correct.
 
         Args:
             filenames: List of raw filenames to clean
@@ -246,10 +271,13 @@ Return ONLY the cleaned filename, nothing else. No explanations, no markdown, ju
             return filenames
 
         try:
-            # Extract ID3 tags for files that have paths
-            pre_cleaned_filenames = []
-            filenames_to_clean_with_llm = []
-            indices_to_clean = []
+            # The LLM cleans every filename; pre_cleaned_filenames stays all-None
+            # (kept so the response-mapping code below is unchanged) and each
+            # filename gets an optional ID3 hint string.
+            pre_cleaned_filenames = [None] * len(filenames)
+            filenames_to_clean_with_llm = list(filenames)
+            indices_to_clean = list(range(len(filenames)))
+            id3_hints: List[Optional[str]] = [None] * len(filenames)
 
             if file_paths and len(file_paths) == len(filenames):
                 for idx, (filename, file_path) in enumerate(zip(filenames, file_paths)):
@@ -269,43 +297,26 @@ Return ONLY the cleaned filename, nothing else. No explanations, no markdown, ju
                     id3_title = id3_tags.get("title") if id3_tags else None
 
                     if id3_artist and id3_title:
-                        cleaned = f"{id3_artist} - {id3_title}"
-                        pre_cleaned_filenames.append(cleaned)
-                        logger.debug(
-                            f"Using ID3 tags for '{filename}': '{id3_artist} - {id3_title}'"
-                        )
+                        id3_hints[idx] = f"artist={id3_artist}; title={id3_title}"
                     elif id3_artist:
-                        cleaned = f"{id3_artist} - {filename}"
-                        pre_cleaned_filenames.append(cleaned)
-                        logger.debug(
-                            f"Using ID3 artist for '{filename}': '{id3_artist} - {filename}'"
-                        )
+                        id3_hints[idx] = f"artist={id3_artist}"
                     elif id3_title:
-                        cleaned = f"{filename} - {id3_title}"
-                        pre_cleaned_filenames.append(cleaned)
-                        logger.debug(
-                            f"Using ID3 title for '{filename}': '{filename} - {id3_title}'"
-                        )
-                    else:
-                        pre_cleaned_filenames.append(None)
-                        filenames_to_clean_with_llm.append(filename)
-                        indices_to_clean.append(idx)
-            else:
-                pre_cleaned_filenames = [None] * len(filenames)
-                filenames_to_clean_with_llm = filenames
-                indices_to_clean = list(range(len(filenames)))
+                        id3_hints[idx] = f"title={id3_title}"
 
-            if not filenames_to_clean_with_llm:
-                logger.info(
-                    f"All {len(filenames)} filenames cleaned using ID3 tags, skipping LLM"
-                )
-                return pre_cleaned_filenames
+            def _format_entry(i: int, fn: str) -> str:
+                hint = id3_hints[i]
+                if hint:
+                    return f"{i + 1}. {fn}  (ID3 tags: {hint})"
+                return f"{i + 1}. {fn}"
 
             filenames_list = "\n".join(
-                [f"{i + 1}. {fn}" for i, fn in enumerate(filenames_to_clean_with_llm)]
+                _format_entry(i, fn)
+                for i, fn in enumerate(filenames_to_clean_with_llm)
             )
             user_content = f"""Filenames to clean:
 {filenames_list}
+
+Some entries include "ID3 tags". Use those ONLY as a fallback when the filename doesn't already contain a clear "Artist - Title". If a filename is already well-formed, keep it as-is and ignore its ID3 tags (they may name a compiler/DJ, not the track artist).
 
 Return ONLY a JSON array of cleaned filenames in the same order, nothing else. Format: ["Artist - Title", "Artist2 - Title2", ...]"""
 
@@ -321,10 +332,16 @@ Return ONLY a JSON array of cleaned filenames in the same order, nothing else. F
                 config=config,
             )
 
+            raw_text = response.text if hasattr(response, "text") else None
+            logger.debug(
+                f"LLM batch filename clean: model={self.cleaning_model} "
+                f"count={len(filenames_to_clean_with_llm)} raw_response={raw_text!r}"
+            )
+
             def _individual_fallback():
                 llm_cleaned = [
-                    self._clean_filename_with_llm(fn)
-                    for fn in filenames_to_clean_with_llm
+                    self._clean_filename_with_llm(fn, id3_hints[indices_to_clean[i]])
+                    for i, fn in enumerate(filenames_to_clean_with_llm)
                 ]
                 final_cleaned = pre_cleaned_filenames.copy()
                 for llm_idx, original_idx in enumerate(indices_to_clean):
@@ -353,9 +370,15 @@ Return ONLY a JSON array of cleaned filenames in the same order, nothing else. F
                         ]
 
                         if len(cleaned_list) == len(filenames_to_clean_with_llm):
-                            logger.debug(
-                                f"Successfully batch cleaned {len(cleaned_list)} filenames with LLM"
+                            logger.info(
+                                f"LLM batch cleaned {len(cleaned_list)} filenames"
                             )
+                            for src, dst in zip(
+                                filenames_to_clean_with_llm, cleaned_list
+                            ):
+                                logger.info(
+                                    f"LLM filename clean: {src!r} -> {dst!r}"
+                                )
                             final_cleaned = pre_cleaned_filenames.copy()
                             for llm_idx, original_idx in enumerate(indices_to_clean):
                                 final_cleaned[original_idx] = cleaned_list[llm_idx]
@@ -390,7 +413,8 @@ Return ONLY a JSON array of cleaned filenames in the same order, nothing else. F
                 f"Failed to clean filenames in batch: {e}. Falling back to individual cleaning."
             )
             llm_cleaned = [
-                self._clean_filename_with_llm(fn) for fn in filenames_to_clean_with_llm
+                self._clean_filename_with_llm(fn, id3_hints[indices_to_clean[i]])
+                for i, fn in enumerate(filenames_to_clean_with_llm)
             ]
             final_cleaned = pre_cleaned_filenames.copy()
             for llm_idx, original_idx in enumerate(indices_to_clean):

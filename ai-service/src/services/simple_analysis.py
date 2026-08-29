@@ -130,9 +130,14 @@ class SimpleAnalysisService:
 
     @monitor_performance("id3_extraction")
     def extract_id3_tags(
-        self, file_path: str, original_filename: str = ""
+        self,
+        file_path: str,
+        original_filename: str = "",
+        cleaned_filename: str = "",
     ) -> Dict[str, Any]:
-        return self.metadata_extractor.extract_id3_tags(file_path, original_filename)
+        return self.metadata_extractor.extract_id3_tags(
+            file_path, original_filename, cleaned_filename
+        )
 
     @monitor_performance("technical_analysis")
     def extract_audio_technical(self, file_path: str) -> Dict[str, Any]:
@@ -156,7 +161,9 @@ class SimpleAnalysisService:
         )
 
     @monitor_performance("discogs_embedding_generation")
-    def generate_discogs_embedding_from_file(self, y_full, sr: int) -> Tuple[list, Optional[dict]]:
+    def generate_discogs_embedding_from_file(
+        self, y_full, sr: int
+    ) -> Tuple[list, Optional[dict]]:
         """
         Extract the discogs-effnet embedding from the FULL track (not the
         trimmed harmonic/BPM/spectral analysis window). Essentia's own docs
@@ -193,10 +200,16 @@ class SimpleAnalysisService:
             return [], {"model": "discogs_embedding", "reason": "empty", "detail": None}
         except Exception as e:
             logger.error(f"Failed to extract discogs embedding: {e}")
-            return [], {"model": "discogs_embedding", "reason": "failed", "detail": str(e)}
+            return [], {
+                "model": "discogs_embedding",
+                "reason": "failed",
+                "detail": str(e),
+            }
 
     @monitor_performance("discogs_classifiers_generation")
-    def generate_discogs_classifiers(self, embedding: list) -> Tuple[dict, Optional[dict]]:
+    def generate_discogs_classifiers(
+        self, embedding: list
+    ) -> Tuple[dict, Optional[dict]]:
         """
         Run the discogs-effnet classifier heads (danceability, 5 moods,
         genre_discogs400) on an already-computed embedding. Gated by
@@ -210,7 +223,11 @@ class SimpleAnalysisService:
             logger.debug(
                 "Discogs classifiers skipped: DISCOGS_CLASSIFIERS_ENABLED is false"
             )
-            return {}, {"model": "discogs_classifiers", "reason": "disabled", "detail": None}
+            return {}, {
+                "model": "discogs_classifiers",
+                "reason": "disabled",
+                "detail": None,
+            }
         if not embedding:
             logger.warning("Discogs classifiers skipped: no embedding available")
             return {}, {
@@ -223,7 +240,11 @@ class SimpleAnalysisService:
             result = self.classifiers_extractor.predict_all(embedding)
         except Exception as e:
             logger.error(f"Discogs classifiers extraction failed: {e}")
-            return {}, {"model": "discogs_classifiers", "reason": "failed", "detail": str(e)}
+            return {}, {
+                "model": "discogs_classifiers",
+                "reason": "failed",
+                "detail": str(e),
+            }
 
         if result:
             genres = result.get("genres") or []
@@ -394,7 +415,9 @@ class SimpleAnalysisService:
             musical, labels = basic_features["musical"], basic_features["labels"]
 
         features = {
-            "tempo": feature(musical.get("tempo"), "tempo_cnn", musical.get("tempo_confidence")),
+            "tempo": feature(
+                musical.get("tempo"), "tempo_cnn", musical.get("tempo_confidence")
+            ),
             "key": feature(musical.get("key"), "skey"),
             "camelot_key": feature(musical.get("camelot_key"), "skey"),
             "mode": feature(musical.get("mode"), "skey"),
@@ -472,21 +495,25 @@ class SimpleAnalysisService:
                 converted_wav_path = self.convert_m4a_to_wav(file_path)
                 file_path = converted_wav_path
 
-            # Clean the filename via the Gemini filename cleaner (if available)
-            # before it's used as a fallback source for ID3 tag parsing.
+            # Clean the filename via the Gemini filename cleaner (if available).
+            # The cleaned "Artist - Title" is passed to extract_id3_tags below,
+            # where -- if it parses to a valid artist + title -- it overrides the
+            # ID3 title/artist tags outright.
+            cleaned_filename = ""
             if (
                 original_filename
                 and self.ai_extractor
                 and self.ai_extractor._is_available()
             ):
-                cleaned_filename = self.ai_extractor._clean_filename_with_llm(
+                llm_cleaned = self.ai_extractor._clean_filename_with_llm(
                     original_filename
                 )
-                if cleaned_filename and cleaned_filename != original_filename:
+                if llm_cleaned and llm_cleaned != original_filename:
                     logger.info(
-                        f"Filename cleaned: '{original_filename}' -> '{cleaned_filename}'"
+                        f"Filename cleaned: '{original_filename}' -> '{llm_cleaned}'"
                     )
-                    original_filename = cleaned_filename
+                    cleaned_filename = llm_cleaned
+                    original_filename = llm_cleaned
 
             builder = AnalysisResponseBuilder()
 
@@ -528,7 +555,9 @@ class SimpleAnalysisService:
 
             pipeline = self._run_model_pipeline(y_full, sr, builder)
 
-            id3_tags = self.extract_id3_tags(file_path, original_filename)
+            id3_tags = self.extract_id3_tags(
+                file_path, original_filename, cleaned_filename
+            )
             tags = id3_tags["id3_tags"]
 
             processing_time = round(time.time() - start_time, 3)
@@ -545,9 +574,7 @@ class SimpleAnalysisService:
                 embedding=pipeline["embedding"],
             )
 
-            logger.info(
-                f"Simple audio analysis completed in {processing_time:.3f}s"
-            )
+            logger.info(f"Simple audio analysis completed in {processing_time:.3f}s")
 
             # Track analysis count and perform periodic garbage collection
             self.analysis_count += 1
@@ -712,8 +739,18 @@ class SimpleAnalysisService:
                     75,
                 )
 
-            # Extract ID3 tags
-            id3_tags = self.extract_id3_tags(original_filepath, original_filename)
+            # Extract ID3 tags. When batch cleaning rewrote the filename
+            # (raw_filename differs), original_filename is the LLM-cleaned
+            # "Artist - Title" -- pass it as cleaned_filename so it overrides
+            # the ID3 title/artist tags.
+            cleaned_filename = (
+                original_filename
+                if raw_filename and raw_filename != original_filename
+                else ""
+            )
+            id3_tags = self.extract_id3_tags(
+                original_filepath, original_filename, cleaned_filename
+            )
             tags = id3_tags["id3_tags"]
 
             processing_time = round(time.time() - file_start_time, 3)
@@ -742,8 +779,7 @@ class SimpleAnalysisService:
                 )
 
             logger.info(
-                f"✅ File {idx + 1}/{total_files} completed in "
-                f"{processing_time:.3f}s"
+                f"✅ File {idx + 1}/{total_files} completed in {processing_time:.3f}s"
             )
 
             return file_result, True
