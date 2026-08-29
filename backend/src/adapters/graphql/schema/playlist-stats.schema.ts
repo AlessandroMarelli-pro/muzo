@@ -6,9 +6,6 @@ export class PlaylistStats {
   @Field(() => Range)
   bpmRange: Range;
 
-  @Field(() => Range)
-  energyRange: Range;
-
   @Field(() => Int)
   genresCount: number;
 

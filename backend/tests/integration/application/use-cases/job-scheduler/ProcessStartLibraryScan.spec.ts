@@ -55,7 +55,7 @@ describe('ProcessStartLibraryScanUseCase', () => {
     };
     const loggerFactory = { createLogger: vi.fn(() => logger) };
 
-    const dbUrl = process.env.DATABASE_URL ?? 'file:./muzo.db';
+    const dbUrl = process.env.DATABASE_URL ?? 'postgresql://localhost:5432/muzo';
     const testPrisma = createIntegrationPrismaClient(dbUrl);
     await testPrisma.$connect();
 

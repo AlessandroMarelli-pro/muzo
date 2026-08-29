@@ -8,6 +8,6 @@ export default defineConfig({
     seed: 'tsx prisma/seed.ts',
   },
   datasource: {
-    url: process.env.DATABASE_URL ?? 'file:./prisma/muzo.db',
+    url: process.env.DATABASE_URL ?? 'postgresql://muzo:muzo@localhost:5432/muzo',
   },
 });

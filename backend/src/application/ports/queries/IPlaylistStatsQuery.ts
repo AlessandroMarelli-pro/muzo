@@ -10,7 +10,6 @@ export interface RangeDto {
 export interface PlaylistStatsDto {
   playlistId: PlaylistId;
   bpmRange: RangeDto;
-  energyRange: RangeDto;
   genresCount: number;
   subgenresCount: number;
   topGenres: string[];
@@ -30,8 +29,6 @@ export type RawPlaylistStatsRow = {
   totalDuration: number;
   bpmMin: number;
   bpmMax: number;
-  energyMin: number;
-  energyMax: number;
   genresCount: number;
   subgenresCount: number;
   allGenres: string | null;

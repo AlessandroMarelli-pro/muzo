@@ -9,7 +9,6 @@ import { PlaylistId } from 'src/kernel/ids/scalars';
 const defaultPlaylistStats = (playlistId: PlaylistId): PlaylistStatsDto => ({
   playlistId,
   bpmRange: { min: 0, max: 0 },
-  energyRange: { min: 0, max: 0 },
   genresCount: 0,
   subgenresCount: 0,
   topGenres: [],

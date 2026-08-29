@@ -38,23 +38,23 @@ export class MetricsQuery implements IMetricsQuery {
   }
   private async getTotalTracks() {
     const result = await this.prisma.$queryRaw<[{ count: bigint }]>`
-      SELECT COUNT(*) as count FROM music_tracks WHERE createdById = ${getCurrentUserId()}
+      SELECT COUNT(*) as count FROM music_tracks WHERE "createdById" = ${getCurrentUserId()}
     `;
     return Number(result[0].count);
   }
 
   private async getTotalListeningTime() {
     const result = await this.prisma.$queryRaw<[{ total_seconds: bigint }]>`
-      SELECT COALESCE(SUM(duration), 0) as total_seconds FROM music_tracks WHERE createdById = ${getCurrentUserId()}
+      SELECT COALESCE(SUM(duration), 0) as total_seconds FROM music_tracks WHERE "createdById" = ${getCurrentUserId()}
     `;
     return Number(result[0].total_seconds);
   }
 
   private async getArtistCount() {
     const result = await this.prisma.$queryRaw<[{ count: bigint }]>`
-      SELECT COUNT(DISTINCT COALESCE(aiArtist, originalArtist)) as count 
-      FROM music_tracks 
-      WHERE createdById = ${getCurrentUserId()} AND (aiArtist IS NOT NULL OR originalArtist IS NOT NULL)  
+      SELECT COUNT(DISTINCT COALESCE("aiArtist", "originalArtist")) as count
+      FROM music_tracks
+      WHERE "createdById" = ${getCurrentUserId()} AND ("aiArtist" IS NOT NULL OR "originalArtist" IS NOT NULL)
     `;
     return Number(result[0].count);
   }
@@ -68,12 +68,12 @@ export class MetricsQuery implements IMetricsQuery {
         favorite_count: bigint;
       }>
     >`
-      SELECT 
-        SUM(listeningCount) as total_plays,
-        SUM(listeningCount * duration) as total_play_time,
-        AVG(aiConfidence) as avg_confidence,
-        COUNT(CASE WHEN isFavorite = true THEN 1 END) as favorite_count
-      FROM music_tracks WHERE createdById = ${getCurrentUserId()}
+      SELECT
+        SUM("listeningCount") as total_plays,
+        SUM("listeningCount" * duration) as total_play_time,
+        AVG("aiConfidence") as avg_confidence,
+        COUNT(CASE WHEN "isFavorite" = true THEN 1 END) as favorite_count
+      FROM music_tracks WHERE "createdById" = ${getCurrentUserId()}
     `;
 
     const stats = result[0];
@@ -92,14 +92,14 @@ export class MetricsQuery implements IMetricsQuery {
         total_duration: number;
       }>
     >`
-      SELECT 
-        COALESCE(aiArtist, originalArtist) as artist,
+      SELECT
+        COALESCE("aiArtist", "originalArtist") as artist,
         COUNT(*) as track_count,
         SUM(duration) as total_duration,
-        AVG(aiConfidence) as avg_confidence
-      FROM music_tracks 
-      WHERE createdById = ${getCurrentUserId()} AND (aiArtist IS NOT NULL OR originalArtist IS NOT NULL)
-      GROUP BY COALESCE(aiArtist, originalArtist)
+        AVG("aiConfidence") as avg_confidence
+      FROM music_tracks
+      WHERE "createdById" = ${getCurrentUserId()} AND ("aiArtist" IS NOT NULL OR "originalArtist" IS NOT NULL)
+      GROUP BY COALESCE("aiArtist", "originalArtist")
       ORDER BY track_count DESC, total_duration DESC
       LIMIT 20
     `;
@@ -112,7 +112,7 @@ export class MetricsQuery implements IMetricsQuery {
 
   private async getTopGenres() {
     return this.prisma.$queryRaw<Array<{ genreId: string; count: bigint; name: string }>>`
-      SELECT genreId, genres.name, COUNT(*) as count FROM track_genres JOIN genres ON track_genres.genreId = genres.id WHERE track_genres.createdById = ${getCurrentUserId()} GROUP BY genreId ORDER BY count DESC LIMIT 10
+      SELECT "genreId", genres.name, COUNT(*) as count FROM track_genres JOIN genres ON track_genres."genreId" = genres.id WHERE track_genres."createdById" = ${getCurrentUserId()} GROUP BY "genreId" ORDER BY count DESC LIMIT 10
     `.then((rows) =>
       rows.map((row) => ({
         genre: row.name,
@@ -129,13 +129,13 @@ export class MetricsQuery implements IMetricsQuery {
         tracks_analyzed: bigint;
       }>
     >`
-      SELECT 
-        DATE(createdAt) as date,
+      SELECT
+        "createdAt"::date as date,
         COUNT(*) as tracks_added,
-        COUNT(CASE WHEN analysisStatus = 'COMPLETED' THEN 1 END) as tracks_analyzed
-      FROM music_tracks 
-      WHERE createdById = ${getCurrentUserId()} AND createdAt >= datetime('now', '-30 days')
-      GROUP BY DATE(createdAt)
+        COUNT(CASE WHEN "analysisStatus" = 'COMPLETED' THEN 1 END) as tracks_analyzed
+      FROM music_tracks
+      WHERE "createdById" = ${getCurrentUserId()} AND "createdAt" >= NOW() - INTERVAL '30 days'
+      GROUP BY "createdAt"::date
       ORDER BY date DESC
       LIMIT 30
     `;

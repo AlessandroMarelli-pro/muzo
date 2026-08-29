@@ -8,7 +8,6 @@ import { PRISMA_SERVICE, PrismaService } from 'src/infrastructure/database/prism
 import { extractModelId, MusicLibraryId, SessionId } from 'src/kernel/ids';
 import { getCurrentUserId, Maybe, models } from 'src/kernel/types';
 import { ScanStatusEnum, Session } from 'src/kernel/types/model-types';
-import { retryOnSqliteBusy } from '../retry-on-sqlite-busy';
 import { toDomain, toPrisma, toPrismaUpdate } from './scan-session.mapper';
 
 @Injectable()
@@ -21,28 +20,23 @@ export class ScanSessionRepository implements IScanSessionRepository {
    * Create a new scan session
    */
   async createSession(libraryId: MusicLibraryId | null): Promise<Session> {
-    const session = await retryOnSqliteBusy(
-      () =>
-        this.prisma.scanSession.create({
-          data: toPrisma({
-            ...models.session.instantiateNew({
-              status: ScanStatusEnum.SCANNING,
-              libraryId: libraryId ?? undefined,
-              totalBatches: 0,
-              completedBatches: 0,
-              totalTracks: 0,
-              completedTracks: 0,
-              failedTracks: 0,
-              overallProgress: 0,
-              startedAt: new Date(),
-              completedAt: undefined,
-              errorMessage: undefined,
-            }),
-          }),
+    const session = await this.prisma.scanSession.create({
+      data: toPrisma({
+        ...models.session.instantiateNew({
+          status: ScanStatusEnum.SCANNING,
+          libraryId: libraryId ?? undefined,
+          totalBatches: 0,
+          completedBatches: 0,
+          totalTracks: 0,
+          completedTracks: 0,
+          failedTracks: 0,
+          overallProgress: 0,
+          startedAt: new Date(),
+          completedAt: undefined,
+          errorMessage: undefined,
         }),
-      this.logger,
-      'createSession',
-    );
+      }),
+    });
 
     return toDomain(session);
   }
@@ -55,59 +49,51 @@ export class ScanSessionRepository implements IScanSessionRepository {
   async getActiveSessionOrCreate(
     libraryId: MusicLibraryId | null,
   ): Promise<{ session: Session; created: boolean }> {
-    return retryOnSqliteBusy(
-      () =>
-        this.prisma.$transaction(async (tx) => {
-          const existing = await tx.scanSession.findFirst({
-            where: {
-              createdById: getCurrentUserId(),
-              status: { in: [ScanStatusEnum.SCANNING, ScanStatusEnum.ANALYZING] },
-            },
-            orderBy: { startedAt: 'desc' },
-          });
+    return this.prisma.$transaction(async (tx) => {
+      const existing = await tx.scanSession.findFirst({
+        where: {
+          createdById: getCurrentUserId(),
+          status: { in: [ScanStatusEnum.SCANNING, ScanStatusEnum.ANALYZING] },
+        },
+        orderBy: { startedAt: 'desc' },
+      });
 
-          if (existing) {
-            return { session: toDomain(existing), created: false };
-          }
+      if (existing) {
+        return { session: toDomain(existing), created: false };
+      }
 
-          const created = await tx.scanSession.create({
-            data: toPrisma({
-              ...models.session.instantiateNew({
-                status: ScanStatusEnum.SCANNING,
-                libraryId: libraryId ?? undefined,
-                totalBatches: 0,
-                completedBatches: 0,
-                totalTracks: 0,
-                completedTracks: 0,
-                failedTracks: 0,
-                overallProgress: 0,
-                startedAt: new Date(),
-                completedAt: undefined,
-                errorMessage: undefined,
-              }),
-            }),
-          });
-
-          return { session: toDomain(created), created: true };
+      const created = await tx.scanSession.create({
+        data: toPrisma({
+          ...models.session.instantiateNew({
+            status: ScanStatusEnum.SCANNING,
+            libraryId: libraryId ?? undefined,
+            totalBatches: 0,
+            completedBatches: 0,
+            totalTracks: 0,
+            completedTracks: 0,
+            failedTracks: 0,
+            overallProgress: 0,
+            startedAt: new Date(),
+            completedAt: undefined,
+            errorMessage: undefined,
+          }),
         }),
-      this.logger,
-      'getActiveSessionOrCreate',
-    );
+      });
+
+      return { session: toDomain(created), created: true };
+    });
   }
 
   async updateSession(sessionId: SessionId, updates: UpdateScanSessionInput): Promise<Session> {
-    return retryOnSqliteBusy(
-      () =>
-        this.prisma.scanSession.update({
-          where: {
-            sessionId: extractModelId(sessionId).dbId,
-            createdById: getCurrentUserId(),
-          },
-          data: toPrismaUpdate(updates),
-        }),
-      this.logger,
-      'updateSession',
-    ).then(toDomain);
+    return this.prisma.scanSession
+      .update({
+        where: {
+          sessionId: extractModelId(sessionId).dbId,
+          createdById: getCurrentUserId(),
+        },
+        data: toPrismaUpdate(updates),
+      })
+      .then(toDomain);
   }
 
   /**
@@ -119,26 +105,23 @@ export class ScanSessionRepository implements IScanSessionRepository {
     sessionId: SessionId,
     delta: { totalBatches?: number; totalTracks?: number },
   ): Promise<Session> {
-    return retryOnSqliteBusy(
-      () =>
-        this.prisma.scanSession.update({
-          where: {
-            sessionId: extractModelId(sessionId).dbId,
-            createdById: getCurrentUserId(),
-          },
-          data: {
-            ...(delta.totalBatches !== undefined && {
-              totalBatches: { increment: delta.totalBatches },
-            }),
-            ...(delta.totalTracks !== undefined && {
-              totalTracks: { increment: delta.totalTracks },
-            }),
-            updatedAt: new Date(),
-          },
-        }),
-      this.logger,
-      'incrementSessionTotals',
-    ).then(toDomain);
+    return this.prisma.scanSession
+      .update({
+        where: {
+          sessionId: extractModelId(sessionId).dbId,
+          createdById: getCurrentUserId(),
+        },
+        data: {
+          ...(delta.totalBatches !== undefined && {
+            totalBatches: { increment: delta.totalBatches },
+          }),
+          ...(delta.totalTracks !== undefined && {
+            totalTracks: { increment: delta.totalTracks },
+          }),
+          updatedAt: new Date(),
+        },
+      })
+      .then(toDomain);
   }
 
   /**
@@ -203,39 +186,35 @@ export class ScanSessionRepository implements IScanSessionRepository {
     }
 
     // Use a transaction to ensure atomicity and check session status
-    return retryOnSqliteBusy(
-      () =>
-        this.prisma.$transaction(async (tx) => {
-          // First, verify the session exists and is in SCANNING status
-          const activeSession = await tx.scanSession.findUnique({
-            where: {
-              sessionId: extractModelId(sessionId).dbId,
-              createdById: getCurrentUserId(),
-            },
-            select: { status: true },
-          });
+    return this.prisma
+      .$transaction(async (tx) => {
+        // First, verify the session exists and is in SCANNING status
+        const activeSession = await tx.scanSession.findUnique({
+          where: {
+            sessionId: extractModelId(sessionId).dbId,
+            createdById: getCurrentUserId(),
+          },
+          select: { status: true },
+        });
 
-          if (!activeSession || activeSession.status !== ScanStatusEnum.SCANNING) {
-            this.logger.warn(
-              `Dropped progress update for session ${sessionId}: session is ${
-                activeSession ? `in status ${activeSession.status}` : 'missing'
-              }, not SCANNING`,
-            );
-            return null;
-          }
+        if (!activeSession || activeSession.status !== ScanStatusEnum.SCANNING) {
+          this.logger.warn(
+            `Dropped progress update for session ${sessionId}: session is ${
+              activeSession ? `in status ${activeSession.status}` : 'missing'
+            }, not SCANNING`,
+          );
+          return null;
+        }
 
-          // Perform atomic update with increment
-          return await tx.scanSession.update({
-            where: {
-              sessionId: extractModelId(sessionId).dbId,
-              createdById: getCurrentUserId(),
-            },
-            data: updateData,
-          });
-        }),
-      this.logger,
-      'updateSessionProgress',
-    )
+        // Perform atomic update with increment
+        return await tx.scanSession.update({
+          where: {
+            sessionId: extractModelId(sessionId).dbId,
+            createdById: getCurrentUserId(),
+          },
+          data: updateData,
+        });
+      })
       .then((result) => (result ? toDomain(result) : null))
       .catch((error) => {
         this.logger.error(`Error updating progress for session ${sessionId}`, error);
@@ -247,22 +226,19 @@ export class ScanSessionRepository implements IScanSessionRepository {
    * Mark session as completed
    */
   async completeSession(sessionId: SessionId, success: boolean = true): Promise<Session> {
-    return retryOnSqliteBusy(
-      () =>
-        this.prisma.scanSession.update({
-          where: {
-            sessionId: extractModelId(sessionId).dbId,
-            createdById: getCurrentUserId(),
-          },
-          data: {
-            status: success ? ScanStatusEnum.IDLE : ScanStatusEnum.ERROR,
-            completedAt: new Date(),
-            overallProgress: 10000,
-          },
-        }),
-      this.logger,
-      'completeSession',
-    ).then(toDomain);
+    return this.prisma.scanSession
+      .update({
+        where: {
+          sessionId: extractModelId(sessionId).dbId,
+          createdById: getCurrentUserId(),
+        },
+        data: {
+          status: success ? ScanStatusEnum.IDLE : ScanStatusEnum.ERROR,
+          completedAt: new Date(),
+          overallProgress: 10000,
+        },
+      })
+      .then(toDomain);
   }
 
   /**
@@ -299,30 +275,20 @@ export class ScanSessionRepository implements IScanSessionRepository {
   }
 
   async deleteSession(sessionId: SessionId): Promise<void> {
-    await retryOnSqliteBusy(
-      () =>
-        this.prisma.scanSession.delete({
-          where: {
-            sessionId: extractModelId(sessionId).dbId,
-            createdById: getCurrentUserId(),
-          },
-        }),
-      this.logger,
-      'deleteSession',
-    );
+    await this.prisma.scanSession.delete({
+      where: {
+        sessionId: extractModelId(sessionId).dbId,
+        createdById: getCurrentUserId(),
+      },
+    });
   }
 
   async deleteAllSessionsForLibrary(libraryId: MusicLibraryId): Promise<void> {
-    await retryOnSqliteBusy(
-      () =>
-        this.prisma.scanSession.deleteMany({
-          where: {
-            createdById: getCurrentUserId(),
-            libraryId: extractModelId(libraryId).dbId,
-          },
-        }),
-      this.logger,
-      'deleteAllSessionsForLibrary',
-    );
+    await this.prisma.scanSession.deleteMany({
+      where: {
+        createdById: getCurrentUserId(),
+        libraryId: extractModelId(libraryId).dbId,
+      },
+    });
   }
 }

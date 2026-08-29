@@ -29,8 +29,6 @@ function makeRawPlaylistStatsRow(
     totalDuration: 3600,
     bpmMin: 90,
     bpmMax: 130,
-    energyMin: 0.2,
-    energyMax: 0.9,
     genresCount: 3,
     subgenresCount: 5,
     allGenres: 'rock,indie,electronic',
@@ -65,7 +63,6 @@ describe('PlaylistStatsQuery', () => {
       expect(result.numberOfTracks).toBe(10);
       expect(result.totalDuration).toBe(3600);
       expect(result.bpmRange).toEqual({ min: 90, max: 130 });
-      expect(result.energyRange).toEqual({ min: 0.2, max: 0.9 });
       expect(result.genresCount).toBe(3);
       expect(result.subgenresCount).toBe(5);
       expect(result.topGenres).toEqual(['rock', 'indie', 'electronic']);

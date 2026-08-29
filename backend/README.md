@@ -43,7 +43,7 @@ The backend is designed to handle large music libraries efficiently through asyn
 ### Core Functionality
 
 - **GraphQL API** — Apollo Server with real-time subscriptions for live updates
-- **Database** — Prisma ORM with SQLite (Turso/LibSQL compatible for production)
+- **Database** — Prisma ORM with PostgreSQL
 - **Queue System** — BullMQ for async audio scanning, metadata extraction, and AI analysis
 - **AI Integration** — Genre classification, BPM detection, audio fingerprinting, mood analysis
 - **Recommendations** — Smart track suggestions powered by Elasticsearch with customizable weights
@@ -76,7 +76,7 @@ The backend is designed to handle large music libraries efficiently through asyn
 | ---------------- | ----------------------------------- |
 | Framework        | NestJS 11.x                         |
 | API              | GraphQL (Apollo Server 4.x)         |
-| Database         | Prisma 6.x + SQLite                 |
+| Database         | Prisma 7.x + PostgreSQL              |
 | Queues           | BullMQ 5.x + Redis (via ioredis)    |
 | Search           | Elasticsearch 9.x                   |
 | Real-time        | Socket.IO 4.x                       |
@@ -114,7 +114,7 @@ The backend is designed to handle large music libraries efficiently through asyn
 │         ▼                 ▼                    ▼                 │
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────────────┐   │
 │  │   Prisma     │  │   BullMQ     │  │   Elasticsearch      │   │
-│  │   (SQLite)   │  │   (Redis)    │  │   (Search/Recs)      │   │
+│  │  (Postgres)  │  │   (Redis)    │  │   (Search/Recs)      │   │
 │  └──────────────┘  └──────────────┘  └──────────────────────┘   │
 └─────────────────────────────────────────────────────────────────┘
                               │
@@ -333,8 +333,7 @@ backend/
 │
 ├── prisma/
 │   ├── schema.prisma              # Database schema definition
-│   ├── migrations/                # Migration history (16 migrations)
-│   ├── muzo.db                    # SQLite database file
+│   ├── migrations/                # Migration history
 │   └── seed.ts                    # Database seeding script
 │
 ├── tests/
@@ -956,7 +955,7 @@ Copy `env.template` to `.env` and configure:
 
 | Variable           | Default          | Description                 |
 | ------------------ | ---------------- | --------------------------- |
-| `DATABASE_URL`     | `file:./muzo.db` | SQLite database path        |
+| `DATABASE_URL`     | `postgresql://muzo:muzo@postgres:5432/muzo` | PostgreSQL connection string |
 | `DATABASE_LOGGING` | `false`          | Enable Prisma query logging |
 
 ### Server

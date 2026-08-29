@@ -19,15 +19,15 @@ export class SavedFilterQuery implements ISavedFilterQuery {
         type: keyof StaticFilterOptions;
       }[]
     >`
-        SELECT id, name, 'genres' as type FROM genres as genres WHERE createdById = ${getCurrentUserId()}
+        SELECT id, name, 'genres' as type FROM genres as genres WHERE "createdById" = ${getCurrentUserId()}
         UNION ALL
-        SELECT id, name, 'subgenres' as type FROM subgenres as subgenres WHERE createdById = ${getCurrentUserId()}
+        SELECT id, name, 'subgenres' as type FROM subgenres as subgenres WHERE "createdById" = ${getCurrentUserId()}
         UNION ALL
-        SELECT DISTINCT key as id, key as name, 'keys' as type FROM audio_fingerprints as keys WHERE createdById = ${getCurrentUserId()}
+        SELECT DISTINCT key as id, key as name, 'keys' as type FROM audio_fingerprints as keys WHERE "createdById" = ${getCurrentUserId()}
         UNION ALL
-        SELECT id, name, 'libraries' as type FROM music_libraries as libraries WHERE createdById = ${getCurrentUserId()}
+        SELECT id, name, 'libraries' as type FROM music_libraries as libraries WHERE "createdById" = ${getCurrentUserId()}
         UNION ALL
-        SELECT id, name, 'atmospheres' as type FROM ai_atmosphere_tags as atmospheres WHERE createdById = ${getCurrentUserId()}
+        SELECT id, name, 'atmospheres' as type FROM ai_atmosphere_tags as atmospheres WHERE "createdById" = ${getCurrentUserId()}
     `.then((result) => {
       const groups = groupBy(result, 'type');
 

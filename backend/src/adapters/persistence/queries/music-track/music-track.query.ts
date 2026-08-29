@@ -26,12 +26,12 @@ export class MusicTrackQuery implements IMusicTrackQueries {
         trackId: string;
       }[]
     >`
-     SELECT SUM(CASE WHEN isLiked = true AND isBanger = false THEN 1 ELSE 0 END) as likedCount,
-        SUM(CASE WHEN isBanger = true THEN 1 ELSE 0 END) as bangerCount,
-        (SELECT COUNT(*) FROM hidden_music_tracks WHERE createdById = ${currentUserId}) as dislikedCount,
-        SUM(CASE WHEN isLiked = false AND isBanger = false THEN 1 ELSE 0 END) as remainingCount,
-        (SELECT id FROM music_tracks WHERE createdById = ${currentUserId} ORDER BY RANDOM() LIMIT 1) as trackId
-      FROM music_tracks WHERE createdById = ${currentUserId}
+     SELECT SUM(CASE WHEN "isLiked" = true AND "isBanger" = false THEN 1 ELSE 0 END) as "likedCount",
+        SUM(CASE WHEN "isBanger" = true THEN 1 ELSE 0 END) as "bangerCount",
+        (SELECT COUNT(*) FROM hidden_music_tracks WHERE "createdById" = ${currentUserId}) as "dislikedCount",
+        SUM(CASE WHEN "isLiked" = false AND "isBanger" = false THEN 1 ELSE 0 END) as "remainingCount",
+        (SELECT id FROM music_tracks WHERE "createdById" = ${currentUserId} ORDER BY RANDOM() LIMIT 1) as "trackId"
+      FROM music_tracks WHERE "createdById" = ${currentUserId}
     `.then(async (rows) => {
       const row = rows[0];
       const track = (await this.prisma.musicTrack.findFirst({
