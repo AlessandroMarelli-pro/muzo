@@ -8,13 +8,10 @@ and other musical characteristics using audioFlux for optimized performance.
 import traceback
 from typing import Any, Dict
 
-import audioflux as af
 import numpy as np
-from audioflux.type import SpectralFilterBankScaleType
 from loguru import logger
 
 from src.services.features.key_detector import KeyDetector
-from src.services.features.shared_features import SharedFeatures
 from src.utils.redis_cache import RedisCache
 
 # Compatibility shim for madmom
@@ -38,174 +35,10 @@ class SimpleFeatureExtractor:
     capabilities using audioFlux for optimized performance.
     """
 
-    shared_features: SharedFeatures = None
-
     def __init__(self):
         """Initialize the feature extractor service."""
         logger.info("SimpleFeatureExtractor initialized")
         self.redis_cache = RedisCache(key_prefix="simple_feature_extractor")
-        self.shared_features = SharedFeatures()
-
-    @monitor_performance("_get_spectral_features")
-    def _get_spectral_features(self) -> dict:
-        """
-        Extract spectral features from audio using audioFlux.
-
-        Returns:
-            Dictionary containing spectral features
-        """
-
-        # Use shared features if available, otherwise extract individually
-        spectral_centroids = self.shared_features.features["spectral_centroids"]
-        spectral_bandwidths = self.shared_features.features["spectral_bandwidths"]
-        spectral_spreads = self.shared_features.features["spectral_spreads"]
-        spectral_flatnesses = self.shared_features.features["spectral_flatnesses"]
-        spectral_rolloffs = self.shared_features.features["spectral_rolloffs"]
-        zero_crossing_rate = self.shared_features.features["zero_crossing_rate"]
-        energy_by_band = self.shared_features.features["energy_by_band"]
-        rms = self.shared_features.features["rms"]
-        mfcc_mean = self.shared_features.features["mfcc_mean"]
-        mfcc_std = self.shared_features.features.get("mfcc_std", [0.0] * 13)
-        spectral_contrasts = self.shared_features.features.get(
-            "spectral_contrasts",
-            {
-                "mean": 0.0,
-                "std": 0.0,
-                "median": 0.0,
-                "min": 0.0,
-                "max": 0.0,
-                "p25": 0.0,
-                "p75": 0.0,
-            },
-        )
-        dynamic_range = float(self.shared_features.features.get("dynamic_range", 0.0))
-
-        # Perceptual energy: combines all frequency bands for comprehensive energy
-        # Captures both "brightness" (high freq) and "fullness" (bass) + mid presence
-        total = sum(energy_by_band)
-        bass, mid, high = energy_by_band
-        # Protect against division by zero
-        if total > 0:
-            energy_ratios = [bass / total, mid / total, high / total]
-        else:
-            energy_ratios = [0.0, 0.0, 0.0]
-
-        return {
-            "spectral_centroids": spectral_centroids,
-            "spectral_bandwidths": spectral_bandwidths,
-            "spectral_spreads": spectral_spreads,
-            "spectral_flatnesses": spectral_flatnesses,
-            "spectral_rolloffs": spectral_rolloffs,
-            "zero_crossing_rate": zero_crossing_rate,
-            "rms": rms,
-            "energy_by_band": energy_by_band,
-            "energy_ratios": energy_ratios,
-            "mfcc_mean": mfcc_mean,
-            "mfcc_std": mfcc_std,
-            "spectral_contrasts": spectral_contrasts,
-            "dynamic_range": dynamic_range,
-        }
-
-    @monitor_performance("_get_energy_band_comment")
-    def _get_energy_band_comment(
-        self, energy_by_band: list, energy_ratios: list
-    ) -> dict:
-        """
-        Generate descriptive comment and keywords about energy distribution across frequency bands.
-
-        Args:
-            energy_by_band: List of [low, mid, high] frequency band energies
-
-        Returns:
-            Dictionary with 'comment' (str) and 'keywords' (list) for classification
-        """
-        if not energy_by_band or len(energy_by_band) != 3:
-            return {"comment": "Energy profile unavailable", "keywords": []}
-
-        bass, mid, high = energy_by_band
-        total = sum(energy_by_band)
-
-        if total < 1.0:
-            return {
-                "comment": "Very low energy overall - quiet or minimal content",
-                "keywords": ["quiet", "minimal", "low-energy"],
-            }
-
-        # Calculate ratios
-        bass_ratio = energy_ratios[0]
-        mid_ratio = energy_ratios[1]
-        high_ratio = energy_ratios[2]
-
-        # Determine energy profile
-        if bass > 25 and bass_ratio > 0.6:
-            if bass > 30:
-                return {
-                    "comment": "Bass-heavy track - strong low-end presence with punchy kick and deep bass lines",
-                    "keywords": [
-                        "bass-heavy",
-                        "punchy",
-                        "deep-bass",
-                        "low-end",
-                        "powerful",
-                    ],
-                }
-            else:
-                return {
-                    "comment": "Bass-focused track - prominent low frequencies, warm foundation",
-                    "keywords": [
-                        "bass-focused",
-                        "warm",
-                        "low-frequencies",
-                        "foundation",
-                    ],
-                }
-
-        elif high_ratio > 0.15 or (high > 1.0 and high_ratio > 0.10):
-            return {
-                "comment": "Bright, treble-focused track - crisp highs and clear detail",
-                "keywords": ["bright", "treble-focused", "crisp", "highs", "detailed"],
-            }
-
-        elif abs(bass_ratio - mid_ratio) < 0.2 and abs(mid_ratio - high_ratio) < 0.15:
-            return {
-                "comment": "Balanced spectral distribution - even energy across frequency range",
-                "keywords": [
-                    "balanced",
-                    "even",
-                    "well-distributed",
-                    "spectral-balance",
-                ],
-            }
-
-        elif mid_ratio > 0.5 and mid > 10:
-            return {
-                "comment": "Mid-forward track - vocals and instruments prominent in the mix",
-                "keywords": [
-                    "mid-forward",
-                    "vocals",
-                    "instruments",
-                    "prominent",
-                    "presence",
-                ],
-            }
-
-        elif total < 15 and high < 1.0:
-            return {
-                "comment": "Subdued energy profile - warm and mellow character",
-                "keywords": ["subdued", "warm", "mellow", "gentle", "soft"],
-            }
-
-        elif bass_ratio < 0.4 and mid_ratio < 0.4:
-            return {
-                "comment": "Bright and airy - emphasis on treble content with minimal bass weight",
-                "keywords": ["bright", "airy", "treble", "light", "ethereal"],
-            }
-
-        else:
-            return {
-                "comment": "Mixed energy profile - varied frequency distribution",
-                "keywords": ["mixed", "varied", "complex"],
-            }
 
     # danceability_feeling threshold ladder, reused from the retired DanceabilityAnalyzer
     # so the label semantics don't change even though the source score does.
@@ -243,7 +76,6 @@ class SimpleFeatureExtractor:
     @monitor_performance("get_musical_features")
     def _get_musical_features(
         self,
-        spectral_features: dict,
         discogs_classifiers: dict,
         discogs_deam: dict,
         mode: str = "major",
@@ -255,8 +87,6 @@ class SimpleFeatureExtractor:
         AudioMoodAnalyzer/DanceabilityAnalyzer formulas and spectral heuristics.
 
         Args:
-            spectral_features: Dictionary containing spectral features (used only for
-                the energy-band comment/keywords, which have no discogs-effnet analog)
             discogs_classifiers: Output of DiscogsClassifiersExtractor.predict_all --
                 danceable, mood_happy, mood_sad, mood_relaxed, mood_aggressive,
                 mood_party, voice (all 0-1 or None)
@@ -306,12 +136,6 @@ class SimpleFeatureExtractor:
             # replacement computation, no placeholder) per explicit decision.
             instrumentalness = 1.0 - voice
 
-            # Generate energy band comment and keywords (no discogs-effnet analog;
-            # kept as-is, still sourced from spectral features)
-            energy_by_band = spectral_features["energy_by_band"]
-            energy_ratios = spectral_features["energy_ratios"]
-            energy_info = self._get_energy_band_comment(energy_by_band, energy_ratios)
-
             return {
                 "valence": float(round(valence, 3)),
                 "valence_mood": valence_mood,
@@ -320,8 +144,6 @@ class SimpleFeatureExtractor:
                 "danceability": float(round(danceability, 3)),
                 "danceability_feeling": danceability_feeling,
                 "instrumentalness": float(round(instrumentalness, 3)),
-                "energy_comment": energy_info["comment"],
-                "energy_keywords": energy_info["keywords"],
                 "mode": mode,
             }
 
@@ -336,60 +158,8 @@ class SimpleFeatureExtractor:
                 "danceability": 0.5,
                 "danceability_feeling": "neutral",
                 "instrumentalness": 0.5,
-                "energy_comment": "Energy profile unavailable",
-                "energy_keywords": [],
-                "energy_ratios": [0.0, 0.0, 0.0],
+                "mode": mode,
             }
-
-    @monitor_performance("get_rhythm_fingerprint")
-    def _get_rhythm_fingerprint(self) -> dict:
-        """
-        Extract rhythm-based fingerprint for tempo and beat pattern identification.
-
-        Rhythm fingerprints capture the temporal structure of audio,
-        useful for identifying songs with similar rhythmic patterns.
-
-        Args:
-            y: Audio data
-            sr: Sample rate
-
-
-        Returns:
-            Dictionary containing rhythm fingerprint features
-        """
-        # Use shared features if available, otherwise extract zero crossing rate
-        zcr = self.shared_features.features["zero_crossing_rate"]
-        onset_density = float(self.shared_features.features.get("onset_density", 0.0))
-        return {
-            "zcr_mean": zcr["mean"],
-            "zcr_std": zcr["std"],
-            "onset_density": onset_density,
-        }
-
-    @monitor_performance("get_melodic_fingerprint")
-    def _get_melodic_fingerprint(
-        self,
-    ) -> dict:
-        """
-        Extract melodic-based fingerprint for harmonic content identification.
-
-        Melodic fingerprints capture the harmonic and tonal characteristics,
-        useful for identifying songs with similar chord progressions or melodies.
-
-        Args:
-            y: Audio data
-            sr: Sample rate
-        Returns:
-            Dictionary containing melodic fingerprint features
-        """
-        # Use shared features if available, otherwise extract individually
-        chroma = self.shared_features.features["chroma"]
-        tonnetz = self.shared_features.features["tonnetz"]
-
-        return {
-            "chroma": chroma,
-            "tonnetz": tonnetz,
-        }
 
     @monitor_performance("simple_basic_features")
     def extract_basic_features(
@@ -411,12 +181,16 @@ class SimpleFeatureExtractor:
         Extract basic audio features using optimized samples.
 
         Args:
-            y_harmonic: Harmonic-rich audio sample (for key, chords, melody)
-            y_percussive: Percussive-rich audio sample (for rhythm analysis)
+            y_harmonic: Harmonic-rich audio sample. Unused now that key comes from
+                S-KEY and mood/danceability from discogs-effnet/DEAM instead of the
+                retired audioFlux-based shared-feature extraction; kept in the
+                signature since callers/smart_audio_sample_loading still produce it.
+            y_percussive: Percussive-rich audio sample. Unused for the same reason
+                as y_harmonic.
             y_bpm: BPM-optimized audio sample (unused now that tempo comes from
                 TempoCNN instead of the retired hand-computed BPM detector; kept in
                 the signature since callers/smart_audio_sample_loading still produce it)
-            sr: Sample rate
+            sr: Sample rate. Unused for the same reason as y_harmonic/y_percussive.
             file_path: Path to audio file (for fallback)
             discogs_classifiers: Output of DiscogsClassifiersExtractor.predict_all,
                 computed earlier in the same request -- feeds danceability/
@@ -436,25 +210,18 @@ class SimpleFeatureExtractor:
             Dictionary containing basic audio features
         """
         try:
-            logger.info("Extracting basic audio features using audioFlux")
-
-            # Extract shared features from both harmonic and percussive samples
-            self.shared_features.extract_shared_features(y_harmonic, y_percussive, sr)
-
             tempo = float((discogs_tempo or {}).get("tempo") or 0.0)
-            tempo_source = "tempo_cnn"
             if ai_bpm:
                 # The LLM-provided BPM silently overrides the detected value.
                 # If AI metadata is only intermittently available, the same
                 # file can report different tempos across runs with no
-                # visible reason -- log it and surface the source downstream
-                # so that's diagnosable instead of invisible.
+                # visible reason -- log it so that's diagnosable instead of
+                # invisible.
                 logger.info(
                     f"Overriding detected tempo {tempo} BPM with AI-provided "
                     f"tempo {ai_bpm} BPM for {file_path}"
                 )
                 tempo = ai_bpm
-                tempo_source = "ai"
 
             # S-KEY's key string (e.g. "C# minor") uses sharps-only naming, so
             # the camelot_wheel lookup (keyed on e.g. "C# MINOR") works unchanged.
@@ -466,35 +233,26 @@ class SimpleFeatureExtractor:
                 camelot_key = KeyDetector.camelot_wheel.get(key.upper(), "Unknown")
                 mode = "major" if "major" in key.lower() else "minor"
             key = key.capitalize()
-            spectral_features = self._get_spectral_features()
 
             musical_features = self._get_musical_features(
-                spectral_features,
                 discogs_classifiers,
                 discogs_deam,
                 mode,
             )
 
-            # bass_presence had no source besides the retired DanceabilityAnalyzer;
-            # no discogs-effnet equivalent exists, so it defaults to 0.0.
-            spectral_features["bass_presence"] = 0.0
-
-            rhythm_fingerprint = self._get_rhythm_fingerprint()
-            melodic_fingerprint = self._get_melodic_fingerprint()
-
-            # Combine all features
+            # Combine all features. spectral_features/rhythm_fingerprint/
+            # melodic_fingerprint (raw audioFlux MFCC/chroma/tonnetz/etc. output,
+            # with no discogs-effnet analog) and tempo_source/key (redundant with
+            # discogs_tempo/discogs_skey, which the caller already has) are no
+            # longer included in the response -- trimmed per explicit decision to
+            # shrink the /audio/analyze/simple response shape.
             features = {
                 "features": {
                     "musical_features": {
                         **musical_features,
                         "tempo": tempo,
-                        "tempo_source": tempo_source,
-                        "key": key,
                         "camelot_key": camelot_key,
                     },
-                    "spectral_features": spectral_features,
-                    "rhythm_fingerprint": rhythm_fingerprint,
-                    "melodic_fingerprint": melodic_fingerprint,
                 }
             }
 

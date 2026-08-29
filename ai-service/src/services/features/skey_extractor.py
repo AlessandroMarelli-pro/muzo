@@ -22,10 +22,15 @@ from loguru import logger
 # segfaults the process (reproduced deterministically via faulthandler; root
 # cause not isolated further, presumably a native FFT/threading-runtime symbol
 # collision, same category as the documented TF/GPU crash in git history).
-# Importing torch lazily inside methods, after SharedFeatures.extract_shared_
-# features (audioflux) has already run at least once via smart_audio_sample_
-# loading earlier in the real pipeline, avoids the crash. Do not hoist this
-# import back to module level.
+# Importing torch lazily inside methods, after audioflux has already done real
+# work at least once via smart_audio_sample_loading (SimpleAudioLoader) earlier
+# in the real pipeline, avoids the crash. Do not hoist this import back to
+# module level. (Note: SharedFeatures.extract_shared_features -- another
+# audioflux call site -- is no longer invoked by simple_feature_extractor.py as
+# of the response-shape trim that dropped spectral_features/rhythm_fingerprint/
+# melodic_fingerprint; smart_audio_sample_loading remains the audioflux call
+# that establishes safe ordering and still runs before generate_skey() in both
+# analyze_audio and _analyze_single_file_in_batch -- verified live.)
 
 
 class SkeyExtractor:
