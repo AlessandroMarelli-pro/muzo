@@ -1,30 +1,5 @@
-// Simplified File Information
-interface FileInfo {
-  filename: string;
-  filepath: string;
-  file_extension: string;
-  mime_type: string;
-  file_size_bytes: number;
-  file_size_mb: number;
-  created_at: string;
-  modified_at: string;
-  accessed_at: string;
-}
-
-// Simplified Audio Technical Information
-interface AudioTechnical {
-  sample_rate: number;
-  duration_seconds: number;
-  format: string;
-  bitrate: number;
-  channels: number;
-  samples: number;
-  bit_depth: number;
-  subtype: string;
-}
-
 // Simplified ID3 Tags
-interface Id3Tags {
+export interface Id3Tags {
   title?: string;
   artist?: string;
   album?: string;
@@ -41,174 +16,6 @@ interface Id3Tags {
   bitrate?: number;
   filename_parsed?: boolean;
 }
-interface AggregationStatistics {
-  mean: number;
-  std: number;
-  median: number;
-  min: number;
-  max: number;
-  p25: number;
-  p75: number;
-}
-// Simplified Audio Features
-interface AudioFeatures {
-  musical_features: {
-    valence: number;
-    mood_calculation: {
-      mode_factor: number;
-      mode_confidence: number;
-      mode_weight: number;
-      tempo_factor: number;
-      energy_factor: number;
-      brightness_factor: number;
-      harmonic_factor: number;
-      spectral_balance: number;
-      beat_strength: number;
-      syncopation: number;
-    };
-    valence_mood: string;
-    arousal: number;
-    arousal_mood: string;
-    danceability: number;
-    danceability_feeling: string;
-    danceability_calculation: {
-      rhythm_stability: number;
-      bass_presence: number;
-      tempo_regularity: number;
-      tempo_appropriateness: number;
-      energy_factor: number;
-      syncopation: number;
-      beat_strength: number;
-    };
-    acousticness: number;
-    instrumentalness: number;
-    speechiness: number;
-    liveness: number;
-    energy_comment: string;
-    energy_keywords: string[];
-    tempo: number;
-    key: string;
-    camelot_key: string;
-  };
-  spectral_features: {
-    spectral_centroids: AggregationStatistics;
-    spectral_bandwidths: AggregationStatistics;
-    spectral_spreads: AggregationStatistics;
-    spectral_flatnesses: AggregationStatistics;
-    spectral_rolloffs: AggregationStatistics;
-    zero_crossing_rate: AggregationStatistics;
-    rms: AggregationStatistics;
-    energy_by_band: number[];
-    energy_ratios: number[];
-    mfcc_mean: number[];
-    mfcc_std?: number[];
-    spectral_contrasts?: AggregationStatistics;
-    dynamic_range?: number;
-    bass_presence?: number;
-  };
-  rhythm_fingerprint: {
-    zcr_mean: number;
-    zcr_std: number;
-    onset_density?: number;
-  };
-  melodic_fingerprint: {
-    chroma: {
-      mean: number[];
-      std: number[];
-      max: number[];
-      overall_mean: number;
-      overall_std: number;
-      dominant_pitch: number;
-    };
-    tonnetz: {
-      mean: number[];
-      std: number[];
-      max: number[];
-      overall_mean: number;
-      overall_std: number;
-    };
-  };
-}
-
-// Simplified Audio Fingerprint
-interface AudioFingerprint {
-  file_hash: string;
-  audio_hash: string;
-  method: string;
-}
-
-// Simplified Genre Classification Details
-interface GenreDetails {
-  file_path: string;
-  predicted_genre: string;
-  confidence: number;
-  all_probabilities: Record<string, number>;
-  model_name: string;
-}
-
-// Simplified Classification Details
-interface ClassificationDetails {
-  genre_details: GenreDetails;
-  subgenre_details: GenreDetails;
-  specialist_used: string;
-  processing_steps: string[];
-}
-
-// Simplified Hierarchical Classification
-export interface HierarchicalClassification {
-  success: boolean;
-  classification: {
-    genre: string;
-    subgenre: string;
-    confidence: {
-      genre: number;
-      subgenre: number;
-      combined: number;
-    };
-  };
-  aggregation_method: string;
-  segment_count: number;
-  genre_votes: Record<string, number>;
-  subgenre_votes: Record<string, number>;
-  processing_time: number;
-  timestamp: number;
-  model_name: string;
-  file_path: string;
-  segmentation: {
-    used: boolean;
-    segment_count: number;
-    segment_duration: number;
-    aggregation_method: string;
-  };
-  details: ClassificationDetails;
-  musicbrainz_validation: {
-    enabled: boolean;
-    used: false;
-    genres_found: [];
-    genre_match: false;
-    boost_factor: number;
-    confidence_improvement: {
-      genre: number;
-      subgenre: number;
-      combined: number;
-    };
-    message: string;
-  };
-  discogs_validation: {
-    enabled: boolean;
-    used: false;
-    genres_found: [];
-    genre_match: false;
-    boost_factor: number;
-    confidence_improvement: {
-      genre: number;
-      subgenre: number;
-      combined: number;
-    };
-    message: string;
-    subgenres_found: [];
-  };
-}
 
 // Simplified Album Art
 interface AlbumArt {
@@ -216,6 +23,66 @@ interface AlbumArt {
   imagePath: string;
   imageUrl: string;
 }
+
+// One `features.*` / `discogs_classifiers`-derived value: null when the source
+// model was disabled, failed, or ran but produced nothing -- never a neutral
+// placeholder (0.5 valence, 0.0 tempo, "Unknown" key).
+export interface Feature<T = number> {
+  value: T;
+  confidence: number | null;
+  source: string;
+}
+
+// `features` entries are omitted entirely (not present-but-null) when their
+// source model produced nothing, hence every member here is optional.
+export interface AnalysisFeatures {
+  tempo?: Feature;
+  key?: Feature<string>;
+  camelot_key?: Feature<string>;
+  mode?: Feature<string>;
+  valence?: Feature;
+  arousal?: Feature;
+  danceability?: Feature;
+  instrumentalness?: Feature;
+  mood_happy?: Feature;
+  mood_sad?: Feature;
+  mood_relaxed?: Feature;
+  mood_aggressive?: Feature;
+  mood_party?: Feature;
+  voice?: Feature;
+}
+
+// Interpreted tier labels; omitted when their source feature is null.
+export interface AnalysisLabels {
+  valence_mood?: string;
+  arousal_mood?: string;
+  danceability_feeling?: string;
+}
+
+export interface GenreStylePrediction {
+  genre: string;
+  style: string;
+  confidence: number;
+}
+
+export interface AnalysisClassifications {
+  /** The raw genre/style pairs from genre_discogs400, ranked by confidence. */
+  genre_styles: GenreStylePrediction[];
+  /** Aggregated per distinct genre, keeping the MAX confidence of that genre's pairs. */
+  genres: { genre: string; confidence: number }[];
+  /** One entry per pair, each carrying the genre it belongs to. */
+  styles: { style: string; genre: string; confidence: number }[];
+  instruments: { instrument: string; confidence: number }[];
+  tags: { tag: string; confidence: number }[];
+}
+
+export interface AnalysisWarning {
+  model: string;
+  reason: 'disabled' | 'failed' | 'empty';
+  detail: string | null;
+}
+
+/** Discogs-effnet classifier heads, as returned by the (unchanged) `/audio/embedding/discogs` endpoint. */
 export interface DiscogsClassifiers {
   /** Probability of the "danceable" class (0-1). */
   danceable?: number;
@@ -227,40 +94,54 @@ export interface DiscogsClassifiers {
   /** Probability of the "voice" class (0-1), from voice_instrumental. */
   voice?: number;
   /** Top 5 "Genre---Style" predictions above 10% confidence, from genre_discogs400. */
-  genres?: { genre: string; style: string; confidence: number }[];
+  genres?: GenreStylePrediction[];
   /** Top 5 instrument predictions above 10% confidence, from mtg_jamendo_instrument. */
   instruments?: { instrument: string; confidence: number }[];
   /** Top 5 tag predictions above 10% confidence, from mtg_jamendo_top50tags. */
   tags?: { tag: string; confidence: number }[];
 }
 
+/** Global tempo estimate, as returned by the (unchanged) `/audio/embedding/discogs` endpoint. */
 export interface DiscogsTempo {
-  /** Global tempo estimate in BPM, from TempoCNN. */
   tempo?: number;
-  /** Mean per-window local tempo probability, as a confidence measure. */
   confidence?: number;
 }
 
-// Simplified Audio Analysis Response
+// Simple-analysis response envelope (schema_version 2), one entry per file in
+// both the single and batch endpoints.
 export interface AudioAnalysisResponse {
   status: 'success' | 'error';
   message?: string;
   processing_time: number;
   processing_mode: string;
-  features: AudioFeatures;
-  fingerprint: AudioFingerprint;
-  /** 1280-dim discogs-effnet embedding (Essentia); empty when extraction failed/unavailable. */
-  embedding?: number[];
-  /** Discogs-effnet classifier heads run on `embedding`; absent when disabled or extraction failed. */
-  discogs_classifiers?: DiscogsClassifiers;
-  /** TempoCNN tempo estimate (separate pipeline, not built on `embedding`); absent when disabled or extraction failed. */
-  discogs_tempo?: DiscogsTempo;
-  hierarchical_classification: HierarchicalClassification;
-  album_art: AlbumArt;
-  file_info: FileInfo;
-  audio_technical: AudioTechnical;
-  id3_tags: Id3Tags;
-  ai_metadata?: AIMetadataResponse['metadata'];
+  schema_version: number;
+  track: {
+    filename: string;
+    extension: string;
+    mime_type: string;
+    size_bytes: number;
+    size_mb: number;
+  } | null;
+  audio: {
+    sample_rate: number;
+    duration_s: number;
+    format: string;
+    bitrate: number;
+    channels: number;
+    samples: number;
+    bit_depth: number;
+    subtype: string;
+  } | null;
+  tags: Id3Tags | null;
+  features: AnalysisFeatures;
+  labels: AnalysisLabels;
+  classifications: AnalysisClassifications;
+  /** 1280-dim discogs-effnet embedding (Essentia); null when extraction failed/unavailable. */
+  embedding: { vector: number[]; dim: number; source: string } | null;
+  /** Names exactly which model produced nothing and why; empty when everything ran. */
+  warnings: AnalysisWarning[];
+  /** Route-added, single endpoint only. */
+  album_art?: AlbumArt | null;
 }
 
 export interface AudioAnalysisBatchResponse {
@@ -271,34 +152,4 @@ export interface AudioAnalysisBatchResponse {
   results: AudioAnalysisResponse[];
   processing_time: number;
   processing_mode: string;
-}
-// AI Metadata Response
-export interface AIMetadataResponse {
-  status: 'success' | 'partial' | 'error';
-  message: string;
-  filename: string;
-  metadata: {
-    artist: string;
-    title: string;
-    mix?: string | null;
-    year?: string | number | null;
-    country?: string | null;
-    label?: string | null;
-    genre: string[];
-    style: string[];
-    audioFeatures?: {
-      bpm?: number | null;
-      key?: string | null;
-      vocals?: string | null;
-      atmosphere?: string[] | null;
-    } | null;
-    context?: {
-      background?: string | null;
-      impact?: string | null;
-    } | null;
-    description?: string | null;
-    tags: string[];
-  };
-  processingTime?: number;
-  serviceInstance?: string;
 }
