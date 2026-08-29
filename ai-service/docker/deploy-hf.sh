@@ -3,7 +3,10 @@
 # Inference Endpoint. Requires: gh CLI (authenticated), hf CLI (authenticated,
 # `hf auth login`), and push access to the muzo repo.
 #
-# Usage: ./deploy-hf.sh
+# Usage: ./deploy-hf.sh [--skip-gh]
+#
+#   --skip-gh   Skip the GitHub Actions build (steps 1-2) and go straight to
+#               the HF redeploy. Use when :latest is already up to date.
 #
 # What this does:
 #   1. Triggers the ai-service-cpu-image.yml GitHub Actions workflow (builds
@@ -28,15 +31,28 @@ ENDPOINT_NAME="muzo-ai-service-cpu"
 WORKFLOW="ai-service-cpu-image.yml"
 REPO="AlessandroMarelli-pro/muzo"
 
-echo "==> Triggering $WORKFLOW"
-gh workflow run "$WORKFLOW"
-sleep 5
+SKIP_GH=false
+for arg in "$@"; do
+  case "$arg" in
+    --skip-gh) SKIP_GH=true ;;
+    *) echo "Unknown argument: $arg" >&2; echo "Usage: ./deploy-hf.sh [--skip-gh]" >&2; exit 1 ;;
+  esac
+done
 
-RUN_ID=$(gh run list --workflow="$WORKFLOW" --limit 1 --json databaseId --jq '.[0].databaseId')
-echo "==> Watching run $RUN_ID"
-gh run watch "$RUN_ID" --exit-status
+if [ "$SKIP_GH" = true ]; then
+  echo "==> Skipping GitHub Actions build (--skip-gh)"
+else
+  echo "==> Triggering $WORKFLOW"
+  gh workflow run "$WORKFLOW"
+  sleep 5
 
-echo "==> Build succeeded, redeploying $ENDPOINT_NAME"
+  RUN_ID=$(gh run list --workflow="$WORKFLOW" --limit 1 --json databaseId --jq '.[0].databaseId')
+  echo "==> Watching run $RUN_ID"
+  gh run watch "$RUN_ID" --exit-status
+  echo "==> Build succeeded"
+fi
+
+echo "==> Redeploying $ENDPOINT_NAME"
 hf endpoints pause "$ENDPOINT_NAME" >/dev/null 2>&1 || true
 hf endpoints resume "$ENDPOINT_NAME" >/dev/null
 
