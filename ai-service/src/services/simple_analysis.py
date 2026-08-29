@@ -18,7 +18,9 @@ if TYPE_CHECKING:
 
 from src.services.base_metadata_extractor import create_metadata_extractor
 from src.services.features.deam_extractor import DeamExtractor
-from src.services.features.discogs_classifiers_extractor import DiscogsClassifiersExtractor
+from src.services.features.discogs_classifiers_extractor import (
+    DiscogsClassifiersExtractor,
+)
 from src.services.features.discogs_embedding_extractor import DiscogsEmbeddingExtractor
 from src.services.features.skey_extractor import SkeyExtractor
 from src.services.features.tempo_cnn_extractor import TempoCnnExtractor
@@ -35,7 +37,9 @@ from src.utils.performance_optimizer import monitor_performance
 # ELASTICSEARCH_MFCC_VECTOR_SIMILARITY/ELASTICSEARCH_EMBEDDING_VECTOR_SIMILARITY on the
 # backend. Toggle off to compare against the existing hand-computed danceability/mood
 # fields without the new discogs_classifiers values overwriting anything.
-DISCOGS_CLASSIFIERS_ENABLED = os.getenv("DISCOGS_CLASSIFIERS_ENABLED", "true").lower() != "false"
+DISCOGS_CLASSIFIERS_ENABLED = (
+    os.getenv("DISCOGS_CLASSIFIERS_ENABLED", "true").lower() != "false"
+)
 
 
 class SimpleAnalysisService:
@@ -70,14 +74,18 @@ class SimpleAnalysisService:
         try:
             self.ai_extractor = create_metadata_extractor(provider="GEMINI")
             if self.ai_extractor and self.ai_extractor._is_available():
-                logger.info("GEMINI filename-cleaning extractor initialized and available")
+                logger.info(
+                    "GEMINI filename-cleaning extractor initialized and available"
+                )
             else:
                 logger.info(
                     "GEMINI filename-cleaning extractor initialized but not available "
                     "(no API key)"
                 )
         except Exception as e:
-            logger.warning("Failed to initialize GEMINI filename-cleaning extractor: %s", e)
+            logger.warning(
+                "Failed to initialize GEMINI filename-cleaning extractor: %s", e
+            )
             self.ai_extractor = None
 
         # Performance monitoring thresholds
@@ -119,19 +127,6 @@ class SimpleAnalysisService:
     @monitor_performance("audio_conversion")
     def convert_m4a_to_wav(self, file_path: str) -> str:
         return self.audio_loader.convert_m4a_to_wav(file_path)
-
-    @monitor_performance("audio_loading")
-    def smart_audio_sample_loading(
-        self,
-        file_path: str,
-        sample_duration: float = None,
-        skip_intro: float = 0.0,
-    ):
-        return self.audio_loader.smart_audio_sample_loading(
-            file_path,
-            sample_duration,
-            skip_intro,
-        )
 
     @monitor_performance("metadata_extraction")
     def extract_file_metadata(self, file_path: str) -> Dict[str, Any]:
@@ -178,7 +173,9 @@ class SimpleAnalysisService:
         pools them, so a short excerpt only samples one part of the song.
         """
         try:
-            y_full, sr = self.audio_loader.load_audio_sample(file_path, sample_duration=None)
+            y_full, sr = self.audio_loader.load_audio_sample(
+                file_path, sample_duration=None
+            )
             duration_s = len(y_full) / sr if sr else 0
             embedding = self.embedding_extractor.extract_from_audio(y_full, sr)
             if embedding:
@@ -204,7 +201,9 @@ class SimpleAnalysisService:
         DISCOGS_CLASSIFIERS_ENABLED; returns {} when disabled or the embedding is empty.
         """
         if not DISCOGS_CLASSIFIERS_ENABLED:
-            logger.debug("Discogs classifiers skipped: DISCOGS_CLASSIFIERS_ENABLED is false")
+            logger.debug(
+                "Discogs classifiers skipped: DISCOGS_CLASSIFIERS_ENABLED is false"
+            )
             return {}
         if not embedding:
             logger.warning("Discogs classifiers skipped: no embedding available")
@@ -244,7 +243,9 @@ class SimpleAnalysisService:
             logger.debug("TempoCNN skipped: DISCOGS_CLASSIFIERS_ENABLED is false")
             return {}
         try:
-            y_full, sr = self.audio_loader.load_audio_sample(file_path, sample_duration=None)
+            y_full, sr = self.audio_loader.load_audio_sample(
+                file_path, sample_duration=None
+            )
             result = self.tempo_cnn_extractor.extract_from_audio(y_full, sr)
             if result:
                 logger.info(
@@ -270,10 +271,14 @@ class SimpleAnalysisService:
         model-driven fields). Returns {} when disabled or on any failure.
         """
         if not DISCOGS_CLASSIFIERS_ENABLED:
-            logger.debug("DEAM mood extraction skipped: DISCOGS_CLASSIFIERS_ENABLED is false")
+            logger.debug(
+                "DEAM mood extraction skipped: DISCOGS_CLASSIFIERS_ENABLED is false"
+            )
             return {}
         try:
-            y_full, sr = self.audio_loader.load_audio_sample(file_path, sample_duration=None)
+            y_full, sr = self.audio_loader.load_audio_sample(
+                file_path, sample_duration=None
+            )
             result = self.deam_extractor.extract_from_audio(y_full, sr)
             if result:
                 logger.info(
@@ -281,7 +286,9 @@ class SimpleAnalysisService:
                     f"arousal={result.get('arousal', 0):.2f}"
                 )
             else:
-                logger.warning(f"DEAM mood extraction returned empty result for {file_path}")
+                logger.warning(
+                    f"DEAM mood extraction returned empty result for {file_path}"
+                )
             return result
         except Exception as e:
             logger.error(f"Failed to load full track for DEAM mood extraction: {e}")
@@ -298,15 +305,21 @@ class SimpleAnalysisService:
         fields). Returns {} when disabled or on any failure.
         """
         if not DISCOGS_CLASSIFIERS_ENABLED:
-            logger.debug("S-KEY extraction skipped: DISCOGS_CLASSIFIERS_ENABLED is false")
+            logger.debug(
+                "S-KEY extraction skipped: DISCOGS_CLASSIFIERS_ENABLED is false"
+            )
             return {}
         try:
-            y_full, sr = self.audio_loader.load_audio_sample(file_path, sample_duration=None)
+            y_full, sr = self.audio_loader.load_audio_sample(
+                file_path, sample_duration=None
+            )
             result = self.skey_extractor.extract_from_audio(y_full, sr)
             if result:
                 logger.info(f"S-KEY: key={result.get('key')}")
             else:
-                logger.warning(f"S-KEY extraction returned empty result for {file_path}")
+                logger.warning(
+                    f"S-KEY extraction returned empty result for {file_path}"
+                )
             return result
         except Exception as e:
             logger.error(f"Failed to load full track for S-KEY extraction: {e}")
@@ -493,24 +506,7 @@ class SimpleAnalysisService:
                     )
                     original_filename = cleaned_filename
             elif skip_filename_cleaning:
-                logger.debug(
-                    "Skipping filename cleaning (skip_filename_cleaning=True)"
-                )
-
-            # Load audio samples for efficient analysis (harmonic, percussive, and BPM)
-            (
-                y_harmonic,
-                y_percussive,
-                y_bpm,
-                sr,
-                harmonic_metadata,
-                percussive_metadata,
-                bpm_metadata,
-            ) = self.smart_audio_sample_loading(
-                file_path,
-                sample_duration,
-                skip_intro,
-            )
+                logger.debug("Skipping filename cleaning (skip_filename_cleaning=True)")
 
             # Extract all information
             file_metadata = self.extract_file_metadata(file_path)
@@ -574,11 +570,6 @@ class SimpleAnalysisService:
             #        "recommendations": performance_status["recommendations"],
             #    }
 
-            # Explicitly release audio array from memory
-            del y_harmonic
-            del y_percussive
-            del y_bpm
-
             # Track analysis count and perform periodic garbage collection
             self.analysis_count += 1
             if self.analysis_count % self.gc_interval == 0:
@@ -590,13 +581,7 @@ class SimpleAnalysisService:
         except Exception as e:
             logger.error(f"Simple audio analysis failed: {e}")
             local = locals()
-            # Clean up on error
-            if "y_harmonic" in local:
-                del local["y_harmonic"]
-            if "y_percussive" in locals():
-                del local["y_percussive"]
-            if "y_bpm" in local:
-                del local["y_bpm"]
+
             gc.collect()
 
             return {
@@ -670,21 +655,6 @@ class SimpleAnalysisService:
             if file_path.endswith(".m4a"):
                 converted_wav_path = self.convert_m4a_to_wav(file_path)
                 file_path = converted_wav_path
-
-            # Load audio samples for efficient analysis
-            (
-                y_harmonic,
-                y_percussive,
-                y_bpm,
-                sr,
-                harmonic_metadata,
-                percussive_metadata,
-                bpm_metadata,
-            ) = self.smart_audio_sample_loading(
-                file_path,
-                sample_duration,
-                skip_intro,
-            )
 
             # Extract all information
             file_metadata = self.extract_file_metadata(file_path)
@@ -774,11 +744,6 @@ class SimpleAnalysisService:
                     original_filename,
                     100,
                 )
-
-            # Explicitly release audio arrays from memory
-            del y_harmonic
-            del y_percussive
-            del y_bpm
 
             logger.info(
                 f"✅ File {idx + 1}/{total_files} completed in "
@@ -884,9 +849,7 @@ class SimpleAnalysisService:
                     filenames_to_clean = [
                         original_filename for _, original_filename in file_items
                     ]
-                    file_paths_to_clean = [
-                        file_path for file_path, _ in file_items
-                    ]
+                    file_paths_to_clean = [file_path for file_path, _ in file_items]
 
                     logger.info(
                         f"Cleaning {len(filenames_to_clean)} filenames in batch"
@@ -895,9 +858,9 @@ class SimpleAnalysisService:
                         filenames_to_clean, file_paths_to_clean
                     )
 
-                    if isinstance(cleaned_result, list) and len(
-                        cleaned_result
-                    ) == len(filenames_to_clean):
+                    if isinstance(cleaned_result, list) and len(cleaned_result) == len(
+                        filenames_to_clean
+                    ):
                         cleaned_filenames = cleaned_result
                         logger.info(
                             f"Successfully cleaned {len(cleaned_filenames)} filenames"
@@ -914,9 +877,7 @@ class SimpleAnalysisService:
                         "Continuing with original filenames."
                     )
             else:
-                logger.debug(
-                    "Skipping filename cleaning (disabled or unavailable)"
-                )
+                logger.debug("Skipping filename cleaning (disabled or unavailable)")
 
             # Step 2: Process each file for audio analysis.
             # The CPU-bound audio work (decode, features) for each file is
