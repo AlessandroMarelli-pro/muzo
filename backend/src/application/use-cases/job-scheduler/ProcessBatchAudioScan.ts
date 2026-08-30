@@ -29,13 +29,7 @@ export class ProcessBatchAudioScanUseCase {
     createdTracks: MusicTrack[];
   }> {
     this.logger.info('Processing batch audio scan', { data });
-    const {
-      audioFiles,
-      sessionId,
-      batchIndex,
-      libraryId: _libraryId,
-      force,
-    } = data;
+    const { audioFiles, sessionId, batchIndex, libraryId: _libraryId, force } = data;
 
     try {
       let validJobs: AudioFile[];
@@ -72,9 +66,7 @@ export class ProcessBatchAudioScanUseCase {
           }
         }
 
-        validJobs = audioFiles.filter(
-          (file) => !alreadyAnalyzedFiles.includes(file.filePath),
-        );
+        validJobs = audioFiles.filter((file) => !alreadyAnalyzedFiles.includes(file.filePath));
       }
 
       if (validJobs.length === 0) {
@@ -115,8 +107,15 @@ export class ProcessBatchAudioScanUseCase {
         sessionId,
         batchIndex,
       );
+
       this.logger.debug(`Analyzed ${result.results.length} files in batch`, {
-        result,
+        result: result.results.map((track) => ({
+          ...{
+            ...track,
+            embedding: { ...track?.embedding, vector: !!track?.embedding?.vector },
+            album_art: { ...track.album_art, imageBase64: !!track?.album_art?.imageBase64 },
+          },
+        })),
       });
       return {
         isBatchComplete: false,

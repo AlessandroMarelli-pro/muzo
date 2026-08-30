@@ -352,7 +352,6 @@ class SimpleAnalysisService:
             logger.error(f"Failed DEAM mood extraction: {e}")
             return {}, {"model": "deam", "reason": "failed", "detail": str(e)}
 
-    @monitor_performance("skey_generation")
     def _skey_window(self, y_full, sr: int):
         """Slice y_full to a mid-track window for S-KEY.
 
@@ -382,6 +381,7 @@ class SimpleAnalysisService:
         start = int(min(skip_s, max(0.0, total_s - win_s)) * sr)
         return y_full[start : start + int(win_s * sr)]
 
+    @monitor_performance("skey_generation")
     def generate_skey(self, y_full, sr: int) -> Tuple[dict, Optional[dict]]:
         """
         Estimate musical key via Deezer's S-KEY model, replacing the retired

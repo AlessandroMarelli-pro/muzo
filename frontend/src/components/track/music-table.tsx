@@ -21,12 +21,12 @@ import { useDataTable } from '@/hooks/use-data-table';
 import { AudioPlayerActions } from '@/hooks/useAudioPlayer';
 import { FilterState } from '@/hooks/useFiltering';
 import { StaticFilterOptionsData } from '@/hooks/useFilterOptions';
+import { apiUrl } from '@/lib/api-config';
 import { Link } from '@tanstack/react-router';
 import { format } from 'date-fns';
 import { DataTablePagination } from '../data-table/data-table-pagination';
 import { AudioQualityBadge } from './audio-quality-badge';
 import { TrackMoreMenu } from './track-more-menu';
-import { apiUrl } from '@/lib/api-config';
 
 interface MusicTableProps {
   data: Track[];
@@ -75,6 +75,11 @@ const CamelotKeyOptions = [
   { label: 'G# major', value: '4B', color: 'rgba(255, 215, 0,0.5)' }, // Gold
   { label: 'D# major', value: '5B', color: 'rgba(255, 165, 0,0.5)' }, // Orange
   { label: 'A# major', value: '6B', color: 'rgba(255, 69, 0,0.5)' }, // Orange Red
+  { label: 'Gb major', value: '2B', color: 'rgba(144, 238, 144,0.5)' }, // Light Green
+  { label: 'Db major', value: '3B', color: 'rgba(0, 128, 0,0.5)' }, // Green
+  { label: 'Ab major', value: '4B', color: 'rgba(255, 215, 0,0.5)' }, // Gold
+  { label: 'Eb major', value: '5B', color: 'rgba(255, 165, 0,0.5)' }, // Orange
+  { label: 'Bb major', value: '6B', color: 'rgba(255, 69, 0,0.5)' }, // Orange Red
   { label: 'F major', value: '7B', color: 'rgba(255, 20, 147,0.5)' }, // Deep Pink
   // Minor keys (outer circle)
   { label: 'A minor', value: '8A', color: 'rgba(221, 160, 221,0.5)' }, // Plum/Lavender
@@ -88,7 +93,11 @@ const CamelotKeyOptions = [
   { label: 'F minor', value: '4A', color: 'rgba(255, 215, 0,0.5)' }, // Gold
   { label: 'C minor', value: '5A', color: 'rgba(255, 165, 0,0.5)' }, // Orange
   { label: 'G minor', value: '6A', color: 'rgba(255, 69, 0,0.5)' }, // Orange Red
-  { label: 'D minor', value: '7A', color: 'rgba(255, 20, 147,0.5)' }, // Deep Pink
+  { label: 'D minor', value: '7A', color: 'rgba(255, 20, 147,0.5)' }, // Deep Pink  { label: 'F# minor', value: '11A', color: 'rgba(0, 0, 255,0.5)' }, // Blue
+  { label: 'Db minor', value: '12A', color: 'rgba(0, 128, 128,0.5)' }, // Teal
+  { label: 'Ab minor', value: '1A', color: 'rgba(0, 255, 255,0.5)' }, // Cyan
+  { label: 'Eb minor', value: '2A', color: 'rgba(144, 238, 144,0.5)' }, // Light Green
+  { label: 'Bb minor', value: '3A', color: 'rgba(0, 128, 0,0.5)' }, // Green
 ];
 
 const ActionCells = ({
