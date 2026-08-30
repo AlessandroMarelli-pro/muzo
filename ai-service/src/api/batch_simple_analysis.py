@@ -169,9 +169,28 @@ class BatchSimpleAnalysisResource(Resource):
                     if file_result.get("status") == "success":
                         try:
                             tags = file_result.get("tags") or {}
-                            artist = tags.get("artist")
-                            title = tags.get("title")
-                            if artist and title:
+                            artist = (tags.get("artist") or "").strip()
+                            title = (tags.get("title") or "").strip()
+                            # Fall back to the (LLM-cleaned) "Artist - Title"
+                            # filename when the ID3 tags are missing/blank -- e.g.
+                            # WAV files, which carry no artwork and often no tags.
+                            # _get_album_art_with_timeout already checks the
+                            # embedded image first and splits an "A - B" string,
+                            # so passing just a title (or filename) still lets it
+                            # try the online sources.
+                            if not (artist and title):
+                                cleaned = (
+                                    file_result.get("track", {}).get("filename")
+                                    or file_items[idx][1]
+                                )
+                                if cleaned and " - " in cleaned:
+                                    guess_artist, _, guess_title = cleaned.partition(" - ")
+                                    artist = artist or guess_artist.strip()
+                                    title = title or guess_title.strip()
+                                elif cleaned:
+                                    title = title or cleaned.strip()
+
+                            if artist or title:
                                 # Submit album art fetching to thread pool
                                 album_art_future = (
                                     simple_analysis_module._executor.submit(
@@ -264,8 +283,20 @@ class BatchSimpleAnalysisResource(Resource):
             Album art URL or None if timeout/failure
         """
         try:
-            album_art = get_album_art(artist.strip() + " - " + title.strip(), file_path)
-            if not album_art and "-" in title:
+            artist, title = artist.strip(), title.strip()
+            query = f"{artist} - {title}" if artist and title else (artist or title)
+            album_art = get_album_art(query, file_path)
+            if not album_art and not artist and " - " in title:
+                # title actually holds "Artist - Title" -- retry split
+                guess_artist, _, guess_title = title.partition(" - ")
+                logger.warning(
+                    f"Album art fetching failed for '{query}', retrying as "
+                    f"'{guess_artist.strip()} - {guess_title.strip()}'"
+                )
+                album_art = get_album_art(
+                    f"{guess_artist.strip()} - {guess_title.strip()}", file_path
+                )
+            elif not album_art and "-" in title:
                 logger.warning(
                     f"Album art fetching failed for '{artist} - {title}', "
                     f"trying again with split title and file path {file_path}"

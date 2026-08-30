@@ -6,9 +6,13 @@
 # Requires: hf CLI, authenticated (`hf auth login`) with a token that has
 # "Manage Inference Endpoints" permission.
 #
-# Usage: GEMINI_API_KEY=xxx ./create-hf-endpoint.sh
-# (GEMINI_API_KEY is optional -- omit it to deploy with filename-cleaning
-# via Gemini disabled; ai-service degrades to using filenames as-is.)
+# Usage: GEMINI_API_KEY=xxx LAST_FM_API_KEY=xxx LAST_FM_SECRET_KEY=xxx \
+#          ./create-hf-endpoint.sh
+#   * GEMINI_API_KEY (optional) -- omit to deploy with LLM filename-cleaning
+#     disabled; ai-service degrades to using filenames as-is.
+#   * LAST_FM_API_KEY / LAST_FM_SECRET_KEY (optional) -- the album-art fallback
+#     chain (Apple Music -> Bandcamp -> Last.fm -> MusicBrainz) skips Last.fm
+#     when these are unset; the other three sources still run.
 
 set -euo pipefail
 
@@ -66,6 +70,13 @@ if [ -n "${GEMINI_API_KEY:-}" ]; then
   DEPLOY_ARGS+=(--secrets "GEMINI_API_KEY=$GEMINI_API_KEY")
 else
   echo "==> No GEMINI_API_KEY provided -- deploying with Gemini filename cleaning disabled"
+fi
+
+if [ -n "${LAST_FM_API_KEY:-}" ] && [ -n "${LAST_FM_SECRET_KEY:-}" ]; then
+  DEPLOY_ARGS+=(--secrets "LAST_FM_API_KEY=$LAST_FM_API_KEY" \
+                          "LAST_FM_SECRET_KEY=$LAST_FM_SECRET_KEY")
+else
+  echo "==> No LAST_FM_API_KEY/LAST_FM_SECRET_KEY -- album-art Last.fm source disabled"
 fi
 
 echo "==> Deploying $ENDPOINT_NAME"

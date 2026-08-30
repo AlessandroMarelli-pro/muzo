@@ -6,6 +6,7 @@ that combines regex patterns with machine learning models.
 """
 
 import os
+import re
 from typing import Dict
 
 from loguru import logger
@@ -69,6 +70,11 @@ class SimpleFilenameParser:
         try:
             logger.info(f"Parsing filename for metadata: {filename}")
 
+            # trainers/ (the ML hybrid parser) isn't in the deployed image --
+            # use the regex fallback below instead of NPE-ing on None.parse().
+            if self.filename_parser is None:
+                return self._parse_minimal(filename)
+
             # Use the hybrid parser to extract metadata
             result = self.filename_parser.parse(filename, use_ml=True)
             # Ensure all fields are present and lowercase
@@ -87,10 +93,47 @@ class SimpleFilenameParser:
 
         except Exception as e:
             logger.error(f"Failed to parse filename: {e}")
-            return {
-                "artist": "",
-                "title": os.path.splitext(filename)[0].lower() if filename else "",
-                "year": "",
-                "label": "",
-                "subtitle": "",
-            }
+            return self._parse_minimal(filename)
+
+    # Separators seen in real filenames, in order of preference. A plain ASCII
+    # " - " is by far the most common "Artist - Title" delimiter.
+    _SEPARATORS = (" - ", " – ", " — ", " ~ ", " | ", " _ ")
+
+    def _parse_minimal(self, filename: str) -> Dict[str, str]:
+        """Regex-only "Artist - Title (year)" extraction, used when the ML
+        hybrid parser isn't available (deployed image) or raises."""
+        base = os.path.splitext(filename or "")[0].strip()
+
+        # Drop common non-metadata suffixes first ("-enhanced" etc; "(Original
+        # Mix)" is kept -- it's part of the title).
+        base = re.sub(
+            r"[-_ ]+(enhanced|remaster(?:ed)?|hd|hq|hi-?res)\s*$", "", base, flags=re.I
+        ).strip()
+        # A trailing (YYYY) or [YYYY] -> year, stripped from the title.
+        year = ""
+        m = re.search(r"[\(\[](\d{4})[\)\]]\s*$", base)
+        if m:
+            year = m.group(1)
+            base = base[: m.start()].strip()
+
+        artist, title = "", base
+        for sep in self._SEPARATORS:
+            if sep in base:
+                left, _, right = base.partition(sep)
+                if left.strip() and right.strip():
+                    artist, title = left.strip(), right.strip()
+                    break
+
+        # Trailing catalog tag like "[FLING007]" / "(CAT123)" -- not part of the
+        # title. Keep parenthetical mix/version info ("(Original Mix)").
+        title = re.sub(
+            r"\s*[\[\(][A-Z]{2,}[\s-]?\d{2,}[\]\)]\s*$", "", title
+        ).strip()
+
+        return {
+            "artist": artist.lower(),
+            "title": title.lower(),
+            "year": year,
+            "label": "",
+            "subtitle": "",
+        }
