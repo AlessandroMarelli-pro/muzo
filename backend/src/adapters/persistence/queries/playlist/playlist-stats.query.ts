@@ -66,7 +66,7 @@ export class PlaylistStatsQuery implements IPlaylistStatsQuery {
           SELECT DISTINCT
             pt."playlistId",
             pt."trackId",
-            img."imagePath"
+            img."trackId"
           FROM playlist_tracks pt
           JOIN image_searches img ON pt."trackId" = img."trackId"
           WHERE pt."playlistId" = ${playlistIdDb} AND pt."createdById" = ${currentUserId}
@@ -111,11 +111,11 @@ export class PlaylistStatsQuery implements IPlaylistStatsQuery {
           -- Aggregate image data separately (limit to first 5 images)
           SELECT
             img_filtered."playlistId",
-            STRING_AGG(DISTINCT img_filtered."imagePath", ',') as all_images
+            STRING_AGG(DISTINCT img_filtered."trackId", ',') as all_images
           FROM (
             SELECT
               img."playlistId",
-              img."imagePath",
+              img."trackId",
               ROW_NUMBER() OVER (PARTITION BY img."playlistId" ORDER BY img."trackId") as rn
             FROM image_stats img
           ) img_filtered
@@ -281,11 +281,11 @@ export class PlaylistStatsQuery implements IPlaylistStatsQuery {
           -- Aggregate image data separately (limit to first 5 images)
           SELECT
             img_filtered."playlistId",
-            STRING_AGG(DISTINCT img_filtered."imagePath", ',') as all_images
+            STRING_AGG(DISTINCT img_filtered."trackId", ',') as all_images
           FROM (
             SELECT
               img."playlistId",
-              img."imagePath",
+              img."trackId",
               ROW_NUMBER() OVER (PARTITION BY img."playlistId" ORDER BY img."trackId") as rn
             FROM image_stats img
           ) img_filtered

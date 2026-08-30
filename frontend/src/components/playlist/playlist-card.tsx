@@ -121,7 +121,8 @@ export function PlaylistCard({ playlist, onViewDetails, onCardClick }: PlaylistC
       setIsDownloading(false);
     }
   };
-  const images = playlist.tracks?.slice(0, 4)?.map((t) => t.trackId) || [];
+  const images = playlist.stats?.images?.slice(0, 4) || [];
+  console.log(playlist);
   const handleCardClick = () => {
     if (onCardClick) {
       onCardClick(playlist.id);
