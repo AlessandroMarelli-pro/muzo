@@ -40,6 +40,7 @@ import { AUDIO_ANALYSIS_REPOSITORY } from '../ports/repositories/IAudioAnalysisR
 import { HIDDEN_MUSIC_TRACK_REPOSITORY } from '../ports/repositories/IHiddenMusicTrackRepository';
 import { IMAGE_SEARCH_REPOSITORY } from '../ports/repositories/IImageSearchRepository';
 import { MUSIC_LIBRARY_REPOSITORY } from '../ports/repositories/IMusicLibraryRepository';
+import { OAUTH_TOKEN_REPOSITORY } from '../ports/repositories/IOAuthTokenRepository';
 import { MUSIC_TRACK_REPOSITORY } from '../ports/repositories/IMusicTrackRepository';
 import { PLAYLIST_REPOSITORY } from '../ports/repositories/IPlaylistRepository';
 import { PLAYLIST_SORTING_REPOSITORY } from '../ports/repositories/IPlaylistSortingRepository';
@@ -129,9 +130,11 @@ import { GetActiveSessionsUseCase } from './scan-session/GetActiveSessions';
 import { GetCompleteSessionsUseCase } from './scan-session/GetCompleteSessions';
 import { StreamSessionUseCase } from './scan-session/StreamSession';
 import {
+  DisconnectProviderUseCase,
   ExchangeSpotifyCodeUseCase,
   ExchangeTidalCodeUseCase,
   ExchangeYouTubeCodeUseCase,
+  GetConnectedProvidersUseCase,
   GetSpotifyAuthUrlUseCase,
   GetTidalAuthUrlUseCase,
   GetYouTubeAuthUrlUseCase,
@@ -416,6 +419,8 @@ const useCasesProviders = [
   createUseCaseProvider(ExchangeTidalCodeUseCase, [TIDAL_SYNC_PROVIDER]),
   createUseCaseProvider(GetSpotifyAuthUrlUseCase, [SPOTIFY_SYNC_PROVIDER]),
   createUseCaseProvider(ExchangeSpotifyCodeUseCase, [SPOTIFY_SYNC_PROVIDER]),
+  createUseCaseProvider(GetConnectedProvidersUseCase, [OAUTH_TOKEN_REPOSITORY]),
+  createUseCaseProvider(DisconnectProviderUseCase, [OAUTH_TOKEN_REPOSITORY]),
 ];
 
 @Module({

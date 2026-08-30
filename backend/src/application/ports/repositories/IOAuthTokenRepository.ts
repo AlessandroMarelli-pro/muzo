@@ -26,4 +26,8 @@ export interface IOAuthTokenRepository {
       expiresAt?: Date | null;
     },
   ): Promise<void>;
+
+  listConnectedProviders(userId: string): Promise<ThirdPartyProvider[]>;
+
+  deleteToken(userId: string, provider: ThirdPartyProvider): Promise<void>;
 }

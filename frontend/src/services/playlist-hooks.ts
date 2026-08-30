@@ -190,6 +190,23 @@ const AUTHENTICATE_SPOTIFY = gql`
   }
 `;
 
+const GET_CONNECTED_PROVIDERS = gql`
+  query ConnectedProviders($userId: String!) {
+    connectedProviders(userId: $userId) {
+      provider
+    }
+  }
+`;
+
+const DISCONNECT_PROVIDER = gql`
+  mutation DisconnectProvider($userId: String!, $provider: String!) {
+    disconnectProvider(userId: $userId, provider: $provider) {
+      success
+      message
+    }
+  }
+`;
+
 const ADD_TRACK_TO_PLAYLIST = gql`
   mutation AddTrackToPlaylist($playlistId: Base64ID!, $input: AddTrackToPlaylistInput!) {
     addTrackToPlaylist(playlistId: $playlistId, input: $input) {
@@ -418,6 +435,23 @@ const authenticateTidal = async (
     authenticateTidal: { success: boolean; message?: string };
   }>(AUTHENTICATE_TIDAL, { code, codeVerifier, userId });
   return data.authenticateTidal;
+};
+
+const getConnectedProviders = async (userId: string = 'default'): Promise<string[]> => {
+  const data = await graffleClient.request<{
+    connectedProviders: { provider: string }[];
+  }>(GET_CONNECTED_PROVIDERS, { userId });
+  return data.connectedProviders.map((p) => p.provider);
+};
+
+const disconnectProvider = async (
+  provider: string,
+  userId: string = 'default',
+): Promise<{ success: boolean; message?: string }> => {
+  const data = await graffleClient.request<{
+    disconnectProvider: { success: boolean; message?: string };
+  }>(DISCONNECT_PROVIDER, { provider, userId });
+  return data.disconnectProvider;
 };
 
 const syncPlaylistToSpotify = async (
@@ -797,6 +831,35 @@ export function useSpotifyAuth(userId: string = 'default') {
     isGettingAuthUrl: getAuthUrlMutation.isPending,
     isAuthenticating: authenticateMutation.isPending,
     authError: authenticateMutation.error,
+  };
+}
+
+export function useConnectedProviders(userId: string = 'default') {
+  const { data, isLoading, refetch } = useQuery<string[]>({
+    queryKey: ['connectedProviders', userId],
+    queryFn: () => getConnectedProviders(userId),
+  });
+
+  return {
+    providers: data ?? [],
+    isLoading,
+    refetch,
+  };
+}
+
+export function useDisconnectProvider(userId: string = 'default') {
+  const queryClient = useQueryClient();
+
+  const mutation = useMutation({
+    mutationFn: (provider: string) => disconnectProvider(provider, userId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['connectedProviders', userId] });
+    },
+  });
+
+  return {
+    disconnect: mutation.mutateAsync,
+    isDisconnecting: mutation.isPending,
   };
 }
 

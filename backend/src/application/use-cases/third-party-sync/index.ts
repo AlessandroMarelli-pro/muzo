@@ -1,6 +1,8 @@
+export { DisconnectProviderUseCase } from './DisconnectProvider';
 export { ExchangeSpotifyCodeUseCase } from './ExchangeSpotifyCode';
 export { ExchangeTidalCodeUseCase } from './ExchangeTidalCode';
 export { ExchangeYouTubeCodeUseCase } from './ExchangeYouTubeCode';
+export { GetConnectedProvidersUseCase } from './GetConnectedProviders';
 export { GetSpotifyAuthUrlUseCase } from './GetSpotifyAuthUrl';
 export { GetTidalAuthUrlUseCase } from './GetTidalAuthUrl';
 export { GetYouTubeAuthUrlUseCase } from './GetYouTubeAuthUrl';

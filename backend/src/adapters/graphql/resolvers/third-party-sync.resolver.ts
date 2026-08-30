@@ -1,8 +1,11 @@
 import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
+import type { ThirdPartyProvider } from 'src/application/ports/repositories/IOAuthTokenRepository';
 import {
+  DisconnectProviderUseCase,
   ExchangeSpotifyCodeUseCase,
   ExchangeTidalCodeUseCase,
   ExchangeYouTubeCodeUseCase,
+  GetConnectedProvidersUseCase,
   GetSpotifyAuthUrlUseCase,
   GetTidalAuthUrlUseCase,
   GetYouTubeAuthUrlUseCase,
@@ -13,6 +16,8 @@ import {
 import { parsePlaylistId } from '../../common/utils/parse-id';
 import { Base64ID } from '../scalars/base64-id.scalar';
 import {
+  ConnectedProvider,
+  DisconnectProviderResult,
   SpotifyAuthResult,
   SpotifyAuthUrl,
   ThirdPartySyncResult,
@@ -34,7 +39,34 @@ export class ThirdPartySyncResolver {
     private readonly getSpotifyAuthUrlUseCase: GetSpotifyAuthUrlUseCase,
     private readonly exchangeSpotifyCodeUseCase: ExchangeSpotifyCodeUseCase,
     private readonly syncPlaylistToSpotifyUseCase: SyncPlaylistToSpotifyUseCase,
+    private readonly getConnectedProvidersUseCase: GetConnectedProvidersUseCase,
+    private readonly disconnectProviderUseCase: DisconnectProviderUseCase,
   ) {}
+
+  @Query(() => [ConnectedProvider])
+  async connectedProviders(@Args('userId') userId: string): Promise<ConnectedProvider[]> {
+    const providers = await this.getConnectedProvidersUseCase.execute(userId);
+    return providers.map((provider) => ({ provider }));
+  }
+
+  @Mutation(() => DisconnectProviderResult)
+  async disconnectProvider(
+    @Args('userId') userId: string,
+    @Args('provider') provider: string,
+  ): Promise<DisconnectProviderResult> {
+    const known: ThirdPartyProvider[] = ['youtube', 'tidal', 'spotify'];
+    if (!known.includes(provider as ThirdPartyProvider)) {
+      return { success: false, message: `Unknown provider: ${provider}` };
+    }
+    try {
+      await this.disconnectProviderUseCase.execute(userId, provider as ThirdPartyProvider);
+      return { success: true, message: `Disconnected ${provider}` };
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : `Failed to disconnect ${provider}`;
+      return { success: false, message };
+    }
+  }
 
   @Query(() => YouTubeAuthUrl)
   getYouTubeAuthUrl(): YouTubeAuthUrl {

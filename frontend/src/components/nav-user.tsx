@@ -99,7 +99,7 @@ export function NavUser({
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={() => router.navigate({ to: '/settings' })}>
                 <Sparkles />
                 Settings
               </DropdownMenuItem>

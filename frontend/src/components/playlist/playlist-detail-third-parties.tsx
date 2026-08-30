@@ -1,21 +1,13 @@
 import { Playlist } from '@/__generated__/types';
 import { Button } from '@/components/ui/button';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Input } from '@/components/ui/input';
+import { ProviderAuthDialog } from '@/components/third-party/provider-auth-dialog';
 import { useTidalAuth, useYouTubeAuth } from '@/services/playlist-hooks';
-import { ChevronDown, Music, Music2 } from 'lucide-react';
+import { ChevronDown, Music2 } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { SpotifySync } from './third-party-apps/spotify-sync';
 import { TidalSync, type TidalSyncHandle } from './third-party-apps/tidal-sync';
@@ -210,195 +202,36 @@ export function PlaylistDetailThirdParties({
         </DropdownMenuContent>
       </DropdownMenu>
 
-      {/* YouTube Authentication Dialog */}
-      <Dialog open={isYouTubeAuthDialogOpen} onOpenChange={setIsYouTubeAuthDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Authenticate with YouTube</DialogTitle>
-            <DialogDescription>
-              To sync playlists to YouTube, you need to authenticate first.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <p className="text-sm text-muted-foreground mb-2">
-                1. Click the button below to open YouTube authorization page
-              </p>
-              {youtubeAuthUrl ? (
-                <>
-                  <Button
-                    onClick={(e) => {
-                      e.preventDefault();
-                      const newWindow = window.open(youtubeAuthUrl, '_blank', 'noopener,noreferrer');
-                      if (!newWindow || newWindow.closed) {
-                        alert(
-                          'Popup blocked. Please click the link below to open the authorization page.',
-                        );
-                      }
-                    }}
-                    disabled={isGettingYouTubeAuthUrl}
-                    className="w-full"
-                    variant="outline"
-                  >
-                    {isGettingYouTubeAuthUrl ? 'Loading…' : 'Open YouTube Authorization'}
-                  </Button>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    Or{' '}
-                    <a
-                      href={youtubeAuthUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-primary underline hover:no-underline"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        window.open(youtubeAuthUrl, '_blank', 'noopener,noreferrer');
-                      }}
-                    >
-                      click here to open in a new tab
-                    </a>
-                  </p>
-                </>
-              ) : (
-                <Button disabled className="w-full" variant="outline">
-                  {isGettingYouTubeAuthUrl ? 'Loading authorization URL…' : 'No URL available'}
-                </Button>
-              )}
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground mb-2">
-                2. After authorizing, copy the authorization code from the URL and paste it below
-              </p>
-              <Input
-                placeholder="Enter authorization code"
-                value={youtubeAuthCode}
-                onChange={(e) => setYoutubeAuthCode(e.target.value)}
-                disabled={isAuthenticatingYouTube}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={closeYouTubeAuthDialog}>
-              Cancel
-            </Button>
-            <Button
-              onClick={handleCompleteYouTubeAuth}
-              disabled={!youtubeAuthCode.trim() || isAuthenticatingYouTube}
-            >
-              {isAuthenticatingYouTube ? 'Authenticating…' : 'Complete Authentication'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <ProviderAuthDialog
+        open={isYouTubeAuthDialogOpen}
+        onOpenChange={(open) => {
+          if (!open) closeYouTubeAuthDialog();
+          else setIsYouTubeAuthDialogOpen(true);
+        }}
+        providerLabel="YouTube"
+        authUrl={youtubeAuthUrl}
+        isLoadingUrl={isGettingYouTubeAuthUrl}
+        code={youtubeAuthCode}
+        onCodeChange={setYoutubeAuthCode}
+        onComplete={handleCompleteYouTubeAuth}
+        isCompleting={isAuthenticatingYouTube}
+      />
 
-      {/* TIDAL Authentication Dialog - PKCE Flow */}
-      <Dialog
+      <ProviderAuthDialog
         open={isTidalAuthDialogOpen}
         onOpenChange={(open) => {
           if (!open) closeTidalAuthDialog();
+          else setIsTidalAuthDialogOpen(true);
         }}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Authenticate with TIDAL</DialogTitle>
-            <DialogDescription>
-              To sync playlists to TIDAL, you need to authenticate first.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            {isGettingTidalAuthUrl ? (
-              <div className="text-center py-4">
-                <p className="text-sm text-muted-foreground">Getting authorization URL...</p>
-              </div>
-            ) : tidalAuthUrl ? (
-              <>
-                <div>
-                  <p className="text-sm text-muted-foreground mb-2">
-                    1. Click the button below to open TIDAL authorization page
-                  </p>
-                  <Button
-                    onClick={(e) => {
-                      e.preventDefault();
-                      const newWindow = window.open(tidalAuthUrl, '_blank', 'noopener,noreferrer');
-                      if (!newWindow || newWindow.closed) {
-                        alert(
-                          'Popup blocked. Please click the link below to open the authorization page.',
-                        );
-                      }
-                    }}
-                    className="w-full"
-                    variant="outline"
-                  >
-                    <Music className="h-4 w-4 mr-2" />
-                    Open TIDAL Authorization
-                  </Button>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    Or{' '}
-                    <a
-                      href={tidalAuthUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-primary underline hover:no-underline"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        window.open(tidalAuthUrl, '_blank', 'noopener,noreferrer');
-                      }}
-                    >
-                      click here to open in a new tab
-                    </a>
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground mb-2">
-                    2. After authorizing, TIDAL will redirect you to a page. Look at the URL in
-                    your browser's address bar and copy the{' '}
-                    <code className="text-xs bg-muted px-1 py-0.5 rounded">code</code> parameter
-                    from the URL.
-                  </p>
-                  <p className="text-xs text-muted-foreground mb-2">
-                    The redirect URL will look like:{' '}
-                    <code className="text-xs bg-muted px-1 py-0.5 rounded break-all">
-                      https://tidal-music.github.io/tidal-api-reference/oauth2-redirect.html?code=...
-                    </code>{' '}
-                    or{' '}
-                    <code className="text-xs bg-muted px-1 py-0.5 rounded">
-                      http://localhost:3000?code=...
-                    </code>
-                  </p>
-                  <p className="text-xs text-muted-foreground mb-2">
-                    Copy everything after{' '}
-                    <code className="text-xs bg-muted px-1 py-0.5 rounded">code=</code> (until the
-                    next <code className="text-xs bg-muted px-1 py-0.5 rounded">&</code> or end of
-                    URL) and paste it below.
-                  </p>
-                  <Input
-                    placeholder="Enter authorization code (from ?code= parameter in the redirect URL)"
-                    value={tidalAuthCode}
-                    onChange={(e) => setTidalAuthCode(e.target.value)}
-                    disabled={isAuthenticatingTidal}
-                  />
-                </div>
-                <DialogFooter>
-                  <Button variant="outline" onClick={closeTidalAuthDialog}>
-                    Cancel
-                  </Button>
-                  <Button
-                    onClick={handleCompleteTidalAuth}
-                    disabled={!tidalAuthCode.trim() || isAuthenticatingTidal || !tidalCodeVerifier}
-                  >
-                    {isAuthenticatingTidal ? 'Authenticating…' : 'Complete Authentication'}
-                  </Button>
-                </DialogFooter>
-              </>
-            ) : (
-              <div className="text-center py-4">
-                <p className="text-sm text-muted-foreground">
-                  Failed to get authorization. Please try again.
-                </p>
-              </div>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
+        providerLabel="TIDAL"
+        authUrl={tidalAuthUrl}
+        isLoadingUrl={isGettingTidalAuthUrl}
+        code={tidalAuthCode}
+        onCodeChange={setTidalAuthCode}
+        onComplete={handleCompleteTidalAuth}
+        isCompleting={isAuthenticatingTidal}
+        canComplete={!!tidalCodeVerifier}
+      />
     </>
   );
 }

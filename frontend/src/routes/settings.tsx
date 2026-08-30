@@ -1,10 +1,11 @@
+import { AccountConnections } from '@/components/settings/account-connections';
 import { createFileRoute } from '@tanstack/react-router';
 
 function SettingsPage() {
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold mb-6">Settings</h1>
-      <p className="text-muted-foreground">Application settings will appear here</p>
+    <div className="p-6 space-y-6 max-w-2xl">
+      <h1 className="text-2xl font-bold">Settings</h1>
+      <AccountConnections />
     </div>
   );
 }

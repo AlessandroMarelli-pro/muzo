@@ -74,6 +74,35 @@ export class OAuthTokenRepository implements IOAuthTokenRepository {
     });
   }
 
+  async listConnectedProviders(userId: string): Promise<ThirdPartyProvider[]> {
+    const rows = await this.prisma.thirdPartyOAuthToken.findMany({
+      where: { createdById: userId },
+      select: { provider: true },
+    });
+    return rows.map((row) => row.provider as ThirdPartyProvider);
+  }
+
+  async deleteToken(userId: string, provider: ThirdPartyProvider): Promise<void> {
+    try {
+      await this.prisma.thirdPartyOAuthToken.delete({
+        where: {
+          createdById_provider: { createdById: userId, provider },
+        },
+      });
+    } catch (error: unknown) {
+      // P2025: record to delete does not exist — treat disconnect as idempotent.
+      if (
+        error &&
+        typeof error === 'object' &&
+        'code' in error &&
+        (error as { code?: string }).code === 'P2025'
+      ) {
+        return;
+      }
+      throw error;
+    }
+  }
+
   private toRecord(row: {
     userId: string;
     provider: string;

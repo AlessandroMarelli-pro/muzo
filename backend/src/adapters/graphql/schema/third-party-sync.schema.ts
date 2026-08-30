@@ -22,6 +22,21 @@ export class ThirdPartySyncResult {
 }
 
 @ObjectType()
+export class ConnectedProvider {
+  @Field()
+  provider: string;
+}
+
+@ObjectType()
+export class DisconnectProviderResult {
+  @Field()
+  success: boolean;
+
+  @Field({ nullable: true })
+  message?: string;
+}
+
+@ObjectType()
 export class YouTubeAuthUrl {
   @Field()
   authUrl: string;

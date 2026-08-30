@@ -10,6 +10,10 @@ input AddTrackToPlaylistInput {
 """ID encoded as base64 for transport"""
 scalar Base64ID
 
+type ConnectedProvider {
+  provider: String!
+}
+
 type CosineRecommendedTrack {
   artist: String!
   externalLink: String
@@ -51,6 +55,11 @@ input CursorPaginationArgs {
 
 """Date custom scalar type"""
 scalar Date
+
+type DisconnectProviderResult {
+  message: String
+  success: Boolean!
+}
 
 type DiscoveredTrack {
   artist: String!
@@ -166,6 +175,7 @@ type Mutation {
   deleteLibrary(id: Base64ID!): Boolean!
   deletePlaylist(id: Base64ID!): Boolean!
   deleteSavedFilter(id: Base64ID!): Boolean!
+  disconnectProvider(provider: String!, userId: String!): DisconnectProviderResult!
   downloadHqAudio(trackId: Base64ID!): Boolean!
   downloadPlaylistHqAudio(playlistId: Base64ID!): HqAudioBatchDownload!
   downloadPlaylistToFolder(playlistId: Base64ID!): Boolean!
@@ -267,6 +277,7 @@ type PlaylistsResult {
 }
 
 type Query {
+  connectedProviders(userId: String!): [ConnectedProvider!]!
   cosineRecommendationsForTrack(trackId: Base64ID!, userId: String): [CosineRecommendedTrack!]!
   discoverSimilarTracksForPlaylist(playlistId: Base64ID!, userId: String!): [DiscoveredTrack!]!
   getSpotifyAuthUrl: SpotifyAuthUrl!
