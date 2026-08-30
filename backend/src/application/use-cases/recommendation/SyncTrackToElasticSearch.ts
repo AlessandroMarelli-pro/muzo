@@ -21,7 +21,10 @@ export class SyncTrackToElasticSearchUseCase {
     const track = await this.musicTrackRepository.getOneById(trackId);
     this.logger.info('Syncing track to elasticsearch', {
       trackId,
-      track,
+      track: {
+        ...track,
+        features: { ...track.features, embedding: track.features?.embedding?.length },
+      },
     });
     return this.trackIndexerPort.indexTrack(track);
   }

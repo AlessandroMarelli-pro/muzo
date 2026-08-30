@@ -290,24 +290,30 @@ COPY requirements.txt .
 # essentia-tensorflow is already built from source above (see essentia-libs);
 # pip would otherwise try and fail to fetch it from PyPI (no Linux wheel).
 #
-# --no-build-isolation for madmom specifically: madmom's setup.py does
-# `import Cython` at build time (no prebuilt wheel exists for any platform),
-# but pip's default PEP 517 build isolation builds each package in its own
-# throwaway env that does NOT see the cython/numpy already installed on the
-# line above -- confirmed via CI, "ModuleNotFoundError: No module named
-# 'Cython'" despite cython==3.0.1 being installed and reported as already
-# satisfied immediately beforehand. --no-build-isolation makes madmom's
-# build see the outer environment (where cython/numpy already are) instead.
-# Also strip the bare `numpy` line: the tensorflow 2.14 wheel already pins it
-# to >=1.23.5,<2.0 and an unbounded `numpy>=1.26.0` here lets pip bump it to
-# 2.x, which breaks `import tensorflow`. A constrained `numpy>=1.26.0,<2.0` is
-# reinstalled explicitly instead.
-RUN grep -vE '^(essentia-tensorflow|numpy)' requirements.txt > requirements.docker.txt && \
+# Lines stripped from requirements.txt before the bulk install, each handled
+# separately below:
+#   essentia-tensorflow -- built from source in essentia-libs (no PyPI wheel).
+#   numpy               -- the tensorflow 2.14 wheel pins it >=1.23.5,<2.0; an
+#                          unbounded `numpy>=1.26.0` here would let pip bump it
+#                          to 2.x and break `import tensorflow`. Reinstalled
+#                          explicitly as `numpy>=1.26.0,<2.0`.
+#   skey                -- its pyproject pins `numpy~=2.2.0`, a hard conflict
+#                          with TF's `numpy<2.0`. skey's actual code (ChromaNet
+#                          key-detection inference) is numpy-2-only in the
+#                          declaration, not in practice, and every real dep it
+#                          needs (torch/torchaudio/soundfile/nnAudio/einops/tqdm)
+#                          is already pinned in requirements.txt -- so install it
+#                          `--no-deps`.
+#   madmom              -- no wheel anywhere; source build needs to SEE the
+#                          already-installed cython/numpy, which PEP 517 build
+#                          isolation hides -> `--no-build-isolation`.
+RUN grep -vE '^(essentia-tensorflow|numpy|skey )' requirements.txt > requirements.docker.txt && \
     python3.11 -m pip install --no-cache-dir cython==3.0.1 "numpy>=1.26.0,<2.0" && \
     grep -v '^madmom' requirements.docker.txt > requirements.nomadmom.txt && \
     python3.11 -m pip install --no-cache-dir -r requirements.nomadmom.txt "numpy>=1.26.0,<2.0" && \
+    python3.11 -m pip install --no-cache-dir --no-deps "$(grep '^skey ' requirements.txt)" && \
     python3.11 -m pip install --no-cache-dir --no-build-isolation "$(grep '^madmom' requirements.docker.txt)" && \
-    python3.11 -c "import tensorflow as tf, numpy; print('tf', tf.__version__, 'numpy', numpy.__version__)"
+    python3.11 -c "import tensorflow as tf, numpy, skey; print('tf', tf.__version__, 'numpy', numpy.__version__, 'skey OK')"
 
 # Includes models/essentia_cache (see essentia-cpu.Dockerfile) so the image
 # ships with the essentia .pb files -- no download on first request. Plain git
