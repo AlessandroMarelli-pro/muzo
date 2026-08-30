@@ -82,9 +82,7 @@ function makePrismaGenreRow(overrides: Partial<PrismaGenre> = {}): PrismaGenre {
     name: 'rock',
     description: null,
     createdAt: new Date(),
-    createdById: TEST_USER_ID,
     updatedAt: null,
-    updatedById: null,
     ...overrides,
   };
 }
@@ -96,9 +94,7 @@ function makePrismaSubgenreRow(overrides: Partial<PrismaSubgenre> = {}): PrismaS
     description: null,
     genreId: null,
     createdAt: new Date(),
-    createdById: TEST_USER_ID,
     updatedAt: null,
-    updatedById: null,
     ...overrides,
   };
 }

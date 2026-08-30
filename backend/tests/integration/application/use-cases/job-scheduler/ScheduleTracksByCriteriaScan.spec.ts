@@ -13,10 +13,10 @@ import { SCAN_SESSION_REPOSITORY } from 'src/application/ports/repositories/ISca
 import { ScheduleBatchAudioScanUseCase } from 'src/application/use-cases/job-scheduler/ScheduleBatchAudioScan';
 import { ScheduleTracksByCriteriaScanUseCase } from 'src/application/use-cases/job-scheduler/ScheduleTracksByCriteriaScan';
 import { PRISMA_SERVICE } from 'src/infrastructure/database/prisma.service';
-import { extractModelId } from 'src/kernel/ids/factory';
 import type { MusicLibraryId, SessionId } from 'src/kernel/ids';
-import { models } from 'src/kernel/types/models';
+import { extractModelId } from 'src/kernel/ids/factory';
 import { AudioFileAnalysisStatusEnum, FilterCriteria } from 'src/kernel/types';
+import { models } from 'src/kernel/types/models';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createIntegrationPrismaClient, setupIntegrationDb } from '../_test-utils/integration-db';
 import { makeLibrary } from '../_test-utils/make-library';
@@ -150,7 +150,6 @@ describe('ScheduleTracksByCriteriaScanUseCase', () => {
     await prisma.scanSession.deleteMany({});
     await prisma.trackGenre.deleteMany({});
     await prisma.trackSubgenre.deleteMany({});
-    await prisma.trackAiAtmosphereTag.deleteMany({});
     await prisma.musicTrack.deleteMany({});
     await prisma.musicLibrary.deleteMany({});
     fakeScheduleBatch.calls.length = 0;

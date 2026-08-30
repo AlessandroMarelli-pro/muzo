@@ -47,7 +47,7 @@ DEPLOY_ARGS=(
   # time (analysis lock), so concurrency = replica count. min-replica 2 keeps two
   # warm to absorb the first requests without a cold start; the scaler adds up to
   # max-replica for the rest. Bump both if scans routinely queue.
-  --min-replica 2
+  --min-replica 4
   --max-replica 4
   #--scale-to-zero-timeout 15
   # Scale on queued (pending) requests rather than hardware usage -- batch

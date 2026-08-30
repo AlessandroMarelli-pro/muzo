@@ -20,6 +20,28 @@ import {
 export class AudioAnalysisRepository implements IAudioAnalysisRepository {
   constructor(@Inject(PRISMA_SERVICE) private readonly prisma: PrismaService) {}
 
+  /**
+   * Reads a genre by its unique `name`, creating it if absent. Race-safe: if a
+   * concurrent transaction inserts the same name between our read and create,
+   * Prisma raises P2002 on `genres_name_key` and we re-read instead of failing
+   * the whole analysis. Rows are normally seeded (see the
+   * seed_discogs_genre_taxonomy migration), so the create path is a fallback.
+   */
+  private async findOrCreateGenreByName(name: string) {
+    const existing = await this.prisma.genre.findUnique({ where: { name } });
+    if (existing) return existing;
+    try {
+      return await this.prisma.genre.create({
+        data: toPrismaGenre(models.genre.instantiateNew({ name, description: null })),
+      });
+    } catch (error) {
+      if ((error as { code?: string }).code !== 'P2002') throw error;
+      const row = await this.prisma.genre.findUnique({ where: { name } });
+      if (!row) throw error;
+      return row;
+    }
+  }
+
   async upsertAudioFingerprint(
     trackId: MusicTrackId,
     analysisResult: AudioAnalysisResponse,
@@ -137,26 +159,26 @@ export class AudioAnalysisRepository implements IAudioAnalysisRepository {
     });
 
     const genreIdByName = new Map<string, string>();
+    const linkedGenreIds = new Set<string>();
+    const linkedSubgenreIds = new Set<string>();
 
     for (const { genre: genreName, confidence } of classifications.genres ?? []) {
       if (!genreName || genreName.trim() === '') continue;
       const normalizedName = genreName.trim().toLowerCase();
 
-      // `name` is the only unique constraint (genres_name_key); upsert atomically
-      // to avoid a race when tracks sharing a genre are analyzed concurrently.
-      const genre = await this.prisma.genre.upsert({
-        where: { name: normalizedName },
-        create: toPrismaGenre(
-          models.genre.instantiateNew({ name: normalizedName, description: null }),
-        ),
-        update: {},
-      });
+      // The Discogs taxonomy is seeded (see the seed_discogs_genre_taxonomy
+      // migration), so this is normally a plain read. The create covers a label
+      // the classifier emits that predates the seed; the P2002 catch handles the
+      // race when concurrent analyses create the same name (Prisma has no atomic
+      // upsert on a non-PK unique -- genres_name_key).
+      const genre = await this.findOrCreateGenreByName(normalizedName);
       genreIdByName.set(normalizedName, genre.id);
 
-      // Upsert on the compound key: classifications.genres can repeat a name
-      // (e.g. "House" + "house") and the same track may be re-analyzed
-      // concurrently -- either would make a second create() collide with
-      // track_genres_trackId_genreId_key.
+      // The trackGenre/trackSubgenre rows for this track were just deleted above,
+      // so a plain create is enough. classifications.genres can still repeat a
+      // normalized name (e.g. "House" + "house"); skip the duplicate.
+      if (linkedGenreIds.has(genre.id)) continue;
+      linkedGenreIds.add(genre.id);
       const trackGenre = toPrismaTrackGenre(
         models.trackGenre.instantiateNew({
           trackId,
@@ -164,16 +186,7 @@ export class AudioAnalysisRepository implements IAudioAnalysisRepository {
           confidence,
         }),
       );
-      await this.prisma.trackGenre.upsert({
-        where: {
-          trackId_genreId: {
-            trackId: trackGenre.trackId,
-            genreId: trackGenre.genreId,
-          },
-        },
-        create: trackGenre,
-        update: { confidence: trackGenre.confidence },
-      });
+      await this.prisma.trackGenre.create({ data: trackGenre });
     }
 
     for (const { style: styleName, genre: parentGenreName, confidence } of classifications.styles ??
@@ -184,27 +197,38 @@ export class AudioAnalysisRepository implements IAudioAnalysisRepository {
         ? (genreIdByName.get(parentGenreName.trim().toLowerCase()) ?? null)
         : null;
 
-      // `name` is the only unique constraint (subgenres_name_key); upsert atomically
-      // to avoid a race when tracks sharing a style are analyzed concurrently.
-      let subgenre = await this.prisma.subgenre.upsert({
-        where: { name: normalizedName },
-        create: toPrismaSubgenre(
-          models.subgenre.instantiateNew({
-            name: normalizedName,
-            description: null,
-            genreId: parentGenreId ? models.genre.id(parentGenreId) : null,
-          }),
-        ),
-        update: {},
-      });
-      if (parentGenreId && subgenre.genreId !== parentGenreId) {
+      // Seeded from the Discogs taxonomy; see the genre note above for why this
+      // is findOrCreate rather than upsert (subgenres_name_key). A newly created
+      // row gets the parent genre we just saw; an existing row whose parent
+      // differs is realigned to it.
+      let subgenre = await this.prisma.subgenre.findUnique({ where: { name: normalizedName } });
+      if (!subgenre) {
+        try {
+          subgenre = await this.prisma.subgenre.create({
+            data: toPrismaSubgenre(
+              models.subgenre.instantiateNew({
+                name: normalizedName,
+                description: null,
+                genreId: parentGenreId ? models.genre.id(parentGenreId) : null,
+              }),
+            ),
+          });
+        } catch (error) {
+          if ((error as { code?: string }).code !== 'P2002') throw error;
+          subgenre = await this.prisma.subgenre.findUnique({ where: { name: normalizedName } });
+          if (!subgenre) throw error;
+        }
+      } else if (parentGenreId && subgenre.genreId !== parentGenreId) {
         subgenre = await this.prisma.subgenre.update({
           where: { id: subgenre.id },
           data: { genreId: parentGenreId },
         });
       }
 
-      // Upsert on the compound key -- see the trackGenre note above.
+      // Plain create -- see the trackGenre note above. Skip a style that
+      // normalizes to one already linked for this track.
+      if (linkedSubgenreIds.has(subgenre.id)) continue;
+      linkedSubgenreIds.add(subgenre.id);
       const trackSubgenre = toPrismaTrackSubgenre(
         models.trackSubgenre.instantiateNew({
           trackId,
@@ -212,16 +236,7 @@ export class AudioAnalysisRepository implements IAudioAnalysisRepository {
           confidence,
         }),
       );
-      await this.prisma.trackSubgenre.upsert({
-        where: {
-          trackId_subgenreId: {
-            trackId: trackSubgenre.trackId,
-            subgenreId: trackSubgenre.subgenreId,
-          },
-        },
-        create: trackSubgenre,
-        update: { confidence: trackSubgenre.confidence },
-      });
+      await this.prisma.trackSubgenre.create({ data: trackSubgenre });
     }
   }
 }
