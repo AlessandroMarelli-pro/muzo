@@ -27,12 +27,12 @@ export class GetPlaylistRecommendationsUseCase {
     );
 
     const features = this.recommendationDataPort.getAudioFeatures(
-      playlistTracks.map((track) => track.track).slice(0, 10),
+      playlistTracks.map((track) => track.track),
     );
     if (!features) {
       return [];
     }
-
+    console.log(features);
     const recommendations = await this.recommendationSearchPort.searchByFeatures([features], {
       weights: DEFAULT_RECOMMENDATION_WEIGHTS,
       limit,

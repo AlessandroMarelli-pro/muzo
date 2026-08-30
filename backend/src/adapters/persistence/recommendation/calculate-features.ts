@@ -15,6 +15,16 @@ function calculateMean(values?: (number | undefined)[]): number {
 }
 
 const EMBEDDING_DIM = 1280;
+const MAX_SEED_EMBEDDINGS = 10;
+
+/** Per-seed 1280-dim vectors, sliced to exactly EMBEDDING_DIM and capped. */
+function collectSeedEmbeddings(tracks: MusicTrack[]): number[][] {
+  return tracks
+    .map((track) => track.features?.embedding)
+    .filter((v): v is number[] => Array.isArray(v) && v.length >= EMBEDDING_DIM)
+    .map((v) => v.slice(0, EMBEDDING_DIM))
+    .slice(0, MAX_SEED_EMBEDDINGS);
+}
 
 function calculateVectorAggregate(
   tracks: MusicTrack[],
@@ -73,6 +83,7 @@ export function calculateFeatures(tracks: MusicTrack[]): Maybe<AudioFeatures> {
     artist: '',
     album: '',
     embedding: [],
+    embeddings: [],
   };
 
   const genreCounts: Record<string, number> = {};
@@ -181,6 +192,7 @@ export function calculateFeatures(tracks: MusicTrack[]): Maybe<AudioFeatures> {
   if (embedding) {
     features.embedding = embedding;
   }
+  features.embeddings = collectSeedEmbeddings(tracks);
 
   features.instrumentalness = instrumentalnessCount > 0 ? instrumentalnessSum / instrumentalnessCount : 0;
   features.voice = voiceCount > 0 ? voiceSum / voiceCount : 0;

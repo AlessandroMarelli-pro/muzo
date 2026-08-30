@@ -19,6 +19,9 @@ export class RecommendationSearchAdapter implements IRecommendationSearchPort {
     this.elasticsearchClient = this.client.getClient();
   }
 
+  // `features` is always a single-element array: `features[0]` is the fully
+  // aggregated playlist-level object, and multi-seed diversity is carried inside
+  // it via `features[0].embeddings`.
   async searchByFeatures(
     features: AudioFeatures[],
     criteria: RecommendationCriteria,
@@ -26,11 +29,10 @@ export class RecommendationSearchAdapter implements IRecommendationSearchPort {
     const query = buildElasticsearchRecommendationQuery(
       features[0],
       criteria,
-    ) as unknown as SearchRequest['body'];
-    console.log(query);
+    ) as unknown as SearchRequest;
     const response = await this.elasticsearchClient.search({
       index: 'music_tracks',
-      body: query,
+      ...query,
     });
     const hits = response.hits.hits;
     hits.sort((a, b) => (b._score ?? 0) - (a._score ?? 0));

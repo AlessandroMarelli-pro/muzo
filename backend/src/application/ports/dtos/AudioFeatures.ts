@@ -24,6 +24,16 @@ export type AudioFeatures = {
   subgenres?: string[];
   artist?: string;
   album?: string;
-  /** 1280-dim discogs-effnet embedding (Essentia) for acoustic similarity search. */
+  /**
+   * Element-wise mean of the seed tracks' 1280-dim discogs-effnet embeddings.
+   * Kept for backward compatibility, single-seed fallback, and reason generation.
+   */
   embedding?: number[];
+  /**
+   * Per-seed 1280-dim discogs-effnet embeddings (one entry per seed track that has
+   * a vector, capped at 10). Drives a native multi-`knn` search so a candidate close
+   * to any single sub-cluster of a diverse playlist still ranks well, instead of
+   * being matched against a blurred centroid.
+   */
+  embeddings?: number[][];
 };
