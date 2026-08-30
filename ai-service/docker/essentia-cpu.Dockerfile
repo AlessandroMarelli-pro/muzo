@@ -2,19 +2,23 @@
 #
 # CPU-only counterpart to essentia-gpu.Dockerfile -- see that file's header
 # comments for the full essentia-libs build-stage rationale (FFmpeg 5.0+
-# requirement, community libtensorflow_cc binary, etc.), which is identical
-# here. The two Dockerfiles are kept separate rather than parameterized by a
-# build ARG so each runtime stage stays simple to read, at the cost of some
-# duplication in the build stage.
+# requirement, etc.). The two Dockerfiles are kept separate rather than
+# parameterized by a build ARG so each runtime stage stays simple to read, at
+# the cost of some duplication in the build stage.
 #
-# Why CPU instead of GPU: the GPU runtime (nvidia T4 via HF Inference
-# Endpoints) hit a reproducible glibc heap-corruption crash --
-# "malloc(): invalid size (unsorted)" -- on the very first GPU inference call
-# through Essentia's TensorflowPredictEffnetDiscogs. Root cause not found
-# after ruling out a CUDA/cuDNN version mismatch, a glibc/libstdc++ ABI
-# mismatch between build stages, and TF's oneDNN/XLA auto-clustering. The CPU
-# path runs the exact same code and works correctly. See essentia-gpu.Dockerfile
-# and git history for the investigation if GPU is revisited later.
+# NOTE: this CPU image still links Essentia against the ika-rwth-aachen
+# `libtensorflow_cc` community C++ build (below). essentia-gpu.Dockerfile has
+# since been switched to Essentia's documented `setup_from_python.sh` + TF pip
+# wheel approach to fix the GPU "malloc(): invalid size (unsorted)" heap-
+# corruption crash. This CPU image is left on the old approach for now because
+# it *works* -- once the GPU image is verified in production, align this one to
+# the same TF-wheel approach in a follow-up (see essentia-gpu.Dockerfile).
+#
+# Why CPU has been production instead of GPU: the GPU runtime (nvidia T4 via HF
+# Inference Endpoints) hit a reproducible "malloc(): invalid size (unsorted)"
+# glibc heap-corruption crash on the first GPU inference call through Essentia's
+# TensorflowPredictEffnetDiscogs. The CPU path runs the exact same code and
+# works correctly. See essentia-gpu.Dockerfile and git history.
 
 FROM ubuntu:22.04 AS essentia-libs
 ENV DEBIAN_FRONTEND=noninteractive

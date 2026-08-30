@@ -64,11 +64,15 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Verify essentia imports in the built image
+      - name: Verify essentia + tensorflow import together in the built image
         run: |
           # metadata-action already lowercases the image reference correctly
           # (github.repository preserves original case, which docker run
           # rejects) -- take the first tag from its own tags output.
           IMAGE_REF=$(echo "${{ steps.meta.outputs.tags }}" | head -n1)
+          # Import essentia AND tensorflow in one interpreter: this is the
+          # combination that Essentia's `setup_from_python.sh --mode python` TF
+          # setup is meant to make safe. A protobuf `undefined symbol` here would
+          # mean the link is wrong. (Real GPU inference still needs a CUDA host.)
           docker run --rm "$IMAGE_REF" \
-            python3.11 -c "import essentia; import essentia.standard as es; print('essentia', essentia.__version__); assert hasattr(es, 'TensorflowPredictEffnetDiscogs')"
+            python3.11 -c "import essentia, essentia.standard as es; import tensorflow as tf; print('essentia', essentia.__version__, '/ tf', tf.__version__); assert hasattr(es, 'TensorflowPredictEffnetDiscogs')"
