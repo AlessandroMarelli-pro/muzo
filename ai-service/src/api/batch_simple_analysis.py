@@ -8,6 +8,8 @@ efficiently using single API call batching for AI metadata extraction.
 import gc
 import os
 import tempfile
+import threading
+import time
 from typing import List, Optional, Tuple
 
 from flask import request
@@ -20,6 +22,15 @@ from src.scrappers.scrapper_dispatcher import get_album_art
 from src.services.simple_analysis import SimpleAnalysisService
 from src.utils.performance_optimizer import monitor_performance
 from src.utils.scan_progress_publisher import ScanProgressPublisher
+
+# Process-wide analysis lock. gunicorn runs ONE gthread worker (see
+# gunicorn.conf.py) -- the CPU-bound model inference for a batch must run one at
+# a time so it gets the whole box (ANALYSIS_THREADS=8) instead of two batches
+# fighting over 8 vCPUs (measured: per-stage times ~2x, per-file 22s -> 31s).
+# Concurrent batch POSTs from the backend queue here; their gthreads are cheap
+# to hold while blocked, and OTHER gthreads stay free to answer /api/v1/health
+# (which is what a blocked sync worker couldn't do -> HF killed the replica).
+_ANALYSIS_LOCK = threading.Lock()
 
 
 class BatchSimpleAnalysisResource(Resource):
@@ -132,15 +143,25 @@ class BatchSimpleAnalysisResource(Resource):
                 # Store (file_path, original_filename) tuple
                 file_items.append((temp_file_path, audio_file.filename))
 
-            # Perform batch analysis with progress tracking
-            result = self.simple_analysis.analyze_audio_batch(
-                file_items=file_items,
-                sample_duration=sample_duration,
-                skip_intro=skip_intro,
-                session_id=session_id,
-                batch_index=batch_index_int,
-                progress_publisher=self.progress_publisher if session_id else None,
-            )
+            # Serialize the CPU-bound analysis across the whole process so it
+            # runs at full speed (see _ANALYSIS_LOCK). File upload/validation
+            # above and album-art fetch below stay outside the lock.
+            _waited = time.monotonic()
+            with _ANALYSIS_LOCK:
+                queued_s = time.monotonic() - _waited
+                if queued_s > 1.0:
+                    logger.info(
+                        f"Batch waited {queued_s:.1f}s for the analysis lock "
+                        f"({len(file_items)} files)"
+                    )
+                result = self.simple_analysis.analyze_audio_batch(
+                    file_items=file_items,
+                    sample_duration=sample_duration,
+                    skip_intro=skip_intro,
+                    session_id=session_id,
+                    batch_index=batch_index_int,
+                    progress_publisher=self.progress_publisher if session_id else None,
+                )
 
             # Start album art fetching in parallel for successful results (non-blocking)
             if not has_image:

@@ -5,15 +5,15 @@ librosa's resampler, torch).
 Why this module exists and why it must be imported FIRST:
   TF, numpy's BLAS backend, and torch each read their thread-count knobs from the
   environment exactly once, at import time. If nothing sets them, each pool sizes
-  itself to the full CPU count. On the HF `intel-spr x4` box (8 vCPU) with
-  gunicorn running `WEB_CONCURRENCY=2` sync workers, two concurrent batch requests
-  then each spin ~8-wide pools -> ~16 threads fighting over 8 cores, cache
-  thrash, and every model stage runs slower under load than it does in isolation
-  (measured: warm single request ~30s/file, but two concurrent requests are each
-  slower than that).
+  itself to the full CPU count and, with more than one analysis in flight, they
+  oversubscribe (measured on 2 sync workers: per-stage times ~2x, per-file
+  22s -> 31s).
 
-  Pinning each worker to `ANALYSIS_THREADS` (default 4 = 8 vCPU / 2 workers) keeps
-  `workers * threads` ~= vCPU so the two workers stop oversubscribing.
+  The deployment now runs ONE gunicorn worker with a process-wide analysis lock
+  (gunicorn.conf.py + src/api/batch_simple_analysis.py) -- exactly one analysis
+  runs at a time, so it should get the whole box. `ANALYSIS_THREADS` defaults to
+  8 (the HF `intel-spr x4` vCPU count). If you go back to N concurrent analyses,
+  set it to vCPU / N.
 
 Import this at the very top of `app.py` and `wsgi.py`, before anything pulls in
 numpy / tensorflow / essentia / torch. `os.environ.setdefault` means an explicit
@@ -22,7 +22,7 @@ env var from the deploy (`--env ANALYSIS_THREADS=...`) still wins.
 
 import os
 
-_threads = os.getenv("ANALYSIS_THREADS", "4")
+_threads = os.getenv("ANALYSIS_THREADS", "8")
 
 # OpenMP (essentia's TF, audioflux) + the common BLAS backends numpy may use.
 for _var in (
@@ -47,9 +47,9 @@ os.environ.setdefault("TF_ENABLE_ONEDNN_OPTS", "0")
 
 
 def analysis_threads() -> int:
-    """The pinned per-worker thread count, for callers that need it as an int
-    (e.g. `torch.set_num_threads`)."""
+    """The pinned thread count, for callers that need it as an int (e.g.
+    `torch.set_num_threads`)."""
     try:
-        return max(1, int(os.getenv("ANALYSIS_THREADS", "4")))
+        return max(1, int(os.getenv("ANALYSIS_THREADS", "8")))
     except ValueError:
-        return 4
+        return 8

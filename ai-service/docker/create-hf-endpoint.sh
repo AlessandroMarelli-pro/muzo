@@ -32,11 +32,11 @@ DEPLOY_ARGS=(
   --custom-image "$IMAGE"
   --health-route /api/v1/health
   --port 4000
-  # min-replica 1 (not 0): the backend runs the audio-scan queue at
-  # AUDIO_SCAN_CONCURRENCY=4, so a scan fires 4 concurrent batch requests. From
-  # a cold scale-to-zero state the whole burst would queue behind one
-  # cold-starting replica (tens of seconds). Keeping 1 warm absorbs the first
-  # requests immediately; HF autoscales up to max-replica for the rest.
+  # The backend runs the audio-scan queue at AUDIO_SCAN_CONCURRENCY, firing
+  # several concurrent batch requests. Each replica now processes ONE batch at a
+  # time (analysis lock), so concurrency = replica count. min-replica 2 keeps two
+  # warm to absorb the first requests without a cold start; the scaler adds up to
+  # max-replica for the rest. Bump both if scans routinely queue.
   --min-replica 2
   --max-replica 4
   #--scale-to-zero-timeout 15
@@ -45,13 +45,16 @@ DEPLOY_ARGS=(
   --scaling-metric pendingRequests
   --scaling-threshold 2.5
   --env ENABLE_SIMPLE_ANALYSIS=true
-  # gunicorn worker processes per replica (see ai-service/gunicorn.conf.py).
-  # 2 on intel-spr x4 (8 vCPU / 16 GB); each worker loads its own model copy.
-  --env WEB_CONCURRENCY=2
-  # Native thread pool cap PER worker (TF / OpenMP / BLAS / torch). Keep
-  # WEB_CONCURRENCY * ANALYSIS_THREADS ~= vCPU (2 * 4 = 8) so the two workers
-  # don't oversubscribe the box under concurrent load. See src/config/threads.py.
-  --env ANALYSIS_THREADS=4
+  # ONE gunicorn worker per replica (gthread class -- see gunicorn.conf.py). The
+  # per-file model inference is serialized behind a process-wide lock so it runs
+  # at full speed; a 2nd worker only added CPU contention (per-file 22s -> 31s)
+  # and, being blocked in native TF code, couldn't answer /api/v1/health -> HF
+  # killed the replica mid-batch. Cross-replica parallelism comes from the
+  # scaler below.
+  --env WEB_CONCURRENCY=1
+  # Native thread pools (TF / OpenMP / BLAS / torch) = the full 8 vCPU, since
+  # only one analysis runs at a time. See src/config/threads.py.
+  --env ANALYSIS_THREADS=8
   # No Redis is reachable from the endpoint -- make ScanProgressPublisher /
   # RedisCache no-op instead of retrying a refused localhost connection on every
   # call. Real-time scan progress is disabled as a result (it already was).

@@ -201,11 +201,12 @@ EXPOSE 4000
 # Native-stack thread + TF-logging defaults. src/config/threads.py (imported
 # first by app.py / wsgi.py) also sets these via os.environ.setdefault, but
 # having them in the environment covers `python3.11 app.py` and any import path
-# that pulls in TF before that module. ANALYSIS_THREADS is the per-gunicorn-
-# worker cap; override via `--env` at deploy time.
-ENV ANALYSIS_THREADS=4 \
-    OMP_NUM_THREADS=4 \
-    TF_NUM_INTRAOP_THREADS=4 \
+# that pulls in TF before that module. ANALYSIS_THREADS=8 = the full intel-spr
+# x4 vCPU count: one gunicorn worker runs one analysis at a time (analysis lock,
+# see gunicorn.conf.py), so it gets the whole box. Override via `--env`.
+ENV ANALYSIS_THREADS=8 \
+    OMP_NUM_THREADS=8 \
+    TF_NUM_INTRAOP_THREADS=8 \
     TF_NUM_INTEROP_THREADS=1 \
     TF_CPP_MIN_LOG_LEVEL=2 \
     TF_ENABLE_ONEDNN_OPTS=0
