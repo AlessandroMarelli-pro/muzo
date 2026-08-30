@@ -126,6 +126,29 @@ if [ ! -f .env ]; then
     echo "⚠️  openssl not found -- set BETTER_AUTH_SECRET in .env manually."
   fi
 
+  # MUSIC_DIR -- mounted into the backend container at the identical host
+  # path, so absolute paths stored in the DB (a library's rootPath) and set
+  # via env vars (SOCKSEEK_OUTPUT_DIR/TIDAL_OUTPUT_DIR/PLAYLIST_EXPORT_DIR)
+  # resolve without translation. Ask interactively rather than silently
+  # assume ~/Music -- library scanning silently sees nothing if this is
+  # wrong, which is a confusing failure mode to debug after the fact.
+  default_music_dir="${HOME}/Music"
+  if [ -t 0 ]; then
+    read -r -p "📁 Music library folder [${default_music_dir}]: " music_dir
+  else
+    music_dir=""
+  fi
+  music_dir="${music_dir:-$default_music_dir}"
+  # Expand a leading ~ if the user typed one.
+  music_dir="${music_dir/#\~/$HOME}"
+
+  if [[ "$(uname -s)" == "Darwin" ]]; then
+    sed -i '' "s|^# MUSIC_DIR=.*|MUSIC_DIR=${music_dir}|" .env
+  else
+    sed -i "s|^# MUSIC_DIR=.*|MUSIC_DIR=${music_dir}|" .env
+  fi
+  echo "✅ MUSIC_DIR set to ${music_dir}"
+
   echo ""
   echo "⚠️  Edit .env and fill in AI_SERVICE_URL / AI_SERVICE_TOKEN to enable AI"
   echo "   analysis (genre/BPM/key/mood detection). The app runs without them,"
