@@ -270,7 +270,7 @@ export const SwipePage = React.memo(() => {
       tabIndex={0}
     >
       <div className="flex flex-row justify-between  text-center p-6 backdrop-blur-2xl items-start">
-        {!likedTracksCount ? (
+        {!likedTracksCount && likedTracksCount !== 0 ? (
           <Skeleton className="w-10 h-4" />
         ) : (
           <div className="text-3xl text-foreground flex flex-row gap-10">
