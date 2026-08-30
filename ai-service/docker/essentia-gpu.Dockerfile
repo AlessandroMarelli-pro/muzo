@@ -33,12 +33,15 @@
 # This build now follows Essentia's OWN documented approach
 # (essentia.upf.edu/machine_learning.html): `pip install tensorflow`, then
 # `src/3rdparty/tensorflow/setup_from_python.sh` (`--mode python`), which links
-# Essentia against the exact `.so` files shipped inside the TF Python wheel
-# (`libtensorflow_framework.so.2` + `_pywrap_tensorflow_internal.so`). Essentia
-# explicitly recommends this over BOTH the official libtensorflow C API and the
-# C++ library -- setup_tensorflow.py's own comments warn that the C-API path
-# ("--mode libtensorflow") hits protobuf `undefined symbol` conflicts when
-# Essentia and TF are used from the same process.
+# Essentia against the `.so` files shipped inside the TF Python wheel -- all
+# from ONE Google-built, mutually-ABI-consistent wheel, vs. the old third-party
+# libtensorflow_cc. Essentia recommends this over the official libtensorflow
+# C-API tarball too -- setup_tensorflow.py's comments warn that path hits
+# protobuf `undefined symbol` conflicts when Essentia and TF share a process.
+# NOTE: setup_from_python.sh's link list (`-l_pywrap_tensorflow_internal
+# -ltensorflow_framework`) is TF-1.x-era and misses the C API, which now lives
+# only in the wheel's libtensorflow_cc.so.2 -- the Dockerfile patches that in
+# (see the setup_from_python.sh RUN).
 #
 # TF version: 2.14.1. Constraints that pick it:
 #   - Essentia's tested set is 2.5 / 2.8 / 2.12, but 2.12's wheel pins
@@ -149,11 +152,27 @@ RUN git clone --depth 1 https://github.com/MTG/essentia.git /opt/essentia && \
 # Essentia's documented TF setup: symlinks libtensorflow_framework.so.2 +
 # _pywrap_tensorflow_internal.so out of the installed TF wheel into
 # /usr/local/lib, copies the C headers to /usr/local/include/tensorflow/c, and
-# writes /usr/local/lib/pkgconfig/tensorflow.pc -- everything `waf configure
-# --with-tensorflow` needs. Its shebang hardcodes `python3`, which
-# update-alternatives has already pointed at python3.11 above.
+# writes /usr/local/lib/pkgconfig/tensorflow.pc. Its shebang hardcodes
+# `python3`, which update-alternatives has already pointed at python3.11 above.
+#
+# The extra ln/sed after it: setup_from_python.sh is stuck in the TF 1.x era --
+# it links only `-l_pywrap_tensorflow_internal -ltensorflow_framework`, but in
+# modern TF wheels the C API that essentia's C++ calls (TF_NewSession /
+# TF_DeleteSession / ...) lives ONLY in libtensorflow_cc.so.2. Neither of those
+# two libs exports it, so `import essentia` fails with
+# `undefined symbol: TF_DeleteSession`. So also expose the wheel's OWN
+# libtensorflow_cc.so.2 (Google-built, ABI-matched to the other two libs in the
+# same wheel -- this is NOT the third-party ika-rwth-aachen build the old broken
+# approach used) and append -ltensorflow_cc to tensorflow.pc's Libs line so waf
+# links it.
 WORKDIR /opt/essentia
-RUN sh src/3rdparty/tensorflow/setup_from_python.sh
+RUN sh src/3rdparty/tensorflow/setup_from_python.sh && \
+    TF_DIR="$(python3 -c 'import os,tensorflow; print(os.path.dirname(tensorflow.__file__))')" && \
+    ln -sf "${TF_DIR}/libtensorflow_cc.so.2" /usr/local/lib/libtensorflow_cc.so.2 && \
+    ln -sf libtensorflow_cc.so.2 /usr/local/lib/libtensorflow_cc.so && \
+    sed -i 's/^Libs: .*/& -ltensorflow_cc/' /usr/local/lib/pkgconfig/tensorflow.pc && \
+    ldconfig && \
+    cat /usr/local/lib/pkgconfig/tensorflow.pc
 
 # PKG_CONFIG_PATH so `waf configure` finds the tensorflow.pc that
 # setup_from_python.sh just wrote to /usr/local/lib/pkgconfig (FFmpeg 7.1.1 also
@@ -225,10 +244,17 @@ COPY --from=essentia-libs /opt/essentia/src/3rdparty/tensorflow /opt/essentia-tf
 # which TF_XLA_FLAGS=--tf_xla_auto_jit=0 above disables. Same TENSORFLOW_VERSION
 # as the build stage so essentia's _essentia.so links against the identical
 # libtensorflow_framework.so.2 ABI.
+# Same libtensorflow_cc.so.2 exposure as the build stage -- essentia's
+# libessentia.so / _essentia.so now has a DT_NEEDED on it (the C API TF_*
+# symbols); without this symlink the loader can't resolve it at runtime. See the
+# build stage's setup_from_python.sh RUN for the full rationale.
 RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.11 1 && \
     python3.11 -m pip install --no-cache-dir "tensorflow==${TENSORFLOW_VERSION}" && \
     (cd /opt/essentia-tf-setup && sh setup_from_python.sh) && \
     rm -rf /opt/essentia-tf-setup && \
+    TF_DIR="$(python3 -c 'import os,tensorflow; print(os.path.dirname(tensorflow.__file__))')" && \
+    ln -sf "${TF_DIR}/libtensorflow_cc.so.2" /usr/local/lib/libtensorflow_cc.so.2 && \
+    ln -sf libtensorflow_cc.so.2 /usr/local/lib/libtensorflow_cc.so && \
     ldconfig
 
 # waf install's Python destination is derived from the build stage's own
@@ -303,12 +329,13 @@ RUN set -e; \
 
 EXPOSE 4000
 
-# Per-worker native thread cap + TF log level. TF_ENABLE_ONEDNN_OPTS /
-# TF_XLA_FLAGS / TF_FORCE_GPU_ALLOW_GROWTH are already set above. ANALYSIS_THREADS
-# is read by src/config/threads.py; override via `--env` at deploy time.
-ENV ANALYSIS_THREADS=4 \
-    OMP_NUM_THREADS=4 \
-    TF_NUM_INTRAOP_THREADS=4 \
+# Native thread cap + TF log level. TF_ENABLE_ONEDNN_OPTS / TF_XLA_FLAGS /
+# TF_FORCE_GPU_ALLOW_GROWTH are already set above. ANALYSIS_THREADS is read by
+# src/config/threads.py; one gunicorn worker runs one analysis at a time
+# (analysis lock), so default it to the CPU-side vCPU count. Override via `--env`.
+ENV ANALYSIS_THREADS=8 \
+    OMP_NUM_THREADS=8 \
+    TF_NUM_INTRAOP_THREADS=8 \
     TF_NUM_INTEROP_THREADS=1 \
     TF_CPP_MIN_LOG_LEVEL=2
 
