@@ -24,6 +24,15 @@ services:
       - ELASTICSEARCH_NODE=${ELASTICSEARCH_NODE:-http://elasticsearch:9200}
     ports:
       - '${BACKEND_PORT:-3000}:3000'
+    volumes:
+      # Library scanning, HQ audio downloads, and playlist export all work
+      # with absolute host filesystem paths (library rootPath is stored per-
+      # library in the DB; SOCKSEEK_OUTPUT_DIR/TIDAL_OUTPUT_DIR/
+      # PLAYLIST_EXPORT_DIR are set in .env) -- mounted at the SAME path
+      # inside the container as on the host so those absolute paths resolve
+      # without any translation. Configure MUSIC_DIR in .env if your music
+      # doesn't live under ~/Music.
+      - '${MUSIC_DIR:-${HOME}/Music}:${MUSIC_DIR:-${HOME}/Music}'
     depends_on:
       postgres:
         condition: service_healthy

@@ -1,4 +1,5 @@
 import { Playlist } from '@/__generated__/types';
+import { apiUrl } from '@/lib/api-config';
 import { cn } from '@/lib/utils';
 import {
   useDeletePlaylist,
@@ -18,7 +19,6 @@ import {
   DropdownMenuTrigger,
 } from '../ui/dropdown-menu';
 import { Skeleton } from '../ui/skeleton';
-import { apiUrl } from '@/lib/api-config';
 // Note: This app uses custom view state instead of routing
 // Navigation should be handled by parent component
 
@@ -110,9 +110,7 @@ export function PlaylistCard({ playlist, onViewDetails, onCardClick }: PlaylistC
     try {
       const ok = await downloadPlaylistMutation.mutateAsync(playlist.id);
       if (ok) {
-        alert(
-          "Playlist exported by copying audio files to the server's configured export folder.",
-        );
+        alert("Playlist exported by copying audio files to the server's configured export folder.");
       } else {
         alert('Failed to export playlist.');
       }
@@ -123,7 +121,7 @@ export function PlaylistCard({ playlist, onViewDetails, onCardClick }: PlaylistC
       setIsDownloading(false);
     }
   };
-  const images = playlist.stats?.images?.slice(0, 4) || [];
+  const images = playlist.tracks?.slice(0, 4)?.map((t) => t.trackId) || [];
   const handleCardClick = () => {
     if (onCardClick) {
       onCardClick(playlist.id);
