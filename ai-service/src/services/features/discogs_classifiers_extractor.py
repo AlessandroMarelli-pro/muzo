@@ -1,5 +1,4 @@
 from loguru import logger
-
 from src.services.essentia_model_manager import EssentiaModelManager
 
 # Binary classifier heads: each takes the 1280-dim discogs-effnet embedding and outputs
@@ -66,6 +65,9 @@ BINARY_HEADS = {
 # `split_label` -- genre_discogs400's classes are "Genre---Style" strings that get
 # split into {genre, style, confidence}; the others are flat names -> {<result_key>,
 # confidence}.
+# `fallback_top_n_when_empty` -- when nothing clears `min_confidence`, return this
+# many highest-scoring classes anyway (ignoring the threshold) instead of an empty
+# list. 0/absent keeps the strict behaviour.
 MULTI_LABEL_HEADS = {
     "genres": {
         "url": "https://essentia.upf.edu/models/classification-heads/genre_discogs400/genre_discogs400-discogs-effnet-1.pb",
@@ -75,6 +77,7 @@ MULTI_LABEL_HEADS = {
         "min_confidence": 0.10,
         "top_n": 5,
         "split_label": True,
+        "fallback_top_n_when_empty": 2,
     },
     "instruments": {
         "url": "https://essentia.upf.edu/models/classification-heads/mtg_jamendo_instrument/mtg_jamendo_instrument-discogs-effnet-1.pb",
@@ -85,6 +88,7 @@ MULTI_LABEL_HEADS = {
         "top_n": 5,
         "split_label": False,
         "result_key": "instrument",
+        "fallback_top_n_when_empty": 0,
     },
     "tags": {
         "url": "https://essentia.upf.edu/models/classification-heads/mtg_jamendo_moodtheme/mtg_jamendo_moodtheme-discogs-effnet-1.pb",
@@ -95,6 +99,7 @@ MULTI_LABEL_HEADS = {
         "top_n": 5,
         "split_label": False,
         "result_key": "tag",
+        "fallback_top_n_when_empty": 0,
     },
 }
 
@@ -140,12 +145,16 @@ class DiscogsClassifiersExtractor:
             config = MULTI_LABEL_HEADS[head_name]
             model_path = self.model_manager.download_pb(config["url"])
             metadata = self.model_manager.download_json_metadata(config["json_url"])
-            DiscogsClassifiersExtractor._multi_label_classes[head_name] = metadata["classes"]
+            DiscogsClassifiersExtractor._multi_label_classes[head_name] = metadata[
+                "classes"
+            ]
             logger.info(f"Loading {head_name} classifier head into memory")
-            DiscogsClassifiersExtractor._multi_label_models[head_name] = TensorflowPredict2D(
-                graphFilename=model_path,
-                input=config["input"],
-                output=config["output"],
+            DiscogsClassifiersExtractor._multi_label_models[head_name] = (
+                TensorflowPredict2D(
+                    graphFilename=model_path,
+                    input=config["input"],
+                    output=config["output"],
+                )
             )
         return DiscogsClassifiersExtractor._multi_label_models[head_name]
 
@@ -173,7 +182,9 @@ class DiscogsClassifiersExtractor:
         configured confidence threshold. Each result is either
         {"genre": ..., "style": ..., "confidence": ...} (split_label heads) or
         {<result_key>: ..., "confidence": ...} (flat heads). Returns an empty list
-        on failure or if nothing clears the threshold.
+        on failure or if nothing clears the threshold -- unless the head sets
+        `fallback_top_n_when_empty` > 0, in which case that many highest-scoring
+        classes are returned regardless of `min_confidence`.
         """
         try:
             import numpy as np
@@ -184,21 +195,37 @@ class DiscogsClassifiersExtractor:
             emb_arr = np.array(embedding, dtype=np.float32).reshape(1, -1)
             out = np.array(model(emb_arr))[0]
 
-            scored = [
-                (classes[i], float(out[i]))
-                for i in range(len(classes))
-                if out[i] > config["min_confidence"]
-            ]
-            scored.sort(key=lambda x: x[1], reverse=True)
-            top = scored[: config["top_n"]]
+            all_scored = sorted(
+                ((classes[i], float(out[i])) for i in range(len(classes))),
+                key=lambda x: x[1],
+                reverse=True,
+            )
+            scored = [s for s in all_scored if s[1] > config["min_confidence"]]
+
+            if scored:
+                top = scored[: config["top_n"]]
+            else:
+                fallback_n = config.get("fallback_top_n_when_empty", 0)
+                if not fallback_n:
+                    return []
+                top = all_scored[:fallback_n]
+                logger.info(
+                    f"Discogs classifier '{head_name}': nothing cleared "
+                    f"min_confidence={config['min_confidence']}, falling back to "
+                    f"top {len(top)} (best confidence {top[0][1]:.3f})"
+                )
 
             results = []
             for label, confidence in top:
                 if config["split_label"]:
                     genre, _, style = label.partition("---")
-                    results.append({"genre": genre, "style": style, "confidence": confidence})
+                    results.append(
+                        {"genre": genre, "style": style, "confidence": confidence}
+                    )
                 else:
-                    results.append({config["result_key"]: label, "confidence": confidence})
+                    results.append(
+                        {config["result_key"]: label, "confidence": confidence}
+                    )
             return results
         except Exception as e:
             logger.error(f"Discogs classifier '{head_name}' prediction failed: {e}")

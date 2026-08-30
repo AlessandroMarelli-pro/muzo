@@ -87,7 +87,9 @@ export class ProcessSingleTrackAnalysisUseCase {
 
       return { isSuccess: true };
     } catch (error) {
-      this.logger.error(`Failed to process track ${fileName}:`, error.message);
+      this.logger.error(`Failed to process track ${fileName}`, {
+        error: error instanceof Error ? error.message : String(error),
+      });
       // Publish error event
       if (sessionId) {
         const errorEvent: ScanErrorEvent = {

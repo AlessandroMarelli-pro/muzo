@@ -142,26 +142,37 @@ export class AudioAnalysisRepository implements IAudioAnalysisRepository {
       if (!genreName || genreName.trim() === '') continue;
       const normalizedName = genreName.trim().toLowerCase();
 
-      let genre = await this.prisma.genre.findUnique({
-        where: { name: normalizedName, createdById: userId },
+      // `name` is the only unique constraint (genres_name_key); upsert atomically
+      // to avoid a race when tracks sharing a genre are analyzed concurrently.
+      const genre = await this.prisma.genre.upsert({
+        where: { name: normalizedName },
+        create: toPrismaGenre(
+          models.genre.instantiateNew({ name: normalizedName, description: null }),
+        ),
+        update: {},
       });
-      if (!genre) {
-        genre = await this.prisma.genre.create({
-          data: toPrismaGenre(
-            models.genre.instantiateNew({ name: normalizedName, description: null }),
-          ),
-        });
-      }
       genreIdByName.set(normalizedName, genre.id);
 
-      await this.prisma.trackGenre.create({
-        data: toPrismaTrackGenre(
-          models.trackGenre.instantiateNew({
-            trackId,
-            genreId: models.genre.id(genre.id),
-            confidence,
-          }),
-        ),
+      // Upsert on the compound key: classifications.genres can repeat a name
+      // (e.g. "House" + "house") and the same track may be re-analyzed
+      // concurrently -- either would make a second create() collide with
+      // track_genres_trackId_genreId_key.
+      const trackGenre = toPrismaTrackGenre(
+        models.trackGenre.instantiateNew({
+          trackId,
+          genreId: models.genre.id(genre.id),
+          confidence,
+        }),
+      );
+      await this.prisma.trackGenre.upsert({
+        where: {
+          trackId_genreId: {
+            trackId: trackGenre.trackId,
+            genreId: trackGenre.genreId,
+          },
+        },
+        create: trackGenre,
+        update: { confidence: trackGenre.confidence },
       });
     }
 
@@ -173,34 +184,43 @@ export class AudioAnalysisRepository implements IAudioAnalysisRepository {
         ? (genreIdByName.get(parentGenreName.trim().toLowerCase()) ?? null)
         : null;
 
-      let subgenre = await this.prisma.subgenre.findUnique({
-        where: { name: normalizedName, createdById: userId },
+      // `name` is the only unique constraint (subgenres_name_key); upsert atomically
+      // to avoid a race when tracks sharing a style are analyzed concurrently.
+      let subgenre = await this.prisma.subgenre.upsert({
+        where: { name: normalizedName },
+        create: toPrismaSubgenre(
+          models.subgenre.instantiateNew({
+            name: normalizedName,
+            description: null,
+            genreId: parentGenreId ? models.genre.id(parentGenreId) : null,
+          }),
+        ),
+        update: {},
       });
-      if (!subgenre) {
-        subgenre = await this.prisma.subgenre.create({
-          data: toPrismaSubgenre(
-            models.subgenre.instantiateNew({
-              name: normalizedName,
-              description: null,
-              genreId: parentGenreId ? models.genre.id(parentGenreId) : null,
-            }),
-          ),
-        });
-      } else if (parentGenreId && subgenre.genreId !== parentGenreId) {
+      if (parentGenreId && subgenre.genreId !== parentGenreId) {
         subgenre = await this.prisma.subgenre.update({
           where: { id: subgenre.id },
           data: { genreId: parentGenreId },
         });
       }
 
-      await this.prisma.trackSubgenre.create({
-        data: toPrismaTrackSubgenre(
-          models.trackSubgenre.instantiateNew({
-            trackId,
-            subgenreId: models.subgenre.id(subgenre.id),
-            confidence,
-          }),
-        ),
+      // Upsert on the compound key -- see the trackGenre note above.
+      const trackSubgenre = toPrismaTrackSubgenre(
+        models.trackSubgenre.instantiateNew({
+          trackId,
+          subgenreId: models.subgenre.id(subgenre.id),
+          confidence,
+        }),
+      );
+      await this.prisma.trackSubgenre.upsert({
+        where: {
+          trackId_subgenreId: {
+            trackId: trackSubgenre.trackId,
+            subgenreId: trackSubgenre.subgenreId,
+          },
+        },
+        create: trackSubgenre,
+        update: { confidence: trackSubgenre.confidence },
       });
     }
   }
