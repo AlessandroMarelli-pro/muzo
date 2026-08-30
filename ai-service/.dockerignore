@@ -22,4 +22,13 @@ tests
 .claude
 .cursor
 specs.md
+# trainers/ is training-time code, but the filename_parser package is needed at
+# runtime: SimpleFilenameParser loads HybridFilenameParser + the sklearn pickles
+# in filename_models/. Ship only that package (minus its training-only files).
 trainers
+!trainers/__init__.py
+!trainers/filename_parser/
+trainers/filename_parser/*.md
+trainers/filename_parser/comprehensive_test.py
+trainers/filename_parser/train.py
+trainers/filename_parser/__pycache__

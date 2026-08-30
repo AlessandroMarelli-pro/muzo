@@ -7,6 +7,7 @@ that combines regex patterns with machine learning models.
 
 import os
 import re
+from pathlib import Path
 from typing import Dict
 
 from loguru import logger
@@ -43,7 +44,9 @@ class SimpleFilenameParser:
         # Initialize the hybrid filename parser
         # Try to load the manually fixed trained model, fallback to regex-only if not available
         try:
-            model_dir = "filename_models"
+            # Resolve relative to the repo root, not the process CWD (gunicorn
+            # workers may chdir): src/services/simple_filename_parser.py -> repo/
+            model_dir = str(Path(__file__).resolve().parents[2] / "filename_models")
             if os.path.exists(model_dir):
                 self.filename_parser = HybridFilenameParser(model_dir)
                 logger.debug(
