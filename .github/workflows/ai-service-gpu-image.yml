@@ -12,6 +12,8 @@ on:
     paths:
       - 'ai-service/docker/essentia-gpu.Dockerfile'
       - 'ai-service/requirements.txt'
+      - 'ai-service/.dockerignore'
+      - 'ai-service/models/essentia_cache/**'
       - '.github/workflows/ai-service-gpu-image.yml'
 
 env:
@@ -74,5 +76,23 @@ jobs:
           # combination that Essentia's `setup_from_python.sh --mode python` TF
           # setup is meant to make safe. A protobuf `undefined symbol` here would
           # mean the link is wrong. (Real GPU inference still needs a CUDA host.)
-          docker run --rm "$IMAGE_REF" \
-            python3.11 -c "import essentia, essentia.standard as es; import tensorflow as tf; print('essentia', essentia.__version__, '/ tf', tf.__version__); assert hasattr(es, 'TensorflowPredictEffnetDiscogs')"
+          docker run --rm "$IMAGE_REF" python3.11 -c "
+          import essentia, essentia.standard as es
+          import tensorflow as tf
+          print('essentia', essentia.__version__, '/ tf', tf.__version__)
+          assert hasattr(es, 'TensorflowPredictEffnetDiscogs')
+          # Load a baked .pb graph -- catches a truncated / stale-LFS-pointer .pb
+          # ('Error importing graph. Invalid GraphDef').
+          import os
+          cache = 'models/essentia_cache'
+          pbs = sorted(f for f in os.listdir(cache) if f.endswith('.pb'))
+          assert pbs, 'no .pb files baked into image at ' + cache
+          for f in pbs:
+              size = os.path.getsize(os.path.join(cache, f))
+              assert size > 10_000, f'{f} is {size}B -- truncated or a stale LFS pointer stub'
+          es.TensorflowPredictEffnetDiscogs(
+              graphFilename=os.path.join(cache, 'discogs-effnet-bs64-1.pb'),
+              output='PartitionedCall:1',
+          )
+          print(f'OK: {len(pbs)} model graphs present, discogs-effnet loads')
+          "

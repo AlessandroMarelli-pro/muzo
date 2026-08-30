@@ -278,8 +278,22 @@ RUN grep -vE '^(essentia-tensorflow|numpy)' requirements.txt > requirements.dock
     python3.11 -c "import tensorflow as tf, numpy; print('tf', tf.__version__, 'numpy', numpy.__version__)"
 
 # Includes models/essentia_cache (see essentia-cpu.Dockerfile) so the image
-# ships with the essentia .pb files -- no download on first request.
+# ships with the essentia .pb files -- no download on first request. Plain git
+# blobs (not LFS), so a normal checkout has them.
 COPY . .
+
+# Fail early if a .pb file is truncated / a stale git-LFS pointer stub, rather
+# than at runtime with "Invalid GraphDef". See essentia-cpu.Dockerfile.
+RUN set -e; \
+    for pb in models/essentia_cache/*.pb; do \
+      sz=$(wc -c < "$pb"); \
+      if [ "$sz" -lt 10000 ]; then \
+        echo "ERROR: $pb is ${sz}B -- truncated or a stale git-LFS pointer stub." >&2; \
+        echo "Update your checkout (the .pb files are plain git blobs now)." >&2; \
+        exit 1; \
+      fi; \
+    done; \
+    echo "essentia model cache OK ($(ls models/essentia_cache/*.pb | wc -l) graphs)"
 
 EXPOSE 4000
 

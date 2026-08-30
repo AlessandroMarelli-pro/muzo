@@ -177,8 +177,24 @@ RUN grep -v '^essentia-tensorflow' requirements.txt > requirements.docker.txt &&
 
 # Includes models/essentia_cache (kept out of .dockerignore) so the image ships
 # with the ~35 MB of essentia .pb model files -- no download from
-# essentia.upf.edu on a fresh replica's first request.
+# essentia.upf.edu on a fresh replica's first request. These are plain git blobs
+# (not LFS -- see .gitattributes), so a normal checkout has the real files.
 COPY . .
+
+# Fail the build early (not at runtime with a cryptic "Invalid GraphDef") if the
+# .pb files are truncated / placeholder stubs -- e.g. an old checkout that still
+# has git-LFS pointer files (~130 bytes) from before the LFS->plain migration.
+# The smallest real graph (deam-msd-musicnn) is ~82KB.
+RUN set -e; \
+    for pb in models/essentia_cache/*.pb; do \
+      sz=$(wc -c < "$pb"); \
+      if [ "$sz" -lt 10000 ]; then \
+        echo "ERROR: $pb is ${sz}B -- truncated or a stale git-LFS pointer stub, not the real model." >&2; \
+        echo "Update your checkout (the .pb files are plain git blobs now)." >&2; \
+        exit 1; \
+      fi; \
+    done; \
+    echo "essentia model cache OK ($(ls models/essentia_cache/*.pb | wc -l) graphs)"
 
 EXPOSE 4000
 

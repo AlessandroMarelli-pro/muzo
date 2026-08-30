@@ -1,4 +1,11 @@
 backend/prisma/*.db-wal filter=lfs diff=lfs merge=lfs -text
 backend/prisma/*.db filter=lfs diff=lfs merge=lfs -text
 backend/prisma/*.db-shm filter=lfs diff=lfs merge=lfs -text
-ai-service/models/essentia_cache/*.pb filter=lfs diff=lfs merge=lfs -text
+
+# Essentia model graphs (~35 MB total, largest 18 MB, changed ~3x ever) are
+# tracked as plain git blobs, NOT LFS: they're baked into the ai-service Docker
+# image via `COPY . .`, and LFS meant a fresh `actions/checkout` without
+# `lfs: true` shipped pointer stubs -> every TF model failed with "Invalid
+# GraphDef". Plain tracking just works everywhere. Mark them binary so git
+# doesn't try to diff/merge them.
+ai-service/models/essentia_cache/*.pb -text -diff

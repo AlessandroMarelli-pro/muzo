@@ -12,8 +12,9 @@
 #   1. Triggers the ai-service-cpu-image.yml GitHub Actions workflow (builds
 #      + pushes ghcr.io/.../ai-service-cpu:latest). Needed even if you only
 #      changed ai-service source code, since the workflow's push-trigger path
-#      filter only watches the Dockerfile/requirements.txt/workflow file --
-#      app code changes don't auto-trigger a build.
+#      filter only watches the Dockerfile / requirements.txt / .dockerignore /
+#      models/essentia_cache / workflow file -- app code changes don't
+#      auto-trigger a build, so this always dispatches it explicitly.
 #   2. Waits for the build to finish.
 #   3. Pauses + resumes the HF endpoint so it pulls the fresh :latest image
 #      (HF caches the image per-instance; a redeploy doesn't happen just

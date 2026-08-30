@@ -12,6 +12,8 @@ on:
     paths:
       - 'ai-service/docker/essentia-cpu.Dockerfile'
       - 'ai-service/requirements.txt'
+      - 'ai-service/.dockerignore'
+      - 'ai-service/models/essentia_cache/**'
       - '.github/workflows/ai-service-cpu-image.yml'
 
 env:
@@ -64,11 +66,29 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Verify essentia imports in the built image
+      - name: Verify essentia + baked models load in the built image
         run: |
           # metadata-action already lowercases the image reference correctly
           # (github.repository preserves original case, which docker run
           # rejects) -- take the first tag from its own tags output.
           IMAGE_REF=$(echo "${{ steps.meta.outputs.tags }}" | head -n1)
-          docker run --rm "$IMAGE_REF" \
-            python3.11 -c "import essentia; import essentia.standard as es; print('essentia', essentia.__version__); assert hasattr(es, 'TensorflowPredictEffnetDiscogs')"
+          docker run --rm "$IMAGE_REF" python3.11 -c "
+          import essentia, essentia.standard as es
+          print('essentia', essentia.__version__)
+          assert hasattr(es, 'TensorflowPredictEffnetDiscogs')
+          # Actually load a baked .pb graph -- 'import essentia' alone would not
+          # catch a truncated / stale-LFS-pointer .pb ('Error importing graph.
+          # Invalid GraphDef' at load, silent key-only analysis at runtime).
+          import os
+          cache = 'models/essentia_cache'
+          pbs = sorted(f for f in os.listdir(cache) if f.endswith('.pb'))
+          assert pbs, 'no .pb files baked into image at ' + cache
+          for f in pbs:
+              size = os.path.getsize(os.path.join(cache, f))
+              assert size > 10_000, f'{f} is {size}B -- truncated or a stale LFS pointer stub'
+          es.TensorflowPredictEffnetDiscogs(
+              graphFilename=os.path.join(cache, 'discogs-effnet-bs64-1.pb'),
+              output='PartitionedCall:1',
+          )
+          print(f'OK: {len(pbs)} model graphs present, discogs-effnet loads')
+          "
