@@ -40,7 +40,7 @@ DEPLOY_ARGS=(
   # coverage, no image change needed.
   --instance-type nvidia-t4
   --instance-size x1
-  --region us-east-1
+  --region eu-west-1
   --vendor aws
   --custom-image "$IMAGE"
   --health-route /api/v1/health

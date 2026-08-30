@@ -198,14 +198,26 @@ FROM nvidia/cuda:11.8.0-cudnn8-runtime-ubuntu22.04 AS runtime
 ENV DEBIAN_FRONTEND=noninteractive
 ARG TENSORFLOW_VERSION=2.14.1
 
-# Carried over from the GPU-crash investigation (commit cf812be): disable
-# TensorFlow's oneDNN CPU-op optimizations and XLA/MLIR auto-clustering. The
-# suspected root cause -- linking Essentia against a third-party libtensorflow_cc
-# C++ build instead of the TF wheel's own .so files -- has now been fixed (see
-# essentia-libs stage), so these are very likely no longer needed. Kept in place
-# for the FIRST GPU deploy on the new TF setup as a safety margin; drop them in a
-# follow-up commit once a clean GPU run without them is confirmed. Losing these
-# optimizations on this small frozen graph is not a meaningful perf cost.
+# The discogs-effnet embedding graph and the genre/instrument/mood classifier
+# heads were exported TF 2.8 -> ONNX -> TF (`onnx_tf_prefix_*` nodes) and embed
+# XLA-compile directives -- they force XLA JIT *regardless* of
+# --tf_xla_auto_jit=0. XLA's GPU backend then needs NVIDIA's device bitcode
+# (libdevice.10.bc) + ptxas, which the `-runtime` base image does NOT ship
+# (only `-devel` does) -- without them: "libdevice not found ... JIT compilation
+# failed", and every discogs-effnet inference returns empty. Copy just those two
+# files (~1 MB + a few MB) out of the matching -devel image and point XLA at the
+# CUDA dir. TempoCNN / DEAM / S-KEY don't hit this path -- they ran fine even
+# before this.
+COPY --from=nvidia/cuda:11.8.0-devel-ubuntu22.04 \
+     /usr/local/cuda/nvvm/libdevice/libdevice.10.bc \
+     /usr/local/cuda/nvvm/libdevice/libdevice.10.bc
+COPY --from=nvidia/cuda:11.8.0-devel-ubuntu22.04 \
+     /usr/local/cuda/bin/ptxas /usr/local/cuda/bin/ptxas
+ENV XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/local/cuda
+
+# oneDNN off for numerical reproducibility (its own log line warns it changes
+# results). TF_XLA_FLAGS auto-jit=0 kept -- it still suppresses XLA on the graphs
+# that DON'T force it, so only the discogs-effnet ones compile.
 ENV TF_ENABLE_ONEDNN_OPTS=0
 ENV TF_XLA_FLAGS=--tf_xla_auto_jit=0
 # Essentia otherwise reserves ALL GPU memory on the first predictor init

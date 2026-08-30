@@ -74,7 +74,7 @@ fi
 
 if [ -n "${LAST_FM_API_KEY:-}" ] && [ -n "${LAST_FM_SECRET_KEY:-}" ]; then
   DEPLOY_ARGS+=(--secrets "LAST_FM_API_KEY=$LAST_FM_API_KEY" \
-                          "LAST_FM_SECRET_KEY=$LAST_FM_SECRET_KEY")
+                          --secrets "LAST_FM_SECRET_KEY=$LAST_FM_SECRET_KEY")
 else
   echo "==> No LAST_FM_API_KEY/LAST_FM_SECRET_KEY -- album-art Last.fm source disabled"
 fi
