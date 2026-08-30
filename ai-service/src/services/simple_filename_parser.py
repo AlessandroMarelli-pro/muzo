@@ -30,14 +30,14 @@ class SimpleFilenameParser:
 
     def __init__(self):
         """Initialize the filename parser service."""
-        logger.info("SimpleFilenameParser initialized")
+        logger.debug("SimpleFilenameParser initialized")
 
         if HybridFilenameParser is None:
             # trainers/ not available in this environment (e.g. deployed
             # ai-service image); parse_filename_for_metadata falls back to
             # its own minimal filename-based extraction.
             self.filename_parser = None
-            logger.info("Hybrid filename parser unavailable, using minimal fallback")
+            logger.debug("Hybrid filename parser unavailable, using minimal fallback")
             return
 
         # Initialize the hybrid filename parser
@@ -46,12 +46,12 @@ class SimpleFilenameParser:
             model_dir = "filename_models"
             if os.path.exists(model_dir):
                 self.filename_parser = HybridFilenameParser(model_dir)
-                logger.info(
+                logger.debug(
                     "Hybrid filename parser initialized with manually fixed ML model"
                 )
             else:
                 self.filename_parser = HybridFilenameParser()
-                logger.info("Hybrid filename parser initialized (regex-only mode)")
+                logger.debug("Hybrid filename parser initialized (regex-only mode)")
         except Exception as e:
             logger.warning(f"Failed to initialize hybrid parser: {e}, using regex-only")
             self.filename_parser = HybridFilenameParser()
@@ -68,7 +68,7 @@ class SimpleFilenameParser:
             Dictionary with extracted metadata
         """
         try:
-            logger.info(f"Parsing filename for metadata: {filename}")
+            logger.debug(f"Parsing filename for metadata: {filename}")
 
             # trainers/ (the ML hybrid parser) isn't in the deployed image --
             # use the regex fallback below instead of NPE-ing on None.parse().
@@ -86,7 +86,7 @@ class SimpleFilenameParser:
                 "subtitle": result.get("subtitle", "").lower().strip(),
             }
 
-            logger.info(
+            logger.debug(
                 f"Filename parsed: Artist='{parsed_result['artist']}', Title='{parsed_result['title']}', Year='{parsed_result['year']}', Label='{parsed_result['label']}'"
             )
             return parsed_result

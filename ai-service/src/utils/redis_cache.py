@@ -184,7 +184,7 @@ class RedisCache:
             keys = client.keys(pattern)
             if keys:
                 deleted = client.delete(*keys)
-                logger.info(f"Cleared {deleted} cache keys matching pattern: {pattern}")
+                logger.debug(f"Cleared {deleted} cache keys matching pattern: {pattern}")
                 return deleted
             return 0
 

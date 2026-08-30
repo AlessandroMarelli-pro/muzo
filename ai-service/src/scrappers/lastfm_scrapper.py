@@ -19,7 +19,7 @@ def get_album_art(artist_title: str) -> dict:
     Returns:
         Dict with 'imagePath' and 'imageUrl' keys, or empty dict if not found
     """
-    logger.info(f"Starting Last.fm search for: {artist_title}")
+    logger.debug(f"Starting Last.fm search for: {artist_title}")
 
     # Parse artist and title
     if " - " in artist_title:
@@ -51,7 +51,7 @@ def get_album_art(artist_title: str) -> dict:
             logger.warning("No album found for track")
             return {}
 
-        logger.info(f"Found album: {album.get_name()}")
+        logger.debug(f"Found album: {album.get_name()}")
 
         # Get cover image URL (pylast provides get_cover_image method)
         logger.debug("Getting cover image URL")
@@ -70,7 +70,7 @@ def get_album_art(artist_title: str) -> dict:
             logger.warning("No cover image found for album")
             return {}
 
-        logger.info(f"Found image URL: {image_url}")
+        logger.debug(f"Found image URL: {image_url}")
 
         # Create images directory
         project_root = os.path.dirname(
@@ -94,15 +94,15 @@ def get_album_art(artist_title: str) -> dict:
         logger.debug(f"Image path: {image_path}")
 
         # Download and save image
-        logger.info("Downloading and saving image")
+        logger.debug("Downloading and saving image")
         urlretrieve(image_url, image_path)
-        logger.info(f"Successfully saved image to: {image_path}")
+        logger.debug(f"Successfully saved image to: {image_path}")
 
         # Optimize the image
-        logger.info("Optimizing image")
+        logger.debug("Optimizing image")
         try:
             optimize_image_in_place(image_path)
-            logger.info("Image optimization completed")
+            logger.debug("Image optimization completed")
         except Exception as e:
             logger.warning(f"Image optimization failed: {e}")
 

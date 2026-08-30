@@ -35,6 +35,9 @@ from src.services.simple_filename_parser import SimpleFilenameParser
 from src.services.simple_metadata_extractor import SimpleMetadataExtractor
 from src.services.simple_technical_analyzer import SimpleTechnicalAnalyzer
 from src.utils.performance_optimizer import monitor_performance
+from src.utils.trace import trace, trace_start, track_context
+
+_TRACE_FILE = "simple_analysis"
 
 # Gates computation of the discogs-effnet classifier heads (danceability, 5 moods,
 # genre_discogs400). Default-on, opt-out -- same idiom as
@@ -54,7 +57,7 @@ class SimpleAnalysisService:
 
     def __init__(self):
         """Initialize the simple analysis service."""
-        logger.info("SimpleAnalysisService initialized")
+        logger.debug("SimpleAnalysisService initialized")
 
         # Initialize all service components
         self.filename_parser = SimpleFilenameParser()
@@ -78,11 +81,11 @@ class SimpleAnalysisService:
         try:
             self.ai_extractor = create_metadata_extractor(provider="GEMINI")
             if self.ai_extractor and self.ai_extractor._is_available():
-                logger.info(
+                logger.debug(
                     "GEMINI filename-cleaning extractor initialized and available"
                 )
             else:
-                logger.info(
+                logger.debug(
                     "GEMINI filename-cleaning extractor initialized but not available "
                     "(no API key)"
                 )
@@ -195,7 +198,7 @@ class SimpleAnalysisService:
             else:
                 embedding = self.embedding_extractor.extract_from_audio(y_full, sr)
             if embedding:
-                logger.info(
+                logger.debug(
                     f"Discogs embedding: len={len(embedding)}, "
                     f"analyzed {duration_s:.1f}s of full track"
                 )
@@ -260,7 +263,7 @@ class SimpleAnalysisService:
                 if genres
                 else "none >10%"
             )
-            logger.info(
+            logger.debug(
                 f"Discogs classifiers: danceable={result.get('danceable', 0):.2f} "
                 f"aggressive={result.get('mood_aggressive', 0):.2f} "
                 f"happy={result.get('mood_happy', 0):.2f} "
@@ -294,7 +297,7 @@ class SimpleAnalysisService:
         try:
             result = self.tempo_cnn_extractor.extract_from_audio(y_full, sr)
             if result:
-                logger.info(
+                logger.debug(
                     f"TempoCNN: tempo={result.get('tempo', 0):.1f} BPM "
                     f"confidence={result.get('confidence', 0):.2f}"
                 )
@@ -338,7 +341,7 @@ class SimpleAnalysisService:
             else:
                 result = self.deam_extractor.extract_from_audio(y_full, sr)
             if result:
-                logger.info(
+                logger.debug(
                     f"DEAM mood: valence={result.get('valence', 0):.2f} "
                     f"arousal={result.get('arousal', 0):.2f}"
                 )
@@ -371,7 +374,7 @@ class SimpleAnalysisService:
         try:
             result = self.skey_extractor.extract_from_audio(y_full, sr)
             if result:
-                logger.info(f"S-KEY: key={result.get('key')}")
+                logger.debug(f"S-KEY: key={result.get('key')}")
                 return result, None
             logger.warning("S-KEY extraction returned empty result")
             return {}, {"model": "skey", "reason": "empty", "detail": None}
@@ -520,8 +523,12 @@ class SimpleAnalysisService:
         # Track if we converted an M4A file so we can clean it up
         converted_wav_path = None
 
+        track_name = original_filename or os.path.basename(file_path)
+        ctx = track_context(track_name)
+        ctx.__enter__()
+        h = trace_start("simple_analysis", file=_TRACE_FILE, track=track_name)
         try:
-            logger.info(f"Starting simple audio analysis: {file_path}")
+            logger.debug(f"Starting simple audio analysis: {file_path}")
             start_time = time.time()
 
             # Preserved through cleaning below so `track.original_filename` in the
@@ -549,7 +556,7 @@ class SimpleAnalysisService:
                     original_filename
                 )
                 if llm_cleaned and llm_cleaned != original_filename:
-                    logger.info(
+                    logger.debug(
                         f"Filename cleaned: '{original_filename}' -> '{llm_cleaned}'"
                     )
                     cleaned_filename = llm_cleaned
@@ -589,11 +596,13 @@ class SimpleAnalysisService:
             # -- each extractor resamples internally to its own target rate, so
             # a single native-rate load is enough; re-decoding the same file
             # from disk 4 times was pure waste.
-            y_full, sr = self.audio_loader.load_audio_sample(
-                file_path, sample_duration=None
-            )
+            with h.step("load full track"):
+                y_full, sr = self.audio_loader.load_audio_sample(
+                    file_path, sample_duration=None
+                )
 
-            pipeline = self._run_model_pipeline(y_full, sr, builder)
+            with h.step("model pipeline"):
+                pipeline = self._run_model_pipeline(y_full, sr, builder)
 
             id3_tags = self.extract_id3_tags(
                 file_path, original_filename, cleaned_filename
@@ -614,7 +623,8 @@ class SimpleAnalysisService:
                 embedding=pipeline["embedding"],
             )
 
-            logger.info(f"Simple audio analysis completed in {processing_time:.3f}s")
+            logger.debug(f"Simple audio analysis completed in {processing_time:.3f}s")
+            h.done(processing_time=processing_time)
 
             # Track analysis count and perform periodic garbage collection
             self.analysis_count += 1
@@ -626,6 +636,7 @@ class SimpleAnalysisService:
 
         except Exception as e:
             logger.error(f"Simple audio analysis failed: {e}")
+            h.done(error=str(e))
             gc.collect()
 
             return AnalysisResponseBuilder().build_error(
@@ -633,11 +644,12 @@ class SimpleAnalysisService:
                 processing_time=round(time.time() - start_time, 3),
             )
         finally:
+            ctx.__exit__(None, None, None)
             # Clean up converted WAV file if we created one
             if converted_wav_path and os.path.exists(converted_wav_path):
                 try:
                     os.unlink(converted_wav_path)
-                    logger.info(f"Cleaned up converted WAV file: {converted_wav_path}")
+                    logger.debug(f"Cleaned up converted WAV file: {converted_wav_path}")
                 except Exception as e:
                     logger.error(
                         f"Failed to clean up converted WAV file {converted_wav_path}: {e}"
@@ -699,8 +711,10 @@ class SimpleAnalysisService:
                 batchIndex=batch_index,
             )
 
+        ctx = track_context(original_filename or os.path.basename(original_filepath))
+        ctx.__enter__()
         try:
-            logger.info(f"Processing file {idx + 1}/{total_files}: {original_filename}")
+            logger.debug(f"Processing file {idx + 1}/{total_files}: {original_filename}")
 
             # Handle M4A conversion if needed
             if file_path.endswith(".m4a"):
@@ -818,8 +832,12 @@ class SimpleAnalysisService:
                     100,
                 )
 
-            logger.info(
+            logger.debug(
                 f"✅ File {idx + 1}/{total_files} completed in {processing_time:.3f}s"
+            )
+            trace(
+                f"file {idx + 1}/{total_files} done in {processing_time:.3f}s",
+                file=_TRACE_FILE,
             )
 
             return file_result, True
@@ -842,6 +860,7 @@ class SimpleAnalysisService:
             )
 
         finally:
+            ctx.__exit__(None, None, None)
             # Clean up converted WAV file if created
             if converted_wav_path and os.path.exists(converted_wav_path):
                 try:
@@ -890,9 +909,13 @@ class SimpleAnalysisService:
         failed = 0
         results: List[Dict[str, Any]] = []
 
-        logger.info(f"Starting batch audio analysis for {total_files} files")
+        logger.debug(f"Starting batch audio analysis for {total_files} files")
+        h = trace_start(
+            "simple_analysis_batch", file=_TRACE_FILE, files=total_files
+        )
 
         try:
+            h.note("step: batch filename clean")
             # Step 1: Clean all filenames in a single batch call
             cleaned_filenames: List[str] = [
                 original_filename for _, original_filename in file_items
@@ -917,7 +940,7 @@ class SimpleAnalysisService:
                     ]
                     file_paths_to_clean = [file_path for file_path, _ in file_items]
 
-                    logger.info(
+                    logger.debug(
                         f"Cleaning {len(filenames_to_clean)} filenames in batch"
                     )
                     cleaned_result = self.ai_extractor._clean_filenames_batch(
@@ -928,7 +951,7 @@ class SimpleAnalysisService:
                         filenames_to_clean
                     ):
                         cleaned_filenames = cleaned_result
-                        logger.info(
+                        logger.debug(
                             f"Successfully cleaned {len(cleaned_filenames)} filenames"
                         )
                     else:
@@ -954,6 +977,7 @@ class SimpleAnalysisService:
             # converted-path bookkeeping is needed here.
             results = [None] * total_files
             max_workers = min(self.batch_audio_workers, total_files) or 1
+            h.note(f"step: analyze files (workers={max_workers})")
 
             with ThreadPoolExecutor(
                 max_workers=max_workers, thread_name_prefix="batch_audio"
@@ -1022,10 +1046,11 @@ class SimpleAnalysisService:
 
             total_processing_time = round(time.time() - start_time, 3)
 
-            logger.info(
+            logger.debug(
                 f"Batch analysis completed: {successful}/{total_files} successful "
                 f"in {total_processing_time:.3f}s"
             )
+            h.done(files=total_files, ok=successful, failed=failed)
 
             return {
                 "status": overall_status,
@@ -1039,6 +1064,7 @@ class SimpleAnalysisService:
 
         except Exception as e:
             logger.error(f"Batch audio analysis failed: {e}")
+            h.done(files=total_files, error=str(e))
             gc.collect()
 
             # results may have been pre-sized with None placeholders if we failed mid-batch;

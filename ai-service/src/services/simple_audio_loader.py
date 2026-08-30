@@ -27,7 +27,7 @@ class SimpleAudioLoader:
 
     def __init__(self):
         """Initialize the audio loader service."""
-        logger.info("SimpleAudioLoader initialized")
+        logger.debug("SimpleAudioLoader initialized")
 
     def convert_m4a_to_wav(self, file_path: str) -> str:
         """
@@ -40,14 +40,14 @@ class SimpleAudioLoader:
             Path to converted WAV file
         """
         try:
-            logger.info(f"Converting M4A to WAV: {file_path}")
+            logger.debug(f"Converting M4A to WAV: {file_path}")
 
             m4a_file = file_path  # I have downloaded sample audio from this link https://getsamplefiles.com/sample-audio-files/m4a
             wav_filename = file_path.replace(".m4a", ".wav")
 
             sound = AudioSegment.from_file(m4a_file, format="m4a")
             sound.export(wav_filename, format="wav")
-            logger.info(f"Converted M4A to WAV: {wav_filename}")
+            logger.debug(f"Converted M4A to WAV: {wav_filename}")
 
             return wav_filename
         except Exception as e:
@@ -72,7 +72,7 @@ class SimpleAudioLoader:
             Tuple of (audio_data, sample_rate)
         """
         try:
-            logger.info(
+            logger.debug(
                 f"Loading audio sample ({sample_duration}s from {skip_intro}s): {file_path}"
             )
 
@@ -105,7 +105,7 @@ class SimpleAudioLoader:
             del max_val  # Explicitly release
             actual_duration = len(y) / sr
 
-            logger.info(
+            logger.debug(
                 f"Audio sample processed: {len(y)} samples, {sr} Hz, {actual_duration:.2f}s"
             )
 

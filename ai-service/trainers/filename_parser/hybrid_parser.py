@@ -263,7 +263,7 @@ class HybridFilenameParser:
 
         # Remove extension before ML prediction
         base_name = self.remove_extension(filename)
-        print(f"Base name: {base_name}")
+        logger.debug(f"Base name: {base_name}")
         return self.ml_model.predict(base_name)
 
     def parse(self, filename: str, use_ml: bool = True) -> Dict[str, str]:
@@ -277,22 +277,22 @@ class HybridFilenameParser:
         Returns:
             Dictionary with parsed metadata
         """
-        logger.info(f"Parsing filename: {filename}")
+        logger.debug(f"Parsing filename: {filename}")
 
         # Try regex first (fast)
         regex_result = self.parse_with_regex(filename)
-        print(f"Regex result: {regex_result}")
+        logger.debug(f"Regex result: {regex_result}")
         # Check if regex parsing was successful (has both artist and title)
         if regex_result["artist"] and regex_result["title"]:
-            logger.info("Regex parsing successful")
+            logger.debug("Regex parsing successful")
             return regex_result
 
         # If regex failed and ML is available, try ML
         if use_ml and self.ml_model:
             try:
                 ml_result = self.parse_with_ml(filename)
-                print(f"ML result: {ml_result}")
-                logger.info("ML parsing successful")
+                logger.debug(f"ML result: {ml_result}")
+                logger.debug("ML parsing successful")
                 return ml_result
             except Exception as e:
                 logger.warning(f"ML parsing failed: {e}")

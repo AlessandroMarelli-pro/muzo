@@ -20,7 +20,7 @@ def get_album_art(artist_title: str) -> dict:
     Returns:
         Dict with 'imagePath' and 'imageUrl' keys, or empty dict if not found
     """
-    logger.info(f"Starting Bandcamp search for: {artist_title}")
+    logger.debug(f"Starting Bandcamp search for: {artist_title}")
 
     # Encode the search query
     encoded_query = urllib.parse.quote(artist_title)
@@ -50,7 +50,7 @@ def get_album_art(artist_title: str) -> dict:
             logger.warning("No href found in album link")
             return {}
 
-        logger.info(f"Found album URL: {album_url}")
+        logger.debug(f"Found album URL: {album_url}")
 
         # Fetch the album page
         logger.debug("Fetching album page")
@@ -74,7 +74,7 @@ def get_album_art(artist_title: str) -> dict:
             logger.warning("No src found in img tag")
             return {}
 
-        logger.info(f"Found image URL: {image_url}")
+        logger.debug(f"Found image URL: {image_url}")
 
         # Create images directory
         project_root = os.path.dirname(
@@ -94,15 +94,15 @@ def get_album_art(artist_title: str) -> dict:
         logger.debug(f"Image path: {image_path}")
 
         # Download and save image
-        logger.info("Downloading and saving image")
+        logger.debug("Downloading and saving image")
         urlretrieve(image_url, image_path)
-        logger.info(f"Successfully saved image to: {image_path}")
+        logger.debug(f"Successfully saved image to: {image_path}")
 
         # Optimize the image
-        logger.info("Optimizing image")
+        logger.debug("Optimizing image")
         try:
             optimize_image_in_place(image_path)
-            logger.info("Image optimization completed")
+            logger.debug("Image optimization completed")
         except Exception as e:
             logger.warning(f"Image optimization failed: {e}")
 

@@ -89,7 +89,7 @@ def get_album_art(artist_title: str, file_path: str = None) -> dict:
     Returns:
         Dict with 'source', 'imagePath' and 'imageUrl' keys, or empty dict if not found
     """
-    logger.info(f"Starting album art search for: {artist_title}")
+    logger.debug(f"Starting album art search for: {artist_title}")
 
     # First, check for embedded image in file if file_path is provided
     if file_path and os.path.exists(file_path):
@@ -99,7 +99,7 @@ def get_album_art(artist_title: str, file_path: str = None) -> dict:
             image_data = extractor.extract_embedded_image(file_path)
 
             if image_data:
-                logger.info("Found embedded image in audio file")
+                logger.debug("Found embedded image in audio file")
 
                 # Create images directory
                 project_root = os.path.dirname(
@@ -126,16 +126,16 @@ def get_album_art(artist_title: str, file_path: str = None) -> dict:
                 logger.debug(f"Image path: {image_path}")
 
                 # Save image to file
-                logger.info("Saving embedded image to file")
+                logger.debug("Saving embedded image to file")
                 with open(image_path, "wb") as f:
                     f.write(image_data)
-                logger.info(f"Successfully saved embedded image to: {image_path}")
+                logger.debug(f"Successfully saved embedded image to: {image_path}")
 
                 # Optimize the image
                 try:
-                    logger.info("Optimizing embedded image")
+                    logger.debug("Optimizing embedded image")
                     optimize_image_in_place(image_path)
-                    logger.info("Image optimization completed")
+                    logger.debug("Image optimization completed")
                 except Exception as e:
                     logger.warning(f"Image optimization failed: {e}")
 
@@ -160,7 +160,7 @@ def get_album_art(artist_title: str, file_path: str = None) -> dict:
     result = get_apple_music_art(artist_title)
     if result:
         result["source"] = "apple_music"
-        logger.info(f"Found album art on Apple Music: {result['imageUrl']}")
+        logger.debug(f"Found album art on Apple Music: {result['imageUrl']}")
         return _attach_image_bytes(result)
     logger.debug("Apple Music scraper returned no results")
 
@@ -169,7 +169,7 @@ def get_album_art(artist_title: str, file_path: str = None) -> dict:
     result = get_bandcamp_art(artist_title)
     if result:
         result["source"] = "bandcamp"
-        logger.info(f"Found album art on Bandcamp: {result['imageUrl']}")
+        logger.debug(f"Found album art on Bandcamp: {result['imageUrl']}")
         return _attach_image_bytes(result)
     logger.debug("Bandcamp scraper returned no results")
 
@@ -178,7 +178,7 @@ def get_album_art(artist_title: str, file_path: str = None) -> dict:
     result = get_lastfm_art(artist_title)
     if result:
         result["source"] = "lastfm"
-        logger.info(f"Found album art on Last.fm: {result['imageUrl']}")
+        logger.debug(f"Found album art on Last.fm: {result['imageUrl']}")
         return _attach_image_bytes(result)
     logger.debug("Last.fm scraper returned no results")
 
@@ -187,7 +187,7 @@ def get_album_art(artist_title: str, file_path: str = None) -> dict:
     result = get_musicbrainz_art(artist_title)
     if result:
         result["source"] = "musicbrainz"
-        logger.info(f"Found album art on MusicBrainz: {result['imageUrl']}")
+        logger.debug(f"Found album art on MusicBrainz: {result['imageUrl']}")
         return _attach_image_bytes(result)
     logger.debug("MusicBrainz scraper returned no results")
 

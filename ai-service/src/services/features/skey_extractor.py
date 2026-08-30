@@ -68,7 +68,7 @@ class SkeyExtractor:
 
         torch.set_num_threads(analysis_threads())
 
-        logger.info(
+        logger.debug(
             f"Loading S-KEY model into memory (torch threads={torch.get_num_threads()})"
         )
         device = torch.device("cpu")

@@ -50,7 +50,7 @@ class SimpleMetadataExtractor:
         Args:
             filename_parser: Optional filename parser instance for fallback parsing
         """
-        logger.info("SimpleMetadataExtractor initialized")
+        logger.debug("SimpleMetadataExtractor initialized")
         self.filename_parser = filename_parser
 
     @monitor_performance("simple_file_metadata")
@@ -65,7 +65,7 @@ class SimpleMetadataExtractor:
             Dictionary containing file metadata
         """
         try:
-            logger.info(f"Extracting file metadata: {file_path}")
+            logger.debug(f"Extracting file metadata: {file_path}")
 
             # Get file stats
             stat = os.stat(file_path)
@@ -106,7 +106,7 @@ class SimpleMetadataExtractor:
                 }
             }
 
-            logger.info(f"File metadata extracted: {file_size_mb:.2f} MB")
+            logger.debug(f"File metadata extracted: {file_size_mb:.2f} MB")
             return metadata
 
         except Exception as e:
@@ -260,7 +260,7 @@ class SimpleMetadataExtractor:
             Raw image data as bytes, or None if no image found
         """
         try:
-            logger.info(f"Extracting embedded image from: {file_path}")
+            logger.debug(f"Extracting embedded image from: {file_path}")
             audio_file = File(file_path)
 
             if audio_file is None:
@@ -395,7 +395,7 @@ class SimpleMetadataExtractor:
                                 continue
 
             if image_data:
-                logger.info("Successfully extracted embedded image from audio file")
+                logger.debug("Successfully extracted embedded image from audio file")
                 return image_data
             else:
                 logger.debug("No embedded image found in audio file")
@@ -427,7 +427,7 @@ class SimpleMetadataExtractor:
             Dictionary containing ID3 tag information
         """
         try:
-            logger.info(f"Extracting ID3 tags: {original_filename}")
+            logger.debug(f"Extracting ID3 tags: {original_filename}")
 
             # Initialize audio_file to None in case extraction fails
             audio_file = None
@@ -729,7 +729,7 @@ class SimpleMetadataExtractor:
                                 # If artist from title doesn't match current artist,
                                 # prefer the one from title (it's more likely correct)
                                 if potential_artist.lower() != current_artist.lower():
-                                    logger.info(
+                                    logger.debug(
                                         f"YouTube download detected: Title contains artist info. "
                                         f"Replacing artist '{current_artist}' with '{potential_artist}' from title"
                                     )
@@ -752,7 +752,7 @@ class SimpleMetadataExtractor:
                 cleaned_artist = cleaned_metadata.get("artist", "").strip()
                 cleaned_title = cleaned_metadata.get("title", "").strip()
                 if cleaned_artist and cleaned_title:
-                    logger.info(
+                    logger.debug(
                         f"LLM-cleaned filename overrides ID3: "
                         f"'{id3_tags.get('artist', '')}' - '{id3_tags.get('title', '')}' -> "
                         f"'{cleaned_artist}' - '{cleaned_title}'"
@@ -771,7 +771,7 @@ class SimpleMetadataExtractor:
             if cleaned_override_applied:
                 pass
             elif id3_tags.get("title") and not id3_tags.get("artist"):
-                logger.info("ID3 tags missing, falling back to filename parsing")
+                logger.debug("ID3 tags missing, falling back to filename parsing")
                 filename = id3_tags.get("title")
                 if self.filename_parser:
                     filename_metadata = (
@@ -795,7 +795,7 @@ class SimpleMetadataExtractor:
             else:
                 id3_tags["filename_parsed"] = False
 
-            logger.info(
+            logger.debug(
                 f"ID3 tags extracted: {id3_tags.get('title', 'Unknown')} - {id3_tags.get('artist', 'Unknown')} (filename_parsed: {id3_tags.get('filename_parsed', False)})"
             )
             return {"id3_tags": id3_tags}

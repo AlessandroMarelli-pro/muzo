@@ -65,8 +65,10 @@ def warm_all_models() -> None:
         return
     _DID_WARM = True
 
+    from src.utils.trace import trace
+
     start = time.time()
-    logger.info("Warming analysis models for this worker...")
+    trace("START model warmup", file="model_warmup")
 
     silence_16k = np.zeros(_WARM_SR * _WARM_SECONDS, dtype=np.float32)
     ok: dict[str, bool] = {}
@@ -159,6 +161,7 @@ def warm_all_models() -> None:
             f"failed: {', '.join(failed)}"
         )
     else:
-        logger.info(
-            f"Analysis models warmed in {elapsed:.1f}s ({len(loaded)} models)"
+        trace(
+            f"END model warmup in {elapsed:.1f}s ({len(loaded)} models)",
+            file="model_warmup",
         )

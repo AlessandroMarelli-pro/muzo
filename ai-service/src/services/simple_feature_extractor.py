@@ -42,7 +42,7 @@ class SimpleFeatureExtractor:
 
     def __init__(self):
         """Initialize the feature extractor service."""
-        logger.info("SimpleFeatureExtractor initialized")
+        logger.debug("SimpleFeatureExtractor initialized")
         self.redis_cache = RedisCache(key_prefix="simple_feature_extractor")
 
     # danceability_feeling threshold ladder, reused from the retired DanceabilityAnalyzer

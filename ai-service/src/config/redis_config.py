@@ -83,7 +83,7 @@ class RedisConfig:
         self._unavailable_since: float = 0.0
         self._disabled = redis_explicitly_disabled()
         if self._disabled:
-            logger.info(
+            logger.debug(
                 "Redis disabled (DISABLE_REDIS set or REDIS_HOST unset) -- "
                 "cache and scan-progress publishing are no-ops"
             )
@@ -120,7 +120,7 @@ class RedisConfig:
 
                 # Test connection
                 self._client.ping()
-                logger.info(f"Redis connected successfully to {self.host}:{self.port}")
+                logger.debug(f"Redis connected successfully to {self.host}:{self.port}")
                 self._unavailable_since = 0.0
 
             except Exception as e:
@@ -161,7 +161,7 @@ class RedisConfig:
         if self._client:
             try:
                 self._client.close()
-                logger.info("Redis connection closed")
+                logger.debug("Redis connection closed")
             except Exception as e:
                 logger.warning(f"Error closing Redis connection: {e}")
             finally:

@@ -36,7 +36,7 @@ class HealthResource(Resource):
 
             health_status["timestamp"] = datetime.utcnow().isoformat()
 
-            logger.info("Health check requested - service is healthy")
+            logger.debug("Health check requested - service is healthy")
             return health_status, 200
 
         except Exception as e:

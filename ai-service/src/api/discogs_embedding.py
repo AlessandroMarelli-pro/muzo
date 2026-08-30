@@ -25,6 +25,9 @@ from src.services.features.discogs_embedding_extractor import DiscogsEmbeddingEx
 from src.services.features.tempo_cnn_extractor import TempoCnnExtractor
 from src.services.simple_audio_loader import SimpleAudioLoader
 from src.utils.performance_optimizer import monitor_performance
+from src.utils.trace import track_context, trace_start
+
+_TRACE_FILE = "discogs_embedding"
 
 # Same gate as SimpleAnalysisService.DISCOGS_CLASSIFIERS_ENABLED, read independently
 # here since this resource deliberately doesn't import SimpleAnalysisService.
@@ -71,6 +74,7 @@ class DiscogsEmbeddingResource(Resource):
                 "discogs_tempo": {"tempo": float, "confidence": float}
             }
         """
+        h = None
         try:
             if "audio_file" not in request.files:
                 return {
@@ -114,14 +118,21 @@ class DiscogsEmbeddingResource(Resource):
                 converted_wav_path = self.audio_loader.convert_m4a_to_wav(temp_file_path)
                 analysis_path = converted_wav_path
 
+            h = trace_start(
+                "discogs_embedding", file=_TRACE_FILE, track=audio_file.filename
+            )
+            _ctx = track_context(audio_file.filename)
+            _ctx.__enter__()
             try:
-                logger.info(f"Extracting discogs embedding for: {audio_file.filename}")
+                logger.debug(f"Extracting discogs embedding for: {audio_file.filename}")
 
-                y_full, sr = self.audio_loader.load_audio_sample(
-                    analysis_path, sample_duration=None
-                )
+                with h.step("load track"):
+                    y_full, sr = self.audio_loader.load_audio_sample(
+                        analysis_path, sample_duration=None
+                    )
                 duration_s = len(y_full) / sr if sr else 0
-                embedding = self.embedding_extractor.extract_from_audio(y_full, sr)
+                with h.step("embedding"):
+                    embedding = self.embedding_extractor.extract_from_audio(y_full, sr)
 
                 if not embedding:
                     logger.warning(
@@ -130,13 +141,16 @@ class DiscogsEmbeddingResource(Resource):
                     )
                     discogs_classifiers = {}
                 else:
-                    logger.info(
+                    logger.debug(
                         f"Discogs embedding: len={len(embedding)}, "
                         f"analyzed {duration_s:.1f}s of full track "
                         f"({audio_file.filename})"
                     )
                     if DISCOGS_CLASSIFIERS_ENABLED:
-                        discogs_classifiers = self.classifiers_extractor.predict_all(embedding)
+                        with h.step("classifiers"):
+                            discogs_classifiers = self.classifiers_extractor.predict_all(
+                                embedding
+                            )
                         if discogs_classifiers:
                             genres = discogs_classifiers.get("genres") or []
                             top_genre = (
@@ -145,7 +159,7 @@ class DiscogsEmbeddingResource(Resource):
                                 if genres
                                 else "none >10%"
                             )
-                            logger.info(
+                            logger.debug(
                                 f"Discogs classifiers: "
                                 f"danceable={discogs_classifiers.get('danceable', 0):.2f} "
                                 f"aggressive={discogs_classifiers.get('mood_aggressive', 0):.2f} "
@@ -164,9 +178,12 @@ class DiscogsEmbeddingResource(Resource):
                         discogs_classifiers = {}
 
                 if DISCOGS_CLASSIFIERS_ENABLED:
-                    discogs_tempo = self.tempo_cnn_extractor.extract_from_audio(y_full, sr)
+                    with h.step("tempo"):
+                        discogs_tempo = self.tempo_cnn_extractor.extract_from_audio(
+                            y_full, sr
+                        )
                     if discogs_tempo:
-                        logger.info(
+                        logger.debug(
                             f"TempoCNN: tempo={discogs_tempo.get('tempo', 0):.1f} BPM "
                             f"confidence={discogs_tempo.get('confidence', 0):.2f}"
                         )
@@ -175,6 +192,7 @@ class DiscogsEmbeddingResource(Resource):
                 else:
                     discogs_tempo = {}
 
+                h.done(embedding_len=len(embedding) if embedding else 0)
                 return {
                     "status": "success",
                     "embedding": embedding,
@@ -183,6 +201,7 @@ class DiscogsEmbeddingResource(Resource):
                 }, 200
 
             finally:
+                _ctx.__exit__(None, None, None)
                 if os.path.exists(temp_file_path):
                     os.unlink(temp_file_path)
                 if converted_wav_path and os.path.exists(converted_wav_path):
@@ -190,6 +209,8 @@ class DiscogsEmbeddingResource(Resource):
 
         except Exception as e:
             logger.error(f"Discogs embedding extraction failed: {e}")
+            if h:
+                h.done(error=str(e))
             return {
                 "error": "Discogs embedding extraction failed",
                 "message": str(e),

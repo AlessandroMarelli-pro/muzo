@@ -52,7 +52,7 @@ class DeamExtractor:
             from essentia.standard import TensorflowPredictMusiCNN
 
             model_path = self.model_manager.download_pb(MUSICNN_URL)
-            logger.info("Loading MSD-MusiCNN model into memory")
+            logger.debug("Loading MSD-MusiCNN model into memory")
             DeamExtractor._musicnn_model = TensorflowPredictMusiCNN(
                 graphFilename=model_path, output=MUSICNN_EMBEDDING_OUTPUT
             )
@@ -63,7 +63,7 @@ class DeamExtractor:
             from essentia.standard import TensorflowPredict2D
 
             model_path = self.model_manager.download_pb(DEAM_URL)
-            logger.info("Loading DEAM arousal-valence model into memory")
+            logger.debug("Loading DEAM arousal-valence model into memory")
             DeamExtractor._deam_model = TensorflowPredict2D(
                 graphFilename=model_path,
                 input="model/Placeholder",

@@ -22,7 +22,7 @@ class SimpleTechnicalAnalyzer:
 
     def __init__(self):
         """Initialize the technical analyzer service."""
-        logger.info("SimpleTechnicalAnalyzer initialized")
+        logger.debug("SimpleTechnicalAnalyzer initialized")
 
     @monitor_performance("simple_audio_technical")
     def extract_audio_technical(self, file_path: str) -> Dict[str, Any]:
@@ -36,7 +36,7 @@ class SimpleTechnicalAnalyzer:
             Dictionary containing technical audio information
         """
         try:
-            logger.info("Extracting audio technical information")
+            logger.debug("Extracting audio technical information")
 
             # Try to use mutagen for more accurate bitrate extraction
             try:
@@ -59,13 +59,13 @@ class SimpleTechnicalAnalyzer:
                     except (IndexError, ValueError):
                         bit_depth = 16  # Default fallback
 
-                    logger.info(f"Using mutagen for technical info extraction")
+                    logger.debug(f"Using mutagen for technical info extraction")
 
                 else:
                     raise ImportError("Mutagen file info not available")
 
             except (ImportError, AttributeError, Exception) as e:
-                logger.info(f"Mutagen not available or failed, using soundfile: {e}")
+                logger.debug(f"Mutagen not available or failed, using soundfile: {e}")
 
                 # Fallback to soundfile
                 info = sf.info(file_path)
@@ -79,7 +79,7 @@ class SimpleTechnicalAnalyzer:
                     bit_depth = 16  # Default fallback
                 bitrate = None
 
-                logger.info(f"Using soundfile for technical info extraction")
+                logger.debug(f"Using soundfile for technical info extraction")
 
             # Basic format detection from sample rate
             if sr == 44100:
@@ -111,7 +111,7 @@ class SimpleTechnicalAnalyzer:
                 }
             }
 
-            logger.info(
+            logger.debug(
                 f"Audio technical info: {duration:.2f}s, {sr} Hz, {channels} channels, {final_bitrate} bps"
             )
             return technical_info

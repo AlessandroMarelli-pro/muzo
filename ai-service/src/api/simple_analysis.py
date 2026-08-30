@@ -34,7 +34,7 @@ def _refresh_thread_pool():
     Call this periodically to prevent memory accumulation.
     """
     global _executor
-    logger.info("🔄 Refreshing album art thread pool executor...")
+    logger.debug("🔄 Refreshing album art thread pool executor...")
 
     with _executor_lock:
         # Shutdown existing executor
@@ -49,12 +49,12 @@ def _refresh_thread_pool():
         # Force garbage collection
         gc.collect()
 
-    logger.info("✅ Album art thread pool refreshed")
+    logger.debug("✅ Album art thread pool refreshed")
 
 
 def _cleanup_executor():
     """Clean up thread pool on application exit."""
-    logger.info("Shutting down album art executor")
+    logger.debug("Shutting down album art executor")
     with _executor_lock:
         _executor.shutdown(wait=True, cancel_futures=True)
 
@@ -124,7 +124,7 @@ class SimpleAnalysisResource(Resource):
             audio_file.save(temp_file_path)
 
             try:
-                logger.info(
+                logger.debug(
                     f"Processing audio file with simple analysis: {audio_file.filename}"
                 )
 
@@ -185,13 +185,13 @@ class SimpleAnalysisResource(Resource):
                     else:
                         result["album_art"] = None
 
-                logger.info(f"Simple analysis completed for: {audio_file.filename}")
+                logger.debug(f"Simple analysis completed for: {audio_file.filename}")
 
                 # Track request count and auto-refresh thread pool periodically
                 global _request_count
                 _request_count += 1
                 if _request_count % _thread_pool_refresh_interval == 0:
-                    logger.info(
+                    logger.debug(
                         f"🔄 Auto-refreshing thread pool after {_request_count} requests"
                     )
                     _refresh_thread_pool()

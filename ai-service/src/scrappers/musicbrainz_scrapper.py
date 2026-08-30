@@ -19,7 +19,7 @@ def get_album_art(artist_title: str) -> dict:
     Returns:
         Dict with 'imagePath' and 'imageUrl' keys, or empty dict if not found
     """
-    logger.info(f"Starting MusicBrainz search for: {artist_title}")
+    logger.debug(f"Starting MusicBrainz search for: {artist_title}")
 
     # Set user agent (required by MusicBrainz)
     musicbrainzngs.set_useragent("Muzo Album Art Scraper", "1.0", "contact@example.com")
@@ -41,7 +41,7 @@ def get_album_art(artist_title: str) -> dict:
         # Get the first release group
         release_group = result["release-group-list"][0]
         release_group_id = release_group["id"]
-        logger.info(
+        logger.debug(
             f"Found release group: {release_group['title']} (ID: {release_group_id})"
         )
 
@@ -57,7 +57,7 @@ def get_album_art(artist_title: str) -> dict:
 
         release = release_result["release-group"]["release-list"][0]
         release_id = release["id"]
-        logger.info(f"Found release: {release['title']} (ID: {release_id})")
+        logger.debug(f"Found release: {release['title']} (ID: {release_id})")
 
         # Get the front cover image
         logger.debug("Getting front cover image")
@@ -67,7 +67,7 @@ def get_album_art(artist_title: str) -> dict:
             logger.warning("No cover image found for release")
             return {}
 
-        logger.info("Successfully retrieved cover image data")
+        logger.debug("Successfully retrieved cover image data")
 
         # Create images directory if it doesn't exist
         # Navigate from ai-service/src/scrappers/ to project root
@@ -88,16 +88,16 @@ def get_album_art(artist_title: str) -> dict:
         logger.debug(f"Image path: {image_path}")
 
         # Save image to file
-        logger.info("Saving image to file")
+        logger.debug("Saving image to file")
         with open(image_path, "wb") as f:
             f.write(image_data)
-        logger.info(f"Successfully saved image to: {image_path}")
+        logger.debug(f"Successfully saved image to: {image_path}")
 
         # Optimize the image
-        logger.info("Optimizing image")
+        logger.debug("Optimizing image")
         try:
             optimize_image_in_place(image_path)
-            logger.info("Image optimization completed")
+            logger.debug("Image optimization completed")
         except Exception as e:
             logger.warning(f"Image optimization failed: {e}")
 

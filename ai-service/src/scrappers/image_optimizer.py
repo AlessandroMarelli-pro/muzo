@@ -33,7 +33,7 @@ def optimize_image(input_path: str, output_path: str = None, max_size: tuple = (
         name, ext = os.path.splitext(input_path)
         output_path = f"{name}_optimized{ext}"
     
-    logger.info(f"Optimizing image: {input_path} -> {output_path}")
+    logger.debug(f"Optimizing image: {input_path} -> {output_path}")
     
     try:
         # Open and process image
@@ -72,10 +72,10 @@ def optimize_image(input_path: str, output_path: str = None, max_size: tuple = (
             optimized_size_bytes = os.path.getsize(output_path)
             size_reduction = ((original_size_bytes - optimized_size_bytes) / original_size_bytes) * 100
             
-            logger.info(f"Optimization complete:")
-            logger.info(f"  Original: {original_size_bytes:,} bytes")
-            logger.info(f"  Optimized: {optimized_size_bytes:,} bytes")
-            logger.info(f"  Reduction: {size_reduction:.1f}%")
+            logger.debug(f"Optimization complete:")
+            logger.debug(f"  Original: {original_size_bytes:,} bytes")
+            logger.debug(f"  Optimized: {optimized_size_bytes:,} bytes")
+            logger.debug(f"  Reduction: {size_reduction:.1f}%")
             
             return output_path
             
@@ -106,7 +106,7 @@ def optimize_image_in_place(image_path: str, max_size: tuple = (1000, 1000), qua
         # Replace original with optimized version
         os.replace(temp_path, image_path)
         
-        logger.info(f"Image optimized in place: {image_path}")
+        logger.debug(f"Image optimized in place: {image_path}")
         return image_path
         
     except Exception as e:

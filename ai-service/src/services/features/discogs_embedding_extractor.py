@@ -25,7 +25,7 @@ class DiscogsEmbeddingExtractor:
             from essentia.standard import TensorflowPredictEffnetDiscogs
 
             model_path = self.model_manager.download_discogs_effnet()
-            logger.info("Loading discogs-effnet model into memory")
+            logger.debug("Loading discogs-effnet model into memory")
             DiscogsEmbeddingExtractor._model = TensorflowPredictEffnetDiscogs(
                 graphFilename=model_path, output="PartitionedCall:1"
             )

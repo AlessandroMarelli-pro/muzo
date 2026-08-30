@@ -33,7 +33,7 @@ class TempoCnnExtractor:
             from essentia.standard import TempoCNN
 
             model_path = self.model_manager.download_pb(TEMPO_CNN_URL)
-            logger.info("Loading TempoCNN model into memory")
+            logger.debug("Loading TempoCNN model into memory")
             TempoCnnExtractor._model = TempoCNN(graphFilename=model_path)
         return TempoCnnExtractor._model
 

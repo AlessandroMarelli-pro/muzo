@@ -16,6 +16,9 @@ from flask_restful import Resource
 from loguru import logger
 
 from ..services.audio_enhancement import get_service_instance, is_service_ready
+from ..utils.trace import track_context, trace_start
+
+_TRACE_FILE = "audio_enhancement"
 
 VALID_EXTENSIONS = {".mp3", ".wav", ".flac", ".m4a", ".aac", ".ogg", ".opus"}
 
@@ -34,6 +37,8 @@ class AudioEnhancementResource(Resource):
         """
         temp_input_path = None
         temp_output_path = None
+        h = None
+        _ctx = None
         try:
             if "audio_file" not in request.files:
                 return {
@@ -61,7 +66,12 @@ class AudioEnhancementResource(Resource):
                     "message": "Audio enhancement service is not available",
                 }, 503
 
-            logger.info(f"🎧 Audio enhancement request: {audio_file.filename}")
+            logger.debug(f"🎧 Audio enhancement request: {audio_file.filename}")
+            _ctx = track_context(audio_file.filename)
+            _ctx.__enter__()
+            h = trace_start(
+                "audio_enhancement", file=_TRACE_FILE, track=audio_file.filename
+            )
 
             temp_input_path = os.path.join(tempfile.gettempdir(), audio_file.filename)
             audio_file.save(temp_input_path)
@@ -71,9 +81,10 @@ class AudioEnhancementResource(Resource):
             )
 
             service = get_service_instance()
-            service.enhance(temp_input_path, temp_output_path)
+            service.enhance(temp_input_path, temp_output_path, trace_handle=h)
 
-            logger.info(f"✅ Enhancement complete for {audio_file.filename}")
+            logger.debug(f"✅ Enhancement complete for {audio_file.filename}")
+            h.done()
 
             return send_file(
                 temp_output_path,
@@ -84,6 +95,8 @@ class AudioEnhancementResource(Resource):
 
         except Exception as e:
             logger.error(f"❌ Enhancement failed: {e}")
+            if h:
+                h.done(error=str(e))
             return {
                 "error": "Enhancement failed",
                 "message": str(e),
@@ -91,6 +104,8 @@ class AudioEnhancementResource(Resource):
             }, 500
 
         finally:
+            if _ctx is not None:
+                _ctx.__exit__(None, None, None)
             if temp_input_path and os.path.exists(temp_input_path):
                 os.unlink(temp_input_path)
             # temp_output_path is streamed by send_file; Flask's default

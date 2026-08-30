@@ -5,6 +5,7 @@ This module provides the main Flask application for the Muzo AI service,
 handling audio analysis, fingerprinting, and genre classification.
 """
 
+import logging
 import os
 
 # MUST be first: pins native thread counts via env vars that TF / BLAS / torch
@@ -71,6 +72,55 @@ def create_app(config_class=Config):
     return app
 
 
+class _InterceptHandler(logging.Handler):
+    """Route stdlib `logging` records into loguru so third-party libraries
+    (skey, werkzeug, absl, trainers.*, ...) obey the same LOG_LEVEL and sinks
+    as the app instead of printing their own `INFO:root:` lines to stderr."""
+
+    def emit(self, record: logging.LogRecord) -> None:
+        try:
+            level = logger.level(record.levelname).name
+        except ValueError:
+            level = record.levelno
+        # Walk back to the frame where the log call was issued.
+        frame, depth = logging.currentframe(), 2
+        while frame and frame.f_code.co_filename == logging.__file__:
+            frame = frame.f_back
+            depth += 1
+        logger.opt(depth=depth, exception=record.exc_info).bind(
+            stdlib=record.name
+        ).log(level, record.getMessage())
+
+
+# Third-party stdlib loggers that are chatty at INFO and carry nothing an
+# operator needs in the normal stream.
+_NOISY_STDLIB_LOGGERS = (
+    "skey",
+    "trainers",
+    "trainers.filename_parser",
+    "trainers.filename_parser.hybrid_parser",
+    "absl",
+    "tensorflow",
+    "h5py",
+    "numba",
+    "matplotlib",
+    "musicbrainzngs",
+    "pylast",
+    "httpx",
+    "httpcore",
+    "urllib3",
+)
+
+
+class _NoHealthCheckFilter(logging.Filter):
+    """Drop werkzeug access-log lines for the health probe -- it fires
+    constantly (HF platform liveness) and drowns the real request lines."""
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        msg = record.getMessage()
+        return "/api/v1/health" not in msg and "/api/v1/service-status" not in msg
+
+
 def configure_logging(app):
     """Configure application logging."""
     log_level = app.config.get("LOG_LEVEL", "INFO")
@@ -78,13 +128,67 @@ def configure_logging(app):
     # Remove default loguru handler
     logger.remove()
 
+    # --- Bridge stdlib logging -> loguru ---------------------------------
+    # Reset the root logger: strip any handlers a third-party import installed
+    # (skey / trainers call logging.basicConfig at import), then funnel
+    # everything through the intercept handler at our level.
+    # App code logs through loguru; stdlib `logging` is used only by third-party
+    # libraries here, so the root logger sits at WARNING -- their INFO chatter
+    # (skey's `INFO:root:Loading checkpoint`, numba, matplotlib, ...) is dropped,
+    # while warnings and errors still surface via the intercept handler.
+    root = logging.getLogger()
+    for h in list(root.handlers):
+        root.removeHandler(h)
+    root.addHandler(_InterceptHandler())
+    root.setLevel(logging.WARNING)
+
+    for name in _NOISY_STDLIB_LOGGERS:
+        logging.getLogger(name).setLevel(logging.WARNING)
+
+    # werkzeug's request log is useful, but not the constant health probe.
+    werkzeug_logger = logging.getLogger("werkzeug")
+    werkzeug_logger.setLevel(logging.INFO)
+    werkzeug_logger.addFilter(_NoHealthCheckFilter())
+
+    # Process-trace records (logged via src/utils/trace.py) carry extra["trace"]
+    # and already embed a "[file]" tag in the message, so they get a stripped
+    # format with no {function}:{line} noise. Everything else keeps the detailed
+    # format.
+    def _console_format(record):
+        if record["extra"].get("trace"):
+            return (
+                "<green>{time:YYYY-MM-DD HH:mm:ss}</green> | "
+                "<level>{message}</level>\n"
+            )
+        if record["extra"].get("stdlib"):
+            return (
+                "<green>{time:YYYY-MM-DD HH:mm:ss}</green> | "
+                "<dim>{extra[stdlib]}</dim> - <level>{message}</level>\n"
+            )
+        return (
+            "<green>{time:YYYY-MM-DD HH:mm:ss}</green> | "
+            "<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>\n"
+        )
+
+    def _file_format(record):
+        if record["extra"].get("trace"):
+            return "{time:YYYY-MM-DD HH:mm:ss} | {level: <8} | {message}\n"
+        if record["extra"].get("stdlib"):
+            return (
+                "{time:YYYY-MM-DD HH:mm:ss} | {level: <8} | "
+                "{extra[stdlib]} - {message}\n"
+            )
+        return (
+            "{time:YYYY-MM-DD HH:mm:ss} | {level: <8} | "
+            "{name}:{function}:{line} - {message}\n"
+        )
+
     # Add console handler
     logger.add(
         sink=lambda msg: print(msg, end=""),
         level=log_level,
         colorize=True,
-        # format="<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level: <8}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>",
-        format="<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>",
+        format=_console_format,
     )
 
     # Add file handler if log file is configured
@@ -93,7 +197,7 @@ def configure_logging(app):
         logger.add(
             sink=log_file,
             level=log_level,
-            format="{time:YYYY-MM-DD HH:mm:ss} | {level: <8} | {name}:{function}:{line} - {message}",
+            format=_file_format,
             rotation="10 MB",
             retention="7 days",
         )
@@ -101,7 +205,7 @@ def configure_logging(app):
 
 def initialize_services(app):
     """Initialize application services based on configuration flags."""
-    logger.info("Services initialized successfully")
+    logger.debug("Services initialized successfully")
 
 
 def register_resources(api, app):
@@ -113,22 +217,22 @@ def register_resources(api, app):
     if os.getenv("ENABLE_SIMPLE_ANALYSIS") == "true":
         api.add_resource(SimpleAnalysisResource, "/audio/analyze/simple")
         api.add_resource(BatchSimpleAnalysisResource, "/audio/analyze/batch")
-        logger.info("✅ Simple analysis endpoints registered")
+        logger.debug("✅ Simple analysis endpoints registered")
     else:
-        logger.info("🚫 Simple analysis endpoints disabled by configuration")
+        logger.debug("🚫 Simple analysis endpoints disabled by configuration")
 
     # Discogs-effnet embedding endpoint (always enabled)
     api.add_resource(DiscogsEmbeddingResource, "/audio/embedding/discogs")
-    logger.info("✅ Discogs embedding endpoint registered")
+    logger.debug("✅ Discogs embedding endpoint registered")
 
     # Audio enhancement (super-resolution) endpoint
     if os.getenv("ENABLE_AUDIO_ENHANCEMENT", "true") == "true":
         api.add_resource(AudioEnhancementResource, "/audio/enhance")
-        logger.info("✅ Audio enhancement endpoint registered")
+        logger.debug("✅ Audio enhancement endpoint registered")
     else:
-        logger.info("🚫 Audio enhancement endpoint disabled by configuration")
+        logger.debug("🚫 Audio enhancement endpoint disabled by configuration")
 
-    logger.info("API resources registered successfully")
+    logger.debug("API resources registered successfully")
 
 
 def register_error_handlers(app):

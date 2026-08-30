@@ -11,9 +11,16 @@ import os
 import subprocess
 import tempfile
 import uuid
+from contextlib import contextmanager
 from typing import Optional
 
 from loguru import logger
+
+
+@contextmanager
+def _null_step(*_args, **_kwargs):
+    """No-op stand-in for TraceHandle.step when no trace handle is passed."""
+    yield
 
 BUCKET_REPO = os.getenv("UNIVERSR_BUCKET_REPO", "CosmicSurfer/muzo-enhance-scratch")
 # a10g-large (24GB VRAM, same as l4x1 but generally faster compute) over
@@ -38,14 +45,18 @@ BUCKET_MOUNT = "/scratch"
 class AudioEnhancementService:
     """Dispatches enhancement work to a Hugging Face Jobs GPU instance."""
 
-    def enhance(self, input_path: str, output_path: str) -> dict:
+    def enhance(self, input_path: str, output_path: str, trace_handle=None) -> dict:
         job_key = str(uuid.uuid4())
         remote_input = f"{job_key}/input.wav"
         remote_output = f"{job_key}/output.wav"
 
-        self._upload(input_path, remote_input)
-        job_id = self._submit_job(remote_input, remote_output)
-        logger.info(f"Submitted UniverSR job {job_id} (key={job_key})")
+        _step = trace_handle.step if trace_handle is not None else _null_step
+
+        with _step("upload input"):
+            self._upload(input_path, remote_input)
+        with _step("submit HF job"):
+            job_id = self._submit_job(remote_input, remote_output)
+        logger.debug(f"Submitted UniverSR job {job_id} (key={job_key})")
 
         # `hf jobs wait` just polls job status over HTTP -- a transient
         # network error here (e.g. connection reset) does not mean the job
@@ -54,9 +65,11 @@ class AudioEnhancementService:
         # for a job we're confident truly failed gets cleaned up; if we
         # can't even confirm that, leave it in place rather than risk
         # deleting a completed job's only output before it's downloaded.
-        self._wait_with_retry(job_id)
+        with _step("poll job"):
+            self._wait_with_retry(job_id)
         try:
-            self._download(remote_output, output_path)
+            with _step("download result"):
+                self._download(remote_output, output_path)
         except Exception:
             logger.error(
                 f"Enhancement job {job_id} succeeded but downloading the "
@@ -65,7 +78,8 @@ class AudioEnhancementService:
             )
             raise
 
-        self._cleanup(job_key)
+        with _step("cleanup scratch"):
+            self._cleanup(job_key)
         return {"output_path": output_path, "output_sample_rate": 48000}
 
     def _wait_with_retry(self, job_id: str, max_attempts: int = 3) -> None:

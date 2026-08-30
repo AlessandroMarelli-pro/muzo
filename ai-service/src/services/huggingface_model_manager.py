@@ -19,7 +19,7 @@ class HuggingFaceModelManager:
         self, repo_id: str = "CosmicSurfer/muzo-genre-classifier"
     ) -> str:
         """Download the main genre classifier model."""
-        logger.info(f"📥 Downloading genre classifier from {repo_id}")
+        logger.debug(f"📥 Downloading genre classifier from {repo_id}")
 
         try:
             model_path = self.api.hf_hub_download(
@@ -29,7 +29,7 @@ class HuggingFaceModelManager:
                 local_files_only=False,
             )
 
-            logger.info(f"✅ Genre classifier downloaded: {model_path}")
+            logger.debug(f"✅ Genre classifier downloaded: {model_path}")
             return model_path
 
         except Exception as e:
@@ -40,7 +40,7 @@ class HuggingFaceModelManager:
         self, genre: str, repo_id: str = "CosmicSurfer/muzo-subgenre-specialists"
     ) -> str:
         """Download a specific subgenre specialist model."""
-        logger.info(f"📥 Downloading {genre} specialist from {repo_id}")
+        logger.debug(f"📥 Downloading {genre} specialist from {repo_id}")
 
         try:
             model_path = self.api.hf_hub_download(
@@ -50,7 +50,7 @@ class HuggingFaceModelManager:
                 local_files_only=False,
             )
 
-            logger.info(f"✅ {genre} specialist downloaded: {model_path}")
+            logger.debug(f"✅ {genre} specialist downloaded: {model_path}")
             return model_path
 
         except Exception as e:
@@ -61,7 +61,7 @@ class HuggingFaceModelManager:
         self, genres: list, repo_id: str = "CosmicSurfer/muzo-subgenre-specialists"
     ) -> dict:
         """Download all subgenre specialists."""
-        logger.info(f"📥 Downloading {len(genres)} specialists from {repo_id}")
+        logger.debug(f"📥 Downloading {len(genres)} specialists from {repo_id}")
 
         downloaded_models = {}
 
@@ -74,7 +74,7 @@ class HuggingFaceModelManager:
                 downloaded_models[genre] = None
 
         successful = sum(1 for path in downloaded_models.values() if path is not None)
-        logger.info(f"✅ Downloaded {successful}/{len(genres)} specialists")
+        logger.debug(f"✅ Downloaded {successful}/{len(genres)} specialists")
 
         return downloaded_models
 

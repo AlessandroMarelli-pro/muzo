@@ -86,7 +86,7 @@ class GeminiMetadataExtractor(BaseMetadataExtractor):
                 variables. Kept for create_metadata_extractor(api_key=...)
                 callers.
         """
-        logger.info("GeminiMetadataExtractor initializing")
+        logger.debug("GeminiMetadataExtractor initializing")
 
         if not GEMINI_AVAILABLE:
             logger.error(
@@ -146,7 +146,7 @@ class GeminiMetadataExtractor(BaseMetadataExtractor):
 
         try:
             client = genai.Client(api_key=api_key)
-            logger.info("Gemini client initialized via Developer API")
+            logger.debug("Gemini client initialized via Developer API")
             return client
         except Exception as e:
             logger.error(f"Failed to initialize Gemini Developer API client: {e}")
@@ -236,7 +236,7 @@ Return ONLY the cleaned filename, nothing else. No explanations, no markdown, ju
                 cleaned = raw_text.strip()
                 cleaned = cleaned.strip('"').strip("'").strip()
                 cleaned = cleaned.replace("```", "").strip()
-                logger.info(f"LLM filename clean: {filename!r} -> {cleaned!r}")
+                logger.debug(f"LLM filename clean: {filename!r} -> {cleaned!r}")
                 return cleaned
             else:
                 logger.warning(
@@ -370,13 +370,13 @@ Return ONLY a JSON array of cleaned filenames in the same order, nothing else. F
                         ]
 
                         if len(cleaned_list) == len(filenames_to_clean_with_llm):
-                            logger.info(
+                            logger.debug(
                                 f"LLM batch cleaned {len(cleaned_list)} filenames"
                             )
                             for src, dst in zip(
                                 filenames_to_clean_with_llm, cleaned_list
                             ):
-                                logger.info(
+                                logger.debug(
                                     f"LLM filename clean: {src!r} -> {dst!r}"
                                 )
                             final_cleaned = pre_cleaned_filenames.copy()

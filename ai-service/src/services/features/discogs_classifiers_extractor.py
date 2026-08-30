@@ -130,7 +130,7 @@ class DiscogsClassifiersExtractor:
 
             config = BINARY_HEADS[head_name]
             model_path = self.model_manager.download_pb(config["url"])
-            logger.info(f"Loading {head_name} classifier head into memory")
+            logger.debug(f"Loading {head_name} classifier head into memory")
             DiscogsClassifiersExtractor._binary_models[head_name] = TensorflowPredict2D(
                 graphFilename=model_path,
                 input=config["input"],
@@ -148,7 +148,7 @@ class DiscogsClassifiersExtractor:
             DiscogsClassifiersExtractor._multi_label_classes[head_name] = metadata[
                 "classes"
             ]
-            logger.info(f"Loading {head_name} classifier head into memory")
+            logger.debug(f"Loading {head_name} classifier head into memory")
             DiscogsClassifiersExtractor._multi_label_models[head_name] = (
                 TensorflowPredict2D(
                     graphFilename=model_path,
@@ -209,7 +209,7 @@ class DiscogsClassifiersExtractor:
                 if not fallback_n:
                     return []
                 top = all_scored[:fallback_n]
-                logger.info(
+                logger.debug(
                     f"Discogs classifier '{head_name}': nothing cleared "
                     f"min_confidence={config['min_confidence']}, falling back to "
                     f"top {len(top)} (best confidence {top[0][1]:.3f})"

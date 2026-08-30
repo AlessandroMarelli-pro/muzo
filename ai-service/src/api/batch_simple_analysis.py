@@ -22,6 +22,9 @@ from src.scrappers.scrapper_dispatcher import get_album_art
 from src.services.simple_analysis import SimpleAnalysisService
 from src.utils.performance_optimizer import monitor_performance
 from src.utils.scan_progress_publisher import ScanProgressPublisher
+from src.utils.trace import trace_start
+
+_TRACE_FILE = "batch_simple_analysis"
 
 # Per-process analysis lock. Each gunicorn worker holds its own (gthread class,
 # see gunicorn.conf.py) -- within a worker the CPU-bound model inference runs one
@@ -62,6 +65,7 @@ class BatchSimpleAnalysisResource(Resource):
             dict: Batch analysis results with per-file results
         """
         temp_file_paths: List[str] = []
+        h = None
 
         try:
             # Get multiple files from request
@@ -106,7 +110,10 @@ class BatchSimpleAnalysisResource(Resource):
                         "message": f"File {audio_file.filename} exceeds 100MB limit",
                     }, 413
 
-            logger.info(f"Processing batch audio analysis for {len(audio_files)} files")
+            logger.debug(f"Processing batch audio analysis for {len(audio_files)} files")
+            h = trace_start(
+                "batch_api", file=_TRACE_FILE, files=len(audio_files)
+            )
 
             # Get parameters with optimized defaults
             sample_duration = float(request.form.get("sample_duration", "10.0"))
@@ -151,10 +158,12 @@ class BatchSimpleAnalysisResource(Resource):
             with _ANALYSIS_LOCK:
                 queued_s = time.monotonic() - _waited
                 if queued_s > 1.0:
-                    logger.info(
+                    logger.debug(
                         f"Batch waited {queued_s:.1f}s for the analysis lock "
                         f"({len(file_items)} files)"
                     )
+                if h:
+                    h.note(f"queue wait {queued_s:.3f}s")
                 result = self.simple_analysis.analyze_audio_batch(
                     file_items=file_items,
                     sample_duration=sample_duration,
@@ -222,7 +231,7 @@ class BatchSimpleAnalysisResource(Resource):
                             if "album_art" not in file_result:
                                 file_result["album_art"] = None
 
-            logger.info(
+            logger.debug(
                 f"Batch analysis completed: {result.get('successful', 0)}/"
                 f"{result.get('total_files', 0)} successful"
             )
@@ -234,16 +243,23 @@ class BatchSimpleAnalysisResource(Resource):
                 % simple_analysis_module._thread_pool_refresh_interval
                 == 0
             ):
-                logger.info(
+                logger.debug(
                     f"🔄 Auto-refreshing thread pool after "
                     f"{simple_analysis_module._request_count} requests"
                 )
                 simple_analysis_module._refresh_thread_pool()
 
+            if h:
+                h.done(
+                    files=len(audio_files),
+                    ok=result.get("successful", 0),
+                )
             return result, 200
 
         except Exception as e:
             logger.error(f"Batch audio analysis failed: {e}")
+            if h:
+                h.done(error=str(e))
 
             # Clean up on error
             gc.collect()

@@ -13,6 +13,7 @@ import numpy as np
 from loguru import logger
 
 from src.config.settings import Config
+from src.utils.trace import trace
 
 
 class PerformanceMonitor:
@@ -86,8 +87,8 @@ def monitor_performance(operation: str):
                     logger.warning(
                         f"Slow operation detected: {operation} took {duration:.2f}s"
                     )
-                else:
-                    logger.debug(f"{operation} completed in {duration:.2f}s")
+                # Per-step timing trace (INFO, [perf] <step> done in X.XXXs)
+                trace(f"{operation} done in {duration:.3f}s", file="perf")
 
         return wrapper
 
