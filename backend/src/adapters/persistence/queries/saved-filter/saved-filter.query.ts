@@ -19,9 +19,9 @@ export class SavedFilterQuery implements ISavedFilterQuery {
         type: keyof StaticFilterOptions;
       }[]
     >`
-        SELECT id, name, 'genres' as type FROM genres as genres WHERE "createdById" = ${getCurrentUserId()}
+        SELECT id, name, 'genres' as type FROM genres as genres
         UNION ALL
-        SELECT id, name, 'subgenres' as type FROM subgenres as subgenres WHERE "createdById" = ${getCurrentUserId()}
+        SELECT id, name, 'subgenres' as type FROM subgenres as subgenres
         UNION ALL
         SELECT DISTINCT key as id, key as name, 'keys' as type FROM audio_fingerprints as keys WHERE "createdById" = ${getCurrentUserId()}
         UNION ALL

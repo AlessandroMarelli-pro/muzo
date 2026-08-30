@@ -7,6 +7,7 @@ metadata and audio file ID3 tags with filename parsing fallback.
 
 import base64
 import os
+import re
 from typing import Any, Dict, Optional
 
 from loguru import logger
@@ -405,6 +406,40 @@ class SimpleMetadataExtractor:
             logger.warning(f"Failed to extract embedded image: {e}")
             return None
 
+    def _split_cleaned_filename(self, cleaned_filename: str) -> Dict[str, str]:
+        """Split an LLM-cleaned filename into {artist, title, year, label}.
+
+        The Gemini filename cleaner is instructed to always emit
+        ``"Artist - Title"`` with a spaced-dash separator (converting ":", en/em
+        dashes, etc.), so we split on the *first* " - " directly. This is
+        deliberately preferred over ``self.filename_parser`` (HybridFilenameParser),
+        whose regex cascade splits on the first bare "-" and mangles names like
+        "Saiko-Pod - Wednesday" into artist="saiko", title="pod - wednesday".
+
+        Falls back to the hybrid/minimal parser only when there is no spaced
+        dash (e.g. the LLM was unavailable and this is a raw filename).
+        """
+        text = cleaned_filename.strip()
+
+        artist, sep, title = text.partition(" - ")
+        if sep and artist.strip() and title.strip():
+            year = ""
+            m = re.search(r"[\(\[](19|20)\d{2}[\)\]]\s*$", title)
+            if m:
+                year = m.group(0).strip("()[] ")
+                title = title[: m.start()].strip()
+            return {
+                "artist": artist.strip(),
+                "title": title.strip(),
+                "year": year,
+                "label": "",
+                "subtitle": "",
+            }
+
+        if self.filename_parser:
+            return self.filename_parser.parse_filename_for_metadata(text)
+        return {"artist": "", "title": text, "year": "", "label": "", "subtitle": ""}
+
     @monitor_performance("simple_id3_tags")
     def extract_id3_tags(
         self,
@@ -745,10 +780,8 @@ class SimpleMetadataExtractor:
             # overrides the ID3 title/artist tags outright (those often name a
             # compiler/DJ, e.g. "Off The Shelf DJ", or carry label/catalog junk).
             cleaned_override_applied = False
-            if cleaned_filename and cleaned_filename.strip() and self.filename_parser:
-                cleaned_metadata = self.filename_parser.parse_filename_for_metadata(
-                    cleaned_filename.strip()
-                )
+            if cleaned_filename and cleaned_filename.strip():
+                cleaned_metadata = self._split_cleaned_filename(cleaned_filename.strip())
                 cleaned_artist = cleaned_metadata.get("artist", "").strip()
                 cleaned_title = cleaned_metadata.get("title", "").strip()
                 if cleaned_artist and cleaned_title:
