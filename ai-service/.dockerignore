@@ -10,7 +10,13 @@ docker
 htmlcov
 coverage.xml
 temp_segments
+# Exclude the models dir, but keep the pre-downloaded essentia model cache so the
+# image ships with it -- otherwise every fresh HF replica re-downloads ~35 MB of
+# .pb files from essentia.upf.edu on its first request (and again after any
+# replica restart, since the disk cache is ephemeral).
 models
+!models/essentia_cache
+!models/essentia_cache/**
 tests
 *.md
 .claude

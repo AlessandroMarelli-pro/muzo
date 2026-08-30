@@ -12,7 +12,7 @@ from typing import Dict, Optional
 import redis
 from loguru import logger
 
-from src.config.redis_config import redis_config
+from src.config.redis_config import RedisUnavailable, redis_config
 
 
 class ScanProgressPublisher:
@@ -26,13 +26,10 @@ class ScanProgressPublisher:
         self._last_sent_progress: Dict[str, int] = {}  # Track last sent progress per track
 
     def _get_redis_client(self) -> redis.Redis:
-        """Get or create Redis client."""
+        """Get or create Redis client. Raises (RedisUnavailable or a redis
+        error) when Redis can't be reached -- publish_* below swallow it."""
         if self.redis_client is None:
-            try:
-                self.redis_client = redis_config.get_client()
-            except Exception as e:
-                logger.error(f"Failed to connect to Redis: {e}")
-                raise
+            self.redis_client = redis_config.get_client()
         return self.redis_client
 
     def _should_publish_progress(self, track_id: str, current_progress: int) -> bool:
@@ -84,8 +81,13 @@ class ScanProgressPublisher:
             message = json.dumps(event)
             redis_client.publish(channel, message)
             logger.debug(f"Published event {event_type} for session {session_id}")
+        except RedisUnavailable:
+            # Redis not configured / unreachable -- scan progress is optional.
+            logger.debug(
+                f"Skipped event {event_type} for session {session_id} (no Redis)"
+            )
         except Exception as e:
-            logger.error(f"Failed to publish event for session {session_id}: {e}")
+            logger.warning(f"Failed to publish event for session {session_id}: {e}")
             # Don't raise - event publishing shouldn't break the scan
 
     def publish_error(
@@ -129,8 +131,12 @@ class ScanProgressPublisher:
             logger.warning(
                 f"Published error {error_code} for session {session_id}: {error_message}"
             )
+        except RedisUnavailable:
+            logger.debug(
+                f"Skipped error event for session {session_id} (no Redis)"
+            )
         except Exception as e:
-            logger.error(f"Failed to publish error for session {session_id}: {e}")
+            logger.warning(f"Failed to publish error for session {session_id}: {e}")
             # Don't raise - error publishing shouldn't break the scan
 
     def publish_track_progress(

@@ -9,7 +9,7 @@ from typing import Any, Dict, List, Optional, Union
 import redis
 from loguru import logger
 
-from src.config.redis_config import redis_config
+from src.config.redis_config import RedisUnavailable, redis_config
 
 
 class RedisCache:
@@ -37,6 +37,8 @@ class RedisCache:
             if self._client is None:
                 self._client = self.redis_config.get_client()
             return self._client
+        except RedisUnavailable:
+            return None
         except Exception as e:
             logger.warning(f"Redis client unavailable: {e}")
             return None

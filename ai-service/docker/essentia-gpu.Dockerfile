@@ -215,9 +215,21 @@ RUN grep -v '^essentia-tensorflow' requirements.txt > requirements.docker.txt &&
     python3.11 -m pip install --no-cache-dir -r requirements.nomadmom.txt && \
     python3.11 -m pip install --no-cache-dir --no-build-isolation "$(grep '^madmom' requirements.docker.txt)"
 
+# Includes models/essentia_cache (see essentia-cpu.Dockerfile) so the image
+# ships with the essentia .pb files -- no download on first request.
 COPY . .
 
 EXPOSE 4000
+
+# Per-worker native thread cap + TF log level. TF_ENABLE_ONEDNN_OPTS is already
+# set above for the GPU-crash investigation. ANALYSIS_THREADS is read by
+# src/config/threads.py; override via `--env` at deploy time.
+ENV ANALYSIS_THREADS=4 \
+    OMP_NUM_THREADS=4 \
+    TF_NUM_INTRAOP_THREADS=4 \
+    TF_NUM_INTEROP_THREADS=1 \
+    TF_CPP_MIN_LOG_LEVEL=2
+
 # See essentia-cpu.Dockerfile for the rationale. Note: on GPU, raising
 # WEB_CONCURRENCY means multiple processes sharing one GPU -- size it against
 # GPU memory, not just host RAM.

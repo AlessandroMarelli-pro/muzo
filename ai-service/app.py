@@ -7,6 +7,10 @@ handling audio analysis, fingerprinting, and genre classification.
 
 import os
 
+# MUST be first: pins native thread counts via env vars that TF / BLAS / torch
+# read once at import time. See the module docstring.
+import src.config.threads  # noqa: F401
+
 from dotenv import load_dotenv
 from flask import Flask, jsonify, request
 from flask_cors import CORS

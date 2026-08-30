@@ -162,7 +162,7 @@ class SimpleAnalysisService:
 
     @monitor_performance("discogs_embedding_generation")
     def generate_discogs_embedding_from_file(
-        self, y_full, sr: int
+        self, y_full, sr: int, audio_16k=None
     ) -> Tuple[list, Optional[dict]]:
         """
         Extract the discogs-effnet embedding from the FULL track (not the
@@ -178,6 +178,10 @@ class SimpleAnalysisService:
                 whole track (embedding, tempo, mood, key) -- avoids re-decoding
                 the same file from disk multiple times per analysis.
             sr: Native sample rate of y_full.
+            audio_16k: Optional -- y_full already resampled to 16 kHz. When the
+                caller (see _run_model_pipeline) has done this once to share with
+                generate_deam_mood, pass it here to skip a redundant full-track
+                librosa.resample.
 
         Returns:
             (embedding, warning) -- warning is None on success, else
@@ -186,7 +190,10 @@ class SimpleAnalysisService:
         """
         try:
             duration_s = len(y_full) / sr if sr else 0
-            embedding = self.embedding_extractor.extract_from_audio(y_full, sr)
+            if audio_16k is not None:
+                embedding = self.embedding_extractor.extract(audio_16k)
+            else:
+                embedding = self.embedding_extractor.extract_from_audio(y_full, sr)
             if embedding:
                 logger.info(
                     f"Discogs embedding: len={len(embedding)}, "
@@ -299,15 +306,22 @@ class SimpleAnalysisService:
             return {}, {"model": "tempo_cnn", "reason": "failed", "detail": str(e)}
 
     @monitor_performance("deam_generation")
-    def generate_deam_mood(self, y_full, sr: int) -> Tuple[dict, Optional[dict]]:
+    def generate_deam_mood(
+        self, y_full, sr: int, audio_16k=None
+    ) -> Tuple[dict, Optional[dict]]:
         """
         Estimate valence/arousal via the DEAM arousal-valence regression model
         from the FULL track. Unlike the discogs-effnet classifier heads, DEAM
-        runs on a separate MSD-MusiCNN embedding (also 16kHz, so no extra
-        resample beyond what DeamExtractor already does) -- see DeamExtractor's
-        docstring for why this model over emoMusic/MuSe. Gated by
+        runs on a separate MSD-MusiCNN embedding (also 16kHz) -- see
+        DeamExtractor's docstring for why this model over emoMusic/MuSe. Gated by
         DISCOGS_CLASSIFIERS_ENABLED (same flag as the rest of this pipeline's
         model-driven fields).
+
+        Args:
+            audio_16k: Optional -- y_full already resampled to 16 kHz (shared
+                with generate_discogs_embedding_from_file by _run_model_pipeline).
+                MusiCNN wants 16 kHz too, so passing it skips a redundant
+                full-track resample.
 
         Returns:
             (result, warning) -- {} result when disabled, failed, or empty;
@@ -319,7 +333,10 @@ class SimpleAnalysisService:
             )
             return {}, {"model": "deam", "reason": "disabled", "detail": None}
         try:
-            result = self.deam_extractor.extract_from_audio(y_full, sr)
+            if audio_16k is not None:
+                result = self.deam_extractor.extract(audio_16k)
+            else:
+                result = self.deam_extractor.extract_from_audio(y_full, sr)
             if result:
                 logger.info(
                     f"DEAM mood: valence={result.get('valence', 0):.2f} "
@@ -375,7 +392,30 @@ class SimpleAnalysisService:
         the way the old flat-dict versions did (different message strings, an
         extra top-level "filename" key in the batch path, etc).
         """
-        embedding, warn = self.generate_discogs_embedding_from_file(y_full, sr)
+        # discogs-effnet and MSD-MusiCNN (DEAM) both want 16 kHz mono. Resample
+        # the full track once here and share it, instead of each extractor
+        # calling librosa.resample on the whole track independently. TempoCNN
+        # (11025 Hz) and S-KEY (its checkpoint's own rate) still resample
+        # themselves from y_full.
+        audio_16k = None
+        if sr is not None and len(y_full):
+            try:
+                import librosa
+
+                audio_16k = (
+                    y_full
+                    if sr == 16000
+                    else librosa.resample(y_full, orig_sr=sr, target_sr=16000)
+                )
+            except Exception as e:
+                logger.warning(
+                    f"Shared 16 kHz resample failed ({e}); extractors will "
+                    "resample individually"
+                )
+
+        embedding, warn = self.generate_discogs_embedding_from_file(
+            y_full, sr, audio_16k=audio_16k
+        )
         if warn:
             builder.add_warning(**warn)
 
@@ -387,7 +427,7 @@ class SimpleAnalysisService:
         if warn:
             builder.add_warning(**warn)
 
-        discogs_deam, warn = self.generate_deam_mood(y_full, sr)
+        discogs_deam, warn = self.generate_deam_mood(y_full, sr, audio_16k=audio_16k)
         if warn:
             builder.add_warning(**warn)
 

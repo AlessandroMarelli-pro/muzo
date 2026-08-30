@@ -18,11 +18,20 @@ Why `sync` workers (separate processes), NOT `gthread`/threads:
   concurrency is safe where thread-level isn't.
 
 Memory: each worker lazily loads its own copy of the essentia/TF + torch models
-on its first request (models are class-level singletons *per process*, loaded
-lazily -- see e.g. src/services/features/discogs_embedding_extractor.py, so
---preload would not share them). On the HF `intel-spr x4` instance (8 vCPU /
-16 GB) keep WEB_CONCURRENCY modest -- default 2, raise cautiously and watch the
-endpoint's memory graph.
+(models are class-level singletons *per process*, so --preload would not share
+them). On the HF `intel-spr x4` instance (8 vCPU / 16 GB) keep WEB_CONCURRENCY
+modest -- default 2, raise cautiously and watch the endpoint's memory graph.
+
+Warmup: the post_fork hook below calls model_warmup.warm_all_models() in each
+freshly forked worker, so the models are resident BEFORE the worker takes
+traffic -- otherwise the first real request per worker pays ~15-20s of graph
+loading on top of the analysis. This trades a longer worker-boot / post-recycle
+gap for a fast first request; max_requests is raised so recycles (and their
+re-warm) are rare. Disable with WARM_MODELS_ON_FORK=false.
+
+Threads: src/config/threads.py (imported first by app.py / wsgi.py) pins the
+native thread pools to ANALYSIS_THREADS per worker so 2 workers don't
+oversubscribe 8 vCPUs.
 """
 
 import os
@@ -43,9 +52,11 @@ graceful_timeout = 60
 
 # Recycle workers periodically to bound native-allocator fragmentation from
 # repeated large audio buffers / TF sessions (the dev-server path already does
-# manual gc + periodic thread-pool refresh for the same reason).
-max_requests = int(os.getenv("GUNICORN_MAX_REQUESTS", "200"))
-max_requests_jitter = 20
+# manual gc + periodic thread-pool refresh for the same reason). Raised from 200
+# now that each recycle re-runs the ~15-20s model warmup in post_fork -- 1000
+# keeps fragmentation bounded while making the re-warm cost rare.
+max_requests = int(os.getenv("GUNICORN_MAX_REQUESTS", "1000"))
+max_requests_jitter = 50
 
 # Uploads are multipart audio files; don't let gunicorn buffer whole bodies in a
 # way that trips its default limits.
@@ -56,3 +67,17 @@ limit_request_field_size = 0
 accesslog = "-"
 errorlog = "-"
 loglevel = os.getenv("LOG_LEVEL", "info").lower()
+
+
+def post_fork(server, worker):
+    """Warm every analysis model in the freshly forked worker so its first real
+    request isn't a cold one. See module docstring; disable with
+    WARM_MODELS_ON_FORK=false."""
+    if os.getenv("WARM_MODELS_ON_FORK", "true").lower() != "true":
+        return
+    try:
+        from src.services.model_warmup import warm_all_models
+
+        warm_all_models()
+    except Exception as exc:  # never let warmup stop a worker from booting
+        worker.log.warning("post_fork model warmup failed: %s", exc)

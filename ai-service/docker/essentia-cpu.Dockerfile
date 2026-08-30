@@ -171,9 +171,25 @@ RUN grep -v '^essentia-tensorflow' requirements.txt > requirements.docker.txt &&
     python3.11 -m pip install --no-cache-dir -r requirements.nomadmom.txt && \
     python3.11 -m pip install --no-cache-dir --no-build-isolation "$(grep '^madmom' requirements.docker.txt)"
 
+# Includes models/essentia_cache (kept out of .dockerignore) so the image ships
+# with the ~35 MB of essentia .pb model files -- no download from
+# essentia.upf.edu on a fresh replica's first request.
 COPY . .
 
 EXPOSE 4000
+
+# Native-stack thread + TF-logging defaults. src/config/threads.py (imported
+# first by app.py / wsgi.py) also sets these via os.environ.setdefault, but
+# having them in the environment covers `python3.11 app.py` and any import path
+# that pulls in TF before that module. ANALYSIS_THREADS is the per-gunicorn-
+# worker cap; override via `--env` at deploy time.
+ENV ANALYSIS_THREADS=4 \
+    OMP_NUM_THREADS=4 \
+    TF_NUM_INTRAOP_THREADS=4 \
+    TF_NUM_INTEROP_THREADS=1 \
+    TF_CPP_MIN_LOG_LEVEL=2 \
+    TF_ENABLE_ONEDNN_OPTS=0
+
 # Run under gunicorn (multiple worker processes) rather than `python app.py`'s
 # single-threaded Werkzeug dev server, so one HF endpoint replica can serve
 # concurrent batch-analysis requests. Worker count / timeout knobs live in

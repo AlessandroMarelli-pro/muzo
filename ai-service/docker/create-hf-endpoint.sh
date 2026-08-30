@@ -39,7 +39,7 @@ DEPLOY_ARGS=(
   # requests immediately; HF autoscales up to max-replica for the rest.
   --min-replica 2
   --max-replica 4
-  --scale-to-zero-timeout 15
+  #--scale-to-zero-timeout 15
   # Scale on queued (pending) requests rather than hardware usage -- batch
   # analysis is bursty and a replica looks busy well before CPU saturates.
   --scaling-metric pendingRequests
@@ -48,6 +48,14 @@ DEPLOY_ARGS=(
   # gunicorn worker processes per replica (see ai-service/gunicorn.conf.py).
   # 2 on intel-spr x4 (8 vCPU / 16 GB); each worker loads its own model copy.
   --env WEB_CONCURRENCY=2
+  # Native thread pool cap PER worker (TF / OpenMP / BLAS / torch). Keep
+  # WEB_CONCURRENCY * ANALYSIS_THREADS ~= vCPU (2 * 4 = 8) so the two workers
+  # don't oversubscribe the box under concurrent load. See src/config/threads.py.
+  --env ANALYSIS_THREADS=4
+  # No Redis is reachable from the endpoint -- make ScanProgressPublisher /
+  # RedisCache no-op instead of retrying a refused localhost connection on every
+  # call. Real-time scan progress is disabled as a result (it already was).
+  --env DISABLE_REDIS=true
   --type authenticated
 )
 
