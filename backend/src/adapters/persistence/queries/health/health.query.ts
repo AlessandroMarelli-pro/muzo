@@ -16,7 +16,7 @@ export class HealthQuery implements IHealthQuery {
       database: {
         connected: dbConnected,
         status: dbConnected ? HEALTH_STATUS.HEALTHY : HEALTH_STATUS.UNHEALTHY,
-        provider: 'prisma-sqlite',
+        provider: 'prisma-postgresql',
       },
     };
   }

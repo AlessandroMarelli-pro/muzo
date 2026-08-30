@@ -77,25 +77,33 @@ Muzo is an intelligent personal assistant for music collections that uses audio 
           │                   │                    │
           ▼                   ▼                    ▼
 ┌──────────────┐    ┌──────────────┐    ┌──────────────────────┐
-│   SQLite     │    │    Redis     │    │   Elasticsearch      │
+│  PostgreSQL  │    │    Redis     │    │   Elasticsearch      │
 │   (Prisma)   │    │   (Queues)   │    │   (Recommendations)  │
 └──────────────┘    └──────────────┘    └──────────────────────┘
                               │
                               ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│                   AI Service (Python/Flask)                     │
+│         AI Service (Python/Flask, hosted separately)            │
+│  Deployed as a Hugging Face Inference Endpoint --                │
 │  librosa • PyTorch • audioflux • MusicBrainz • Discogs         │
 └─────────────────────────────────────────────────────────────────┘
 ```
+
+Postgres, Redis, and Elasticsearch run as local Docker containers alongside
+the app. The AI service runs remotely as a Hugging Face Inference Endpoint
+rather than locally — see `ai-service/docker/deploy-hf.sh` to deploy your
+own; the app works without one configured, just without AI analysis.
 
 ## 🚀 Quick Start
 
 ### Prerequisites
 
-- Node.js 18+
-- Python 3.10+
-- Docker (for Redis)
-- FFmpeg
+- Docker + Docker Compose
+- ffmpeg
+- [sockseek](https://github.com/fiso64/sockseek) (Soulseek CLI, only needed for HQ audio acquisition)
+
+`./scripts/install.sh` checks for all three and installs what it can
+automatically (see below) — you don't need to install them by hand first.
 
 ### Installation
 
@@ -104,45 +112,57 @@ Muzo is an intelligent personal assistant for music collections that uses audio 
 git clone https://github.com/yourusername/muzo.git
 cd muzo
 
-# Backend setup
-cd backend
-npm install
-cp env.template .env
-npm run redis:up
-npm run prisma:generate
-npm run prisma:migrate
-npm run start:dev
+# Installs missing dependencies (Docker check, ffmpeg guidance, auto-installs
+# sockseek), creates .env from .env.example, builds the Docker images.
+./scripts/install.sh
 
-# Frontend setup (new terminal)
-cd frontend
-npm install
-npm run dev
+# Edit .env: at minimum set AI_SERVICE_URL/AI_SERVICE_TOKEN if you want AI
+# analysis (genre/BPM/key/mood detection) -- see ai-service/docker/deploy-hf.sh
+# to deploy your own AI service endpoint. The app runs fine without it, just
+# without that feature.
 
-# AI Service setup (new terminal)
-cd ai-service
-python -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-python run_services.py --port=4000
+# Starts everything and waits for the backend to be ready.
+./scripts/start.sh
 ```
+
+Stop with `./scripts/stop.sh` (non-destructive, your data stays). Update to
+the latest code with `./scripts/update.sh` (pulls, rebuilds, restarts — data
+volumes are never touched).
+
+Prefer to run the commands yourself instead of the scripts?
+
+```bash
+cp .env.example .env    # then edit .env
+docker compose build
+docker compose up -d
+```
+
+(Older Docker Compose versions may not support the root `docker-compose.yml`'s
+`include:` directive — if `docker compose` errors on it, run
+`docker compose -f backend/docker-compose.yml -f docker-compose.yml <cmd>`
+instead.)
 
 ### Access Points
 
-| Service             | URL                           |
-| ------------------- | ----------------------------- |
-| Frontend            | http://localhost:3000         |
-| Backend GraphQL     | http://localhost:3000/graphql |
-| Bull Board (Queues) | http://localhost:3001         |
-| AI Service          | http://localhost:4000         |
+| Service              | URL                             |
+| --------------------- | -------------------------------- |
+| Frontend              | http://localhost:3001            |
+| Backend GraphQL       | http://localhost:3000/graphql    |
+| Kibana                | http://localhost:5601            |
+| Bull Board (Queues)   | http://localhost:2000 (`cd backend && npm run bull-board`) |
+
+Ports are configurable via `BACKEND_PORT`/`FRONTEND_PORT` in `.env`.
 
 ## 📦 Project Structure
 
 ```
 muzo/
-├── frontend/          # React 19 + Vite + TanStack
-├── backend/           # NestJS + GraphQL + Prisma
-├── ai-service/        # Python Flask AI analysis
+├── frontend/          # React 19 + Vite + TanStack (Dockerfile: local container)
+├── backend/           # NestJS + GraphQL + Prisma (Dockerfile: local container)
+├── ai-service/        # Python Flask AI analysis (deployed remotely, see ai-service/docker/)
 ├── model-trainer/     # ML model training scripts
+├── scripts/           # install.sh / start.sh / stop.sh / update.sh
+├── docker-compose.yml # Root orchestration (backend + frontend + infra)
 ├── docs/              # Documentation & screenshots
 └── specs/             # Feature specifications
 ```
@@ -154,7 +174,7 @@ muzo/
 | **Frontend**    | React 19, Vite, TanStack Router/Query, Tailwind CSS, Shadcn/ui, Recharts, p5.js |
 | **Backend**     | NestJS 11, GraphQL (Apollo), Prisma, BullMQ, Socket.IO, Elasticsearch           |
 | **AI Service**  | Python, Flask, librosa, PyTorch, audioflux, MusicBrainz, Discogs                |
-| **Database**    | SQLite (Prisma), Redis                                                          |
+| **Database**    | PostgreSQL (Prisma), Redis                                                      |
 | **ML Training** | PyTorch, scikit-learn, librosa                                                  |
 
 ## 📋 Roadmap & TODOs

@@ -111,7 +111,7 @@ export function PlaylistCard({ playlist, onViewDetails, onCardClick }: PlaylistC
       const ok = await downloadPlaylistMutation.mutateAsync(playlist.id);
       if (ok) {
         alert(
-          'Playlist exported by copying audio files. Check /Users/alessandro/Music/playlists-exports on the server.',
+          "Playlist exported by copying audio files to the server's configured export folder.",
         );
       } else {
         alert('Failed to export playlist.');

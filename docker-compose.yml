@@ -1,0 +1,50 @@
+# Root orchestration for the full distributable Muzo stack: this includes
+# backend/docker-compose.yml (postgres, redis, elasticsearch, kibana) and
+# adds the backend and frontend app containers on top. ai-service is
+# intentionally NOT here -- it runs as a separately-deployed Hugging Face
+# Inference Endpoint (see ai-service/docker/deploy-hf.sh); this stack only
+# needs AI_SERVICE_URL/AI_SERVICE_TOKEN pointing at it.
+#
+# `include:` requires Docker Compose v2.20+. If your Docker Desktop bundles
+# an older Compose, run the two files layered instead:
+#   docker compose -f backend/docker-compose.yml -f docker-compose.yml <cmd>
+
+include:
+  - backend/docker-compose.yml
+
+services:
+  backend:
+    build:
+      context: ./backend
+    container_name: muzo-backend
+    env_file: .env
+    environment:
+      - DATABASE_URL=${DATABASE_URL:-postgresql://muzo:muzo@postgres:5432/muzo}
+      - REDIS_HOST=${REDIS_HOST:-redis}
+      - ELASTICSEARCH_NODE=${ELASTICSEARCH_NODE:-http://elasticsearch:9200}
+    ports:
+      - '${BACKEND_PORT:-3000}:3000'
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - muzo-network
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:3000}
+    container_name: muzo-frontend
+    ports:
+      - '${FRONTEND_PORT:-3001}:80'
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - muzo-network
