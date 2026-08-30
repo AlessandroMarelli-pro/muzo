@@ -30,7 +30,13 @@ DEPLOY_ARGS=(
   --task custom
   --accelerator cpu
   --instance-type intel-spr
-  --instance-size x4
+  # x8 = 16 vCPU / 32 GB. Runs 2 gunicorn workers (WEB_CONCURRENCY=2) each pinned
+  # to ANALYSIS_THREADS=8 -> 2 concurrent analyses, 8 threads each, exactly
+  # filling 16 vCPU with no oversubscription. 2x per-replica throughput vs the
+  # old x4 / 1-worker setup. (Safe now that workers are gthread + each serializes
+  # its own analyses behind a per-process lock -- the old 2-sync-worker problem
+  # was CPU contention on 8 vCPU + health-check starvation, both gone here.)
+  --instance-size x8
   --region eu-west-1
   --vendor aws
   --custom-image "$IMAGE"
@@ -49,15 +55,15 @@ DEPLOY_ARGS=(
   --scaling-metric pendingRequests
   --scaling-threshold 2.5
   --env ENABLE_SIMPLE_ANALYSIS=true
-  # ONE gunicorn worker per replica (gthread class -- see gunicorn.conf.py). The
-  # per-file model inference is serialized behind a process-wide lock so it runs
-  # at full speed; a 2nd worker only added CPU contention (per-file 22s -> 31s)
-  # and, being blocked in native TF code, couldn't answer /api/v1/health -> HF
-  # killed the replica mid-batch. Cross-replica parallelism comes from the
-  # scaler below.
-  --env WEB_CONCURRENCY=1
-  # Native thread pools (TF / OpenMP / BLAS / torch) = the full 8 vCPU, since
-  # only one analysis runs at a time. See src/config/threads.py.
+  # 2 gunicorn workers per replica (gthread -- see gunicorn.conf.py). Each worker
+  # serializes its own analyses behind a per-process lock, so this is 2
+  # concurrent analyses per replica; with ANALYSIS_THREADS=8 that's 16 threads on
+  # the x8's 16 vCPU -- no oversubscription. gthread keeps /api/v1/health
+  # answered during the native TF calls (the old 2-sync-worker health starvation
+  # is gone). Cross-replica parallelism still comes from the scaler below.
+  --env WEB_CONCURRENCY=2
+  # Native thread pools (TF / OpenMP / BLAS / torch) PER worker. 2 workers * 8 =
+  # 16 = the x8 vCPU count. See src/config/threads.py.
   --env ANALYSIS_THREADS=8
   # No Redis is reachable from the endpoint -- make ScanProgressPublisher /
   # RedisCache no-op instead of retrying a refused localhost connection on every

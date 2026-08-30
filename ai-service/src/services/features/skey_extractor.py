@@ -60,7 +60,17 @@ class SkeyExtractor:
         import torch
         from skey.key_detection import load_checkpoint, load_model_components
 
-        logger.info("Loading S-KEY model into memory")
+        # torch's CPU intra-op pool does NOT reliably pick up OMP_NUM_THREADS
+        # (which src/config/threads.py sets) -- without this call S-KEY inference
+        # runs on 1-2 threads and takes ~10s on the 8-vCPU box; pinned it's ~3s.
+        # Idempotent, cheap; safe to call on every (rare) model load.
+        from src.config.threads import analysis_threads
+
+        torch.set_num_threads(analysis_threads())
+
+        logger.info(
+            f"Loading S-KEY model into memory (torch threads={torch.get_num_threads()})"
+        )
         device = torch.device("cpu")
         checkpoint = load_checkpoint()
         hcqt, chromanet, crop_fn = load_model_components(checkpoint, device)

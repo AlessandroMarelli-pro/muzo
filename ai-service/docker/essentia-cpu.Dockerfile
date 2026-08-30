@@ -201,19 +201,32 @@ EXPOSE 4000
 # Native-stack thread + TF-logging defaults. src/config/threads.py (imported
 # first by app.py / wsgi.py) also sets these via os.environ.setdefault, but
 # having them in the environment covers `python3.11 app.py` and any import path
-# that pulls in TF before that module. ANALYSIS_THREADS=8 = the full intel-spr
-# x4 vCPU count: one gunicorn worker runs one analysis at a time (analysis lock,
-# see gunicorn.conf.py), so it gets the whole box. Override via `--env`.
+# that pulls in TF before that module. ANALYSIS_THREADS=8 = per-worker thread
+# budget; each gunicorn worker serializes its analyses behind a lock
+# (gunicorn.conf.py), so on the `intel-spr x8` deploy 2 workers * 8 threads fill
+# the 16 vCPU without oversubscription. Override via `--env` (keep
+# WEB_CONCURRENCY * ANALYSIS_THREADS ~= vCPU).
+#
+# TF_ENABLE_ONEDNN_OPTS=1: Sapphire Rapids has AVX-512 + AMX; oneDNN speeds the
+# TF model stages ~1.3-1.9x. It can shift low-order float bits (op reordering) --
+# below this pipeline's reported output precision, changes no label. Set to 0 at
+# deploy time if a consumer needs bit-exact reproducibility. See threads.py.
 ENV ANALYSIS_THREADS=8 \
     OMP_NUM_THREADS=8 \
     TF_NUM_INTRAOP_THREADS=8 \
     TF_NUM_INTEROP_THREADS=1 \
     TF_CPP_MIN_LOG_LEVEL=2 \
-    TF_ENABLE_ONEDNN_OPTS=0
+    TF_ENABLE_ONEDNN_OPTS=1
+
+# 2 gunicorn workers by default -- matches the `intel-spr x8` deploy (16 vCPU /
+# 2 workers * ANALYSIS_THREADS=8). Baked into the image (not just the deploy
+# script) because `hf endpoints update` has no --env flag, so a plain redeploy
+# can't change it -- only a delete+recreate could. `hf endpoints deploy --env
+# WEB_CONCURRENCY=1` still overrides for a smaller (x4) instance.
+ENV WEB_CONCURRENCY=2
 
 # Run under gunicorn (multiple worker processes) rather than `python app.py`'s
-# single-threaded Werkzeug dev server, so one HF endpoint replica can serve
-# concurrent batch-analysis requests. Worker count / timeout knobs live in
+# single-threaded Werkzeug dev server. Worker count / timeout knobs live in
 # gunicorn.conf.py (WEB_CONCURRENCY env). `python3.11 app.py` still works for
 # local dev.
 CMD ["python3.11", "-m", "gunicorn", "-c", "gunicorn.conf.py", "wsgi:app"]

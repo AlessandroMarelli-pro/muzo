@@ -6,44 +6,43 @@ Why this exists: the default `python app.py` runs Werkzeug's dev server, which
 serves one request at a time AND blocks health checks while an analysis runs.
 
 Concurrency model (revised after measuring under real scan load):
-  ONE worker, gthread class, a few threads, and ANALYSIS_THREADS pinned to the
-  whole box (8). The actual per-file analysis is serialized behind a process-wide
-  lock (src/api/batch_simple_analysis.py) so exactly one analysis runs at a time
-  and gets all 8 vCPUs -- no CPU contention, predictable ~18-20s/file.
+  N gthread workers (WEB_CONCURRENCY), each pinned to ANALYSIS_THREADS native
+  threads, sized so `WEB_CONCURRENCY * ANALYSIS_THREADS <= vCPU`. Each worker
+  serializes ITS OWN analyses behind a per-process lock
+  (src/api/batch_simple_analysis.py) -- so a replica runs WEB_CONCURRENCY
+  analyses at once, each with the full ANALYSIS_THREADS and no cross-analysis CPU
+  contention. Current deploy: `intel-spr x8` (16 vCPU), WEB_CONCURRENCY=2,
+  ANALYSIS_THREADS=8 -> 2 analyses/replica, predictable ~15-18s/file each.
+  (A single-worker `x4` deploy is the fallback: WEB_CONCURRENCY=1,
+  ANALYSIS_THREADS=8.)
 
-  Earlier this ran 2 `sync` workers. Measured result: two concurrent batch
-  requests each spun their own TF/torch/librosa thread pools and oversubscribed
-  the 8 vCPUs -- per-stage times ~2x'd (DEAM hit 12s, per-file 31s), and because
-  a `sync` worker blocked in native TF code cannot accept the /api/v1/health
-  TCP connection, HF's health probe timed out and killed the replica mid-batch
-  ("Handling signal: term").
+  The constraint is `workers * threads <= vCPU`, NOT "one worker". Earlier this
+  ran 2 `sync` workers on an x4 (8 vCPU) with UNPINNED thread pools: each spun
+  ~8-wide TF/torch/librosa pools -> ~16 threads on 8 cores, per-stage times ~2x'd
+  (DEAM hit 12s, per-file 31s). And a `sync` worker blocked in native TF code
+  can't accept the /api/v1/health TCP connection -> HF's probe timed out and
+  killed the replica mid-batch. Both are fixed here: thread pinning keeps
+  workers*threads == vCPU, and gthread lets a sibling thread answer /health
+  during the analysis's native GIL-release windows. The per-process lock still
+  prevents a single worker from ever running two analyses at once, so gthread
+  never parallelizes the (not-actually-thread-safe) native audio code within a
+  worker.
 
-  gthread fixes the health-check starvation: the analysis holds the GIL only in
-  Python, releasing it during the long native TF/numpy calls, so a sibling
-  gthread accepts and answers the (trivial, sub-ms) health request in those
-  windows. The analysis lock keeps two analyses from ever running concurrently,
-  so gthread never actually parallelizes the native audio code (which is why the
-  old "sync only, native libs aren't thread-safe" rule doesn't bite here --
-  audioflux computation isn't on the current request path anyway; see
-  src/services/simple_audio_loader.py, only the dead smart-loading helpers call
-  it).
-
-  Cross-replica parallelism still comes from HF autoscaling (min/max-replica in
+  Cross-replica parallelism comes from HF autoscaling (min/max-replica in
   create-hf-endpoint.sh) -- the backend's AUDIO_SCAN_CONCURRENCY requests queue
-  on the lock within a replica and spread across replicas via HF's scaler.
+  on the per-worker locks and spread across replicas via HF's scaler.
 
-Memory: the single worker lazily loads one copy of the essentia/TF + torch
-models (class-level singletons per process). ~2-3 GB resident on the HF
-`intel-spr x4` (8 vCPU / 16 GB) -- one worker is well within budget.
+Memory: each worker lazily loads its own copy of the essentia/TF + torch models
+(class-level singletons per process), ~2-3 GB resident. 2 workers ~= 5-6 GB on
+the `intel-spr x8` (32 GB) -- well within budget.
 
-Warmup: the post_fork hook warms every model before the worker takes traffic --
-otherwise the first real request pays ~15-20s of graph loading on top of the
-analysis. max_requests is high so the re-warm on recycle is rare. Disable with
-WARM_MODELS_ON_FORK=false.
+Warmup: the post_fork hook warms every model in each forked worker before it
+takes traffic -- otherwise the first real request pays ~15-20s of graph loading
+on top of the analysis. max_requests is high so the re-warm on recycle is rare.
+Disable with WARM_MODELS_ON_FORK=false.
 
 Threads: src/config/threads.py (imported first by app.py / wsgi.py) pins the
-native pools to ANALYSIS_THREADS. With one worker holding the analysis lock,
-ANALYSIS_THREADS should be the full vCPU count (8).
+native pools to ANALYSIS_THREADS. Set it to vCPU / WEB_CONCURRENCY.
 """
 
 import os
@@ -51,9 +50,10 @@ import os
 # HF Inference Endpoint expects the app on the --port passed at deploy time (4000).
 bind = f"0.0.0.0:{os.getenv('FLASK_PORT', '4000')}"
 
-# One worker (see module docstring). Analyses are serialized behind an in-process
-# lock, so a second worker would only add model-memory pressure and CPU
-# contention. Cross-replica parallelism comes from HF autoscaling.
+# WEB_CONCURRENCY workers (see module docstring). Each serializes its own
+# analyses behind a per-process lock, so this is the per-replica analysis
+# concurrency. Keep WEB_CONCURRENCY * ANALYSIS_THREADS <= vCPU. Default 1 for a
+# bare `python -m gunicorn` run; the x8 deploy passes 2.
 workers = int(os.getenv("WEB_CONCURRENCY", "1"))
 
 # gthread, not sync: a sync worker blocked in a 20-30s native analysis cannot

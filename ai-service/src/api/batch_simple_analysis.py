@@ -23,13 +23,14 @@ from src.services.simple_analysis import SimpleAnalysisService
 from src.utils.performance_optimizer import monitor_performance
 from src.utils.scan_progress_publisher import ScanProgressPublisher
 
-# Process-wide analysis lock. gunicorn runs ONE gthread worker (see
-# gunicorn.conf.py) -- the CPU-bound model inference for a batch must run one at
-# a time so it gets the whole box (ANALYSIS_THREADS=8) instead of two batches
-# fighting over 8 vCPUs (measured: per-stage times ~2x, per-file 22s -> 31s).
-# Concurrent batch POSTs from the backend queue here; their gthreads are cheap
-# to hold while blocked, and OTHER gthreads stay free to answer /api/v1/health
-# (which is what a blocked sync worker couldn't do -> HF killed the replica).
+# Per-process analysis lock. Each gunicorn worker holds its own (gthread class,
+# see gunicorn.conf.py) -- within a worker the CPU-bound model inference runs one
+# batch at a time so it gets its full ANALYSIS_THREADS slice, instead of two
+# batches in the same process fighting over the same cores (measured: per-stage
+# times ~2x, per-file 22s -> 31s). Per-replica concurrency is WEB_CONCURRENCY
+# (one analysis per worker); sizing keeps WEB_CONCURRENCY * ANALYSIS_THREADS <=
+# vCPU. Concurrent batch POSTs queue here; their gthreads are cheap to hold while
+# blocked, and OTHER gthreads stay free to answer /api/v1/health.
 _ANALYSIS_LOCK = threading.Lock()
 
 
