@@ -170,9 +170,11 @@ RUN python3 waf configure --with-tensorflow --with-python && \
 # essentia-libs stage header comment for why that match matters (both this
 # nvidia/cuda tag and essentia-libs' plain ubuntu:22.04 are glibc 2.35).
 # TensorFlow 2.14 targets CUDA 11.8 + cuDNN 8.7 (tensorflow.org/install/
-# source#gpu) -- this is the 11.8.0-cudnn8 tag. TF dlopen()s CUDA libraries by
-# exact SONAME at runtime (libcudart.so.11); the tensorflow[and-cuda] extra
-# installed below also bundles them as pip packages, so this is belt-and-braces.
+# source#gpu) -- this is the 11.8.0-cudnn8 tag. TF 2.14's wheel dlopen()s the
+# CUDA libraries from the system by exact SONAME (libcudart.so.11), which this
+# base provides; 2.14 does not bundle nvidia-*-cu pip packages (that began with
+# TF 2.15) and its `[and-cuda]` extra is broken on PyPI (pulls a nonexistent
+# tensorrt), so the base image IS the CUDA runtime here.
 FROM nvidia/cuda:11.8.0-cudnn8-runtime-ubuntu22.04 AS runtime
 ENV DEBIAN_FRONTEND=noninteractive
 ARG TENSORFLOW_VERSION=2.14.1
@@ -213,14 +215,18 @@ COPY --from=essentia-libs /usr/local/include /usr/local/include
 # _essentia.so was linked against in the build stage. update-alternatives points
 # `python3` at python3.11 so the script (hardcoded `PYTHON=python3`) finds it.
 COPY --from=essentia-libs /opt/essentia/src/3rdparty/tensorflow /opt/essentia-tf-setup
-# tensorflow[and-cuda]: bundle the CUDA 11.8 / cuDNN 8.7 / cuBLAS / cuFFT /
-# cuPTI / NCCL runtime libs as pip packages rather than relying on exactly what
-# the nvidia/cuda:11.8.0-cudnn8-runtime base ships (cuPTI in particular is not
-# always present in -runtime). Same TENSORFLOW_VERSION as the build stage so
-# essentia's _essentia.so links against the identical
+# Plain `tensorflow` (NOT the `[and-cuda]` extra -- that pulls
+# `tensorrt==8.5.3.1`, which is not on PyPI, so the install fails outright).
+# TF 2.14's wheel expects CUDA/cuDNN from the system rather than bundling
+# nvidia-*-cu12 pip packages (that started with 2.15) -- the
+# nvidia/cuda:11.8.0-cudnn8-runtime base supplies exactly that: libcudart.so.11,
+# cuDNN 8, plus the cuBLAS/cuFFT/cuSPARSE/cuSOLVER runtime libs. cuPTI (profiling
+# only) is not in -runtime, but TF only needs it for the profiler / XLA JIT,
+# which TF_XLA_FLAGS=--tf_xla_auto_jit=0 above disables. Same TENSORFLOW_VERSION
+# as the build stage so essentia's _essentia.so links against the identical
 # libtensorflow_framework.so.2 ABI.
 RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.11 1 && \
-    python3.11 -m pip install --no-cache-dir "tensorflow[and-cuda]==${TENSORFLOW_VERSION}" && \
+    python3.11 -m pip install --no-cache-dir "tensorflow==${TENSORFLOW_VERSION}" && \
     (cd /opt/essentia-tf-setup && sh setup_from_python.sh) && \
     rm -rf /opt/essentia-tf-setup && \
     ldconfig
