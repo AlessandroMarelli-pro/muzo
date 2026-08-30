@@ -69,6 +69,12 @@ DEPLOY_ARGS=(
   # RedisCache no-op instead of retrying a refused localhost connection on every
   # call. Real-time scan progress is disabled as a result (it already was).
   --env DISABLE_REDIS=true
+  # S-KEY runs on a bounded mid-track window (it's length-linear and was trained
+  # on 15s segments, unlike the patch-pooling discogs/tempo/DEAM models). 90s
+  # from 30s in cuts the skey_generation stage ~3-4x. SKEY_WINDOW_S=0 -> full
+  # track. Also code defaults in src/services/simple_analysis.py.
+  --env SKEY_WINDOW_S=90
+  --env SKEY_SKIP_INTRO_S=30
   --type authenticated
 )
 
