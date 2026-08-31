@@ -103,6 +103,7 @@ model MusicTrack {
   trackGenres           TrackGenre[]
   trackSubgenres        TrackSubgenre[]
   queue                 Queue?
+  cosineTrackMatch      CosineTrackMatch?
 
 
   // Indexes for query performance
@@ -281,6 +282,25 @@ model ImageSearch {
   @@index([trackId])
   @@index([status])
   @@map("image_searches")
+}
+
+// Maps a local MusicTrack to its matched cosine.club track id, so recommendation
+// lookups skip the expensive searchTrack / YouTube-fallback resolution on every
+// request. Cache-forever-until-miss: a stale row is deleted (not TTL'd) when the
+// stored id yields no similar tracks, forcing a re-resolution next time.
+model CosineTrackMatch {
+  id            String   @id @default(uuid())
+  musicTrackId  String   @unique
+  cosineTrackId String
+  matchMethod   String   // "search" | "youtube-lookup"
+  createdAt   DateTime @default(now())
+  createdById   String @default("userId")
+  updatedAt   DateTime? @updatedAt
+  updatedById  String?
+
+  track MusicTrack @relation(fields: [musicTrackId], references: [id], onDelete: Cascade)
+
+  @@map("cosine_track_matches")
 }
 
 model SavedFilter {

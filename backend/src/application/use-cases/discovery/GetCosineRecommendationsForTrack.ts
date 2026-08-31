@@ -5,6 +5,8 @@ import { MusicTrackId } from 'src/kernel/ids';
 import type { CosineSimilarTrack, ICosineProvider } from '../../ports/infrastructure/ICosineProvider';
 import type { IMusicTrackRepository } from '../../ports/repositories/IMusicTrackRepository';
 import type { IYouTubeSyncProvider } from '../../ports/infrastructure/IYouTubeSyncProvider';
+import type { ICosineTrackMatchRepository } from '../../ports/repositories/ICosineTrackMatchRepository';
+import { forgetCosineTrackMatch, resolveCosineTrackId } from './resolve-cosine-track-id';
 
 const RECOMMENDATIONS_LIMIT = 20;
 
@@ -13,6 +15,7 @@ export class GetCosineRecommendationsForTrackUseCase {
     private readonly musicTrackRepository: IMusicTrackRepository,
     private readonly cosineProvider: ICosineProvider,
     private readonly youtubeSyncProvider: IYouTubeSyncProvider,
+    private readonly cosineTrackMatchRepository: ICosineTrackMatchRepository,
     @Inject(LOGGER_FACTORY)
     loggerFactory: { createLogger: (name: string) => ILogger },
     @Inject(LOGGER)
@@ -28,64 +31,46 @@ export class GetCosineRecommendationsForTrackUseCase {
       return [];
     }
 
-    this.logger.debug('Searching Cosine for track', {
-      trackId,
+    const deps = {
+      cosineProvider: this.cosineProvider,
+      youtubeSyncProvider: this.youtubeSyncProvider,
+      cosineTrackMatchRepository: this.cosineTrackMatchRepository,
+      logger: this.logger,
+    };
+    const resolveParams = {
+      musicTrackId: trackId,
       artist: track.artist,
       title: track.title,
-    });
+      durationSeconds: track.technicalInfo?.duration ?? 0,
+      userId,
+    };
 
-    let cosineTrack = await this.cosineProvider.searchTrack(track.artist, track.title);
-    if (!cosineTrack) {
-      this.logger.info('No strict match found on Cosine for track, trying YouTube fallback', {
-        trackId,
-        artist: track.artist,
-        title: track.title,
-      });
-      try {
-        const match = await this.youtubeSyncProvider.findBestMatch(
-          track.artist,
-          track.title,
-          track.technicalInfo?.duration ?? 0,
-          userId,
-        );
-        if (match.videoId) {
-          cosineTrack = await this.cosineProvider.lookupTrackByUrl(
-            `https://www.youtube.com/watch?v=${match.videoId}`,
-          );
-        }
-      } catch (error) {
-        this.logger.warn('YouTube fallback lookup failed for track', {
-          trackId,
-          artist: track.artist,
-          title: track.title,
-          error: error instanceof Error ? error.message : String(error),
-        });
-      }
-    }
-    if (!cosineTrack) {
-      this.logger.info('No match found on Cosine for track', {
-        trackId,
-        artist: track.artist,
-        title: track.title,
-      });
+    const resolved = await resolveCosineTrackId(deps, resolveParams);
+    if (!resolved) {
       return [];
     }
 
-    this.logger.debug('Track matched on Cosine', {
-      trackId,
-      artist: track.artist,
-      title: track.title,
-      cosineTrackId: cosineTrack.id,
-    });
-
-    const similarTracks = await this.cosineProvider.getSimilarTracks(
-      cosineTrack.id,
+    let similarTracks = await this.cosineProvider.getSimilarTracks(
+      resolved.id,
       RECOMMENDATIONS_LIMIT,
     );
 
+    // A cached id that no longer yields results is stale — drop it and re-resolve once.
+    if (similarTracks.length === 0 && resolved.fromCache) {
+      await forgetCosineTrackMatch(deps, trackId);
+      const reResolved = await resolveCosineTrackId(deps, resolveParams);
+      if (!reResolved) {
+        return [];
+      }
+      similarTracks = await this.cosineProvider.getSimilarTracks(
+        reResolved.id,
+        RECOMMENDATIONS_LIMIT,
+      );
+    }
+
     this.logger.info('Fetched Cosine recommendations for track', {
       trackId,
-      cosineTrackId: cosineTrack.id,
+      cosineTrackId: resolved.id,
       recommendationCount: similarTracks.length,
     });
 

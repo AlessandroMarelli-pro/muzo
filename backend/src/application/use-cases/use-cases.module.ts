@@ -20,6 +20,7 @@ import { HQ_AUDIO_BATCH_PROGRESS_SUBSCRIBER } from '../ports/infrastructure/IHqA
 import { ID3_READER } from '../ports/infrastructure/IId3Reader';
 import { IMAGE_FILE_READER } from '../ports/infrastructure/IImageFileReader';
 import { COSINE_PROVIDER } from '../ports/infrastructure/ICosineProvider';
+import { COSINE_TRACK_MATCH_REPOSITORY } from '../ports/repositories/ICosineTrackMatchRepository';
 import { LIBRARY_SCAN_SCHEDULER_PRODUCER } from '../ports/infrastructure/ILibraryScanSchedulerProducer';
 import { LOGGER } from '../ports/infrastructure/ILogger';
 import { LOGGER_FACTORY } from '../ports/infrastructure/ILoggerFactory';
@@ -403,6 +404,7 @@ const useCasesProviders = [
     COSINE_PROVIDER,
     MUSIC_TRACK_REPOSITORY,
     YOUTUBE_SYNC_PROVIDER,
+    COSINE_TRACK_MATCH_REPOSITORY,
     LOGGER_FACTORY,
     LOGGER,
   ]),
@@ -410,6 +412,7 @@ const useCasesProviders = [
     MUSIC_TRACK_REPOSITORY,
     COSINE_PROVIDER,
     YOUTUBE_SYNC_PROVIDER,
+    COSINE_TRACK_MATCH_REPOSITORY,
     LOGGER_FACTORY,
     LOGGER,
   ]),

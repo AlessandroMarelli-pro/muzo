@@ -12,6 +12,7 @@ import { METRICS_QUERY } from 'src/application/ports/queries/IMetricsQuery';
 import { PLAYLIST_STATS_QUERY } from 'src/application/ports/queries/IPlaylistStatsQuery';
 import { RECOMMENDATION_DATA_PORT } from 'src/application/ports/queries/IRecommendationDataPort';
 import { SAVED_FILTER_QUERY } from 'src/application/ports/queries/ISavedFilterQuery';
+import { COSINE_TRACK_MATCH_REPOSITORY } from 'src/application/ports/repositories/ICosineTrackMatchRepository';
 import { IMAGE_SEARCH_REPOSITORY } from 'src/application/ports/repositories/IImageSearchRepository';
 import { MUSIC_LIBRARY_REPOSITORY } from 'src/application/ports/repositories/IMusicLibraryRepository';
 import { MUSIC_TRACK_REPOSITORY } from 'src/application/ports/repositories/IMusicTrackRepository';
@@ -31,6 +32,7 @@ import { MetricsQuery } from './queries/metrics/metrics.query';
 import { PlaylistStatsQuery } from './queries/playlist/playlist-stats.query';
 import { SavedFilterQuery } from './queries/saved-filter/saved-filter.query';
 import { RecommendationDataAdapter } from './recommendation/recommendation-data.adapter';
+import { CosineTrackMatchRepository } from './repositories/cosine-track-match/cosine-track-match.repository';
 import { ImageSearchRepository } from './repositories/image-search/image-search.repository';
 import { MusicLibraryRepository } from './repositories/music-library/music-library.repository';
 import { MusicTrackRepository } from './repositories/music-track/music-track.repository';
@@ -73,6 +75,7 @@ const queriesProviders = [
   { provide: SAVED_FILTER_QUERY, useClass: SavedFilterQuery },
   { provide: SAVED_FILTER_REPOSITORY, useClass: SavedFilterRepository },
   { provide: IMAGE_SEARCH_REPOSITORY, useClass: ImageSearchRepository },
+  { provide: COSINE_TRACK_MATCH_REPOSITORY, useClass: CosineTrackMatchRepository },
   { provide: IMAGE_FILE_READER, useClass: FileSystemImageReader },
   { provide: ID3_READER, useClass: Id3ReaderAdapter },
   { provide: METRICS_QUERY, useClass: MetricsQuery },

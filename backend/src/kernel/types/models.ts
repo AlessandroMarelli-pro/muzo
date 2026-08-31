@@ -1,4 +1,5 @@
 import {
+  CosineTrackMatchId,
   GenreId,
   HiddenMusicTrackId,
   ImageSearchId,
@@ -18,6 +19,7 @@ import {
 import { modelIdFactory } from '../ids/factory';
 import { modelFactory } from './factory';
 import {
+  CosineTrackMatch,
   Genre,
   HiddenMusicTrack,
   ImageSearch,
@@ -50,6 +52,9 @@ export const models = {
   library: modelFactory<MusicLibrary, MusicLibraryId>(modelIdFactory('MusicLibrary')),
   queueItem: modelFactory<QueueItem, QueueItemId>(modelIdFactory('QueueItem')),
   imageSearch: modelFactory<ImageSearch, ImageSearchId>(modelIdFactory('ImageSearch')),
+  cosineTrackMatch: modelFactory<CosineTrackMatch, CosineTrackMatchId>(
+    modelIdFactory('CosineTrackMatch'),
+  ),
   hiddenMusicTrack: modelFactory<HiddenMusicTrack, HiddenMusicTrackId>(
     modelIdFactory('HiddenMusicTrack'),
   ),

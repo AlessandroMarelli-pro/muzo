@@ -1,6 +1,7 @@
 import { Maybe, MaybeUndefined } from '../common';
 import type {
   Brand,
+  CosineTrackMatchId,
   GenreId,
   HiddenMusicTrackId,
   ImageSearchId,
@@ -32,6 +33,7 @@ export type Model =
   | PlaylistSorting
   | MusicLibrary
   | ImageSearch
+  | CosineTrackMatch
   | TrackGenre
   | Genre
   | TrackSubgenre
@@ -243,6 +245,12 @@ export type ImageSearch = Readonly<ModelBase<ImageSearchId>> & {
   imagePath: string;
   imageUrl: string;
   error: Maybe<string>;
+};
+
+export type CosineTrackMatch = Readonly<ModelBase<CosineTrackMatchId>> & {
+  musicTrackId: MusicTrackId;
+  cosineTrackId: string;
+  matchMethod: 'search' | 'youtube-lookup';
 };
 
 export type TrackGenre = Readonly<ModelBase<TrackGenreId>> & {

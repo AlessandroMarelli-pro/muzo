@@ -18,6 +18,8 @@ export type MusicLibraryId = Brand<string, 'MusicLibraryId'>;
 
 export type ImageSearchId = Brand<string, 'ImageSearchId'>;
 
+export type CosineTrackMatchId = Brand<string, 'CosineTrackMatchId'>;
+
 export type TrackGenreId = Brand<string, 'TrackGenreId'>;
 
 export type TrackSubgenreId = Brand<string, 'TrackSubgenreId'>;
