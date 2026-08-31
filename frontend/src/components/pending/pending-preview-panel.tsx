@@ -102,33 +102,46 @@ export function PendingPreviewPanel({
 
   return (
     <aside className={cn('space-y-4 rounded-lg border bg-card p-4', className)}>
-      <div className="relative aspect-square w-full overflow-hidden rounded-lg bg-muted">
-        {track.imagePath ? (
-          <img
-            src={apiUrl(`/api/images/serve?imagePath=${track.imagePath}`)}
-            alt=""
-            className="h-full w-full object-cover"
-          />
-        ) : (
-          <div className="flex h-full w-full items-center justify-center">
-            <Music className="h-10 w-10 text-muted-foreground" aria-hidden />
-          </div>
-        )}
-        <Button
-          size="icon"
-          variant="secondary"
-          className="absolute bottom-3 left-3 h-11 w-11 rounded-full shadow-md"
-          onClick={() => onTogglePlay(track)}
-          aria-label={isThisPlaying ? `Pause ${track.title}` : `Play ${track.title}`}
-        >
-          {isThisPlaying ? (
-            <Pause className="h-5 w-5" aria-hidden />
+      <div className="inline-flex justify-between">
+        <div className="relative aspect-square w-2/3 overflow-hidden rounded-lg bg-muted">
+          {track.imagePath ? (
+            <img
+              src={apiUrl(`/api/images/serve?imagePath=${track.imagePath}`)}
+              alt=""
+              className="h-full w-full object-cover"
+            />
           ) : (
-            <Play className="h-5 w-5" aria-hidden />
+            <div className="flex h-full w-full items-center justify-center">
+              <Music className="h-10 w-10 text-muted-foreground" aria-hidden />
+            </div>
           )}
-        </Button>
+          <Button
+            size="icon"
+            variant="secondary"
+            className="absolute bottom-3 left-3 h-11 w-11 rounded-full shadow-md"
+            onClick={() => onTogglePlay(track)}
+            aria-label={isThisPlaying ? `Pause ${track.title}` : `Play ${track.title}`}
+          >
+            {isThisPlaying ? (
+              <Pause className="h-5 w-5" aria-hidden />
+            ) : (
+              <Play className="h-5 w-5" aria-hidden />
+            )}
+          </Button>
+        </div>
+        <div className="grid grid-rows-3 gap-3 rounded-md bg-muted/50 p-3 h-auto w-30">
+          <Stat
+            label="BPM"
+            value={
+              typeof track.mfTempo === 'number' && track.mfTempo > 0
+                ? String(Math.round(track.mfTempo))
+                : '—'
+            }
+          />
+          <Stat label="Key" value={camelot?.label ?? '—'} />
+          <Stat label="Length" value={formatTime(track.duration ?? 0)} />
+        </div>
       </div>
-
       <div className="space-y-1">
         <div className="flex items-start gap-2">
           <h2 className="font-semibold text-lg capitalize leading-tight">{track.title}</h2>
@@ -151,19 +164,6 @@ export function PendingPreviewPanel({
           ))}
         </div>
       )}
-
-      <div className="grid grid-cols-3 gap-3 rounded-md bg-muted/50 p-3">
-        <Stat
-          label="BPM"
-          value={
-            typeof track.mfTempo === 'number' && track.mfTempo > 0
-              ? String(Math.round(track.mfTempo))
-              : '—'
-          }
-        />
-        <Stat label="Key" value={camelot?.label ?? '—'} />
-        <Stat label="Length" value={formatTime(track.duration ?? 0)} />
-      </div>
 
       <div className="space-y-2">
         {[

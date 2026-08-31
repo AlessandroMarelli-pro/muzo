@@ -5,8 +5,6 @@ import {
   DataTableActionBarAction,
   DataTableActionBarSelection,
 } from '@/components/data-table/data-table-action-bar';
-import { DataTableSortList } from '@/components/data-table/data-table-sort-list';
-import { DataTableToolbar } from '@/components/data-table/data-table-toolbar';
 import { Separator } from '@/components/ui/separator';
 import { useDataTable } from '@/hooks/use-data-table';
 import type { FilterState } from '@/hooks/useFiltering';
@@ -68,7 +66,6 @@ export function PendingTable({
     columns,
     pageCount,
     initialState: {
-      columnPinning: { right: ['actions'] },
       pagination: { pageIndex: 0, pageSize: initialPageSize },
       columnVisibility: {
         mfDanceabilityFeeling: false,
@@ -136,10 +133,6 @@ export function PendingTable({
           </DataTableActionBarAction>
         </DataTableActionBar>
       }
-    >
-      <DataTableToolbar table={table}>
-        <DataTableSortList table={table} />
-      </DataTableToolbar>
-    </DataTable>
+    />
   );
 }

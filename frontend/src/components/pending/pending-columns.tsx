@@ -105,7 +105,7 @@ export function buildPendingColumns({
         </div>
       ),
       meta: { label: 'Title' },
-      size: 320,
+      size: 250,
     },
     {
       id: 'artist',
@@ -117,7 +117,7 @@ export function buildPendingColumns({
         </div>
       ),
       meta: { label: 'Artist' },
-      size: 230,
+      size: 170,
     },
     {
       id: 'genres',
@@ -127,7 +127,7 @@ export function buildPendingColumns({
         <GenresBadge genres={(row.original.genres as string[]) ?? []} variant="secondary" />
       ),
       meta: { label: 'Genre' },
-      size: 140,
+      size: 120,
     },
     {
       id: 'mfTempo',
@@ -142,7 +142,7 @@ export function buildPendingColumns({
         );
       },
       meta: { label: 'BPM' },
-      size: 80,
+      size: 64,
     },
     {
       id: 'mfDanceabilityFeeling',
@@ -182,7 +182,7 @@ export function buildPendingColumns({
       id: 'actions',
       enableHiding: false,
       enableSorting: false,
-      size: 190,
+      size: 178,
       cell: ({ row }) => {
         const track = row.original;
         const isThisPlaying = currentTrackId === track.id && isPlaying;

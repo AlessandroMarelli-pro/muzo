@@ -244,21 +244,26 @@ export function PendingPage() {
 
   return (
     <PageShell>
-      <PageHeader title="Pending" description="Tracks you haven't rated yet.">
-        <Badge variant="outline">{total} pending</Badge>
-        <FilterButton />
-      </PageHeader>
-
       {tracks.length === 0 ? (
-        <NoData
-          Icon={Sparkles}
-          title="Nothing left to rate"
-          subtitle="Every track matching the current filters has been rated. Adjust the filters or scan a library to find more."
-          ButtonIcon={ListMusic}
-        />
+        <>
+          <div className="flex items-center justify-end gap-2">
+            <Badge variant="outline">{total} pending</Badge>
+            <FilterButton />
+          </div>
+          <NoData
+            Icon={Sparkles}
+            title="Nothing left to rate"
+            subtitle="Every track matching the current filters has been rated. Adjust the filters or scan a library to find more."
+            ButtonIcon={ListMusic}
+          />
+        </>
       ) : (
         <PageContent className="lg:grid lg:grid-cols-[minmax(0,1fr)_380px] lg:gap-6 xl:grid-cols-[minmax(0,1fr)_420px]">
-          <div className="min-w-0">
+          <div className="min-w-0 space-y-3">
+            <div className="flex items-center justify-end gap-2">
+              <Badge variant="outline">{total} pending</Badge>
+              <FilterButton />
+            </div>
             <PendingTable
               data={tracks}
               pageCount={totalPages}
