@@ -15,6 +15,7 @@ import {
   ChartTooltipContent,
 } from '@/components/ui/chart';
 import { useCachedSessionStorage } from '@/hooks/use-cached-storage';
+import { PageHeader, PageShell } from '@/components/layout/page-shell';
 import { Route } from '@/routes/index';
 import { BookHeadphones, ListMusic, Sparkles } from 'lucide-react';
 import { Skeleton } from '../ui/skeleton';
@@ -161,6 +162,7 @@ const TopGenres = ({ genres, isLoading }: { genres: TopGenre[]; isLoading: boole
 };
 
 export function Home() {
+  // The route loader blocks navigation until this data resolves.
   const isLoading = false;
   const loaderData = Route.useLoaderData();
   const recentlyPlayed = loaderData.recentlyPlayed;
@@ -174,12 +176,13 @@ export function Home() {
   const hasRecentTracks = (recentlyPlayed?.length ?? 0) > 0;
 
   return (
-    <main className="px-6 flex flex-col gap-4">
+    <PageShell>
       {/* Hero */}
-      <section aria-labelledby="home-heading" className="flex flex-col gap-4">
-        <p className="text-muted-foreground max-w-xl text-pretty">
-          Browse your library, discover with AI, and build playlists that match your taste.
-        </p>
+      <PageHeader
+        title="Home"
+        description="Browse your library, discover with AI, and build playlists that match your taste."
+      />
+      <section className="flex flex-col gap-4">
         <div className="flex flex-wrap gap-3">
           <Button asChild variant="default" size="sm" className="gap-2">
             <Link to="/music" preload="intent">
@@ -258,6 +261,6 @@ export function Home() {
           />
         </div>
       </section>
-    </main>
+    </PageShell>
   );
 }

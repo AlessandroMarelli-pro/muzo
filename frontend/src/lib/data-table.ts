@@ -12,6 +12,10 @@ export function getCommonPinningStyles<TData>({
   const isPinned = column.getIsPinned();
   const isLastLeftPinnedColumn = isPinned === 'left' && column.getIsLastColumn('left');
   const isFirstRightPinnedColumn = isPinned === 'right' && column.getIsFirstColumn('right');
+  // Only constrain width when a column opts in with an explicit `size`.
+  // TanStack falls back to a 150px default, which would otherwise force every
+  // column to the same width and clip content like durations and dates.
+  const hasExplicitSize = column.columnDef.size !== undefined;
 
   return {
     boxShadow: withBorder
@@ -23,10 +27,8 @@ export function getCommonPinningStyles<TData>({
       : undefined,
     left: isPinned === 'left' ? `${column.getStart('left')}px` : undefined,
     right: isPinned === 'right' ? `${column.getAfter('right')}px` : undefined,
-    opacity: isPinned ? 0.97 : 1,
     position: isPinned ? 'sticky' : 'relative',
-    background: isPinned ? 'var(--background)' : 'var(--background)',
-    width: column.getSize(),
+    width: hasExplicitSize ? column.getSize() : undefined,
     zIndex: isPinned ? 1 : 0,
   };
 }

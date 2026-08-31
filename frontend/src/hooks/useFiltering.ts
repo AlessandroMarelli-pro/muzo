@@ -69,7 +69,6 @@ const defaultFilterState: FilterState = {
 };
 
 const toFilterCriteriaInput = (filters: FilterState): FilterCriteriaInput => {
-  console.log('toFilterCriteriaInput', filters);
   return {
     genreIds: filters.genres,
     subgenreIds: filters.subgenres,
@@ -96,7 +95,6 @@ export const useFiltering = (options: UseFilteringOptions = {}) => {
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const resetFilters = () => {
-    console.log('resetFilters', filters.id);
     if (filters.id) {
       deleteActiveFilter.mutate(filters.id);
       setFilters(defaultFilterState);

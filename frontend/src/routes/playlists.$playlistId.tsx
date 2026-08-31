@@ -10,7 +10,6 @@ function PlaylistDetailPage() {
     navigate({ to: '/playlists' });
   };
 
-  console.log('PlaylistDetailPage rendered with playlistId:', playlistId);
 
   if (!playlistId) {
     console.error('No playlistId provided');

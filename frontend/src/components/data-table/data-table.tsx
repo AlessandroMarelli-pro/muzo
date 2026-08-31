@@ -1,4 +1,4 @@
-import { flexRender, type Table as TanstackTable } from '@tanstack/react-table';
+import { flexRender, type Row, type Table as TanstackTable } from '@tanstack/react-table';
 import type * as React from 'react';
 
 import { DataTablePagination } from '@/components/data-table/data-table-pagination';
@@ -18,6 +18,14 @@ interface DataTableProps<TData> extends React.ComponentProps<'div'> {
   table: TanstackTable<TData>;
   actionBar?: React.ReactNode;
   isLoading?: boolean;
+  /** Extra props per row, e.g. click handlers or focus state attributes. */
+  getRowProps?: (row: Row<TData>) => React.ComponentProps<'tr'>;
+  /**
+   * Lay the table out with `table-fixed`, dividing width by each column's
+   * declared `size`. Only enable when every visible column sets one —
+   * otherwise sizeless columns get equal shares and their content collides.
+   */
+  fixedLayout?: boolean;
 }
 
 export function DataTable<TData>({
@@ -26,26 +34,22 @@ export function DataTable<TData>({
   children,
   className,
   isLoading,
+  getRowProps,
+  fixedLayout = false,
   ...props
 }: DataTableProps<TData>) {
   return (
-    <div
-      className={cn(
-        'flex w-full flex-col gap-2.5 overflow-auto justify-center items-center',
-        className,
-      )}
-      {...props}
-    >
+    <div className={cn('flex w-full min-w-0 flex-col gap-2.5', className)} {...props}>
       {children}
-      <div className="overflow-hidden rounded-md border shadow-sm w-[99.5%] ">
-        <Table>
+      <div className="w-full overflow-x-auto rounded-md border shadow-sm">
+        <Table className={cn('w-full', fixedLayout && 'table-fixed')}>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
                   <TableHead
                     key={header.id}
-                    colSpan={header.colSpan}
+                    className={cn(header.column.getIsPinned() && 'bg-background')}
                     style={{
                       ...getCommonPinningStyles({ column: header.column }),
                     }}
@@ -60,24 +64,36 @@ export function DataTable<TData>({
           </TableHeader>
           <TableBody>
             {table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
-                <TableRow
-                  key={row.id}
-                  data-state={row.getIsSelected() && 'selected'}
-                  className="[content-visibility:auto] [contain-intrinsic-size:0_2.5rem]"
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell
-                      key={cell.id}
-                      style={{
-                        ...getCommonPinningStyles({ column: cell.column }),
-                      }}
-                    >
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))
+              table.getRowModel().rows.map((row) => {
+                const { className: rowClassName, ...rowProps } = getRowProps?.(row) ?? {};
+
+                return (
+                  <TableRow
+                    key={row.id}
+                    data-state={row.getIsSelected() && 'selected'}
+                    {...rowProps}
+                    className={cn(
+                      'group/row [content-visibility:auto] [contain-intrinsic-size:0_2.5rem]',
+                      rowClassName,
+                    )}
+                  >
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell
+                        key={cell.id}
+                        className={cn(
+                          cell.column.getIsPinned() &&
+                            'bg-background group-hover/row:bg-muted/50 group-data-[state=selected]/row:bg-muted group-data-[focused=true]/row:bg-accent/50',
+                        )}
+                        style={{
+                          ...getCommonPinningStyles({ column: cell.column }),
+                        }}
+                      >
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                );
+              })
             ) : (
               <TableRow>
                 <TableCell colSpan={table.getAllColumns().length} className="h-24 text-center">

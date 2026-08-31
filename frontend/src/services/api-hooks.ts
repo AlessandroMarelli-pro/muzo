@@ -143,7 +143,6 @@ export const useLibraryTracks = (id: string, pagination: CursorPaginationArgs) =
   return useInfiniteQuery({
     queryKey: queryKeys.libraryTracks(id, pagination),
     queryFn: async (d) => {
-      console.log(d.pageParam);
       const response = await graffleClient.request<{
         node: {
           tracks: CursorPaginatedTracks;
@@ -530,6 +529,45 @@ export const useDeleteLibrary = () => {
   });
 };
 
+/** Root key for every paginated pending-tracks query (prefix-matched). */
+const PENDING_TRACKS_ROOT_KEY = ['pendingTracks'] as const;
+
+type PendingTracksSnapshot = [readonly unknown[], PaginatedTracks | undefined][];
+
+/**
+ * Rating a track is what makes it non-pending, so drop it from every cached
+ * pending page immediately instead of waiting for the refetch. Returns the
+ * previous cache so `onError` can roll back.
+ */
+const removeTrackFromPendingCache = async (
+  queryClient: ReturnType<typeof useQueryClient>,
+  trackId: string,
+): Promise<{ previous: PendingTracksSnapshot }> => {
+  await queryClient.cancelQueries({ queryKey: PENDING_TRACKS_ROOT_KEY });
+
+  const previous = queryClient.getQueriesData<PaginatedTracks>({
+    queryKey: PENDING_TRACKS_ROOT_KEY,
+  });
+
+  queryClient.setQueriesData<PaginatedTracks>({ queryKey: PENDING_TRACKS_ROOT_KEY }, (old) => {
+    if (!old?.items) return old;
+
+    const items = old.items.filter((track) => track.id !== trackId);
+    if (items.length === old.items.length) return old;
+
+    return { ...old, items, total: Math.max(0, old.total - 1) };
+  });
+
+  return { previous };
+};
+
+const restorePendingCache = (
+  queryClient: ReturnType<typeof useQueryClient>,
+  context?: { previous: PendingTracksSnapshot },
+) => {
+  context?.previous.forEach(([key, data]) => queryClient.setQueryData(key, data));
+};
+
 export const useLikeTrack = () => {
   const queryClient = useQueryClient();
 
@@ -550,12 +588,16 @@ export const useLikeTrack = () => {
       );
       return response.toggleLike;
     },
-    onSuccess: () => {
+    onMutate: (trackId) => removeTrackFromPendingCache(queryClient, trackId),
+    onError: (_error, _trackId, context) => {
+      restorePendingCache(queryClient, context);
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({
         queryKey: queryKeys.randomTrackWithStats(),
       });
       queryClient.invalidateQueries({
-        queryKey: ['pendingTracks'],
+        queryKey: PENDING_TRACKS_ROOT_KEY,
       });
     },
   });
@@ -581,12 +623,16 @@ export const useBangerTrack = () => {
       );
       return response.toggleBanger;
     },
-    onSuccess: () => {
+    onMutate: (trackId) => removeTrackFromPendingCache(queryClient, trackId),
+    onError: (_error, _trackId, context) => {
+      restorePendingCache(queryClient, context);
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({
         queryKey: queryKeys.randomTrackWithStats(),
       });
       queryClient.invalidateQueries({
-        queryKey: ['pendingTracks'],
+        queryKey: PENDING_TRACKS_ROOT_KEY,
       });
     },
   });
@@ -609,12 +655,16 @@ export const useDislikeTrack = () => {
       );
       return response.toggleDislike;
     },
-    onSuccess: () => {
+    onMutate: (trackId) => removeTrackFromPendingCache(queryClient, trackId),
+    onError: (_error, _trackId, context) => {
+      restorePendingCache(queryClient, context);
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({
         queryKey: queryKeys.randomTrackWithStats(),
       });
       queryClient.invalidateQueries({
-        queryKey: ['pendingTracks'],
+        queryKey: PENDING_TRACKS_ROOT_KEY,
       });
     },
   });

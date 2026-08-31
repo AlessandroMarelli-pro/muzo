@@ -18,7 +18,6 @@ function MusicPage() {
   const memoizedSort = useMemo(() => {
     return sort;
   }, [sort]);
-  console.log('filters', filters);
   const memoizedFilters = useMemo(() => {
     return filters;
   }, [filters]);

@@ -122,7 +122,6 @@ export function PlaylistCard({ playlist, onViewDetails, onCardClick }: PlaylistC
     }
   };
   const images = playlist.stats?.images?.slice(0, 4) || [];
-  console.log(playlist);
   const handleCardClick = () => {
     if (onCardClick) {
       onCardClick(playlist.id);

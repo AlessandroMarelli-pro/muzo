@@ -1008,6 +1008,8 @@ export function useRemoveTrackFromPlaylist() {
     onSuccess: (_, { playlistId }) => {
       queryClient.invalidateQueries({ queryKey: ['playlists'] });
       queryClient.invalidateQueries({ queryKey: ['playlist', playlistId] });
+      // Favorites is a playlist too, and it has its own cache entry.
+      queryClient.invalidateQueries({ queryKey: ['favoritePlaylist'] });
     },
   });
 }

@@ -1,4 +1,5 @@
 import { Track } from '@/__generated__/types';
+import { PageHeader, PageShell } from '@/components/layout/page-shell';
 import { StaticFilterOptionsData } from '@/hooks/useFilterOptions';
 import { FilterState } from '@/hooks/useFiltering';
 import { useTracksList } from '@/services/api-hooks';
@@ -77,7 +78,8 @@ export const TrackList = React.memo<TrackListProps>(
 
     if (staticFilterOptions.isLoading) {
       return (
-        <div className="p-6 flex flex-col " key="loading-track-list">
+        <PageShell key="loading-track-list">
+          <PageHeader title="Music" description="Everything in your library." />
           <DataTableSkeleton
             columnCount={10}
             rowCount={10}
@@ -99,13 +101,14 @@ export const TrackList = React.memo<TrackListProps>(
             withTopPagination={true}
             className="gap-4"
           />
-        </div>
+        </PageShell>
       );
     }
     const tracks = data?.items;
     const totalPages = data?.pages || 0;
     return (
-      <div className="p-6  flex flex-col z-0" key="track-list">
+      <PageShell key="track-list">
+        <PageHeader title="Music" description="Everything in your library." />
         <MusicTable
           data={(tracks || []).map((t) => ({ ...t, tempo: t.mfTempo ?? null }))}
           pageCount={totalPages}
@@ -115,7 +118,7 @@ export const TrackList = React.memo<TrackListProps>(
           handleFilterChange={handleFilterChange}
           isLoading={isLoading}
         />
-      </div>
+      </PageShell>
     );
   },
   (prevProps, nextProps) => {

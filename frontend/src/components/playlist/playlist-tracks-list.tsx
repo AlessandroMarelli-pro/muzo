@@ -41,7 +41,6 @@ export function PlaylistTracksList({
 }: PlaylistTracksListProps) {
   const [removingTrackId, setRemovingTrackId] = useState<string | null>(null);
   const [localTracks, setLocalTracks] = useState<PlaylistTrack[]>(playlist?.tracks || []);
-  console.log('sortingOrder', playlist);
 
   const removeTrackMutation = useRemoveTrackFromPlaylist();
   const updatePositionsMutation = useUpdatePlaylistPositions();

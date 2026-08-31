@@ -59,6 +59,15 @@ interface UseDataTableProps<TData>
   startTransition?: React.TransitionStartFunction;
   filterValues: Record<string, string | string[] | null>;
   setFilterValues: (values: Record<string, string | string[] | null>) => void;
+  /**
+   * Whether pagination, sorting and filtering are handled server-side.
+   *
+   * `true` (default) — the consumer fetches one page at a time and passes
+   * `pageCount`; the table renders `data` as-is.
+   * `false` — the consumer passes the full array and the table slices, sorts
+   * and filters it in the browser.
+   */
+  manualPagination?: boolean;
 }
 
 export function useDataTable<TData>(props: UseDataTableProps<TData>) {
@@ -77,6 +86,7 @@ export function useDataTable<TData>(props: UseDataTableProps<TData>) {
     startTransition,
     filterValues,
     setFilterValues,
+    manualPagination = true,
     ...tableProps
   } = props;
   const pageKey = queryKeys?.page ?? PAGE_KEY;
@@ -306,9 +316,9 @@ export function useDataTable<TData>(props: UseDataTableProps<TData>) {
     getFacetedRowModel: getFacetedRowModel(),
     getFacetedUniqueValues: getFacetedUniqueValues(),
     getFacetedMinMaxValues: getFacetedMinMaxValues(),
-    manualPagination: true,
-    manualSorting: true,
-    manualFiltering: true,
+    manualPagination,
+    manualSorting: manualPagination,
+    manualFiltering: manualPagination,
     meta: {
       queryKeys: {
         page: pageKey,

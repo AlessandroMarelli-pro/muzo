@@ -23,7 +23,6 @@ export const Route = createFileRoute('/research/{-$trackId}')({
     const { user } = context;
     const { trackId } = params;
     const randomTrackId = trackId || user?.randomTrackId;
-    console.log('randomTrackId', randomTrackId);
 
     const criteria = deps.boost ?? undefined;
 

@@ -29,11 +29,6 @@ export interface NavMainItem {
 export interface AppSidebarProps {
   data: {
     navMain: NavMainItem[];
-    user: {
-      name: string;
-      email: string;
-      avatar: string;
-    };
   };
 }
 export function AppSidebar({
@@ -42,7 +37,7 @@ export function AppSidebar({
 }: React.ComponentProps<typeof Sidebar> & AppSidebarProps) {
   const { user } = useAuth();
   return (
-    <Sidebar collapsible="icon" variant="inset" {...props} className="h-[92%]">
+    <Sidebar collapsible="icon" variant="inset" {...props} className="h-full">
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>

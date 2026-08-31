@@ -1,6 +1,7 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useLibrary, useLibraryTracks } from '@/services/api-hooks';
 import {
   BarChart3,
@@ -117,7 +118,7 @@ export const LibraryDashboard: React.FC<LibraryDashboardProps> = ({
             <p className="text-muted-foreground">Loading library data…</p>
           </div>
         </div>
-        <div className="h-96 bg-gray-100 rounded-lg animate-pulse" />
+        <Skeleton className="h-96 w-full rounded-lg" />
       </div>
     );
   }
@@ -149,8 +150,8 @@ export const LibraryDashboard: React.FC<LibraryDashboardProps> = ({
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center space-x-3">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <BarChart3 className="h-5 w-5 text-blue-600" />
+              <div className="rounded-lg bg-chart-1/15 p-2">
+                <BarChart3 className="h-5 w-5 text-chart-1" />
               </div>
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Total Tracks</p>
@@ -163,14 +164,12 @@ export const LibraryDashboard: React.FC<LibraryDashboardProps> = ({
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center space-x-3">
-              <div className="p-2 bg-green-100 rounded-lg">
-                <TrendingUp className="h-5 w-5 text-green-600" />
+              <div className="rounded-lg bg-chart-2/15 p-2">
+                <TrendingUp className="h-5 w-5 text-chart-2" />
               </div>
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Analyzed</p>
-                <p className="text-2xl font-bold">
-                  {library?.analyzedTracks.toLocaleString().length}
-                </p>
+                <p className="text-2xl font-bold">{library?.analyzedTracks.toLocaleString()}</p>
               </div>
             </div>
           </CardContent>
@@ -179,8 +178,8 @@ export const LibraryDashboard: React.FC<LibraryDashboardProps> = ({
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center space-x-3">
-              <div className="p-2 bg-purple-100 rounded-lg">
-                <Lightbulb className="h-5 w-5 text-purple-600" />
+              <div className="rounded-lg bg-chart-3/15 p-2">
+                <Lightbulb className="h-5 w-5 text-chart-3" />
               </div>
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Genres</p>
@@ -195,8 +194,8 @@ export const LibraryDashboard: React.FC<LibraryDashboardProps> = ({
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center space-x-3">
-              <div className="p-2 bg-orange-100 rounded-lg">
-                <Settings className="h-5 w-5 text-orange-600" />
+              <div className="rounded-lg bg-chart-4/15 p-2">
+                <Settings className="h-5 w-5 text-chart-4" />
               </div>
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Formats</p>
@@ -232,7 +231,7 @@ export const LibraryDashboard: React.FC<LibraryDashboardProps> = ({
           </div>
         </CardHeader>
         <CardContent>
-          <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg w-fit">
+          <div className="flex w-fit space-x-1 rounded-lg bg-muted p-1">
             {views.map((view) => (
               <Button
                 key={view.id}

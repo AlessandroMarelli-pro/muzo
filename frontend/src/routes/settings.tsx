@@ -1,12 +1,13 @@
+import { PageHeader, PageShell } from '@/components/layout/page-shell';
 import { AccountConnections } from '@/components/settings/account-connections';
 import { createFileRoute } from '@tanstack/react-router';
 
 function SettingsPage() {
   return (
-    <div className="p-6 space-y-6 max-w-2xl">
-      <h1 className="text-2xl font-bold">Settings</h1>
+    <PageShell className="max-w-2xl">
+      <PageHeader title="Settings" description="Connect the services Muzo syncs with." />
       <AccountConnections />
-    </div>
+    </PageShell>
   );
 }
 

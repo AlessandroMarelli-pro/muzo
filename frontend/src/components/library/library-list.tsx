@@ -2,10 +2,11 @@ import { Button } from '@/components/ui/button';
 import { Route } from '@/routes/libraries.index';
 import { useDeleteLibrary } from '@/services/api-hooks';
 import { useRouter } from '@tanstack/react-router';
-import { Plus, Search } from 'lucide-react';
+import { Library, Plus } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
-import { Loading } from '../loading';
-import { Input } from '../ui/input';
+import { PageHeader, PageShell } from '@/components/layout/page-shell';
+import { NoData } from '../no-data';
+import { SearchInput } from '@/components/ui/search-input';
 import { LibraryCard } from './library-card';
 
 interface LibraryListProps {
@@ -27,7 +28,6 @@ export const LibraryList: React.FC<LibraryListProps> = ({
   onStopLibraryScan,
   isScanning = false,
 }) => {
-  const isLoading = false;
   const { libraries } = Route.useLoaderData();
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
@@ -40,9 +40,6 @@ export const LibraryList: React.FC<LibraryListProps> = ({
     );
   }, [searchQuery, libraries]);
 
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchQuery(e.target.value);
-  };
   const handleDeleteLibrary = async (e: React.MouseEvent<HTMLButtonElement>, libraryId: string) => {
     const hasConfirmed = confirm('Are you sure you want to delete this library?');
     if (!hasConfirmed) {
@@ -53,10 +50,6 @@ export const LibraryList: React.FC<LibraryListProps> = ({
     e.stopPropagation();
     e.preventDefault();
   };
-  if (isLoading) {
-    return <Loading />;
-  }
-
   const handleScanLibrary = (e: React.MouseEvent<HTMLButtonElement>, libraryId: string) => {
     e.stopPropagation();
     e.preventDefault();
@@ -81,42 +74,50 @@ export const LibraryList: React.FC<LibraryListProps> = ({
     onStopLibraryScan(libraryId, sessionId);
   };
   return (
-    <div className="p-6  flex flex-col z-0 gap-4">
-      <div className="flex items-center justify-between">
-        <div className="flex flex-row justify-between items-center w-full">
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <Input
-              type="text"
-              placeholder="Filter libraries..."
-              value={searchQuery}
-              onChange={handleSearchChange}
-              className="w-full pl-10 pr-4 py-2 border  rounded-md "
+    <PageShell>
+      <PageHeader title="Libraries" description="Folders Muzo scans for music.">
+        <SearchInput
+          value={searchQuery}
+          onValueChange={setSearchQuery}
+          placeholder="Filter libraries…"
+          className="sm:w-64"
+        />
+        <Button onClick={onCreateLibrary} size="sm" variant="link">
+          <Plus className="h-4 w-4" />
+          Add new library
+        </Button>
+      </PageHeader>
+
+      {filteredLibraries?.length === 0 ? (
+        <NoData
+          Icon={Library}
+          title={searchQuery ? 'No libraries match your filter' : 'No libraries yet'}
+          subtitle={
+            searchQuery
+              ? `Nothing matches "${searchQuery}".`
+              : 'Add a folder of music and Muzo will scan and analyse it.'
+          }
+          buttonAction={searchQuery ? () => setSearchQuery('') : onCreateLibrary}
+          buttonLabel={searchQuery ? 'Clear filter' : 'Add new library'}
+          ButtonIcon={searchQuery ? undefined : Plus}
+        />
+      ) : (
+        <div className="flex flex-row flex-wrap gap-5 justify-start">
+          {filteredLibraries?.map((library) => (
+            <LibraryCard
+              key={library.id}
+              library={library}
+              onScan={handleScanLibrary}
+              onForceScan={handleForceScanLibrary}
+              onStopScan={handleStopLibraryScan}
+              onView={() => onViewLibrary(library.id)}
+              onPlay={() => onPlayLibrary(library.id)}
+              isScanning={isScanning}
+              onDelete={(e) => handleDeleteLibrary(e, library.id)}
             />
-          </div>
-
-          <Button onClick={onCreateLibrary} size="sm" variant="link">
-            <Plus className="h-4 w-4" />
-            Add new library
-          </Button>
+          ))}
         </div>
-      </div>
-
-      <div className="flex flex-row flex-wrap gap-5 justify-start">
-        {filteredLibraries?.map((library) => (
-          <LibraryCard
-            key={library.id}
-            library={library}
-            onScan={handleScanLibrary}
-            onForceScan={handleForceScanLibrary}
-            onStopScan={handleStopLibraryScan}
-            onView={() => onViewLibrary(library.id)}
-            onPlay={() => onPlayLibrary(library.id)}
-            isScanning={isScanning}
-            onDelete={(e) => handleDeleteLibrary(e, library.id)}
-          />
-        ))}
-      </div>
-    </div>
+      )}
+    </PageShell>
   );
 };

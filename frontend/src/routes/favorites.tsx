@@ -1,35 +1,33 @@
-import { FavoriteList } from '@/components/favorites/favortite-list';
+import { FavoritesPage, type FavoritesTab } from '@/components/favorites/favorites-page';
 import {
   favoritePlaylistQueryOptions,
   playlistRecommendationsQueryOptions,
 } from '@/services/playlist-hooks';
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, useNavigate } from '@tanstack/react-router';
+import { z } from 'zod';
 
-function FavoritesPage() {
-  const handleRefresh = async () => {
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-  };
+function FavoritesRoute() {
+  const { playlist, recommendations } = Route.useLoaderData();
+  const { tab } = Route.useSearch();
+  const navigate = useNavigate({ from: Route.fullPath });
 
   return (
-    <FavoriteList
-      viewMode="grid"
-      sortBy="title"
-      sortOrder="asc"
-      filterStatus="all"
-      searchQuery=""
-      onViewModeChange={(mode) => console.log('View mode changed:', mode)}
-      onSortChange={(sortBy) => console.log('Sort changed:', sortBy)}
-      onSortOrderChange={(order) => console.log('Sort order changed:', order)}
-      onFilterChange={(status) => console.log('Filter changed:', status)}
-      onSearchChange={(query) => console.log('Search changed:', query)}
-      onRefresh={handleRefresh}
+    <FavoritesPage
+      playlist={playlist}
+      recommendations={recommendations}
+      tab={tab}
+      onTabChange={(nextTab: FavoritesTab) =>
+        navigate({ search: (previous) => ({ ...previous, tab: nextTab }) })
+      }
     />
   );
 }
 
 export const Route = createFileRoute('/favorites')({
-  component: FavoritesPage,
+  component: FavoritesRoute,
+  validateSearch: z.object({
+    tab: z.enum(['tracks', 'recommendations']).default('tracks'),
+  }),
   loader: async ({ context }) => {
     const favoritePlaylist = await context.queryClient.ensureQueryData(
       favoritePlaylistQueryOptions(),

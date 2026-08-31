@@ -9,6 +9,7 @@ interface SwipeControlsProps {
   onDislike: () => void;
   onBanger: () => void;
   disabled?: boolean;
+  className?: string;
 }
 
 export function SwipeControls({
@@ -16,9 +17,10 @@ export function SwipeControls({
   onDislike,
   onBanger,
   disabled = false,
+  className,
 }: SwipeControlsProps) {
   return (
-    <div className="flex flex-row items-center justify-center gap-4 mt-8">
+    <div className={cn('flex flex-row items-center justify-center gap-4 mt-8', className)}>
       <Button
         size="icon"
         variant="destructive"

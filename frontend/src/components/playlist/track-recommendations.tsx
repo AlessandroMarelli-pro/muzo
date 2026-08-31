@@ -29,6 +29,7 @@ export const TrackRecommandationsComponent = ({
           {!isLoading
             ? recommendations.map((recommendation, index) => (
                 <TrackRecommendationsCard
+                  key={recommendation.track?.id ?? `recommendation-${index}`}
                   recommendation={recommendation}
                   onAddTrack={onAddTrack}
                   index={index}

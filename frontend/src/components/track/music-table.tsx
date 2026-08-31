@@ -136,7 +136,7 @@ const ActionCells = ({
         {isThisTrackPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
       </Button>
       <Button asChild size="sm" variant="ghost">
-        <Link to="/research/$trackId" params={{ trackId: track.id }} preload="intent">
+        <Link to="/research/{-$trackId}" params={{ trackId: track.id }} preload="intent">
           <Brain className="h-4 w-4" aria-hidden />
         </Link>
       </Button>

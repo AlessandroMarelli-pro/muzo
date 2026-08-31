@@ -52,7 +52,8 @@ export function SiteHeader(_props: SiteHeaderProps) {
   const getPageTitle = (pathname: string) => {
     if (pathname === '/') return 'Home';
     if (pathname === '/music') return 'Music';
-    if (pathname === '/categories') return 'Categories';
+    if (pathname === '/pending') return 'Pending';
+    if (pathname === '/swipe') return 'Swipe';
     if (pathname === '/libraries') return 'Libraries';
     if (pathname.startsWith('/libraries/')) return 'Library Dashboard';
     if (pathname === '/playlists') return 'Playlists';

@@ -127,7 +127,6 @@ export const ScanSessionProvider: React.FC<{ children: React.ReactNode }> = ({ c
   };
 
   const getSessionForLibrary = (libraryId: string): ScanSession | undefined => {
-    console.log('getSessionForLibrary', libraryId, activeSessions);
     for (const session of activeSessions.values()) {
       if (session.libraryId === libraryId) {
         return session;

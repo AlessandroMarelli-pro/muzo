@@ -57,7 +57,7 @@ const MusicPlayerInset = React.memo(function MusicPlayerInset({
   );
 });
 
-const navigationData: Omit<AppSidebarProps['data'], 'user'> = {
+const navigationData: AppSidebarProps['data'] = {
   navMain: [
     {
       title: 'Home',
@@ -69,11 +69,6 @@ const navigationData: Omit<AppSidebarProps['data'], 'user'> = {
       url: '/music',
       icon: ListMusic,
     },
-    /*    {
-      title: 'Categories',
-      url: '/categories',
-      icon: Boxes,
-    }, */
     {
       title: 'Research',
       url: '/research',
@@ -120,9 +115,6 @@ function RootContent() {
   const { isAuthenticated, isLoading } = useAuth();
   const isAuthPage = pathname === '/login' || pathname === '/sign-up';
 
-  const handleToggleShuffle = React.useCallback(() => {
-    console.log('Toggle shuffle');
-  }, []);
   const { resolvedTheme } = useTheme();
   const [sidebarDefaultOpen] = React.useState(() =>
     typeof window !== 'undefined' ? localStorage.getItem('sidebar_state') === 'expanded' : false,
@@ -153,16 +145,7 @@ function RootContent() {
   return (
     <TooltipProvider delayDuration={0}>
       <SidebarProvider defaultOpen={sidebarDefaultOpen}>
-        <AppSidebar
-          data={{
-            ...navigationData,
-            user: {
-              name: 'John Doe',
-              email: 'john.doe@example.com',
-              avatar: 'https://github.com/shadcn.png',
-            },
-          }}
-        />
+        <AppSidebar data={navigationData} />
 
         <SidebarInset>
           <MusicPlayerInset>
@@ -171,7 +154,7 @@ function RootContent() {
           </MusicPlayerInset>
         </SidebarInset>
       </SidebarProvider>
-      <EnhancedMusicPlayer onToggleShuffle={handleToggleShuffle} showVisualizations={true} />
+      <EnhancedMusicPlayer showVisualizations={true} />
     </TooltipProvider>
   );
 }

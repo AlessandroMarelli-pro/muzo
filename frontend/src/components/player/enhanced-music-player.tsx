@@ -5,7 +5,8 @@ import {
   useCurrentTrack,
   useIsPlaying,
 } from '@/contexts/audio-player-context';
-import { cn } from '@/lib/utils';
+import { Slider } from '@/components/ui/slider';
+import { cn, formatTime } from '@/lib/utils';
 import { useWaveformData } from '@/services/music-player-hooks';
 import { useQueue } from '@/services/queue-hooks';
 import { useNavigate } from '@tanstack/react-router';
@@ -61,6 +62,8 @@ export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
 
   const actions = useAudioPlayerActions();
   const isPlaying = useIsPlaying();
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
   const formattedImage = currentTrack?.imagePath || 'Unknown Image';
   // Get full playback state from context
   const { state: playbackState } = useAudioPlayerContext();
@@ -75,7 +78,6 @@ export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
   // Update audio element when state changes
   useEffect(() => {
     if (audioRef.current && currentTrack) {
-      audioRef.current.muted = false;
       if (isPlaying && playbackState.trackId === currentTrack.id) {
         // Only play if the playback state matches the current track
         // Use a promise to handle potential play() errors
@@ -102,13 +104,33 @@ export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
       // Track ended, trigger next track
       actions.next();
     };
+    const handleTimeUpdate = () => setCurrentTime(audio.currentTime);
+    const handleLoadedMetadata = () => setDuration(audio.duration || 0);
 
     audio.addEventListener('ended', handleEnded);
+    audio.addEventListener('timeupdate', handleTimeUpdate);
+    audio.addEventListener('loadedmetadata', handleLoadedMetadata);
 
     return () => {
       audio.removeEventListener('ended', handleEnded);
+      audio.removeEventListener('timeupdate', handleTimeUpdate);
+      audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
     };
   }, [actions]);
+
+  // Reset the scrubber when the track changes.
+  useEffect(() => {
+    setCurrentTime(0);
+    setDuration(0);
+  }, [currentTrack?.id]);
+
+  const trackDuration = duration || currentTrack?.duration || 0;
+
+  const handleSeek = (value: number) => {
+    if (!audioRef.current) return;
+    audioRef.current.currentTime = value;
+    setCurrentTime(value);
+  };
 
   const handleToggleFavorite = () => {
     if (!currentTrack) return;
@@ -194,8 +216,14 @@ export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
         <div className="flex items-center gap-2 min-w-0 flex-1 justify-end order-3 sm:order-3 px-10">
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-2">
-              <Button variant="ghost" size="sm" onClick={onToggleShuffle} className="h-8 w-8 p-0">
-                <Shuffle className="h-4 w-4" />
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onToggleShuffle}
+                className="h-8 w-8 p-0"
+                aria-label="Toggle shuffle"
+              >
+                <Shuffle className="h-4 w-4" aria-hidden />
               </Button>
               <Button
                 variant="ghost"
@@ -203,17 +231,22 @@ export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
                 onClick={handlePreviousTrack}
                 className="h-8 w-8 p-0"
                 disabled={queueIndex === 0}
+                aria-label="Previous track"
               >
-                <SkipBack className="h-4 w-4" />
+                <SkipBack className="h-4 w-4" aria-hidden />
               </Button>
               <Button
                 variant="default"
                 size="sm"
                 onClick={handlePlay}
-                //disabled={playbackState.isLoading}
                 className="h-8 w-8 p-0"
+                aria-label={isPlaying ? 'Pause' : 'Play'}
               >
-                {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+                {isPlaying ? (
+                  <Pause className="h-4 w-4" aria-hidden />
+                ) : (
+                  <Play className="h-4 w-4" aria-hidden />
+                )}
               </Button>
               <Button
                 variant="ghost"
@@ -221,21 +254,26 @@ export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
                 onClick={handleNextTrack}
                 className="h-8 w-8 p-0"
                 disabled={queueIndex === (queue?.length || 0) - 1}
+                aria-label="Next track"
               >
-                <SkipForward className="h-4 w-4" />
+                <SkipForward className="h-4 w-4" aria-hidden />
               </Button>
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={handleToggleFavorite}
                 className="h-8 w-8 p-0"
-                //disabled={playbackState.isLoading}
+                aria-label={
+                  playbackState?.isFavorite ? 'Remove from favorites' : 'Add to favorites'
+                }
+                aria-pressed={!!playbackState?.isFavorite}
               >
                 <Heart
                   className={cn(
                     'h-4 w-4',
                     playbackState?.isFavorite ? 'fill-red-500 text-red-500' : '',
                   )}
+                  aria-hidden
                 />
               </Button>
               <Button
@@ -243,8 +281,9 @@ export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
                 size="sm"
                 onClick={handleToggleResearch}
                 className="h-8 w-8 p-0"
+                aria-label="Open research for this track"
               >
-                <Brain className="h-4 w-4" />
+                <Brain className="h-4 w-4" aria-hidden />
               </Button>
               <TrackMoreMenu
                 trackId={currentTrack?.id || ''}
@@ -263,7 +302,26 @@ export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
                 isPlaying={isPlaying}
               />
             </div>
-            {/* Volume controls removed for simplification */}
+            {/* Seek: a real slider so the scrubber is keyboard-operable. */}
+            <div className="flex min-w-[180px] flex-1 items-center gap-2">
+              <span className="w-10 shrink-0 text-right font-mono text-muted-foreground text-xs tabular-nums">
+                {formatTime(currentTime)}
+              </span>
+              <Slider
+                value={[currentTime]}
+                min={0}
+                max={trackDuration || 0}
+                step={1}
+                onValueChange={([value]) => handleSeek(value)}
+                disabled={!trackDuration}
+                aria-label="Seek"
+                aria-valuetext={`${formatTime(currentTime)} of ${formatTime(trackDuration)}`}
+                className="flex-1"
+              />
+              <span className="w-10 shrink-0 font-mono text-muted-foreground text-xs tabular-nums">
+                {formatTime(trackDuration)}
+              </span>
+            </div>
           </div>
         </div>
       </div>
@@ -271,11 +329,8 @@ export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
       {/* Hidden Audio Element */}
       {currentTrack && (
         <audio
-          muted
           ref={audioRef}
-          src={
-            currentTrack ? apiUrl(`/api/audio/stream/${currentTrack.id}`) : undefined
-          }
+          src={currentTrack ? apiUrl(`/api/audio/stream/${currentTrack.id}`) : undefined}
           style={{ display: 'none' }}
         />
       )}

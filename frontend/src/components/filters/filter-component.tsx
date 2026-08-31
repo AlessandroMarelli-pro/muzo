@@ -74,7 +74,6 @@ export const FilterComponent = ({
   const handleSaveFilter = async () => {
     try {
       //await saveCurrentFilter();
-      console.log('filters', filters);
     } catch (error) {
       console.error('Failed to save filter:', error);
     }

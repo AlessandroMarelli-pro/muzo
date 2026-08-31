@@ -1,9 +1,10 @@
 import { Playlist } from '@/__generated__/types';
 import { Button } from '@/components/ui/button';
 import { Route } from '@/routes/playlists.index';
-import { Plus, Search } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { Input } from '../ui/input';
+import { PageHeader, PageShell } from '@/components/layout/page-shell';
+import { SearchInput } from '@/components/ui/search-input';
 import { CreatePlaylistDialog } from './create-playlist-dialog';
 import { InlinePlaylistCard, InlinePlaylistCardSkeleton } from './inline-playlist-card';
 import { PlaylistCard, PlaylistCardSkeleton } from './playlist-card';
@@ -91,36 +92,21 @@ export function PlaylistList({ onViewPlaylistDetails, loading = false }: Playlis
   const handleCreatePlaylist = () => {
     setIsCreateDialogOpen(true);
   };
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchQuery(e.target.value);
-  };
 
   return (
-    <div className="p-6  flex flex-col z-0 gap-4">
-      {/*   <PlaylistTable
-        data={playlists}
-        onUpdate={refetch}
-        onViewDetails={onViewPlaylistDetails}
-        isLoading={false}
-        onCreatePlaylist={handleCreatePlaylist}
-      /> */}
-      <div className="flex flex-row justify-between items-center">
-        <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <Input
-            type="text"
-            placeholder="Filter playlists..."
-            value={searchQuery}
-            onChange={handleSearchChange}
-            className="w-full pl-10 pr-4 py-2 border rounded-md "
-          />
-        </div>
-
+    <PageShell>
+      <PageHeader title="Playlists" description="Collections you've built.">
+        <SearchInput
+          value={searchQuery}
+          onValueChange={setSearchQuery}
+          placeholder="Filter playlists…"
+          className="sm:w-64"
+        />
         <Button onClick={handleCreatePlaylist} size="sm" variant="link">
           <Plus className="h-4 w-4" />
           Create Playlist
         </Button>
-      </div>
+      </PageHeader>
       <PlaylistListComponent
         loading={loading}
         playlists={filteredPlaylists}
@@ -133,6 +119,6 @@ export function PlaylistList({ onViewPlaylistDetails, loading = false }: Playlis
           setIsCreateDialogOpen(false);
         }}
       />
-    </div>
+    </PageShell>
   );
 }
