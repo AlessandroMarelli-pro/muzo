@@ -85,6 +85,19 @@ export class MusicTrackRepository implements IMusicTrackRepository {
     return subgenreIds;
   }
 
+  async getManyByLibraryIdNotCompleted(libraryId: MusicLibraryId): Promise<MusicTrack[]> {
+    return this.prisma.musicTrack
+      .findMany({
+        where: {
+          libraryId: extractModelId(libraryId).dbId,
+          createdById: getCurrentUserId(),
+          analysisStatus: { not: AudioFileAnalysisStatusEnum.COMPLETED },
+        },
+        include: musicTracksIncludes,
+      })
+      .then((rows) => rows.map(toDomain));
+  }
+
   async getAnalysisStatusForManyByLibraryId(
     libraryId: MusicLibraryId,
   ): Promise<{ analysisStatus: AudioFileAnalysisStatusEnum; count: number }[]> {

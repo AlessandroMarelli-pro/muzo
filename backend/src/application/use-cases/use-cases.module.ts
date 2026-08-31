@@ -109,6 +109,7 @@ import {
   RemoveTrackFromQueueUseCase,
   ResetQueueUseCase,
   ScheduleBatchAudioScanUseCase,
+  ScheduleIncompleteTracksScanUseCase,
   ScheduleLibraryScanUseCase,
   ScheduleSingleTrackScanUseCase,
   ScheduleTracksByCriteriaScanUseCase,
@@ -291,6 +292,13 @@ const useCasesProviders = [
     LOGGER,
   ]),
   createUseCaseProvider(ScheduleSingleTrackScanUseCase, [
+    MUSIC_TRACK_REPOSITORY,
+    SCAN_SESSION_REPOSITORY,
+    ScheduleBatchAudioScanUseCase,
+    LOGGER_FACTORY,
+    LOGGER,
+  ]),
+  createUseCaseProvider(ScheduleIncompleteTracksScanUseCase, [
     MUSIC_TRACK_REPOSITORY,
     SCAN_SESSION_REPOSITORY,
     ScheduleBatchAudioScanUseCase,

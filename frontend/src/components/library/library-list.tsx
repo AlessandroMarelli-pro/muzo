@@ -13,6 +13,7 @@ interface LibraryListProps {
   onCreateLibrary: () => void;
   onScanLibrary: (libraryId: string) => void;
   onForceScanLibrary: (libraryId: string) => void;
+  onScanIncompleteTracks: (libraryId: string) => void;
   onStopLibraryScan: (libraryId: string, sessionId: string) => void;
   onViewLibrary: (libraryId: string) => void;
   onPlayLibrary: (libraryId: string) => void;
@@ -23,6 +24,7 @@ export const LibraryList: React.FC<LibraryListProps> = ({
   onCreateLibrary,
   onScanLibrary,
   onForceScanLibrary,
+  onScanIncompleteTracks,
   onViewLibrary,
   onPlayLibrary,
   onStopLibraryScan,
@@ -64,6 +66,20 @@ export const LibraryList: React.FC<LibraryListProps> = ({
     if (!hasConfirmed) return;
     onForceScanLibrary(libraryId);
   };
+  const handleScanIncompleteTracks = (
+    e: React.MouseEvent<HTMLButtonElement>,
+    libraryId: string,
+  ) => {
+    e.stopPropagation();
+    e.preventDefault();
+    const library = libraries.find((l) => l.id === libraryId);
+    const incompleteCount = library ? Math.max(library.totalTracks - library.analyzedTracks, 0) : 0;
+    const hasConfirmed = confirm(
+      `Re-analyze the ${incompleteCount} track(s) in this library that haven't been fully analyzed yet?`,
+    );
+    if (!hasConfirmed) return;
+    onScanIncompleteTracks(libraryId);
+  };
   const handleStopLibraryScan = (
     e: React.MouseEvent<HTMLButtonElement>,
     libraryId: string,
@@ -102,13 +118,14 @@ export const LibraryList: React.FC<LibraryListProps> = ({
           ButtonIcon={searchQuery ? undefined : Plus}
         />
       ) : (
-        <div className="flex flex-row flex-wrap gap-5 justify-start">
+        <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
           {filteredLibraries?.map((library) => (
             <LibraryCard
               key={library.id}
               library={library}
               onScan={handleScanLibrary}
               onForceScan={handleForceScanLibrary}
+              onScanIncompleteTracks={handleScanIncompleteTracks}
               onStopScan={handleStopLibraryScan}
               onView={() => onViewLibrary(library.id)}
               onPlay={() => onPlayLibrary(library.id)}

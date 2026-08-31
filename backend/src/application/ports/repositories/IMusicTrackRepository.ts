@@ -40,6 +40,7 @@ export type MusicTrackUpdateData = {
 export interface IMusicTrackRepository {
   getAllSubgenresBySubgenreId(_subgenreIds: SubgenreId[]): Promise<SubgenreId[]>;
   getManyByLibraryId(libraryId: MusicLibraryId): Promise<MusicTrack[]>;
+  getManyByLibraryIdNotCompleted(libraryId: MusicLibraryId): Promise<MusicTrack[]>;
   getAnalysisStatusForManyByLibraryId(
     libraryId: MusicLibraryId,
   ): Promise<{ analysisStatus: AudioFileAnalysisStatusEnum; count: number }[]>;

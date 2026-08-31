@@ -7,6 +7,7 @@ import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
 import { Card, CardDescription, CardHeader, CardTitle } from '../ui/card';
 
+import { PageShell } from '@/components/layout/page-shell';
 import { CardContent } from '@/components/ui/card';
 import {
   ChartConfig,
@@ -15,7 +16,6 @@ import {
   ChartTooltipContent,
 } from '@/components/ui/chart';
 import { useCachedSessionStorage } from '@/hooks/use-cached-storage';
-import { PageHeader, PageShell } from '@/components/layout/page-shell';
 import { Route } from '@/routes/index';
 import { BookHeadphones, ListMusic, Sparkles } from 'lucide-react';
 import { Skeleton } from '../ui/skeleton';
@@ -178,10 +178,6 @@ export function Home() {
   return (
     <PageShell>
       {/* Hero */}
-      <PageHeader
-        title="Home"
-        description="Browse your library, discover with AI, and build playlists that match your taste."
-      />
       <section className="flex flex-col gap-4">
         <div className="flex flex-wrap gap-3">
           <Button asChild variant="default" size="sm" className="gap-2">

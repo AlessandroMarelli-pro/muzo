@@ -54,17 +54,18 @@ export class ProcessEndLibraryScanUseCase {
         ({ analysisStatus }) => analysisStatus === AudioFileAnalysisStatusEnum.COMPLETED,
       )?.count ?? 0;
 
-    const failedTracks =
-      analysisStatusCounts.find(
-        ({ analysisStatus }) => analysisStatus === AudioFileAnalysisStatusEnum.FAILED,
-      )?.count ?? 0;
+    // "failedTracks" is really "not-yet-successfully-analyzed": FAILED plus any PENDING /
+    // PROCESSING left over. That's what the "scan incomplete tracks" action targets, so the
+    // counter must match it or the button would hide tracks it can still fix.
+    const totalTracks = analysisStatusCounts.reduce((sum, { count }) => sum + count, 0);
+    const failedTracks = totalTracks - analyzedTracks;
 
     // Update library with final statistics
     const updateData: any = {
       analyzedTracks,
       failedTracks,
       scanStatus: ScanStatusEnum.IDLE,
-      totalTracks: analyzedTracks + failedTracks,
+      totalTracks,
     };
 
     // Update appropriate scan timestamp

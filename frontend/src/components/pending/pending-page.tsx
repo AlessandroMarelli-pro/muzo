@@ -3,7 +3,7 @@
 import type { Track } from '@/__generated__/types';
 import { DataTableSkeleton } from '@/components/data-table/data-table-skeleton';
 import { FilterButton } from '@/components/filters/filter-button';
-import { PageContent, PageHeader, PageShell } from '@/components/layout/page-shell';
+import { PageContent, PageShell } from '@/components/layout/page-shell';
 import { NoData } from '@/components/no-data';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -227,9 +227,6 @@ export function PendingPage() {
   if (isLoading) {
     return (
       <PageShell>
-        <PageHeader title="Pending" description="Tracks you haven't rated yet.">
-          <FilterButton />
-        </PageHeader>
         <DataTableSkeleton
           columnCount={7}
           rowCount={10}

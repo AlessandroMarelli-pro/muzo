@@ -185,6 +185,7 @@ type Mutation {
   removeTrackFromPlaylist(playlistId: Base64ID!, trackId: Base64ID!): Boolean!
   removeTrackFromQueue(trackId: Base64ID!): RemoveTrackFromQueueResponse!
   resetQueue: Boolean!
+  scanIncompleteTracks(libraryId: Base64ID!): Base64ID!
   scanTrack(force: Boolean, trackId: Base64ID!): Base64ID!
   startLibraryScan(force: Boolean, incremental: Boolean, libraryId: Base64ID!): Base64ID!
   stopLibraryScan(libraryId: Base64ID!, sessionId: Base64ID): Boolean!

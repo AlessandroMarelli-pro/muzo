@@ -13,7 +13,9 @@ const toastOptions: ExternalToast = {
 };
 
 /** Pick the most recently added active session so new track scans show up. */
-function getLatestSessionId(activeSessions: Map<string, { sessionId: string }>): string | undefined {
+function getLatestSessionId(
+  activeSessions: Map<string, { sessionId: string }>,
+): string | undefined {
   const values = [...activeSessions.values()];
   return values.length ? values[values.length - 1]?.sessionId : undefined;
 }
@@ -34,16 +36,14 @@ export const ScanProgress = React.memo(() => {
   useEffect(() => {
     if (latestSessionId) {
       const session = activeSessions.get(latestSessionId);
-      setProgress((prev) => (session ? session.overallProgress / 100 : Math.max(0, prev)));
+      setProgress((prev) => (session ? session.overallProgress : Math.max(0, prev)));
     } else {
       setProgress(-1);
     }
   }, [latestSessionId, activeSessions]);
 
   useEffect(() => {
-    const overallProgress = scanProgress?.overallProgress
-      ? scanProgress.overallProgress / 100
-      : undefined;
+    const overallProgress = scanProgress?.overallProgress ?? undefined;
     if (overallProgress !== undefined && overallProgress !== null) {
       setProgress(overallProgress);
     }

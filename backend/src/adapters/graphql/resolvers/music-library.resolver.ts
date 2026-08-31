@@ -4,6 +4,7 @@ import {
   CreateLibraryUseCase,
   DeleteLibraryUseCase,
   GetTracksWithCursorPaginationUseCase,
+  ScheduleIncompleteTracksScanUseCase,
   ScheduleLibraryScanUseCase,
   StopLibraryScanUseCase,
 } from 'src/application/use-cases';
@@ -29,6 +30,7 @@ export class MusicLibraryResolver {
     private readonly deleteLibraryUseCase: DeleteLibraryUseCase,
     private readonly getTracksWithCursorPaginationUseCase: GetTracksWithCursorPaginationUseCase,
     private readonly scheduleLibraryScanUseCase: ScheduleLibraryScanUseCase,
+    private readonly scheduleIncompleteTracksScanUseCase: ScheduleIncompleteTracksScanUseCase,
     private readonly stopLibraryScanUseCase: StopLibraryScanUseCase,
   ) {}
 
@@ -82,6 +84,15 @@ export class MusicLibraryResolver {
   ): Promise<SessionId> {
     return this.scheduleLibraryScanUseCase
       .execute(parseMusicLibraryId(libraryId), incremental ?? false, force ?? false)
+      .then(({ sessionId }) => sessionId);
+  }
+
+  @Mutation(() => Base64ID)
+  async scanIncompleteTracks(
+    @Args('libraryId', { type: () => Base64ID }) libraryId: string,
+  ): Promise<SessionId> {
+    return this.scheduleIncompleteTracksScanUseCase
+      .execute(parseMusicLibraryId(libraryId))
       .then(({ sessionId }) => sessionId);
   }
 

@@ -30,6 +30,26 @@ export const useStartLibraryScan = () => {
   });
 };
 
+export const useScanIncompleteTracks = () => {
+  return useMutation({
+    mutationFn: async ({ libraryId }: { libraryId: string }) => {
+      const response = await graffleClient.request<{
+        scanIncompleteTracks: string;
+      }>(
+        parse(
+          `
+						mutation ScanIncompleteTracks($libraryId: Base64ID!) {
+							scanIncompleteTracks(libraryId: $libraryId)
+						}
+					`,
+        ),
+        { libraryId },
+      );
+      return response.scanIncompleteTracks;
+    },
+  });
+};
+
 export const useStopLibraryScan = () => {
   return useMutation({
     mutationFn: async ({ libraryId, sessionId }: { libraryId: string; sessionId: string }) => {
