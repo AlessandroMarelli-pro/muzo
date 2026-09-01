@@ -27,13 +27,11 @@ export function AddTrackDrawer({ open, onOpenChange, addTrackToPlaylist }: AddTr
   const pages = data?.pages;
   const tracks = pages?.flatMap((page) => page.items);
   const [shouldDisplayFilter, setShouldDisplayFilter] = useState(false);
-  const [divMaxWidth, setDivMaxWidth] = useState<number>(800);
 
   const handleOpenChange = (newOpen: boolean) => {
     onOpenChange(newOpen);
   };
   const handleDisplayFilter = () => {
-    setDivMaxWidth(1200);
     setShouldDisplayFilter(true);
   };
 
@@ -46,7 +44,7 @@ export function AddTrackDrawer({ open, onOpenChange, addTrackToPlaylist }: AddTr
   return (
     <Sheet open={open} onOpenChange={handleOpenChange}>
       <SheetContent
-        className={`sm:max-w-[${divMaxWidth}px]  `}
+        className={shouldDisplayFilter ? 'sm:max-w-[1200px]' : 'sm:max-w-[800px]'}
         onInteractOutside={(e) => e.preventDefault()}
       >
         <SheetHeader className="flex flex-row justify-start items-center gap-4">

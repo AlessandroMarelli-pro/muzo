@@ -29,7 +29,7 @@ function statusIcon(status: string) {
     case 'downloading':
       return <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />;
     case 'succeeded':
-      return <CheckCircle2 className="h-4 w-4 text-green-500" />;
+      return <CheckCircle2 className="h-4 w-4 text-primary" />;
     case 'failed':
       return <XCircle className="h-4 w-4 text-destructive" />;
     case 'skipped':

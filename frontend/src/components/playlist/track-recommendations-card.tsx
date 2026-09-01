@@ -4,9 +4,9 @@ import {
   useCurrentTrack,
   useIsPlaying,
 } from '@/contexts/audio-player-context';
-import { cn } from '@/lib/utils';
+import { capitalizeEveryWord, cn } from '@/lib/utils';
 import { useNavigate } from '@tanstack/react-router';
-import { Brain, InfoIcon, Pause, Play, Plus } from 'lucide-react';
+import { AudioLines, Brain, InfoIcon, ListMusic, Pause, Play, Plus } from 'lucide-react';
 import { AudioQualityBadge } from '../track/audio-quality-badge';
 import { TrackMoreMenu } from '../track/track-more-menu';
 import { Badge } from '../ui/badge';
@@ -55,7 +55,12 @@ export const TrackRecommendationsCard = ({
   const isCurrentTrack = currentTrack?.id === track.id;
   const isThisTrackPlaying = isCurrentTrack && isPlaying;
 
-  const formattedImage = track.imagePath || 'Unknown Image';
+  const artUrl = track.imagePath
+    ? apiUrl(`/api/images/serve?imagePath=${encodeURIComponent(track.imagePath)}`)
+    : null;
+  const artistLabel = track.artist ? capitalizeEveryWord(track.artist) : 'Unknown artist';
+  const titleLabel = track.title ? capitalizeEveryWord(track.title) : 'Unknown track';
+  const label = `${artistLabel} — ${titleLabel}`;
 
   const handlePlay = (e: React.SyntheticEvent<any>) => {
     e.stopPropagation();
@@ -84,32 +89,37 @@ export const TrackRecommendationsCard = ({
   return (
     <div
       key={recommendation.track.id}
+      aria-current={isCurrentTrack ? 'true' : undefined}
       className={cn(
         'group flex items-center gap-3 p-3 transition-colors hover:bg-muted/50',
-        isThisTrackPlaying && 'bg-muted/80',
-        isThisTrackPlaying && index === 0 && 'border-l-2 border-l-primary rounded-t-xl',
-        isCurrentTrack &&
-          index === recommendationsLength - 1 &&
-          'border-l-2 border-l-primary rounded-b-xl',
-        isCurrentTrack &&
-          index !== 0 &&
-          index !== recommendationsLength - 1 &&
-          'border-l-2 border-l-primary',
+        isCurrentTrack && 'bg-muted/80 border-l-2 border-l-primary',
+        isCurrentTrack && index === 0 && 'rounded-t-xl',
+        isCurrentTrack && index === recommendationsLength - 1 && 'rounded-b-xl',
       )}
     >
-      <img
-        src={apiUrl(`/api/images/serve?imagePath=${formattedImage}`)}
-        alt="Album Art"
-        className="h-10 w-10 shrink-0 rounded-full object-cover"
-      />
+      {artUrl ? (
+        <img
+          src={artUrl}
+          alt=""
+          loading="lazy"
+          className="h-10 w-10 shrink-0 rounded-full object-cover"
+        />
+      ) : (
+        <div
+          className="h-10 w-10 shrink-0 rounded-full bg-muted flex items-center justify-center"
+          aria-hidden
+        >
+          <ListMusic className="h-4 w-4 text-muted-foreground" />
+        </div>
+      )}
 
       {/* Track info — two lines: title, then muted meta */}
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
-          <span className="truncate text-sm font-medium capitalize">
-            {track?.artist?.toLowerCase() || 'Unknown Artist'} —{' '}
-            {track?.title?.toLowerCase() || 'Unknown Track'}
-          </span>
+          {isThisTrackPlaying && (
+            <AudioLines className="h-4 w-4 shrink-0 text-primary" aria-label="Now playing" />
+          )}
+          <span className="truncate text-sm font-medium">{label}</span>
           <AudioQualityBadge format={track.format} hqAudioPath={track.hqAudioPath} />
           {recommendation.reasons.length > 0 && (
             <Tooltip>
@@ -129,7 +139,9 @@ export const TrackRecommendationsCard = ({
           )}
         </div>
         <p className="mt-1 truncate text-xs text-muted-foreground">
-          <span className="tabular-nums">{track.mfTempo} BPM</span>
+          <span className="font-mono tabular-nums">
+            {track.mfTempo ? `${Math.round(track.mfTempo)} BPM` : '— BPM'}
+          </span>
           {track.genres && track.genres.length > 0 && (
             <span className="capitalize"> · {track.genres.slice(0, 3).join(', ')}</span>
           )}

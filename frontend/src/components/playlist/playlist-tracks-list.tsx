@@ -18,11 +18,12 @@ import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
 import {
   SortableContext,
   arrayMove,
+  sortableKeyboardCoordinates,
   useSortable,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { PlaylistTrackListCard, PlaylistTrackListCardSkeleton } from './playlist-track-list-card';
 
@@ -45,8 +46,10 @@ export function PlaylistTracksList({
   const removeTrackMutation = useRemoveTrackFromPlaylist();
   const updatePositionsMutation = useUpdatePlaylistPositions();
 
-  // Sync localTracks with playlist.tracks when playlist changes (e.g., after sorting)
-  // Use a stringified version of track IDs and positions to detect order changes
+  // Sync localTracks with playlist.tracks when the playlist changes (e.g. after
+  // sorting). Keyed only on a signature of ids+positions so a fresh array
+  // reference from a background refetch that didn't actually reorder anything
+  // doesn't trigger an extra state write + render.
   const tracksSignature = useMemo(
     () => playlist?.tracks?.map((t) => `${t.id}:${t.position}`).join(','),
     [playlist?.tracks],
@@ -54,17 +57,20 @@ export function PlaylistTracksList({
 
   useEffect(() => {
     setLocalTracks(playlist?.tracks || []);
-  }, [tracksSignature, playlist?.tracks]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tracksSignature]);
 
   const sensors = useSensors(
     useSensor(MouseSensor, {}),
     useSensor(TouchSensor, {}),
-    useSensor(KeyboardSensor, {}),
+    // Without the sortable coordinate getter, arrow-key reordering doesn't
+    // understand the list geometry and moves items erratically.
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
 
   const trackIds = useMemo(() => localTracks.map((track) => track.id), [localTracks]);
 
-  const handleRemoveTrack = async (trackId: string) => {
+  const handleRemoveTrack = useCallback(async (trackId: string) => {
     const track = localTracks.find((t) => t.track?.id === trackId);
 
     const trackName = `${track?.track?.title} by ${track?.track?.artist}`;
@@ -88,10 +94,11 @@ export function PlaylistTracksList({
       onUpdate();
     } catch (error) {
       console.error('Failed to remove track:', error);
+      toast.error('Could not remove that track. Please try again.');
     } finally {
       setRemovingTrackId(null);
     }
-  };
+  }, [localTracks, playlist?.id, removeTrackMutation, addTrackToPlaylist, onUpdate]);
 
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
@@ -123,6 +130,7 @@ export function PlaylistTracksList({
           onUpdate();
         } catch (error) {
           console.error('Failed to update playlist positions:', error);
+          toast.error('Could not save the new order. Reverting.');
           // Revert on error
           setLocalTracks(playlist?.tracks || []);
         }
@@ -183,11 +191,21 @@ function SortablePlaylistTrack({
     id: playlistTrack.id,
   });
 
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
-  };
+  const style = useMemo(
+    () => ({
+      transform: CSS.Transform.toString(transform),
+      transition,
+      opacity: isDragging ? 0.5 : 1,
+    }),
+    [transform, transition, isDragging],
+  );
+
+  // Stable object identity so the memo() on PlaylistTrackListCard isn't
+  // defeated by a fresh spread on every render of the list.
+  const dragHandleProps = useMemo(
+    () => ({ ...attributes, ...listeners }),
+    [attributes, listeners],
+  );
 
   return (
     <div ref={setNodeRef} style={style}>
@@ -195,7 +213,7 @@ function SortablePlaylistTrack({
         playlistTrack={playlistTrack}
         handleRemoveTrack={onRemove}
         removingTrackId={removingTrackId}
-        dragHandleProps={{ ...attributes, ...listeners }}
+        dragHandleProps={dragHandleProps}
         index={index}
         playlistLength={playlistLength}
       />

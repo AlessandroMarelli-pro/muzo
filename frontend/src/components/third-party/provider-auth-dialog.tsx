@@ -8,6 +8,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { toast } from 'sonner';
 
 interface ProviderAuthDialogProps {
   open: boolean;
@@ -39,7 +40,7 @@ export function ProviderAuthDialog({
     if (!authUrl) return;
     const newWindow = window.open(authUrl, '_blank', 'noopener,noreferrer');
     if (!newWindow || newWindow.closed) {
-      alert('Popup blocked. Please click the link below to open the authorization page.');
+      toast.error('Popup blocked — use the link below to open the page.');
     }
   };
 

@@ -5,15 +5,25 @@ import {
   useCurrentTrack,
   useIsPlaying,
 } from '@/contexts/audio-player-context';
-import { cn, formatDuration } from '@/lib/utils';
+import { capitalizeEveryWord, cn, formatDuration } from '@/lib/utils';
 import { useAddTrackToQueue } from '@/services/queue-hooks';
 import { Link } from '@tanstack/react-router';
-import { Brain, GripVertical, ListMusic, Pause, Play, Trash2 } from 'lucide-react';
+import { AudioLines, Brain, GripVertical, ListMusic, Pause, Play, Trash2 } from 'lucide-react';
 import { memo } from 'react';
 import { AudioQualityBadge } from '../track/audio-quality-badge';
 import { GenresBadge } from '../track/genres-badge';
 import { Skeleton } from '../ui/skeleton';
 import { apiUrl } from '@/lib/api-config';
+
+/** Album-art URL, or null when the track has no artwork (avoids a broken request). */
+const albumArtUrl = (imagePath?: string | null) =>
+  imagePath ? apiUrl(`/api/images/serve?imagePath=${encodeURIComponent(imagePath)}`) : null;
+
+const trackLabel = (track?: Track | null) => {
+  const artist = track?.artist ? capitalizeEveryWord(track.artist) : 'Unknown artist';
+  const title = track?.title ? capitalizeEveryWord(track.title) : 'Unknown title';
+  return `${artist} — ${title}`;
+};
 export const PlaylistTrackListCardSkeleton = ({ position }: { position: number }) => {
   return (
     <div className="flex items-center gap-4 p-4 hover:bg-muted/50 transition-colors group h-20">
@@ -52,7 +62,9 @@ export const PlaylistTrackListCard = memo(
     const isCurrentTrack = currentTrack?.id === playlistTrack.track?.id;
     const isThisTrackPlaying = isCurrentTrack && isPlaying;
 
-    const formattedImage = playlistTrack.track?.imagePath || 'Unknown Image';
+    const artUrl = albumArtUrl(playlistTrack.track?.imagePath);
+    const label = trackLabel(playlistTrack.track);
+    const tempo = playlistTrack.track?.mfTempo;
     const handlePlay = (e: React.SyntheticEvent<any>) => {
       e.stopPropagation();
       if (currentTrack?.id !== playlistTrack.track?.id) {
@@ -70,45 +82,56 @@ export const PlaylistTrackListCard = memo(
     return (
       <div
         key={playlistTrack.id}
+        aria-current={isCurrentTrack ? 'true' : undefined}
         className={cn(
           'flex items-center gap-2 p-2 hover:bg-muted/50 transition-colors group',
-          isThisTrackPlaying && 'bg-muted/80  ',
-          isThisTrackPlaying && index === 0 && 'border-l-2 border-l-primary rounded-t-xl',
-          isCurrentTrack &&
-            index === playlistLength - 1 &&
-            'border-l-2 border-l-primary rounded-b-xl',
-          isCurrentTrack &&
-            index !== 0 &&
-            index !== playlistLength - 1 &&
-            'border-l-2 border-l-primary',
+          isCurrentTrack && 'bg-muted/80 border-l-2 border-l-primary',
+          isCurrentTrack && index === 0 && 'rounded-t-xl',
+          isCurrentTrack && index === playlistLength - 1 && 'rounded-b-xl',
         )}
       >
-        {/* Position */}
+        {/* Position / drag handle */}
         <div className="flex items-center gap-2 text-muted-foreground text-sm w-8">
-          {dragHandleProps && (
-            <GripVertical
+          {dragHandleProps ? (
+            <button
+              type="button"
               {...dragHandleProps}
-              className="h-4 w-4 min-h-4 min-w-4 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing"
+              aria-label={`Reorder ${label}`}
+              className="rounded-sm opacity-0 group-hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring transition-opacity cursor-grab active:cursor-grabbing"
+            >
+              <GripVertical className="h-4 w-4" aria-hidden />
+            </button>
+          ) : (
+            <GripVertical
+              className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity"
+              aria-hidden
             />
           )}
-          {!dragHandleProps && (
-            <GripVertical className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity" />
-          )}
-          <span>{playlistTrack.position}</span>
+          <span className="tabular-nums">{playlistTrack.position}</span>
         </div>
-        <img
-          src={apiUrl(`/api/images/serve?imagePath=${formattedImage}`)}
-          alt="Album Art"
-          width={40}
-          height={40}
-          className="w-10 h-10 object-cover rounded-md"
-        />
+        {artUrl ? (
+          <img
+            src={artUrl}
+            alt=""
+            width={40}
+            height={40}
+            loading="lazy"
+            className="w-10 h-10 object-cover rounded-md shrink-0"
+          />
+        ) : (
+          <div
+            className="w-10 h-10 rounded-md shrink-0 bg-muted flex items-center justify-center"
+            aria-hidden
+          >
+            <ListMusic className="h-4 w-4 text-muted-foreground" />
+          </div>
+        )}
         {/* Track Info */}
         <div className="flex-1 min-w-0 flex items-center gap-2">
-          <div className="text-sm font-medium truncate capitalize">
-            {playlistTrack.track?.artist?.toLowerCase()} -{' '}
-            {playlistTrack.track?.title?.toLowerCase() || 'Unknown Title'.toLowerCase()}
-          </div>
+          {isThisTrackPlaying && (
+            <AudioLines className="h-4 w-4 shrink-0 text-primary" aria-label="Now playing" />
+          )}
+          <span className="text-sm font-medium truncate">{label}</span>
           <AudioQualityBadge
             format={playlistTrack.track?.format}
             hqAudioPath={playlistTrack.track?.hqAudioPath}
@@ -122,21 +145,26 @@ export const PlaylistTrackListCard = memo(
         <div className="hidden md:flex flex-row gap-2">
           <GenresBadge genres={playlistTrack.track?.subgenres || []} variant="outline" />
         </div>
-        <div className="hidden md:block text-xs text-muted-foreground">
-          {playlistTrack.track?.mfTempo || 'Unknown'} BPM
+        <div className="hidden md:block text-xs text-muted-foreground font-mono tabular-nums">
+          {tempo ? `${Math.round(tempo)} BPM` : '— BPM'}
         </div>
         {/* Duration */}
-        <div className="text-sm text-muted-foreground">
-          {formatDuration(playlistTrack.track?.duration || 0)}
+        <div className="text-sm text-muted-foreground font-mono tabular-nums">
+          {formatDuration(playlistTrack.track?.duration || 0) || '—'}
         </div>
 
         {/* Actions */}
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" onClick={handlePlay}>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handlePlay}
+            aria-label={isThisTrackPlaying ? `Pause ${label}` : `Play ${label}`}
+          >
             {isThisTrackPlaying ? (
-              <Pause className="h-5 w-5" />
+              <Pause className="h-5 w-5" aria-hidden />
             ) : (
-              <Play className="h-5 w-5 ml-0.5" />
+              <Play className="h-5 w-5 ml-0.5" aria-hidden />
             )}
           </Button>
           <Button
@@ -146,24 +174,25 @@ export const PlaylistTrackListCard = memo(
               e.stopPropagation();
               addToQueueMutation.mutate(playlistTrack.track?.id || '');
             }}
-            title="Add to queue"
+            aria-label={`Add ${label} to queue`}
           >
-            <ListMusic className="h-4 w-4" />
+            <ListMusic className="h-4 w-4" aria-hidden />
           </Button>
           <Button
             variant="ghost"
             size="sm"
             className="text-destructive hover:text-destructive"
             onClick={() => handleRemoveTrack(playlistTrack.track?.id || '')}
+            aria-label={`Remove ${label} from playlist`}
           >
-            <Trash2 className="h-4 w-4 " />
+            <Trash2 className="h-4 w-4" aria-hidden />
           </Button>
           <Button asChild size="sm" variant="ghost">
             <Link
               to="/research/{-$trackId}"
               params={{ trackId: playlistTrack.track?.id ?? '' }}
               preload="intent"
-              aria-label="Open research"
+              aria-label={`Open research for ${label}`}
             >
               <Brain className="h-4 w-4" aria-hidden />
             </Link>
@@ -173,3 +202,4 @@ export const PlaylistTrackListCard = memo(
     );
   },
 );
+PlaylistTrackListCard.displayName = 'PlaylistTrackListCard';

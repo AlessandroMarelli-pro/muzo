@@ -1,5 +1,6 @@
 'use client';
 
+import { memo, useMemo } from 'react';
 import { Area, AreaChart, CartesianGrid, XAxis } from 'recharts';
 
 import {
@@ -12,6 +13,7 @@ import { formatTime } from '@/lib/utils';
 import { Skeleton } from '../ui/skeleton';
 
 export interface PlaylistChartData {
+  position?: number;
   key?: string;
   tempo?: number;
   name?: string;
@@ -27,25 +29,37 @@ const chartConfig = {
   },
 } satisfies ChartConfig;
 
-export function PlaylistChart({
+function PlaylistChartImpl({
   data,
   isLoading,
 }: {
   data: PlaylistChartData[];
   isLoading: boolean;
 }) {
+  // Single O(n) pass for the cumulative-duration x-axis, memoised so the
+  // recharts SVG only reconciles when the track data actually changes rather
+  // than on every parent re-render (tab switch, playback tick, invalidate).
+  const { minTempo, dataWithTempoAdjusted } = useMemo(() => {
+    let minT = Infinity;
+    for (const item of data) minT = Math.min(minT, item.tempo || 0);
+    const min = (Number.isFinite(minT) ? minT : 0) - 1;
+
+    let cumulatedDuration = 0;
+    const adjusted = data.map((item) => {
+      const row = {
+        ...item,
+        tempo: item.tempo ? ((item.tempo - min) / 10).toFixed(2) : 0,
+        duration: formatTime(cumulatedDuration),
+      };
+      cumulatedDuration += item.duration;
+      return row;
+    });
+    return { minTempo: min, dataWithTempoAdjusted: adjusted };
+  }, [data]);
+
   if (isLoading) {
     return <Skeleton className="h-[30vh] aspect-auto" />;
   }
-  const minTempo = Math.min(...data.map((item) => item.tempo || 0)) - 1;
-  const dataWithTempoAdjusted = data.map((item, index) => {
-    const cumulatedDuration = data.slice(0, index).reduce((acc, curr) => acc + curr.duration, 0);
-    return {
-      ...item,
-      tempo: item.tempo ? ((item.tempo - minTempo) / 10).toFixed(2) : 0,
-      duration: formatTime(cumulatedDuration),
-    };
-  });
   return (
     <ChartContainer config={chartConfig} className="h-[30vh] aspect-auto">
       <AreaChart
@@ -123,3 +137,5 @@ export function PlaylistChart({
     </ChartContainer>
   );
 }
+
+export const PlaylistChart = memo(PlaylistChartImpl);

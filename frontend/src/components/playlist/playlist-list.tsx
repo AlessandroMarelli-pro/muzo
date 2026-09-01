@@ -2,7 +2,7 @@ import { Playlist } from '@/__generated__/types';
 import { Button } from '@/components/ui/button';
 import { Route } from '@/routes/playlists.index';
 import { Plus } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { PageHeader, PageShell } from '@/components/layout/page-shell';
 import { SearchInput } from '@/components/ui/search-input';
 import { CreatePlaylistDialog } from './create-playlist-dialog';
@@ -79,14 +79,11 @@ export const InlinePlaylistListComponent = ({
 export function PlaylistList({ onViewPlaylistDetails, loading = false }: PlaylistListProps) {
   const playlists = Route.useLoaderData() as Playlist[];
 
-  const [filteredPlaylists, setFilteredPlaylists] = useState(playlists);
   const [searchQuery, setSearchQuery] = useState('');
-  useEffect(() => {
-    setFilteredPlaylists(
-      playlists.filter((playlist) =>
-        playlist.name.toLowerCase().includes(searchQuery.toLowerCase()),
-      ),
-    );
+  const filteredPlaylists = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return playlists;
+    return playlists.filter((playlist) => playlist.name.toLowerCase().includes(q));
   }, [searchQuery, playlists]);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const handleCreatePlaylist = () => {
@@ -111,6 +108,7 @@ export function PlaylistList({ onViewPlaylistDetails, loading = false }: Playlis
         loading={loading}
         playlists={filteredPlaylists}
         onViewPlaylistDetails={onViewPlaylistDetails}
+        onCardClick={onViewPlaylistDetails}
       />
       <CreatePlaylistDialog
         open={isCreateDialogOpen}

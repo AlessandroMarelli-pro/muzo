@@ -1,6 +1,7 @@
 import { DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { Youtube } from 'lucide-react';
 import { forwardRef, useImperativeHandle, useState } from 'react';
+import { toast } from 'sonner';
 
 export interface YouTubeSyncHandle {
   retrySync: () => void;
@@ -38,9 +39,9 @@ export const YouTubeSync = forwardRef<YouTubeSyncHandle, YouTubeSyncProps>(funct
         if (result.playlistUrl) {
           window.open(result.playlistUrl, '_blank');
         }
-        alert(
-          `Successfully synced ${result.syncedCount} tracks to YouTube!${
-            result.skippedCount > 0 ? ` ${result.skippedCount} tracks were skipped.` : ''
+        toast.success(
+          `Synced ${result.syncedCount} tracks to YouTube${
+            result.skippedCount > 0 ? ` · ${result.skippedCount} skipped` : ''
           }`,
         );
       } else {
@@ -56,7 +57,7 @@ export const YouTubeSync = forwardRef<YouTubeSyncHandle, YouTubeSyncProps>(funct
         if (isAuthError) {
           onNeedAuth();
         } else {
-          alert(`Failed to sync playlist. Errors: ${result.errors.join(', ')}`);
+          toast.error(`Couldn't sync to YouTube: ${result.errors.join(', ')}`);
         }
       }
     } catch (error: any) {
@@ -79,7 +80,7 @@ export const YouTubeSync = forwardRef<YouTubeSyncHandle, YouTubeSyncProps>(funct
       if (isAuthError) {
         onNeedAuth();
       } else {
-        alert(`Failed to sync playlist to YouTube: ${errorMessage}`);
+        toast.error(`Couldn't sync to YouTube: ${errorMessage}`);
       }
     } finally {
       setIsSyncing(false);

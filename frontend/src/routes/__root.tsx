@@ -12,6 +12,7 @@ import { cn } from '@/lib/utils';
 import { queryClient } from '@/query-client';
 import type { QueryClient } from '@tanstack/react-query';
 import { QueryClientProvider } from '@tanstack/react-query';
+import { RouteError, RouteNotFound } from '@/components/route-error';
 import {
   createRootRouteWithContext,
   Outlet,
@@ -176,4 +177,6 @@ const RootComponent = React.memo(function RootComponent() {
 
 export const Route = createRootRouteWithContext<RouterContext>()({
   component: RootComponent,
+  errorComponent: ({ error }) => <RouteError error={error} />,
+  notFoundComponent: () => <RouteNotFound />,
 });

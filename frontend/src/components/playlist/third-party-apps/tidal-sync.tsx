@@ -1,6 +1,7 @@
 import { DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { Music } from 'lucide-react';
 import { forwardRef, useImperativeHandle, useState } from 'react';
+import { toast } from 'sonner';
 
 export interface TidalSyncHandle {
   retrySync: () => void;
@@ -35,10 +36,13 @@ export const TidalSync = forwardRef<TidalSyncHandle, TidalSyncProps>(function Ti
     try {
       const result = await onSync();
       if (result.success) {
-        alert(
-          `Successfully synced playlist to TIDAL!\n\nSynced: ${result.syncedCount} tracks\nSkipped: ${result.skippedCount} tracks${
-            result.playlistUrl ? `\n\nPlaylist URL: ${result.playlistUrl}` : ''
-          }${result.errors.length > 0 ? `\n\nErrors:\n${result.errors.join('\n')}` : ''}`,
+        if (result.playlistUrl) {
+          window.open(result.playlistUrl, '_blank');
+        }
+        toast.success(
+          `Synced ${result.syncedCount} tracks to TIDAL${
+            result.skippedCount > 0 ? ` · ${result.skippedCount} skipped` : ''
+          }`,
         );
       } else {
         const errorMessages = result.errors.join(' ').toLowerCase();
@@ -53,7 +57,7 @@ export const TidalSync = forwardRef<TidalSyncHandle, TidalSyncProps>(function Ti
         if (isAuthError) {
           onNeedAuth();
         } else {
-          alert(`Failed to sync playlist to TIDAL: ${result.errors.join(', ')}`);
+          toast.error(`Couldn't sync to TIDAL: ${result.errors.join(', ')}`);
         }
       }
     } catch (error: any) {
@@ -76,7 +80,7 @@ export const TidalSync = forwardRef<TidalSyncHandle, TidalSyncProps>(function Ti
       if (isAuthError) {
         onNeedAuth();
       } else {
-        alert(`Failed to sync playlist to TIDAL: ${errorMessage}`);
+        toast.error(`Couldn't sync to TIDAL: ${errorMessage}`);
       }
     } finally {
       setIsSyncing(false);

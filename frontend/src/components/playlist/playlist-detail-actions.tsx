@@ -4,6 +4,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
@@ -58,10 +59,10 @@ export function PlaylistDetailActions({
     const csv = rows.map((row) => row.map(escapeCsvField).join(',')).join('\n');
     try {
       await navigator.clipboard.writeText(csv);
-      toast.success('Playlist copied to clipboard as CSV');
+      toast.success('Tracklist copied to clipboard as CSV');
     } catch (error) {
       console.error('Failed to copy playlist:', error);
-      toast.error('Failed to copy playlist');
+      toast.error('Could not copy the tracklist. Please try again.');
     }
   };
 
@@ -71,47 +72,49 @@ export function PlaylistDetailActions({
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button size="sm" variant="ghost" disabled={isDisabled}>
-          <ChevronDown className="h-4 w-4 mr-2" />
           Actions
+          <ChevronDown className="h-4 w-4" aria-hidden />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={onAddTrack} disabled={isDisabled}>
-          <Plus className="h-4 w-4 mr-2" />
-          Add Track
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={onSetAsQueue} disabled={isDisabled || isSettingAsQueue}>
-          <ListMusic className="h-4 w-4 mr-2" />
-          {isSettingAsQueue ? 'Setting as Queue…' : 'Set as Queue'}
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={handleCopyList} disabled={isDisabled}>
-          <Copy className="h-4 w-4 mr-2" />
-          Copy List
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={onDownloadAllHq} disabled={isDisabled}>
-          <Download className="h-4 w-4 mr-2" />
-          Download All in HQ
-        </DropdownMenuItem>
         <DropdownMenuItem onClick={handlePlay} disabled={isDisabled}>
           {isPlaying ? (
             <>
-              <Pause className="h-4 w-4 mr-2" />
+              <Pause className="h-4 w-4 mr-2" aria-hidden />
               Pause
             </>
           ) : (
             <>
-              <Play className="h-4 w-4 mr-2" />
-              Play
+              <Play className="h-4 w-4 mr-2" aria-hidden />
+              Play from the top
             </>
           )}
         </DropdownMenuItem>
+        <DropdownMenuItem onClick={onSetAsQueue} disabled={isDisabled || isSettingAsQueue}>
+          <ListMusic className="h-4 w-4 mr-2" aria-hidden />
+          {isSettingAsQueue ? 'Replacing queue…' : 'Replace queue with this'}
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={onAddTrack} disabled={isDisabled}>
+          <Plus className="h-4 w-4 mr-2" aria-hidden />
+          Add tracks
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={handleCopyList} disabled={isDisabled}>
+          <Copy className="h-4 w-4 mr-2" aria-hidden />
+          Copy tracklist (CSV)
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={onDownloadAllHq} disabled={isDisabled}>
+          <Download className="h-4 w-4 mr-2" aria-hidden />
+          Download all in HQ…
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
         <DropdownMenuItem
           onClick={onDelete}
           disabled={isDisabled || isDeleting}
           className="text-destructive focus:text-destructive"
         >
-          <Trash2 className="h-4 w-4 mr-2" />
-          Delete Playlist
+          <Trash2 className="h-4 w-4 mr-2" aria-hidden />
+          Delete playlist…
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

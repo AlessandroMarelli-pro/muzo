@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input';
 import { useSpotifyAuth } from '@/services/playlist-hooks';
 import { Music2 } from 'lucide-react';
 import { useState } from 'react';
+import { toast } from 'sonner';
 
 interface SpotifySyncProps {
   onSync: () => Promise<{
@@ -41,14 +42,14 @@ export function SpotifySync({ onSync, disabled = false }: SpotifySyncProps) {
     try {
       const result = await onSync();
       if (result.success) {
-        alert(
-          `Successfully synced playlist to Spotify!\n\nSynced: ${result.syncedCount} tracks\nSkipped: ${result.skippedCount} tracks${
-            result.playlistUrl ? `\n\nPlaylist URL: ${result.playlistUrl}` : ''
-          }${result.errors.length > 0 ? `\n\nErrors:\n${result.errors.join('\n')}` : ''}`,
-        );
         if (result.playlistUrl) {
           window.open(result.playlistUrl, '_blank');
         }
+        toast.success(
+          `Synced ${result.syncedCount} tracks to Spotify${
+            result.skippedCount > 0 ? ` · ${result.skippedCount} skipped` : ''
+          }`,
+        );
       } else {
         const errorMessages = result.errors.join(' ').toLowerCase();
         const isAuthError =
@@ -62,7 +63,7 @@ export function SpotifySync({ onSync, disabled = false }: SpotifySyncProps) {
         if (isAuthError) {
           await handleStartAuth();
         } else {
-          alert(`Failed to sync playlist to Spotify: ${result.errors.join(', ')}`);
+          toast.error(`Couldn't sync to Spotify: ${result.errors.join(', ')}`);
         }
       }
     } catch (error: any) {
@@ -87,10 +88,10 @@ export function SpotifySync({ onSync, disabled = false }: SpotifySyncProps) {
           await handleStartAuth();
         } catch (authError: any) {
           console.error('Failed to start Spotify auth:', authError);
-          alert(`Failed to start authentication: ${authError?.message || 'Unknown error'}`);
+          toast.error(`Couldn't start Spotify authentication: ${authError?.message || 'Unknown error'}`);
         }
       } else {
-        alert(`Failed to sync playlist to Spotify: ${errorMessage}`);
+        toast.error(`Couldn't sync to Spotify: ${errorMessage}`);
       }
     } finally {
       setIsSyncing(false);
@@ -114,18 +115,18 @@ export function SpotifySync({ onSync, disabled = false }: SpotifySyncProps) {
     } catch (error: any) {
       console.error('Failed to get Spotify authorization:', error);
       const errorMsg = error?.message || error?.response?.errors?.[0]?.message || 'Unknown error';
-      alert(`Failed to get authorization: ${errorMsg}. Please check your backend configuration.`);
+      toast.error(`Couldn't get a Spotify authorization link: ${errorMsg}`);
     }
   };
 
   const handleCompleteAuth = async () => {
     if (!authCode.trim()) {
-      alert('Please enter the authorization code');
+      toast.error('Enter the authorization code first.');
       return;
     }
 
     if (!codeVerifier) {
-      alert('Missing code verifier. Please start the authentication process again.');
+      toast.error('Session expired — start the authentication again.');
       return;
     }
 
@@ -139,16 +140,16 @@ export function SpotifySync({ onSync, disabled = false }: SpotifySyncProps) {
         setAuthCode('');
         setAuthUrl(null);
         setCodeVerifier(null);
-        alert('Successfully authenticated with Spotify! Retrying sync...');
+        toast.success('Connected to Spotify. Retrying sync…');
         setTimeout(() => {
           handleSync();
         }, 500);
       } else {
-        alert(`Authentication failed: ${result.message || 'Unknown error'}`);
+        toast.error(`Spotify authentication failed: ${result.message || 'Unknown error'}`);
       }
     } catch (error: any) {
       console.error('Failed to authenticate:', error);
-      alert(`Failed to authenticate: ${error.message || 'Unknown error'}`);
+      toast.error(`Spotify authentication failed: ${error.message || 'Unknown error'}`);
     }
   };
 
@@ -195,9 +196,7 @@ export function SpotifySync({ onSync, disabled = false }: SpotifySyncProps) {
                       console.log('Opening Spotify auth URL:', authUrl);
                       const newWindow = window.open(authUrl, '_blank', 'noopener,noreferrer');
                       if (!newWindow || newWindow.closed) {
-                        alert(
-                          'Popup blocked. Please click the link below to open the authorization page.',
-                        );
+                        toast.error('Popup blocked — use the link below to open the page.');
                       }
                     }}
                     className="w-full"

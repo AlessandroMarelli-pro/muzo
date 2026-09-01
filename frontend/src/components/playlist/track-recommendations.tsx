@@ -5,6 +5,7 @@ import { useAddTrackToPlaylist, usePlaylistRecommendations } from '@/services/pl
 import type { RecommendationSeedStrategy } from '@/services/recommendation-types';
 import { useRouter } from '@tanstack/react-router';
 import { useState } from 'react';
+import { toast } from 'sonner';
 import {
   TrackRecommendationsCard,
   TrackRecommendationsCardSkeleton,
@@ -87,7 +88,7 @@ export function TrackRecommendations({
       }
     } catch (error) {
       console.error('Failed to add track:', error);
-    } finally {
+      toast.error('Could not add that track. Please try again.');
     }
   };
 

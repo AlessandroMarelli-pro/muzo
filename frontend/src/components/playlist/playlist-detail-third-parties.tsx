@@ -9,6 +9,7 @@ import { ProviderAuthDialog } from '@/components/third-party/provider-auth-dialo
 import { useTidalAuth, useYouTubeAuth } from '@/services/playlist-hooks';
 import { ChevronDown, Music2 } from 'lucide-react';
 import { useRef, useState } from 'react';
+import { toast } from 'sonner';
 import { SpotifySync } from './third-party-apps/spotify-sync';
 import { TidalSync, type TidalSyncHandle } from './third-party-apps/tidal-sync';
 import { YouTubeSync, type YouTubeSyncHandle } from './third-party-apps/youtube-sync';
@@ -74,9 +75,7 @@ export function PlaylistDetailThirdParties({
     } catch (error: any) {
       console.error('Failed to get YouTube auth URL:', error);
       const errorMsg = error?.message || error?.response?.errors?.[0]?.message || 'Unknown error';
-      alert(
-        `Failed to get authentication URL: ${errorMsg}. Please check your backend configuration.`,
-      );
+      toast.error(`Couldn't get a YouTube authorization link: ${errorMsg}`);
     }
   };
 
@@ -88,7 +87,7 @@ export function PlaylistDetailThirdParties({
 
   const handleCompleteYouTubeAuth = async () => {
     if (!youtubeAuthCode.trim()) {
-      alert('Please enter the authorization code');
+      toast.error('Enter the authorization code first.');
       return;
     }
 
@@ -96,16 +95,16 @@ export function PlaylistDetailThirdParties({
       const result = await authenticateYouTube(youtubeAuthCode);
       if (result.success) {
         closeYouTubeAuthDialog();
-        alert('Successfully authenticated with YouTube! Retrying sync...');
+        toast.success('Connected to YouTube. Retrying sync…');
         setTimeout(() => {
           youtubeSyncRef.current?.retrySync();
         }, 500);
       } else {
-        alert(`Authentication failed: ${result.message || 'Unknown error'}`);
+        toast.error(`YouTube authentication failed: ${result.message || 'Unknown error'}`);
       }
     } catch (error: any) {
       console.error('Failed to authenticate:', error);
-      alert(`Failed to authenticate: ${error.message || 'Unknown error'}`);
+      toast.error(`YouTube authentication failed: ${error.message || 'Unknown error'}`);
     }
   };
 
@@ -134,7 +133,7 @@ export function PlaylistDetailThirdParties({
     } catch (error: any) {
       console.error('Failed to get TIDAL authorization:', error);
       const errorMsg = error?.message || error?.response?.errors?.[0]?.message || 'Unknown error';
-      alert(`Failed to get authorization: ${errorMsg}. Please check your backend configuration.`);
+      toast.error(`Couldn't get a TIDAL authorization link: ${errorMsg}`);
     }
   };
 
@@ -147,11 +146,11 @@ export function PlaylistDetailThirdParties({
 
   const handleCompleteTidalAuth = async () => {
     if (!tidalAuthCode.trim()) {
-      alert('Please enter the authorization code');
+      toast.error('Enter the authorization code first.');
       return;
     }
     if (!tidalCodeVerifier) {
-      alert('Missing code verifier. Please start the authentication process again.');
+      toast.error('Session expired — start the authentication again.');
       return;
     }
 
@@ -162,16 +161,16 @@ export function PlaylistDetailThirdParties({
       });
       if (result.success) {
         closeTidalAuthDialog();
-        alert('Successfully authenticated with TIDAL! Retrying sync...');
+        toast.success('Connected to TIDAL. Retrying sync…');
         setTimeout(() => {
           tidalSyncRef.current?.retrySync();
         }, 500);
       } else {
-        alert(`Authentication failed: ${result.message || 'Unknown error'}`);
+        toast.error(`TIDAL authentication failed: ${result.message || 'Unknown error'}`);
       }
     } catch (error: any) {
       console.error('Failed to authenticate:', error);
-      alert(`Failed to authenticate: ${error.message || 'Unknown error'}`);
+      toast.error(`TIDAL authentication failed: ${error.message || 'Unknown error'}`);
     }
   };
 
