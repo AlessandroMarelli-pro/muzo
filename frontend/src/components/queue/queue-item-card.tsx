@@ -7,26 +7,14 @@ import {
 import { capitalizeEveryWord, cn, formatDuration } from '@/lib/utils';
 import { QueueItem } from '@/services/queue-hooks';
 import { Link } from '@tanstack/react-router';
-import {
-  Brain,
-  GripVertical,
-  Music2,
-  Pause,
-  Play,
-  Trash2,
-  AudioLines,
-} from 'lucide-react';
+import { Brain, GripVertical, Music2, Pause, Play, Trash2, AudioLines } from 'lucide-react';
 import { memo } from 'react';
 import { apiUrl } from '@/lib/api-config';
-import type {
-  DraggableAttributes,
-  DraggableSyntheticListeners,
-} from '@dnd-kit/core';
+import type { DraggableAttributes, DraggableSyntheticListeners } from '@dnd-kit/core';
 
 interface QueueItemCardProps {
   queueItem: QueueItem;
   index: number;
-  queueItemsCount: number;
   onRemove: (trackId: string) => void;
   removingTrackId: string | null;
   dragHandleProps?: {
@@ -36,14 +24,7 @@ interface QueueItemCardProps {
 }
 
 export const QueueItemCard = memo(
-  ({
-    queueItem,
-    queueItemsCount,
-    index,
-    onRemove,
-    removingTrackId,
-    dragHandleProps,
-  }: QueueItemCardProps) => {
+  ({ queueItem, index, onRemove, removingTrackId, dragHandleProps }: QueueItemCardProps) => {
     const { currentTrack, setCurrentTrack } = useCurrentTrack();
     const actions = useAudioPlayerActions();
     const isPlaying = useIsPlaying();
@@ -56,12 +37,8 @@ export const QueueItemCard = memo(
     const isThisTrackPlaying = isCurrentTrack && isPlaying;
     const isRemoving = removingTrackId === queueItem.trackId;
 
-    const trackTitle = capitalizeEveryWord(
-      queueItem.track.title || 'Untitled Track',
-    );
-    const trackArtist = capitalizeEveryWord(
-      queueItem.track.artist || 'Unknown Artist',
-    );
+    const trackTitle = capitalizeEveryWord(queueItem.track.title || 'Untitled Track');
+    const trackArtist = capitalizeEveryWord(queueItem.track.artist || 'Unknown Artist');
 
     const handlePlay = (e: React.SyntheticEvent<any>) => {
       e.stopPropagation();
@@ -81,41 +58,33 @@ export const QueueItemCard = memo(
     return (
       <div
         className={cn(
-          'flex items-center gap-3 p-3 hover:bg-muted/50 transition-colors group',
+          'group relative flex items-center gap-3 px-4 py-2.5 transition-colors hover:bg-muted/50',
           isCurrentTrack && 'bg-primary/10',
-          isCurrentTrack &&
-            index === 0 &&
-            'border-l-2 border-l-primary rounded-t-xl',
-          isCurrentTrack &&
-            index === queueItemsCount - 1 &&
-            'border-l-2 border-l-primary rounded-b-xl',
-          isCurrentTrack &&
-            index !== 0 &&
-            index !== queueItemsCount - 1 &&
-            'border-l-2 border-l-primary',
           isRemoving && 'opacity-50',
         )}
       >
-        {/* Position and Drag Handle */}
-        <div className="flex items-center gap-1 text-muted-foreground text-sm w-6">
-          {dragHandleProps && (
-            <GripVertical
-              {...dragHandleProps.attributes}
-              {...dragHandleProps.listeners}
-              aria-label="Drag to reorder"
-              className="h-4 w-4 min-h-4 min-w-4 opacity-40 group-hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm transition-opacity cursor-grab active:cursor-grabbing"
-            />
-          )}
-          <span>{index + 1}</span>
-        </div>
+        {isCurrentTrack && (
+          <span className="absolute inset-y-0 left-0 w-0.5 bg-primary" aria-hidden />
+        )}
+        {/* Drag handle — sits in the gutter, only visible on hover/focus. */}
+        {dragHandleProps && (
+          <GripVertical
+            {...dragHandleProps.attributes}
+            {...dragHandleProps.listeners}
+            aria-label="Drag to reorder"
+            className="size-4 shrink-0 cursor-grab rounded-sm text-muted-foreground opacity-0 transition-opacity focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring group-hover:opacity-40 active:cursor-grabbing"
+          />
+        )}
+        {/* Position */}
+        <span className="w-6 shrink-0 text-right font-mono text-xs tabular-nums text-muted-foreground">
+          {index + 1}
+        </span>
 
         {/* Album Art */}
         <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-md bg-muted">
           {queueItem.track.imagePath ? (
             <img
-              src={apiUrl(
-                `/api/images/serve?imagePath=${queueItem.track.imagePath}`,
-              )}
+              src={apiUrl(`/api/images/serve?imagePath=${queueItem.track.imagePath}`)}
               alt={`${trackTitle} album art`}
               width={44}
               height={44}
@@ -128,10 +97,7 @@ export const QueueItemCard = memo(
           )}
           {isThisTrackPlaying && (
             <div className="absolute inset-0 flex items-center justify-center bg-background/60">
-              <AudioLines
-                className="h-5 w-5 text-primary animate-pulse"
-                aria-hidden
-              />
+              <AudioLines className="h-5 w-5 text-primary animate-pulse" aria-hidden />
             </div>
           )}
         </div>
@@ -140,9 +106,10 @@ export const QueueItemCard = memo(
         <div className="flex-1 min-w-0">
           <div
             className={cn(
-              'font-medium truncate text-sm',
-              isCurrentTrack && 'text-primary font-semibold',
+              'line-clamp-2 text-sm font-medium leading-snug',
+              isCurrentTrack && 'font-semibold text-primary',
             )}
+            title={trackTitle}
           >
             {trackTitle}
           </div>
@@ -156,42 +123,44 @@ export const QueueItemCard = memo(
           </div>
         </div>
 
-        {/* Duration */}
-        <div className="text-xs text-muted-foreground">
+        {/* Duration — yields to the actions on hover/focus. */}
+        <div className="font-mono text-xs tabular-nums text-muted-foreground transition-opacity group-focus-within:opacity-0 group-hover:opacity-0">
           {formatDuration(queueItem.track.duration || 0)}
         </div>
 
-        {/* Actions */}
-        <div className="flex items-center gap-0">
+        {/* Actions — revealed on hover/focus, sitting over the duration slot. */}
+        <div className="absolute right-3 flex items-center gap-0.5 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100">
           <Button
             variant="ghost"
             size="iconSm"
+            className="size-8"
             onClick={handlePlay}
             aria-label={isThisTrackPlaying ? 'Pause' : 'Play'}
           >
             {isThisTrackPlaying ? (
-              <Pause className="h-5 w-5" aria-hidden />
+              <Pause className="size-4" aria-hidden />
             ) : (
-              <Play className="h-5 w-5 ml-0.5" aria-hidden />
+              <Play className="size-4 translate-x-px" aria-hidden />
             )}
           </Button>
           <Button
             variant="ghost"
             size="iconSm"
+            className="size-8"
             onClick={() => onRemove(queueItem.trackId)}
             disabled={isRemoving}
             aria-label="Remove from queue"
           >
-            <Trash2 className="h-4 w-4" aria-hidden />
+            <Trash2 className="size-4" aria-hidden />
           </Button>
-          <Button asChild size="iconSm" variant="ghost">
+          <Button asChild size="iconSm" variant="ghost" className="size-8">
             <Link
               to="/research/{-$trackId}"
               params={{ trackId: queueItem.track?.id ?? '' }}
               preload="intent"
               aria-label="Open research"
             >
-              <Brain className="h-4 w-4" aria-hidden />
+              <Brain className="size-4" aria-hidden />
             </Link>
           </Button>
         </div>

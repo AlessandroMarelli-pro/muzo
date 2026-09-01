@@ -1,5 +1,4 @@
 import { Loading } from '@/components/loading';
-import { Card, CardContent } from '@/components/ui/card';
 import {
   QueueItem,
   useQueue,
@@ -46,10 +45,7 @@ export function QueueList() {
     useSensor(KeyboardSensor, {}),
   );
 
-  const queueIds = useMemo(
-    () => localQueue.map((item) => item.id),
-    [localQueue],
-  );
+  const queueIds = useMemo(() => localQueue.map((item) => item.id), [localQueue]);
 
   const handleRemoveTrack = async (trackId: string) => {
     setRemovingTrackId(trackId);
@@ -91,71 +87,51 @@ export function QueueList() {
 
   if (isLoading) {
     return (
-      <Card>
-        <CardContent className="p-6">
-          <Loading />
-        </CardContent>
-      </Card>
+      <div className="p-6">
+        <Loading />
+      </div>
     );
   }
 
   if (error) {
     return (
-      <Card>
-        <CardContent className="text-center py-12">
-          <div className="text-red-500">
-            Error loading queue: {error.message}
-          </div>
-        </CardContent>
-      </Card>
+      <div className="px-4 py-12 text-center text-sm text-destructive">
+        Couldn't load the queue — {error.message}
+      </div>
     );
   }
 
   if (localQueue.length === 0) {
     return (
-      <Card>
-        <CardContent className="text-center py-12">
-          <div className="space-y-4">
-            <div className="text-muted-foreground">
-              <Clock className="h-12 w-12 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold">Queue is empty</h3>
-              <p>Add tracks to start building your queue</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="flex flex-col items-center gap-2 px-4 py-16 text-center">
+        <Clock className="size-8 text-muted-foreground/60" aria-hidden />
+        <h3 className="text-sm font-semibold text-foreground">Queue is empty</h3>
+        <p className="text-xs text-muted-foreground">Add tracks and they'll line up here.</p>
+      </div>
     );
   }
 
   return (
-    <Card className="py-0">
-      <CardContent className="p-0">
-        <DndContext
-          collisionDetection={closestCenter}
-          modifiers={[restrictToVerticalAxis]}
-          onDragEnd={handleDragEnd}
-          sensors={sensors}
-        >
-          <SortableContext
-            items={queueIds}
-            strategy={verticalListSortingStrategy}
-          >
-            <div className="divide-y">
-              {localQueue.map((queueItem, index) => (
-                <SortableQueueItem
-                  key={queueItem.id}
-                  queueItem={queueItem}
-                  index={index}
-                  onRemove={handleRemoveTrack}
-                  removingTrackId={removingTrackId}
-                  queueItemsCount={localQueue.length}
-                />
-              ))}
-            </div>
-          </SortableContext>
-        </DndContext>
-      </CardContent>
-    </Card>
+    <DndContext
+      collisionDetection={closestCenter}
+      modifiers={[restrictToVerticalAxis]}
+      onDragEnd={handleDragEnd}
+      sensors={sensors}
+    >
+      <SortableContext items={queueIds} strategy={verticalListSortingStrategy}>
+        <div className="divide-y divide-border/60">
+          {localQueue.map((queueItem, index) => (
+            <SortableQueueItem
+              key={queueItem.id}
+              queueItem={queueItem}
+              index={index}
+              onRemove={handleRemoveTrack}
+              removingTrackId={removingTrackId}
+            />
+          ))}
+        </div>
+      </SortableContext>
+    </DndContext>
   );
 }
 
@@ -164,22 +140,13 @@ function SortableQueueItem({
   index,
   onRemove,
   removingTrackId,
-  queueItemsCount,
 }: {
   queueItem: QueueItem;
   index: number;
   onRemove: (trackId: string) => void;
   removingTrackId: string | null;
-  queueItemsCount: number;
 }) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: queueItem.id,
   });
 
@@ -194,7 +161,6 @@ function SortableQueueItem({
       <QueueItemCard
         queueItem={queueItem}
         index={index}
-        queueItemsCount={queueItemsCount}
         onRemove={onRemove}
         removingTrackId={removingTrackId}
         dragHandleProps={{ attributes, listeners }}
