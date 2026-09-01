@@ -2,12 +2,12 @@
 
 import type { Track } from '@/__generated__/types';
 import { DataTableSkeleton } from '@/components/data-table/data-table-skeleton';
-import { FilterButton } from '@/components/filters/filter-button';
 import { PageContent, PageShell } from '@/components/layout/page-shell';
 import { NoData } from '@/components/no-data';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Drawer, DrawerContent, DrawerTitle } from '@/components/ui/drawer';
+import { TrackFilterBar } from '@/components/track/track-filter-bar';
 import {
   useAudioPlayerActions,
   useCurrentTrack,
@@ -243,9 +243,9 @@ export function PendingPage() {
     <PageShell>
       {tracks.length === 0 ? (
         <>
-          <div className="flex items-center justify-end gap-2">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <TrackFilterBar />
             <Badge variant="outline">{total} pending</Badge>
-            <FilterButton />
           </div>
           <NoData
             Icon={Sparkles}
@@ -257,9 +257,9 @@ export function PendingPage() {
       ) : (
         <PageContent className="lg:grid lg:grid-cols-[minmax(0,1fr)_380px] lg:gap-6 xl:grid-cols-[minmax(0,1fr)_420px]">
           <div className="min-w-0 space-y-3">
-            <div className="flex items-center justify-end gap-2">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <TrackFilterBar />
               <Badge variant="outline">{total} pending</Badge>
-              <FilterButton />
             </div>
             <PendingTable
               data={tracks}

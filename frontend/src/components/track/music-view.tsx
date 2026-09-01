@@ -185,6 +185,7 @@ export const MusicView = React.memo<MusicViewProps>(function MusicView({
         <MusicFilterBar
           reviewMode={reviewMode}
           pendingCount={pendingCount}
+          matchCount={totalCount}
           onReviewChange={(next) =>
             void navigate({ search: (prev) => ({ ...prev, review: next, page: 1 }) })
           }

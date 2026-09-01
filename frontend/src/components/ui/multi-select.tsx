@@ -53,17 +53,28 @@ export default function MultiSelect({
   return (
     <div className={cn('w-full', className)}>
       <Popover open={open} onOpenChange={setOpen} modal={false}>
-        <PopoverTrigger
-          className={cn(
-            'flex h-8 w-full  items-center justify-between rounded-md border border-input bg-background text-sm ',
-            'focus:outline-none ',
-            'disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer',
-            'hover:bg-accent hover:text-accent-foreground',
-          )}
-          disabled={disabled}
-          aria-expanded={open}
-        >
-          <div className="flex justify-between flex-1 overflow-hidden">
+        <PopoverTrigger asChild disabled={disabled}>
+          <div
+            role="combobox"
+            aria-expanded={open}
+            aria-disabled={disabled}
+            tabIndex={disabled ? -1 : 0}
+            onClick={() => !disabled && setOpen((prev) => !prev)}
+            onKeyDown={(e) => {
+              if (disabled) return;
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                setOpen((prev) => !prev);
+              }
+            }}
+            className={cn(
+              'flex h-8 w-full  items-center justify-between rounded-md border border-input bg-background text-sm ',
+              'focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+              'disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer',
+              'hover:bg-accent hover:text-accent-foreground',
+            )}
+          >
+            <div className="flex justify-between flex-1 overflow-hidden">
             <div
               className="flex gap-1 flex-1 py-2 px-3 overflow-x-auto"
               style={{
@@ -77,41 +88,29 @@ export default function MultiSelect({
                 value.map((item) => {
                   const option = options?.find((opt) => opt.value === item);
                   return (
-                    <Badge
-                      key={item}
-                      variant="default"
-                      className="text-xs cursor-pointer "
-                      size="xs"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleUnselect(item);
-                      }}
-                    >
-                      <div className="flex flex-row items-center gap-1 align-middle">
+                    <Badge key={item} variant="default" className="text-xs" size="xs" asChild>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleUnselect(item);
+                        }}
+                        aria-label={`Remove ${option?.label ?? item}`}
+                        className="flex cursor-pointer flex-row items-center gap-1 align-middle"
+                      >
                         {option?.label}
                         <X className="size-3" />
-                      </div>
+                      </button>
                     </Badge>
                   );
                 })
               )}
             </div>
-            <hr className="border-l border-border bg-red-300 h-6 mx-0.5 my-auto" />
-            <span
-              role="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                setOpen((prev) => !prev);
-              }}
-              tabIndex={0}
-              className={cn(
-                'p-1 mx-1.5 my-auto h-full outline-none',
-                'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
-                'hover:bg-accent/50 rounded-sm cursor-pointer',
-              )}
-            >
+            <hr className="border-l border-border h-6 mx-0.5 my-auto" />
+            <span className="p-1 mx-1.5 my-auto h-full flex items-center" aria-hidden="true">
               <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
             </span>
+          </div>
           </div>
         </PopoverTrigger>
         <PopoverContent

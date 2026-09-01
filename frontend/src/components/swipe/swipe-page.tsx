@@ -5,13 +5,13 @@ import {
   useCurrentTrack,
   useIsPlaying,
 } from '@/contexts/audio-player-context';
+import { TrackFilterBar } from '@/components/track/track-filter-bar';
 import { Route } from '@/routes/swipe.index';
 import { useBangerTrack, useDislikeTrack, useLikeTrack } from '@/services/api-hooks';
 import { useRouter } from '@tanstack/react-router';
 import { InfoIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { FilterButton } from '../filters';
 import { Skeleton } from '../ui/skeleton';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip';
 import { SwipeView } from './swipe-track';
@@ -286,9 +286,11 @@ export const SwipePage = React.memo(() => {
         )}
 
         <div className="flex flex-row justify-end gap-4 ">
-          <FilterButton />
           <UsageTooltip />
         </div>
+      </div>
+      <div className="flex justify-end px-6">
+        <TrackFilterBar />
       </div>
       <div className="flex flex-row justify-center mb-8 text-center h-full w-full backdrop-blur-2xl">
         <SwipeView

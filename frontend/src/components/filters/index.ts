@@ -1,2 +1,1 @@
-export { FilterButton } from './filter-button';
-export { FilterSheet } from './filter-sheet';
+export { FilterComponent } from './filter-component';
