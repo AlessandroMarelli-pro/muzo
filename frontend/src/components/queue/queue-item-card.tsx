@@ -4,7 +4,7 @@ import {
   useCurrentTrack,
   useIsPlaying,
 } from '@/contexts/audio-player-context';
-import { cn, formatDuration } from '@/lib/utils';
+import { capitalizeEveryWord, cn, formatDuration } from '@/lib/utils';
 import { QueueItem } from '@/services/queue-hooks';
 import { Link } from '@tanstack/react-router';
 import {
@@ -56,8 +56,12 @@ export const QueueItemCard = memo(
     const isThisTrackPlaying = isCurrentTrack && isPlaying;
     const isRemoving = removingTrackId === queueItem.trackId;
 
-    const trackTitle = queueItem.track.title || 'Untitled Track';
-    const trackArtist = queueItem.track.artist || 'Unknown Artist';
+    const trackTitle = capitalizeEveryWord(
+      queueItem.track.title || 'Untitled Track',
+    );
+    const trackArtist = capitalizeEveryWord(
+      queueItem.track.artist || 'Unknown Artist',
+    );
 
     const handlePlay = (e: React.SyntheticEvent<any>) => {
       e.stopPropagation();

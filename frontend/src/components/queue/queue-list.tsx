@@ -1,6 +1,5 @@
 import { Loading } from '@/components/loading';
 import { Card, CardContent } from '@/components/ui/card';
-import { useCurrentTrack } from '@/contexts/audio-player-context';
 import {
   QueueItem,
   useQueue,
@@ -31,7 +30,6 @@ import { QueueItemCard } from './queue-item-card';
 
 export function QueueList() {
   const { data: queueItems = [], isLoading, error } = useQueue();
-  const { currentTrack } = useCurrentTrack();
   const removeTrackMutation = useRemoveTrackFromQueue();
   const updatePositionsMutation = useUpdateQueuePositions();
   const [removingTrackId, setRemovingTrackId] = useState<string | null>(null);
@@ -129,10 +127,6 @@ export function QueueList() {
     );
   }
 
-  const nowPlayingIndex = localQueue.findIndex(
-    (item) => item.track?.id === currentTrack?.id,
-  );
-
   return (
     <Card className="py-0">
       <CardContent className="p-0">
@@ -146,42 +140,18 @@ export function QueueList() {
             items={queueIds}
             strategy={verticalListSortingStrategy}
           >
-            {nowPlayingIndex !== -1 && (
-              <div>
-                <div className="px-4 pt-3 pb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  Now Playing
-                </div>
+            <div className="divide-y">
+              {localQueue.map((queueItem, index) => (
                 <SortableQueueItem
-                  key={localQueue[nowPlayingIndex].id}
-                  queueItem={localQueue[nowPlayingIndex]}
-                  index={nowPlayingIndex}
+                  key={queueItem.id}
+                  queueItem={queueItem}
+                  index={index}
                   onRemove={handleRemoveTrack}
                   removingTrackId={removingTrackId}
                   queueItemsCount={localQueue.length}
                 />
-              </div>
-            )}
-            {localQueue.length > (nowPlayingIndex !== -1 ? 1 : 0) && (
-              <div>
-                <div className="px-4 pt-3 pb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  Up Next
-                </div>
-                <div className="divide-y">
-                  {localQueue.map((queueItem, index) =>
-                    index === nowPlayingIndex ? null : (
-                      <SortableQueueItem
-                        key={queueItem.id}
-                        queueItem={queueItem}
-                        index={index}
-                        onRemove={handleRemoveTrack}
-                        removingTrackId={removingTrackId}
-                        queueItemsCount={localQueue.length}
-                      />
-                    ),
-                  )}
-                </div>
-              </div>
-            )}
+              ))}
+            </div>
           </SortableContext>
         </DndContext>
       </CardContent>

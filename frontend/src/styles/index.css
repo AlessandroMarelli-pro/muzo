@@ -178,6 +178,10 @@
   --shadow-lg: var(--shadow-lg);
   --shadow-xl: var(--shadow-xl);
   --shadow-2xl: var(--shadow-2xl);
+
+  /* Layering scale — the player bar and anything that must sit above it. */
+  --z-player: 40;
+  --z-player-overlay: 50;
 }
 
 /*

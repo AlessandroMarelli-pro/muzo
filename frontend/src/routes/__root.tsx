@@ -43,13 +43,15 @@ const MusicPlayerInset = React.memo(function MusicPlayerInset({
   ...props
 }: React.ComponentProps<'div'>) {
   const { currentTrack } = useCurrentTrack();
-  const hasPlayer = !!currentTrack;
+  // The player bar is always docked; it grows a little on mobile when a
+  // track is loaded (extra scrubber row), hence the two reserved heights.
+  const hasTrack = !!currentTrack;
 
   return (
     <div
       className={cn(
         ' flex w-full flex-col transition-[margin-bottom] duration-200 ease-linear   h-full ',
-        hasPlayer ? 'mb-20 sm:mb-16' : 'mb-0',
+        hasTrack ? 'mb-[7.5rem] sm:mb-[4.75rem]' : 'mb-[5.5rem] sm:mb-[4.5rem]',
         className,
       )}
       {...props}
@@ -154,7 +156,7 @@ function RootContent() {
           </MusicPlayerInset>
         </SidebarInset>
       </SidebarProvider>
-      <EnhancedMusicPlayer showVisualizations={true} />
+      <EnhancedMusicPlayer />
     </TooltipProvider>
   );
 }

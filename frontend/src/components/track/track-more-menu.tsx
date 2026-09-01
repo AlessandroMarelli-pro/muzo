@@ -65,7 +65,7 @@ export const TrackMoreMenu = ({
           <MoreHorizontal className="h-4 w-4" />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="z-99999">
+      <DropdownMenuContent align="end" className="z-[var(--z-player-overlay)]">
         <DropdownMenuItem onClick={handleAddToQueue}>Add to Queue</DropdownMenuItem>
         <SelectPlaylistTrigger trackId={trackId} artist={artist} title={title} />
         <DropdownMenuItem
