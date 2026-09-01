@@ -10,8 +10,6 @@ import * as React from 'react';
 
 import { DataTable } from '@/components/data-table/data-table';
 import { DataTableColumnHeader } from '@/components/data-table/data-table-column-header';
-import { DataTableSortList } from '@/components/data-table/data-table-sort-list';
-import { DataTableToolbar } from '@/components/data-table/data-table-toolbar';
 import { useCurrentTrack, useIsPlaying } from '@/contexts/audio-player-context';
 import { AudioPlayerActions } from '@/hooks/useAudioPlayer';
 import { StaticFilterOptionsData } from '@/hooks/useFilterOptions';
@@ -375,11 +373,7 @@ export function buildMusicColumns(
 export const MusicTable = React.memo<MusicTableProps>(function MusicTable({ table, isLoading }) {
   return (
     <div className="w-full space-y-4">
-      <DataTable table={table} isLoading={isLoading}>
-        <DataTableToolbar table={table}>
-          <DataTableSortList table={table} />
-        </DataTableToolbar>
-      </DataTable>
+      <DataTable table={table} isLoading={isLoading} />
     </div>
   );
 });

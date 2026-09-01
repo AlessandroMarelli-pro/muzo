@@ -97,9 +97,9 @@ export const useFiltering = (options: UseFilteringOptions = {}) => {
   const resetFilters = () => {
     if (filters.id) {
       deleteActiveFilter.mutate(filters.id);
-      setFilters(defaultFilterState);
-      setIsDirty(false);
     }
+    setFilters(defaultFilterState);
+    setIsDirty(false);
   };
 
   const updateFilter = useCallback(<K extends keyof FilterState>(key: K, value: FilterState[K]) => {

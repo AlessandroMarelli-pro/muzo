@@ -19,8 +19,10 @@ import {
   TableProperties,
 } from 'lucide-react';
 import * as React from 'react';
+import { KeyboardShortcutsHelp } from './keyboard-shortcuts-help';
 import { LibraryStatusStrip } from './library-status-strip';
 import { MusicCardGrid } from './music-card-grid';
+import { MusicFilterBar } from './music-filter-bar';
 import { buildMusicColumns, MusicTable } from './music-table';
 import { useTrackKeyboardNav } from './use-track-keyboard-nav';
 
@@ -29,12 +31,14 @@ export type MusicViewMode = 'cards' | 'table';
 interface MusicViewProps {
   data: Track[];
   pageCount: number;
+  totalCount?: number;
   view: MusicViewMode;
   staticFilterOptions: StaticFilterOptionsData;
   initialPageSize: number;
   initialFilters: FilterState;
   handleFilterChange: (values: Record<string, string | string[] | null>) => void;
   isLoading: boolean;
+  isFetching: boolean;
   isError: boolean;
   onRetry: () => void;
 }
@@ -42,12 +46,14 @@ interface MusicViewProps {
 export const MusicView = React.memo<MusicViewProps>(function MusicView({
   data,
   pageCount,
+  totalCount,
   view,
   staticFilterOptions,
   initialPageSize,
   initialFilters,
   handleFilterChange,
   isLoading,
+  isFetching,
   isError,
   onRetry,
 }) {
@@ -95,12 +101,35 @@ export const MusicView = React.memo<MusicViewProps>(function MusicView({
     onNextPage: table.nextPage,
   });
 
-  const isEmpty = !isLoading && !isError && data.length === 0;
+  // Keep keyboard focus with the results when the page changes, instead of
+  // silently dropping it to <body>.
+  const resultsRef = React.useRef<HTMLDivElement>(null);
+  const pageIndex = table.getState().pagination.pageIndex;
+  const isFirstRender = React.useRef(true);
+  React.useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+    resultsRef.current?.focus();
+  }, [pageIndex]);
+
+  // Treat a background refetch that has emptied `data` as still-loading, so the
+  // grid shows a skeleton instead of flashing an empty state.
+  const busy = isLoading || (isFetching && data.length === 0);
+
+  // "No rows returned" — could be a genuinely empty library, an over-narrow
+  // filter, or a transient gap mid-refetch. Disambiguate with the total count.
+  const noRows = !busy && !isError && data.length === 0;
+  const libraryEmpty = noRows && !hasActiveFilters && (totalCount === 0 || totalCount === undefined);
+  const noMatches = noRows && hasActiveFilters && totalCount === 0;
+  const showResults = !isError && !libraryEmpty && !noMatches;
 
   return (
     <PageShell key="music-view">
       <PageHeader title="Music" description="Everything in your library.">
-        {view === 'cards' && !isEmpty && !isError && <DataTableSortList table={table} />}
+        {showResults && <KeyboardShortcutsHelp />}
+        {view === 'cards' && showResults && <DataTableSortList table={table} />}
         <ToggleGroup
           type="single"
           value={view}
@@ -126,6 +155,8 @@ export const MusicView = React.memo<MusicViewProps>(function MusicView({
 
       <LibraryStatusStrip />
 
+      {!isError && !libraryEmpty && <MusicFilterBar />}
+
       {isError ? (
         <div className="py-12">
           <NoData
@@ -136,7 +167,7 @@ export const MusicView = React.memo<MusicViewProps>(function MusicView({
             buttonAction={onRetry}
           />
         </div>
-      ) : isEmpty && !hasActiveFilters ? (
+      ) : libraryEmpty ? (
         <div className="py-12">
           <NoData
             Icon={FolderPlus}
@@ -146,7 +177,7 @@ export const MusicView = React.memo<MusicViewProps>(function MusicView({
             buttonAction={() => void navigate({ to: '/libraries' })}
           />
         </div>
-      ) : isEmpty && hasActiveFilters ? (
+      ) : noMatches ? (
         <div className="py-12">
           <NoData
             Icon={SearchX}
@@ -156,16 +187,25 @@ export const MusicView = React.memo<MusicViewProps>(function MusicView({
             buttonAction={resetFilters}
           />
         </div>
-      ) : view === 'table' ? (
-        <MusicTable table={table} isLoading={isLoading} />
       ) : (
-        <MusicCardGrid
-          tracks={data}
-          isLoading={isLoading}
-          table={table}
-          hasActiveFilters={hasActiveFilters}
-          onClearFilters={resetFilters}
-        />
+        <div
+          ref={resultsRef}
+          tabIndex={-1}
+          aria-label="Track results"
+          className="outline-none"
+        >
+          {view === 'table' ? (
+            <MusicTable table={table} isLoading={busy} />
+          ) : (
+            <MusicCardGrid
+              tracks={data}
+              isLoading={busy}
+              table={table}
+              hasActiveFilters={hasActiveFilters}
+              onClearFilters={resetFilters}
+            />
+          )}
+        </div>
       )}
     </PageShell>
   );

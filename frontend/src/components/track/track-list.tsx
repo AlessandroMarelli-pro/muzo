@@ -72,7 +72,7 @@ export const TrackList = React.memo<TrackListProps>(
       [perPage, offset, orderBy, orderDirection],
     );
 
-    const { data, isLoading, isError, refetch } = useTracksList(queryParams);
+    const { data, isLoading, isFetching, isError, refetch } = useTracksList(queryParams);
 
     if (staticFilterOptions.isLoading) {
       return (
@@ -98,12 +98,14 @@ export const TrackList = React.memo<TrackListProps>(
       <MusicView
         data={(tracks || []).map((t) => ({ ...t, tempo: t.mfTempo ?? null }))}
         pageCount={totalPages}
+        totalCount={data?.total}
         view={view}
         staticFilterOptions={staticFilterOptions}
         initialPageSize={perPage}
         initialFilters={filters}
         handleFilterChange={handleFilterChange}
         isLoading={isLoading}
+        isFetching={isFetching}
         isError={isError}
         onRetry={() => void refetch()}
       />

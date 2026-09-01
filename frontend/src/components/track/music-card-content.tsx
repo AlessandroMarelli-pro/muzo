@@ -33,7 +33,8 @@ export function MusicCardContent({
         <div className="z-0 absolute  w-full h-full opacity-50 ">
           <img
             src={apiUrl(`/api/images/serve?imagePath=${formattedImage}`)}
-            alt="Album Art"
+            alt=""
+            aria-hidden
             width={300}
             height={300}
             className=" object-fit rounded-md w-full h-full"
@@ -68,7 +69,7 @@ export function MusicCardContent({
           <div className="flex items-center justify-center h-full w-full ">
             <img
               src={apiUrl(`/api/images/serve?imagePath=${formattedImage}`)}
-              alt="Album Art"
+              alt={`${formattedTitle} — ${formattedArtist}`}
               width={200}
               height={200}
               className="w-2/3 h-2/3 object-cover rounded-md z-1"
