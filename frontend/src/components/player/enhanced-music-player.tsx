@@ -54,8 +54,13 @@ interface EnhancedMusicPlayerProps {
 
 type RepeatMode = 'off' | 'all' | 'one';
 const VOLUME_KEY = 'muzo.player.volume';
+/** Tooltips that survive are informational — hold before showing them. */
+const HINT_DELAY = 600;
 
-/** Small, evenly weighted transport button. */
+/**
+ * Small, evenly weighted transport button. The icon plus its `aria-label`
+ * carry the meaning — no tooltip on these; they speak for themselves.
+ */
 function ControlButton({
   label,
   onClick,
@@ -70,23 +75,28 @@ function ControlButton({
   children: React.ReactNode;
 }) {
   return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <Button
-          variant="ghost"
-          size="iconSm"
-          onClick={onClick}
-          disabled={disabled}
-          aria-label={label}
-          aria-pressed={pressed}
-          className={cn('size-9', pressed && 'text-primary')}
-        >
-          {children}
-        </Button>
-      </TooltipTrigger>
-      <TooltipContent>{label}</TooltipContent>
-    </Tooltip>
+    <Button
+      variant="ghost"
+      size="iconSm"
+      onClick={onClick}
+      disabled={disabled}
+      aria-label={label}
+      aria-pressed={pressed}
+      className={cn('size-9', pressed && 'text-primary')}
+    >
+      {children}
+    </Button>
   );
+}
+
+/**
+ * Trim, then upper-case only the first letter. Enough to tidy a lower-case
+ * tag ("daft punk" → "Daft punk") without re-casing the rest — interior
+ * casing like "deadmau5", "RÜFÜS DU SOL" or "will.i.am" is left as tagged.
+ */
+function tidyMeta(value?: string | null): string {
+  const v = (value ?? '').trim();
+  return v ? v[0].toLocaleUpperCase() + v.slice(1) : '';
 }
 
 export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
@@ -329,29 +339,24 @@ export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
         <p className="flex-1 truncate text-sm text-muted-foreground">
           Choose a track to start playing
         </p>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size="iconSm"
-              onClick={() => setQueueOpen((prev) => !prev)}
-              className="relative size-9"
-              aria-label="Toggle queue"
-              aria-pressed={queueOpen}
+        <Button
+          variant="ghost"
+          size="iconSm"
+          onClick={() => setQueueOpen((prev) => !prev)}
+          className="relative size-9"
+          aria-label="Toggle queue"
+          aria-pressed={queueOpen}
+        >
+          <ListMusic className="size-4" aria-hidden />
+          {queueItems.length > 0 && (
+            <Badge
+              variant="secondary"
+              className="absolute -right-1.5 -top-1.5 h-4 min-w-4 justify-center px-1 text-xs leading-none tabular-nums"
             >
-              <ListMusic className="size-4" aria-hidden />
-              {queueItems.length > 0 && (
-                <Badge
-                  variant="secondary"
-                  className="absolute -right-1.5 -top-1.5 h-4 min-w-4 justify-center px-1 text-xs leading-none tabular-nums"
-                >
-                  {queueItems.length > 99 ? '99+' : queueItems.length}
-                </Badge>
-              )}
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>Toggle queue</TooltipContent>
-        </Tooltip>
+              {queueItems.length > 99 ? '99+' : queueItems.length}
+            </Badge>
+          )}
+        </Button>
         <QueueDrawer
           open={queueOpen}
           onOpenChange={setQueueOpen}
@@ -363,7 +368,9 @@ export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
 
   const bpm = currentTrack.mfTempo ? Math.round(currentTrack.mfTempo) : null;
   const musicalKey = currentTrack.mfCamelotKey || currentTrack.mfKey || null;
-  const primaryGenre = currentTrack.genres?.[0] || null;
+  const title = tidyMeta(currentTrack.title) || 'Unknown title';
+  const artist = tidyMeta(currentTrack.artist) || 'Unknown artist';
+  const primaryGenre = tidyMeta(currentTrack.genres?.[0]) || null;
   const isFavorite = !!playbackState?.isFavorite;
 
   const VolumeIcon = muted || volume === 0 ? VolumeX : volume < 0.5 ? Volume1 : Volume2;
@@ -401,30 +408,27 @@ export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
         <div className="flex min-w-0 items-center gap-3 sm:w-[280px] sm:shrink-0">
           <AlbumArt
             imagePath={currentTrack.imagePath}
-            title={currentTrack.title}
-            artist={currentTrack.artist}
+            title={title}
+            artist={artist}
             className="size-12 shrink-0 rounded-md sm:size-14"
           />
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-1.5">
-              <Tooltip>
+              {/* Delayed hint — only useful when the title is clipped. */}
+              <Tooltip delayDuration={HINT_DELAY}>
                 <TooltipTrigger asChild>
                   <p className="truncate text-sm font-semibold leading-tight">
-                    {currentTrack.title || 'Unknown title'}
+                    {title}
                   </p>
                 </TooltipTrigger>
-                <TooltipContent>
-                  {currentTrack.title || 'Unknown title'}
-                </TooltipContent>
+                <TooltipContent>{title}</TooltipContent>
               </Tooltip>
               <AudioQualityBadge
                 format={currentTrack.format}
                 hqAudioPath={currentTrack.hqAudioPath}
               />
             </div>
-            <p className="truncate text-xs text-muted-foreground">
-              {currentTrack.artist || 'Unknown artist'}
-            </p>
+            <p className="truncate text-xs text-muted-foreground">{artist}</p>
             {/* The numbers a DJ actually mixes on. */}
             {(bpm || musicalKey || primaryGenre) && (
               <div className="mt-1 flex items-center gap-2 text-xs leading-none text-muted-foreground">
@@ -463,27 +467,20 @@ export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
             >
               <SkipBack className="size-4" aria-hidden />
             </ControlButton>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="default"
-                  size="icon"
-                  onClick={handleTogglePlay}
-                  aria-label={isPlaying ? 'Pause' : 'Play'}
-                  className="size-10 rounded-full"
-                >
-                  {isPlaying ? (
-                    <Pause className="size-5" aria-hidden />
-                  ) : (
-                    <Play className="size-5 translate-x-[1px]" aria-hidden />
-                  )}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                {isPlaying ? 'Pause' : 'Play'}{' '}
-                <span className="text-muted-foreground">Space</span>
-              </TooltipContent>
-            </Tooltip>
+            <Button
+              variant="default"
+              size="icon"
+              onClick={handleTogglePlay}
+              aria-label={isPlaying ? 'Pause' : 'Play'}
+              title={isPlaying ? 'Pause (Space)' : 'Play (Space)'}
+              className="size-10 rounded-full"
+            >
+              {isPlaying ? (
+                <Pause className="size-5" aria-hidden />
+              ) : (
+                <Play className="size-5 translate-x-[1px]" aria-hidden />
+              )}
+            </Button>
             <ControlButton
               label={canNext ? 'Next track' : 'No next track'}
               onClick={actions.next}
@@ -512,21 +509,16 @@ export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
               <RepeatIcon className="size-4" aria-hidden />
             </ControlButton>
             <Popover>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="iconSm"
-                      className="size-9"
-                      aria-label="Volume"
-                    >
-                      <VolumeIcon className="size-4" aria-hidden />
-                    </Button>
-                  </PopoverTrigger>
-                </TooltipTrigger>
-                <TooltipContent>Volume</TooltipContent>
-              </Tooltip>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="iconSm"
+                  className="size-9"
+                  aria-label="Volume"
+                >
+                  <VolumeIcon className="size-4" aria-hidden />
+                </Button>
+              </PopoverTrigger>
               <PopoverContent
                 side="top"
                 className="z-[var(--z-player-overlay)] flex h-40 w-auto flex-col items-center gap-3 px-3 py-4"
@@ -588,39 +580,43 @@ export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
               aria-hidden
             />
           </ControlButton>
-          <ControlButton
-            label="Open research for this track"
-            onClick={() => navigate({ to: `/research/${currentTrack.id}` })}
-          >
-            <Brain className="size-4" aria-hidden />
-          </ControlButton>
-          <Tooltip>
+          {/* Research is not self-evident from the icon — keep a delayed hint. */}
+          <Tooltip delayDuration={HINT_DELAY}>
             <TooltipTrigger asChild>
               <Button
                 variant="ghost"
                 size="iconSm"
-                onClick={() => setQueueOpen((prev) => !prev)}
-                className="relative size-9"
-                aria-label="Toggle queue"
-                aria-pressed={queueOpen}
+                onClick={() => navigate({ to: `/research/${currentTrack.id}` })}
+                aria-label="Open research for this track"
+                className="size-9"
               >
-                <ListMusic className="size-4" aria-hidden />
-                {queueItems.length > 0 && (
-                  <Badge
-                    variant="secondary"
-                    className="absolute -right-1.5 -top-1.5 h-4 min-w-4 justify-center px-1 text-xs leading-none tabular-nums"
-                  >
-                    {queueItems.length > 99 ? '99+' : queueItems.length}
-                  </Badge>
-                )}
+                <Brain className="size-4" aria-hidden />
               </Button>
             </TooltipTrigger>
-            <TooltipContent>Toggle queue</TooltipContent>
+            <TooltipContent>Research this track</TooltipContent>
           </Tooltip>
+          <Button
+            variant="ghost"
+            size="iconSm"
+            onClick={() => setQueueOpen((prev) => !prev)}
+            className="relative size-9"
+            aria-label="Toggle queue"
+            aria-pressed={queueOpen}
+          >
+            <ListMusic className="size-4" aria-hidden />
+            {queueItems.length > 0 && (
+              <Badge
+                variant="secondary"
+                className="absolute -right-1.5 -top-1.5 h-4 min-w-4 justify-center px-1 text-xs leading-none tabular-nums"
+              >
+                {queueItems.length > 99 ? '99+' : queueItems.length}
+              </Badge>
+            )}
+          </Button>
           <TrackMoreMenu
             trackId={currentTrack.id}
-            artist={currentTrack.artist || ''}
-            title={currentTrack.title || ''}
+            artist={artist}
+            title={title}
             format={currentTrack.format}
             hqAudioPath={currentTrack.hqAudioPath}
           />
