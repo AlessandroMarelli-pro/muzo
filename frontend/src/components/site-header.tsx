@@ -51,6 +51,7 @@ export function SiteHeader(_props: SiteHeaderProps) {
   // Get the current page title from the pathname
   const getPageTitle = (pathname: string) => {
     if (pathname === '/') return 'Home';
+    if (pathname === '/music/harmonic') return 'Harmonic Mixing';
     if (pathname === '/music') return 'Music';
     if (pathname === '/pending') return 'Pending';
     if (pathname === '/swipe') return 'Swipe';

@@ -36,7 +36,7 @@ export const ScanProgress = React.memo(() => {
   useEffect(() => {
     if (latestSessionId) {
       const session = activeSessions.get(latestSessionId);
-      setProgress((prev) => (session ? session.overallProgress : Math.max(0, prev)));
+      setProgress((prev) => (session ? session.overallProgress / 100 : Math.max(0, prev)));
     } else {
       setProgress(-1);
     }
@@ -45,7 +45,7 @@ export const ScanProgress = React.memo(() => {
   useEffect(() => {
     const overallProgress = scanProgress?.overallProgress ?? undefined;
     if (overallProgress !== undefined && overallProgress !== null) {
-      setProgress(overallProgress);
+      setProgress(overallProgress / 100);
     }
   }, [scanProgress?.overallProgress]);
 

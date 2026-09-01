@@ -21,6 +21,7 @@ import { Route as PlaylistsIndexRouteImport } from './routes/playlists.index'
 import { Route as LibrariesIndexRouteImport } from './routes/libraries.index'
 import { Route as ResearchChar123TrackIdChar125RouteImport } from './routes/research.{-$trackId}'
 import { Route as PlaylistsPlaylistIdRouteImport } from './routes/playlists.$playlistId'
+import { Route as MusicHarmonicRouteImport } from './routes/music_.harmonic'
 import { Route as LibrariesLibraryIdRouteImport } from './routes/libraries.$libraryId'
 
 const SignUpRoute = SignUpRouteImport.update({
@@ -84,6 +85,11 @@ const PlaylistsPlaylistIdRoute = PlaylistsPlaylistIdRouteImport.update({
   path: '/playlists/$playlistId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MusicHarmonicRoute = MusicHarmonicRouteImport.update({
+  id: '/music_/harmonic',
+  path: '/music/harmonic',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LibrariesLibraryIdRoute = LibrariesLibraryIdRouteImport.update({
   id: '/libraries/$libraryId',
   path: '/libraries/$libraryId',
@@ -99,6 +105,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof SettingsRoute
   '/sign-up': typeof SignUpRoute
   '/libraries/$libraryId': typeof LibrariesLibraryIdRoute
+  '/music/harmonic': typeof MusicHarmonicRoute
   '/playlists/$playlistId': typeof PlaylistsPlaylistIdRoute
   '/research/{-$trackId}': typeof ResearchChar123TrackIdChar125Route
   '/libraries/': typeof LibrariesIndexRoute
@@ -114,6 +121,7 @@ export interface FileRoutesByTo {
   '/settings': typeof SettingsRoute
   '/sign-up': typeof SignUpRoute
   '/libraries/$libraryId': typeof LibrariesLibraryIdRoute
+  '/music/harmonic': typeof MusicHarmonicRoute
   '/playlists/$playlistId': typeof PlaylistsPlaylistIdRoute
   '/research/{-$trackId}': typeof ResearchChar123TrackIdChar125Route
   '/libraries': typeof LibrariesIndexRoute
@@ -130,6 +138,7 @@ export interface FileRoutesById {
   '/settings': typeof SettingsRoute
   '/sign-up': typeof SignUpRoute
   '/libraries/$libraryId': typeof LibrariesLibraryIdRoute
+  '/music_/harmonic': typeof MusicHarmonicRoute
   '/playlists/$playlistId': typeof PlaylistsPlaylistIdRoute
   '/research/{-$trackId}': typeof ResearchChar123TrackIdChar125Route
   '/libraries/': typeof LibrariesIndexRoute
@@ -147,6 +156,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/sign-up'
     | '/libraries/$libraryId'
+    | '/music/harmonic'
     | '/playlists/$playlistId'
     | '/research/{-$trackId}'
     | '/libraries/'
@@ -162,6 +172,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/sign-up'
     | '/libraries/$libraryId'
+    | '/music/harmonic'
     | '/playlists/$playlistId'
     | '/research/{-$trackId}'
     | '/libraries'
@@ -177,6 +188,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/sign-up'
     | '/libraries/$libraryId'
+    | '/music_/harmonic'
     | '/playlists/$playlistId'
     | '/research/{-$trackId}'
     | '/libraries/'
@@ -193,6 +205,7 @@ export interface RootRouteChildren {
   SettingsRoute: typeof SettingsRoute
   SignUpRoute: typeof SignUpRoute
   LibrariesLibraryIdRoute: typeof LibrariesLibraryIdRoute
+  MusicHarmonicRoute: typeof MusicHarmonicRoute
   PlaylistsPlaylistIdRoute: typeof PlaylistsPlaylistIdRoute
   ResearchChar123TrackIdChar125Route: typeof ResearchChar123TrackIdChar125Route
   LibrariesIndexRoute: typeof LibrariesIndexRoute
@@ -286,6 +299,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PlaylistsPlaylistIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/music_/harmonic': {
+      id: '/music_/harmonic'
+      path: '/music/harmonic'
+      fullPath: '/music/harmonic'
+      preLoaderRoute: typeof MusicHarmonicRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/libraries/$libraryId': {
       id: '/libraries/$libraryId'
       path: '/libraries/$libraryId'
@@ -305,6 +325,7 @@ const rootRouteChildren: RootRouteChildren = {
   SettingsRoute: SettingsRoute,
   SignUpRoute: SignUpRoute,
   LibrariesLibraryIdRoute: LibrariesLibraryIdRoute,
+  MusicHarmonicRoute: MusicHarmonicRoute,
   PlaylistsPlaylistIdRoute: PlaylistsPlaylistIdRoute,
   ResearchChar123TrackIdChar125Route: ResearchChar123TrackIdChar125Route,
   LibrariesIndexRoute: LibrariesIndexRoute,

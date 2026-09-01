@@ -6,12 +6,13 @@ import { useTracksList } from '@/services/api-hooks';
 import { ExtendedColumnSort } from '@/types/data-table';
 import React from 'react';
 import { DataTableSkeleton } from '../data-table/data-table-skeleton';
-import { MusicTable } from './music-table';
+import { MusicView, type MusicViewMode } from './music-view';
 
 interface TrackListProps {
   page: number;
   perPage: number;
   sort: ExtendedColumnSort<Track>[];
+  view: MusicViewMode;
   staticFilterOptions: StaticFilterOptionsData & {
     isLoading: boolean;
   };
@@ -20,7 +21,7 @@ interface TrackListProps {
 }
 
 export const TrackList = React.memo<TrackListProps>(
-  ({ page, perPage, sort, staticFilterOptions, filters, handleFilterChange }) => {
+  ({ page, perPage, sort, view, staticFilterOptions, filters, handleFilterChange }) => {
     const offset = (page - 1) * perPage;
 
     // Map frontend sort field names to backend field names
@@ -49,19 +50,16 @@ export const TrackList = React.memo<TrackListProps>(
     const { orderBy, orderDirection } = React.useMemo(() => {
       if (Array.isArray(sort) && sort.length > 0) {
         const firstSort = sort[0];
-        const result = {
+        return {
           orderBy: mapSortField(firstSort.id),
           orderDirection: firstSort.desc ? 'desc' : ('asc' as 'asc' | 'desc'),
         };
-
-        return result;
       }
 
-      const defaultResult = {
+      return {
         orderBy: 'fileCreatedAt',
-        orderDirection: 'asc' as 'asc' | 'desc',
+        orderDirection: 'desc' as 'asc' | 'desc',
       };
-      return defaultResult;
     }, [sort, mapSortField]);
 
     const queryParams = React.useMemo(
@@ -83,42 +81,30 @@ export const TrackList = React.memo<TrackListProps>(
           <DataTableSkeleton
             columnCount={10}
             rowCount={10}
-            filterCount={18}
-            cellWidths={[
-              '100px',
-              '100px',
-              '100px',
-              '100px',
-              '100px',
-              '100px',
-              '100px',
-              '100px',
-              '100px',
-              '100px',
-            ]}
-            withViewOptions={true}
-            withPagination={true}
-            withTopPagination={true}
+            filterCount={4}
+            withViewOptions
+            withPagination
+            withTopPagination={false}
             className="gap-4"
           />
         </PageShell>
       );
     }
+
     const tracks = data?.items;
     const totalPages = data?.pages || 0;
+
     return (
-      <PageShell key="track-list">
-        <PageHeader title="Music" description="Everything in your library." />
-        <MusicTable
-          data={(tracks || []).map((t) => ({ ...t, tempo: t.mfTempo ?? null }))}
-          pageCount={totalPages}
-          staticFilterOptions={staticFilterOptions}
-          initialPageSize={perPage}
-          initialFilters={filters}
-          handleFilterChange={handleFilterChange}
-          isLoading={isLoading}
-        />
-      </PageShell>
+      <MusicView
+        data={(tracks || []).map((t) => ({ ...t, tempo: t.mfTempo ?? null }))}
+        pageCount={totalPages}
+        view={view}
+        staticFilterOptions={staticFilterOptions}
+        initialPageSize={perPage}
+        initialFilters={filters}
+        handleFilterChange={handleFilterChange}
+        isLoading={isLoading}
+      />
     );
   },
   (prevProps, nextProps) => {
@@ -126,6 +112,7 @@ export const TrackList = React.memo<TrackListProps>(
       prevProps.page === nextProps.page &&
       prevProps.perPage === nextProps.perPage &&
       prevProps.sort === nextProps.sort &&
+      prevProps.view === nextProps.view &&
       prevProps.staticFilterOptions === nextProps.staticFilterOptions &&
       prevProps.filters === nextProps.filters
     );
