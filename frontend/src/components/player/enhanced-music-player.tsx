@@ -1,3 +1,4 @@
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
   useAudioPlayerActions,
@@ -10,12 +11,23 @@ import { cn, formatTime } from '@/lib/utils';
 import { useWaveformData } from '@/services/music-player-hooks';
 import { useQueue } from '@/services/queue-hooks';
 import { useNavigate } from '@tanstack/react-router';
-import { Brain, Heart, Pause, Play, Shuffle, SkipBack, SkipForward } from 'lucide-react';
+import {
+  Brain,
+  Heart,
+  ListMusic,
+  Pause,
+  Play,
+  Shuffle,
+  SkipBack,
+  SkipForward,
+} from 'lucide-react';
 import React, { useEffect, useRef, useState } from 'react';
 import { AudioQualityBadge } from '../track/audio-quality-badge';
 import { TrackMoreMenu } from '../track/track-more-menu';
 import { WaveformVisualizer } from './waveform-visualizer';
+import { QueueDrawer } from '../queue/queue-sidebar';
 import { apiUrl } from '@/lib/api-config';
+import { MUSIC_PLAYER_HEIGHT } from './player-constants';
 
 interface MusicTrack {
   id: string;
@@ -33,15 +45,25 @@ interface EnhancedMusicPlayerProps {
   className?: string;
   showVisualizations?: boolean;
 }
-export const MUSIC_PLAYER_HEIGHT = '8vh';
-export const MUSIC_PLAYER_HEIGHT_CSS = `var(--music-player-height)`;
-
 export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
   onToggleShuffle,
   className,
 }: EnhancedMusicPlayerProps) {
   const audioRef = useRef<HTMLAudioElement>(null);
+  const playerBarRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+  const [queueOpen, setQueueOpen] = useState(false);
+  const [playerBarHeight, setPlayerBarHeight] = useState(0);
+
+  useEffect(() => {
+    const el = playerBarRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver(([entry]) => {
+      setPlayerBarHeight(entry.contentRect.height);
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   // Audio player hooks
   const { currentTrack } = useCurrentTrack();
@@ -57,7 +79,9 @@ export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
   );
 
   useEffect(() => {
-    setQueueIndex(queue.findIndex((track) => track.id === currentTrack?.id) || 0);
+    setQueueIndex(
+      queue.findIndex((track) => track.id === currentTrack?.id) || 0,
+    );
   }, [currentTrack, queue]);
 
   const actions = useAudioPlayerActions();
@@ -88,12 +112,16 @@ export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
         audioRef.current.pause();
       }
     }
-  }, [isPlaying, playbackState.isFavorite, playbackState.trackId, currentTrack?.id]);
+  }, [
+    isPlaying,
+    playbackState.isFavorite,
+    playbackState.trackId,
+    currentTrack?.id,
+  ]);
 
   // Queries for visualizations
-  const { data: waveformData = [...Array(200)].map(() => 0.05) } = useWaveformData(
-    currentTrack?.id || '',
-  );
+  const { data: waveformData = [...Array(200)].map(() => 0.05) } =
+    useWaveformData(currentTrack?.id || '');
 
   // Audio element event handlers
   useEffect(() => {
@@ -162,6 +190,7 @@ export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
 
   return (
     <div
+      ref={playerBarRef}
       style={
         {
           '--music-player-height': MUSIC_PLAYER_HEIGHT,
@@ -264,14 +293,18 @@ export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
                 onClick={handleToggleFavorite}
                 className="h-8 w-8 p-0"
                 aria-label={
-                  playbackState?.isFavorite ? 'Remove from favorites' : 'Add to favorites'
+                  playbackState?.isFavorite
+                    ? 'Remove from favorites'
+                    : 'Add to favorites'
                 }
                 aria-pressed={!!playbackState?.isFavorite}
               >
                 <Heart
                   className={cn(
                     'h-4 w-4',
-                    playbackState?.isFavorite ? 'fill-red-500 text-red-500' : '',
+                    playbackState?.isFavorite
+                      ? 'fill-red-500 text-red-500'
+                      : '',
                   )}
                   aria-hidden
                 />
@@ -284,6 +317,24 @@ export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
                 aria-label="Open research for this track"
               >
                 <Brain className="h-4 w-4" aria-hidden />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setQueueOpen((prev) => !prev)}
+                className="h-8 w-8 p-0 relative"
+                aria-label="Toggle queue"
+                aria-pressed={queueOpen}
+              >
+                <ListMusic className="h-4 w-4" aria-hidden />
+                {queueItems.length > 0 && (
+                  <Badge
+                    variant="secondary"
+                    className="absolute -top-1 -right-1 h-4 w-4 flex items-center justify-center p-0 text-[10px]"
+                  >
+                    {queueItems.length}
+                  </Badge>
+                )}
               </Button>
               <TrackMoreMenu
                 trackId={currentTrack?.id || ''}
@@ -330,10 +381,20 @@ export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
       {currentTrack && (
         <audio
           ref={audioRef}
-          src={currentTrack ? apiUrl(`/api/audio/stream/${currentTrack.id}`) : undefined}
+          src={
+            currentTrack
+              ? apiUrl(`/api/audio/stream/${currentTrack.id}`)
+              : undefined
+          }
           style={{ display: 'none' }}
         />
       )}
+
+      <QueueDrawer
+        open={queueOpen}
+        onOpenChange={setQueueOpen}
+        offsetBottom={playerBarHeight}
+      />
     </div>
   );
 });

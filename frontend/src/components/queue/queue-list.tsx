@@ -1,5 +1,6 @@
 import { Loading } from '@/components/loading';
 import { Card, CardContent } from '@/components/ui/card';
+import { useCurrentTrack } from '@/contexts/audio-player-context';
 import {
   QueueItem,
   useQueue,
@@ -30,6 +31,7 @@ import { QueueItemCard } from './queue-item-card';
 
 export function QueueList() {
   const { data: queueItems = [], isLoading, error } = useQueue();
+  const { currentTrack } = useCurrentTrack();
   const removeTrackMutation = useRemoveTrackFromQueue();
   const updatePositionsMutation = useUpdateQueuePositions();
   const [removingTrackId, setRemovingTrackId] = useState<string | null>(null);
@@ -46,7 +48,10 @@ export function QueueList() {
     useSensor(KeyboardSensor, {}),
   );
 
-  const queueIds = useMemo(() => localQueue.map((item) => item.id), [localQueue]);
+  const queueIds = useMemo(
+    () => localQueue.map((item) => item.id),
+    [localQueue],
+  );
 
   const handleRemoveTrack = async (trackId: string) => {
     setRemovingTrackId(trackId);
@@ -100,7 +105,9 @@ export function QueueList() {
     return (
       <Card>
         <CardContent className="text-center py-12">
-          <div className="text-red-500">Error loading queue: {error.message}</div>
+          <div className="text-red-500">
+            Error loading queue: {error.message}
+          </div>
         </CardContent>
       </Card>
     );
@@ -122,6 +129,10 @@ export function QueueList() {
     );
   }
 
+  const nowPlayingIndex = localQueue.findIndex(
+    (item) => item.track?.id === currentTrack?.id,
+  );
+
   return (
     <Card className="py-0">
       <CardContent className="p-0">
@@ -131,19 +142,46 @@ export function QueueList() {
           onDragEnd={handleDragEnd}
           sensors={sensors}
         >
-          <SortableContext items={queueIds} strategy={verticalListSortingStrategy}>
-            <div className="divide-y">
-              {localQueue.map((queueItem, index) => (
+          <SortableContext
+            items={queueIds}
+            strategy={verticalListSortingStrategy}
+          >
+            {nowPlayingIndex !== -1 && (
+              <div>
+                <div className="px-4 pt-3 pb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  Now Playing
+                </div>
                 <SortableQueueItem
-                  key={queueItem.id}
-                  queueItem={queueItem}
-                  index={index}
+                  key={localQueue[nowPlayingIndex].id}
+                  queueItem={localQueue[nowPlayingIndex]}
+                  index={nowPlayingIndex}
                   onRemove={handleRemoveTrack}
                   removingTrackId={removingTrackId}
                   queueItemsCount={localQueue.length}
                 />
-              ))}
-            </div>
+              </div>
+            )}
+            {localQueue.length > (nowPlayingIndex !== -1 ? 1 : 0) && (
+              <div>
+                <div className="px-4 pt-3 pb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  Up Next
+                </div>
+                <div className="divide-y">
+                  {localQueue.map((queueItem, index) =>
+                    index === nowPlayingIndex ? null : (
+                      <SortableQueueItem
+                        key={queueItem.id}
+                        queueItem={queueItem}
+                        index={index}
+                        onRemove={handleRemoveTrack}
+                        removingTrackId={removingTrackId}
+                        queueItemsCount={localQueue.length}
+                      />
+                    ),
+                  )}
+                </div>
+              </div>
+            )}
           </SortableContext>
         </DndContext>
       </CardContent>
@@ -164,7 +202,14 @@ function SortableQueueItem({
   removingTrackId: string | null;
   queueItemsCount: number;
 }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({
     id: queueItem.id,
   });
 
@@ -182,7 +227,7 @@ function SortableQueueItem({
         queueItemsCount={queueItemsCount}
         onRemove={onRemove}
         removingTrackId={removingTrackId}
-        dragHandleProps={{ ...attributes, ...listeners }}
+        dragHandleProps={{ attributes, listeners }}
       />
     </div>
   );

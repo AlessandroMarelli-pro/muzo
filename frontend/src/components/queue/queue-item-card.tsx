@@ -7,9 +7,21 @@ import {
 import { cn, formatDuration } from '@/lib/utils';
 import { QueueItem } from '@/services/queue-hooks';
 import { Link } from '@tanstack/react-router';
-import { Brain, GripVertical, Pause, Play, Trash2 } from 'lucide-react';
+import {
+  Brain,
+  GripVertical,
+  Music2,
+  Pause,
+  Play,
+  Trash2,
+  AudioLines,
+} from 'lucide-react';
 import { memo } from 'react';
 import { apiUrl } from '@/lib/api-config';
+import type {
+  DraggableAttributes,
+  DraggableSyntheticListeners,
+} from '@dnd-kit/core';
 
 interface QueueItemCardProps {
   queueItem: QueueItem;
@@ -17,7 +29,10 @@ interface QueueItemCardProps {
   queueItemsCount: number;
   onRemove: (trackId: string) => void;
   removingTrackId: string | null;
-  dragHandleProps?: any;
+  dragHandleProps?: {
+    attributes: DraggableAttributes;
+    listeners: DraggableSyntheticListeners;
+  };
 }
 
 export const QueueItemCard = memo(
@@ -41,7 +56,8 @@ export const QueueItemCard = memo(
     const isThisTrackPlaying = isCurrentTrack && isPlaying;
     const isRemoving = removingTrackId === queueItem.trackId;
 
-    const formattedImage = queueItem.track.imagePath || 'Unknown Image';
+    const trackTitle = queueItem.track.title || 'Untitled Track';
+    const trackArtist = queueItem.track.artist || 'Unknown Artist';
 
     const handlePlay = (e: React.SyntheticEvent<any>) => {
       e.stopPropagation();
@@ -61,9 +77,11 @@ export const QueueItemCard = memo(
     return (
       <div
         className={cn(
-          'flex items-center gap-4 p-2 hover:bg-muted/50 transition-colors group',
-          isCurrentTrack && 'bg-muted/80  ',
-          isCurrentTrack && index === 0 && 'border-l-2 border-l-primary rounded-t-xl',
+          'flex items-center gap-3 p-3 hover:bg-muted/50 transition-colors group',
+          isCurrentTrack && 'bg-primary/10',
+          isCurrentTrack &&
+            index === 0 &&
+            'border-l-2 border-l-primary rounded-t-xl',
           isCurrentTrack &&
             index === queueItemsCount - 1 &&
             'border-l-2 border-l-primary rounded-b-xl',
@@ -78,39 +96,59 @@ export const QueueItemCard = memo(
         <div className="flex items-center gap-1 text-muted-foreground text-sm w-6">
           {dragHandleProps && (
             <GripVertical
-              {...dragHandleProps}
-              className="h-4 w-4 min-h-4 min-w-4 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing"
+              {...dragHandleProps.attributes}
+              {...dragHandleProps.listeners}
+              aria-label="Drag to reorder"
+              className="h-4 w-4 min-h-4 min-w-4 opacity-40 group-hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm transition-opacity cursor-grab active:cursor-grabbing"
             />
           )}
           <span>{index + 1}</span>
         </div>
 
         {/* Album Art */}
-        <img
-          src={apiUrl(`/api/images/serve?imagePath=${formattedImage}`)}
-          alt="Album Art"
-          width={32}
-          height={32}
-          className="w-8 h-8 object-cover rounded-md"
-        />
+        <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-md bg-muted">
+          {queueItem.track.imagePath ? (
+            <img
+              src={apiUrl(
+                `/api/images/serve?imagePath=${queueItem.track.imagePath}`,
+              )}
+              alt={`${trackTitle} album art`}
+              width={44}
+              height={44}
+              className="h-full w-full object-cover"
+            />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center">
+              <Music2 className="h-5 w-5 text-muted-foreground" aria-hidden />
+            </div>
+          )}
+          {isThisTrackPlaying && (
+            <div className="absolute inset-0 flex items-center justify-center bg-background/60">
+              <AudioLines
+                className="h-5 w-5 text-primary animate-pulse"
+                aria-hidden
+              />
+            </div>
+          )}
+        </div>
 
         {/* Track Info */}
         <div className="flex-1 min-w-0">
           <div
             className={cn(
-              'font-medium truncate capitalize text-sm',
+              'font-medium truncate text-sm',
               isCurrentTrack && 'text-primary font-semibold',
             )}
           >
-            {queueItem.track.title || queueItem.track.artist}
+            {trackTitle}
           </div>
           <div
             className={cn(
-              'text-xs truncate capitalize ',
+              'text-xs truncate',
               isCurrentTrack ? 'text-primary/80' : 'text-muted-foreground',
             )}
           >
-            {queueItem.track.artist || 'Unknown Artist'}
+            {trackArtist}
           </div>
         </div>
 

@@ -1,14 +1,10 @@
-import { QueueDrawer } from '@/components/queue/queue-sidebar';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { SidebarTrigger } from '@/components/ui/sidebar';
-import { useQueue } from '@/services/queue-hooks';
 import { useLocation } from '@tanstack/react-router';
 
-import { ListMusic, Moon, Sun } from 'lucide-react';
+import { Moon, Sun } from 'lucide-react';
 import { useTheme } from 'next-themes';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 
 import { Switch } from '@/components/ui/switch';
 import { ScanProgress } from './scan-progress';
@@ -16,10 +12,8 @@ import { ScanProgress } from './scan-progress';
 interface SiteHeaderProps {}
 
 export function SiteHeader(_props: SiteHeaderProps) {
-  const [queueOpen, setQueueOpen] = useState(false);
   const location = useLocation();
   const { setTheme, resolvedTheme } = useTheme();
-  const { data: queueItems = [] } = useQueue();
 
   const isDark = resolvedTheme === 'dark';
 
@@ -70,7 +64,10 @@ export function SiteHeader(_props: SiteHeaderProps) {
     <header className="relative group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 flex h-12 shrink-0 items-center gap-2 transition-[width,height] ease-linear">
       <div className="flex w-full items-center gap-1 px-4 lg:gap-2 lg:px-6 ">
         <SidebarTrigger className="-ml-1" />
-        <Separator orientation="vertical" className="mx-2 data-[orientation=vertical]:h-4" />
+        <Separator
+          orientation="vertical"
+          className="mx-2 data-[orientation=vertical]:h-4"
+        />
         <div className="flex items-center justify-between gap-2 w-full px-2 py-1.5">
           <span className="font-normal text-foreground min-w-md">
             {getPageTitle(location.pathname)}
@@ -80,7 +77,9 @@ export function SiteHeader(_props: SiteHeaderProps) {
             <ScanProgress />
             <Switch
               checked={isDark}
-              onCheckedChange={(checked: boolean) => setTheme(checked ? 'dark' : 'light')}
+              onCheckedChange={(checked: boolean) =>
+                setTheme(checked ? 'dark' : 'light')
+              }
               aria-label="Toggle night mode"
             >
               {isDark ? (
@@ -91,26 +90,7 @@ export function SiteHeader(_props: SiteHeaderProps) {
             </Switch>
           </div>
         </div>
-        <Separator orientation="vertical" className="mx-2 data-[orientation=vertical]:h-4" />{' '}
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8 relative"
-          onClick={() => setQueueOpen(!queueOpen)}
-          aria-label="Toggle queue"
-        >
-          <ListMusic className="h-4 w-4" />
-          {queueItems.length > 0 && (
-            <Badge
-              variant="secondary"
-              className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
-            >
-              {queueItems.length}
-            </Badge>
-          )}
-        </Button>
       </div>
-      <QueueDrawer open={queueOpen} onOpenChange={setQueueOpen} />
     </header>
   );
 }
