@@ -8,6 +8,7 @@ import {
   DownloadPlaylistToFolderUseCase,
   GetPlaylistRecommendationsUseCase,
   GetPlaylistSortingByPlaylistIdUseCase,
+  SchedulePlaylistTracksScanUseCase,
   UpdatePlaylistUseCase,
 } from 'src/application/use-cases';
 import { AcquireHqAudioBatchUseCase } from 'src/application/use-cases/hq-audio-batch/AcquireHqAudioBatch';
@@ -46,6 +47,7 @@ export class PlaylistResolver {
     private readonly getPlaylistRecommendationsUseCase: GetPlaylistRecommendationsUseCase,
     private readonly startHqAudioBatchDownloadUseCase: StartHqAudioBatchDownloadUseCase,
     private readonly acquireHqAudioBatchUseCase: AcquireHqAudioBatchUseCase,
+    private readonly schedulePlaylistTracksScanUseCase: SchedulePlaylistTracksScanUseCase,
   ) {}
 
   @ResolveField(() => PlaylistStats)
@@ -131,6 +133,18 @@ export class PlaylistResolver {
   @Mutation(() => Boolean)
   async deletePlaylist(@Args('id', { type: () => Base64ID }) id: string): Promise<boolean> {
     return this.deletePlaylistUseCase.execute(parsePlaylistId(id));
+  }
+
+  /** (Re-)schedule DSP analysis for every track in a playlist. `force: true` re-analyses
+   *  tracks even if they already have results. Returns the scan session id. */
+  @Mutation(() => Base64ID)
+  async scanPlaylistTracks(
+    @Args('playlistId', { type: () => Base64ID }) playlistId: string,
+    @Args('force', { type: () => Boolean, nullable: true }) force?: boolean,
+  ): Promise<string> {
+    return this.schedulePlaylistTracksScanUseCase
+      .execute(parsePlaylistId(playlistId), force ?? false)
+      .then(({ sessionId }) => sessionId);
   }
 
   @Mutation(() => String)

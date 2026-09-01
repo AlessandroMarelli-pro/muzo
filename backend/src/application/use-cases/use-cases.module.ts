@@ -111,6 +111,7 @@ import {
   ScheduleBatchAudioScanUseCase,
   ScheduleIncompleteTracksScanUseCase,
   ScheduleLibraryScanUseCase,
+  SchedulePlaylistTracksScanUseCase,
   ScheduleSingleTrackScanUseCase,
   ScheduleTracksByCriteriaScanUseCase,
   ServeImageUseCase,
@@ -300,6 +301,13 @@ const useCasesProviders = [
   ]),
   createUseCaseProvider(ScheduleIncompleteTracksScanUseCase, [
     MUSIC_TRACK_REPOSITORY,
+    SCAN_SESSION_REPOSITORY,
+    ScheduleBatchAudioScanUseCase,
+    LOGGER_FACTORY,
+    LOGGER,
+  ]),
+  createUseCaseProvider(SchedulePlaylistTracksScanUseCase, [
+    PLAYLIST_REPOSITORY,
     SCAN_SESSION_REPOSITORY,
     ScheduleBatchAudioScanUseCase,
     LOGGER_FACTORY,

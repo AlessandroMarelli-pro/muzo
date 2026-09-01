@@ -99,6 +99,12 @@ const DOWNLOAD_PLAYLIST_TO_FOLDER = gql`
   }
 `;
 
+const SCAN_PLAYLIST_TRACKS = gql`
+  mutation ScanPlaylistTracks($playlistId: Base64ID!, $force: Boolean) {
+    scanPlaylistTracks(playlistId: $playlistId, force: $force)
+  }
+`;
+
 const SYNC_PLAYLIST_TO_YOUTUBE = gql`
   mutation SyncPlaylistToYouTube($playlistId: Base64ID!, $userId: String!) {
     syncPlaylistToYouTube(playlistId: $playlistId, userId: $userId) {
@@ -383,6 +389,14 @@ const downloadPlaylistToFolder = async (playlistId: string): Promise<boolean> =>
     { playlistId },
   );
   return data.downloadPlaylistToFolder;
+};
+
+const scanPlaylistTracks = async (playlistId: string, force: boolean): Promise<string> => {
+  const data = await graffleClient.request<{ scanPlaylistTracks: string }>(SCAN_PLAYLIST_TRACKS, {
+    playlistId,
+    force,
+  });
+  return data.scanPlaylistTracks;
 };
 
 export interface SyncResult {
@@ -956,6 +970,21 @@ export function useExportPlaylistToM3U() {
 export function useDownloadPlaylistToFolder() {
   return useMutation({
     mutationFn: (playlistId: string) => downloadPlaylistToFolder(playlistId),
+  });
+}
+
+export function useScanPlaylistTracks() {
+  return useMutation({
+    mutationFn: ({ playlistId, force = false }: { playlistId: string; force?: boolean }) =>
+      scanPlaylistTracks(playlistId, force),
+    onSuccess: () => {
+      toast.success('Scan scheduled for every track in the playlist', { duration: 3000 });
+    },
+    onError: (error: any) => {
+      const message =
+        error?.response?.errors?.[0]?.message || error?.message || 'Failed to schedule scan';
+      toast.error(message, { duration: 3000 });
+    },
   });
 }
 

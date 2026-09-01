@@ -19,6 +19,7 @@ import {
   MoreHorizontal,
   Play,
   Plus,
+  RefreshCw,
   Trash2,
 } from 'lucide-react';
 import * as React from 'react';
@@ -32,6 +33,7 @@ import {
   useDeletePlaylist,
   useDownloadPlaylistToFolder,
   useExportPlaylistToM3U,
+  useScanPlaylistTracks,
 } from '@/services/playlist-hooks';
 import { format } from 'date-fns';
 import { apiUrl } from '@/lib/api-config';
@@ -70,6 +72,7 @@ const ActionCells = ({
   const deletePlaylistMutation = useDeletePlaylist();
   const exportPlaylistMutation = useExportPlaylistToM3U();
   const downloadPlaylistMutation = useDownloadPlaylistToFolder();
+  const scanPlaylistTracksMutation = useScanPlaylistTracks();
 
   const playlist = row.original;
 
@@ -143,6 +146,21 @@ const ActionCells = ({
     }
   };
 
+  const handleRescanTracks = async () => {
+    if (
+      !confirm(
+        `Force re-scan (DSP analysis) of every track in "${playlist.name}"? This can take a while.`,
+      )
+    ) {
+      return;
+    }
+    try {
+      await scanPlaylistTracksMutation.mutateAsync({ playlistId: playlist.id, force: true });
+    } catch (error) {
+      console.error('Failed to schedule playlist scan:', error);
+    }
+  };
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -167,6 +185,13 @@ const ActionCells = ({
         <DropdownMenuItem onClick={handleDownloadFolder} disabled={isDownloading}>
           <Download className="mr-2 h-4 w-4" />
           {isDownloading ? 'Exporting…' : 'Export (copy)'}
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={handleRescanTracks}
+          disabled={scanPlaylistTracksMutation.isPending}
+        >
+          <RefreshCw className="mr-2 h-4 w-4" />
+          Force re-scan all tracks
         </DropdownMenuItem>
         <DropdownMenuItem
           onClick={handleDelete}

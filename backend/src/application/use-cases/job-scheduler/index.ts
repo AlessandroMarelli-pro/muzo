@@ -7,6 +7,7 @@ export * from './ProcessStartLibraryScan';
 export * from './ScheduleBatchAudioScan';
 export * from './ScheduleIncompleteTracksScan';
 export * from './ScheduleLibraryScan';
+export * from './SchedulePlaylistTracksScan';
 export * from './ScheduleSingleTrackScan';
 export * from './ScheduleTracksByCriteriaScan';
 export * from './StopLibraryScan';

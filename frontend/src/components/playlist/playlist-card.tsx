@@ -5,6 +5,7 @@ import {
   useDeletePlaylist,
   useDownloadPlaylistToFolder,
   useExportPlaylistToM3U,
+  useScanPlaylistTracks,
 } from '@/services/playlist-hooks';
 import { useRouter } from '@tanstack/react-router';
 import { Eye, MoreHorizontal } from 'lucide-react';
@@ -55,6 +56,7 @@ export function PlaylistCard({ playlist, onViewDetails, onCardClick }: PlaylistC
   const deletePlaylistMutation = useDeletePlaylist();
   const exportPlaylistMutation = useExportPlaylistToM3U();
   const downloadPlaylistMutation = useDownloadPlaylistToFolder();
+  const scanPlaylistTracksMutation = useScanPlaylistTracks();
   const [isHovered, setIsHovered] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
 
@@ -121,6 +123,21 @@ export function PlaylistCard({ playlist, onViewDetails, onCardClick }: PlaylistC
       setIsDownloading(false);
     }
   };
+  const handleRescanTracks = async () => {
+    if (
+      !confirm(
+        `Force re-scan (DSP analysis) of every track in "${playlist.name}"? This can take a while.`,
+      )
+    ) {
+      return;
+    }
+    try {
+      await scanPlaylistTracksMutation.mutateAsync({ playlistId: playlist.id, force: true });
+    } catch (error) {
+      console.error('Failed to schedule playlist scan:', error);
+    }
+  };
+
   const images = playlist.stats?.images?.slice(0, 4) || [];
   const handleCardClick = () => {
     if (onCardClick) {
@@ -175,6 +192,12 @@ export function PlaylistCard({ playlist, onViewDetails, onCardClick }: PlaylistC
                   <DropdownMenuItem onClick={handleExport}>Export Playlist</DropdownMenuItem>
                   <DropdownMenuItem onClick={handleDownloadFolder} disabled={isDownloading}>
                     Export (copy) folder
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={handleRescanTracks}
+                    disabled={scanPlaylistTracksMutation.isPending}
+                  >
+                    Force re-scan all tracks
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     className="text-destructive focus:text-destructive"
