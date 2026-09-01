@@ -9,14 +9,7 @@ function LibraryDashboardPage() {
     await new Promise((resolve) => setTimeout(resolve, 1000));
   };
 
-  return (
-    <LibraryDashboard
-      libraryId={libraryId}
-      onRefresh={handleRefresh}
-      onExportData={() => console.log('Export data')}
-      onShareLibrary={() => console.log('Share library')}
-    />
-  );
+  return <LibraryDashboard libraryId={libraryId} onRefresh={handleRefresh} />;
 }
 
 export const Route = createFileRoute('/libraries/$libraryId')({

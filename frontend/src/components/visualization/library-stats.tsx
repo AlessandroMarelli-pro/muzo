@@ -1,5 +1,4 @@
 import type { Library, Track } from '@/__generated__/types';
-import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useScanSessionContext } from '@/contexts/scan-session.context';
 import { AnalysisStatus } from '@/services/api-hooks';
@@ -13,77 +12,16 @@ import {
   HardDrive,
   Loader,
   Music,
-  TrendingUp,
   Users,
 } from 'lucide-react';
 import React from 'react';
+import { StatTile } from './stat-tile';
 
 interface LibraryStatsProps {
   library: Library;
   tracks: Track[];
   isLoading?: boolean;
 }
-
-interface StatCardProps {
-  title: string;
-  value: string | number;
-  description?: string;
-  icon: React.ReactNode;
-  trend?: {
-    value: number;
-    isPositive: boolean;
-  };
-  color?: 'default' | 'success' | 'warning' | 'danger';
-}
-
-const StatCard: React.FC<StatCardProps> = ({
-  title,
-  value,
-  description,
-  icon,
-  trend,
-  color = 'default',
-}) => {
-  const getColorClasses = () => {
-    switch (color) {
-      case 'success':
-        return 'text-green-600 bg-green-50 border-green-200';
-      case 'warning':
-        return 'text-yellow-600 bg-yellow-50 border-yellow-200';
-      case 'danger':
-        return 'text-red-600 bg-red-50 border-red-200';
-      default:
-        return 'text-blue-600 bg-blue-50 border-blue-200';
-    }
-  };
-
-  return (
-    <Card className="hover:shadow-md transition-shadow">
-      <CardContent className="p-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <div className={`p-2 rounded-lg ${getColorClasses()}`}>{icon}</div>
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">{title}</p>
-              <p className="text-2xl font-bold">{value}</p>
-              {description && <p className="text-xs text-muted-foreground">{description}</p>}
-            </div>
-          </div>
-          {trend && (
-            <div
-              className={`flex items-center space-x-1 text-sm ${
-                trend.isPositive ? 'text-green-600' : 'text-red-600'
-              }`}
-            >
-              <TrendingUp className={`h-4 w-4 ${trend.isPositive ? '' : 'rotate-180'}`} />
-              <span>{Math.abs(trend.value)}%</span>
-            </div>
-          )}
-        </div>
-      </CardContent>
-    </Card>
-  );
-};
 
 const formatDuration = (seconds: number) => {
   const hours = Math.floor(seconds / 3600);
@@ -125,7 +63,7 @@ const getGenreDistribution = (tracks: Track[]) => {
   return Object.entries(genreCounts)
     .map(([genre, count]) => ({ genre, count }))
     .sort((a, b) => b.count - a.count)
-    .slice(0, 10); // Top 10 genres
+    .slice(0, 10);
 };
 
 const getFormatDistribution = (tracks: Track[]) => {
@@ -158,25 +96,65 @@ const getYearDistribution = (tracks: Track[]) => {
     .sort((a, b) => a.year - b.year);
 };
 
+interface DistributionCardProps {
+  title: string;
+  description: string;
+  icon: React.ReactNode;
+  barClassName: string;
+  rows: { label: string; count: number }[];
+  max: number;
+}
+
+const DistributionCard: React.FC<DistributionCardProps> = ({
+  title,
+  description,
+  icon,
+  barClassName,
+  rows,
+  max,
+}) => (
+  <Card>
+    <CardHeader>
+      <CardTitle className="flex items-center gap-2">
+        {icon}
+        {title}
+      </CardTitle>
+      <CardDescription>{description}</CardDescription>
+    </CardHeader>
+    <CardContent>
+      <div className="space-y-3">
+        {rows.map(({ label, count }) => (
+          <div key={label} className="grid grid-cols-[7rem_1fr_2rem] items-center gap-3">
+            <span className="truncate text-sm font-medium">{label}</span>
+            <div className="h-1.5 rounded-full bg-muted">
+              <div
+                className={`h-1.5 rounded-full ${barClassName}`}
+                style={{ width: `${max > 0 ? (count / max) * 100 : 0}%` }}
+              />
+            </div>
+            <span className="text-right text-sm text-muted-foreground tabular-nums">{count}</span>
+          </div>
+        ))}
+      </div>
+    </CardContent>
+  </Card>
+);
+
 export const LibraryStats: React.FC<LibraryStatsProps> = ({
   library,
   tracks = [],
   isLoading = false,
 }) => {
-  // Subscribe to real-time scan progress updates
   const { getSessionForLibrary } = useScanSessionContext();
   const session = getSessionForLibrary(library.id);
   const { progress: scanProgress } = useScanProgress(session?.sessionId);
 
   if (isLoading) {
     return (
-      <div className="space-y-6">
-        <h2 className="text-2xl font-bold">Library Statistics</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {Array.from({ length: 8 }).map((_, i) => (
-            <div key={i} className="h-24 bg-gray-100 rounded-lg animate-pulse" />
-          ))}
-        </div>
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+        {Array.from({ length: 8 }).map((_, i) => (
+          <div key={i} className="h-24 animate-pulse rounded-xl bg-muted" />
+        ))}
       </div>
     );
   }
@@ -191,14 +169,12 @@ export const LibraryStats: React.FC<LibraryStatsProps> = ({
   const formatDistribution = getFormatDistribution(tracks);
   const yearDistribution = getYearDistribution(tracks);
 
-  // Use real-time scan progress if available, otherwise calculate from tracks
   const analysisProgress = scanProgress?.overallProgress
     ? scanProgress.overallProgress / 100
     : totalTracks > 0
       ? ((analysisStatusCounts.COMPLETED || 0) / totalTracks) * 100
       : 0;
 
-  // Extract progress details from scan event
   const processedFiles = scanProgress?.data?.completedTracks || 0;
   const totalFiles = scanProgress?.data?.totalTracks || totalTracks;
   const remainingFiles = totalFiles - processedFiles;
@@ -206,207 +182,113 @@ export const LibraryStats: React.FC<LibraryStatsProps> = ({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <div className="flex items-center gap-2">
-            <h2 className="text-2xl font-bold">Library Statistics</h2>
-            {scanStatus === 'SCANNING' && (
-              <div className="flex items-center gap-1 text-blue-600">
-                <Loader className="h-4 w-4 animate-spin" />
-                <span className="text-sm font-medium">Scanning…</span>
-              </div>
-            )}
-          </div>
-          <p className="text-muted-foreground">
-            Overview of {library?.name} - {totalTracks} tracks
-            {scanProgress && (
-              <span className="ml-2 text-blue-600">
-                ({processedFiles}/{totalFiles} processed)
-              </span>
-            )}
-          </p>
+      {scanStatus === 'SCANNING' && (
+        <div className="flex items-center gap-1.5 text-sm font-medium text-primary">
+          <Loader className="h-4 w-4 animate-spin" />
+          Scanning… {processedFiles}/{totalFiles} processed
         </div>
-        <div className="flex items-center gap-2">
-          <Badge variant="outline" className="text-sm">
-            Last updated: {new Date().toLocaleDateString()}
-          </Badge>
-        </div>
-      </div>
+      )}
 
       {/* Key Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard
-          title="Total Tracks"
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <StatTile
+          label="Total tracks"
           value={totalTracks.toLocaleString()}
-          description="Audio files"
-          icon={<Music className="h-5 w-5" />}
-          color="default"
+          icon={<Music />}
+          accent={1}
         />
-
-        <StatCard
-          title="Total Duration"
+        <StatTile
+          label="Total duration"
           value={formatDuration(totalDuration)}
-          description="Play time"
-          icon={<Clock className="h-5 w-5" />}
-          color="default"
+          icon={<Clock />}
+          accent={2}
         />
-
-        <StatCard
-          title="Total Size"
+        <StatTile
+          label="Total size"
           value={formatFileSize(totalSize)}
-          description="Storage used"
-          icon={<HardDrive className="h-5 w-5" />}
-          color="default"
+          icon={<HardDrive />}
+          accent={3}
         />
-
-        <StatCard
-          title="Total Plays"
+        <StatTile
+          label="Total plays"
           value={totalPlayCount.toLocaleString()}
-          description="Listen count"
-          icon={<Users className="h-5 w-5" />}
-          color="success"
+          icon={<Users />}
+          accent={4}
         />
       </div>
 
       {/* Analysis Status */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard
-          title="Analysis Progress"
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <StatTile
+          label="Analysis progress"
           value={`${Math.round(analysisProgress)}%`}
-          description={
+          hint={
             scanProgress
               ? `${processedFiles}/${totalFiles} processed`
               : `${analysisStatusCounts.COMPLETED || 0} completed`
           }
-          icon={<CheckCircle className="h-5 w-5" />}
-          color={scanStatus === 'SCANNING' ? 'warning' : 'success'}
+          icon={<CheckCircle />}
+          accent={1}
         />
-
-        <StatCard
-          title="Pending Analysis"
+        <StatTile
+          label="Pending analysis"
           value={scanProgress ? remainingFiles : analysisStatusCounts.PENDING || 0}
-          description={scanProgress ? 'Remaining files' : 'Awaiting processing'}
-          icon={<Clock className="h-5 w-5" />}
-          color="warning"
+          hint={scanProgress ? 'Remaining files' : 'Awaiting processing'}
+          icon={<Clock />}
+          accent={2}
         />
-
-        <StatCard
-          title="Processing"
+        <StatTile
+          label="Processing"
           value={analysisStatusCounts.PROCESSING || 0}
-          description="Currently analyzing"
-          icon={<Loader className="h-5 w-5" />}
-          color="warning"
+          hint="Currently analyzing"
+          icon={<Loader />}
+          accent={3}
         />
-
-        <StatCard
-          title="Failed Analysis"
+        <StatTile
+          label="Failed analysis"
           value={analysisStatusCounts.FAILED || 0}
-          description="Need attention"
-          icon={<AlertCircle className="h-5 w-5" />}
-          color="danger"
+          hint="Need attention"
+          icon={<AlertCircle />}
+          accent={5}
         />
       </div>
 
       {/* Distribution Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Genre Distribution */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {genreDistribution.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Disc className="h-5 w-5 mr-2" />
-                Genre Distribution
-              </CardTitle>
-              <CardDescription>Top genres in your library</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {genreDistribution.slice(0, 5).map(({ genre, count }) => (
-                  <div key={genre} className="flex items-center justify-between">
-                    <span className="text-sm font-medium">{genre}</span>
-                    <div className="flex items-center space-x-2">
-                      <div className="w-24 bg-gray-200 rounded-full h-2">
-                        <div
-                          className="bg-blue-600 h-2 rounded-full"
-                          style={{
-                            width: `${(count / genreDistribution[0].count) * 100}%`,
-                          }}
-                        />
-                      </div>
-                      <span className="text-sm text-muted-foreground w-8 text-right">{count}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+          <DistributionCard
+            title="Genre distribution"
+            description="Top genres in your library"
+            icon={<Disc className="h-5 w-5" />}
+            barClassName="bg-chart-1"
+            rows={genreDistribution.slice(0, 5).map((g) => ({ label: g.genre, count: g.count }))}
+            max={genreDistribution[0].count}
+          />
         )}
 
-        {/* Format Distribution */}
         {formatDistribution.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <HardDrive className="h-5 w-5 mr-2" />
-                Format Distribution
-              </CardTitle>
-              <CardDescription>Audio formats in your library</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {formatDistribution.map(({ format, count }) => (
-                  <div key={format} className="flex items-center justify-between">
-                    <span className="text-sm font-medium">{format}</span>
-                    <div className="flex items-center space-x-2">
-                      <div className="w-24 bg-gray-200 rounded-full h-2">
-                        <div
-                          className="bg-green-600 h-2 rounded-full"
-                          style={{
-                            width: `${(count / formatDistribution[0].count) * 100}%`,
-                          }}
-                        />
-                      </div>
-                      <span className="text-sm text-muted-foreground w-8 text-right">{count}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+          <DistributionCard
+            title="Format distribution"
+            description="Audio formats in your library"
+            icon={<HardDrive className="h-5 w-5" />}
+            barClassName="bg-chart-2"
+            rows={formatDistribution.map((f) => ({ label: f.format, count: f.count }))}
+            max={formatDistribution[0].count}
+          />
         )}
       </div>
 
-      {/* Year Distribution */}
       {yearDistribution.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <BarChart3 className="h-5 w-5 mr-2" />
-              Year Distribution
-            </CardTitle>
-            <CardDescription>Music release years in your library</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {yearDistribution.slice(0, 10).map(({ year, count }) => (
-                <div key={year} className="flex items-center justify-between">
-                  <span className="text-sm font-medium">{year}</span>
-                  <div className="flex items-center space-x-2">
-                    <div className="w-32 bg-gray-200 rounded-full h-2">
-                      <div
-                        className="bg-purple-600 h-2 rounded-full"
-                        style={{
-                          width: `${(count / yearDistribution[0].count) * 100}%`,
-                        }}
-                      />
-                    </div>
-                    <span className="text-sm text-muted-foreground w-8 text-right">{count}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+        <DistributionCard
+          title="Year distribution"
+          description="Music release years in your library"
+          icon={<BarChart3 className="h-5 w-5" />}
+          barClassName="bg-chart-3"
+          rows={yearDistribution
+            .slice(0, 10)
+            .map((y) => ({ label: String(y.year), count: y.count }))}
+          max={yearDistribution[0].count}
+        />
       )}
     </div>
   );

@@ -55,7 +55,7 @@ export function SiteHeader(_props: SiteHeaderProps) {
     if (pathname === '/pending') return 'Pending';
     if (pathname === '/swipe') return 'Swipe';
     if (pathname === '/libraries') return 'Libraries';
-    if (pathname.startsWith('/libraries/')) return 'Library Dashboard';
+    if (pathname.startsWith('/libraries/')) return 'Library';
     if (pathname === '/playlists') return 'Playlists';
     if (pathname.startsWith('/playlists/')) return 'Playlist Details';
     if (pathname === '/favorites') return 'Favorites';
