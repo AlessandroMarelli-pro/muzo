@@ -61,8 +61,8 @@ export const queryKeys = {
   randomTrack: (id?: string, filterLiked?: boolean) =>
     ['tracks', 'random', { id, filterLiked }] as const,
   randomTrackWithStats: () => ['tracks', 'random-with-stats'] as const,
-  trackRecommendations: (id?: string, criteria?: string) =>
-    ['tracks', 'recommendations', { id, criteria }] as const,
+  trackRecommendations: (id?: string, boost?: string) =>
+    ['tracks', 'recommendations', { id, boost }] as const,
 };
 
 /** Query options for loaders (ensureQueryData dedupes preload + load). */
@@ -84,10 +84,10 @@ export const randomTrackQueryOptions = (id?: string, filterLiked?: boolean) =>
     queryFn: () => fetchRandomTrack(id, filterLiked),
   });
 
-export const trackRecommendationsQueryOptions = (id?: string, criteria?: string) =>
+export const trackRecommendationsQueryOptions = (id?: string, boost?: string) =>
   queryOptions({
-    queryKey: queryKeys.trackRecommendations(id, criteria),
-    queryFn: () => fetchTrackRecommendations(id, criteria),
+    queryKey: queryKeys.trackRecommendations(id, boost),
+    queryFn: () => fetchTrackRecommendations(id, boost),
   });
 
 export const fetchLibraries = async () => {
@@ -261,16 +261,24 @@ export const useRandomTrackWithStats = () => {
   });
 };
 
-export const fetchTrackRecommendations = async (id?: string, _criteria?: string) => {
+/** `boost` is a comma-joined list of RecommendationBoostKey (see
+ * recommendation-types.ts), matching the `?boost=` search param the research
+ * page keeps in the URL. An unrecognized key is silently ignored server-side. */
+export const fetchTrackRecommendations = async (id?: string, boost?: string) => {
+  const boosts = boost ? boost.split(',').filter(Boolean) : undefined;
   const response = await graffleClient.request<{
     node: { recommendations: TrackRecommendation[] };
   }>(
     gql`
       ${trackFragment}
-      query GetTrackRecommendations($trackId: Base64ID!, $recommendationsLimit: Int) {
+      query GetTrackRecommendations(
+        $trackId: Base64ID!
+        $recommendationsLimit: Int
+        $boosts: [String!]
+      ) {
         node(id: $trackId) {
           ... on Track {
-            recommendations(limit: $recommendationsLimit) {
+            recommendations(limit: $recommendationsLimit, boosts: $boosts) {
               track {
                 ...TrackFragment
               }
@@ -281,15 +289,15 @@ export const fetchTrackRecommendations = async (id?: string, _criteria?: string)
         }
       }
     `,
-    { trackId: id, recommendationsLimit: 50 },
+    { trackId: id, recommendationsLimit: 50, boosts },
   );
   return response.node.recommendations;
 };
-export const useTrackRecommendations = (id?: string, criteria?: string) => {
+export const useTrackRecommendations = (id?: string, boost?: string) => {
   return useQuery({
     enabled: !!id,
-    queryKey: queryKeys.trackRecommendations(id, criteria),
-    queryFn: async () => fetchTrackRecommendations(id, criteria),
+    queryKey: queryKeys.trackRecommendations(id, boost),
+    queryFn: async () => fetchTrackRecommendations(id, boost),
   });
 };
 
@@ -672,13 +680,7 @@ export const useDislikeTrack = () => {
 
 export const useScanTrack = () => {
   return useMutation({
-    mutationFn: async ({
-      trackId,
-      force = false,
-    }: {
-      trackId: string;
-      force?: boolean;
-    }) => {
+    mutationFn: async ({ trackId, force = false }: { trackId: string; force?: boolean }) => {
       const response = await graffleClient.request<{
         scanTrack: string;
       }>(

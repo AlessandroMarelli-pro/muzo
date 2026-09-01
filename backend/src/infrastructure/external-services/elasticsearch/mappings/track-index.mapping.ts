@@ -15,6 +15,10 @@ export const trackIndexMapping: {
       date: { type: 'date' },
       genres: { type: 'keyword' },
       subgenres: { type: 'keyword' },
+      /** mtg_jamendo_instrument labels (top-5, confidence >= 0.15), flat -- only ~23
+       * distinct values in this corpus, so a keyword array + bounded term boosts is
+       * cheaper and simpler than `nested` for no ranking benefit at this cardinality. */
+      instruments: { type: 'keyword' },
       musical_audio_features: {
         properties: {
           tempo: { type: 'float' },

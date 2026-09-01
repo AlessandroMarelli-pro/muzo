@@ -16,6 +16,32 @@ function calculateMean(values?: (number | undefined)[]): number {
 
 const EMBEDDING_DIM = 1280;
 const MAX_SEED_EMBEDDINGS = 10;
+const MAX_SEED_INSTRUMENTS = 6;
+
+/**
+ * Aggregate seed-track instruments by summed confidence, then normalize to
+ * shares that sum to ~1. Confidence-weighted (not a flat occurrence count)
+ * because a handful of instruments (bass, synthesizer, drums) appear on the
+ * vast majority of tracks in this corpus -- a flat count would let those
+ * near-universal labels dominate the boost regardless of how strongly the
+ * seed tracks actually feature them.
+ */
+function aggregateSeedInstruments(tracks: MusicTrack[]): { instrument: string; weight: number }[] {
+  const confidenceSums: Record<string, number> = {};
+  for (const track of tracks) {
+    for (const { instrument, confidence } of track.features?.instruments ?? []) {
+      confidenceSums[instrument] = (confidenceSums[instrument] ?? 0) + confidence;
+    }
+  }
+  const total = Object.values(confidenceSums).reduce((a, b) => a + b, 0);
+  if (total <= 0) {
+    return [];
+  }
+  return Object.entries(confidenceSums)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, MAX_SEED_INSTRUMENTS)
+    .map(([instrument, sum]) => ({ instrument, weight: sum / total }));
+}
 
 /** Per-seed 1280-dim vectors, sliced to exactly EMBEDDING_DIM and capped. */
 function collectSeedEmbeddings(tracks: MusicTrack[]): number[][] {
@@ -31,9 +57,7 @@ function calculateVectorAggregate(
   getVec: (track: MusicTrack) => number[] | undefined,
   dim: number,
 ): number[] {
-  const vecs = tracks
-    .map(getVec)
-    .filter((v): v is number[] => Array.isArray(v) && v.length >= dim);
+  const vecs = tracks.map(getVec).filter((v): v is number[] => Array.isArray(v) && v.length >= dim);
   if (vecs.length === 0) {
     return [];
   }
@@ -84,6 +108,7 @@ export function calculateFeatures(tracks: MusicTrack[]): Maybe<AudioFeatures> {
     album: '',
     embedding: [],
     embeddings: [],
+    instruments: [],
   };
 
   const genreCounts: Record<string, number> = {};
@@ -101,6 +126,12 @@ export function calculateFeatures(tracks: MusicTrack[]): Maybe<AudioFeatures> {
   let instrumentalnessCount = 0;
   let voiceSum = 0;
   let voiceCount = 0;
+  let valenceSum = 0;
+  let valenceCount = 0;
+  let danceabilitySum = 0;
+  let danceabilityCount = 0;
+  let arousalSum = 0;
+  let arousalCount = 0;
   const moodSums = { happy: 0, sad: 0, relaxed: 0, aggressive: 0, party: 0 };
   const moodCounts = { happy: 0, sad: 0, relaxed: 0, aggressive: 0, party: 0 };
 
@@ -115,13 +146,16 @@ export function calculateFeatures(tracks: MusicTrack[]): Maybe<AudioFeatures> {
         validTracks++;
       }
       if (mf.valence != null) {
-        features.valence! += mf.valence;
+        valenceSum += mf.valence;
+        valenceCount++;
       }
       if (mf.danceability != null) {
-        features.danceability! += mf.danceability;
+        danceabilitySum += mf.danceability;
+        danceabilityCount++;
       }
       if (mf.arousal != null) {
-        features.arousal! += mf.arousal;
+        arousalSum += mf.arousal;
+        arousalCount++;
       }
       if (mf.instrumentalness != null) {
         instrumentalnessSum += mf.instrumentalness;
@@ -193,8 +227,10 @@ export function calculateFeatures(tracks: MusicTrack[]): Maybe<AudioFeatures> {
     features.embedding = embedding;
   }
   features.embeddings = collectSeedEmbeddings(tracks);
+  features.instruments = aggregateSeedInstruments(tracks);
 
-  features.instrumentalness = instrumentalnessCount > 0 ? instrumentalnessSum / instrumentalnessCount : 0;
+  features.instrumentalness =
+    instrumentalnessCount > 0 ? instrumentalnessSum / instrumentalnessCount : 0;
   features.voice = voiceCount > 0 ? voiceSum / voiceCount : 0;
   features.moodHappy = moodCounts.happy > 0 ? moodSums.happy / moodCounts.happy : 0;
   features.moodSad = moodCounts.sad > 0 ? moodSums.sad / moodCounts.sad : 0;
@@ -203,17 +239,18 @@ export function calculateFeatures(tracks: MusicTrack[]): Maybe<AudioFeatures> {
     moodCounts.aggressive > 0 ? moodSums.aggressive / moodCounts.aggressive : 0;
   features.moodParty = moodCounts.party > 0 ? moodSums.party / moodCounts.party : 0;
 
-  const n = tracks.length;
   if (validTracks > 0) {
     features.tempo!.min = features.tempo!.min - 5;
     features.tempo!.max = features.tempo!.max + 5;
     features.tempoCenter = (features.tempo!.min + features.tempo!.max) / 2;
   }
-  if (n > 0) {
-    features.valence = features.valence! / n;
-    features.danceability = features.danceability! / n;
-    features.arousal = features.arousal! / n;
-  }
+  // Averaged over tracks that actually had the value (matching instrumentalness/
+  // voice/mood* above), not tracks.length -- otherwise a seed missing the value
+  // silently pulls the mean toward 0, which then skews the gauss origin used
+  // for scoring every candidate.
+  features.valence = valenceCount > 0 ? valenceSum / valenceCount : 0;
+  features.danceability = danceabilityCount > 0 ? danceabilitySum / danceabilityCount : 0;
+  features.arousal = arousalCount > 0 ? arousalSum / arousalCount : 0;
 
   // Get all genres and subgenres (as arrays)
   // Sort genres and subgenres by count

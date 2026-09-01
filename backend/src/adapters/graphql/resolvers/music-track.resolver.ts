@@ -1,6 +1,10 @@
 import { Inject, UseGuards } from '@nestjs/common';
 import { Args, Int, Mutation, Parent, ResolveField, Resolver } from '@nestjs/graphql';
-import { GetTrackRecommendationsUseCase, ScheduleSingleTrackScanUseCase } from 'src/application/use-cases';
+import {
+  GetTrackRecommendationsUseCase,
+  ScheduleSingleTrackScanUseCase,
+} from 'src/application/use-cases';
+import { RecommendationSeedStrategy } from 'src/kernel/types';
 import {
   HQ_AUDIO_ACQUIRE_PRODUCER,
   IHqAudioAcquireProducer,
@@ -44,14 +48,19 @@ export class MusicTrackResolver {
   async recommendations(
     @Parent() parent: Track,
     @Args('limit', { type: () => Int, nullable: true }) limit?: number,
+    @Args('seedStrategy', { type: () => String, nullable: true })
+    seedStrategy?: RecommendationSeedStrategy,
+    @Args('boosts', { type: () => [String], nullable: true }) boosts?: string[],
   ) {
-    return this.getTrackRecommendationsUseCase.execute(parent.id, limit).then((recommendations) =>
-      recommendations.map((recommendation) => ({
-        track: toTrack(recommendation.track),
-        similarity: recommendation.similarity,
-        reasons: recommendation.reasons,
-      })),
-    );
+    return this.getTrackRecommendationsUseCase
+      .execute(parent.id, limit, seedStrategy, boosts)
+      .then((recommendations) =>
+        recommendations.map((recommendation) => ({
+          track: toTrack(recommendation.track),
+          similarity: recommendation.similarity,
+          reasons: recommendation.reasons,
+        })),
+      );
   }
 
   @Mutation(() => Track)
@@ -85,14 +94,24 @@ export class MusicTrackResolver {
   }
 
   @Mutation(() => Boolean)
-  async downloadHqAudio(@Args('trackId', { type: () => Base64ID }) trackId: string): Promise<boolean> {
-    await this.hqAudioAcquireProducer.scheduleHqAudioAcquire(parseMusicTrackId(trackId), getCurrentUser());
+  async downloadHqAudio(
+    @Args('trackId', { type: () => Base64ID }) trackId: string,
+  ): Promise<boolean> {
+    await this.hqAudioAcquireProducer.scheduleHqAudioAcquire(
+      parseMusicTrackId(trackId),
+      getCurrentUser(),
+    );
     return true;
   }
 
   @Mutation(() => Boolean)
-  async enhanceHqAudio(@Args('trackId', { type: () => Base64ID }) trackId: string): Promise<boolean> {
-    await this.hqAudioEnhanceProducer.scheduleHqAudioEnhance(parseMusicTrackId(trackId), getCurrentUser());
+  async enhanceHqAudio(
+    @Args('trackId', { type: () => Base64ID }) trackId: string,
+  ): Promise<boolean> {
+    await this.hqAudioEnhanceProducer.scheduleHqAudioEnhance(
+      parseMusicTrackId(trackId),
+      getCurrentUser(),
+    );
     return true;
   }
 }

@@ -12,9 +12,11 @@ export class SyncAllTracksToElasticsearchUseCase {
   ) {}
 
   async execute(): Promise<void> {
+    // recreateIndex() already drops and recreates the index, so it starts
+    // empty -- a bulk deleteTracks() here was a redundant no-op delete of
+    // every track id against an index with nothing in it.
     await this.trackIndexerPort.recreateIndex();
     const tracks = await this.musicTrackRepository.getAll();
-    await this.trackIndexerPort.deleteTracks(tracks.map((track) => track.id));
     return this.trackIndexerPort.indexTracks(tracks);
   }
 }

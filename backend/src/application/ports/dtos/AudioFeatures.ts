@@ -25,6 +25,14 @@ export type AudioFeatures = {
   artist?: string;
   album?: string;
   /**
+   * Seed instruments ranked by aggregate confidence share across seed tracks
+   * (shares sum to ~1). Drives a bounded per-instrument term boost so the
+   * playlist's dominant instrument (by confidence, not raw frequency) counts
+   * more -- near-universal labels like "bass"/"synthesizer" are common in
+   * this corpus and shouldn't dominate purely by appearing everywhere.
+   */
+  instruments?: { instrument: string; weight: number }[];
+  /**
    * Element-wise mean of the seed tracks' 1280-dim discogs-effnet embeddings.
    * Kept for backward compatibility, single-seed fallback, and reason generation.
    */

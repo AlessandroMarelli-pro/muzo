@@ -1,6 +1,6 @@
 import { PlaylistId } from 'src/kernel/ids';
-import { TrackSimilarity } from 'src/kernel/types';
-import { DEFAULT_RECOMMENDATION_WEIGHTS } from 'src/kernel/types/defaults';
+import { RecommendationSeedStrategy, TrackSimilarity } from 'src/kernel/types';
+import { applyRecommendationBoosts } from 'src/kernel/types/defaults';
 import { IRecommendationDataPort } from '../../ports/queries/IRecommendationDataPort';
 import { IRecommendationSearchPort } from '../../ports/queries/IRecommendationSearchPort';
 import { IMusicTrackRepository } from '../../ports/repositories/IMusicTrackRepository';
@@ -17,7 +17,12 @@ export class GetPlaylistRecommendationsUseCase {
     private readonly musicTrackRepository: IMusicTrackRepository,
   ) {}
 
-  async execute(playlistId: PlaylistId, limit: number = 50): Promise<TrackSimilarity[]> {
+  async execute(
+    playlistId: PlaylistId,
+    limit: number = 50,
+    seedStrategy?: RecommendationSeedStrategy,
+    boosts?: string[],
+  ): Promise<TrackSimilarity[]> {
     const playlistTracks = await this.playlistTrackRepository.getTracksByPlaylistIdWithTrack(
       playlistId,
       {
@@ -32,11 +37,11 @@ export class GetPlaylistRecommendationsUseCase {
     if (!features) {
       return [];
     }
-    console.log(features);
     const recommendations = await this.recommendationSearchPort.searchByFeatures([features], {
-      weights: DEFAULT_RECOMMENDATION_WEIGHTS,
+      weights: applyRecommendationBoosts(boosts),
       limit,
       excludeTrackIds: playlistTracks.map((track) => track.track.id),
+      seedStrategy,
     });
     const findTracks = await this.musicTrackRepository.getManyByIds(
       recommendations.map((recommendation) => recommendation.track?.id),

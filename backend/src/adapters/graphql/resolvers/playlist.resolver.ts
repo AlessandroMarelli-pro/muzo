@@ -15,6 +15,7 @@ import { StartHqAudioBatchDownloadUseCase } from 'src/application/use-cases/hq-a
 import { HqAudioBatchId } from 'src/kernel/ids';
 import { UpdatePlaylistSortingUseCase } from 'src/application/use-cases/playlist-sorting/UpdatePlaylistSorting';
 import { Maybe } from 'src/kernel/common';
+import { RecommendationSeedStrategy } from 'src/kernel/types';
 
 import { parseMusicTrackId, parsePlaylistId } from '../../common/utils/parse-id';
 import { PlaylistContainsTrackLoader } from '../../persistence/repositories/playlist-track/playlist-contains-track.loader';
@@ -176,6 +177,9 @@ export class PlaylistResolver {
   async recommendations(
     @Parent() parent: Playlist,
     @Args('limit', { type: () => Int, nullable: true }) limit?: number,
+    @Args('seedStrategy', { type: () => String, nullable: true })
+    seedStrategy?: RecommendationSeedStrategy,
+    @Args('boosts', { type: () => [String], nullable: true }) boosts?: string[],
   ) {
     if (parent.recommendations != null) {
       return parent.recommendations;
@@ -186,6 +190,8 @@ export class PlaylistResolver {
     const recommendations = await this.getPlaylistRecommendationsUseCase.execute(
       parsePlaylistId(parent.id),
       limit,
+      seedStrategy,
+      boosts,
     );
 
     return recommendations.map((recommendation) => ({

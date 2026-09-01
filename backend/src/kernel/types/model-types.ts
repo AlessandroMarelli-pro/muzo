@@ -301,18 +301,64 @@ export type QueueItem = Readonly<ModelBase<QueueItemId>> & {
   position: number;
 };
 
+/**
+ * Each weight is a fraction of the embedding base (1.0), not an independent
+ * multiplier -- see recommendation-scoring-functions.ts DEFAULT_BOOST_BUDGET.
+ * `audioSimilarity` no longer gates a kNN clause; it is unused by the query
+ * builder (kept for API stability -- the embedding is always the base now).
+ * `instrumentalness` and `voice` are collapsed into a single scoring signal
+ * (instrumentalness = 1 - voice) -- both weights are summed onto one gauss
+ * function so the two knobs stay independently tunable without double-
+ * counting the same underlying axis.
+ */
 export type RecommendationWeights = {
-  audioSimilarity: number; // MFCC, chroma, spectral features
-  genreSimilarity: number; // AI genre + subgenre classification
-  metadataSimilarity: number; // Artist, album, year patterns
-  userBehavior: number; // Listening history, favorites
-  audioFeatures: number; // Tempo, key, energy, valence
+  audioSimilarity: number; // unused: embedding is always the score base
+  genreSimilarity: number; // AI genre + subgenre classification (bounded term boost)
+  metadataSimilarity: number; // unused: artist/album/year patterns
+  userBehavior: number; // unused: listening history, favorites
+  audioFeatures: number; // tempo (bounded gauss boost)
+  moodSimilarity: number; // mood_happy/sad/relaxed/aggressive/party (bounded gauss boost)
+  arousalSimilarity: number; // bounded gauss boost
+  danceabilitySimilarity: number; // bounded gauss boost
+  instrumentalnessSimilarity: number; // collapsed with voiceSimilarity onto one gauss
+  voiceSimilarity: number; // collapsed with instrumentalnessSimilarity onto one gauss
+  instrumentsSimilarity: number; // instrument-overlap term boost
 };
+
+export type RecommendationSeedStrategy = 'mean' | 'max';
+
+/**
+ * The subset of RecommendationWeights keys that actually score something
+ * (excludes audioSimilarity/metadataSimilarity/userBehavior, which the query
+ * builder never reads -- the embedding is always the base and there is no
+ * metadata/behavior signal to score on). Used to let a caller boost specific
+ * criteria above their defaults without exposing the unused keys.
+ */
+export const ACTIVE_RECOMMENDATION_BOOST_KEYS = [
+  'genreSimilarity',
+  'audioFeatures',
+  'moodSimilarity',
+  'arousalSimilarity',
+  'danceabilitySimilarity',
+  'instrumentalnessSimilarity',
+  'voiceSimilarity',
+  'instrumentsSimilarity',
+] as const;
+
+export type RecommendationBoostKey = (typeof ACTIVE_RECOMMENDATION_BOOST_KEYS)[number];
 
 export type RecommendationCriteria = {
   weights: RecommendationWeights;
   limit?: number;
   excludeTrackIds?: MusicTrackId[];
+  /**
+   * How multiple seed tracks' embeddings combine into the base score.
+   * `mean` (default): average cosine similarity across seeds -- favours the
+   * playlist's centre of mass. `max`: best cosine similarity across seeds --
+   * favours tracks that strongly match any single seed, better for eclectic
+   * playlists. Both are exact (no kNN/HNSW approximation).
+   */
+  seedStrategy?: RecommendationSeedStrategy;
 };
 
 export type TrackSimilarity = {

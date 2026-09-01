@@ -4,6 +4,7 @@ import { Toggle } from '@/components/ui/toggle';
 import { cn } from '@/lib/utils';
 import { Route } from '@/routes/research.{-$trackId}';
 import { fetchRandomTrack } from '@/services/api-hooks';
+import { RECOMMENDATION_BOOSTS } from '@/services/recommendation-types';
 import { useNavigate, useRouter } from '@tanstack/react-router';
 import { Brain } from 'lucide-react';
 import { useMemo } from 'react';
@@ -11,14 +12,6 @@ import { TrackRecommandationsComponent } from '../playlist/track-recommendations
 import { DetailedTrackCard } from '../track/detailed-track-card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { CosineRecommendations } from './cosine-recommendations';
-
-const BOOSTS = [
-  { key: 'audioSimilarity', label: 'Audio' },
-  { key: 'genreSimilarity', label: 'Genre' },
-  { key: 'metadataSimilarity', label: 'Metadata' },
-  { key: 'userBehavior', label: 'User behavior' },
-  { key: 'audioFeatures', label: 'Audio features' },
-];
 
 export function Research() {
   const router = useRouter();
@@ -75,7 +68,7 @@ export function Research() {
           Boost similarity by
         </p>
         <div className="flex flex-wrap gap-2">
-          {BOOSTS.map(({ key, label }) => {
+          {RECOMMENDATION_BOOSTS.map(({ key, label }) => {
             const active = selectedBoost.includes(key);
             return (
               <Toggle

@@ -22,8 +22,15 @@ export const formatDuration = (seconds: number, withAllTime = false) => {
   return duration;
 };
 
+/**
+ * `similarity` is the raw Elasticsearch recommendation score: an embedding
+ * cosine base in [0,1] plus bounded criteria boosts, so the practical range
+ * is roughly [0, 1.7] rather than a percentage. Clamped so a boosted score
+ * above 1.0 still reads as "100%" instead of overflowing.
+ */
 export const formatSimilarity = (similarity: number) => {
-  return `${Math.round(similarity)}%`;
+  const percent = Math.max(0, Math.min(1, similarity)) * 100;
+  return `${Math.round(percent)}%`;
 };
 
 export const formatTime = (seconds: number) => {

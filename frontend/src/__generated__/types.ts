@@ -21,6 +21,11 @@ export type AddTrackToPlaylistInput = {
   trackId: Scalars['Base64ID']['input'];
 };
 
+export type ConnectedProvider = {
+  __typename?: 'ConnectedProvider';
+  provider: Scalars['String']['output'];
+};
+
 export type CosineRecommendedTrack = {
   __typename?: 'CosineRecommendedTrack';
   artist: Scalars['String']['output'];
@@ -60,6 +65,12 @@ export type CursorPaginationArgs = {
   cursor?: InputMaybe<Scalars['Base64ID']['input']>;
   direction?: InputMaybe<Scalars['String']['input']>;
   size?: InputMaybe<Scalars['Int']['input']>;
+};
+
+export type DisconnectProviderResult = {
+  __typename?: 'DisconnectProviderResult';
+  message?: Maybe<Scalars['String']['output']>;
+  success: Scalars['Boolean']['output'];
 };
 
 export type DiscoveredTrack = {
@@ -197,6 +208,7 @@ export type Mutation = {
   deleteLibrary: Scalars['Boolean']['output'];
   deletePlaylist: Scalars['Boolean']['output'];
   deleteSavedFilter: Scalars['Boolean']['output'];
+  disconnectProvider: DisconnectProviderResult;
   downloadHqAudio: Scalars['Boolean']['output'];
   downloadPlaylistHqAudio: HqAudioBatchDownload;
   downloadPlaylistToFolder: Scalars['Boolean']['output'];
@@ -206,6 +218,7 @@ export type Mutation = {
   removeTrackFromPlaylist: Scalars['Boolean']['output'];
   removeTrackFromQueue: RemoveTrackFromQueueResponse;
   resetQueue: Scalars['Boolean']['output'];
+  scanIncompleteTracks: Scalars['Base64ID']['output'];
   scanTrack: Scalars['Base64ID']['output'];
   startLibraryScan: Scalars['Base64ID']['output'];
   stopLibraryScan: Scalars['Boolean']['output'];
@@ -300,6 +313,12 @@ export type MutationDeleteSavedFilterArgs = {
 };
 
 
+export type MutationDisconnectProviderArgs = {
+  provider: Scalars['String']['input'];
+  userId: Scalars['String']['input'];
+};
+
+
 export type MutationDownloadHqAudioArgs = {
   trackId: Scalars['Base64ID']['input'];
 };
@@ -338,6 +357,11 @@ export type MutationRemoveTrackFromPlaylistArgs = {
 
 export type MutationRemoveTrackFromQueueArgs = {
   trackId: Scalars['Base64ID']['input'];
+};
+
+
+export type MutationScanIncompleteTracksArgs = {
+  libraryId: Scalars['Base64ID']['input'];
 };
 
 
@@ -464,7 +488,9 @@ export type PlaylistContainsTrackArgs = {
 
 
 export type PlaylistRecommendationsArgs = {
+  boosts?: InputMaybe<Array<Scalars['String']['input']>>;
   limit?: InputMaybe<Scalars['Int']['input']>;
+  seedStrategy?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type PlaylistFilterInput = {
@@ -513,6 +539,7 @@ export type PlaylistsResult = {
 
 export type Query = {
   __typename?: 'Query';
+  connectedProviders: Array<ConnectedProvider>;
   cosineRecommendationsForTrack: Array<CosineRecommendedTrack>;
   discoverSimilarTracksForPlaylist: Array<DiscoveredTrack>;
   getSpotifyAuthUrl: SpotifyAuthUrl;
@@ -521,6 +548,11 @@ export type Query = {
   me: User;
   /** Fetch any node by global ID. Use inline fragments (... on Playlist { ... }) to request fields. */
   node?: Maybe<Node>;
+};
+
+
+export type QueryConnectedProvidersArgs = {
+  userId: Scalars['String']['input'];
 };
 
 
@@ -691,7 +723,9 @@ export type Track = Node & {
 
 
 export type TrackRecommendationsArgs = {
+  boosts?: InputMaybe<Array<Scalars['String']['input']>>;
   limit?: InputMaybe<Scalars['Int']['input']>;
+  seedStrategy?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type TrackRecommendation = {
@@ -836,6 +870,7 @@ export type GetRandomTrackWithStatsQuery = { __typename?: 'Query', me: { __typen
 export type GetTrackRecommendationsQueryVariables = Exact<{
   trackId: Scalars['Base64ID']['input'];
   recommendationsLimit?: InputMaybe<Scalars['Int']['input']>;
+  boosts?: InputMaybe<Array<Scalars['String']['input']> | Scalars['String']['input']>;
 }>;
 
 
@@ -1112,6 +1147,21 @@ export type AuthenticateSpotifyMutationVariables = Exact<{
 
 export type AuthenticateSpotifyMutation = { __typename?: 'Mutation', authenticateSpotify: { __typename?: 'SpotifyAuthResult', success: boolean, message?: string | null } };
 
+export type ConnectedProvidersQueryVariables = Exact<{
+  userId: Scalars['String']['input'];
+}>;
+
+
+export type ConnectedProvidersQuery = { __typename?: 'Query', connectedProviders: Array<{ __typename?: 'ConnectedProvider', provider: string }> };
+
+export type DisconnectProviderMutationVariables = Exact<{
+  userId: Scalars['String']['input'];
+  provider: Scalars['String']['input'];
+}>;
+
+
+export type DisconnectProviderMutation = { __typename?: 'Mutation', disconnectProvider: { __typename?: 'DisconnectProviderResult', success: boolean, message?: string | null } };
+
 export type AddTrackToPlaylistMutationVariables = Exact<{
   playlistId: Scalars['Base64ID']['input'];
   input: AddTrackToPlaylistInput;
@@ -1131,6 +1181,8 @@ export type RemoveTrackFromPlaylistMutation = { __typename?: 'Mutation', removeT
 export type GetPlaylistRecommendationsQueryVariables = Exact<{
   playlistId: Scalars['Base64ID']['input'];
   recommendationsLimit?: InputMaybe<Scalars['Int']['input']>;
+  seedStrategy?: InputMaybe<Scalars['String']['input']>;
+  boosts?: InputMaybe<Array<Scalars['String']['input']> | Scalars['String']['input']>;
 }>;
 
 

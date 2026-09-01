@@ -230,7 +230,7 @@ type Playlist implements Node {
   id: Base64ID!
   isPublic: Boolean!
   name: String!
-  recommendations(limit: Int): [TrackRecommendation!]
+  recommendations(boosts: [String!], limit: Int, seedStrategy: String): [TrackRecommendation!]
   sorting: PlaylistSorting
   stats: PlaylistStats
   tracks: [PlaylistTrack!]
@@ -421,7 +421,7 @@ type Track implements Node {
   mfTempo: Float
   mfValenceMood: String
   mfVoice: Float
-  recommendations(limit: Int): [TrackRecommendation!]!
+  recommendations(boosts: [String!], limit: Int, seedStrategy: String): [TrackRecommendation!]!
   subgenres: [String!]
   title: String
   updatedAt: Date

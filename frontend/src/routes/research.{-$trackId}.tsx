@@ -24,13 +24,13 @@ export const Route = createFileRoute('/research/{-$trackId}')({
     const { trackId } = params;
     const randomTrackId = trackId || user?.randomTrackId;
 
-    const criteria = deps.boost ?? undefined;
+    const boost = deps.boost ?? undefined;
 
     const randomTrack = await context.queryClient.ensureQueryData(
       randomTrackQueryOptions(randomTrackId),
     );
     const trackRecommendations = await context.queryClient.ensureQueryData(
-      trackRecommendationsQueryOptions(randomTrack.id, criteria),
+      trackRecommendationsQueryOptions(randomTrack.id, boost),
     );
 
     return { randomTrack, trackRecommendations, isLoading: false };

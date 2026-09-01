@@ -29,9 +29,35 @@ function sliceEmbeddingVector(values: number[] | undefined): number[] | undefine
   return isZeroVector(vector) ? undefined : vector;
 }
 
+/** Confidence floor below which an instrument label is dropped -- keeps the
+ * near-universal low-confidence tail (e.g. faint "bass" on almost everything)
+ * from diluting the boost. Top 5 by confidence, matching the ai-service's
+ * own top_n for this classifier head. */
+const INSTRUMENT_CONFIDENCE_FLOOR = 0.15;
+const MAX_INDEXED_INSTRUMENTS = 5;
+
+function selectInstruments(
+  instruments: { instrument: string; confidence: number }[] | undefined,
+): string[] {
+  return (instruments ?? [])
+    .filter((i) => i.confidence >= INSTRUMENT_CONFIDENCE_FLOOR)
+    .sort((a, b) => b.confidence - a.confidence)
+    .slice(0, MAX_INDEXED_INSTRUMENTS)
+    .map((i) => i.instrument);
+}
+
+/** Only includes the key when `value` is present -- an unanalyzed feature is
+ * omitted from the document rather than indexed as a placeholder (`0`/`''`),
+ * so a `gauss`/`term` function scores it as contributing nothing instead of
+ * as maximally distant from every seed. */
+function optionalField<K extends string, V>(key: K, value: V | undefined): { [P in K]?: V } {
+  return value != null ? ({ [key]: value } as { [P in K]?: V }) : {};
+}
+
 export const toElasticsearchTrackDocument = (dto: MusicTrack): ElasticsearchTrackDocument => {
   const date = dto.metadata?.date;
   const embedding = sliceEmbeddingVector(dto.features?.embedding);
+  const mf = dto.features?.musicalFeatures;
   const doc: ElasticsearchTrackDocument = {
     trackId: dto.id,
     duration: dto.technicalInfo?.duration ?? 0,
@@ -42,23 +68,24 @@ export const toElasticsearchTrackDocument = (dto: MusicTrack): ElasticsearchTrac
     ...(date && { date: date.toISOString() }),
     genres: dto.metadata?.genres ?? [],
     subgenres: dto.metadata?.subgenres ?? [],
+    instruments: selectInstruments(dto.features?.instruments),
     musical_audio_features: {
-      tempo: dto.features?.musicalFeatures?.tempo ?? 0,
-      key: dto.features?.musicalFeatures?.key ?? '',
-      camelot_key: dto.features?.musicalFeatures?.camelotKey ?? '',
-      valence: dto.features?.musicalFeatures?.valence ?? 0,
-      valence_mood: dto.features?.musicalFeatures?.valenceMood ?? '',
-      arousal: dto.features?.musicalFeatures?.arousal ?? 0,
-      arousal_mood: dto.features?.musicalFeatures?.arousalMood ?? '',
-      danceability: dto.features?.musicalFeatures?.danceability ?? 0,
-      danceability_feeling: dto.features?.musicalFeatures?.danceabilityFeeling ?? '',
-      instrumentalness: dto.features?.musicalFeatures?.instrumentalness ?? 0,
-      voice: dto.features?.musicalFeatures?.voice ?? 0,
-      mood_happy: dto.features?.musicalFeatures?.moodHappy ?? 0,
-      mood_sad: dto.features?.musicalFeatures?.moodSad ?? 0,
-      mood_relaxed: dto.features?.musicalFeatures?.moodRelaxed ?? 0,
-      mood_aggressive: dto.features?.musicalFeatures?.moodAggressive ?? 0,
-      mood_party: dto.features?.musicalFeatures?.moodParty ?? 0,
+      ...optionalField('tempo', mf?.tempo),
+      ...optionalField('key', mf?.key),
+      ...optionalField('camelot_key', mf?.camelotKey),
+      ...optionalField('valence', mf?.valence),
+      ...optionalField('valence_mood', mf?.valenceMood),
+      ...optionalField('arousal', mf?.arousal),
+      ...optionalField('arousal_mood', mf?.arousalMood),
+      ...optionalField('danceability', mf?.danceability),
+      ...optionalField('danceability_feeling', mf?.danceabilityFeeling),
+      ...optionalField('instrumentalness', mf?.instrumentalness),
+      ...optionalField('voice', mf?.voice),
+      ...optionalField('mood_happy', mf?.moodHappy),
+      ...optionalField('mood_sad', mf?.moodSad),
+      ...optionalField('mood_relaxed', mf?.moodRelaxed),
+      ...optionalField('mood_aggressive', mf?.moodAggressive),
+      ...optionalField('mood_party', mf?.moodParty),
     },
     audio_features: {
       ...(embedding && { discogs_embedding: embedding }),
@@ -112,6 +139,9 @@ export const toMusicTrack = (
         moodParty: document.musical_audio_features.mood_party,
       },
       embedding: document.audio_features.discogs_embedding,
+      // Confidence isn't stored per-document (see selectInstruments) -- round-tripped
+      // as 1 since only presence/rank, not the original score, survives indexing.
+      instruments: document.instruments?.map((instrument) => ({ instrument, confidence: 1 })),
     },
   };
 };

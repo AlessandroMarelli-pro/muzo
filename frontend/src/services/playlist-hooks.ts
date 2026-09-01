@@ -12,6 +12,7 @@ import { gql, graffleClient } from '@/services/graffle-client';
 import { queryOptions, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { playlistFragment, trackFragment } from './fragments';
+import type { RecommendationSeedStrategy } from './recommendation-types';
 
 // GraphQL Queries and Mutations
 const GET_PLAYLISTS = gql`
@@ -225,10 +226,19 @@ const REMOVE_TRACK_FROM_PLAYLIST = gql`
 
 const GET_PLAYLIST_RECOMMENDATIONS = gql`
   ${trackFragment}
-  query GetPlaylistRecommendations($playlistId: Base64ID!, $recommendationsLimit: Int) {
+  query GetPlaylistRecommendations(
+    $playlistId: Base64ID!
+    $recommendationsLimit: Int
+    $seedStrategy: String
+    $boosts: [String!]
+  ) {
     node(id: $playlistId) {
       ... on Playlist {
-        recommendations(limit: $recommendationsLimit) {
+        recommendations(
+          limit: $recommendationsLimit
+          seedStrategy: $seedStrategy
+          boosts: $boosts
+        ) {
           track {
             ...TrackFragment
           }
@@ -303,10 +313,15 @@ export const favoritePlaylistQueryOptions = () =>
     queryFn: () => fetchFavoritePlaylist(),
   });
 
-export const playlistRecommendationsQueryOptions = (playlistId: string, limit = 50) =>
+export const playlistRecommendationsQueryOptions = (
+  playlistId: string,
+  limit = 50,
+  seedStrategy?: RecommendationSeedStrategy,
+  boosts?: string[],
+) =>
   queryOptions({
-    queryKey: ['playlistRecommendations', playlistId, limit] as const,
-    queryFn: () => fetchPlaylistRecommendations(playlistId, limit),
+    queryKey: ['playlistRecommendations', playlistId, limit, seedStrategy, boosts] as const,
+    queryFn: () => fetchPlaylistRecommendations(playlistId, limit, seedStrategy, boosts),
   });
 
 // API functions
@@ -529,7 +544,8 @@ const removeTrackFromPlaylist = async (
 export const fetchPlaylistRecommendations = async (
   playlistId: string,
   limit = 50,
-  excludeTrackIds?: string[],
+  seedStrategy?: RecommendationSeedStrategy,
+  boosts?: string[],
 ): Promise<TrackRecommendation[]> => {
   const data = await graffleClient.request<{
     node: {
@@ -537,8 +553,9 @@ export const fetchPlaylistRecommendations = async (
     };
   }>(GET_PLAYLIST_RECOMMENDATIONS, {
     playlistId,
-    limit,
-    excludeTrackIds,
+    recommendationsLimit: limit,
+    seedStrategy,
+    boosts,
   });
   return data.node.recommendations;
 };
@@ -1017,12 +1034,14 @@ export function useRemoveTrackFromPlaylist() {
 export function usePlaylistRecommendations(
   playlistId: string,
   limit = 50,
-  excludeTrackIds?: string[],
+  seedStrategy?: RecommendationSeedStrategy,
+  boosts?: string[],
+  options?: { enabled?: boolean },
 ) {
   const { data, isLoading, error, refetch } = useQuery({
-    queryKey: ['playlistRecommendations', playlistId, limit],
-    queryFn: () => fetchPlaylistRecommendations(playlistId, limit, excludeTrackIds),
-    enabled: !!playlistId,
+    queryKey: ['playlistRecommendations', playlistId, limit, seedStrategy, boosts],
+    queryFn: () => fetchPlaylistRecommendations(playlistId, limit, seedStrategy, boosts),
+    enabled: !!playlistId && (options?.enabled ?? true),
     staleTime: 5 * 60 * 1000, // 5 minutes - recommendations can change
   });
   return {

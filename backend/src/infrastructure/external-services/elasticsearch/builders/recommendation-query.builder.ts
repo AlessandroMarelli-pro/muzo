@@ -1,220 +1,133 @@
 import type { AudioFeatures } from 'src/application/ports/dtos/AudioFeatures';
 import type { RecommendationCriteria } from 'src/kernel/types/model-types';
-
-const EMBEDDING_DIM = 1280;
-
-function isValidEmbeddingVector(vector: number[] | undefined): vector is number[] {
-  if (!vector || vector.length !== EMBEDDING_DIM) {
-    return false;
-  }
-  return vector.every((v) => Number.isFinite(v));
-}
-
-/**
- * Valid per-seed embedding vectors for the kNN search. Prefers the per-seed list
- * (`embeddings`); falls back to the centroid (`embedding`) so single-track
- * recommendations still issue a 1-element kNN. Returns [] when nothing is usable.
- */
-function seedEmbeddingVectors(playlistFeatures: AudioFeatures): number[][] {
-  const perSeed = (playlistFeatures.embeddings ?? []).filter(isValidEmbeddingVector);
-  if (perSeed.length > 0) {
-    return perSeed;
-  }
-  return isValidEmbeddingVector(playlistFeatures.embedding) ? [playlistFeatures.embedding] : [];
-}
-
-/** Elasticsearch gauss decay requires scale strictly greater than 0. */
-function ensurePositiveGaussScale(scale: number, fallback: number): number {
-  const fb = Number.isFinite(fallback) && fallback > 0 ? fallback : 1e-6;
-  const raw = Number.isFinite(scale) && scale > 0 ? scale : fb;
-  return Math.max(raw, 1e-6);
-}
-
-function tempoOriginAndScale(playlistFeatures: {
-  tempo?: { min: number; max: number };
-  tempoCenter?: number;
-}): { origin: number; scale: number } {
-  const { tempo, tempoCenter } = playlistFeatures;
-  if (tempoCenter != null && Number.isFinite(tempoCenter) && tempoCenter > 0) {
-    return { origin: tempoCenter, scale: 18 };
-  }
-  if (
-    tempo != null &&
-    Number.isFinite(tempo.min) &&
-    Number.isFinite(tempo.max) &&
-    tempo.max > 0 &&
-    tempo.min < Infinity
-  ) {
-    const origin = (tempo.min + tempo.max) / 2;
-    const halfSpan = Math.max((tempo.max - tempo.min) / 2, 8);
-    return { origin, scale: Math.min(halfSpan + 6, 40) };
-  }
-  return { origin: 120, scale: 25 };
-}
+import {
+  categoricalMoodFunctions,
+  genreFunctions,
+  instrumentFunctions,
+  moodFunctions,
+  scalarFunction,
+  tempoFunction,
+  voiceFunction,
+} from './recommendation-scoring-functions';
+import { embeddingScoreScript, seedEmbeddingVectors } from './recommendation-seed-scripts';
 
 /**
  * Builds the Elasticsearch body for feature-based recommendations.
  *
- * Scoring signals: genre/subgenre term matches, tempo (gauss decay), mood/voice/
- * instrumentalness (gauss decay), and the 1280-dim discogs-effnet embedding
- * (native multi-kNN, one clause per seed track). This mirrors what the
- * ai-service's v2 pipeline actually produces -- there is no more
- * spectral/MFCC/chroma data to score on.
+ * The 1280-dim discogs-effnet embedding cosine similarity is ALWAYS the score
+ * base -- an always-matching `script_score` function with weight 1.0. Every
+ * other signal (genre/subgenre, tempo, mood, arousal, danceability,
+ * voice/instrumentalness, instruments) is a bounded additive boost expressed
+ * as a small fraction of that base (see recommendation-scoring-functions.ts
+ * and defaults.ts DEFAULT_RECOMMENDATION_WEIGHTS), so the embedding always
+ * dominates ranking and the boosts only reorder within a similarity band.
+ *
+ * This replaces an earlier design that combined a magic-number function_score
+ * (100+ points) with a separate top-level `knn` block in an outer `should` --
+ * the two were on incomparable scales, so the embedding (meant to be the best
+ * signal) contributed under 10% of the total score. It also replaces the
+ * per-seed-knn-clause "good-enough max-similarity approximation": this
+ * cluster runs an Elasticsearch Basic licence, so the `linear`/`rrf`
+ * retrievers that would normally do this composition are unavailable
+ * (verified: HTTP 403 "license is non-compliant"). Instead the base is an
+ * EXACT brute-force `script_score` cosine over every candidate -- measured at
+ * 15-220ms across this ~7.7k track corpus, cheap enough at this scale that no
+ * approximation is needed. Revisit if the library grows towards ~100k tracks.
+ *
+ * `boost_mode: 'replace'` is required, not `'sum'`: with `sum` the outer
+ * query's constant 1.0 leaks back into every score. It also avoids a proven
+ * function_score pitfall: a document matching NO function scores 1.0 (`"no
+ * function matched"`), not 0 -- with `boost_mode: 'replace'` this is safe
+ * because the embedding script_score always matches every candidate that has
+ * an embedding.
+ *
+ * The `exists` filter on the embedding field is MANDATORY, not defensive:
+ * without it, any candidate missing `audio_features.discogs_embedding` throws
+ * a Painless runtime error that fails the entire shard (reproduced against
+ * the live cluster), not just that one document.
+ *
+ * See recommendation-seed-scripts.ts for why the per-seed cosine calls are
+ * fully unrolled rather than looped over `params.seeds[i]` -- a real
+ * Elasticsearch vector-scripting bug, not a style choice.
  */
 export const buildElasticsearchRecommendationQuery = (
   playlistFeatures: AudioFeatures,
   criteria: RecommendationCriteria,
 ) => {
   const { weights, excludeTrackIds } = criteria;
-  const wGenre = weights.genreSimilarity;
-  const wAudio = weights.audioSimilarity;
-  const wAudioFeat = weights.audioFeatures;
+  const excluded = excludeTrackIds ?? [];
+  const limit = criteria.limit ?? 50;
+  const candidatePoolSize = Math.min(Math.max(limit * 3, 150), 500);
 
   const functions: unknown[] = [];
 
-  if (wGenre > 0 && playlistFeatures.genres && playlistFeatures.genres.length > 0) {
-    for (const genre of playlistFeatures.genres) {
-      functions.push({
-        filter: { term: { genres: genre } },
-        weight: wGenre * 35.0,
-      });
-    }
-  }
-
-  if (wGenre > 0 && playlistFeatures.subgenres && playlistFeatures.subgenres.length > 0) {
-    for (const subgenre of playlistFeatures.subgenres) {
-      functions.push({
-        filter: { term: { subgenres: subgenre } },
-        weight: wGenre * 45.0,
-      });
-    }
-  }
-
-  const { origin: tempoOriginRaw, scale: tempoScaleRaw } = tempoOriginAndScale(playlistFeatures);
-  const tempoOrigin = Number.isFinite(tempoOriginRaw) ? tempoOriginRaw : 120;
-  const tempoScale = ensurePositiveGaussScale(tempoScaleRaw, 18);
-  functions.push({
-    gauss: {
-      'musical_audio_features.tempo': {
-        origin: tempoOrigin,
-        scale: tempoScale,
-        offset: 4,
-        decay: 0.5,
-      },
-    },
-    weight: Math.max(wAudio, 0.01) * 14.0,
-  });
-
-  const gaussFeature = (field: string, value: number | undefined, weight: number) => {
-    if (wAudioFeat > 0 && value != null && Number.isFinite(value)) {
-      functions.push({
-        gauss: {
-          [`musical_audio_features.${field}`]: {
-            origin: value,
-            scale: 0.18,
-            offset: 0.04,
-            decay: 0.5,
-          },
-        },
-        weight: wAudioFeat * weight,
-      });
-    }
-  };
-
-  gaussFeature('valence', playlistFeatures.valence, 10.0);
-  gaussFeature('arousal', playlistFeatures.arousal, 10.0);
-  gaussFeature('danceability', playlistFeatures.danceability, 10.0);
-  gaussFeature('instrumentalness', playlistFeatures.instrumentalness, 6.0);
-  gaussFeature('voice', playlistFeatures.voice, 6.0);
-  gaussFeature('mood_happy', playlistFeatures.moodHappy, 4.0);
-  gaussFeature('mood_sad', playlistFeatures.moodSad, 4.0);
-  gaussFeature('mood_relaxed', playlistFeatures.moodRelaxed, 4.0);
-  gaussFeature('mood_aggressive', playlistFeatures.moodAggressive, 4.0);
-  gaussFeature('mood_party', playlistFeatures.moodParty, 4.0);
-
-  if (wAudioFeat > 0 && playlistFeatures.valenceMood) {
-    functions.push({
-      filter: { term: { 'musical_audio_features.valence_mood': playlistFeatures.valenceMood } },
-      weight: wAudioFeat * 12.0,
-    });
-  }
-  if (wAudioFeat > 0 && playlistFeatures.arousalMood) {
-    functions.push({
-      filter: { term: { 'musical_audio_features.arousal_mood': playlistFeatures.arousalMood } },
-      weight: wAudioFeat * 12.0,
-    });
-  }
-  if (wAudioFeat > 0 && playlistFeatures.danceabilityFeeling) {
-    functions.push({
-      filter: {
-        term: {
-          'musical_audio_features.danceability_feeling': playlistFeatures.danceabilityFeeling,
-        },
-      },
-      weight: wAudioFeat * 12.0,
-    });
-  }
-
-  const limit = criteria.limit ?? 50;
-  const candidatePoolSize = Math.min(Math.max(limit * 3, 150), 500);
-  const excluded = excludeTrackIds ?? [];
-
-  const baseBool: Record<string, unknown> = {
-    must_not: [{ terms: { trackId: excluded } }],
-    must: [{ match_all: {} }],
-  };
-
-  const functionScoreQuery: Record<string, unknown> = {
-    function_score: {
-      query: { bool: baseBool },
-      functions,
-      score_mode: 'sum',
-      boost_mode: 'sum',
-      boost: 1,
-    },
-  };
-  const outerShould: unknown[] = [functionScoreQuery];
-
-  /**
-   * Native multi-kNN over the HNSW-indexed 1280-dim discogs-effnet vector. One
-   * clause per seed track: ES sums the per-clause contributions, but a candidate
-   * genuinely close to a single seed still gets a large term from that clause
-   * while distant seeds don't surface it at all -- a good-enough max-similarity
-   * approximation without a brute-force script_score. Each clause boost is divided
-   * by the seed count so total embedding weight stays comparable to the old
-   * single-vector behaviour. Weighted high (35.0 default) vs the term/gauss
-   * signals: the learned embedding captures genre/style far better than the
-   * hand-picked scalars. Tunable via ELASTICSEARCH_EMBEDDING_VECTOR_WEIGHT.
-   */
   const seedVectors = seedEmbeddingVectors(playlistFeatures);
-  const useEmbeddingKnn =
-    wAudio > 0 &&
-    seedVectors.length > 0 &&
-    process.env.ELASTICSEARCH_EMBEDDING_VECTOR_SIMILARITY !== 'false';
-  let knnClauses: unknown[] | undefined;
-  if (useEmbeddingKnn) {
-    const embeddingWeightMultiplier = parseFloat(
-      process.env.ELASTICSEARCH_EMBEDDING_VECTOR_WEIGHT || '35.0',
-    );
-    const perSeedBoost = (wAudio * embeddingWeightMultiplier) / seedVectors.length;
-    knnClauses = seedVectors.map((vec) => ({
-      field: 'audio_features.discogs_embedding',
-      query_vector: vec,
-      k: candidatePoolSize,
-      num_candidates: Math.min(candidatePoolSize * 2, 1000),
-      boost: perSeedBoost,
-      filter: { bool: { must_not: [{ terms: { trackId: excluded } }] } },
-    }));
+  const useEmbeddingBase =
+    seedVectors.length > 0 && process.env.ELASTICSEARCH_EMBEDDING_VECTOR_SIMILARITY !== 'false';
+  if (useEmbeddingBase) {
+    const strategy = criteria.seedStrategy ?? 'mean';
+    const { source, params } = embeddingScoreScript(strategy, seedVectors);
+    functions.push({
+      script_score: {
+        script: { source, params },
+      },
+      weight: 1.0,
+    });
   }
+
+  functions.push(...genreFunctions(playlistFeatures, weights.genreSimilarity));
+
+  const tempo = tempoFunction(playlistFeatures, weights.audioFeatures);
+  if (tempo) {
+    functions.push(tempo);
+  }
+
+  const arousal = scalarFunction('arousal', playlistFeatures.arousal, weights.arousalSimilarity);
+  if (arousal) {
+    functions.push(arousal);
+  }
+  const danceability = scalarFunction(
+    'danceability',
+    playlistFeatures.danceability,
+    weights.danceabilitySimilarity,
+  );
+  if (danceability) {
+    functions.push(danceability);
+  }
+
+  functions.push(...moodFunctions(playlistFeatures, weights.moodSimilarity));
+  functions.push(...categoricalMoodFunctions(playlistFeatures, weights.moodSimilarity));
+
+  const voice = voiceFunction(playlistFeatures, weights);
+  if (voice) {
+    functions.push(voice);
+  }
+
+  functions.push(...instrumentFunctions(playlistFeatures, weights.instrumentsSimilarity));
+
+  // Only required when the base script_score actually runs: it dereferences
+  // the vector field, and a document missing it throws a Painless runtime
+  // error that fails the whole shard (reproduced). When there's no usable
+  // embedding (or the kill-switch is set), skip the guard entirely so
+  // scoring degrades gracefully to boosts-only over every candidate instead
+  // of matching nothing.
+  const filter: unknown[] = useEmbeddingBase
+    ? [{ exists: { field: 'audio_features.discogs_embedding' } }]
+    : [];
 
   return {
     size: candidatePoolSize,
-    ...(knnClauses ? { knn: knnClauses } : {}),
     query: {
-      bool: {
-        must_not: [{ terms: { trackId: excluded } }],
-        should: outerShould,
-        minimum_should_match: 1,
+      function_score: {
+        query: {
+          bool: {
+            filter,
+            must_not: [{ terms: { trackId: excluded } }],
+          },
+        },
+        functions,
+        score_mode: 'sum',
+        boost_mode: 'replace',
       },
     },
     highlight: {
