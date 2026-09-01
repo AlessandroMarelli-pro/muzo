@@ -77,6 +77,19 @@ export const CamelotKeyOptions = [
 export const findCamelotKey = (key?: string | null) =>
   CamelotKeyOptions.find((option) => option.label?.toLowerCase() === key?.toLowerCase());
 
+/**
+ * A track's key in the one form used everywhere it's shown: the Camelot code
+ * (the harmonic-mixing coordinate) plus an abbreviated musical name, e.g.
+ * `"8A · A min"`. Falls back to the raw value when it isn't a known key.
+ */
+export const formatKey = (key?: string | null): string | null => {
+  if (!key) return null;
+  const match = findCamelotKey(key);
+  if (!match) return key;
+  const shortName = match.label.replace(/\bminor\b/i, 'min').replace(/\bmajor\b/i, 'maj');
+  return `${match.value} · ${shortName}`;
+};
+
 export const findFeatureLabel = (
   options: { label: string; value: string }[],
   value?: string | null,

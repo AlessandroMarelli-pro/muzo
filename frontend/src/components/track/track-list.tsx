@@ -2,7 +2,7 @@ import { Track } from '@/__generated__/types';
 import { PageHeader, PageShell } from '@/components/layout/page-shell';
 import { StaticFilterOptionsData } from '@/hooks/useFilterOptions';
 import { FilterState } from '@/hooks/useFiltering';
-import { useTracksList } from '@/services/api-hooks';
+import { usePendingTracks, useTracksList } from '@/services/api-hooks';
 import { ExtendedColumnSort } from '@/types/data-table';
 import React from 'react';
 import { DataTableSkeleton } from '../data-table/data-table-skeleton';
@@ -13,6 +13,7 @@ interface TrackListProps {
   perPage: number;
   sort: ExtendedColumnSort<Track>[];
   view: MusicViewMode;
+  review: boolean;
   staticFilterOptions: StaticFilterOptionsData & {
     isLoading: boolean;
   };
@@ -21,7 +22,7 @@ interface TrackListProps {
 }
 
 export const TrackList = React.memo<TrackListProps>(
-  ({ page, perPage, sort, view, staticFilterOptions, filters, handleFilterChange }) => {
+  ({ page, perPage, sort, view, review, staticFilterOptions, filters, handleFilterChange }) => {
     const offset = (page - 1) * perPage;
 
     // Map frontend sort field names to backend field names
@@ -46,7 +47,6 @@ export const TrackList = React.memo<TrackListProps>(
       return sortMapping[frontendSort] || frontendSort;
     }, []);
 
-    // Parse sorting state and extract orderBy and orderDirection
     const { orderBy, orderDirection } = React.useMemo(() => {
       if (Array.isArray(sort) && sort.length > 0) {
         const firstSort = sort[0];
@@ -55,7 +55,6 @@ export const TrackList = React.memo<TrackListProps>(
           orderDirection: firstSort.desc ? 'desc' : ('asc' as 'asc' | 'desc'),
         };
       }
-
       return {
         orderBy: 'fileCreatedAt',
         orderDirection: 'desc' as 'asc' | 'desc',
@@ -63,16 +62,17 @@ export const TrackList = React.memo<TrackListProps>(
     }, [sort, mapSortField]);
 
     const queryParams = React.useMemo(
-      () => ({
-        limit: perPage,
-        offset,
-        orderBy,
-        orderDirection,
-      }),
+      () => ({ limit: perPage, offset, orderBy, orderDirection }),
       [perPage, offset, orderBy, orderDirection],
     );
 
-    const { data, isLoading, isFetching, isError, refetch } = useTracksList(queryParams);
+    const library = useTracksList({ ...queryParams, enabled: !review });
+    const pending = usePendingTracks({ ...queryParams, enabled: review });
+    // Lightweight always-on count so the "Needs review" toggle can show a badge.
+    const pendingCount = usePendingTracks({ limit: 1, offset: 0 });
+
+    const active = review ? pending : library;
+    const { data, isLoading, isFetching, isError, refetch } = active;
 
     if (staticFilterOptions.isLoading) {
       return (
@@ -100,6 +100,8 @@ export const TrackList = React.memo<TrackListProps>(
         pageCount={totalPages}
         totalCount={data?.total}
         view={view}
+        reviewMode={review}
+        pendingCount={pendingCount.data?.total ?? 0}
         staticFilterOptions={staticFilterOptions}
         initialPageSize={perPage}
         initialFilters={filters}
@@ -117,6 +119,7 @@ export const TrackList = React.memo<TrackListProps>(
       prevProps.perPage === nextProps.perPage &&
       prevProps.sort === nextProps.sort &&
       prevProps.view === nextProps.view &&
+      prevProps.review === nextProps.review &&
       prevProps.staticFilterOptions === nextProps.staticFilterOptions &&
       prevProps.filters === nextProps.filters
     );

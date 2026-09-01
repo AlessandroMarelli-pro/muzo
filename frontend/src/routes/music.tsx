@@ -8,7 +8,7 @@ import { useMemo } from 'react';
 import { z } from 'zod';
 
 function MusicPage() {
-  const { page, perPage, sort, view } = Route.useSearch();
+  const { page, perPage, sort, view, review } = Route.useSearch();
 
   const staticFilterOptions = useFilterOptionsData();
   // Use URL state management for pagination and sorting
@@ -34,6 +34,7 @@ function MusicPage() {
       perPage={perPage}
       sort={memoizedSort as ExtendedColumnSort<Track>[]}
       view={view}
+      review={review}
       staticFilterOptions={memoizedStaticFilterOptions}
       filters={memoizedFilters}
       handleFilterChange={handleFilterChange}
@@ -45,6 +46,8 @@ const productSearchSchema = z.object({
   page: z.number().default(1),
   perPage: z.number().default(10),
   view: z.enum(['cards', 'table']).default('table'),
+  /** Show only tracks that still need analysis (from the pending-tracks query). */
+  review: z.boolean().default(false),
   // sort if of type sort=[{"id":"key","desc":false}]
   sort: z
     .array(

@@ -4,8 +4,8 @@ import { AudioQualityBadge } from '@/components/track/audio-quality-badge';
 import {
   arousalMoodOptions,
   danceabilityFeelingOptions,
-  findCamelotKey,
   findFeatureLabel,
+  formatKey,
   valenceMoodOptions,
 } from '@/components/track/track-feature-options';
 import { Badge } from '@/components/ui/badge';
@@ -96,7 +96,7 @@ export function PendingPreviewPanel({
     );
   }
 
-  const camelot = findCamelotKey(track.mfKey);
+  const keyLabel = formatKey(track.mfKey);
   const genres = (track.genres as string[]) ?? [];
   const subgenres = (track.subgenres as string[]) ?? [];
 
@@ -138,7 +138,7 @@ export function PendingPreviewPanel({
                 : '—'
             }
           />
-          <Stat label="Key" value={camelot?.label ?? '—'} />
+          <Stat label="Key" value={keyLabel ?? '—'} />
           <Stat label="Length" value={formatTime(track.duration ?? 0)} />
         </div>
       </div>

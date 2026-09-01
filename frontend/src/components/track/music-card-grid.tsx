@@ -1,9 +1,7 @@
 import { Track } from '@/__generated__/types';
 import { cn } from '@/lib/utils';
-import { Disc3 } from 'lucide-react';
 import { memo } from 'react';
 import { DataTablePagination } from '../data-table/data-table-pagination';
-import { NoData } from '../no-data';
 import { Skeleton } from '../ui/skeleton';
 import type { Table } from '@tanstack/react-table';
 import { TrackTile } from './track-tile';
@@ -15,14 +13,14 @@ interface MusicCardGridProps {
   tracks: Track[];
   isLoading: boolean;
   table: Table<Track>;
-  hasActiveFilters: boolean;
-  onClearFilters: () => void;
+  /** Total across all pages, for the count line. */
+  totalCount?: number;
 }
 
-function GridSkeleton() {
+function GridSkeleton({ count }: { count: number }) {
   return (
     <div className={GRID_CLASS}>
-      {Array.from({ length: 12 }).map((_, i) => (
+      {Array.from({ length: count }).map((_, i) => (
         <div key={i} className="flex flex-col overflow-hidden rounded-lg bg-card shadow-sm">
           <Skeleton className="aspect-square w-full rounded-none" />
           <div className="space-y-2 p-3">
@@ -39,41 +37,30 @@ function GridSkeleton() {
   );
 }
 
+/**
+ * Card grid for the Music view. Empty / error / filtered-empty states are all
+ * handled upstream in `MusicView` — this only ever renders with tracks or a
+ * loading skeleton.
+ */
 export const MusicCardGrid = memo(function MusicCardGrid({
   tracks,
   isLoading,
   table,
-  hasActiveFilters,
-  onClearFilters,
+  totalCount,
 }: MusicCardGridProps) {
-  if (isLoading) {
-    return <GridSkeleton />;
-  }
+  const pageSize = table.getState().pagination.pageSize;
 
-  if (tracks.length === 0) {
-    return (
-      <div className="py-12">
-        {hasActiveFilters ? (
-          <NoData
-            Icon={Disc3}
-            title="No tracks match these filters"
-            subtitle="Loosen the filters to see more of your library."
-            buttonLabel="Clear filters"
-            buttonAction={onClearFilters}
-          />
-        ) : (
-          <NoData
-            Icon={Disc3}
-            title="Nothing here yet"
-            subtitle="Point Muzo at a music folder and run a scan to fill your library."
-          />
-        )}
-      </div>
-    );
+  if (isLoading) {
+    return <GridSkeleton count={pageSize} />;
   }
 
   return (
-    <div className={cn('flex flex-col gap-4')}>
+    <div className={cn('flex flex-col gap-3')}>
+      {totalCount != null && (
+        <p className="px-1 text-muted-foreground text-sm">
+          {totalCount.toLocaleString()} {totalCount === 1 ? 'track' : 'tracks'}
+        </p>
+      )}
       <div className={GRID_CLASS}>
         {tracks.map((track) => (
           <TrackTile key={track.id} track={track} />

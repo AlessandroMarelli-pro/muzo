@@ -309,6 +309,7 @@ export const useTracksList = ({
   offset = 0,
   orderBy = 'createdAt',
   orderDirection = 'desc',
+  enabled = true,
 }: {
   libraryId?: string;
   status?: AnalysisStatus;
@@ -317,8 +318,10 @@ export const useTracksList = ({
   offset?: number;
   orderBy?: string;
   orderDirection?: 'asc' | 'desc';
+  enabled?: boolean;
 }) => {
   return useQuery({
+    enabled,
     retry: 1,
     queryKey: queryKeys.tracksList(
       libraryId,
@@ -368,13 +371,16 @@ export const usePendingTracks = ({
   offset = 0,
   orderBy = 'createdAt',
   orderDirection = 'desc',
+  enabled = true,
 }: {
   limit?: number;
   offset?: number;
   orderBy?: string;
   orderDirection?: 'asc' | 'desc';
+  enabled?: boolean;
 }) => {
   return useQuery({
+    enabled,
     queryKey: queryKeys.pendingTracks(limit, offset, orderBy, orderDirection),
     queryFn: async () => {
       const response = await graffleClient.request<{

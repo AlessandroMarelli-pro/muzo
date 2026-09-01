@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { ColumnDef, Row } from '@tanstack/react-table';
 import { Brain, Heart, Pause, Play } from 'lucide-react';
-import * as React from 'react';
 
 import { DataTable } from '@/components/data-table/data-table';
 import { DataTableColumnHeader } from '@/components/data-table/data-table-column-header';
@@ -18,11 +17,12 @@ import { Link } from '@tanstack/react-router';
 import { format } from 'date-fns';
 import type { Table as TanstackTable } from '@tanstack/react-table';
 import { AudioQualityBadge } from './audio-quality-badge';
+import { GenresBadge } from './genres-badge';
 import {
   arousalMoodOptions,
   danceabilityFeelingOptions,
-  findCamelotKey,
   findFeatureLabel,
+  formatKey,
   valenceMoodOptions,
 } from './track-feature-options';
 import { TrackMoreMenu } from './track-more-menu';
@@ -115,8 +115,9 @@ export function buildMusicColumns(
         );
       },
       enableColumnFilter: true,
+      enableSorting: false,
       meta: {
-        label: 'Library',
+        label: 'Artwork',
         variant: 'multiSelect',
         options: staticFilterOptions.libraries,
       },
@@ -171,6 +172,7 @@ export function buildMusicColumns(
           </div>
         );
       },
+      meta: { label: 'Duration' },
     },
     {
       id: 'listeningCount',
@@ -180,28 +182,15 @@ export function buildMusicColumns(
         const count = row.getValue('listeningCount') as number;
         return <div className="max-w-[25px] text-right">{count.toLocaleString()}</div>;
       },
+      meta: { label: 'Plays' },
     },
     {
       id: 'genres',
       accessorKey: 'genres',
       header: ({ column }) => <DataTableColumnHeader column={column} title="Genre" />,
-      cell: ({ row }) => {
-        const genres = row.getValue('genres') as string[];
-        return (
-          <div className="flex gap-1">
-            {genres?.map((genre, index) => (
-              <Badge
-                key={`genre-${index}-${genre}`}
-                variant="secondary"
-                className="capitalize"
-                size="xs"
-              >
-                {genre}
-              </Badge>
-            ))}
-          </div>
-        );
-      },
+      cell: ({ row }) => (
+        <GenresBadge genres={(row.getValue('genres') as string[]) ?? []} variant="secondary" />
+      ),
       meta: { label: 'Genre', variant: 'multiSelect', options: staticFilterOptions.genres },
       enableColumnFilter: true,
     },
@@ -209,23 +198,9 @@ export function buildMusicColumns(
       id: 'subgenres',
       accessorKey: 'subgenres',
       header: ({ column }) => <DataTableColumnHeader column={column} title="Subgenre" />,
-      cell: ({ row }) => {
-        const subgenres = row.getValue('subgenres') as string[];
-        return (
-          <div className="flex gap-1">
-            {subgenres?.map((subgenre, index) => (
-              <Badge
-                key={`subgenre-${index}-${subgenre}`}
-                variant="default"
-                className="capitalize"
-                size="xs"
-              >
-                {subgenre}
-              </Badge>
-            ))}
-          </div>
-        );
-      },
+      cell: ({ row }) => (
+        <GenresBadge genres={(row.getValue('subgenres') as string[]) ?? []} variant="outline" />
+      ),
       meta: { label: 'Subgenre', variant: 'multiSelect', options: staticFilterOptions.subgenres },
       enableColumnFilter: true,
     },
@@ -249,10 +224,10 @@ export function buildMusicColumns(
       accessorKey: 'mfKey',
       header: ({ column }) => <DataTableColumnHeader column={column} title="Key" />,
       cell: ({ row }) => {
-        const key = row.original.mfKey as string;
+        const key = formatKey(row.original.mfKey);
         return (
-          <Badge variant="outline" className="max-w-[70px] text-center font-mono" size="xs">
-            {findCamelotKey(key)?.label || key || 'N/A'}
+          <Badge variant="outline" className="text-center font-mono" size="xs">
+            {key ?? 'N/A'}
           </Badge>
         );
       },
@@ -342,6 +317,7 @@ export function buildMusicColumns(
           </div>
         );
       },
+      meta: { label: 'Last scanned' },
     },
     {
       id: 'fileCreatedAt',
@@ -355,6 +331,7 @@ export function buildMusicColumns(
           </div>
         );
       },
+      meta: { label: 'Created' },
     },
     {
       id: 'actions',
@@ -369,11 +346,16 @@ export function buildMusicColumns(
 /**
  * The Music table view body. The table instance is owned by `MusicView` so the
  * card and table views share one set of URL-bound pagination / sort state.
+ *
+ * Not memoized: the `table` object from `useReactTable` is a stable reference
+ * that mutates in place, so `React.memo` here would skip re-renders when the
+ * row data changes (e.g. after a filter refetch). `MusicView` is already
+ * memoized upstream.
  */
-export const MusicTable = React.memo<MusicTableProps>(function MusicTable({ table, isLoading }) {
+export function MusicTable({ table, isLoading }: MusicTableProps) {
   return (
     <div className="w-full space-y-4">
       <DataTable table={table} isLoading={isLoading} />
     </div>
   );
-});
+}

@@ -15,12 +15,13 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { SearchInput } from '@/components/ui/search-input';
 import { Slider } from '@/components/ui/slider';
+import { Toggle } from '@/components/ui/toggle';
 import { useFilters } from '@/contexts/filter-context';
 import { useFilterOptionsData } from '@/hooks/useFilterOptions';
 import { useDebouncedCallback } from '@/hooks/use-debounced-callback';
 import { cn } from '@/lib/utils';
 import { CheckIcon } from '@radix-ui/react-icons';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, Sparkles } from 'lucide-react';
 import * as React from 'react';
 
 interface Option {
@@ -166,13 +167,20 @@ function TempoFilter({
   );
 }
 
+interface MusicFilterBarProps {
+  reviewMode: boolean;
+  pendingCount: number;
+  onReviewChange: (next: boolean) => void;
+}
+
 /**
  * The compact filter row for the Music views: one search field, the four
- * filters a DJ reaches for constantly (Genre, BPM, Key, Energy), and an
- * "All filters" button that opens the full sheet for everything else.
- * Writes straight to the shared FilterContext.
+ * filters a DJ reaches for constantly (Genre, BPM, Key, Energy), an
+ * "All filters" button, and a "Needs review" toggle that swaps the list to
+ * tracks still awaiting analysis. Writes straight to the shared FilterContext.
+ * In review mode the facets are hidden — they don't apply to the pending query.
  */
-export function MusicFilterBar() {
+export function MusicFilterBar({ reviewMode, pendingCount, onReviewChange }: MusicFilterBarProps) {
   const { filters, updateFilter } = useFilters();
   const options = useFilterOptionsData();
 
@@ -184,6 +192,29 @@ export function MusicFilterBar() {
 
   const pushArtist = useDebouncedCallback((v: string) => updateFilter('artist', v), 300);
   const pushTitle = useDebouncedCallback((v: string) => updateFilter('title', v), 300);
+
+  const reviewToggle = (pendingCount > 0 || reviewMode) && (
+    <Toggle
+      pressed={reviewMode}
+      onPressedChange={onReviewChange}
+      variant="outline"
+      size="sm"
+      className="gap-1.5"
+      aria-label="Show only tracks that need review"
+    >
+      <Sparkles className="h-3.5 w-3.5" />
+      Needs review
+      {pendingCount > 0 && (
+        <Badge variant="secondary" size="xs" className="rounded-full px-1.5 font-normal">
+          {pendingCount.toLocaleString()}
+        </Badge>
+      )}
+    </Toggle>
+  );
+
+  if (reviewMode) {
+    return <div className="flex flex-wrap items-center gap-2">{reviewToggle}</div>;
+  }
 
   return (
     <div className="flex flex-wrap items-center gap-2">
@@ -227,6 +258,7 @@ export function MusicFilterBar() {
       />
 
       <FilterButton />
+      {reviewToggle}
     </div>
   );
 }

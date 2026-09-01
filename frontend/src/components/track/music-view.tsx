@@ -1,12 +1,14 @@
 import { Track } from '@/__generated__/types';
 import { PageHeader, PageShell } from '@/components/layout/page-shell';
 import { DataTableSortList } from '@/components/data-table/data-table-sort-list';
+import { DataTableViewOptions } from '@/components/data-table/data-table-view-options';
 import { NoData } from '@/components/no-data';
 import { Button } from '@/components/ui/button';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { useAudioPlayerActions, useCurrentTrack } from '@/contexts/audio-player-context';
 import { useFilters } from '@/contexts/filter-context';
 import { useDataTable } from '@/hooks/use-data-table';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { FilterState } from '@/hooks/useFiltering';
 import { StaticFilterOptionsData } from '@/hooks/useFilterOptions';
 import { Link, useNavigate } from '@tanstack/react-router';
@@ -16,6 +18,7 @@ import {
   LayoutGrid,
   PlugZap,
   SearchX,
+  Sparkles,
   TableProperties,
 } from 'lucide-react';
 import * as React from 'react';
@@ -33,6 +36,8 @@ interface MusicViewProps {
   pageCount: number;
   totalCount?: number;
   view: MusicViewMode;
+  reviewMode: boolean;
+  pendingCount: number;
   staticFilterOptions: StaticFilterOptionsData;
   initialPageSize: number;
   initialFilters: FilterState;
@@ -48,6 +53,8 @@ export const MusicView = React.memo<MusicViewProps>(function MusicView({
   pageCount,
   totalCount,
   view,
+  reviewMode,
+  pendingCount,
   staticFilterOptions,
   initialPageSize,
   initialFilters,
@@ -61,6 +68,11 @@ export const MusicView = React.memo<MusicViewProps>(function MusicView({
   const actions = useAudioPlayerActions();
   const { setCurrentTrack } = useCurrentTrack();
   const { resetFilters, hasActiveFilters } = useFilters();
+  const isMobile = useIsMobile();
+
+  // Below `md` the 15-column table can't reflow (WCAG 1.4.10) — always show the
+  // card grid there, regardless of the `view` param, and hide the toggle.
+  const effectiveView: MusicViewMode = isMobile ? 'cards' : view;
 
   const columns = React.useMemo(
     () => buildMusicColumns(staticFilterOptions, actions, setCurrentTrack),
@@ -75,10 +87,18 @@ export const MusicView = React.memo<MusicViewProps>(function MusicView({
       sorting: [{ id: 'fileCreatedAt', desc: true }],
       columnPinning: { right: ['actions'] },
       pagination: { pageIndex: 0, pageSize: initialPageSize },
+      // Default to a scannable ~7-column set; the rest live behind the
+      // column-visibility menu (table view only).
       columnVisibility: {
+        subgenres: false,
+        duration: false,
+        listeningCount: false,
         mfDanceabilityFeeling: false,
         mfArousalMood: false,
         mfValenceMood: false,
+        isFavorite: false,
+        lastScannedAt: false,
+        fileCreatedAt: false,
       },
     },
     filterValues: initialFilters as unknown as Record<string, string | string[] | null>,
@@ -121,30 +141,37 @@ export const MusicView = React.memo<MusicViewProps>(function MusicView({
   // "No rows returned" — could be a genuinely empty library, an over-narrow
   // filter, or a transient gap mid-refetch. Disambiguate with the total count.
   const noRows = !busy && !isError && data.length === 0;
-  const libraryEmpty = noRows && !hasActiveFilters && (totalCount === 0 || totalCount === undefined);
-  const noMatches = noRows && hasActiveFilters && totalCount === 0;
-  const showResults = !isError && !libraryEmpty && !noMatches;
+  const reviewAllClear = reviewMode && noRows && totalCount === 0;
+  const libraryEmpty =
+    !reviewMode && noRows && !hasActiveFilters && (totalCount === 0 || totalCount === undefined);
+  const noMatches = !reviewMode && noRows && hasActiveFilters && totalCount === 0;
+  const showResults = !isError && !libraryEmpty && !noMatches && !reviewAllClear;
 
   return (
     <PageShell key="music-view">
       <PageHeader title="Music" description="Everything in your library.">
         {showResults && <KeyboardShortcutsHelp />}
-        {view === 'cards' && showResults && <DataTableSortList table={table} />}
-        <ToggleGroup
-          type="single"
-          value={view}
-          onValueChange={setView}
-          variant="outline"
-          size="sm"
-          aria-label="View mode"
-        >
-          <ToggleGroupItem value="table" aria-label="Table view">
-            <TableProperties className="h-4 w-4" />
-          </ToggleGroupItem>
-          <ToggleGroupItem value="cards" aria-label="Card view">
-            <LayoutGrid className="h-4 w-4" />
-          </ToggleGroupItem>
-        </ToggleGroup>
+        {showResults && <DataTableSortList table={table} />}
+        {showResults && effectiveView === 'table' && (
+          <DataTableViewOptions table={table} triggerClassName="flex" />
+        )}
+        {!isMobile && (
+          <ToggleGroup
+            type="single"
+            value={view}
+            onValueChange={setView}
+            variant="outline"
+            size="sm"
+            aria-label="View mode"
+          >
+            <ToggleGroupItem value="table" aria-label="Table view">
+              <TableProperties className="h-4 w-4" />
+            </ToggleGroupItem>
+            <ToggleGroupItem value="cards" aria-label="Card view">
+              <LayoutGrid className="h-4 w-4" />
+            </ToggleGroupItem>
+          </ToggleGroup>
+        )}
         <Button asChild variant="outline" size="sm">
           <Link to="/music/harmonic">
             <CircleDashed className="h-4 w-4" />
@@ -153,9 +180,17 @@ export const MusicView = React.memo<MusicViewProps>(function MusicView({
         </Button>
       </PageHeader>
 
-      <LibraryStatusStrip />
+      {!reviewMode && <LibraryStatusStrip />}
 
-      {!isError && !libraryEmpty && <MusicFilterBar />}
+      {!isError && !libraryEmpty && (
+        <MusicFilterBar
+          reviewMode={reviewMode}
+          pendingCount={pendingCount}
+          onReviewChange={(next) =>
+            void navigate({ search: (prev) => ({ ...prev, review: next, page: 1 }) })
+          }
+        />
+      )}
 
       {isError ? (
         <div className="py-12">
@@ -187,23 +222,35 @@ export const MusicView = React.memo<MusicViewProps>(function MusicView({
             buttonAction={resetFilters}
           />
         </div>
+      ) : reviewAllClear ? (
+        <div className="py-12">
+          <NoData
+            Icon={Sparkles}
+            title="Nothing needs review"
+            subtitle="Every track in your library has been analyzed."
+            buttonLabel="Back to the library"
+            buttonAction={() =>
+              void navigate({ search: (prev) => ({ ...prev, review: false, page: 1 }) })
+            }
+          />
+        </div>
       ) : (
         <div
           ref={resultsRef}
           tabIndex={-1}
-          aria-label="Track results"
+          aria-label={reviewMode ? 'Tracks that need review' : 'Track results'}
           className="outline-none"
         >
-          {view === 'table' ? (
+          {reviewMode && (
+            <p className="mb-3 px-1 text-muted-foreground text-sm">
+              Showing {totalCount?.toLocaleString() ?? ''} track
+              {totalCount === 1 ? '' : 's'} that still need analysis
+            </p>
+          )}
+          {effectiveView === 'table' ? (
             <MusicTable table={table} isLoading={busy} />
           ) : (
-            <MusicCardGrid
-              tracks={data}
-              isLoading={busy}
-              table={table}
-              hasActiveFilters={hasActiveFilters}
-              onClearFilters={resetFilters}
-            />
+            <MusicCardGrid tracks={data} isLoading={busy} table={table} totalCount={totalCount} />
           )}
         </div>
       )}

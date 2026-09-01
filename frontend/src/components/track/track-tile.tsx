@@ -12,7 +12,7 @@ import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
 import { AudioQualityBadge } from './audio-quality-badge';
 import { GenresBadge } from './genres-badge';
-import { findCamelotKey } from './track-feature-options';
+import { formatKey } from './track-feature-options';
 import { TrackMoreMenu } from './track-more-menu';
 
 interface TrackTileProps {
@@ -37,7 +37,7 @@ export const TrackTile = memo(function TrackTile({ track, className }: TrackTile
   const title = capitalizeEveryWord(track.title || 'Unknown title');
   const artist = capitalizeEveryWord(track.artist || 'Unknown artist');
   const genres = track.genres?.length ? track.genres : [];
-  const camelot = findCamelotKey(track.mfKey ?? undefined);
+  const keyLabel = formatKey(track.mfKey);
   const bpm = track.mfTempo != null && track.mfTempo >= 0 ? Math.round(track.mfTempo) : null;
   const energy = track.mfArousalMood ?? null;
 
@@ -114,16 +114,16 @@ export const TrackTile = memo(function TrackTile({ track, className }: TrackTile
           </p>
         </div>
 
-        {(bpm != null || camelot || energy) && (
+        {(bpm != null || keyLabel || energy) && (
           <div className="flex flex-wrap items-center gap-1">
             {bpm != null && (
               <Badge variant="outline" size="xs" className="font-mono">
                 {bpm} BPM
               </Badge>
             )}
-            {camelot && (
+            {keyLabel && (
               <Badge variant="outline" size="xs" className="font-mono">
-                {camelot.label}
+                {keyLabel}
               </Badge>
             )}
             {energy && (

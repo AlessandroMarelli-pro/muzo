@@ -61,10 +61,13 @@ export function HarmonicPage({ selectedKey }: HarmonicPageProps) {
               <span className="text-muted-foreground text-sm">Mixes with</span>
               {getCompatibleKeys(normalized).map((code) => {
                 const key = getCamelotKey(code);
+                const shortName = key?.name
+                  .replace(/\bminor\b/i, 'min')
+                  .replace(/\bmajor\b/i, 'maj');
                 return (
                   <Badge key={code} variant="outline" size="xs" className="font-mono">
                     {code}
-                    {key ? ` · ${key.name}` : ''}
+                    {shortName ? ` · ${shortName}` : ''}
                   </Badge>
                 );
               })}

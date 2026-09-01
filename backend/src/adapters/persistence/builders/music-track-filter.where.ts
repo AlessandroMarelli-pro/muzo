@@ -2,6 +2,28 @@ import { Maybe } from 'src/kernel/common';
 import { extractModelId } from 'src/kernel/ids/factory';
 import { FilterCriteria } from 'src/kernel/types/model-types';
 
+const TEMPO_MIN_DEFAULT = 0;
+const TEMPO_MAX_DEFAULT = 200;
+const INSTRUMENTALNESS_MIN_DEFAULT = 0;
+const INSTRUMENTALNESS_MAX_DEFAULT = 1;
+
+const isStringSet = (value: Maybe<string>): value is string =>
+  typeof value === 'string' && value.length > 0;
+
+const isArraySet = (value: Maybe<string[]>): value is string[] =>
+  Array.isArray(value) && value.length > 0;
+
+const isRangeSet = (
+  range: Maybe<{ min?: number; max?: number }>,
+  minDefault: number,
+  maxDefault: number,
+): range is { min?: number; max?: number } => {
+  if (!range) return false;
+  const minSet = range.min !== undefined && range.min > minDefault;
+  const maxSet = range.max !== undefined && range.max < maxDefault;
+  return minSet || maxSet;
+};
+
 export const buildMusicTrackFilterWhereClause = (
   criteria: Maybe<FilterCriteria>,
   subgenreSelectionMode: 'exact' | 'contain' = 'contain',
@@ -52,78 +74,75 @@ export const buildMusicTrackFilterWhereClause = (
     }
   }
 
+  // Track-level columns (not on the fingerprint relation).
+  if (isStringSet(criteria.artist)) {
+    where.originalArtist = { contains: criteria.artist };
+  }
+
+  if (isStringSet(criteria.title)) {
+    where.originalTitle = { contains: criteria.title };
+  }
+
+  if (criteria.libraryIds && criteria.libraryIds.length > 0) {
+    where.libraryId = {
+      in: criteria.libraryIds.map((id) => extractModelId(id).dbId),
+    };
+  }
+
+  // Fingerprint-backed criteria. `audioFingerprint` is a nullable 1-1 relation,
+  // so Prisma requires the `is` wrapper to filter through it.
+  const fingerprintWhere: any = {};
+
+  if (isArraySet(criteria.keyIds)) {
+    fingerprintWhere.key = { in: criteria.keyIds };
+  }
+
+  if (isArraySet(criteria.valenceMood)) {
+    fingerprintWhere.valenceMood = { in: criteria.valenceMood };
+  }
+
+  if (isArraySet(criteria.arousalMood)) {
+    fingerprintWhere.arousalMood = { in: criteria.arousalMood };
+  }
+
+  if (isArraySet(criteria.danceabilityFeeling)) {
+    fingerprintWhere.danceabilityFeeling = { in: criteria.danceabilityFeeling };
+  }
+
+  if (isRangeSet(criteria.tempo, TEMPO_MIN_DEFAULT, TEMPO_MAX_DEFAULT)) {
+    fingerprintWhere.tempo = {};
+    if (criteria.tempo.min !== undefined && criteria.tempo.min > TEMPO_MIN_DEFAULT) {
+      fingerprintWhere.tempo.gte = criteria.tempo.min;
+    }
+    if (criteria.tempo.max !== undefined && criteria.tempo.max < TEMPO_MAX_DEFAULT) {
+      fingerprintWhere.tempo.lte = criteria.tempo.max;
+    }
+  }
+
   if (
-    criteria.artist ||
-    criteria.title ||
-    criteria.keyIds ||
-    criteria.tempo?.min !== 0 ||
-    criteria.tempo?.max !== 200 ||
-    criteria.valenceMood ||
-    criteria.arousalMood ||
-    criteria.danceabilityFeeling ||
-    criteria.instrumentalness?.min !== 0 ||
-    criteria.instrumentalness?.max !== 1
+    isRangeSet(
+      criteria.instrumentalness,
+      INSTRUMENTALNESS_MIN_DEFAULT,
+      INSTRUMENTALNESS_MAX_DEFAULT,
+    )
   ) {
-    const fingerprintWhere: any = {};
-
-    if (criteria.artist && criteria.artist.length > 0) {
-      where.originalArtist = { contains: criteria.artist };
-    }
-
-    if (criteria.title && criteria.title.length > 0) {
-      where.originalTitle = { contains: criteria.title };
-    }
-
-    if (criteria.keyIds && criteria.keyIds.length > 0) {
-      fingerprintWhere.key = { in: criteria.keyIds };
-    }
-
-    if (criteria.valenceMood && criteria.valenceMood?.length > 0) {
-      fingerprintWhere.valenceMood = { in: criteria.valenceMood };
-    }
-
-    if (criteria.arousalMood && criteria.arousalMood?.length > 0) {
-      fingerprintWhere.arousalMood = { in: criteria.arousalMood };
-    }
-
-    if (criteria.danceabilityFeeling && criteria.danceabilityFeeling?.length > 0) {
-      fingerprintWhere.danceabilityFeeling = {
-        in: criteria.danceabilityFeeling,
-      };
-    }
-
-    if (criteria.tempo && (criteria.tempo?.min !== 0 || criteria.tempo?.max !== 200)) {
-      fingerprintWhere.tempo = {};
-      if (criteria.tempo.min !== undefined && criteria.tempo.min !== 200) {
-        fingerprintWhere.tempo.gte = criteria.tempo.min;
-      }
-      if (criteria.tempo.max !== undefined && criteria.tempo.max !== 200) {
-        fingerprintWhere.tempo.lte = criteria.tempo.max;
-      }
-    }
-
+    fingerprintWhere.instrumentalness = {};
     if (
-      criteria.instrumentalness &&
-      (criteria.instrumentalness?.min !== 0 || criteria.instrumentalness?.max !== 1)
+      criteria.instrumentalness.min !== undefined &&
+      criteria.instrumentalness.min > INSTRUMENTALNESS_MIN_DEFAULT
     ) {
-      fingerprintWhere.instrumentalness = {};
-      if (criteria.instrumentalness.min !== undefined) {
-        fingerprintWhere.instrumentalness.gte = criteria.instrumentalness.min;
-      }
-      if (criteria.instrumentalness.max !== undefined) {
-        fingerprintWhere.instrumentalness.lte = criteria.instrumentalness.max;
-      }
+      fingerprintWhere.instrumentalness.gte = criteria.instrumentalness.min;
     }
+    if (
+      criteria.instrumentalness.max !== undefined &&
+      criteria.instrumentalness.max < INSTRUMENTALNESS_MAX_DEFAULT
+    ) {
+      fingerprintWhere.instrumentalness.lte = criteria.instrumentalness.max;
+    }
+  }
 
-    if (criteria.libraryIds && criteria.libraryIds.length > 0) {
-      where.libraryId = {
-        in: criteria.libraryIds.map((id) => extractModelId(id).dbId),
-      };
-    }
-
-    if (Object.keys(fingerprintWhere).length > 0) {
-      where.audioFingerprint = fingerprintWhere;
-    }
+  if (Object.keys(fingerprintWhere).length > 0) {
+    where.audioFingerprint = { is: fingerprintWhere };
   }
 
   return where;

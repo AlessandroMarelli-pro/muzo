@@ -3,7 +3,7 @@ import { DataTableColumnHeader } from '@/components/data-table/data-table-column
 import { AudioQualityBadge } from '@/components/track/audio-quality-badge';
 import { GenresBadge } from '@/components/track/genres-badge';
 import { TrackMoreMenu } from '@/components/track/track-more-menu';
-import { findCamelotKey } from '@/components/track/track-feature-options';
+import { formatKey } from '@/components/track/track-feature-options';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -125,19 +125,11 @@ export function buildFavoritesColumns({
       id: 'mfKey',
       accessorKey: 'mfKey',
       header: ({ column }) => <DataTableColumnHeader column={column} title="Key" />,
-      cell: ({ row }) => {
-        const match = findCamelotKey(row.original.mfKey);
-        return (
-          <Badge
-            variant="outline"
-            size="xs"
-            className="font-mono"
-            style={match ? { backgroundColor: match.color } : undefined}
-          >
-            {match?.label ?? 'N/A'}
-          </Badge>
-        );
-      },
+      cell: ({ row }) => (
+        <Badge variant="outline" size="xs" className="font-mono">
+          {formatKey(row.original.mfKey) ?? 'N/A'}
+        </Badge>
+      ),
     },
     {
       id: 'duration',

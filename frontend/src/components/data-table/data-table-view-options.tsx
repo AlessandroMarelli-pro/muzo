@@ -18,9 +18,14 @@ import * as React from 'react';
 
 interface DataTableViewOptionsProps<TData> {
   table: Table<TData>;
+  /** Override the trigger button classes (defaults hide it below `lg`). */
+  triggerClassName?: string;
 }
 
-export function DataTableViewOptions<TData>({ table }: DataTableViewOptionsProps<TData>) {
+export function DataTableViewOptions<TData>({
+  table,
+  triggerClassName,
+}: DataTableViewOptionsProps<TData>) {
   const columns = React.useMemo(
     () =>
       table
@@ -37,7 +42,7 @@ export function DataTableViewOptions<TData>({ table }: DataTableViewOptionsProps
           role="combobox"
           variant="outline"
           size="sm"
-          className="ml-auto hidden h-8 lg:flex shadow-xs"
+          className={cn('ml-auto hidden h-8 lg:flex shadow-xs', triggerClassName)}
         >
           <Settings2 />
           View

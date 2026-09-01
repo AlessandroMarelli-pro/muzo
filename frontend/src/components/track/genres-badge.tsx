@@ -24,7 +24,7 @@ export const GenresBadge = ({
         <Tooltip>
           <TooltipTrigger>
             <Badge
-              variant="default"
+              variant="secondary"
               className="text-xs capitalize border-none"
               key={'more-genres-badge'}
             >
