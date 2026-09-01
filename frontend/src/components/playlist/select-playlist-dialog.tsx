@@ -42,7 +42,8 @@ export const SelectPlaylistTrigger = ({
     <>
       {isDropdownMenuItem ? (
         <DropdownMenuItem onPointerDown={handleOpen} onSelect={(e) => e.preventDefault()}>
-          Add to Playlist
+          <ListPlus />
+          Add to playlist
         </DropdownMenuItem>
       ) : (
         <Button onClick={handleOpen} variant="ghost" size="sm">

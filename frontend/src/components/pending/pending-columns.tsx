@@ -242,6 +242,7 @@ export function buildPendingColumns({
               title={track.title || ''}
               format={track.format}
               hqAudioPath={track.hqAudioPath}
+              imagePath={track.imagePath}
             />
           </div>
         );

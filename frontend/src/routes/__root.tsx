@@ -4,8 +4,8 @@ import { EnhancedMusicPlayer } from '@/components/player/enhanced-music-player';
 import { SiteHeader } from '@/components/site-header';
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
 import { TooltipProvider } from '@/components/ui/tooltip';
-import { AuthProvider, useAuth } from '@/contexts/auth-context';
 import { AudioPlayerProvider, useCurrentTrack } from '@/contexts/audio-player-context';
+import { AuthProvider, useAuth } from '@/contexts/auth-context';
 import { FilterProvider } from '@/contexts/filter-context';
 import { ScanSessionProvider } from '@/contexts/scan-session.context';
 import { cn } from '@/lib/utils';
@@ -27,7 +27,6 @@ import {
   Library,
   ListMusic,
   Settings,
-  Sparkles,
 } from 'lucide-react';
 import { ThemeProvider, useTheme } from 'next-themes';
 import * as React from 'react';
@@ -77,12 +76,7 @@ const navigationData: AppSidebarProps['data'] = {
       icon: Brain,
       preload: false,
     },
-    {
-      title: 'Swipe',
-      url: '/swipe',
-      icon: Sparkles,
-      preload: false,
-    },
+
     {
       title: 'Pending',
       url: '/pending',

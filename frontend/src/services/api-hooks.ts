@@ -700,6 +700,19 @@ export const useScanTrack = () => {
       );
       return response.scanTrack;
     },
+    onSuccess: (_data, { force }) => {
+      toast.success(force ? 'Re-analysis started' : 'Rescan started', {
+        description: force
+          ? 'Rebuilding this track’s metadata and analysis from scratch. This can take a minute.'
+          : 'Refreshing this track’s metadata in the background.',
+        duration: 4000,
+      });
+    },
+    onError: (error: any) => {
+      const errorMessage =
+        error?.response?.errors?.[0]?.message ?? error?.message ?? 'Failed to start scan';
+      toast.error(errorMessage, { duration: 3000 });
+    },
   });
 };
 

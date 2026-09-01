@@ -619,6 +619,7 @@ export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
             title={title}
             format={currentTrack.format}
             hqAudioPath={currentTrack.hqAudioPath}
+            imagePath={currentTrack.imagePath}
           />
         </div>
       </div>

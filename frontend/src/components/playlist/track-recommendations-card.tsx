@@ -162,6 +162,7 @@ export const TrackRecommendationsCard = ({
             title={track.title || 'Unknown Track'}
             format={track.format}
             hqAudioPath={track.hqAudioPath}
+            imagePath={track.imagePath}
           />
         )}
       </div>

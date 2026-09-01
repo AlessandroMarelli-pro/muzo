@@ -166,6 +166,11 @@ export function DataTableFilterMenu<TData>({
         return;
       }
 
+      const target = event.target as HTMLElement | null;
+      if (target?.isContentEditable || target?.closest('[role="menu"],[role="dialog"],[role="listbox"]')) {
+        return;
+      }
+
       if (
         event.key.toLowerCase() === OPEN_MENU_SHORTCUT &&
         !event.ctrlKey &&
