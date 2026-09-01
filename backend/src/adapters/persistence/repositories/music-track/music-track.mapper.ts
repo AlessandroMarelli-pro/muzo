@@ -174,6 +174,10 @@ export const toImagePath: ToImagePath = (row) => {
   // GET /api/images/serve?imagePath=<trackId>, which serves the bytes from the DB.
   // imageMimeType is persisted iff imageData (the bytes) is; the lite select
   // deliberately omits the bytes themselves.
+  //
+  // IMPORTANT: this is a track id, not a real filesystem path -- do not fs.readFile()
+  // it. Callers that need the actual bytes (e.g. playlist folder export) must fetch
+  // them via IImageSearchRepository.findLatestImageForTrack(track.id) instead.
   const hasStoredImage = row.imageSearches?.some((s) => s.imageMimeType != null) ?? false;
   return hasStoredImage ? row.id : undefined;
 };

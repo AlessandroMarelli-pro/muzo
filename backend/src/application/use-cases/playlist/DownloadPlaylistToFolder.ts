@@ -8,9 +8,13 @@ import { PlaylistId } from 'src/kernel/ids';
 import { ILogger, LOGGER } from 'src/application/ports/infrastructure/ILogger';
 import { LOGGER_FACTORY } from 'src/application/ports/infrastructure/ILoggerFactory';
 
-import type { ICopyAudioWithMetadata } from 'src/application/ports/infrastructure/ICopyAudioWithMetadata';
+import type {
+  AudioArtwork,
+  ICopyAudioWithMetadata,
+} from 'src/application/ports/infrastructure/ICopyAudioWithMetadata';
 import type { WavMetadata } from 'src/application/ports/infrastructure/IWavConverterWithMetadata';
 
+import { IImageSearchRepository } from '../../ports/repositories/IImageSearchRepository';
 import { IPlaylistRepository } from '../../ports/repositories/IPlaylistRepository';
 import { IPlaylistSortingRepository } from '../../ports/repositories/IPlaylistSortingRepository';
 
@@ -75,6 +79,7 @@ export class DownloadPlaylistToFolderUseCase {
     private readonly playlistRepository: IPlaylistRepository,
     private readonly playlistSortingRepository: IPlaylistSortingRepository,
     private readonly copyAudioWithMetadata: ICopyAudioWithMetadata,
+    private readonly imageSearchRepository: IImageSearchRepository,
     @Inject(LOGGER_FACTORY)
     loggerFactory: { createLogger: (name: string) => ILogger },
     @Inject(LOGGER)
@@ -97,6 +102,10 @@ export class DownloadPlaylistToFolderUseCase {
       trackCount: playlist.tracks.length,
     });
 
+    let tracksWithArtwork = 0;
+    let tracksWithoutArtwork = 0;
+    let artworkFailed = 0;
+
     for (const playlistTrack of playlist.tracks) {
       const track = playlistTrack.track;
       // Prefer the HQ-acquired audio file (Tidal/Soulseek FLAC/WAV) when present,
@@ -117,14 +126,14 @@ export class DownloadPlaylistToFolderUseCase {
       );
       const [displayArtist, displayTitle] = [artist, title].map(capitalizeWords);
 
-      const [genreValue, commentValue, styleValue] = ['genres', 'subgenres', 'subgenres'].map(
-        (key: 'genres' | 'subgenres') =>
-          (track.metadata?.[key] &&
-            normalizeMetadataValue(
-              track.metadata?.[key]?.map((g) => `#${g.toLowerCase()}`).join(', '),
-            )) ||
-          '',
-      );
+      const toHashtags = (values: string[] | undefined): string =>
+        values?.length
+          ? normalizeMetadataValue(values.map((v) => `#${v.toLowerCase()}`).join(', '))
+          : '';
+
+      const genreValue = toHashtags(track.metadata?.subgenres);
+      const styleValue = toHashtags(track.metadata?.subgenres);
+      const commentValue = toHashtags(track.metadata?.genres);
 
       const fileBase = sanitizeFileName(`${displayArtist} - ${displayTitle}`);
       const ext = (path.extname(sourcePath) || '.opus').toLowerCase();
@@ -153,18 +162,69 @@ export class DownloadPlaylistToFolderUseCase {
         title: displayTitle,
       });
 
-      await this.copyAudioWithMetadata.copyAudioWithMetadata(
-        sourcePath,
-        destFilePath,
-        metadata satisfies WavMetadata,
-        track.imagePath,
-      );
+      let artwork: AudioArtwork | undefined;
+      // track.imagePath only carries the track id as an "art exists" flag for the
+      // GET /api/images/serve HTTP route -- it is not a filesystem path. Fetch the
+      // actual bytes from the DB via track.id.
+      if (track.imagePath) {
+        try {
+          const stored = await this.imageSearchRepository.findLatestImageForTrack(track.id);
+          artwork = stored ?? undefined;
+        } catch (err) {
+          this.logger.error('DownloadPlaylistToFolder: failed to load cover art from DB', {
+            trackId: track.id,
+            error: String(err),
+          });
+        }
+      }
+      if (artwork) {
+        tracksWithArtwork += 1;
+      } else {
+        tracksWithoutArtwork += 1;
+        this.logger.warn('DownloadPlaylistToFolder: no cover art stored for track', {
+          trackId: track.id,
+          artist: displayArtist,
+          title: displayTitle,
+        });
+      }
+
+      try {
+        await this.copyAudioWithMetadata.copyAudioWithMetadata(
+          sourcePath,
+          destFilePath,
+          metadata satisfies WavMetadata,
+          artwork,
+        );
+      } catch (err) {
+        if (!artwork) {
+          throw err;
+        }
+        // Malformed cover-art bytes shouldn't cost the whole export -- retry once
+        // without artwork so the track still lands as a valid, correctly-tagged file.
+        artworkFailed += 1;
+        tracksWithArtwork -= 1;
+        tracksWithoutArtwork += 1;
+        this.logger.error('DownloadPlaylistToFolder: copy with artwork failed, retrying without it', {
+          destFilePath,
+          error: String(err),
+        });
+        await this.copyAudioWithMetadata.copyAudioWithMetadata(
+          sourcePath,
+          destFilePath,
+          metadata satisfies WavMetadata,
+          undefined,
+        );
+      }
 
       this.logger.debug('DownloadPlaylistToFolder: copy ok', { destFilePath });
     }
 
     this.logger.info('DownloadPlaylistToFolder: completed', {
       playlistFolderPath,
+      trackCount: playlist.tracks.length,
+      tracksWithArtwork,
+      tracksWithoutArtwork,
+      artworkFailed,
     });
     return true;
   }

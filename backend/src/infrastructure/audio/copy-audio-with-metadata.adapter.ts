@@ -1,9 +1,14 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { spawn } from 'child_process';
+import * as crypto from 'crypto';
 import * as fs from 'fs/promises';
+import * as os from 'os';
 import * as path from 'path';
 
-import { ICopyAudioWithMetadata } from 'src/application/ports/infrastructure/ICopyAudioWithMetadata';
+import {
+  AudioArtwork,
+  ICopyAudioWithMetadata,
+} from 'src/application/ports/infrastructure/ICopyAudioWithMetadata';
 import { ILogger, LOGGER } from 'src/application/ports/infrastructure/ILogger';
 import { LOGGER_FACTORY } from 'src/application/ports/infrastructure/ILoggerFactory';
 import type { WavMetadata } from 'src/application/ports/infrastructure/IWavConverterWithMetadata';
@@ -100,10 +105,6 @@ export class CopyAudioWithMetadata implements ICopyAudioWithMetadata {
     });
   }
 
-  private resolveImagePath(imagePath: string): string {
-    return imagePath;
-  }
-
   // The file extension is not trustworthy: images saved from embedded audio
   // artwork have been observed with a `.png` extension while actually
   // containing JPEG bytes. Sniff the magic bytes instead, so the MIME type
@@ -135,20 +136,6 @@ export class CopyAudioWithMetadata implements ICopyAudioWithMetadata {
       return 'image/gif';
     }
     return null;
-  }
-
-  private getImageMimeTypeFromExtension(imagePath: string): string {
-    const ext = path.extname(imagePath).toLowerCase();
-    if (ext === '.jpg' || ext === '.jpeg') {
-      return 'image/jpeg';
-    }
-    if (ext === '.webp') {
-      return 'image/webp';
-    }
-    if (ext === '.gif') {
-      return 'image/gif';
-    }
-    return 'image/png';
   }
 
   private buildFlacPictureBlockBase64(imageBytes: Buffer, mimeType: string): string {
@@ -183,31 +170,27 @@ export class CopyAudioWithMetadata implements ICopyAudioWithMetadata {
     ]).toString('base64');
   }
 
-  private async readPictureMetadataFromDbImagePath(imagePath?: string): Promise<string | null> {
-    if (!imagePath) {
-      return null;
-    }
-
-    try {
-      const absolutePath = this.resolveImagePath(imagePath);
-      const imageBytes = await fs.readFile(absolutePath);
-      const mimeType =
-        this.getImageMimeTypeFromBytes(imageBytes) ?? this.getImageMimeTypeFromExtension(absolutePath);
-      return this.buildFlacPictureBlockBase64(imageBytes, mimeType);
-    } catch (err) {
-      this.logger.warn('CopyAudioWithMetadata: failed to read DB image for picture metadata', {
-        imagePath,
-        error: String(err),
-      });
-      return null;
-    }
+  // ffmpeg needs the cover art as a file input; the bytes arrive as a Buffer from the DB.
+  // Caller is responsible for deleting the returned path once ffmpeg has run.
+  private async writeTempImage(imageBytes: Buffer, mimeType: string): Promise<string> {
+    const ext =
+      mimeType === 'image/png'
+        ? '.png'
+        : mimeType === 'image/webp'
+          ? '.webp'
+          : mimeType === 'image/gif'
+            ? '.gif'
+            : '.jpg';
+    const tempPath = path.join(os.tmpdir(), `muzo-cover-${crypto.randomUUID()}${ext}`);
+    await fs.writeFile(tempPath, imageBytes);
+    return tempPath;
   }
 
   async copyAudioWithMetadata(
     inputPath: string,
     outputPath: string,
     metadata: WavMetadata,
-    imagePath?: string,
+    artwork?: AudioArtwork,
   ): Promise<void> {
     this.logger.debug('CopyAudioWithMetadata: copying with metadata', {
       inputPath,
@@ -216,97 +199,161 @@ export class CopyAudioWithMetadata implements ICopyAudioWithMetadata {
 
     const ext = outputPath.split('.').pop()?.toLowerCase() ?? '';
     const isOpusLike = ext === 'opus' || ext === 'ogg';
+    // WAV (RIFF) has no standard cover-art chunk, and ffmpeg's wav muxer rejects an
+    // attached-picture video stream outright -- there is no way to embed artwork here.
+    const canEmbedPictureStream = !isOpusLike && ext !== 'wav';
     const mapMetadataValue = isOpusLike ? '-1' : '0';
+
+    const sniffedMimeType = artwork
+      ? (this.getImageMimeTypeFromBytes(artwork.data) ?? artwork.mimeType)
+      : undefined;
+
     let opusPictureMetadata: string | null = null;
+    let tempImagePath: string | undefined;
 
-    if (isOpusLike) {
-      opusPictureMetadata = await this.readPictureMetadataFromDbImagePath(imagePath);
+    try {
+      if (isOpusLike) {
+        // Vorbis comments are the only way opus/ogg can carry a picture; ffmpeg's ogg
+        // muxer rejects an attached-picture video stream for this container.
+        if (artwork && sniffedMimeType) {
+          opusPictureMetadata = this.buildFlacPictureBlockBase64(artwork.data, sniffedMimeType);
+        }
 
-      if (!opusPictureMetadata) {
-        // Fallback to existing embedded artwork in source file if DB image is unavailable.
-        try {
-          opusPictureMetadata = await this.readOpusPictureMetadata(inputPath);
-        } catch (err) {
-          this.logger.warn('CopyAudioWithMetadata: failed to read OPUS picture metadata', {
-            inputPath,
-            error: String(err),
-          });
+        if (!opusPictureMetadata) {
+          // Fallback to existing embedded artwork in source file if DB image is unavailable.
+          try {
+            opusPictureMetadata = await this.readOpusPictureMetadata(inputPath);
+          } catch (err) {
+            this.logger.warn('CopyAudioWithMetadata: failed to read OPUS picture metadata', {
+              inputPath,
+              error: String(err),
+            });
+          }
+        }
+      } else if (canEmbedPictureStream && artwork && sniffedMimeType) {
+        tempImagePath = await this.writeTempImage(artwork.data, sniffedMimeType);
+      } else if (!canEmbedPictureStream && artwork) {
+        this.logger.debug('CopyAudioWithMetadata: output container cannot carry cover art', {
+          outputPath,
+          ext,
+        });
+      }
+
+      const usesPictureStream = Boolean(tempImagePath);
+      // APIC (mp3) / covr (m4a) effectively only accept JPEG or PNG; a WebP/GIF cover
+      // muxes without error but many players fail to render it, so transcode those.
+      const needsPictureTranscode =
+        usesPictureStream &&
+        (ext === 'mp3' || ext === 'm4a') &&
+        sniffedMimeType !== 'image/jpeg' &&
+        sniffedMimeType !== 'image/png';
+
+      this.logger.debug('CopyAudioWithMetadata: artwork strategy', {
+        ext,
+        hasArtwork: Boolean(artwork),
+        strategy: isOpusLike
+          ? 'vorbis-tag'
+          : usesPictureStream
+            ? 'picture-stream'
+            : 'none',
+      });
+
+      // -map_metadata 0 copies existing metadata; -metadata overrides selected fields.
+      // For OPUS, write both COMMENT and DESCRIPTION for wider software compatibility.
+      const args: string[] = [
+        '-y',
+        '-i',
+        inputPath,
+        ...(usesPictureStream ? ['-i', tempImagePath as string] : []),
+        '-map_metadata',
+        mapMetadataValue,
+        // Only copy the audio stream by default. Inputs may contain attached pics/video
+        // streams which are not supported in the chosen container (e.g. opus).
+        '-map',
+        '0:a:0',
+        ...(usesPictureStream ? ['-map', '1:v:0'] : []),
+        '-c:a',
+        'copy',
+        ...(usesPictureStream
+          ? ['-c:v', needsPictureTranscode ? 'mjpeg' : 'copy', '-disposition:v:0', 'attached_pic']
+          : []),
+        '-metadata',
+        `artist=${metadata.artist}`,
+        '-metadata',
+        `title=${metadata.title}`,
+        '-metadata',
+        `genre=${metadata.genre}`,
+        '-metadata',
+        `style=${metadata.style}`,
+        '-metadata',
+        `label=${metadata.style}`,
+        '-metadata',
+        `comment=${metadata.comment}`,
+        '-metadata',
+        `description=${metadata.comment}`,
+        '-metadata',
+        `synopsis=${metadata.comment}`,
+      ];
+
+      if (ext === 'mp3') {
+        // ID3v2.3 is what DJ software (Rekordbox/Traktor/Serato) reliably parses;
+        // ffmpeg's default (v2.4) is read by fewer tools.
+        args.push('-id3v2_version', '3');
+      }
+      if (ext === 'm4a' || ext === 'mp4') {
+        args.push('-movflags', '+faststart');
+      }
+
+      if (isOpusLike) {
+        const escapedComment = metadata.comment.replace(/\r?\n/g, ' ');
+        const escapedStyle = metadata.style.replace(/\r?\n/g, ' ');
+        const escapedGenre = metadata.genre.replace(/\r?\n/g, ' ');
+        const escapedArtist = metadata.artist.replace(/\r?\n/g, ' ');
+        const escapedTitle = metadata.title.replace(/\r?\n/g, ' ');
+        args.push('-metadata', `STYLE=${escapedStyle}`);
+        args.push('-metadata', `LABEL=${escapedStyle}`);
+        args.push('-metadata', `COMMENT=${escapedComment}`);
+        args.push('-metadata', `comment=${escapedComment}`);
+        args.push('-metadata', `COMM=${escapedComment}`);
+        args.push('-metadata', `COMMENTS=${escapedComment}`);
+        args.push('-metadata', `DESCRIPTION=${escapedComment}`);
+        args.push('-metadata', `SYNOPSIS=${escapedComment}`);
+        args.push('-metadata', `GENRE=${escapedGenre}`);
+        args.push('-metadata', `GENRES=${escapedGenre}`);
+        args.push('-metadata', `ARTIST=${escapedArtist}`);
+        args.push('-metadata', `TITLE=${escapedTitle}`);
+        // Only stream-level tags survive in the ogg/opus muxer -- container-level
+        // -metadata above is written for compatibility but is dropped on read-back.
+        // Some players read OPUS Vorbis comments from stream-level tags.
+        args.push('-metadata:s:a:0', `STYLE=${escapedStyle}`);
+        args.push('-metadata:s:a:0', `LABEL=${escapedStyle}`);
+        args.push('-metadata:s:a:0', `label=${escapedStyle}`);
+        args.push('-metadata:s:a:0', `COMMENT=${escapedComment}`);
+        args.push('-metadata:s:a:0', `comment=${escapedComment}`);
+        args.push('-metadata:s:a:0', `COMM=${escapedComment}`);
+        args.push('-metadata:s:a:0', `COMMENTS=${escapedComment}`);
+        args.push('-metadata:s:a:0', `DESCRIPTION=${escapedComment}`);
+        args.push('-metadata:s:a:0', `description=${escapedComment}`);
+        args.push('-metadata:s:a:0', `SYNOPSIS=${escapedComment}`);
+        args.push('-metadata:s:a:0', `synopsis=${escapedComment}`);
+        args.push('-metadata:s:a:0', `GENRE=${escapedGenre}`);
+        args.push('-metadata:s:a:0', `GENRES=${escapedGenre}`);
+        args.push('-metadata:s:a:0', `ARTIST=${escapedArtist}`);
+        args.push('-metadata:s:a:0', `TITLE=${escapedTitle}`);
+        if (opusPictureMetadata) {
+          args.push('-metadata', `METADATA_BLOCK_PICTURE=${opusPictureMetadata}`);
+          args.push('-metadata:s:a:0', `METADATA_BLOCK_PICTURE=${opusPictureMetadata}`);
         }
       }
-    }
 
-    // -map_metadata 0 copies existing metadata; -metadata overrides selected fields.
-    // For OPUS, write both COMMENT and DESCRIPTION for wider software compatibility.
-    const args: string[] = [
-      '-y',
-      '-i',
-      inputPath,
-      '-map_metadata',
-      mapMetadataValue,
-      // Only copy the audio stream. Inputs may contain attached pics/video streams
-      // which are not supported in the chosen container (e.g. opus).
-      '-map',
-      '0:a:0',
-      '-c',
-      'copy',
-      '-metadata',
-      `artist=${metadata.artist}`,
-      '-metadata',
-      `title=${metadata.title}`,
-      '-metadata',
-      `genre=${metadata.genre}`,
-      '-metadata',
-      `style=${metadata.style}`,
-      '-metadata',
-      `label=${metadata.style}`,
-      '-metadata',
-      `comment=${metadata.comment}`,
-      '-metadata',
-      `description=${metadata.comment}`,
-      '-metadata',
-      `synopsis=${metadata.comment}`,
-    ];
+      args.push(outputPath);
 
-    if (isOpusLike) {
-      const escapedComment = metadata.comment.replace(/\r?\n/g, ' ');
-      const escapedStyle = metadata.style.replace(/\r?\n/g, ' ');
-      args.push('-metadata', `STYLE=${metadata.style}`);
-      args.push('-metadata', `LABEL=${metadata.style}`);
-      args.push('-metadata', `COMMENT=${metadata.comment}`);
-      args.push('-metadata', `comment=${metadata.comment}`);
-      args.push('-metadata', `COMM=${metadata.comment}`);
-      args.push('-metadata', `COMMENTS=${metadata.comment}`);
-      args.push('-metadata', `DESCRIPTION=${metadata.comment}`);
-      args.push('-metadata', `SYNOPSIS=${metadata.comment}`);
-      args.push('-metadata', `GENRE=${metadata.genre}`);
-      args.push('-metadata', `GENRES=${metadata.genre}`);
-      args.push('-metadata', `ARTIST=${metadata.artist}`);
-      args.push('-metadata', `TITLE=${metadata.title}`);
-      // Some players read OPUS Vorbis comments from stream-level tags.
-      args.push('-metadata:s:a:0', `STYLE=${metadata.style}`);
-      args.push('-metadata:s:a:0', `LABEL=${metadata.style}`);
-      args.push('-metadata:s:a:0', `label=${escapedStyle}`);
-      args.push('-metadata:s:a:0', `COMMENT=${escapedComment}`);
-      args.push('-metadata:s:a:0', `comment=${escapedComment}`);
-      args.push('-metadata:s:a:0', `COMM=${escapedComment}`);
-      args.push('-metadata:s:a:0', `COMMENTS=${escapedComment}`);
-      args.push('-metadata:s:a:0', `DESCRIPTION=${escapedComment}`);
-      args.push('-metadata:s:a:0', `description=${escapedComment}`);
-      args.push('-metadata:s:a:0', `SYNOPSIS=${escapedComment}`);
-      args.push('-metadata:s:a:0', `synopsis=${escapedComment}`);
-      args.push('-metadata:s:a:0', `GENRE=${metadata.genre}`);
-      args.push('-metadata:s:a:0', `GENRES=${metadata.genre}`);
-      args.push('-metadata:s:a:0', `ARTIST=${metadata.artist}`);
-      args.push('-metadata:s:a:0', `TITLE=${metadata.title}`);
-      if (opusPictureMetadata) {
-        args.push('-metadata', `METADATA_BLOCK_PICTURE=${opusPictureMetadata}`);
-        args.push('-metadata:s:a:0', `METADATA_BLOCK_PICTURE=${opusPictureMetadata}`);
+      await this.runFfmpeg(args);
+    } finally {
+      if (tempImagePath) {
+        await fs.unlink(tempImagePath).catch(() => {});
       }
     }
-
-    args.push(outputPath);
-
-    await this.runFfmpeg(args);
   }
 
   async copyAudio(inputPath: string, outputPath: string): Promise<void> {
