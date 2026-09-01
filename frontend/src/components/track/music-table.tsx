@@ -97,6 +97,7 @@ export function buildMusicColumns(
     {
       id: 'library',
       accessorKey: 'libraryId',
+      size: 48,
       header: () => null,
       cell: ({ row }) => {
         const track = row.original;
@@ -125,11 +126,12 @@ export function buildMusicColumns(
     {
       id: 'artist',
       accessorKey: 'artist',
+      size: 180,
       header: ({ column }) => <DataTableColumnHeader column={column} title="Artist" />,
       cell: ({ row }) => {
         const artist = row.getValue('artist') as string;
         return (
-          <div className="max-w-[100px] truncate font-medium capitalize" title={artist}>
+          <div className="truncate font-medium capitalize" title={artist}>
             {artist}
           </div>
         );
@@ -140,11 +142,12 @@ export function buildMusicColumns(
     {
       id: 'title',
       accessorKey: 'title',
+      size: 240,
       header: ({ column }) => <DataTableColumnHeader column={column} title="Title" />,
       cell: ({ row }) => {
         const title = row.getValue('title') as string;
         return (
-          <div className="flex max-w-[180px] items-center gap-2">
+          <div className="flex items-center gap-2 overflow-hidden">
             <div className="truncate capitalize" title={title}>
               {title}
             </div>
@@ -161,6 +164,7 @@ export function buildMusicColumns(
     {
       id: 'duration',
       accessorKey: 'duration',
+      size: 90,
       header: ({ column }) => <DataTableColumnHeader column={column} title="Duration" />,
       cell: ({ row }) => {
         const duration = row.getValue('duration') as number;
@@ -177,6 +181,7 @@ export function buildMusicColumns(
     {
       id: 'listeningCount',
       accessorKey: 'listeningCount',
+      size: 80,
       header: ({ column }) => <DataTableColumnHeader column={column} title="Plays" />,
       cell: ({ row }) => {
         const count = row.getValue('listeningCount') as number;
@@ -187,6 +192,7 @@ export function buildMusicColumns(
     {
       id: 'genres',
       accessorKey: 'genres',
+      size: 160,
       header: ({ column }) => <DataTableColumnHeader column={column} title="Genre" />,
       cell: ({ row }) => (
         <GenresBadge genres={(row.getValue('genres') as string[]) ?? []} variant="secondary" />
@@ -197,6 +203,7 @@ export function buildMusicColumns(
     {
       id: 'subgenres',
       accessorKey: 'subgenres',
+      size: 220,
       header: ({ column }) => <DataTableColumnHeader column={column} title="Subgenre" />,
       cell: ({ row }) => (
         <GenresBadge genres={(row.getValue('subgenres') as string[]) ?? []} variant="outline" />
@@ -207,11 +214,12 @@ export function buildMusicColumns(
     {
       id: 'tempo',
       accessorKey: 'tempo',
+      size: 100,
       header: ({ column }) => <DataTableColumnHeader column={column} title="Tempo" />,
       cell: ({ row }) => {
         const tempo = row.getValue('tempo') as number;
         return (
-          <div className="max-w-[50px] text-right font-mono">
+          <div className="text-right font-mono">
             {tempo >= 0 ? `${Math.round(tempo)} BPM` : 'N/A'}
           </div>
         );
@@ -222,6 +230,7 @@ export function buildMusicColumns(
     {
       id: 'mfKey',
       accessorKey: 'mfKey',
+      size: 130,
       header: ({ column }) => <DataTableColumnHeader column={column} title="Key" />,
       cell: ({ row }) => {
         const key = formatKey(row.original.mfKey);
@@ -237,6 +246,7 @@ export function buildMusicColumns(
     {
       id: 'mfDanceabilityFeeling',
       accessorKey: 'mfDanceabilityFeeling',
+      size: 130,
       header: ({ column }) => <DataTableColumnHeader column={column} title="Danceability" />,
       cell: ({ row }) => {
         const value = row.getValue('mfDanceabilityFeeling') as string;
@@ -256,6 +266,7 @@ export function buildMusicColumns(
     {
       id: 'mfArousalMood',
       accessorKey: 'mfArousalMood',
+      size: 120,
       header: ({ column }) => <DataTableColumnHeader column={column} title="Energy" />,
       cell: ({ row }) => {
         const value = row.getValue('mfArousalMood') as string;
@@ -271,6 +282,7 @@ export function buildMusicColumns(
     {
       id: 'mfValenceMood',
       accessorKey: 'mfValenceMood',
+      size: 110,
       header: ({ column }) => <DataTableColumnHeader column={column} title="Mood" />,
       cell: ({ row }) => {
         const value = row.getValue('mfValenceMood') as string;
@@ -286,6 +298,7 @@ export function buildMusicColumns(
     {
       id: 'isFavorite',
       accessorKey: 'isFavorite',
+      size: 80,
       header: ({ column }) => <DataTableColumnHeader column={column} title="Favorite" />,
       cell: ({ row }) => {
         const isFavorite = row.getValue('isFavorite') as boolean;
@@ -308,6 +321,7 @@ export function buildMusicColumns(
     {
       id: 'lastScannedAt',
       accessorKey: 'lastScannedAt',
+      size: 150,
       header: ({ column }) => <DataTableColumnHeader column={column} title="Last Scanned At" />,
       cell: ({ row }) => {
         const lastScannedAt = row.getValue('lastScannedAt') as string;
@@ -322,6 +336,7 @@ export function buildMusicColumns(
     {
       id: 'fileCreatedAt',
       accessorKey: 'fileCreatedAt',
+      size: 150,
       header: ({ column }) => <DataTableColumnHeader column={column} title="Created At" />,
       cell: ({ row }) => {
         const fileCreatedAt = row.getValue('fileCreatedAt') as string;
@@ -336,6 +351,7 @@ export function buildMusicColumns(
     {
       id: 'actions',
       enableHiding: false,
+      size: 132,
       cell: ({ row }) => (
         <ActionCells row={row} actions={actions} setCurrentTrack={setCurrentTrack} />
       ),
@@ -354,8 +370,8 @@ export function buildMusicColumns(
  */
 export function MusicTable({ table, isLoading }: MusicTableProps) {
   return (
-    <div className="w-full space-y-4">
-      <DataTable table={table} isLoading={isLoading} />
+    <div className="w-full min-w-0 space-y-4">
+      <DataTable table={table} isLoading={isLoading} fixedLayout />
     </div>
   );
 }

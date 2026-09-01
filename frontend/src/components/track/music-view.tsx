@@ -87,10 +87,9 @@ export const MusicView = React.memo<MusicViewProps>(function MusicView({
       sorting: [{ id: 'fileCreatedAt', desc: true }],
       columnPinning: { right: ['actions'] },
       pagination: { pageIndex: 0, pageSize: initialPageSize },
-      // Default to a scannable ~7-column set; the rest live behind the
+      // Default to a scannable core set; the rest live behind the
       // column-visibility menu (table view only).
       columnVisibility: {
-        subgenres: false,
         duration: false,
         listeningCount: false,
         mfDanceabilityFeeling: false,
@@ -239,7 +238,7 @@ export const MusicView = React.memo<MusicViewProps>(function MusicView({
           ref={resultsRef}
           tabIndex={-1}
           aria-label={reviewMode ? 'Tracks that need review' : 'Track results'}
-          className="outline-none"
+          className="min-w-0 outline-none"
         >
           {reviewMode && (
             <p className="mb-3 px-1 text-muted-foreground text-sm">

@@ -243,6 +243,12 @@ export function MusicFilterBar({ reviewMode, pendingCount, onReviewChange }: Mus
         selected={filters.genres}
         onChange={(next) => updateFilter('genres', next)}
       />
+      <FacetFilter
+        title="Subgenre"
+        options={options.subgenres}
+        selected={filters.subgenres}
+        onChange={(next) => updateFilter('subgenres', next)}
+      />
       <TempoFilter value={filters.tempo} onChange={(next) => updateFilter('tempo', next)} />
       <FacetFilter
         title="Key"
