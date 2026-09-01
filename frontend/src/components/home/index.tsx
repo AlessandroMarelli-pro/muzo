@@ -1,1 +1,1 @@
-export { Home, ChartRadar, description } from './home';
+export { Home } from './home';
