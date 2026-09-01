@@ -72,7 +72,7 @@ export const TrackList = React.memo<TrackListProps>(
       [perPage, offset, orderBy, orderDirection],
     );
 
-    const { data, isLoading } = useTracksList(queryParams);
+    const { data, isLoading, isError, refetch } = useTracksList(queryParams);
 
     if (staticFilterOptions.isLoading) {
       return (
@@ -104,6 +104,8 @@ export const TrackList = React.memo<TrackListProps>(
         initialFilters={filters}
         handleFilterChange={handleFilterChange}
         isLoading={isLoading}
+        isError={isError}
+        onRetry={() => void refetch()}
       />
     );
   },

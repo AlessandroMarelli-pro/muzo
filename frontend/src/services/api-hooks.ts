@@ -319,6 +319,7 @@ export const useTracksList = ({
   orderDirection?: 'asc' | 'desc';
 }) => {
   return useQuery({
+    retry: 1,
     queryKey: queryKeys.tracksList(
       libraryId,
       status,
