@@ -10,7 +10,7 @@ import { libraryMetricsQueryOptions } from '@/services/metrics-hooks';
 import { playlistsQueryOptions } from '@/services/playlist-hooks';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
-import { isAfter, subDays } from 'date-fns';
+import { formatDistanceToNow, isAfter, subDays } from 'date-fns';
 import { ArrowRight, CircleDashed, FolderPlus, Loader2, PlugZap } from 'lucide-react';
 import * as React from 'react';
 import { HorizontalMusicCardList } from '../track/music-card';
@@ -29,6 +29,9 @@ const IN_PROGRESS_MAX_TRACKS = 30;
 
 /** How far back "added recently" looks, matching the metrics `recentActivity` window. */
 const RECENT_WINDOW_DAYS = 7;
+
+/** How many top genres to show as browsable chips. */
+const MAX_GENRES_DISPLAYED = 12;
 
 /* -------------------------------------------------------------------------- */
 /*  Section primitives                                                         */
@@ -103,7 +106,7 @@ function ScanningBriefing() {
 interface Briefing {
   addedRecently: number;
   needsAnalysis: number;
-  inProgressPlaylist: { id: string; name: string; count: number } | null;
+  inProgressPlaylist: { id: string; name: string; count: number; updatedAt: string } | null;
 }
 
 function BriefingBlock({ briefing }: { briefing: Briefing }) {
@@ -134,13 +137,25 @@ function BriefingBlock({ briefing }: { briefing: Briefing }) {
           {needsAnalysis === 1 ? 'track needs' : 'tracks need'} analysis before you can dig
         </>
       );
-    action = { to: '/pending', label: 'Start analysis' };
+    // `/pending` is the rating-triage queue (like/dislike/banger), not an
+    // analysis-status view — `Library.pendingTracks`/`failedTracks` have no
+    // corresponding track-level filter yet. `/libraries` is the one place
+    // that actually shows per-library analysis progress and the "retry
+    // incomplete" action, so send the user there until a dedicated filter
+    // exists.
+    action = { to: '/libraries', label: 'Review libraries' };
   } else if (inProgressPlaylist) {
+    // Name the heuristic's own evidence (last-edited time) so surfacing this
+    // playlist over another reads as informed, not arbitrary.
+    const lastEdited = formatDistanceToNow(new Date(inProgressPlaylist.updatedAt), {
+      addSuffix: true,
+    });
     headline = (
       <>
         Pick up where you left off —{' '}
         <strong className="font-semibold text-foreground">{inProgressPlaylist.name}</strong> has{' '}
-        {inProgressPlaylist.count} {inProgressPlaylist.count === 1 ? 'track' : 'tracks'}
+        {inProgressPlaylist.count} {inProgressPlaylist.count === 1 ? 'track' : 'tracks'}, edited{' '}
+        {lastEdited}
       </>
     );
     action = { to: `/playlists/${inProgressPlaylist.id}`, label: 'Open playlist' };
@@ -189,6 +204,8 @@ interface PipelineTile {
   value: number;
   to: string;
   emphasis?: boolean;
+  /** Reserved for a genuine problem state (failed analyses) — Rose, per DESIGN.md, error states only. */
+  destructive?: boolean;
 }
 
 function PipelineTiles({ tiles }: { tiles: PipelineTile[] }) {
@@ -206,7 +223,12 @@ function PipelineTiles({ tiles }: { tiles: PipelineTile[] }) {
             tile.emphasis && 'ring-1 ring-primary/30',
           )}
         >
-          <span className="font-mono text-2xl font-semibold tabular-nums text-foreground">
+          <span
+            className={cn(
+              'font-mono text-2xl font-semibold tabular-nums',
+              tile.destructive ? 'text-destructive' : 'text-foreground',
+            )}
+          >
             {tile.value.toLocaleString()}
           </span>
           <span className="text-sm text-muted-foreground">{tile.label}</span>
@@ -234,23 +256,37 @@ function PipelineTilesSkeleton() {
 /* -------------------------------------------------------------------------- */
 
 /**
- * Genres arrive lowercased/inconsistent from the pipeline. Title-case each word
- * but keep short scene acronyms (UK, US, DnB, EDM) upper.
+ * Genres arrive lowercased/inconsistent from the pipeline. Title-case each
+ * word but keep short scene acronyms/tags (UK, D&B, 2-Step, EDM) upper —
+ * split on whitespace AND hyphens/ampersands while keeping the original
+ * separator, since "d&b" and "2-step" don't carry a space to split on.
  */
-const GENRE_ACRONYMS = new Set(['uk', 'us', 'dnb', 'edm', 'idm', 'nyc', 'la']);
+const GENRE_ACRONYMS = new Set([
+  'uk',
+  'us',
+  'dnb',
+  'd&b',
+  '2-step',
+  'edm',
+  'idm',
+  'nyc',
+  'la',
+  'r&b',
+]);
 function formatGenre(raw: string) {
   return raw
-    .split(/\s+/)
-    .map((word) =>
-      GENRE_ACRONYMS.has(word.toLowerCase())
+    .split(/(\s+)/)
+    .map((word) => {
+      if (/^\s+$/.test(word)) return word;
+      return GENRE_ACRONYMS.has(word.toLowerCase())
         ? word.toUpperCase()
-        : word.charAt(0).toUpperCase() + word.slice(1),
-    )
-    .join(' ');
+        : word.charAt(0).toUpperCase() + word.slice(1);
+    })
+    .join('');
 }
 
 function TopGenres({ genres }: { genres: { genre: string; trackCount: number }[] }) {
-  const display = (genres ?? []).slice(0, 12);
+  const display = (genres ?? []).slice(0, MAX_GENRES_DISPLAYED);
   if (display.length === 0) {
     return (
       <p className="text-sm text-muted-foreground">
@@ -350,14 +386,27 @@ export function Home() {
     const first = matches[0];
     return {
       count: matches.length,
-      first: first
-        ? { id: first.id, name: first.name, count: first.stats?.numberOfTracks ?? 0 }
-        : null,
+      first:
+        first && first.updatedAt
+          ? {
+              id: first.id,
+              name: first.name,
+              count: first.stats?.numberOfTracks ?? 0,
+              updatedAt: first.updatedAt,
+            }
+          : null,
     };
   }, [playlists]);
 
-  /* --- Loading / error / empty gates --- */
-  const coreLoading = librariesQuery.isPending || metricsQuery.isPending;
+  /* --- Loading / error / empty gates ---
+   * The briefing reasons over libraries + metrics + playlists together, so a
+   * failed playlists fetch must surface as an error too — otherwise it
+   * silently reads as "0 playlists in progress" and the briefing confidently
+   * says the wrong thing instead of showing a retry.
+   */
+  const coreLoading =
+    librariesQuery.isPending || metricsQuery.isPending || playlistsQuery.isPending;
+  const coreError = librariesQuery.isError || metricsQuery.isError || playlistsQuery.isError;
   const librariesReady = librariesQuery.isSuccess;
   const libraryEmpty = librariesReady && pipeline.total === 0;
 
@@ -369,17 +418,24 @@ export function Home() {
 
   const tiles: PipelineTile[] = [];
   if (!coreLoading) {
+    // `/libraries` is where analysis progress and the "retry incomplete" action
+    // actually live — `/pending` is the unrelated rating-triage queue.
     tiles.push({
       label: 'Need analysis',
       value: pipeline.pending,
-      to: '/pending',
+      to: '/libraries',
       emphasis: pipeline.pending > 0,
     });
     // `/music` already defaults its sort to `fileCreatedAt desc` (newest first).
     tiles.push({ label: 'Added this week', value: addedRecently, to: '/music' });
     tiles.push({ label: 'Playlists in progress', value: inProgress.count, to: '/playlists' });
     if (pipeline.failed > 0) {
-      tiles.push({ label: 'Failed', value: pipeline.failed, to: '/pending' });
+      tiles.push({
+        label: 'Failed',
+        value: pipeline.failed,
+        to: '/libraries',
+        destructive: true,
+      });
     } else {
       tiles.push({ label: 'Analyzed', value: pipeline.analyzed, to: '/music' });
     }
@@ -414,12 +470,13 @@ export function Home() {
         </h2>
         {coreLoading ? (
           <BriefingSkeleton />
-        ) : librariesQuery.isError || metricsQuery.isError ? (
+        ) : coreError ? (
           <SectionError
             label="your library status"
             onRetry={() => {
               void librariesQuery.refetch();
               void metricsQuery.refetch();
+              void playlistsQuery.refetch();
             }}
           />
         ) : activeScan ? (
@@ -431,7 +488,7 @@ export function Home() {
       </section>
 
       {/* Pipeline */}
-      {!(librariesQuery.isError || metricsQuery.isError) && (
+      {!coreError && (
         <section aria-labelledby="pipeline-heading" className="flex flex-col gap-4">
           <div className="flex items-center justify-between gap-2">
             <SectionHeading id="pipeline-heading">Your library</SectionHeading>
