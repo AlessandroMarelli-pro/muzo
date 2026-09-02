@@ -22,7 +22,7 @@ const albumArtUrl = (imagePath?: string | null) =>
   imagePath ? apiUrl(`/api/images/serve?imagePath=${encodeURIComponent(imagePath)}`) : null;
 
 const REC_GRID =
-  'grid grid-cols-[2.5rem_minmax(0,1fr)_auto] md:grid-cols-[2.5rem_minmax(0,1fr)_3.25rem_2.5rem_3.5rem_auto] items-center gap-x-3 border-l-2 border-l-transparent pl-3 pr-3';
+  'grid grid-cols-[2.5rem_minmax(0,1fr)_auto] md:grid-cols-[2.5rem_minmax(0,1fr)_3.5rem_2.75rem_3.75rem_7.5rem] items-center gap-x-3 border-l-2 border-l-transparent pl-3 pr-3';
 
 export function TrackRecommendationsHeader() {
   return (
@@ -36,7 +36,7 @@ export function TrackRecommendationsHeader() {
       <span>Title / Artist — why it fits</span>
       <span className="hidden text-right md:block">BPM</span>
       <span className="hidden text-right md:block">Key</span>
-      <span className="hidden text-right md:block">Length</span>
+      <span className="hidden text-right md:block">Len</span>
       <span aria-hidden />
     </div>
   );
@@ -163,7 +163,7 @@ export const TrackRecommendationsCard = ({
         {track.duration ? formatTime(track.duration) : '—'}
       </div>
 
-      <div className="flex items-center gap-0.5 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100 group-data-[current=true]:opacity-100">
+      <div className="flex items-center justify-end gap-0.5 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100 group-data-[current=true]:opacity-100">
         <Button
           variant="ghost"
           size="iconSm"

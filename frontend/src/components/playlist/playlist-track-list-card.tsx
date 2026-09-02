@@ -33,12 +33,13 @@ const trackLabel = (track?: Track | null) => `${artistOf(track)} — ${titleOf(t
 
 /**
  * The ledger's column template — shared by the header and every row, so they
- * stay aligned. Genres live inside the title cell (not their own column) so the
- * numeric columns never shift. Every grid gets the same 2px left border
- * (transparent unless a transition needs a mark) so the columns don't drift.
+ * stay aligned. Genres live inside the title cell (not their own column) and the
+ * actions column is a FIXED width (reserved even while the buttons are hidden)
+ * so nothing shifts between the header and the rows. Every grid also carries the
+ * same 2px left border (transparent unless a transition needs a mark).
  */
 export const LEDGER_GRID =
-  'grid grid-cols-[1.75rem_2.5rem_minmax(0,1fr)_auto] md:grid-cols-[1.75rem_2.5rem_minmax(0,1fr)_3.25rem_2.5rem_3.5rem_auto] items-center gap-x-3 border-l-2 border-l-transparent pl-3 pr-3';
+  'grid grid-cols-[1.75rem_2.5rem_minmax(0,1fr)_auto] md:grid-cols-[1.75rem_2.5rem_minmax(0,1fr)_3.5rem_2.75rem_3.75rem_9.5rem] items-center gap-x-3 border-l-2 border-l-transparent pl-3 pr-3';
 
 export function PlaylistLedgerHeader() {
   return (
@@ -53,7 +54,7 @@ export function PlaylistLedgerHeader() {
       <span>Title / Artist</span>
       <span className="hidden text-right md:block">BPM</span>
       <span className="hidden text-right md:block">Key</span>
-      <span className="hidden text-right md:block">Length</span>
+      <span className="hidden text-right md:block">Len</span>
       <span aria-hidden />
     </div>
   );
@@ -229,8 +230,8 @@ export const PlaylistTrackListCard = memo(
           {track?.duration ? formatTime(track.duration) : '—'}
         </div>
 
-        {/* Actions */}
-        <div className="flex items-center gap-0.5 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100 group-data-[current=true]:opacity-100">
+        {/* Actions — reserved lane, revealed on hover / when current */}
+        <div className="flex items-center justify-end gap-0.5 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100 group-data-[current=true]:opacity-100">
           <Button
             variant="ghost"
             size="iconSm"
