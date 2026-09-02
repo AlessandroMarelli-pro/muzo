@@ -21,6 +21,9 @@ colors:
   border: "oklch(0.9325 0.0022 17.1973)"
   ring: "oklch(0.7205 0.1038 273.6722)"
   sidebar: "oklch(0.9325 0.0022 17.1973)"
+  sidebar-border: "oklch(0.8895 0.0035 17.1973)"
+  sidebar-active: "oklch(0.8807 0.0556 273.6722)"
+  sidebar-active-foreground: "oklch(0.3771 0.1178 273.6722)"
   chart-1: "oklch(0.7205 0.1038 273.6722)"
   chart-2: "oklch(0.6214 0.1372 275.9795)"
   chart-3: "oklch(0.5464 0.1374 276.5018)"
@@ -270,8 +273,9 @@ with `overflow-x-scroll` and a `pb-3` scrollbar gutter — browsing wide is a
 first-class pattern, not a fallback.
 
 Density is medium-high: track tables and lists are built to scan hundreds of
-rows. Responsive behavior collapses the sidebar to an icon rail and stacks
-card content vertically (`flex-col sm:flex-row`) below `sm`.
+rows. Responsive behavior hides the rail below `md` (a `SidebarTrigger` opens
+it as an overlay Sheet) and stacks card content vertically
+(`flex-col sm:flex-row`) below `sm`.
 
 ## Elevation & Depth
 
