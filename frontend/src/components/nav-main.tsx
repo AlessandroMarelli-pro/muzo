@@ -1,93 +1,97 @@
-'use client';
+import { type LucideIcon } from 'lucide-react';
 
-import { ChevronRight, type LucideIcon } from 'lucide-react';
-
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import {
   SidebarGroup,
+  SidebarGroupLabel,
   SidebarMenu,
-  SidebarMenuAction,
+  SidebarMenuBadge,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarMenuSub,
-  SidebarMenuSubButton,
-  SidebarMenuSubItem,
 } from '@/components/ui/sidebar';
-import { Link, useLocation, useNavigate } from '@tanstack/react-router';
+import { Link, useLocation } from '@tanstack/react-router';
+
+export interface NavItem {
+  title: string;
+  url: string;
+  icon: LucideIcon;
+  preload?: 'render' | 'intent' | false | 'viewport' | undefined;
+  /** Optional key for a live count badge, resolved by the parent. */
+  badge?: 'pending' | 'favorites';
+}
+
+export interface NavSection {
+  /** Section heading; hidden when the rail is collapsed to icons. */
+  label: string;
+  items: NavItem[];
+}
+
+/** True when `pathname` is `url` or a descendant of it (segment-boundary safe). */
+function matchesRoute(pathname: string, url: string) {
+  if (url === '/') return pathname === '/';
+  return pathname === url || pathname.startsWith(`${url}/`);
+}
+
+/**
+ * The single active item is the one with the longest matching URL, so
+ * `/music/harmonic` lights "Harmonic" and not its "/music" ancestor.
+ */
+function activeUrl(pathname: string, urls: string[]) {
+  return urls.filter((url) => matchesRoute(pathname, url)).sort((a, b) => b.length - a.length)[0];
+}
 
 export function NavMain({
-  items,
+  sections,
+  counts,
 }: {
-  items: {
-    title: string;
-    url: string;
-    icon: LucideIcon;
-    isActive?: boolean;
-    preload?: 'render' | 'intent' | false | 'viewport' | undefined;
-    items?: {
-      title: string;
-      url: string;
-    }[];
-  }[];
+  sections: NavSection[];
+  counts?: Partial<Record<NonNullable<NavItem['badge']>, number>>;
 }) {
   const location = useLocation();
-  const navigate = useNavigate();
-  const handleNavigate = (url: string) => {
-    sessionStorage.setItem('isLoaded', 'true');
-    navigate({ to: url });
-  };
+
+  // The <Link> owns navigation; this only records the transient "app has
+  // navigated at least once" flag that route loaders read for skeleton state.
+  const markLoaded = () => sessionStorage.setItem('isLoaded', 'true');
+
+  const currentActive = activeUrl(
+    location.pathname,
+    sections.flatMap((section) => section.items.map((item) => item.url)),
+  );
 
   return (
-    <SidebarGroup>
-      <SidebarMenu className="flex flex-col gap-2">
-        {items.map((item) => {
-          const Icon = item.icon;
+    <>
+      {sections.map((section) => (
+        <SidebarGroup key={section.label}>
+          <SidebarGroupLabel>{section.label}</SidebarGroupLabel>
+          <SidebarMenu className="flex flex-col gap-1">
+            {section.items.map((item) => {
+              const Icon = item.icon;
+              const isActive = item.url === currentActive;
+              const count = item.badge ? counts?.[item.badge] : undefined;
 
-          const isActive =
-            (location.pathname !== '/' &&
-              item.url !== '/' &&
-              location.pathname.startsWith(item.url)) ||
-            location.pathname === item.url;
-          return (
-            <Collapsible key={item.title} asChild defaultOpen={isActive}>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip={item.title} isActive={isActive}>
-                  <Link
-                    to={item.url}
-                    className="flex items-center gap-2"
-                    onClick={() => handleNavigate(item.url)}
-                    preload={item.preload}
-                  >
-                    <Icon className="h-4 w-4" />
-                    {item.title}
-                  </Link>
-                </SidebarMenuButton>
-                {item.items?.length ? (
-                  <>
-                    <CollapsibleTrigger asChild>
-                      <SidebarMenuAction className="data-[state=open]:rotate-90">
-                        <ChevronRight />
-                        <span className="sr-only">Toggle</span>
-                      </SidebarMenuAction>
-                    </CollapsibleTrigger>
-                    <CollapsibleContent>
-                      <SidebarMenuSub>
-                        {item.items?.map((subItem) => (
-                          <SidebarMenuSubItem key={subItem.title}>
-                            <SidebarMenuSubButton asChild>
-                              <Link to={subItem.url}>{subItem.title}</Link>
-                            </SidebarMenuSubButton>
-                          </SidebarMenuSubItem>
-                        ))}
-                      </SidebarMenuSub>
-                    </CollapsibleContent>
-                  </>
-                ) : null}
-              </SidebarMenuItem>
-            </Collapsible>
-          );
-        })}
-      </SidebarMenu>
-    </SidebarGroup>
+              return (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton asChild tooltip={item.title} isActive={isActive}>
+                    <Link
+                      to={item.url}
+                      className="flex items-center gap-2"
+                      onClick={markLoaded}
+                      preload={item.preload}
+                    >
+                      <Icon className="size-4" />
+                      <span>{item.title}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                  {count && count > 0 ? (
+                    <SidebarMenuBadge>
+                      {count > 999 ? '999+' : count.toLocaleString()}
+                    </SidebarMenuBadge>
+                  ) : null}
+                </SidebarMenuItem>
+              );
+            })}
+          </SidebarMenu>
+        </SidebarGroup>
+      ))}
+    </>
   );
 }

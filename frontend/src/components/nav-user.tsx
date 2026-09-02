@@ -1,9 +1,7 @@
-'use client';
-
 import { ChevronsUpDown, LogOut, Settings } from 'lucide-react';
 import { useRouter } from '@tanstack/react-router';
 
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,7 +18,6 @@ import {
   useSidebar,
 } from '@/components/ui/sidebar';
 import { authClient } from '@/lib/auth-client';
-import { cn } from '@/lib/utils';
 
 export function NavUser({
   user,
@@ -28,7 +25,6 @@ export function NavUser({
   user: {
     name: string;
     email: string;
-    avatar: string;
   };
 }) {
   const router = useRouter();
@@ -40,11 +36,14 @@ export function NavUser({
     router.navigate({ to: '/login' });
   };
 
-  const initials = user.name
-    .split(' ')
-    .map((name) => name[0])
-    .join('')
-    .toUpperCase();
+  const initials =
+    user.name
+      .split(' ')
+      .map((part) => part[0])
+      .filter(Boolean)
+      .slice(0, 2)
+      .join('')
+      .toUpperCase() || 'G';
   return (
     <SidebarMenu>
       <SidebarMenuItem className="justify-center flex cursor-pointer">
@@ -54,20 +53,16 @@ export function NavUser({
               size="lg"
               className="h-12 data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground "
             >
-              <Avatar className="h-8 w-8 rounded-lg bg-primary">
-                <AvatarImage src={user.avatar} alt={user.name} />
-                <AvatarFallback
-                  className={cn(
-                    'rounded-lg bg-primary text-primary-foreground',
-                    initials.length > 2 ? 'text-xs' : 'text-sm text-primary-foreground',
-                  )}
-                >
+              <Avatar className="h-8 w-8 rounded-lg">
+                <AvatarFallback className="rounded-lg bg-sidebar-primary text-sm font-medium text-sidebar-primary-foreground">
                   {initials}
                 </AvatarFallback>
               </Avatar>
               <div className="grid flex-1 text-left text-xs leading-tight">
                 <span className="truncate font-semibold">{user.name}</span>
-                <span className="truncate text-xs">{user.email}</span>
+                {user.email ? (
+                  <span className="truncate text-xs text-sidebar-foreground/70">{user.email}</span>
+                ) : null}
               </div>
               <ChevronsUpDown className="ml-auto size-4" />
             </SidebarMenuButton>
@@ -81,19 +76,15 @@ export function NavUser({
             <DropdownMenuLabel className="p-0 font-normal">
               <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                 <Avatar className="h-8 w-8 rounded-lg">
-                  <AvatarImage src={user.avatar} alt={user.name} />
-                  <AvatarFallback
-                    className={cn(
-                      'rounded-lg bg-primary text-primary-foreground',
-                      initials.length > 2 ? 'text-xs' : 'text-sm',
-                    )}
-                  >
+                  <AvatarFallback className="rounded-lg bg-primary text-sm font-medium text-primary-foreground">
                     {initials}
                   </AvatarFallback>
                 </Avatar>
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-semibold">{user.name}</span>
-                  <span className="truncate text-xs">{user.email}</span>
+                  {user.email ? (
+                    <span className="truncate text-xs text-muted-foreground">{user.email}</span>
+                  ) : null}
                 </div>
               </div>
             </DropdownMenuLabel>

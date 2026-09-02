@@ -36,8 +36,16 @@
   --sidebar-primary-foreground: oklch(1 0 0);
   --sidebar-accent: oklch(1 0 0);
   --sidebar-accent-foreground: oklch(0.4099 0.0228 243.4564);
-  --sidebar-border: oklch(0.9325 0.0022 17.1973);
+  /* One tonal step darker than the sidebar surface so dividers actually read
+     (the old value equalled --sidebar and rendered invisible). */
+  --sidebar-border: oklch(0.8895 0.0035 17.1973);
   --sidebar-ring: oklch(0.7205 0.1038 273.6722);
+  /* Active nav wayfinding — the periwinkle accent tinted onto the sidebar
+     surface, with an ink-dark foreground that clears AA (the old treatment
+     put white on full-strength periwinkle at ~2.9:1). The tint sits clearly
+     above the sidebar surface so the current item reads without the bar. */
+  --sidebar-active: oklch(0.8807 0.0556 273.6722);
+  --sidebar-active-foreground: oklch(0.3771 0.1178 273.6722);
   --font-sans: Plus Jakarta Sans, sans-serif;
   --font-serif: Lora, serif;
   --font-mono: Roboto Mono, monospace;
@@ -101,8 +109,12 @@
   --sidebar-primary-foreground: oklch(0.18 0 0);
   --sidebar-accent: oklch(0.4123 0.0063 48.5674);
   --sidebar-accent-foreground: oklch(0.9418 0.0025 228.7853);
-  --sidebar-border: oklch(0.3557 0.0065 48.5318);
+  /* One tonal step lighter than the dark sidebar surface. */
+  --sidebar-border: oklch(0.4213 0.0065 48.5318);
   --sidebar-ring: oklch(0.811 0.0692 269.2988);
+  /* Active nav wayfinding in the warm-charcoal dark world. */
+  --sidebar-active: oklch(0.3862 0.0507 273.6722);
+  --sidebar-active-foreground: oklch(0.9137 0.0451 269.2988);
   --font-sans: Plus Jakarta Sans, sans-serif;
   --font-serif: Lora, serif;
   --font-mono: Roboto Mono, monospace;
@@ -160,6 +172,8 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-active: var(--sidebar-active);
+  --color-sidebar-active-foreground: var(--sidebar-active-foreground);
 
   --font-sans: var(--font-sans);
   --font-mono: var(--font-mono);

@@ -1,41 +1,34 @@
-'use client';
-
-import { DogIcon, LucideIcon } from 'lucide-react';
+import { Disc3 } from 'lucide-react';
 import * as React from 'react';
 
-import { NavMain } from '@/components/nav-main';
+import { NavMain, type NavSection } from '@/components/nav-main';
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { useAuth } from '@/contexts/auth-context';
+import { useSidebarCounts } from '@/hooks/use-sidebar-counts';
+import { Link } from '@tanstack/react-router';
 import { NavUser } from '../nav-user';
 
-export interface NavMainItem {
-  title: string;
-  url: string;
-  icon: LucideIcon;
-  isActive?: boolean;
-  preload?: 'render' | 'intent' | false | 'viewport' | undefined;
-  items?: {
-    title: string;
-    url: string;
-  }[];
-}
 export interface AppSidebarProps {
   data: {
-    navMain: NavMainItem[];
+    sections: NavSection[];
   };
 }
+
 export function AppSidebar({
   data,
   ...props
 }: React.ComponentProps<typeof Sidebar> & AppSidebarProps) {
   const { user } = useAuth();
+  const counts = useSidebarCounts();
+
   return (
     <Sidebar collapsible="icon" variant="inset" {...props} className="h-full">
       <SidebarHeader>
@@ -44,31 +37,34 @@ export function AppSidebar({
             <SidebarMenuButton
               size="lg"
               asChild
-              className="h-12 group-data-[collapsible=icon]:!size-12 gap-2 group-data-[collapsible=icon]:hover:bg-sidebar"
+              className="h-12 gap-2.5 group-data-[collapsible=icon]:!size-12"
             >
-              <a href="/">
-                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-                  <DogIcon className="size-4" />
-                </div>
-                <div className=" flex-1 text-left text-sm leading-tight grid group-data-[collapsible=icon]:hidden ">
-                  <span className="truncate font-semibold">Muzo</span>
-                  <span className="truncate text-xs">Music Organizer</span>
-                </div>
-              </a>
+              <Link to="/">
+                <span className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground shadow-xs">
+                  <Disc3 className="size-4" />
+                </span>
+                <span className="grid flex-1 text-left leading-tight group-data-[collapsible=icon]:hidden">
+                  <span className="truncate font-semibold tracking-tight">Muzo</span>
+                  <span className="truncate text-xs text-sidebar-foreground/70">Crate room</span>
+                </span>
+              </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
-      <SidebarContent className="flex flex-col gap-2 justify-between">
-        <NavMain items={data.navMain} />
+
+      <SidebarContent>
+        <NavMain sections={data.sections} counts={counts} />
+      </SidebarContent>
+
+      <SidebarFooter>
         <NavUser
           user={{
             name: [user?.firstName, user?.lastName].filter(Boolean).join(' ') || 'Guest',
             email: user?.email ?? '',
-            avatar: '',
           }}
         />
-      </SidebarContent>
+      </SidebarFooter>
     </Sidebar>
   );
 }

@@ -23,11 +23,11 @@ import {
   BookHeadphones,
   Brain,
   Clock3,
+  Disc3,
   Heart,
   Home,
   Library,
   ListMusic,
-  Settings,
 } from 'lucide-react';
 import { ThemeProvider, useTheme } from 'next-themes';
 import * as React from 'react';
@@ -60,49 +60,27 @@ const MusicPlayerInset = React.memo(function MusicPlayerInset({
 });
 
 const navigationData: AppSidebarProps['data'] = {
-  navMain: [
+  sections: [
     {
-      title: 'Home',
-      url: '/',
-      icon: Home,
+      // Where the collection lives — the entry points for browsing and scanning.
+      label: 'Library',
+      items: [
+        { title: 'Home', url: '/', icon: Home },
+        { title: 'Music', url: '/music', icon: ListMusic },
+        { title: 'Harmonic', url: '/music/harmonic', icon: Disc3, preload: false },
+        { title: 'Libraries', url: '/libraries', icon: Library },
+      ],
     },
     {
-      title: 'Music',
-      url: '/music',
-      icon: ListMusic,
-    },
-    {
-      title: 'Research',
-      url: '/research',
-      icon: Brain,
-      preload: false,
-    },
-
-    {
-      title: 'Pending',
-      url: '/pending',
-      icon: Clock3,
-      preload: false,
-    },
-    {
-      title: 'Playlists',
-      url: '/playlists',
-      icon: BookHeadphones,
-    },
-    {
-      title: 'Favorites',
-      url: '/favorites',
-      icon: Heart,
-    },
-    {
-      title: 'Settings',
-      url: '/settings',
-      icon: Settings,
-    },
-    {
-      title: 'Libraries',
-      url: '/libraries',
-      icon: Library,
+      // The off-gig prep loop: triage what came back rough, dig, favourite,
+      // assemble the set.
+      label: 'Prep',
+      items: [
+        { title: 'Pending', url: '/pending', icon: Clock3, preload: false, badge: 'pending' },
+        { title: 'Research', url: '/research', icon: Brain, preload: false },
+        { title: 'Favorites', url: '/favorites', icon: Heart, badge: 'favorites' },
+        { title: 'Playlists', url: '/playlists', icon: BookHeadphones },
+      ],
     },
   ],
 };
@@ -113,9 +91,15 @@ function RootContent() {
   const isAuthPage = pathname === '/login' || pathname === '/sign-up';
 
   const { resolvedTheme } = useTheme();
-  const [sidebarDefaultOpen] = React.useState(() =>
-    typeof window !== 'undefined' ? localStorage.getItem('sidebar_state') === 'expanded' : false,
-  );
+  // Expanded is the default; only an explicit "collapsed" preference overrides
+  // it, so a first-time visitor meets the labelled rail, not a bare icon strip.
+  const [sidebarDefaultOpen] = React.useState(() => {
+    try {
+      return localStorage.getItem('sidebar_state') !== 'collapsed';
+    } catch {
+      return true;
+    }
+  });
 
   React.useEffect(() => {
     document.documentElement.style.colorScheme = resolvedTheme === 'dark' ? 'dark' : 'light';
@@ -141,10 +125,16 @@ function RootContent() {
 
   return (
     <TooltipProvider delayDuration={0}>
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-popover focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-popover-foreground focus:shadow-md focus:outline-none focus:ring-2 focus:ring-ring"
+      >
+        Skip to content
+      </a>
       <SidebarProvider defaultOpen={sidebarDefaultOpen}>
         <AppSidebar data={navigationData} />
 
-        <SidebarInset>
+        <SidebarInset id="main-content">
           <MusicPlayerInset>
             <SiteHeader />
             <Outlet />
