@@ -1,4 +1,4 @@
-import { PlaylistTrack } from '@/__generated__/types';
+import { PlaylistTrack, Track } from '@/__generated__/types';
 import { Card, CardContent } from '@/components/ui/card';
 
 import { Playlist } from '@/__generated__/types';
@@ -23,15 +23,24 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
-import { PlaylistTrackListCard, PlaylistTrackListCardSkeleton } from './playlist-track-list-card';
+import {
+  PlaylistLedgerHeader,
+  PlaylistTrackListCard,
+  PlaylistTrackListCardSkeleton,
+} from './playlist-track-list-card';
+
+export interface PlaylistTracksListHandle {
+  scrollToPosition: (position: number) => void;
+}
 
 interface PlaylistTracksListProps {
   playlist: Playlist | undefined;
   onUpdate: () => void;
   isLoading: boolean;
   addTrackToPlaylist: (trackId: string, artist: string, title: string) => void;
+  handleRef?: React.Ref<PlaylistTracksListHandle>;
 }
 
 export function PlaylistTracksList({
@@ -39,9 +48,11 @@ export function PlaylistTracksList({
   onUpdate,
   isLoading,
   addTrackToPlaylist,
+  handleRef,
 }: PlaylistTracksListProps) {
   const [removingTrackId, setRemovingTrackId] = useState<string | null>(null);
   const [localTracks, setLocalTracks] = useState<PlaylistTrack[]>(playlist?.tracks || []);
+  const listRef = useRef<HTMLDivElement>(null);
 
   const removeTrackMutation = useRemoveTrackFromPlaylist();
   const updatePositionsMutation = useUpdatePlaylistPositions();
@@ -60,6 +71,18 @@ export function PlaylistTracksList({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tracksSignature]);
 
+  const flashRow = useCallback((position: number) => {
+    const el = listRef.current?.querySelector<HTMLElement>(
+      `[data-track-row][data-position="${position}"]`,
+    );
+    if (!el) return;
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    el.classList.add('ring-1', 'ring-primary', 'ring-inset');
+    window.setTimeout(() => el.classList.remove('ring-1', 'ring-primary', 'ring-inset'), 1400);
+  }, []);
+
+  useImperativeHandle(handleRef, () => ({ scrollToPosition: flashRow }), [flashRow]);
+
   const sensors = useSensors(
     useSensor(MouseSensor, {}),
     useSensor(TouchSensor, {}),
@@ -70,35 +93,38 @@ export function PlaylistTracksList({
 
   const trackIds = useMemo(() => localTracks.map((track) => track.id), [localTracks]);
 
-  const handleRemoveTrack = useCallback(async (trackId: string) => {
-    const track = localTracks.find((t) => t.track?.id === trackId);
+  const handleRemoveTrack = useCallback(
+    async (trackId: string) => {
+      const track = localTracks.find((t) => t.track?.id === trackId);
 
-    const trackName = `${track?.track?.title} by ${track?.track?.artist}`;
-    setRemovingTrackId(trackId);
-    try {
-      await removeTrackMutation.mutateAsync({
-        playlistId: playlist?.id || '',
-        trackId,
-        artist: track?.track?.artist || '',
-        title: track?.track?.title || '',
-      });
-      toast.success(`Track removed from playlist`, {
-        description: capitalizeEveryWord(trackName),
-        action: {
-          label: 'Undo',
-          onClick: () => {
-            addTrackToPlaylist(trackId, track?.track?.artist || '', track?.track?.title || '');
+      const trackName = `${track?.track?.title} by ${track?.track?.artist}`;
+      setRemovingTrackId(trackId);
+      try {
+        await removeTrackMutation.mutateAsync({
+          playlistId: playlist?.id || '',
+          trackId,
+          artist: track?.track?.artist || '',
+          title: track?.track?.title || '',
+        });
+        toast.success(`Track removed from playlist`, {
+          description: capitalizeEveryWord(trackName),
+          action: {
+            label: 'Undo',
+            onClick: () => {
+              addTrackToPlaylist(trackId, track?.track?.artist || '', track?.track?.title || '');
+            },
           },
-        },
-      });
-      onUpdate();
-    } catch (error) {
-      console.error('Failed to remove track:', error);
-      toast.error('Could not remove that track. Please try again.');
-    } finally {
-      setRemovingTrackId(null);
-    }
-  }, [localTracks, playlist?.id, removeTrackMutation, addTrackToPlaylist, onUpdate]);
+        });
+        onUpdate();
+      } catch (error) {
+        console.error('Failed to remove track:', error);
+        toast.error('Could not remove that track. Please try again.');
+      } finally {
+        setRemovingTrackId(null);
+      }
+    },
+    [localTracks, playlist?.id, removeTrackMutation, addTrackToPlaylist, onUpdate],
+  );
 
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
@@ -139,8 +165,9 @@ export function PlaylistTracksList({
   };
 
   return (
-    <Card className="py-0">
-      <CardContent className="p-0">
+    <Card className="overflow-hidden py-0">
+      <CardContent className="p-0" ref={listRef}>
+        <PlaylistLedgerHeader />
         <DndContext
           collisionDetection={closestCenter}
           modifiers={[restrictToVerticalAxis]}
@@ -148,19 +175,20 @@ export function PlaylistTracksList({
           sensors={sensors}
         >
           <SortableContext items={trackIds} strategy={verticalListSortingStrategy}>
-            <div className="divide-y">
+            <div className="divide-y" role="list" aria-label="Tracks in this playlist">
               {!isLoading && localTracks.length > 0
                 ? localTracks.map((playlistTrack, index) => (
                     <SortablePlaylistTrack
                       key={playlistTrack.id}
                       playlistTrack={playlistTrack}
+                      prevTrack={index > 0 ? localTracks[index - 1]?.track ?? null : null}
                       onRemove={handleRemoveTrack}
                       removingTrackId={removingTrackId}
                       index={index}
                       playlistLength={localTracks.length}
                     />
                   ))
-                : Array.from({ length: 5 }).map((_, i) => (
+                : Array.from({ length: 6 }).map((_, i) => (
                     <PlaylistTrackListCardSkeleton
                       key={`playlist-tracks-list-skeleton-${i}`}
                       position={i + 1}
@@ -176,12 +204,14 @@ export function PlaylistTracksList({
 
 function SortablePlaylistTrack({
   playlistTrack,
+  prevTrack,
   onRemove,
   removingTrackId,
   index,
   playlistLength,
 }: {
   playlistTrack: PlaylistTrack;
+  prevTrack?: Track | null;
   onRemove: (trackId: string) => void;
   removingTrackId: string | null;
   index: number;
@@ -208,9 +238,18 @@ function SortablePlaylistTrack({
   );
 
   return (
-    <div ref={setNodeRef} style={style}>
+    <div
+      ref={setNodeRef}
+      style={style}
+      id={`track-${playlistTrack.position}`}
+      role="listitem"
+      data-track-row
+      data-position={playlistTrack.position}
+      className="scroll-mt-4"
+    >
       <PlaylistTrackListCard
         playlistTrack={playlistTrack}
+        prevTrack={prevTrack}
         handleRemoveTrack={onRemove}
         removingTrackId={removingTrackId}
         dragHandleProps={dragHandleProps}

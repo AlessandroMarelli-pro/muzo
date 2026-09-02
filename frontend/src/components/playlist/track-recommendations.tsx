@@ -4,11 +4,13 @@ import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { useAddTrackToPlaylist, usePlaylistRecommendations } from '@/services/playlist-hooks';
 import type { RecommendationSeedStrategy } from '@/services/recommendation-types';
 import { useRouter } from '@tanstack/react-router';
+import { Sparkles } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import {
   TrackRecommendationsCard,
   TrackRecommendationsCardSkeleton,
+  TrackRecommendationsHeader,
 } from './track-recommendations-card';
 
 interface TrackRecommendationsProps {
@@ -21,14 +23,17 @@ export const TrackRecommandationsComponent = ({
   recommendations,
   onAddTrack,
   isLoading,
+  addedIds,
 }: {
   recommendations: TrackRecommendation[];
   onAddTrack?: (trackId: string, artist: string, title: string) => void;
   isLoading: boolean;
+  addedIds?: Set<string>;
 }) => {
   return (
-    <Card className="py-0">
+    <Card className="overflow-hidden py-0">
       <CardContent className="p-0">
+        <TrackRecommendationsHeader />
         <div className="divide-y">
           {!isLoading
             ? recommendations.map((recommendation, index) => (
@@ -38,6 +43,11 @@ export const TrackRecommandationsComponent = ({
                   onAddTrack={onAddTrack}
                   index={index}
                   recommendationsLength={recommendations.length}
+                  added={
+                    recommendation.track?.id
+                      ? addedIds?.has(recommendation.track.id) ?? false
+                      : false
+                  }
                 />
               ))
             : Array.from({ length: 10 }).map((_, i) => (
@@ -57,6 +67,7 @@ export function TrackRecommendations({
   const addTrackMutation = useAddTrackToPlaylist('default');
   const router = useRouter();
   const [seedStrategy, setSeedStrategy] = useState<RecommendationSeedStrategy>('mean');
+  const [addedIds, setAddedIds] = useState<Set<string>>(new Set());
 
   // The playlist route loader already fetched `mean` recommendations for the
   // initial render -- only issue a client-side fetch once the user actually
@@ -71,6 +82,8 @@ export function TrackRecommendations({
   const recommendations = seedStrategy === 'mean' ? initialRecommendations : fetchedRecommendations;
 
   const handleAddTrack = async (trackId: string, artist: string, title: string) => {
+    // Grey the row out immediately instead of letting it vanish on refetch.
+    setAddedIds((prev) => new Set(prev).add(trackId));
     try {
       await addTrackMutation.mutateAsync({
         playlistId,
@@ -80,7 +93,6 @@ export function TrackRecommendations({
       });
       onTrackAdded(trackId, artist, title);
 
-      // Remove the added track from recommendations
       if (seedStrategy === 'mean') {
         router.invalidate();
       } else {
@@ -89,14 +101,20 @@ export function TrackRecommendations({
     } catch (error) {
       console.error('Failed to add track:', error);
       toast.error('Could not add that track. Please try again.');
+      setAddedIds((prev) => {
+        const next = new Set(prev);
+        next.delete(trackId);
+        return next;
+      });
     }
   };
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
-          Match style
+      <div className="flex items-center justify-between gap-3">
+        <p className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          <Sparkles className="h-3.5 w-3.5" aria-hidden />
+          From your library — pencilled in
         </p>
         <ToggleGroup
           type="single"
@@ -120,6 +138,7 @@ export function TrackRecommendations({
         recommendations={recommendations ?? []}
         onAddTrack={handleAddTrack}
         isLoading={seedStrategy !== 'mean' && isLoading}
+        addedIds={addedIds}
       />
     </div>
   );
