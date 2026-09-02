@@ -196,6 +196,17 @@ A near-neutral warm-grey system with a single periwinkle accent. Content
   Applied globally to every element by default (`* { @apply border-border }`).
   In light mode it equals the card surface, so borders are nearly invisible and
   separation comes from tone and shadow, not lines.
+- **Sidebar Border** (`oklch(0.8895 0.0035 17.20)` light /
+  `oklch(0.4213 0.0065 48.53)` dark): one tonal step off the sidebar surface —
+  unlike the app `border`, this one is meant to be faintly visible, for the
+  rail's nav/crate divider and the group separators.
+- **Sidebar Active** (`oklch(0.8807 0.0556 273.67)` light /
+  `oklch(0.3862 0.0507 273.67)` dark) with **Sidebar Active Foreground**
+  (`oklch(0.3771 0.1178 273.67)` light / `oklch(0.9137 0.0451 269.30)` dark):
+  the periwinkle accent tinted onto the sidebar surface for the active-nav
+  cell, paired with an ink-toned foreground that clears AA. This is the only
+  place a tinted fill stands in for the accent — everywhere else periwinkle is
+  full-strength and used at ≤10% of the screen.
 
 ### Destructive
 - **Rose** (`oklch(0.6823 0.1365 10.37)`): Delete actions and error states only.
@@ -245,10 +256,12 @@ Mono is reserved strictly for machine values a user might read digit by digit.
 
 ## Layout
 
-The app shell is a persistent left sidebar (collapsible, `sidebar` surface) plus
-a scrollable main inset, with a fixed music-player bar docked to the bottom when
-a track is loaded (`mb-20 sm:mb-16` reserved on the inset so content is never
-hidden behind it). A `SiteHeader` sits above the inset content.
+The app shell is a **fixed narrow navigation rail** (`4.5rem`, `sidebar`
+surface — see Navigation) plus a scrollable main inset, with a fixed
+music-player bar docked to the bottom when a track is loaded (`mb-20 sm:mb-16`
+reserved on the inset so content is never hidden behind it). The rail itself
+also stops at the top of the player bar. A `SiteHeader` sits above the inset
+content.
 
 Spacing rhythm is a 0.25rem base (`--spacing`). Cards use a `gap-6` (1.5rem)
 internal stack and `px-6` gutters. Card grids and horizontal rails use `gap-6`.
@@ -352,13 +365,37 @@ carries at least a 1rem radius.
 - **Placeholder:** `text-muted-foreground`.
 - **Disabled:** `cursor-not-allowed opacity-50`.
 
-### Navigation (Sidebar)
-- **Style:** `sidebar` surface (= card value), collapsible to an icon rail.
-- **Items:** Lucide icon + label, `text-sm`. Active item takes the periwinkle
-  `sidebar-primary` treatment; hover uses `sidebar-accent`.
-- **Mobile:** collapses to icons; opens as an overlay sheet.
-- **Icon set:** Lucide React throughout, `size-4` inside buttons, `size-3`
-  inside badges.
+### Navigation (The Rail)
+The desktop navigation is a **fixed narrow icon rail** (`--sidebar-width-icon`
+= `4.5rem`) on the `sidebar` surface — it never expands. The metaphor is a
+record box: icons up top, your crates filed right below as cover art.
+
+- **Nav cells:** `size-10` `rounded-xl` cells holding a `~1.15rem` Lucide icon,
+  idle at `text-sidebar-foreground/75`, stacked `gap-1` with an `mt-5`
+  finger-gap between the two route groups (group labels are structural only —
+  `aria-label` on the `<ul>`, never rendered). No counts, no visible dividers
+  in the nav block.
+- **Active cell:** filled `bg-sidebar-active` (periwinkle tinted onto the
+  sidebar surface) with `text-sidebar-active-foreground` (ink-dark, clears AA),
+  plus a 3px periwinkle tick (`--sidebar-primary`) detached to the rail's left
+  edge (`-left-[13px]`), vertically centred on the icon. Longest-matching-URL
+  wins, so `/music/harmonic` lights Harmonic, not Music.
+- **Hover / focus label:** a floating pill on the `popover` surface
+  (`rounded-md`, `shadow-md`, `text-xs`) to the right of the item, via the
+  shared Tooltip primitive so keyboard focus reveals it too (`RailLabel`).
+- **Crate strip:** below a hairline `sidebar-border/70` divider, a vertical
+  `overflow-y-auto` column of 40px `rounded-lg` playlist covers — a 2×2 mosaic
+  from `stats.images`, a single image, or a periwinkle-tinted monogram tile as
+  fallback. `mask-image` linear-gradient fade top and bottom, scrollbar hidden
+  (`.no-scrollbar`), each cover `hover:scale-105` with its name in the same
+  label pill. Clicking a cover opens that crate.
+- **Ends:** the `Disc3` mark in a periwinkle `rounded-xl` tile pinned top; the
+  user's initials avatar (`size-9`, opens the account dropdown to the right)
+  pinned bottom. The fixed rail stops at the top of the player bar
+  (`bottom: var(--music-player-height)`) so the avatar is never covered.
+- **Mobile:** the rail is hidden; `SidebarTrigger` (mobile-only) opens the same
+  content as an overlay Sheet.
+- **Icon set:** Lucide React throughout, one stroke weight.
 
 ### Signature: The Music Player Bar
 A persistent bottom-docked bar (`EnhancedMusicPlayer`) that appears only when a

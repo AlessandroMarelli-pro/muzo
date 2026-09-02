@@ -225,3 +225,11 @@ Retrieved 2026-01-14, License - CC BY-SA 4.0
 [data-description] {
   color: var(--muted-foreground) !important;
 }
+
+/* Scroll without a visible scrollbar — used by the rail's crate strip. */
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}

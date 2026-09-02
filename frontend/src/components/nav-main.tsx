@@ -1,13 +1,7 @@
 import { type LucideIcon } from 'lucide-react';
 
-import {
-  SidebarGroup,
-  SidebarGroupLabel,
-  SidebarMenu,
-  SidebarMenuBadge,
-  SidebarMenuButton,
-  SidebarMenuItem,
-} from '@/components/ui/sidebar';
+import { RailLabel } from '@/components/layout/rail-label';
+import { cn } from '@/lib/utils';
 import { Link, useLocation } from '@tanstack/react-router';
 
 export interface NavItem {
@@ -15,12 +9,10 @@ export interface NavItem {
   url: string;
   icon: LucideIcon;
   preload?: 'render' | 'intent' | false | 'viewport' | undefined;
-  /** Optional key for a live count badge, resolved by the parent. */
-  badge?: 'pending' | 'favorites';
 }
 
 export interface NavSection {
-  /** Section heading; hidden when the rail is collapsed to icons. */
+  /** Groups are separated by a gap in the rail; the label is not rendered. */
   label: string;
   items: NavItem[];
 }
@@ -39,13 +31,12 @@ function activeUrl(pathname: string, urls: string[]) {
   return urls.filter((url) => matchesRoute(pathname, url)).sort((a, b) => b.length - a.length)[0];
 }
 
-export function NavMain({
-  sections,
-  counts,
-}: {
-  sections: NavSection[];
-  counts?: Partial<Record<NonNullable<NavItem['badge']>, number>>;
-}) {
+/**
+ * The nav block of the rail: icon-only cells, grouped by a gap, with the
+ * current route lit as a filled rounded cell and a periwinkle tick flush to
+ * the rail's left edge. Labels float in a pill on hover.
+ */
+export function NavMain({ sections }: { sections: NavSection[] }) {
   const location = useLocation();
 
   // The <Link> owns navigation; this only records the transient "app has
@@ -58,40 +49,49 @@ export function NavMain({
   );
 
   return (
-    <>
-      {sections.map((section) => (
-        <SidebarGroup key={section.label}>
-          <SidebarGroupLabel>{section.label}</SidebarGroupLabel>
-          <SidebarMenu className="flex flex-col gap-1">
-            {section.items.map((item) => {
-              const Icon = item.icon;
-              const isActive = item.url === currentActive;
-              const count = item.badge ? counts?.[item.badge] : undefined;
+    <nav className="flex shrink-0 flex-col items-center px-0 pb-2 pt-1">
+      {sections.map((section, sectionIndex) => (
+        <ul
+          key={section.label}
+          aria-label={section.label}
+          className={cn(
+            'flex flex-col items-center gap-1',
+            // A clear finger-gap between filed groups.
+            sectionIndex > 0 && 'mt-5',
+          )}
+        >
+          {section.items.map((item) => {
+            const Icon = item.icon;
+            const isActive = item.url === currentActive;
 
-              return (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild tooltip={item.title} isActive={isActive}>
-                    <Link
-                      to={item.url}
-                      className="flex items-center gap-2"
-                      onClick={markLoaded}
-                      preload={item.preload}
-                    >
-                      <Icon className="size-4" />
-                      <span>{item.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                  {count && count > 0 ? (
-                    <SidebarMenuBadge>
-                      {count > 999 ? '999+' : count.toLocaleString()}
-                    </SidebarMenuBadge>
-                  ) : null}
-                </SidebarMenuItem>
-              );
-            })}
-          </SidebarMenu>
-        </SidebarGroup>
+            return (
+              <li key={item.title}>
+                <RailLabel label={item.title}>
+                  <Link
+                    to={item.url}
+                    onClick={markLoaded}
+                    preload={item.preload}
+                    aria-label={item.title}
+                    aria-current={isActive ? 'page' : undefined}
+                    data-active={isActive}
+                    className={cn(
+                      'group/cell relative flex size-10 items-center justify-center rounded-xl',
+                      'text-sidebar-foreground/75 outline-none transition-colors duration-150',
+                      'ring-sidebar-ring ring-offset-2 ring-offset-sidebar focus-visible:ring-2',
+                      'hover:bg-sidebar-accent hover:text-sidebar-foreground',
+                      // Active: filled cell + a tick flush to the rail edge.
+                      'data-[active=true]:bg-sidebar-active data-[active=true]:text-sidebar-active-foreground',
+                      'data-[active=true]:before:absolute data-[active=true]:before:-left-[13px] data-[active=true]:before:h-5 data-[active=true]:before:w-[3px] data-[active=true]:before:rounded-full data-[active=true]:before:bg-sidebar-primary',
+                    )}
+                  >
+                    <Icon className="size-[1.15rem]" />
+                  </Link>
+                </RailLabel>
+              </li>
+            );
+          })}
+        </ul>
       ))}
-    </>
+    </nav>
   );
 }

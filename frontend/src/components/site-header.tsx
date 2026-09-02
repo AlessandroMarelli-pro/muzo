@@ -63,10 +63,11 @@ export function SiteHeader(_props: SiteHeaderProps) {
   return (
     <header className="relative group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 flex h-12 shrink-0 items-center gap-2 transition-[width,height] ease-linear">
       <div className="flex w-full items-center gap-1 px-4 lg:gap-2 lg:px-6 ">
-        <SidebarTrigger className="-ml-1" />
+        {/* Desktop rail is fixed; the trigger only opens the mobile Sheet. */}
+        <SidebarTrigger className="-ml-1 md:hidden" />
         <Separator
           orientation="vertical"
-          className="mx-2 data-[orientation=vertical]:h-4"
+          className="mx-2 data-[orientation=vertical]:h-4 md:hidden"
         />
         <div className="flex items-center justify-between gap-2 w-full px-2 py-1.5">
           <span className="font-normal text-foreground min-w-md">
@@ -77,9 +78,7 @@ export function SiteHeader(_props: SiteHeaderProps) {
             <ScanProgress />
             <Switch
               checked={isDark}
-              onCheckedChange={(checked: boolean) =>
-                setTheme(checked ? 'dark' : 'light')
-              }
+              onCheckedChange={(checked: boolean) => setTheme(checked ? 'dark' : 'light')}
               aria-label="Toggle night mode"
             >
               {isDark ? (

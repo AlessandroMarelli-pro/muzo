@@ -76,9 +76,9 @@ const navigationData: AppSidebarProps['data'] = {
       // assemble the set.
       label: 'Prep',
       items: [
-        { title: 'Pending', url: '/pending', icon: Clock3, preload: false, badge: 'pending' },
+        { title: 'Pending', url: '/pending', icon: Clock3, preload: false },
         { title: 'Research', url: '/research', icon: Brain, preload: false },
-        { title: 'Favorites', url: '/favorites', icon: Heart, badge: 'favorites' },
+        { title: 'Favorites', url: '/favorites', icon: Heart },
         { title: 'Playlists', url: '/playlists', icon: BookHeadphones },
       ],
     },
@@ -91,15 +91,6 @@ function RootContent() {
   const isAuthPage = pathname === '/login' || pathname === '/sign-up';
 
   const { resolvedTheme } = useTheme();
-  // Expanded is the default; only an explicit "collapsed" preference overrides
-  // it, so a first-time visitor meets the labelled rail, not a bare icon strip.
-  const [sidebarDefaultOpen] = React.useState(() => {
-    try {
-      return localStorage.getItem('sidebar_state') !== 'collapsed';
-    } catch {
-      return true;
-    }
-  });
 
   React.useEffect(() => {
     document.documentElement.style.colorScheme = resolvedTheme === 'dark' ? 'dark' : 'light';
@@ -131,7 +122,9 @@ function RootContent() {
       >
         Skip to content
       </a>
-      <SidebarProvider defaultOpen={sidebarDefaultOpen}>
+      {/* The rail is a fixed narrow strip — it never expands, so the provider
+          stays closed and drives only the mobile Sheet + inset offset. */}
+      <SidebarProvider defaultOpen={false}>
         <AppSidebar data={navigationData} />
 
         <SidebarInset id="main-content">

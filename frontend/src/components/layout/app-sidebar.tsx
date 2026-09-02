@@ -1,18 +1,11 @@
 import { Disc3 } from 'lucide-react';
 import * as React from 'react';
 
+import { CrateStrip } from '@/components/layout/crate-strip';
+import { RailLabel } from '@/components/layout/rail-label';
 import { NavMain, type NavSection } from '@/components/nav-main';
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarHeader,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-} from '@/components/ui/sidebar';
+import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader } from '@/components/ui/sidebar';
 import { useAuth } from '@/contexts/auth-context';
-import { useSidebarCounts } from '@/hooks/use-sidebar-counts';
 import { Link } from '@tanstack/react-router';
 import { NavUser } from '../nav-user';
 
@@ -27,37 +20,30 @@ export function AppSidebar({
   ...props
 }: React.ComponentProps<typeof Sidebar> & AppSidebarProps) {
   const { user } = useAuth();
-  const counts = useSidebarCounts();
 
   return (
-    <Sidebar collapsible="icon" variant="inset" {...props} className="h-full">
-      <SidebarHeader>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              size="lg"
-              asChild
-              className="h-12 gap-2.5 group-data-[collapsible=icon]:!size-12"
-            >
-              <Link to="/">
-                <span className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground shadow-xs">
-                  <Disc3 className="size-4" />
-                </span>
-                <span className="grid flex-1 text-left leading-tight group-data-[collapsible=icon]:hidden">
-                  <span className="truncate font-semibold tracking-tight">Muzo</span>
-                  <span className="truncate text-xs text-sidebar-foreground/70">Crate room</span>
-                </span>
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
+    <Sidebar collapsible="icon" variant="inset" {...props}>
+      {/* The crate label — the record-box mark, centred at the top. */}
+      <SidebarHeader className="items-center px-0 pb-3 pt-3">
+        <RailLabel label="Muzo — Crate room">
+          <Link
+            to="/"
+            aria-label="Muzo — home"
+            className="flex size-10 items-center justify-center rounded-xl bg-sidebar-primary text-sidebar-primary-foreground shadow-xs outline-none ring-sidebar-ring ring-offset-2 ring-offset-sidebar transition-transform duration-150 hover:scale-105 focus-visible:ring-2"
+          >
+            <Disc3 className="size-[1.15rem]" />
+          </Link>
+        </RailLabel>
       </SidebarHeader>
 
-      <SidebarContent>
-        <NavMain sections={data.sections} counts={counts} />
+      <SidebarContent className="items-center gap-0 overflow-hidden px-0">
+        <NavMain sections={data.sections} />
+        <div className="mb-2 mt-1 h-px w-7 shrink-0 bg-sidebar-border/70" />
+        <CrateStrip />
       </SidebarContent>
 
-      <SidebarFooter>
+      {/* The account tile, filed at the base of the box. */}
+      <SidebarFooter className="items-center px-0 pb-2 pt-1">
         <NavUser
           user={{
             name: [user?.firstName, user?.lastName].filter(Boolean).join(' ') || 'Guest',
