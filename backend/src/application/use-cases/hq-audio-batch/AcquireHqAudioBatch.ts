@@ -20,6 +20,7 @@ interface BatchTrackQuery {
   artist: string;
   title: string;
   durationSeconds: number;
+  album?: string;
 }
 
 export class AcquireHqAudioBatchUseCase {
@@ -49,6 +50,7 @@ export class AcquireHqAudioBatchUseCase {
           artist: track.artist,
           title: track.title,
           durationSeconds: track.technicalInfo?.duration ?? 0,
+          album: track.metadata?.album,
         },
       ];
     });

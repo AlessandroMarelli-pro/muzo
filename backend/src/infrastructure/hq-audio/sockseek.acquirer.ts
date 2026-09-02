@@ -68,11 +68,29 @@ type SockseekEvent =
   | SockseekTrackListEvent
   | { type: string; data: unknown };
 
+type HqAudioFormat = HqAudioAcquireResult['format'];
+
+/**
+ * `--pref-format` only ranks flac/wav/m4a ahead of other formats, it does not exclude
+ * them, so sockseek can still hand back an mp3 (or anything else). Only the three formats
+ * we actually asked for count as a successful HQ acquisition; anything else is treated as
+ * "no acceptable match" rather than being mislabeled as flac.
+ */
+function resolveHqFormat(extension: string | undefined): HqAudioFormat | null {
+  if (extension === 'flac' || extension === 'wav' || extension === 'm4a') {
+    return extension;
+  }
+  return null;
+}
+
 export interface SockseekBatchTrackQuery {
   key: string;
   artist: string;
   title: string;
   durationSeconds: number;
+  /** Optional album hint: not added to the search query itself, but used to prefer
+   *  matching results via `--pref-strict-album` when present. */
+  album?: string;
 }
 
 export type SockseekBatchTrackOutcome =
@@ -203,17 +221,82 @@ export class SockseekAcquirer implements IHqAudioAcquirer {
   private async writeBatchQueryCsv(tracks: SockseekBatchTrackQuery[]): Promise<string> {
     const csvPath = path.join(os.tmpdir(), `sockseek-batch-query-${crypto.randomUUID()}.csv`);
     const rows = [
-      'Artist,Title,Length',
+      'Artist,Title,Length,Album',
       ...tracks.map((track) =>
         [
           this.escapeCsvField(track.artist),
           this.escapeCsvField(track.title),
           Math.round(track.durationSeconds).toString(),
+          this.escapeCsvField(track.album ?? ''),
         ].join(','),
       ),
     ];
     await fs.writeFile(csvPath, rows.join('\n'), 'utf-8');
     return csvPath;
+  }
+
+  /**
+   * Writes a tiny Node helper script used as a sockseek `--on-complete` command. It appends
+   * one `snum<TAB>downloadPath` line to `sidecarPath` for every successfully downloaded
+   * track. `{snum}` is sockseek's 1-indexed source item number, which corresponds exactly to
+   * the row order we wrote in the batch query CSV, so `snum - 1` indexes directly into our
+   * `tracks` array - unlike artist/title, it survives sockseek's own normalization
+   * (e.g. `--remove-ft`) untouched, so it is an exact key rather than a best-effort match.
+   */
+  private async writeOnCompleteHelper(): Promise<string> {
+    const scriptPath = path.join(os.tmpdir(), `sockseek-on-complete-${crypto.randomUUID()}.js`);
+    const script = [
+      "const fs = require('fs');",
+      'const [, , sidecarPath, snum, downloadPath] = process.argv;',
+      "fs.appendFileSync(sidecarPath, `${snum}\\t${downloadPath}\\n`);",
+      '',
+    ].join('\n');
+    await fs.writeFile(scriptPath, script, 'utf-8');
+    return scriptPath;
+  }
+
+  /**
+   * Reads the sidecar file written by the on-complete helper and returns a map of
+   * sockseek's 1-indexed `snum` to the downloaded file path, for every track that completed
+   * successfully.
+   */
+  private async readOnCompleteSidecar(sidecarPath: string): Promise<Map<number, string>> {
+    const result = new Map<number, string>();
+    try {
+      const contents = await fs.readFile(sidecarPath, 'utf-8');
+      for (const line of contents.split('\n')) {
+        if (!line.trim()) {
+          continue;
+        }
+        const [snumText, ...pathParts] = line.split('\t');
+        const snum = Number.parseInt(snumText, 10);
+        const downloadPath = pathParts.join('\t');
+        if (Number.isInteger(snum) && downloadPath) {
+          result.set(snum, downloadPath);
+        }
+      }
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
+        this.logger.warn('failed to read sockseek on-complete sidecar', { error: String(error) });
+      }
+    }
+    return result;
+  }
+
+  /**
+   * sockseek's reported `downloadPath` is otherwise trusted unvalidated; a stale or missing
+   * path would only be caught much later (e.g. when the file is exported to a playlist
+   * folder), which silently falls back to the original lossy file instead of surfacing the
+   * problem here. Confirm the file actually exists before treating an acquisition as a
+   * success.
+   */
+  private async downloadPathExists(filePath: string): Promise<boolean> {
+    try {
+      await fs.access(filePath);
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   private async listIncompleteFiles(dir: string): Promise<string[]> {
@@ -407,6 +490,8 @@ export class SockseekAcquirer implements IHqAudioAcquirer {
         resolvedOutputDir,
         '--pref-format',
         'flac,wav,m4a',
+        '--pref-strict-title',
+        '--pref-strict-artist',
         '--search-timeout',
         this.searchTimeoutMs.toString(),
       );
@@ -540,6 +625,27 @@ export class SockseekAcquirer implements IHqAudioAcquirer {
         return null;
       }
 
+      const format = resolveHqFormat(finalState.extension);
+      if (!format) {
+        this.logger.warn('sockseek matched a non-HQ format, discarding', {
+          artist,
+          title,
+          downloadPath: finalState.downloadPath,
+          extension: finalState.extension,
+        });
+        return null;
+      }
+
+      const downloadPath = finalState.downloadPath as string;
+      if (!(await this.downloadPathExists(downloadPath))) {
+        this.logger.warn('sockseek reported success but the download path does not exist', {
+          artist,
+          title,
+          downloadPath,
+        });
+        return null;
+      }
+
       this.logger.info('sockseek acquisition succeeded', {
         artist,
         title,
@@ -549,10 +655,8 @@ export class SockseekAcquirer implements IHqAudioAcquirer {
         lockedCount: finalState.lockedCount,
       });
 
-      const format =
-        finalState.extension === 'wav' ? 'wav' : finalState.extension === 'm4a' ? 'm4a' : 'flac';
       return {
-        filePath: finalState.downloadPath as string,
+        filePath: downloadPath,
         format,
       };
     } finally {
@@ -598,7 +702,28 @@ export class SockseekAcquirer implements IHqAudioAcquirer {
     // the same sockseek-side normalization - match correctly.
     const keyByIndex = new Map<number, string>(tracks.map((track, index) => [index, track.key]));
     const pendingByIdentity = new Map<string, string[]>();
-    const settledKeys = new Set<string>();
+    // Provisional (name-matched) outcomes, keyed by track. `onTrackSettled` is deliberately
+    // not called as these are recorded: the {snum} sidecar (read once the process exits) can
+    // still overwrite an entry here for a key that collided on artist/title, so each track
+    // must be emitted exactly once at the end rather than as events stream in.
+    const finalOutcomeByKey = new Map<string, SockseekBatchTrackOutcome>();
+
+    // `{snum}` is sockseek's own 1-indexed source item number and is exact for resolving
+    // *sockseek-side* normalization (e.g. `--remove-ft` making two originally-different
+    // inputs collide) - but when two CSV rows are byte-identical to begin with, sockseek
+    // cannot tell which physical row a given completion belongs to and may report either
+    // row's `snum` for either job. Only trust `snum` for rows whose raw (pre-normalization)
+    // query is unique in this batch; for duplicate rows, keep the name-matched result, which
+    // is at least self-consistent (a FIFO queue over the only jobs that share that identity).
+    const rawRowCounts = new Map<string, number>();
+    for (const track of tracks) {
+      const rawIdentity = normalize(track.artist, track.title);
+      rawRowCounts.set(rawIdentity, (rawRowCounts.get(rawIdentity) ?? 0) + 1);
+    }
+    const isUnambiguousRow = (index: number): boolean => {
+      const track = tracks[index];
+      return track ? rawRowCounts.get(normalize(track.artist, track.title)) === 1 : false;
+    };
 
     const registerTrackList = (event: SockseekTrackListEvent) => {
       for (const entry of event.data.tracks) {
@@ -622,6 +747,11 @@ export class SockseekAcquirer implements IHqAudioAcquirer {
     };
 
     const queryCsvPath = await this.writeBatchQueryCsv(tracks);
+    const onCompleteScriptPath = await this.writeOnCompleteHelper();
+    const onCompleteSidecarPath = path.join(
+      os.tmpdir(),
+      `sockseek-batch-snum-${crypto.randomUUID()}.tsv`,
+    );
 
     this.logger.info('sockseek batch acquisition starting', {
       trackCount: tracks.length,
@@ -635,6 +765,8 @@ export class SockseekAcquirer implements IHqAudioAcquirer {
         queryCsvPath,
         '--input-type',
         'csv',
+        '--album-col',
+        'Album',
         '--length-tol',
         '9',
         '--progress-json',
@@ -642,11 +774,16 @@ export class SockseekAcquirer implements IHqAudioAcquirer {
         resolvedOutputDir,
         '--pref-format',
         'flac,wav,m4a',
+        '--pref-strict-title',
+        '--pref-strict-artist',
+        '--pref-strict-album',
         '--remove-ft',
         '--search-timeout',
         this.searchTimeoutMs.toString(),
         '--concurrent-jobs',
         concurrentJobs.toString(),
+        '--on-complete',
+        `when=success -- node "${onCompleteScriptPath}" "${onCompleteSidecarPath}" {snum} "{path}"`,
       ];
       if (this.fastSearch) {
         args.push('--fast-search');
@@ -694,38 +831,43 @@ export class SockseekAcquirer implements IHqAudioAcquirer {
           const data = (event as SockseekTrackStateEvent).data;
           const key = resolveKey(data.artist, data.title);
           this.logEvent(event, data.artist ?? '', data.title ?? '');
-          if (!key || settledKeys.has(key)) {
+          if (!key || finalOutcomeByKey.has(key)) {
             return;
           }
 
           const queue = pendingByIdentity.get(normalize(data.artist ?? '', data.title ?? ''));
           queue?.shift();
-          settledKeys.add(key);
 
-          const succeeded = data.terminalOutcome === 'Succeeded' && !!data.downloadPath;
+          const format = resolveHqFormat(data.extension);
+          const succeeded = data.terminalOutcome === 'Succeeded' && !!data.downloadPath && !!format;
           if (succeeded) {
-            this.logger.info('sockseek batch track succeeded', {
+            this.logger.info('sockseek batch track succeeded (provisional, name-matched)', {
               artist: data.artist,
               title: data.title,
               downloadPath: data.downloadPath,
             });
-            callbacks.onTrackSettled?.(key, {
+            finalOutcomeByKey.set(key, {
               status: 'succeeded',
-              result: {
-                filePath: data.downloadPath as string,
-                format:
-                  data.extension === 'wav' ? 'wav' : data.extension === 'm4a' ? 'm4a' : 'flac',
-              },
+              result: { filePath: data.downloadPath as string, format: format as HqAudioFormat },
             });
           } else {
-            this.logger.warn('sockseek batch track did not find a match', {
-              artist: data.artist,
-              title: data.title,
-              terminalOutcome: data.terminalOutcome,
-              skipReason: data.skipReason,
-              failureReason: data.failureReason,
-            });
-            callbacks.onTrackSettled?.(key, { status: 'not-found' });
+            if (data.terminalOutcome === 'Succeeded' && data.downloadPath && !format) {
+              this.logger.warn('sockseek batch track matched a non-HQ format, discarding', {
+                artist: data.artist,
+                title: data.title,
+                downloadPath: data.downloadPath,
+                extension: data.extension,
+              });
+            } else {
+              this.logger.warn('sockseek batch track did not find a match', {
+                artist: data.artist,
+                title: data.title,
+                terminalOutcome: data.terminalOutcome,
+                skipReason: data.skipReason,
+                failureReason: data.failureReason,
+              });
+            }
+            finalOutcomeByKey.set(key, { status: 'not-found' });
           }
         }
       };
@@ -755,11 +897,6 @@ export class SockseekAcquirer implements IHqAudioAcquirer {
 
         cmd.stdout.on('data', (chunk) => {
           const text = String(chunk);
-          this.logger.debug('DIAG stdout chunk', {
-            bytes: text.length,
-            at: new Date().toISOString(),
-            lineCount: text.split('\n').length,
-          });
           stdoutBuffer += text;
           const lines = stdoutBuffer.split('\n');
           stdoutBuffer = lines.pop() ?? '';
@@ -767,13 +904,6 @@ export class SockseekAcquirer implements IHqAudioAcquirer {
             const event = this.parseEventLine(line);
             if (event) {
               armTimer();
-              if (event.type === 'track_state') {
-                this.logger.debug('DIAG track_state received', {
-                  at: new Date().toISOString(),
-                  artist: (event as SockseekTrackStateEvent).data.artist,
-                  title: (event as SockseekTrackStateEvent).data.title,
-                });
-              }
               handleEvent(event);
             }
           }
@@ -812,9 +942,68 @@ export class SockseekAcquirer implements IHqAudioAcquirer {
 
       await this.cleanupIncompleteFiles(resolvedOutputDir, preExistingIncompleteFiles, '', '');
 
+      // Reconcile against the `{snum}` sidecar, which is exact: `snum` is sockseek's
+      // 1-indexed source item number, corresponding directly to the row order of our own
+      // query CSV, so `keyByIndex.get(snum - 1)` gives the correct key regardless of any
+      // artist/title collisions or sockseek-side normalization. The sidecar only ever
+      // records successes (it is driven by `--on-complete when=success`), so it can only
+      // overwrite a `finalOutcomeByKey` entry with a success - it never turns a real success
+      // into a failure, and any key it doesn't cover keeps whatever the name-matched
+      // `track_state` handling already decided.
+      const anyTrackSucceeded = [...finalOutcomeByKey.values()].some((o) => o.status === 'succeeded');
+      const snumToPath = await this.readOnCompleteSidecar(onCompleteSidecarPath);
+      if (snumToPath.size === 0 && anyTrackSucceeded) {
+        // The sidecar produced nothing at all (e.g. `node` is unavailable on PATH) even
+        // though sockseek reported at least one success - keep the name-matched results
+        // rather than silently discarding every success in the batch, since with a single
+        // success in the batch there is no collision to resolve anyway.
+        this.logger.warn(
+          'sockseek on-complete sidecar empty despite successful tracks, keeping name-matched results',
+          { trackCount: tracks.length },
+        );
+      } else {
+        for (const [snum, filePath] of snumToPath) {
+          const index = snum - 1;
+          if (!isUnambiguousRow(index)) {
+            // Two or more CSV rows are byte-identical to this one; `snum` cannot be trusted
+            // to say which of those rows' jobs actually produced this file, so leave
+            // whatever the name-matched `track_state` handling already decided for all of
+            // them untouched.
+            continue;
+          }
+          const key = keyByIndex.get(index);
+          if (!key) {
+            continue;
+          }
+          const format = resolveHqFormat(path.extname(filePath).replace(/^\./, '').toLowerCase());
+          if (!format) {
+            this.logger.warn('sockseek matched a non-HQ format, discarding', {
+              trackKey: key,
+              downloadPath: filePath,
+            });
+            finalOutcomeByKey.set(key, { status: 'not-found' });
+            continue;
+          }
+          if (!(await this.downloadPathExists(filePath))) {
+            this.logger.warn('sockseek reported success but the download path does not exist', {
+              trackKey: key,
+              downloadPath: filePath,
+            });
+            finalOutcomeByKey.set(key, { status: 'not-found' });
+            continue;
+          }
+          this.logger.info('sockseek batch track succeeded', { trackKey: key, downloadPath: filePath });
+          finalOutcomeByKey.set(key, { status: 'succeeded', result: { filePath, format } });
+        }
+      }
+
+      for (const [key, outcome] of finalOutcomeByKey) {
+        callbacks.onTrackSettled?.(key, outcome);
+      }
+
       if (!cancelled) {
         for (const track of tracks) {
-          if (!settledKeys.has(track.key)) {
+          if (!finalOutcomeByKey.has(track.key)) {
             if (timedOut) {
               this.logger.warn('sockseek batch track interrupted by batch timeout', {
                 artist: track.artist,
@@ -834,6 +1023,8 @@ export class SockseekAcquirer implements IHqAudioAcquirer {
     } finally {
       this.activeBatchProcesses.delete(batchId);
       await fs.unlink(queryCsvPath).catch(() => undefined);
+      await fs.unlink(onCompleteScriptPath).catch(() => undefined);
+      await fs.unlink(onCompleteSidecarPath).catch(() => undefined);
     }
   }
 
