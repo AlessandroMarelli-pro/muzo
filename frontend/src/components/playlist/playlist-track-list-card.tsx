@@ -9,6 +9,7 @@ import { apiUrl } from '@/lib/api-config';
 import {
   capitalizeEveryWord,
   cn,
+  formatGenreLine,
   formatTime,
   isHarmonicTransition,
   toCamelotCode,
@@ -18,7 +19,6 @@ import { Link } from '@tanstack/react-router';
 import { AudioLines, Brain, GripVertical, ListMusic, Pause, Play, Trash2 } from 'lucide-react';
 import { memo } from 'react';
 import { AudioQualityBadge } from '../track/audio-quality-badge';
-import { GenresBadge } from '../track/genres-badge';
 import { Skeleton } from '../ui/skeleton';
 
 /** Album-art URL, or null when the track has no artwork (avoids a broken request). */
@@ -119,6 +119,7 @@ export const PlaylistTrackListCard = memo(
     const tempo = track?.mfTempo;
     const rawKey = (track?.mfCamelotKey || track?.mfKey || '').trim();
     const camelot = toCamelotCode(rawKey);
+    const genreLine = formatGenreLine(track?.genres, track?.subgenres);
     const transition = transitionBefore(prevTrack, track);
 
     const handlePlay = (e: React.SyntheticEvent<any>) => {
@@ -202,19 +203,16 @@ export const PlaylistTrackListCard = memo(
             <span className="truncate text-sm font-medium">{titleOf(track)}</span>
             <AudioQualityBadge format={track?.format} hqAudioPath={track?.hqAudioPath} />
           </div>
-          <div className="flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
-            <span className="shrink-0 truncate">{artistOf(track)}</span>
-            {/* genres — inline, so they never shift the numeric columns */}
-            <span className="hidden min-w-0 items-center gap-1.5 lg:flex">
-              <GenresBadge genres={track?.genres || []} variant="secondary" />
-              <GenresBadge genres={track?.subgenres || []} variant="outline" />
-            </span>
+          <p className="truncate text-xs text-muted-foreground">
+            <span>{artistOf(track)}</span>
+            {genreLine && <span className="capitalize"> · {genreLine}</span>}
             {/* BPM/key inline on mobile where the columns are hidden */}
-            <span className="shrink-0 font-mono tabular-nums md:hidden">
-              · {tempo ? `${Math.round(tempo)}` : '—'} BPM
+            <span className="font-mono tabular-nums md:hidden">
+              {' · '}
+              {tempo ? `${Math.round(tempo)}` : '—'} BPM
               {camelot ? ` · ${camelot}` : ''}
             </span>
-          </div>
+          </p>
         </div>
 
         {/* BPM column */}

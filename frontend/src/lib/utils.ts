@@ -112,6 +112,25 @@ export const capitalizeEveryWord = (string: string) => {
     .join(' ');
 };
 
+/**
+ * A track's genre line as plain text: the umbrella genre, then its styles.
+ * e.g. `Electronic · House, Techno, Tribal House`. Returns null when there's
+ * nothing to show.
+ */
+export const formatGenreLine = (
+  genres?: string[] | null,
+  subgenres?: string[] | null,
+  maxStyles = 4,
+): string | null => {
+  const g = (genres ?? []).filter(Boolean);
+  const styles = [...g.slice(1), ...(subgenres ?? []).filter(Boolean)];
+  const umbrella = g[0];
+  if (!umbrella && styles.length === 0) return null;
+  const stylePart = styles.slice(0, maxStyles).join(', ');
+  if (umbrella && stylePart) return `${umbrella} · ${stylePart}`;
+  return umbrella || stylePart;
+};
+
 export const encodeBase64 = (value: string) => {
   return btoa(value);
 };
