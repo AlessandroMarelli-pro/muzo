@@ -163,7 +163,7 @@ export const TrackRecommendationsCard = ({
         {track.duration ? formatTime(track.duration) : '—'}
       </div>
 
-      <div className="flex items-center justify-end gap-0.5 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100 group-data-[current=true]:opacity-100">
+      <div className="flex items-center justify-end gap-4 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100 group-data-[current=true]:opacity-100">
         <Button
           variant="ghost"
           size="iconSm"

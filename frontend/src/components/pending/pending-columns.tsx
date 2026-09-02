@@ -2,13 +2,13 @@ import type { Track } from '@/__generated__/types';
 import { DataTableColumnHeader } from '@/components/data-table/data-table-column-header';
 import { AudioQualityBadge } from '@/components/track/audio-quality-badge';
 import { GenresBadge } from '@/components/track/genres-badge';
-import { TrackMoreMenu } from '@/components/track/track-more-menu';
 import {
   arousalMoodOptions,
   danceabilityFeelingOptions,
   findFeatureLabel,
   valenceMoodOptions,
 } from '@/components/track/track-feature-options';
+import { TrackMoreMenu } from '@/components/track/track-more-menu';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -60,18 +60,23 @@ export function buildPendingColumns({
     {
       id: 'select',
       header: ({ table }) => (
-        <Checkbox
-          checked={
-            table.getIsAllPageRowsSelected() ||
-            (table.getIsSomePageRowsSelected() && 'indeterminate')
-          }
-          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-          aria-label="Select all rows"
-        />
+        <div className="flex h-full items-center justify-center">
+          <Checkbox
+            checked={
+              table.getIsAllPageRowsSelected() ||
+              (table.getIsSomePageRowsSelected() && 'indeterminate')
+            }
+            onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+            aria-label="Select all rows"
+          />
+        </div>
       ),
       cell: ({ row }) => (
         // Stop propagation so ticking the box doesn't also move the preview focus.
-        <div onClick={(event) => event.stopPropagation()}>
+        <div
+          className="flex h-full items-center justify-center"
+          onClick={(event) => event.stopPropagation()}
+        >
           <Checkbox
             checked={row.getIsSelected()}
             onCheckedChange={(value) => row.toggleSelected(!!value)}

@@ -195,10 +195,7 @@ export const PlaylistTrackListCard = memo(
         <div className="min-w-0">
           <div className="flex items-center gap-1.5">
             {isThisTrackPlaying && (
-              <AudioLines
-                className="h-3.5 w-3.5 shrink-0 text-primary"
-                aria-label="Now playing"
-              />
+              <AudioLines className="h-3.5 w-3.5 shrink-0 text-primary" aria-label="Now playing" />
             )}
             <span className="truncate text-sm font-medium">{titleOf(track)}</span>
             <AudioQualityBadge format={track?.format} hqAudioPath={track?.hqAudioPath} />
@@ -229,7 +226,7 @@ export const PlaylistTrackListCard = memo(
         </div>
 
         {/* Actions — reserved lane, revealed on hover / when current */}
-        <div className="flex items-center justify-end gap-0.5 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100 group-data-[current=true]:opacity-100">
+        <div className="flex items-center justify-end gap-4 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100 group-data-[current=true]:opacity-100">
           <Button
             variant="ghost"
             size="iconSm"
