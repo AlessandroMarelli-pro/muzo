@@ -1,40 +1,50 @@
 ---
 name: Muzo
 description: Local-first AI music library organization for DJs and crate-diggers
+# Active theme: Vinyl Sleeve (src/styles/themes/vinyl-sleeve.css).
+# Swap the @import in src/styles/index.css to change palettes; periwinkle.css
+# is the previous world, kept as a rollback. All values below are the Vinyl
+# Sleeve theme.
 colors:
-  background: "oklch(0.9918 0.0011 17.1778)"
-  foreground: "oklch(0.3102 0.0265 244.3187)"
-  card: "oklch(0.9325 0.0022 17.1973)"
-  card-foreground: "oklch(0.3102 0.0265 244.3187)"
-  popover: "oklch(1 0 0)"
-  popover-foreground: "oklch(0.3102 0.0265 244.3187)"
-  primary: "oklch(0.7205 0.1038 273.6722)"
-  primary-foreground: "oklch(1 0 0)"
-  secondary: "oklch(0.9325 0.0022 17.1973)"
-  secondary-foreground: "oklch(0.4864 0.0199 242.7423)"
-  muted: "oklch(0.9918 0.0011 17.1778)"
-  muted-foreground: "oklch(0.5996 0.0167 251.2515)"
-  accent: "oklch(1 0 0)"
-  accent-foreground: "oklch(0.4099 0.0228 243.4564)"
-  destructive: "oklch(0.6823 0.1365 10.3688)"
-  destructive-foreground: "oklch(1 0 0)"
-  border: "oklch(0.9325 0.0022 17.1973)"
-  ring: "oklch(0.7205 0.1038 273.6722)"
-  sidebar: "oklch(0.9325 0.0022 17.1973)"
-  sidebar-border: "oklch(0.8895 0.0035 17.1973)"
-  sidebar-active: "oklch(0.8807 0.0556 273.6722)"
-  sidebar-active-foreground: "oklch(0.3771 0.1178 273.6722)"
-  chart-1: "oklch(0.7205 0.1038 273.6722)"
-  chart-2: "oklch(0.6214 0.1372 275.9795)"
-  chart-3: "oklch(0.5464 0.1374 276.5018)"
-  chart-4: "oklch(0.4647 0.1344 274.8044)"
-  chart-5: "oklch(0.4202 0.0982 274.837)"
-  dark-background: "oklch(0.18 0 0)"
-  dark-foreground: "oklch(1 0 0)"
-  dark-card: "oklch(0.293 0.0061 34.2971)"
-  dark-primary: "oklch(0.811 0.0692 269.2988)"
-  dark-muted-foreground: "oklch(0.7733 0.0109 247.9677)"
-  dark-border: "oklch(0.3557 0.0065 48.5318)"
+  background: "oklch(0.9555 0.0140 88.68)"
+  foreground: "oklch(0.2813 0.0094 88.77)"
+  card: "oklch(0.9162 0.0223 89.80)"
+  card-foreground: "oklch(0.2813 0.0094 88.77)"
+  popover: "oklch(0.9765 0.0098 87.47)"
+  popover-foreground: "oklch(0.2813 0.0094 88.77)"
+  primary: "oklch(0.4179 0.1249 258.70)"
+  primary-foreground: "oklch(0.9696 0.0086 264.52)"
+  secondary: "oklch(0.8832 0.0282 88.76)"
+  secondary-foreground: "oklch(0.3919 0.0192 86.46)"
+  muted: "oklch(0.9349 0.0197 87.52)"
+  muted-foreground: "oklch(0.5055 0.0232 84.57)"
+  accent: "oklch(0.9043 0.0253 89.22)"
+  accent-foreground: "oklch(0.3919 0.0192 86.46)"
+  destructive: "oklch(0.5648 0.1755 30.69)"
+  destructive-foreground: "oklch(0.9700 0.0130 40)"
+  success: "oklch(0.4661 0.0742 129.78)"
+  success-surface: "oklch(0.9119 0.0322 124.50)"
+  warning: "oklch(0.6488 0.1157 74.5)"
+  warning-surface: "oklch(0.9153 0.0473 88.30)"
+  info: "oklch(0.4179 0.1249 258.70)"
+  info-surface: "oklch(0.9156 0.0190 255.54)"
+  border: "oklch(0.8744 0.0312 88.38)"
+  ring: "oklch(0.4179 0.1249 258.70)"
+  sidebar: "oklch(0.9162 0.0223 89.80)"
+  sidebar-border: "oklch(0.8376 0.0343 88.07)"
+  sidebar-active: "oklch(0.4179 0.1249 258.70)"
+  sidebar-active-foreground: "oklch(0.9696 0.0086 264.52)"
+  chart-1: "oklch(0.3205 0.0885 257.60)"
+  chart-2: "oklch(0.4179 0.1249 258.70)"
+  chart-3: "oklch(0.5298 0.1204 256.66)"
+  chart-4: "oklch(0.6651 0.0976 255.76)"
+  chart-5: "oklch(0.8006 0.0596 252.49)"
+  dark-background: "oklch(0.2363 0.0120 84.56)"
+  dark-foreground: "oklch(0.9316 0.0169 88.00)"
+  dark-card: "oklch(0.2744 0.0154 84.54)"
+  dark-primary: "oklch(0.6437 0.1182 255.94)"
+  dark-muted-foreground: "oklch(0.6575 0.0260 79.67)"
+  dark-border: "oklch(0.3032 0.0187 84.52)"
 typography:
   display:
     fontFamily: "Plus Jakarta Sans, ui-sans-serif, system-ui, sans-serif"
@@ -137,7 +147,7 @@ components:
 
 ## Overview
 
-**Creative North Star: "The Crate Room"**
+**Creative North Star: "The Crate Room, filed on printed sleeves"**
 
 Muzo is a room where a DJ goes to dig. The interface has crate-room energy:
 album art forward, dense enough to browse a large collection quickly, and
@@ -145,86 +155,172 @@ deliberately low on chrome so the music does the talking. Cards are the primary
 object on screen and they lead with cover imagery — the UI frames the artwork,
 it doesn't compete with it. The chrome that remains is soft: generously rounded
 corners (`--radius: 1.25rem`) and diffuse ambient shadows keep every surface
-feeling like a physical, pillowy object you could pick up, never a hard-edged
-panel.
+feeling like a physical object you could pick up, never a hard-edged panel.
 
-Color is rationed. The surfaces are a near-neutral warm grey that functions as a
-quiet stage: its job is to recede so that cover art and a single periwinkle
-accent carry all the color in the room. That accent — a soft, muted blue-violet
-— is used for wayfinding only: the active nav item, the primary action, the
-"you are here" signal, and the recommendation chart series. Everywhere else the
-system stays in neutrals and lets content fill the frame.
+The layout is the crate; the palette is the jacket you pull from it.
+
+The colour world is **the printed record sleeve**: uncoated stock, spot-colour
+ink, the flat confident fields of a Blue Note or Factory jacket. One deep spot
+blue is the whole palette — and unlike an accent, it is used as an *area*: the
+active nav block is a solid blue field, primary buttons are filled blue, the
+recommendation chart is five steps of it. One spot red handles delete and error.
+Everywhere else is warm-grey paper and charcoal ink. The stock is deliberately
+warm-grey, not cream — cream-plus-sans is a design cliché the sleeve world
+sidesteps by committing the blue as a field rather than a hairline.
 
 The system is fully dual-theme. Dark mode is not an afterthought — it is the
-expected working environment for an off-gig prep session — and the warm charcoal
-dark palette is tuned so album art still pops against it.
+expected working environment for an off-gig prep session — and the dark palette
+is a warm "press-room" black (not neutral charcoal) with the blue brightened one
+notch so it still reads as a field against it. Album art pops against both.
 
 **Key Characteristics:**
 - Album art is the hero; cards frame it and stay out of its way
-- One accent (periwinkle), used sparingly for wayfinding and primary actions
-- Warm near-neutral surfaces as a deliberately quiet stage
+- One committed colour (spot blue), used as a *field* — nav-active, primary
+  buttons, chart series — not a scattered accent
+- Warm-grey "stock" surfaces and charcoal ink, like an uncoated jacket
+- One spot red, for delete and error only
 - Very generous rounding (16–24px) on every interactive surface
-- Soft ambient shadows — atmosphere, not hard elevation
+- Soft ambient shadows — the one concession to screen; print has none
 - Dark mode is a first-class working environment, not a toggle afterthought
 
 ## Colors
 
-A near-neutral warm-grey system with a single periwinkle accent. Content
-(album art, charts) supplies the color; the chrome does not.
+The full palette lives in a swappable theme file (`src/styles/themes/`) — see
+**The Theme System** below. Values here are the active **Vinyl Sleeve** theme.
 
 ### Primary
-- **Soft Periwinkle** (`oklch(0.7205 0.1038 273.67)` light / `oklch(0.811 0.0692 269.30)` dark):
-  The one accent. Used for the primary button, the active sidebar item, focus
-  rings, selected states, default badges, and the recommendation chart ramp
-  (`chart-1` through `chart-5` are all shades of it). Muted, never electric —
-  it reads as a calm signal, not an alarm.
+- **Spot Blue** (`oklch(0.4179 0.1249 258.70)` light / `oklch(0.6437 0.1182 255.94)` dark):
+  The one committed colour. Used as a *field*: the primary button fill, the
+  active sidebar cell (a solid block, not a tint), focus rings, selected states,
+  default badges, `--wave-played`, and the recommendation chart ramp. It reads
+  as ink on a jacket — flat, confident, not a glow. In dark mode it brightens so
+  it still carries against the press-room black.
 
 ### Neutral
-- **Quiet Stage** — Background (`oklch(0.9918 0.0011 17.18)` light /
-  `oklch(0.18 0 0)` dark): The page ground. Very low chroma, faintly warm.
-  Deliberately recessive so nothing on it has to fight for attention.
-- **Card Surface** (`oklch(0.9325 0.0022 17.20)` light / `oklch(0.293 0.0061 34.30)` dark):
-  One tonal step off the background. Cards, the sidebar, and secondary buttons
-  share this value, so the layout reads as one continuous soft material with
-  gentle tonal separation rather than stacked panels.
-- **Popover** (`oklch(1 0 0)` light / `oklch(0.293 0.0061 34.30)` dark):
-  Pure white in light mode for menus, dropdowns, and dialogs — the one place the
-  system goes brighter than the card surface to lift transient UI forward.
-- **Foreground** (`oklch(0.3102 0.0265 244.32)` light / `oklch(1 0 0)` dark):
-  Primary text. A soft dark blue-grey in light mode rather than true black.
-- **Muted Foreground** (`oklch(0.5996 0.0167 251.25)` light /
-  `oklch(0.7733 0.0109 247.97)` dark): Secondary text, captions, `CardDescription`,
-  and — via a global `[data-description]` rule — every Radix description slot.
-- **Border** (`oklch(0.9325 0.0022 17.20)` light / `oklch(0.3557 0.0065 48.53)` dark):
-  Applied globally to every element by default (`* { @apply border-border }`).
-  In light mode it equals the card surface, so borders are nearly invisible and
-  separation comes from tone and shadow, not lines.
-- **Sidebar Border** (`oklch(0.8895 0.0035 17.20)` light /
-  `oklch(0.4213 0.0065 48.53)` dark): one tonal step off the sidebar surface —
-  unlike the app `border`, this one is meant to be faintly visible, for the
-  rail's nav/crate divider and the group separators.
-- **Sidebar Active** (`oklch(0.8807 0.0556 273.67)` light /
-  `oklch(0.3862 0.0507 273.67)` dark) with **Sidebar Active Foreground**
-  (`oklch(0.3771 0.1178 273.67)` light / `oklch(0.9137 0.0451 269.30)` dark):
-  the periwinkle accent tinted onto the sidebar surface for the active-nav
-  cell, paired with an ink-toned foreground that clears AA. This is the only
-  place a tinted fill stands in for the accent — everywhere else periwinkle is
-  full-strength and used at ≤10% of the screen.
+- **Stock** — Background (`oklch(0.9555 0.0140 88.68)` light /
+  `oklch(0.2363 0.0120 84.56)` dark): the page ground. A warm paper grey, low
+  chroma; in dark, a warm near-black ("press room"), not a neutral charcoal.
+- **Inner Sleeve** — Card (`oklch(0.9162 0.0223 89.80)` light /
+  `oklch(0.2744 0.0154 84.54)` dark): one tonal step off the stock. Cards, the
+  sidebar, and secondary buttons share this value, so the layout reads as one
+  continuous paper stock with gentle tonal separation rather than stacked panels.
+- **Popover** (`oklch(0.9765 0.0098 87.47)` light / equals Inner Sleeve in dark):
+  a shade brighter than the card in light mode, to lift menus and dialogs forward.
+- **Ink** — Foreground (`oklch(0.2813 0.0094 88.77)` light /
+  `oklch(0.9316 0.0169 88.00)` dark): primary text. A warm near-black in light,
+  a warm off-white in dark — the ink and the paper share a hue.
+- **Warm Grey** — Muted Foreground (`oklch(0.5055 0.0232 84.57)` light /
+  `oklch(0.6575 0.0260 79.67)` dark): secondary text, captions, `CardDescription`,
+  the idle nav-icon colour, and — via a global `[data-description]` rule — every
+  Radix description slot.
+- **Hairline** — Border (`oklch(0.8744 0.0312 88.38)` light /
+  `oklch(0.3032 0.0187 84.52)` dark): applied globally by default
+  (`* { @apply border-border }`). Near-invisible against the stock; separation
+  comes from tone and shadow, not lines.
+- **Rule** — Sidebar Border / Input (`oklch(0.8376 0.0343 88.07)` light /
+  equals Hairline in dark): one step darker than the sidebar surface — unlike
+  the app `border` this one is meant to be faintly visible, for the rail's
+  nav/crate divider and for form-field edges.
+- **Sidebar Active** (`oklch(0.4179 0.1249 258.70)` light /
+  `oklch(0.3896 0.0806 254.28)` dark) with **Sidebar Active Foreground**
+  (`oklch(0.9696 0.0086 264.52)` light / `oklch(0.8502 0.0488 255.13)` dark):
+  a **solid blue field** behind the active nav icon — an ink block on the
+  sleeve. In dark mode the field deepens so the pale-blue icon reads on it.
+  This is the thesis of the direction: the accent is an area, not a dot.
 
 ### Destructive
-- **Rose** (`oklch(0.6823 0.1365 10.37)`): Delete actions and error states only.
-  The same value in both themes.
+- **Spot Red** (`oklch(0.5648 0.1755 30.69)`): delete actions and error states
+  only. The same value in both themes, with a near-white `destructive-foreground`
+  (`oklch(0.97 0.013 40)`). The one warm colour in an otherwise blue-and-paper
+  system, so it always means "stop."
+
+### Semantic Status
+A small, deliberately muted set of status roles — the only colours besides the
+spot blue and spot red in the system. Each is used as a **tinted badge or pill**
+(`*-surface` fill, `*-border` hairline, hue-matched `*-foreground` text), and
+each **always travels with an icon and a text label** so status is never
+communicated by colour alone. The solid `success` / `warning` / `info` values
+are for icons and single lines of text on the page ground, not large fills.
+
+- **Success — moss green** (`oklch(0.4661 0.0742 129.78)` light /
+  `oklch(0.8097 0.0967 134.17)` dark): scan complete, analysis done, account
+  connected, track kept. The resolved / good state — a printerly green that sits
+  next to the blue without competing.
+- **Warning — muted amber** (`oklch(0.6488 0.1157 74.5)` light /
+  `oklch(0.8161 0.1198 82.5)` dark): incomplete tracks, paused scans, "needs a
+  look." Also the fill of the swipe "banger" action (with `warning-ink`, a fixed
+  dark text value that does not flip between themes). Draws the eye without the
+  alarm of the spot red.
+- **Info — the spot blue, held to a wash** (`--info` equals `--primary`;
+  `--info-surface` is `--vs-blue-wash`, a pale tint on the stock): work in
+  progress — scanning, analyzing. It shares the primary's hue on purpose but
+  only ever appears as a wash, so an in-progress state reads as related to the
+  primary without spending the full-strength blue field.
+
+**The Muted Status Rule.** Status colour is rationed like the primary. It
+appears as a tint on a chip, carries an icon and a word, and stays low-chroma.
+If a status needs a saturated fill to be noticed, the layout is burying it.
 
 ### Named Rules
-**The One Voice Rule.** Periwinkle is the only accent in the system and it marks
-wayfinding and primary intent — the active path, the main action, the current
-selection. It should occupy roughly 10% or less of any screen. Its restraint is
-what makes it read as a signal. If a screen needs a second color to make sense,
-the layout is wrong, not the palette.
+**The Field Rule.** The spot blue is used as an *area*, not an accent dot: a
+solid fill behind the active nav icon, the whole primary button, the full chart
+series. This is the sleeve thesis — ink is printed in blocks. It still stays off
+most of the screen (the stock and ink carry the bulk), but where it appears it
+is committed, not a hairline or a 3px tick alone.
 
-**The Ghost Border Rule.** In light mode, borders share the card-surface value
-and all but disappear. Reach for a tonal shift or a soft shadow to separate
-surfaces before you reach for a visible line.
+**The One Warm Colour Rule.** In a blue-and-paper system the spot red is the
+only warm colour, so it always and only means "stop" — delete, error, the
+current-beat marker. Never use it decoratively; never introduce a second warm
+hue to sit beside it.
+
+**The Ghost Border Rule.** Borders share the stock/card tonal family and all but
+disappear. Reach for a tonal shift or a soft shadow to separate surfaces before
+you reach for a visible line. The exceptions are `--sidebar-border` and
+`--input`, which are one step darker and meant to be faintly seen.
+
+**The Favorite-Heart Exception.** The one place a raw Tailwind colour is
+sanctioned: the favourite/like heart uses `fill-red-500 text-red-500`. A red
+heart is a near-universal convention and routing it through `--destructive`
+would wrongly link "favourite" and "delete." It is the single exception to
+"every colour is a token."
+
+## The Theme System
+
+Colour is separated from structure so a whole palette can be swapped in one line.
+
+- **`src/styles/index.css`** owns only structural tokens — fonts, `--radius`,
+  the `--shadow-*` recipe, `--spacing`, z-index — and the `@theme inline` bridge
+  that maps every `--token` to a Tailwind `--color-*` utility. It ends with one
+  `@import './themes/<name>.css';` — **that import is the palette switch.**
+- **`src/styles/themes/<name>.css`** defines *only* colour tokens, as a
+  `:root { }` (light) + `.dark { }` (dark) pair. Each file has two layers: a
+  private **primitive ramp** at the top (`--vs-blue`, `--vs-stock`, … / `--pw-*`
+  for periwinkle) and then the **semantic tokens** that reference it
+  (`--primary: var(--vs-blue)`). Recolouring is mostly rewriting the ramp;
+  "darken the accent one step" is a one-line primitive edit.
+- **`themes/_contract.css`** documents the full semantic token list a theme must
+  define. `npm run theme:check` (also `prebuild`) parses it and every theme file
+  and fails if a theme is missing a token in either block — a half-finished
+  palette can't ship.
+- **Available themes:**
+  - `vinyl-sleeve.css` — **active.** Spot blue as a field, warm paper stock.
+  - `periwinkle.css` — the previous world (Shadcn "New York" violet), kept
+    verbatim as the rollback.
+  - `sodium-neon.css` — "Sodium & Neon at 2am": the record shop at closing.
+    A rare, directional sodium-orange accent (primary action / active path /
+    now-playing tick, *not* a filled field), deep blue-grey night neutrals in
+    dark, and a fluorescent cyan reserved for the `info` status and the chart
+    tail. All AA-verified, not currently wired.
+  To switch, change the one `@import` in `index.css` and update this doc's
+  frontmatter + Colors section to describe the newly-active theme.
+- **Canvas colours** (`beat-visualizer`, `waveform-visualizer`) read tokens via
+  `getComputedStyle` and blend alpha with `color-mix(in oklab, …)` — never
+  `hsl(var(--token))`, which is invalid against oklch values.
+
+To add a palette: copy `periwinkle.css`, rewrite its primitive ramp, run
+`npm run theme:check`, switch the import. Document the built result here (this
+frontmatter + the Colors section) — the theme file is the source of truth, this
+doc describes the active one.
 
 ## Typography
 
@@ -280,11 +376,11 @@ it as an overlay Sheet) and stacks card content vertically
 ## Elevation & Depth
 
 Ambient and soft. Shadows are atmosphere: they lift cards a few millimetres off
-the quiet stage at rest and never read as hard or directional. The shadow
-vocabulary is a single diffuse recipe scaled up — a 2px/2px offset with a 10px
-blur and 4px spread, at 18% opacity, warm grey in light mode
-(`#a6a7ab`) and near-black in dark. There is no crisp drop shadow anywhere in
-the system.
+the stock at rest and never read as hard or directional. The shadow vocabulary
+is a single diffuse recipe scaled up — a 2px/2px offset with a 10px blur and 4px
+spread, at 18% opacity, warm grey in light mode (`#a6a7ab`) and near-black in
+dark. There is no crisp drop shadow anywhere in the system. (Print has no
+shadow at all — this is the one screen concession the sleeve world makes.)
 
 Secondary depth comes from tonal layering: background → card → popover is a
 three-step lightness climb, and in light mode that tonal step (not a border or
@@ -326,25 +422,26 @@ carries at least a 1rem radius.
   the same `rounded-md`.
 - **Sizes:** default `h-9 px-4`, `sm` `h-8 px-3 text-xs`, `lg` `h-10 px-8`, plus
   icon sizes `icon` (h-9 w-9), `iconSm` (h-6), `iconXs` (h-4).
-- **Primary:** `bg-primary` periwinkle, white text, `shadow-xs`. Hover drops to
-  `bg-primary/90`. Feel: tactile and confident — a clear, pressable target.
-- **Secondary:** `bg-secondary` (card surface), muted-blue text, hover
-  `bg-secondary/80`.
+- **Primary:** `bg-primary` spot blue, `primary-foreground` text, `shadow-xs`.
+  Hover drops to `bg-primary/90`. A filled ink block — tactile and confident.
+- **Secondary:** `bg-secondary` (one step off the card), `secondary-foreground`
+  text, hover `bg-secondary/80`.
 - **Outline:** `border-input` on `bg-background`, hover fills `bg-accent` with
   `accent-foreground`.
 - **Ghost:** transparent at rest, hover fills `bg-accent`. For low-emphasis
   toolbar actions.
-- **Link:** periwinkle text, underline on hover.
-- **Transition:** `transition-colors` only. Focus: `ring-1 ring-ring` (periwinkle).
+- **Link:** spot-blue text, underline on hover.
+- **Transition:** `transition-colors` only. Focus: `ring-1 ring-ring` (spot blue).
 - **Cursor:** buttons set `cursor-pointer` explicitly.
 
 ### Chips / Badges
 - **Style:** Fully round (`rounded-full`), `px-2 py-0.5 text-xs font-medium`,
   transparent border.
-- **Variants:** `default` (periwinkle / white), `secondary` (card surface /
-  foreground), `accent` (white / accent-foreground), `outline` (foreground text,
-  hover tint), `destructive` (rose / white), `foreground` (inverted: foreground
-  bg / background text).
+- **Variants:** `default` (spot blue / `primary-foreground`), `secondary` (one
+  step off the card / foreground), `accent` (accent surface / accent-foreground),
+  `outline` (foreground text, hover tint), `destructive` (spot red / near-white),
+  `success` / `warning` / `info` (tinted surface + hairline + hue-matched text —
+  always with an icon), `foreground` (inverted: foreground bg / background text).
 - **Use:** genre and subgenre tags on track cards, audio-quality badges, counts.
   Genre badges are the densest recurring use — expect many per card.
 
@@ -364,7 +461,7 @@ carries at least a 1rem radius.
 ### Inputs / Fields
 - **Style:** `h-9`, `rounded-md`, 1px `border-input`, `bg-transparent`,
   `shadow-xs`, `text-base` on mobile / `text-sm` on `md`+.
-- **Focus:** `outline-none` + `ring-1 ring-ring` (periwinkle). No glow, just a
+- **Focus:** `outline-none` + `ring-1 ring-ring` (spot blue). No glow, just a
   clean single-pixel ring.
 - **Placeholder:** `text-muted-foreground`.
 - **Disabled:** `cursor-not-allowed opacity-50`.
@@ -379,21 +476,22 @@ record box: icons up top, your crates filed right below as cover art.
   finger-gap between the two route groups (group labels are structural only —
   `aria-label` on the `<ul>`, never rendered). No counts, no visible dividers
   in the nav block.
-- **Active cell:** filled `bg-sidebar-active` (periwinkle tinted onto the
-  sidebar surface) with `text-sidebar-active-foreground` (ink-dark, clears AA),
-  plus a 3px periwinkle tick (`--sidebar-primary`) detached to the rail's left
-  edge (`-left-[13px]`), vertically centred on the icon. Longest-matching-URL
+- **Active cell:** a **solid spot-blue field** (`bg-sidebar-active`) with
+  `text-sidebar-active-foreground` (near-white in light, pale blue on the deeper
+  dark field — both clear AA), plus a 3px blue tick (`--sidebar-primary`)
+  detached to the rail's left edge (`-left-[13px]`), vertically centred on the
+  icon. An ink block on the sleeve, per The Field Rule. Longest-matching-URL
   wins, so `/music/harmonic` lights Harmonic, not Music.
 - **Hover / focus label:** a floating pill on the `popover` surface
   (`rounded-md`, `shadow-md`, `text-xs`) to the right of the item, via the
   shared Tooltip primitive so keyboard focus reveals it too (`RailLabel`).
 - **Crate strip:** below a hairline `sidebar-border/70` divider, a vertical
   `overflow-y-auto` column of 40px `rounded-lg` playlist covers — a 2×2 mosaic
-  from `stats.images`, a single image, or a periwinkle-tinted monogram tile as
+  from `stats.images`, a single image, or a spot-blue monogram tile as
   fallback. `mask-image` linear-gradient fade top and bottom, scrollbar hidden
   (`.no-scrollbar`), each cover `hover:scale-105` with its name in the same
   label pill. Clicking a cover opens that crate.
-- **Ends:** the `Disc3` mark in a periwinkle `rounded-xl` tile pinned top; the
+- **Ends:** the `Disc3` mark in a spot-blue `rounded-xl` tile pinned top; the
   user's initials avatar (`size-9`, opens the account dropdown to the right)
   pinned bottom. The fixed rail stops at the top of the player bar
   (`bottom: var(--music-player-height)`) so the avatar is never covered.
@@ -418,22 +516,33 @@ light mode (flat `bg-card` in dark). This is the primary browse-a-lot pattern.
 ### Do:
 - **Do** lead every track/library/playlist card with cover artwork; frame it,
   don't crop it out.
-- **Do** keep periwinkle to wayfinding and primary intent — active nav, primary
-  button, current selection, chart series — at ≤10% of a screen.
-- **Do** separate surfaces with a tonal step (background → card → popover) and a
+- **Do** use the spot blue as a *field* for wayfinding and primary intent —
+  the active nav block, the primary button, current selection, the chart series.
+  Filled, not a hairline.
+- **Do** separate surfaces with a tonal step (stock → card → popover) and a
   soft `shadow-sm` before reaching for a visible border.
 - **Do** use `rounded-md` for controls, `rounded-xl` for cards, `rounded-full`
   for badges and avatars. Nothing sharper than 1rem.
 - **Do** design dark mode as the primary working environment and verify album
-  art still reads against the warm charcoal.
+  art still reads against the press-room black.
 - **Do** use Roboto Mono for BPM, key, duration, and file paths only.
 - **Do** support horizontal scrolling rails as a real browsing pattern.
 - **Do** honor `prefers-reduced-motion` — the base layer already forces near-zero
   durations; keep motion non-essential.
 
 ### Don't:
-- **Don't** introduce a second accent color. If a screen seems to need one, fix
-  the hierarchy instead.
+- **Don't** introduce a second field colour. The spot blue is the whole palette;
+  the spot red is "stop" only. If a screen seems to need another colour, fix the
+  hierarchy instead. (The semantic status roles — success/warning/info — are not
+  accents: they are muted, icon-and-label bound, and used only as chip tints.)
+- **Don't** reach for a raw Tailwind colour (`text-green-500`, `bg-orange-500`).
+  Every colour is a token — `primary`, `destructive`, `success`, `warning`,
+  `info` and their `-surface` / `-border` / `-foreground` pairs. The one
+  sanctioned exception is the `red-500` favourite heart (see The Favorite-Heart
+  Exception).
+- **Don't** hardcode a colour in canvas code as `hsl(var(--token))` — the tokens
+  are `oklch()`. Read them with `getComputedStyle` and blend alpha with
+  `color-mix(in oklab, …)`, as `beat-visualizer` and `waveform-visualizer` do.
 - **Don't** use hard, crisp, or directional drop shadows. Every shadow is
   diffuse and ≤18% opacity.
 - **Don't** add a second typeface for emphasis — use weight (400/500/600/700)

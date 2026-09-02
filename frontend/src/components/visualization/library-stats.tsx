@@ -183,7 +183,7 @@ export const LibraryStats: React.FC<LibraryStatsProps> = ({
   return (
     <div className="space-y-6">
       {scanStatus === 'SCANNING' && (
-        <div className="flex items-center gap-1.5 text-sm font-medium text-primary">
+        <div className="flex w-fit items-center gap-1.5 rounded-full border border-info-border bg-info-surface px-2.5 py-1 text-sm font-medium text-info-foreground">
           <Loader className="h-4 w-4 animate-spin" />
           Scanning… {processedFiles}/{totalFiles} processed
         </div>

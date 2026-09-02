@@ -15,7 +15,9 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
+    "prebuild": "node scripts/theme-check.mjs",
     "preview": "vite preview",
+    "theme:check": "node scripts/theme-check.mjs",
     "lint": "oxlint",
     "lint:fix": "oxlint --fix",
     "fmt": "oxfmt",

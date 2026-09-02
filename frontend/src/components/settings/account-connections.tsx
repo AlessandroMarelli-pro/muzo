@@ -7,7 +7,7 @@ import {
   useTidalAuth,
   useYouTubeAuth,
 } from '@/services/playlist-hooks';
-import { Music, Youtube } from 'lucide-react';
+import { CheckCircle2, CircleDashed, Music, Youtube } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
@@ -156,7 +156,12 @@ export function AccountConnections() {
               <div className="flex items-center gap-3">
                 <Icon className="h-5 w-5" />
                 <span className="font-medium">{label}</span>
-                <Badge variant={connected ? 'default' : 'outline'}>
+                <Badge variant={connected ? 'success' : 'outline'} className="gap-1">
+                  {connected ? (
+                    <CheckCircle2 className="h-3 w-3" aria-hidden />
+                  ) : (
+                    <CircleDashed className="h-3 w-3" aria-hidden />
+                  )}
                   {connected ? 'Connected' : 'Not connected'}
                 </Badge>
               </div>

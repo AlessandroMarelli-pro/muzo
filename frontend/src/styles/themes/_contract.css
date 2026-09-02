@@ -1,0 +1,71 @@
+/**
+ * THEME CONTRACT
+ * ─────────────────────────────────────────────────────────────────────────────
+ * The full list of colour tokens every theme file under `themes/` must define,
+ * once for light (`:root`) and once for dark (`.dark`). Structural tokens
+ * (fonts, radius, shadows, spacing, z-index) do NOT live in theme files — they
+ * stay in `index.css` and are shared across every palette.
+ *
+ * `npm run theme:check` parses this file and every `themes/<name>.css`, and
+ * fails the build if a theme is missing a token listed here or defines a colour
+ * token that isn't. Keep this list and the checker as the single source of
+ * truth for "what a complete theme looks like".
+ *
+ * To add a new palette:
+ *   1. copy an existing theme file (periwinkle.css is the reference)
+ *   2. rewrite its primitive ramp (the `--<name>-*` values at the top)
+ *   3. leave the semantic mappings alone unless the palette needs a different
+ *      relationship — they already point at the primitives
+ *   4. run `npm run theme:check`, then switch the `@import` in index.css
+ *
+ * This file is documentation + checker input. It is imported nowhere.
+ */
+
+/* ── surfaces ─────────────────────────────────────────────────────────────── */
+/* --background            page ground
+   --foreground            primary text on the ground
+   --card                  one tonal step off the ground: cards, sidebar, secondary
+   --card-foreground       primary text on a card
+   --popover               transient UI lifted forward (menus, dialogs)
+   --popover-foreground    text on a popover
+   --muted                 recessive fill (equals background in the current system)
+   --muted-foreground      secondary text, captions, descriptions
+   --accent                hover-fill surface for ghost/outline controls
+   --accent-foreground     text on --accent
+   --secondary             secondary button / chip fill (equals card)
+   --secondary-foreground  text on --secondary
+   --border                near-invisible hairline, applied globally
+   --input                 form field border */
+
+/* ── action ───────────────────────────────────────────────────────────────── */
+/* --primary               the one accent: primary button, active path, selection
+   --primary-foreground    text/icon on --primary
+   --ring                  focus ring (usually equals --primary) */
+
+/* ── semantic status ──────────────────────────────────────────────────────── */
+/* --destructive           delete + error
+   --destructive-foreground
+   --success  --success-foreground  --success-surface  --success-border
+   --warning  --warning-foreground  --warning-surface  --warning-border
+   --warning-ink           fixed dark text on the solid --warning fill (no flip)
+   --info     --info-foreground     --info-surface     --info-border */
+
+/* ── data viz ─────────────────────────────────────────────────────────────── */
+/* --chart-1 … --chart-5   recommendation ramp, dark→light */
+
+/* ── sidebar / nav rail ───────────────────────────────────────────────────── */
+/* --sidebar               rail surface
+   --sidebar-foreground    idle icon colour
+   --sidebar-primary       the 3px active tick at the rail edge
+   --sidebar-primary-foreground
+   --sidebar-accent        hover-fill on a nav cell
+   --sidebar-accent-foreground
+   --sidebar-border        faintly-visible divider (one step off --sidebar)
+   --sidebar-ring          focus ring inside the rail
+   --sidebar-active        active nav cell fill
+   --sidebar-active-foreground   icon on the active cell */
+
+/* ── player waveform (canvas-drawn, read via getComputedStyle) ─────────────── */
+/* --wave-played           played portion of the waveform
+   --wave-unplayed         unplayed portion
+   --wave-grid             centre line / grid */

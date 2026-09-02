@@ -18,8 +18,10 @@ import {
   BarChart3,
   Loader,
   MoreHorizontal,
+  PauseCircle,
   Play,
   RefreshCw,
+  Sparkles,
   Trash,
 } from 'lucide-react';
 import React from 'react';
@@ -43,13 +45,12 @@ interface LibraryCardProps {
 const getScanStatusColor = (status: LibraryScanStatus) => {
   switch (status) {
     case 'SCANNING':
-      return 'bg-primary/10 text-primary';
     case 'ANALYZING':
-      return 'bg-chart-3/15 text-chart-3';
+      return 'border-info-border bg-info-surface text-info-foreground';
     case 'ERROR':
-      return 'bg-destructive/10 text-destructive';
+      return 'border-transparent bg-destructive/10 text-destructive';
     case 'PAUSED':
-      return 'bg-muted text-muted-foreground';
+      return 'border-warning-border bg-warning-surface text-warning-foreground';
     default:
       return 'bg-muted text-muted-foreground';
   }
@@ -172,6 +173,11 @@ export const LibraryCard: React.FC<LibraryCardProps> = ({
             {scanStatus !== 'IDLE' && (
               <Badge className={cn('gap-1 text-xs capitalize', getScanStatusColor(scanStatus))}>
                 {isScanning && <Loader className="h-3 w-3 animate-spin" aria-hidden />}
+                {scanStatus === 'ANALYZING' && !isScanning && (
+                  <Sparkles className="h-3 w-3" aria-hidden />
+                )}
+                {scanStatus === 'PAUSED' && <PauseCircle className="h-3 w-3" aria-hidden />}
+                {scanStatus === 'ERROR' && <AlertTriangle className="h-3 w-3" aria-hidden />}
                 {scanStatus.toLowerCase()}
               </Badge>
             )}

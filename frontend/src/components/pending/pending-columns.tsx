@@ -224,7 +224,7 @@ export function buildPendingColumns({
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 text-muted-foreground hover:text-orange-500"
+              className="h-8 w-8 text-muted-foreground hover:text-warning"
               onClick={() => onRate(track.id, 'banger')}
               disabled={isRating}
               aria-label={`Mark ${track.title} as banger`}

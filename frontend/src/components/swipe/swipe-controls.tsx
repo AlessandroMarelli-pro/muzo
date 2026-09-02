@@ -36,7 +36,7 @@ export function SwipeControls({
         size="icon"
         variant="default"
         className={cn(
-          'border-none text-white bg-orange-500 hover:bg-orange-500/80',
+          'border-none bg-warning text-warning-ink hover:bg-warning/85',
           disabled && 'opacity-50 cursor-not-allowed',
         )}
         onClick={onBanger}

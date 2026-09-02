@@ -50,11 +50,27 @@ export function BeatVisualizer({
 
     const { width, height: canvasHeight } = canvas;
 
+    // Resolve theme tokens to real colour values. The tokens are oklch(), so
+    // they can't be interpolated inside an hsl() string — read the computed
+    // value and blend alpha with color-mix instead.
+    const cs = getComputedStyle(canvas);
+    const tok = (name: string) => cs.getPropertyValue(name).trim();
+    const fade = (color: string, pct: number) =>
+      `color-mix(in oklab, ${color} ${Math.round(pct * 100)}%, transparent)`;
+    const c = {
+      muted: tok('--muted') || '#efe9db',
+      mutedFg: tok('--muted-foreground') || '#6b6456',
+      primary: tok('--primary') || '#1c4a8f',
+      accent: tok('--wave-played') || tok('--primary') || '#1c4a8f',
+      destructive: tok('--destructive') || '#c8402e',
+      foreground: tok('--foreground') || '#2b2924',
+    };
+
     // Clear canvas
     ctx.clearRect(0, 0, width, canvasHeight);
 
     // Draw background
-    ctx.fillStyle = 'hsl(var(--muted))';
+    ctx.fillStyle = c.muted;
     ctx.fillRect(0, 0, width, canvasHeight);
 
     // Find current beat (unused for now but available for future features)
@@ -74,18 +90,18 @@ export function BeatVisualizer({
       const isCurrent = Math.abs(timeAtPosition - currentTime) < 1;
       const isPast = timeAtPosition < currentTime;
 
-      let color = 'hsl(var(--muted-foreground) / 0.3)';
+      let color = fade(c.mutedFg, 0.3);
 
       if (isCurrent) {
         // Pulsing effect for current energy
         const pulse = Math.sin(animationTime * 10) * 0.3 + 0.7;
-        color = `hsl(var(--primary) / ${pulse})`;
+        color = fade(c.primary, pulse);
       } else if (isPast) {
-        color = 'hsl(var(--primary) / 0.6)';
+        color = fade(c.primary, 0.6);
       } else if (energy.energy > 0.7) {
-        color = 'hsl(var(--accent) / 0.8)';
+        color = fade(c.accent, 0.8);
       } else if (energy.energy > 0.4) {
-        color = 'hsl(var(--accent) / 0.5)';
+        color = fade(c.accent, 0.5);
       }
 
       ctx.fillStyle = color;
@@ -101,20 +117,20 @@ export function BeatVisualizer({
       if (isCurrent) {
         // Highlight current beat with pulsing effect
         const pulse = Math.sin(animationTime * 15) * 0.5 + 0.5;
-        ctx.fillStyle = `hsl(var(--destructive) / ${pulse})`;
+        ctx.fillStyle = fade(c.destructive, pulse);
         ctx.fillRect(beatX - 2, 0, 4, canvasHeight);
       } else if (isPast) {
-        ctx.fillStyle = 'hsl(var(--destructive) / 0.6)';
+        ctx.fillStyle = fade(c.destructive, 0.6);
         ctx.fillRect(beatX - 1, 0, 2, canvasHeight);
       } else {
-        ctx.fillStyle = 'hsl(var(--destructive) / 0.3)';
+        ctx.fillStyle = fade(c.destructive, 0.3);
         ctx.fillRect(beatX - 1, canvasHeight * 0.2, 2, canvasHeight * 0.6);
       }
     });
 
     // Draw current time indicator
     const currentX = (currentTime / duration) * width;
-    ctx.strokeStyle = 'hsl(var(--foreground))';
+    ctx.strokeStyle = c.foreground;
     ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.moveTo(currentX, 0);

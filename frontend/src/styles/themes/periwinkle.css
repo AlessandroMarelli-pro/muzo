@@ -1,0 +1,165 @@
+/**
+ * THEME: Periwinkle  (the original Shadcn "New York" world)
+ * ─────────────────────────────────────────────────────────────────────────────
+ * Kept as the escape hatch / rollback. To restore it, change the theme import
+ * in `index.css` back to this file. See `_contract.css` for the token list.
+ *
+ * Structure: a primitive ramp first (`--pw-*`), then semantic tokens that
+ * reference it. Recolouring is mostly a matter of rewriting the ramp.
+ */
+
+:root {
+  /* ── primitives ────────────────────────────────────────────────────────── */
+  --pw-periwinkle: oklch(0.7205 0.1038 273.6722);
+  --pw-periwinkle-tint: oklch(0.8807 0.0556 273.6722);
+  --pw-periwinkle-ink: oklch(0.3771 0.1178 273.6722);
+  --pw-stage: oklch(0.9918 0.0011 17.1778);
+  --pw-surface: oklch(0.9325 0.0022 17.1973);
+  --pw-white: oklch(1 0 0);
+  --pw-ink: oklch(0.3102 0.0265 244.3187);
+  --pw-ink-soft: oklch(0.4099 0.0228 243.4564);
+  --pw-ink-softer: oklch(0.4864 0.0199 242.7423);
+  --pw-grey: oklch(0.5996 0.0167 251.2515);
+  --pw-divider: oklch(0.8895 0.0035 17.1973);
+  --pw-rose: oklch(0.6823 0.1365 10.3688);
+
+  /* ── surfaces ──────────────────────────────────────────────────────────── */
+  --background: var(--pw-stage);
+  --foreground: var(--pw-ink);
+  --card: var(--pw-surface);
+  --card-foreground: var(--pw-ink);
+  --popover: var(--pw-white);
+  --popover-foreground: var(--pw-ink);
+  --muted: var(--pw-stage);
+  --muted-foreground: var(--pw-grey);
+  --accent: var(--pw-white);
+  --accent-foreground: var(--pw-ink-soft);
+  --secondary: var(--pw-surface);
+  --secondary-foreground: var(--pw-ink-softer);
+  --border: var(--pw-surface);
+  --input: var(--pw-surface);
+
+  /* ── action ────────────────────────────────────────────────────────────── */
+  --primary: var(--pw-periwinkle);
+  --primary-foreground: var(--pw-white);
+  --ring: var(--pw-periwinkle);
+
+  /* ── semantic status ───────────────────────────────────────────────────── */
+  --destructive: var(--pw-rose);
+  --destructive-foreground: var(--pw-white);
+  --success: oklch(0.5854 0.0827 152.5);
+  --success-foreground: oklch(0.3706 0.0611 152.5);
+  --success-surface: oklch(0.9282 0.0286 152.5);
+  --success-border: oklch(0.8623 0.0409 152.5);
+  --warning: oklch(0.6488 0.1157 74.5);
+  --warning-foreground: oklch(0.3924 0.0771 66.5);
+  --warning-surface: oklch(0.9391 0.049 84.5);
+  --warning-border: oklch(0.8676 0.0765 82.5);
+  --warning-ink: oklch(0.28 0.045 66.5);
+  --info: oklch(0.5464 0.1374 276.5018);
+  --info-foreground: var(--pw-periwinkle-ink);
+  --info-surface: oklch(0.9199 0.0389 274.5);
+  --info-border: var(--pw-periwinkle-tint);
+
+  /* ── data viz ──────────────────────────────────────────────────────────── */
+  --chart-1: oklch(0.7205 0.1038 273.6722);
+  --chart-2: oklch(0.6214 0.1372 275.9795);
+  --chart-3: oklch(0.5464 0.1374 276.5018);
+  --chart-4: oklch(0.4647 0.1344 274.8044);
+  --chart-5: oklch(0.4202 0.0982 274.837);
+
+  /* ── sidebar ───────────────────────────────────────────────────────────── */
+  --sidebar: var(--pw-surface);
+  --sidebar-foreground: var(--pw-ink);
+  --sidebar-primary: var(--pw-periwinkle);
+  --sidebar-primary-foreground: var(--pw-white);
+  --sidebar-accent: var(--pw-white);
+  --sidebar-accent-foreground: var(--pw-ink-soft);
+  --sidebar-border: var(--pw-divider);
+  --sidebar-ring: var(--pw-periwinkle);
+  --sidebar-active: var(--pw-periwinkle-tint);
+  --sidebar-active-foreground: var(--pw-periwinkle-ink);
+
+  /* ── player waveform ───────────────────────────────────────────────────── */
+  --wave-played: var(--pw-periwinkle);
+  --wave-unplayed: oklch(0.8654 0.0187 273.6722);
+  --wave-grid: oklch(0.7205 0.1038 273.6722 / 0.16);
+}
+
+.dark {
+  /* ── primitives ────────────────────────────────────────────────────────── */
+  --pw-periwinkle: oklch(0.811 0.0692 269.2988);
+  --pw-periwinkle-tint: oklch(0.3862 0.0507 273.6722);
+  --pw-periwinkle-ink: oklch(0.9137 0.0451 269.2988);
+  --pw-stage: oklch(0.18 0 0);
+  --pw-surface: oklch(0.293 0.0061 34.2971);
+  --pw-charcoal: oklch(0.3557 0.0065 48.5318);
+  --pw-white: oklch(1 0 0);
+  --pw-ink: oklch(1 0 0);
+  --pw-ink-soft: oklch(0.9418 0.0025 228.7853);
+  --pw-grey: oklch(0.7733 0.0109 247.9677);
+  --pw-divider: oklch(0.4213 0.0065 48.5318);
+  --pw-rose: oklch(0.6823 0.1365 10.3688);
+
+  /* ── surfaces ──────────────────────────────────────────────────────────── */
+  --background: var(--pw-stage);
+  --foreground: var(--pw-ink);
+  --card: var(--pw-surface);
+  --card-foreground: var(--pw-ink);
+  --popover: var(--pw-surface);
+  --popover-foreground: var(--pw-ink);
+  --muted: oklch(0.2376 0.006 56.087);
+  --muted-foreground: var(--pw-grey);
+  --accent: oklch(0.4123 0.0063 48.5674);
+  --accent-foreground: var(--pw-ink-soft);
+  --secondary: var(--pw-charcoal);
+  --secondary-foreground: var(--pw-ink-soft);
+  --border: var(--pw-charcoal);
+  --input: var(--pw-charcoal);
+
+  /* ── action ────────────────────────────────────────────────────────────── */
+  --primary: var(--pw-periwinkle);
+  --primary-foreground: var(--pw-stage);
+  --ring: var(--pw-periwinkle);
+
+  /* ── semantic status ───────────────────────────────────────────────────── */
+  --destructive: var(--pw-rose);
+  --destructive-foreground: var(--pw-stage);
+  --success: oklch(0.7654 0.1123 154.5);
+  --success-foreground: oklch(0.9139 0.0537 154.5);
+  --success-surface: oklch(0.3348 0.0509 154.5);
+  --success-border: oklch(0.4213 0.0627 154.5);
+  --warning: oklch(0.8161 0.1198 82.5);
+  --warning-foreground: oklch(0.9226 0.0653 84.5);
+  --warning-surface: oklch(0.3495 0.0627 74.5);
+  --warning-border: oklch(0.4387 0.0765 76.5);
+  --warning-ink: oklch(0.28 0.045 66.5);
+  --info: var(--pw-periwinkle);
+  --info-foreground: var(--pw-periwinkle-ink);
+  --info-surface: var(--pw-periwinkle-tint);
+  --info-border: oklch(0.4623 0.0627 273.6722);
+
+  /* ── data viz ──────────────────────────────────────────────────────────── */
+  --chart-1: oklch(0.811 0.0692 269.2988);
+  --chart-2: oklch(0.7205 0.1038 273.6722);
+  --chart-3: oklch(0.6214 0.1372 275.9795);
+  --chart-4: oklch(0.5464 0.1374 276.5018);
+  --chart-5: oklch(0.4647 0.1344 274.8044);
+
+  /* ── sidebar ───────────────────────────────────────────────────────────── */
+  --sidebar: var(--pw-charcoal);
+  --sidebar-foreground: var(--pw-ink);
+  --sidebar-primary: var(--pw-periwinkle);
+  --sidebar-primary-foreground: var(--pw-stage);
+  --sidebar-accent: oklch(0.4123 0.0063 48.5674);
+  --sidebar-accent-foreground: var(--pw-ink-soft);
+  --sidebar-border: var(--pw-divider);
+  --sidebar-ring: var(--pw-periwinkle);
+  --sidebar-active: var(--pw-periwinkle-tint);
+  --sidebar-active-foreground: var(--pw-periwinkle-ink);
+
+  /* ── player waveform ───────────────────────────────────────────────────── */
+  --wave-played: var(--pw-periwinkle);
+  --wave-unplayed: oklch(0.4213 0.0187 273.6722);
+  --wave-grid: oklch(0.811 0.0692 269.2988 / 0.18);
+}

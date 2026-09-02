@@ -1,0 +1,195 @@
+/**
+ * THEME: Vinyl Sleeve  (active)
+ * ─────────────────────────────────────────────────────────────────────────────
+ * The printed record jacket: uncoated stock, spot-colour ink, flat confident
+ * fields. One deep spot blue used as an AREA (active nav block, primary
+ * buttons, chart series) rather than a scattered accent; one spot red for
+ * delete and error. Warm-grey paper ground, charcoal ink. See DESIGN.md.
+ *
+ * Structure: primitive ramp first (`--vs-*`), then semantic tokens that
+ * reference it. To adjust the accent strength, edit `--vs-blue*` in one place.
+ * See `_contract.css` for the required token list; `npm run theme:check`
+ * verifies completeness.
+ */
+
+:root {
+  /* ── primitives ────────────────────────────────────────────────────────── */
+  /* spot blue — the one committed colour, used as a field */
+  --vs-blue: oklch(0.4179 0.1249 258.70);          /* #1c4a8f */
+  --vs-blue-deep: oklch(0.3205 0.0885 257.60);     /* #12325f */
+  --vs-blue-mid: oklch(0.5298 0.1204 256.66);      /* #3a6cb0 */
+  --vs-blue-soft: oklch(0.6651 0.0976 255.76);     /* #6b96cf */
+  --vs-blue-pale: oklch(0.8006 0.0596 252.49);     /* #a3c1e4 */
+  --vs-blue-wash: oklch(0.9156 0.0190 255.54);     /* #dbe4f0 tint on stock */
+  --vs-on-blue: oklch(0.9696 0.0086 264.52);       /* #f2f5fb text on blue */
+
+  /* stock / paper ── the warm-grey ground, deliberately not cream */
+  --vs-stock: oklch(0.9555 0.0140 88.68);          /* #f4f0e6 */
+  --vs-sleeve: oklch(0.9162 0.0223 89.80);         /* #e9e3d3 inner sleeve */
+  --vs-sleeve-2: oklch(0.8832 0.0282 88.76);       /* #e0d8c4 one step darker */
+  --vs-popover: oklch(0.9765 0.0098 87.47);        /* #faf7f0 lifted */
+  --vs-hairline: oklch(0.8744 0.0312 88.38);       /* #ded5bf */
+  --vs-rule: oklch(0.8376 0.0343 88.07);           /* #d3c9b1 visible divider */
+
+  /* ink */
+  --vs-ink: oklch(0.2813 0.0094 88.77);            /* #2b2924 */
+  --vs-ink-soft: oklch(0.3919 0.0192 86.46);       /* #4a453a */
+  --vs-warmgrey: oklch(0.5055 0.0232 84.57);       /* #6b6456 secondary text */
+
+  /* spot red — delete + error only */
+  --vs-red: oklch(0.5648 0.1755 30.69);            /* #c8402e */
+  --vs-on-red: oklch(0.9700 0.0130 40);
+
+  /* ── surfaces ──────────────────────────────────────────────────────────── */
+  --background: var(--vs-stock);
+  --foreground: var(--vs-ink);
+  --card: var(--vs-sleeve);
+  --card-foreground: var(--vs-ink);
+  --popover: var(--vs-popover);
+  --popover-foreground: var(--vs-ink);
+  --muted: oklch(0.9349 0.0197 87.52);             /* #efe9db */
+  --muted-foreground: var(--vs-warmgrey);
+  --accent: oklch(0.9043 0.0253 89.22);            /* #e6dfcd hover fill */
+  --accent-foreground: var(--vs-ink-soft);
+  --secondary: var(--vs-sleeve-2);
+  --secondary-foreground: var(--vs-ink-soft);
+  --border: var(--vs-hairline);
+  --input: var(--vs-rule);
+
+  /* ── action ────────────────────────────────────────────────────────────── */
+  --primary: var(--vs-blue);
+  --primary-foreground: var(--vs-on-blue);
+  --ring: var(--vs-blue);
+
+  /* ── semantic status ───────────────────────────────────────────────────── */
+  --destructive: var(--vs-red);
+  --destructive-foreground: var(--vs-on-red);
+  --success: oklch(0.4661 0.0742 129.78);
+  --success-foreground: oklch(0.4661 0.0742 129.78);
+  --success-surface: oklch(0.9119 0.0322 124.50);
+  --success-border: oklch(0.8410 0.0519 123.26);
+  --warning: oklch(0.6488 0.1157 74.5);
+  --warning-foreground: oklch(0.4817 0.0858 77.10);
+  --warning-surface: oklch(0.9153 0.0473 88.30);
+  --warning-border: oklch(0.8357 0.0724 87.70);
+  --warning-ink: oklch(0.28 0.045 66.5);
+  /* info shares the spot blue held to a wash — an in-progress state reads as
+     related to the primary without spending the full-strength field */
+  --info: var(--vs-blue);
+  --info-foreground: var(--vs-blue);
+  --info-surface: var(--vs-blue-wash);
+  --info-border: oklch(0.8413 0.0412 254.06);
+
+  /* ── data viz ── blue mono ramp, dark→light ────────────────────────────── */
+  --chart-1: var(--vs-blue-deep);
+  --chart-2: var(--vs-blue);
+  --chart-3: var(--vs-blue-mid);
+  --chart-4: var(--vs-blue-soft);
+  --chart-5: var(--vs-blue-pale);
+
+  /* ── sidebar ──────────────────────────────────────────────────────────── */
+  --sidebar: var(--vs-sleeve);
+  --sidebar-foreground: var(--vs-warmgrey);
+  --sidebar-primary: var(--vs-blue);
+  --sidebar-primary-foreground: var(--vs-on-blue);
+  --sidebar-accent: oklch(0.9043 0.0253 89.22);
+  --sidebar-accent-foreground: var(--vs-ink-soft);
+  --sidebar-border: var(--vs-rule);
+  --sidebar-ring: var(--vs-blue);
+  /* the active nav cell is a solid blue field — an ink block on the sleeve */
+  --sidebar-active: var(--vs-blue);
+  --sidebar-active-foreground: var(--vs-on-blue);
+
+  /* ── player waveform ───────────────────────────────────────────────────── */
+  --wave-played: var(--vs-blue);
+  --wave-unplayed: oklch(0.8062 0.0359 88.80);     /* #c9bfa6 */
+  --wave-grid: oklch(0.4179 0.1249 258.70 / 0.16);
+}
+
+.dark {
+  /* ── primitives ── press-room black; the blue brightens to hold on dark ── */
+  --vs-blue: oklch(0.6437 0.1182 255.94);          /* #5b8fd4 */
+  --vs-blue-deep: oklch(0.3980 0.0833 255.20);
+  --vs-blue-mid: oklch(0.5825 0.1184 256.51);
+  --vs-blue-soft: oklch(0.6651 0.0976 255.76);
+  --vs-blue-pale: oklch(0.8006 0.0596 252.49);
+  --vs-blue-wash: oklch(0.3072 0.0382 259.41);
+  --vs-on-blue: oklch(0.2168 0.0396 258.28);       /* #0e1a2c ink on blue */
+
+  --vs-stock: oklch(0.2363 0.0120 84.56);          /* #211e18 */
+  --vs-sleeve: oklch(0.2744 0.0154 84.54);         /* #2b271f */
+  --vs-sleeve-2: oklch(0.3032 0.0187 84.52);
+  --vs-popover: oklch(0.2744 0.0154 84.54);
+  --vs-hairline: oklch(0.3032 0.0187 84.52);       /* #332e24 */
+  --vs-rule: oklch(0.3032 0.0187 84.52);
+
+  --vs-ink: oklch(0.9316 0.0169 88.00);            /* #ede8dc */
+  --vs-ink-soft: oklch(0.8647 0.0201 87.52);       /* #d8d2c4 */
+  --vs-warmgrey: oklch(0.6575 0.0260 79.67);       /* #9a9080 */
+
+  --vs-red: oklch(0.5648 0.1755 30.69);
+  --vs-on-red: oklch(0.9700 0.0130 40);
+
+  /* ── surfaces ──────────────────────────────────────────────────────────── */
+  --background: var(--vs-stock);
+  --foreground: var(--vs-ink);
+  --card: var(--vs-sleeve);
+  --card-foreground: var(--vs-ink);
+  --popover: var(--vs-popover);
+  --popover-foreground: var(--vs-ink);
+  --muted: oklch(0.2234 0.0121 84.55);             /* #1e1b15 */
+  --muted-foreground: var(--vs-warmgrey);
+  --accent: oklch(0.3306 0.0199 86.44);            /* #3a352a */
+  --accent-foreground: var(--vs-ink-soft);
+  --secondary: var(--vs-sleeve-2);
+  --secondary-foreground: var(--vs-ink-soft);
+  --border: var(--vs-hairline);
+  --input: var(--vs-rule);
+
+  /* ── action ────────────────────────────────────────────────────────────── */
+  --primary: var(--vs-blue);
+  --primary-foreground: var(--vs-on-blue);
+  --ring: var(--vs-blue);
+
+  /* ── semantic status ───────────────────────────────────────────────────── */
+  --destructive: var(--vs-red);
+  --destructive-foreground: var(--vs-on-red);
+  --success: oklch(0.8097 0.0967 134.17);
+  --success-foreground: oklch(0.8097 0.0967 134.17);
+  --success-surface: oklch(0.3291 0.0417 134.60);
+  --success-border: oklch(0.4036 0.0532 133.48);
+  --warning: oklch(0.8161 0.1198 82.5);
+  --warning-foreground: oklch(0.8261 0.0838 81.20);
+  --warning-surface: oklch(0.3451 0.0382 78.97);
+  --warning-border: oklch(0.4141 0.0433 79.87);
+  --warning-ink: oklch(0.28 0.045 66.5);
+  --info: var(--vs-blue);
+  --info-foreground: oklch(0.8502 0.0488 255.13);
+  --info-surface: var(--vs-blue-wash);
+  --info-border: oklch(0.3913 0.0467 252.44);
+
+  /* ── data viz ──────────────────────────────────────────────────────────── */
+  --chart-1: var(--vs-blue-pale);
+  --chart-2: var(--vs-blue-soft);
+  --chart-3: var(--vs-blue-mid);
+  --chart-4: var(--vs-blue-deep);
+  --chart-5: oklch(0.3205 0.0885 257.60);
+
+  /* ── sidebar ──────────────────────────────────────────────────────────── */
+  --sidebar: oklch(0.2179 0.0117 91.77);           /* #1c1a14 */
+  --sidebar-foreground: var(--vs-warmgrey);
+  --sidebar-primary: var(--vs-blue);
+  --sidebar-primary-foreground: var(--vs-on-blue);
+  --sidebar-accent: oklch(0.3306 0.0199 86.44);
+  --sidebar-accent-foreground: var(--vs-ink-soft);
+  --sidebar-border: var(--vs-rule);
+  --sidebar-ring: var(--vs-blue);
+  /* solid blue field, still — the dark blue is bright enough to carry ink */
+  --sidebar-active: oklch(0.3896 0.0806 254.28);   /* #24466f deeper for dark */
+  --sidebar-active-foreground: oklch(0.8502 0.0488 255.13);
+
+  /* ── player waveform ───────────────────────────────────────────────────── */
+  --wave-played: var(--vs-blue);
+  --wave-unplayed: oklch(0.3275 0.0219 84.49);     /* #3a3428 */
+  --wave-grid: oklch(0.6437 0.1182 255.94 / 0.18);
+}
