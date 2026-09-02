@@ -1,3 +1,5 @@
+import { motion, useReducedMotion } from 'motion/react';
+
 import { RailLabel } from '@/components/layout/rail-label';
 import { apiUrl } from '@/lib/api-config';
 import { cn } from '@/lib/utils';
@@ -54,6 +56,7 @@ function CrateCover({ name, images }: { name: string; images: string[] }) {
  * Clicking a cover opens that crate.
  */
 export function CrateStrip() {
+  const reduceMotion = useReducedMotion();
   const { data: playlists = [] } = useQuery({
     ...playlistsQueryOptions(),
     staleTime: 60_000,
@@ -69,16 +72,33 @@ export function CrateStrip() {
         '[mask-image:linear-gradient(to_bottom,transparent,black_16px,black_calc(100%-16px),transparent)]',
       )}
     >
-      {playlists.map((playlist) => (
+      {playlists.map((playlist, i) => (
         <RailLabel key={playlist.id} label={playlist.name}>
-          <Link
-            to="/playlists/$playlistId"
-            params={{ playlistId: playlist.id }}
-            aria-label={playlist.name}
-            className="shrink-0 rounded-lg outline-none ring-sidebar-ring ring-offset-2 ring-offset-sidebar transition-transform duration-150 hover:scale-105 focus-visible:ring-2"
+          <motion.div
+            initial={reduceMotion ? false : { opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={
+              reduceMotion
+                ? { duration: 0 }
+                : {
+                    // A short filed-into-place sequence, capped so a long crate
+                    // list never trails.
+                    delay: Math.min(i * 0.035, 0.4),
+                    duration: 0.32,
+                    ease: [0.16, 1, 0.3, 1],
+                  }
+            }
+            className="shrink-0"
           >
-            <CrateCover name={playlist.name} images={playlist.stats?.images ?? []} />
-          </Link>
+            <Link
+              to="/playlists/$playlistId"
+              params={{ playlistId: playlist.id }}
+              aria-label={playlist.name}
+              className="block rounded-lg outline-none ring-sidebar-ring ring-offset-2 ring-offset-sidebar transition-transform duration-150 ease-[cubic-bezier(0.16,1,0.3,1)] hover:scale-105 focus-visible:ring-2 active:scale-95 motion-reduce:transform-none"
+            >
+              <CrateCover name={playlist.name} images={playlist.stats?.images ?? []} />
+            </Link>
+          </motion.div>
         </RailLabel>
       ))}
     </div>

@@ -29,9 +29,9 @@ export function AppSidebar({
           <Link
             to="/"
             aria-label="Muzo — home"
-            className="flex size-10 items-center justify-center rounded-xl bg-sidebar-primary text-sidebar-primary-foreground shadow-xs outline-none ring-sidebar-ring ring-offset-2 ring-offset-sidebar transition-transform duration-150 hover:scale-105 focus-visible:ring-2"
+            className="group/disc flex size-10 items-center justify-center rounded-xl bg-sidebar-primary text-sidebar-primary-foreground shadow-xs outline-none ring-sidebar-ring ring-offset-2 ring-offset-sidebar transition-transform duration-150 ease-[cubic-bezier(0.16,1,0.3,1)] hover:scale-105 focus-visible:ring-2 active:scale-95 motion-reduce:transform-none"
           >
-            <Disc3 className="size-[1.15rem]" />
+            <Disc3 className="size-[1.15rem] transition-transform duration-500 ease-out group-hover/disc:rotate-180 motion-reduce:transform-none" />
           </Link>
         </RailLabel>
       </SidebarHeader>

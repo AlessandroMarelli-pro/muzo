@@ -42,7 +42,7 @@ export function NavUser({
     <DropdownMenu>
       <DropdownMenuTrigger
         aria-label="Account menu"
-        className="rounded-full outline-none ring-sidebar-ring ring-offset-2 ring-offset-sidebar transition-transform duration-150 hover:scale-105 focus-visible:ring-2 data-[state=open]:scale-105"
+        className="rounded-full outline-none ring-sidebar-ring ring-offset-2 ring-offset-sidebar transition-transform duration-150 ease-[cubic-bezier(0.16,1,0.3,1)] hover:scale-105 focus-visible:ring-2 active:scale-95 data-[state=open]:scale-105 motion-reduce:transform-none"
       >
         <Avatar className="size-9">
           <AvatarFallback className="bg-sidebar-primary text-xs font-semibold text-sidebar-primary-foreground">
