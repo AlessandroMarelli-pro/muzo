@@ -61,6 +61,23 @@ class GeminiMetadataExtractor(BaseMetadataExtractor):
         "",
         '2. If a filename only contains a title (no artist), use "Unknown Artist - Filename Title" format',
         "",
+        "2b. A leading single letter A-F, optionally followed by one digit "
+        '("A", "B", "A1", "B2", "A2"), is a VINYL SIDE MARKER, not an artist. Drop it.',
+        '   - "A - Circulation - Purple (Mix 1)" -> "Circulation - Purple (Mix 1)"',
+        '   - "B1 - Mental Generation - Cafe Del Mar (Original Mix)" -> "Mental Generation - Cafe Del Mar (Original Mix)"',
+        '   - "A4 - Hypnotised" -> "Unknown Artist - Hypnotised"',
+        "   - Only that exact shape. Short real artist names are NOT markers:",
+        '     "Sade - Smooth Operator", "Moby - Go", "404 - Der", "7FO - Healing Sword" all keep their artist.',
+        "",
+        "2c. Strip trailing label, catalog, genre and year junk from the title, "
+        "but ALWAYS keep mix/remix credits:",
+        '   - "Up To Date - Shadows (House) [BV3013]" -> "Up To Date - Shadows"',
+        '   - "ABA Structure - Over Unity [2002] {Progressive House}" -> "ABA Structure - Over Unity"',
+        '   - "Kolo - Track One (Steve Porter Remix) |Fade Records| 2000" -> "Kolo - Track One (Steve Porter Remix)"',
+        '   - "Bullitt - Cried To Dream (Amazonian Vocal) 1996, VC Recordings - VCRTDJ 11" -> "Bullitt - Cried To Dream (Amazonian Vocal)"',
+        '   - "Betina Bager & Brian O - Singing In The Rain (Love Baby) [Walther Remix] - 0401" -> "Betina Bager & Brian O - Singing In The Rain (Love Baby) [Walther Remix]"',
+        '   - Keep "(Original Mix)", "(Vocal Mix)", "[Walther Remix]", "(Steve Porter Remix)".',
+        "",
         '3. Format each output as: "Artist - Title" or "Artist - Title (Mix Name)"',
         "   - NEVER return just a title without an artist",
         '   - If artist cannot be determined, use "Unknown Artist"',
@@ -72,6 +89,9 @@ class GeminiMetadataExtractor(BaseMetadataExtractor):
         '- \'Jessie Allen Cooper: "Soft Wave"\' -> "Jessie Allen Cooper - Soft Wave"',
         '- "Artist: Title" -> "Artist - Title"',
         '- "Song Title.mp3" (no ID3 tags) -> "Unknown Artist - Song Title"',
+        '- "A - Circulation - Purple (Mix 1)" -> "Circulation - Purple (Mix 1)"',
+        '- "Full Proof // Nasty Habit (Enrico & Ton TB Remix)" -> "Full Proof - Nasty Habit (Enrico & Ton TB Remix)"',
+        '- "Nino - El Ritmo Del Tambor (Vocal Mix)(2002)" -> "Nino - El Ritmo Del Tambor (Vocal Mix)"',
     ]
 
     def __init__(self, api_key: Optional[str] = None):
@@ -194,7 +214,10 @@ Remove:
 - Country tags in brackets like [nigeria], [uk], [us]
 - Years in parentheses like (1979), (1985)
 - Genre/style tags like "soul", "funk", "electronic" when they appear as separate tags
-- Extra metadata, labels, or identifiers
+- Extra metadata, labels, catalog numbers, or identifiers
+- A leading vinyl side marker: a single letter A-F optionally followed by one
+  digit ("A", "B1", "A2"). Only that exact shape -- short real artist names
+  like "Sade", "Moby", "404", "7FO" are NOT markers and must be kept.
 
 Keep:
 - Artist name (normalize case to Title Case)
@@ -207,6 +230,9 @@ Examples:
 - "t-fire - say a prayer [nigeria] soul (1979)" -> "T-Fire - Say A Prayer"
 - "T-Fire - Say A Prayer" -> "T-Fire - Say A Prayer"
 - "artist - title (remix) [2020]" -> "Artist - Title (Remix)"
+- "A - Circulation - Purple (Mix 1)" -> "Circulation - Purple (Mix 1)"
+- "Up To Date - Shadows (House) [BV3013]" -> "Up To Date - Shadows"
+- "Sade - Smooth Operator" -> "Sade - Smooth Operator"
 
 Filename to clean: "{filename}"
 

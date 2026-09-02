@@ -7,7 +7,7 @@ using a real audio file to ensure proper processing and response format.
 
 import json
 import os
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 from src.services.simple_metadata_extractor import SimpleMetadataExtractor
 
@@ -84,3 +84,77 @@ class TestDefaultId3TagsFallback:
         with patch("src.services.simple_metadata_extractor.File", return_value=None):
             SimpleMetadataExtractor().extract_id3_tags("/fake/c.mp3", "Some Song")
         assert SimpleMetadataExtractor.default_id3_tags == pristine
+
+
+class TestSplitCleanedFilename:
+    """_split_cleaned_filename must not promote a vinyl side marker to artist."""
+
+    def _extractor(self):
+        return SimpleMetadataExtractor(filename_parser=None)
+
+    def test_side_marker_is_not_the_artist(self):
+        result = self._extractor()._split_cleaned_filename(
+            "A - Circulation - Purple (Mix 1)"
+        )
+        assert result["artist"] == "Circulation"
+        assert result["title"] == "Purple (Mix 1)"
+
+    def test_side_marker_without_artist_leaves_artist_empty(self):
+        # Must not fall through to the parser, which would restore "A4".
+        result = self._extractor()._split_cleaned_filename("A4 - Hypnotised")
+        assert result["artist"] == ""
+        assert result["title"] == "Hypnotised"
+
+    def test_short_real_artist_is_preserved(self):
+        result = self._extractor()._split_cleaned_filename("Sade - Smooth Operator")
+        assert result["artist"] == "Sade"
+        assert result["title"] == "Smooth Operator"
+
+    def test_trailing_year_still_extracted(self):
+        result = self._extractor()._split_cleaned_filename("Artist - Title (1979)")
+        assert result["title"] == "Title"
+        assert result["year"] == "1979"
+
+    def test_catalog_and_genre_junk_stripped(self):
+        result = self._extractor()._split_cleaned_filename(
+            "Up To Date - Shadows (House) [BV3013]"
+        )
+        assert result["artist"] == "Up To Date"
+        assert result["title"] == "Shadows"
+
+
+class TestYouTubeArtistCorrection:
+    """The YouTube branch overwrote a real ID3 artist with a side marker."""
+
+    def _tags_for(self, tmp_path, title, artist):
+        path = tmp_path / "youtube" / "track.opus"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(b"fake audio")
+
+        audio = MagicMock()
+        audio.__bool__ = lambda self: True
+        audio.info = MagicMock(bitrate=128000)
+
+        extractor = SimpleMetadataExtractor(filename_parser=None)
+        tag_values = {"title": title, "artist": artist, "purl": "https://youtube.com/x"}
+        extractor.safe_get_tag_value = lambda af, key: tag_values.get(key)
+        extractor.safe_string_conversion = lambda v: str(v)
+        extractor.extract_embedded_image = lambda *a, **k: None
+
+        with patch("src.services.simple_metadata_extractor.File", return_value=audio):
+            return extractor.extract_id3_tags(str(path), "track.opus")["id3_tags"]
+
+    def test_side_marker_does_not_replace_the_real_artist(self, tmp_path):
+        tags = self._tags_for(
+            tmp_path, "A - Circulation - Purple (Mix 1)", "SecretSquizza"
+        )
+        assert tags["artist"] == "circulation"
+        assert tags["artist"] != "a"
+        assert tags["title"] == "purple (mix 1)"
+
+    def test_marker_only_title_keeps_existing_artist(self, tmp_path):
+        # "A4 - Hypnotised" has no artist to offer, so the ID3 artist stands
+        # untouched (only the replacement path lowercases).
+        tags = self._tags_for(tmp_path, "A4 - Hypnotised", "Real Artist")
+        assert tags["artist"] == "Real Artist"
+        assert tags["title"] == "hypnotised"

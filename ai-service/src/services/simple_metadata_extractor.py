@@ -14,6 +14,7 @@ from loguru import logger
 from mutagen import File
 from mutagen.mp4 import MP4
 
+from src.services.filename_cleanup import split_artist_title, strip_title_junk
 from src.utils.performance_optimizer import monitor_performance
 
 
@@ -409,30 +410,44 @@ class SimpleMetadataExtractor:
     def _split_cleaned_filename(self, cleaned_filename: str) -> Dict[str, str]:
         """Split an LLM-cleaned filename into {artist, title, year, label}.
 
-        The Gemini filename cleaner is instructed to always emit
-        ``"Artist - Title"`` with a spaced-dash separator (converting ":", en/em
-        dashes, etc.), so we split on the *first* " - " directly. This is
-        deliberately preferred over ``self.filename_parser`` (HybridFilenameParser),
-        whose regex cascade splits on the first bare "-" and mangles names like
+        Delegates to ``split_artist_title``/``strip_title_junk`` in
+        src/services/filename_cleanup.py, which strip vinyl side markers
+        ("A - Circulation - Purple" is Circulation's track, not "A"'s),
+        normalise yt-dlp's filename substitutions, and pull trailing
+        label/catalog/genre/year junk off the title.
+
+        Those helpers split only on *spaced* separators, which is deliberately
+        preferred over ``self.filename_parser`` (HybridFilenameParser), whose
+        regex cascade splits on the first bare "-" and mangles names like
         "Saiko-Pod - Wednesday" into artist="saiko", title="pod - wednesday".
 
-        Falls back to the hybrid/minimal parser only when there is no spaced
-        dash (e.g. the LLM was unavailable and this is a raw filename).
+        Falls back to the hybrid/minimal parser only when there is no separator
+        at all (e.g. the LLM was unavailable and this is a raw filename).
         """
         text = cleaned_filename.strip()
 
-        artist, sep, title = text.partition(" - ")
-        if sep and artist.strip() and title.strip():
-            year = ""
-            m = re.search(r"[\(\[](19|20)\d{2}[\)\]]\s*$", title)
-            if m:
-                year = m.group(0).strip("()[] ")
-                title = title[: m.start()].strip()
+        artist, title = split_artist_title(text)
+        if artist and title:
+            title, year, label = strip_title_junk(title)
             return {
-                "artist": artist.strip(),
-                "title": title.strip(),
+                "artist": artist,
+                "title": title,
                 "year": year,
-                "label": "",
+                "label": label,
+                "subtitle": "",
+            }
+
+        # No artist: either a bare title, or a vinyl side marker with nothing
+        # behind it ("A4 - Hypnotised"). The side marker is already stripped, so
+        # prefer that cleaned title over handing the raw name to the parser --
+        # which would happily promote "A4" back into the artist slot.
+        if title and title != text:
+            title, year, label = strip_title_junk(title)
+            return {
+                "artist": "",
+                "title": title,
+                "year": year,
+                "label": label,
                 "subtitle": "",
             }
 
@@ -747,33 +762,34 @@ class SimpleMetadataExtractor:
             # extract artist from title and use it if it differs from the existing artist
             if is_youtube_download and id3_tags.get("title"):
                 title = id3_tags.get("title", "")
-                # Try to parse "Artist - Title" pattern from title
-                # Common separators: " - ", " – ", " — ", " | "
-                separators = [" - ", " – ", " — ", " | ", " ~ ", " : ", " _ ", " . "]
-                for sep in separators:
-                    if sep in title:
-                        parts = title.split(sep, 1)
-                        if len(parts) == 2:
-                            potential_artist = parts[0].strip()
-                            potential_title = parts[1].strip()
+                # Route through the shared splitter rather than splitting on the
+                # first separator: a vinyl side marker ("A - Circulation - Purple")
+                # would otherwise be promoted to artist, overwriting a real ID3
+                # artist with "a".
+                potential_artist, potential_title = split_artist_title(title)
 
-                            # Only use this if we have a valid artist and title
-                            if potential_artist and potential_title:
-                                current_artist = id3_tags.get("artist", "").strip()
+                if potential_artist and potential_title:
+                    current_artist = id3_tags.get("artist", "").strip()
 
-                                # If artist from title doesn't match current artist,
-                                # prefer the one from title (it's more likely correct)
-                                if potential_artist.lower() != current_artist.lower():
-                                    logger.debug(
-                                        f"YouTube download detected: Title contains artist info. "
-                                        f"Replacing artist '{current_artist}' with '{potential_artist}' from title"
-                                    )
-                                    id3_tags["artist"] = (
-                                        potential_artist.lower().strip()
-                                    )
-                                    id3_tags["title"] = potential_title.lower().strip()
-                                    id3_tags["youtube_artist_corrected"] = True
-                                break
+                    # If artist from title doesn't match current artist,
+                    # prefer the one from title (it's more likely correct)
+                    if potential_artist.lower() != current_artist.lower():
+                        logger.debug(
+                            f"YouTube download detected: Title contains artist info. "
+                            f"Replacing artist '{current_artist}' with '{potential_artist}' from title"
+                        )
+                        id3_tags["artist"] = potential_artist.lower().strip()
+                        id3_tags["title"] = potential_title.lower().strip()
+                        id3_tags["youtube_artist_corrected"] = True
+                elif potential_title and potential_title != title:
+                    # A side marker with no artist behind it ("A4 - Hypnotised").
+                    # Keep the real ID3 artist rather than blanking it, but drop
+                    # the marker from the title.
+                    logger.debug(
+                        f"YouTube download detected: stripped side marker from title "
+                        f"{title!r} -> {potential_title!r}; keeping existing artist"
+                    )
+                    id3_tags["title"] = potential_title.lower().strip()
 
             # LLM-cleaned filename wins: when the caller passed a cleaned
             # "Artist - Title" and it parses to a valid artist + title, it
