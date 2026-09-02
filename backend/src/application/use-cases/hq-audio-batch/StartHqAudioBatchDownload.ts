@@ -16,8 +16,11 @@ function isTrackAlreadyHq(track: { hqAudioPath?: string | null; fileInfo: { file
   return (
     ext === 'flac' ||
     ext === 'wav' ||
+    ext === 'aiff' ||
+    ext === 'aif' ||
     track.technicalInfo?.format?.toLowerCase() === 'flac' ||
-    track.technicalInfo?.format?.toLowerCase() === 'wav'
+    track.technicalInfo?.format?.toLowerCase() === 'wav' ||
+    track.technicalInfo?.format?.toLowerCase() === 'aiff'
   );
 }
 

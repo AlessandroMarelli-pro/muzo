@@ -71,14 +71,18 @@ type SockseekEvent =
 type HqAudioFormat = HqAudioAcquireResult['format'];
 
 /**
- * `--pref-format` only ranks flac/wav/m4a ahead of other formats, it does not exclude
- * them, so sockseek can still hand back an mp3 (or anything else). Only the three formats
- * we actually asked for count as a successful HQ acquisition; anything else is treated as
+ * `--pref-format` only ranks flac/wav/m4a/aiff ahead of other formats, it does not exclude
+ * them, so sockseek can still hand back an mp3 (or anything else). Only the formats we
+ * actually asked for count as a successful HQ acquisition; anything else is treated as
  * "no acceptable match" rather than being mislabeled as flac.
  */
 function resolveHqFormat(extension: string | undefined): HqAudioFormat | null {
   if (extension === 'flac' || extension === 'wav' || extension === 'm4a') {
     return extension;
+  }
+  // sockseek (and Soulseek uploaders) use both ".aif" and ".aiff" for the same format.
+  if (extension === 'aiff' || extension === 'aif') {
+    return 'aiff';
   }
   return null;
 }
@@ -489,7 +493,7 @@ export class SockseekAcquirer implements IHqAudioAcquirer {
         '-p',
         resolvedOutputDir,
         '--pref-format',
-        'flac,wav,m4a',
+        'flac,wav,m4a,aiff',
         '--pref-strict-title',
         '--pref-strict-artist',
         '--search-timeout',
@@ -773,7 +777,7 @@ export class SockseekAcquirer implements IHqAudioAcquirer {
         '-p',
         resolvedOutputDir,
         '--pref-format',
-        'flac,wav,m4a',
+        'flac,wav,m4a,aiff',
         '--pref-strict-title',
         '--pref-strict-artist',
         '--pref-strict-album',

@@ -471,9 +471,9 @@ export class MusicTrackRepository implements IMusicTrackRepository {
       updateData.sampleRate = analysisResult.audio.sample_rate;
     }
 
-    // A file that is itself lossless (flac/wav) already IS the HQ copy —
+    // A file that is itself lossless (flac/wav/aiff) already IS the HQ copy —
     // no need to acquire one separately. Mirrors AcquireHqAudioUseCase's rule.
-    const LOSSLESS_FORMATS = new Set(['flac', 'wav']);
+    const LOSSLESS_FORMATS = new Set(['flac', 'wav', 'aiff', 'aif']);
     const ext = filePath.split('.').pop()?.toLowerCase();
     const probedFormat = analysisResult.audio?.format?.toLowerCase();
     if (

@@ -29,8 +29,11 @@ export class EnhanceHqAudioUseCase {
       !!track.hqAudioPath ||
       ext === 'flac' ||
       ext === 'wav' ||
+      ext === 'aiff' ||
+      ext === 'aif' ||
       track.technicalInfo?.format?.toLowerCase() === 'flac' ||
-      track.technicalInfo?.format?.toLowerCase() === 'wav';
+      track.technicalInfo?.format?.toLowerCase() === 'wav' ||
+      track.technicalInfo?.format?.toLowerCase() === 'aiff';
 
     if (isAlreadyHq) {
       this.logger.info('Skipping enhance: track already HQ', { trackId });

@@ -27,8 +27,11 @@ export class AcquireHqAudioUseCase {
     const isAlreadyHq =
       ext === 'flac' ||
       ext === 'wav' ||
+      ext === 'aiff' ||
+      ext === 'aif' ||
       track.technicalInfo?.format?.toLowerCase() === 'flac' ||
-      track.technicalInfo?.format?.toLowerCase() === 'wav';
+      track.technicalInfo?.format?.toLowerCase() === 'wav' ||
+      track.technicalInfo?.format?.toLowerCase() === 'aiff';
     if (isAlreadyHq) {
       await this.musicTrackRepository.updateOneById(trackId, { hqAudioPath: filePath });
       return;
