@@ -124,6 +124,10 @@ export class SockseekAcquirer implements IHqAudioAcquirer {
     string,
     ChildProcessByStdio<null, Readable, Readable>
   >();
+  // Batches cancelled via cancelBatch() while no process is currently running for them (e.g.
+  // during the delay between retry passes) - checked before starting the next pass so a
+  // cancellation isn't silently lost to timing.
+  private readonly cancelledBatchIds = new Set<string>();
 
   constructor(
     private readonly configService: ConfigService,
@@ -460,7 +464,47 @@ export class SockseekAcquirer implements IHqAudioAcquirer {
     }
   }
 
+  /**
+   * A single failed candidate (e.g. a peer's connection dropping mid-transfer) can end the
+   * whole sockseek run even though the same search moments later would find another (or the
+   * same) candidate and succeed - sockseek only retries a candidate that already failed up
+   * to its own --max-retries, but gives up immediately once every discovered candidate has
+   * been tried once, which is exactly what happens when only one candidate was found.
+   * Retrying the entire acquisition (a fresh search, not just the download) works around
+   * this at the cost of some latency on tracks that are genuinely unavailable.
+   */
+  private static readonly MAX_ACQUIRE_ATTEMPTS = 3;
+  private static readonly ACQUIRE_RETRY_DELAY_MS = 5000;
+
+  private static delay(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
   async acquire(
+    artist: string,
+    title: string,
+    durationSeconds: number,
+    outputDir: string,
+  ): Promise<HqAudioAcquireResult | null> {
+    for (let attempt = 1; attempt <= SockseekAcquirer.MAX_ACQUIRE_ATTEMPTS; attempt++) {
+      const result = await this.acquireOnce(artist, title, durationSeconds, outputDir);
+      if (result) {
+        return result;
+      }
+      if (attempt < SockseekAcquirer.MAX_ACQUIRE_ATTEMPTS) {
+        this.logger.info('sockseek acquisition failed, retrying', {
+          artist,
+          title,
+          attempt,
+          maxAttempts: SockseekAcquirer.MAX_ACQUIRE_ATTEMPTS,
+        });
+        await SockseekAcquirer.delay(SockseekAcquirer.ACQUIRE_RETRY_DELAY_MS);
+      }
+    }
+    return null;
+  }
+
+  private async acquireOnce(
     artist: string,
     title: string,
     durationSeconds: number,
@@ -677,7 +721,68 @@ export class SockseekAcquirer implements IHqAudioAcquirer {
    * log in to Soulseek and bind the listener port, so concurrent processes fight over the
    * same account session and port.
    */
+  /**
+   * Retries only the tracks that failed the previous pass, up to MAX_ACQUIRE_ATTEMPTS total
+   * passes - the same single-candidate-connection-drop problem described above the
+   * single-track retry wrapper applies here too. `onTrackSettled` is invoked at most once
+   * per track across all passes: a track already settled successfully is skipped rather than
+   * re-run, and only the final pass's outcome is reported for tracks still unresolved.
+   */
   async acquireBatch(
+    batchId: string,
+    tracks: SockseekBatchTrackQuery[],
+    outputDir: string,
+    concurrentJobs: number,
+    callbacks: SockseekBatchProgressCallbacks = {},
+  ): Promise<void> {
+    this.cancelledBatchIds.delete(batchId);
+    let remainingTracks = tracks;
+    try {
+      for (let attempt = 1; attempt <= SockseekAcquirer.MAX_ACQUIRE_ATTEMPTS; attempt++) {
+        if (remainingTracks.length === 0 || this.cancelledBatchIds.has(batchId)) {
+          return;
+        }
+
+        const failedKeys = new Set<string>();
+        const isLastAttempt = attempt === SockseekAcquirer.MAX_ACQUIRE_ATTEMPTS;
+        await this.acquireBatchOnce(batchId, remainingTracks, outputDir, concurrentJobs, {
+          onTrackSearchStart: callbacks.onTrackSearchStart,
+          onTrackDownloadStart: callbacks.onTrackDownloadStart,
+          onTrackSettled: (key, outcome) => {
+            // Only 'not-found' is retried: 'succeeded' needs no retry, and 'interrupted'
+            // means the batch was cancelled or timed out, which should not silently trigger
+            // another pass.
+            if (outcome.status !== 'not-found' || isLastAttempt) {
+              callbacks.onTrackSettled?.(key, outcome);
+              return;
+            }
+            // Leave it unreported for now - it'll either succeed on a later pass (reported
+            // then) or fall through to the last attempt's report above.
+            failedKeys.add(key);
+          },
+        });
+
+        if (failedKeys.size === 0 || this.cancelledBatchIds.has(batchId)) {
+          return;
+        }
+
+        remainingTracks = remainingTracks.filter((track) => failedKeys.has(track.key));
+        if (!isLastAttempt) {
+          this.logger.info('sockseek batch acquisition: some tracks failed, retrying', {
+            batchId,
+            failedCount: remainingTracks.length,
+            attempt,
+            maxAttempts: SockseekAcquirer.MAX_ACQUIRE_ATTEMPTS,
+          });
+          await SockseekAcquirer.delay(SockseekAcquirer.ACQUIRE_RETRY_DELAY_MS);
+        }
+      }
+    } finally {
+      this.cancelledBatchIds.delete(batchId);
+    }
+  }
+
+  private async acquireBatchOnce(
     batchId: string,
     tracks: SockseekBatchTrackQuery[],
     outputDir: string,
@@ -1037,8 +1142,12 @@ export class SockseekAcquirer implements IHqAudioAcquirer {
    * process is currently running for the given batchId (already finished or never started).
    */
   cancelBatch(batchId: string): boolean {
+    this.cancelledBatchIds.add(batchId);
     const cmd = this.activeBatchProcesses.get(batchId);
     if (!cmd) {
+      // No process currently running (e.g. between retry passes) - the retry loop checks
+      // cancelledBatchIds before starting its next pass, so this cancellation still takes
+      // effect, just not immediately.
       return false;
     }
     this.logger.info('cancelling sockseek batch', { batchId });
