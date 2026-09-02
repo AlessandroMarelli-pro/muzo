@@ -1,10 +1,10 @@
 import { Playlist } from '@/__generated__/types';
+import { PageHeader, PageShell } from '@/components/layout/page-shell';
 import { Button } from '@/components/ui/button';
+import { SearchInput } from '@/components/ui/search-input';
 import { Route } from '@/routes/playlists.index';
 import { Plus } from 'lucide-react';
 import { useMemo, useState } from 'react';
-import { PageHeader, PageShell } from '@/components/layout/page-shell';
-import { SearchInput } from '@/components/ui/search-input';
 import { CreatePlaylistDialog } from './create-playlist-dialog';
 import { InlinePlaylistCard, InlinePlaylistCardSkeleton } from './inline-playlist-card';
 import { PlaylistCard, PlaylistCardSkeleton } from './playlist-card';
@@ -27,7 +27,7 @@ export const PlaylistListComponent = ({
   onCardClick?: (playlistId: string) => void;
 }) => {
   return (
-    <div className="flex flex-row flex-wrap gap-5 justify-start ">
+    <div className="flex flex-row flex-wrap gap-3 justify-start ">
       {loading ? (
         <>
           {Array.from({ length: 10 }).map((_, index) => (
