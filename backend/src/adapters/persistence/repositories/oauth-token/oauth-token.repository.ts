@@ -5,6 +5,7 @@ import {
   ThirdPartyProvider,
 } from 'src/application/ports/repositories/IOAuthTokenRepository';
 import { PRISMA_SERVICE, PrismaService } from 'src/infrastructure/database/prisma.service';
+import { getCurrentUserId } from 'src/kernel/types';
 
 const PROVIDER_SCOPE: Record<ThirdPartyProvider, string> = {
   youtube: 'youtube',
@@ -18,7 +19,7 @@ export class OAuthTokenRepository implements IOAuthTokenRepository {
   async getToken(userId: string, provider: ThirdPartyProvider): Promise<OAuthTokenRecord | null> {
     const row = await this.prisma.thirdPartyOAuthToken.findUnique({
       where: {
-        createdById_provider: { createdById: userId, provider },
+        createdById_provider: { createdById: getCurrentUserId() || userId, provider },
       },
     });
     if (!row) return null;
@@ -29,12 +30,12 @@ export class OAuthTokenRepository implements IOAuthTokenRepository {
     await this.prisma.thirdPartyOAuthToken.upsert({
       where: {
         createdById_provider: {
-          createdById: record.userId,
+          createdById: getCurrentUserId() || record.userId,
           provider: record.provider,
         },
       },
       create: {
-        createdById: record.userId,
+        createdById: getCurrentUserId() || record.userId,
         provider: record.provider,
         accessToken: record.accessToken,
         refreshToken: record.refreshToken ?? null,
@@ -60,7 +61,7 @@ export class OAuthTokenRepository implements IOAuthTokenRepository {
   ): Promise<void> {
     await this.prisma.thirdPartyOAuthToken.update({
       where: {
-        createdById_provider: { createdById: userId, provider },
+        createdById_provider: { createdById: getCurrentUserId() || userId, provider },
       },
       data: {
         accessToken: data.accessToken,
@@ -76,7 +77,7 @@ export class OAuthTokenRepository implements IOAuthTokenRepository {
 
   async listConnectedProviders(userId: string): Promise<ThirdPartyProvider[]> {
     const rows = await this.prisma.thirdPartyOAuthToken.findMany({
-      where: { createdById: userId },
+      where: { createdById: getCurrentUserId() || userId },
       select: { provider: true },
     });
     return rows.map((row) => row.provider as ThirdPartyProvider);
@@ -86,7 +87,7 @@ export class OAuthTokenRepository implements IOAuthTokenRepository {
     try {
       await this.prisma.thirdPartyOAuthToken.delete({
         where: {
-          createdById_provider: { createdById: userId, provider },
+          createdById_provider: { createdById: getCurrentUserId() || userId, provider },
         },
       });
     } catch (error: unknown) {
