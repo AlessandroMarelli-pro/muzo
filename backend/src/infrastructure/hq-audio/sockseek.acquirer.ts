@@ -813,12 +813,16 @@ export class SockseekAcquirer implements IHqAudioAcquirer {
     // `tracks` order), and build the identity map from *that* so all later events - which use
     // the same sockseek-side normalization - match correctly.
     const keyByIndex = new Map<number, string>(tracks.map((track, index) => [index, track.key]));
+    const indexByKey = new Map<string, number>(tracks.map((track, index) => [track.key, index]));
     const pendingByIdentity = new Map<string, string[]>();
-    // Provisional (name-matched) outcomes, keyed by track. `onTrackSettled` is deliberately
-    // not called as these are recorded: the {snum} sidecar (read once the process exits) can
-    // still overwrite an entry here for a key that collided on artist/title, so each track
-    // must be emitted exactly once at the end rather than as events stream in.
+    // Provisional (name-matched) outcomes, keyed by track. For a track whose CSV
+    // row is *unambiguous* (unique raw artist+title) the outcome is emitted to
+    // `onTrackSettled` as soon as its `track_state` arrives, so a long batch
+    // persists results incrementally instead of all at the end. Ambiguous rows
+    // stay deferred: the {snum} sidecar (read at process exit) can still correct
+    // which physical row a completion belongs to.
     const finalOutcomeByKey = new Map<string, SockseekBatchTrackOutcome>();
+    const emittedKeys = new Set<string>();
 
     // `{snum}` is sockseek's own 1-indexed source item number and is exact for resolving
     // *sockseek-side* normalization (e.g. `--remove-ft` making two originally-different
@@ -954,16 +958,17 @@ export class SockseekAcquirer implements IHqAudioAcquirer {
 
           const format = resolveHqFormat(data.extension);
           const succeeded = data.terminalOutcome === 'Succeeded' && !!data.downloadPath && !!format;
+          let outcome: SockseekBatchTrackOutcome;
           if (succeeded) {
             this.logger.info('sockseek batch track succeeded (provisional, name-matched)', {
               artist: data.artist,
               title: data.title,
               downloadPath: data.downloadPath,
             });
-            finalOutcomeByKey.set(key, {
+            outcome = {
               status: 'succeeded',
               result: { filePath: data.downloadPath as string, format: format as HqAudioFormat },
-            });
+            };
           } else {
             if (data.terminalOutcome === 'Succeeded' && data.downloadPath && !format) {
               this.logger.warn('sockseek batch track matched a non-HQ format, discarding', {
@@ -981,7 +986,15 @@ export class SockseekAcquirer implements IHqAudioAcquirer {
                 failureReason: data.failureReason,
               });
             }
-            finalOutcomeByKey.set(key, { status: 'not-found' });
+            outcome = { status: 'not-found' };
+          }
+          finalOutcomeByKey.set(key, outcome);
+
+          // Emit now for unambiguous rows; the sidecar can't change these.
+          const idx = indexByKey.get(key);
+          if (idx !== undefined && isUnambiguousRow(idx) && !emittedKeys.has(key)) {
+            emittedKeys.add(key);
+            callbacks.onTrackSettled?.(key, outcome);
           }
         }
       };
@@ -1078,46 +1091,37 @@ export class SockseekAcquirer implements IHqAudioAcquirer {
       } else {
         for (const [snum, filePath] of snumToPath) {
           const index = snum - 1;
-          if (!isUnambiguousRow(index)) {
-            // Two or more CSV rows are byte-identical to this one; `snum` cannot be trusted
-            // to say which of those rows' jobs actually produced this file, so leave
-            // whatever the name-matched `track_state` handling already decided for all of
-            // them untouched.
-            continue;
-          }
           const key = keyByIndex.get(index);
           if (!key) {
             continue;
           }
+          if (isUnambiguousRow(index)) {
+            // Already emitted eagerly from `track_state`; the sidecar can't
+            // reassign it, so nothing to reconcile.
+            continue;
+          }
+          // Ambiguous rows: `snum` is not reliable for byte-identical CSV rows,
+          // so leave whatever the name-matched `track_state` handling decided.
           const format = resolveHqFormat(path.extname(filePath).replace(/^\./, '').toLowerCase());
-          if (!format) {
-            this.logger.warn('sockseek matched a non-HQ format, discarding', {
-              trackKey: key,
-              downloadPath: filePath,
-            });
+          if (!format || !(await this.downloadPathExists(filePath))) {
             finalOutcomeByKey.set(key, { status: 'not-found' });
             continue;
           }
-          if (!(await this.downloadPathExists(filePath))) {
-            this.logger.warn('sockseek reported success but the download path does not exist', {
-              trackKey: key,
-              downloadPath: filePath,
-            });
-            finalOutcomeByKey.set(key, { status: 'not-found' });
-            continue;
-          }
-          this.logger.info('sockseek batch track succeeded', { trackKey: key, downloadPath: filePath });
-          finalOutcomeByKey.set(key, { status: 'succeeded', result: { filePath, format } });
         }
       }
 
+      // Emit anything not already emitted (ambiguous rows + late corrections).
       for (const [key, outcome] of finalOutcomeByKey) {
-        callbacks.onTrackSettled?.(key, outcome);
+        if (!emittedKeys.has(key)) {
+          emittedKeys.add(key);
+          callbacks.onTrackSettled?.(key, outcome);
+        }
       }
 
       if (!cancelled) {
         for (const track of tracks) {
-          if (!finalOutcomeByKey.has(track.key)) {
+          if (!emittedKeys.has(track.key)) {
+            emittedKeys.add(track.key);
             if (timedOut) {
               this.logger.warn('sockseek batch track interrupted by batch timeout', {
                 artist: track.artist,
