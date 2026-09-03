@@ -17,6 +17,7 @@ import type { WavMetadata } from 'src/application/ports/infrastructure/IWavConve
 import { IImageSearchRepository } from '../../ports/repositories/IImageSearchRepository';
 import { IPlaylistRepository } from '../../ports/repositories/IPlaylistRepository';
 import { IPlaylistSortingRepository } from '../../ports/repositories/IPlaylistSortingRepository';
+import { buildAudioTagMetadata } from '../music-track/audio-tag-metadata';
 
 const EXPORT_ROOT_PATH =
   process.env.PLAYLIST_EXPORT_DIR || path.join(os.homedir(), 'Music', 'muzo-exports');
@@ -60,10 +61,6 @@ function sanitizeFileName(input: string): string {
     .replace(/\.+$/, '');
 
   return cleaned || 'unknown';
-}
-
-function normalizeMetadataValue(input: string): string {
-  return input.replace(/\r?\n/g, ' ').trim();
 }
 
 function capitalizeWords(input: string): string {
@@ -121,19 +118,9 @@ export class DownloadPlaylistToFolderUseCase {
         return false;
       }
 
-      const [artist, title] = ['artist', 'title'].map((key: 'artist' | 'title') =>
-        track[key]?.trim() ? track[key] : 'Unknown',
-      );
-      const [displayArtist, displayTitle] = [artist, title].map(capitalizeWords);
-
-      const toHashtags = (values: string[] | undefined): string =>
-        values?.length
-          ? normalizeMetadataValue(values.map((v) => `#${v.toLowerCase()}`).join(', '))
-          : '';
-
-      const genreValue = toHashtags(track.metadata?.subgenres);
-      const styleValue = toHashtags(track.metadata?.subgenres);
-      const commentValue = toHashtags(track.metadata?.genres);
+      const metadata = buildAudioTagMetadata(track);
+      const displayArtist = metadata.artist;
+      const displayTitle = metadata.title;
 
       const fileBase = sanitizeFileName(`${displayArtist} - ${displayTitle}`);
       const ext = (path.extname(sourcePath) || '.opus').toLowerCase();
@@ -148,13 +135,6 @@ export class DownloadPlaylistToFolderUseCase {
         await fs.promises.unlink(destFilePath).catch(() => {});
       }
 
-      const metadata = {
-        artist: normalizeMetadataValue(displayArtist),
-        title: normalizeMetadataValue(displayTitle),
-        genre: genreValue,
-        style: styleValue,
-        comment: commentValue,
-      };
       this.logger.debug('DownloadPlaylistToFolder: copying track', {
         sourcePath,
         destFilePath,

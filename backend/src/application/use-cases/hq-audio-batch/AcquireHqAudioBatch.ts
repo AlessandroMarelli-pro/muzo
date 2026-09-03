@@ -5,6 +5,7 @@ import {
 import { IHqAudioBatchProgressPublisher } from 'src/application/ports/infrastructure/IHqAudioBatchProgressPublisher';
 import { ILogger } from 'src/application/ports/infrastructure/ILogger';
 import { ConfigService } from '@nestjs/config';
+import { IHqAudioTagger } from 'src/application/ports/infrastructure/IHqAudioTagger';
 import { IHqAudioVerifier } from 'src/application/ports/infrastructure/IHqAudioVerifier';
 import { IMusicTrackRepository } from 'src/application/ports/repositories/IMusicTrackRepository';
 import {
@@ -35,6 +36,7 @@ export class AcquireHqAudioBatchUseCase {
     private readonly sockseekAcquirer: SockseekAcquirer,
     private readonly hqAudioBatchProgressPublisher: IHqAudioBatchProgressPublisher,
     private readonly hqAudioVerifier: IHqAudioVerifier,
+    private readonly hqAudioTagger: IHqAudioTagger,
     private readonly configService: ConfigService,
     loggerFactory: { createLogger: (name: string) => ILogger },
     private readonly logger: ILogger,
@@ -92,6 +94,10 @@ export class AcquireHqAudioBatchUseCase {
     for (const { query, result } of tidalResults) {
       if (result) {
         const verification = await this.verify(result.filePath, result.format);
+        const track = trackById.get(query.key);
+        if (track) {
+          await this.hqAudioTagger.tagInPlace(result.filePath, track);
+        }
         await this.musicTrackRepository.updateOneById(query.key, {
           hqAudioPath: result.filePath,
           hqAudioSource: 'tidal',
@@ -115,7 +121,12 @@ export class AcquireHqAudioBatchUseCase {
         );
       },
       onTrackSettled: (key, outcome) => {
-        this.handleTrackSettled(batchId, key as MusicTrackId, outcome).catch((error) =>
+        this.handleTrackSettled(
+          batchId,
+          key as MusicTrackId,
+          outcome,
+          trackById.get(key as MusicTrackId),
+        ).catch((error) =>
           this.logger.error('Failed to handle track settlement', { batchId, key, error }),
         );
       },
@@ -178,12 +189,16 @@ export class AcquireHqAudioBatchUseCase {
     batchId: HqAudioBatchId,
     trackId: MusicTrackId,
     outcome: SockseekBatchTrackOutcome,
+    track?: import('src/kernel/types/model-types').MusicTrack,
   ): Promise<void> {
     if (outcome.status === 'succeeded') {
       const verification = await this.verify(
         outcome.result.filePath,
         outcome.result.format,
       );
+      if (track) {
+        await this.hqAudioTagger.tagInPlace(outcome.result.filePath, track);
+      }
       await this.musicTrackRepository.updateOneById(trackId, {
         hqAudioPath: outcome.result.filePath,
         hqAudioSource: 'soulseek',

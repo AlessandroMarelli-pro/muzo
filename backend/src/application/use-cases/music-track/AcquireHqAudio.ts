@@ -3,6 +3,10 @@ import {
   HQ_AUDIO_ACQUIRER,
   IHqAudioAcquirer,
 } from 'src/application/ports/infrastructure/IHqAudioAcquirer';
+import {
+  HQ_AUDIO_TAGGER,
+  IHqAudioTagger,
+} from 'src/application/ports/infrastructure/IHqAudioTagger';
 import { ILogger, LOGGER } from 'src/application/ports/infrastructure/ILogger';
 import { MusicTrackId } from 'src/kernel/ids';
 import { IMusicTrackRepository } from '../../ports/repositories/IMusicTrackRepository';
@@ -13,6 +17,8 @@ export class AcquireHqAudioUseCase {
     private readonly musicTrackRepository: IMusicTrackRepository,
     @Inject(HQ_AUDIO_ACQUIRER)
     private readonly hqAudioAcquirer: IHqAudioAcquirer,
+    @Inject(HQ_AUDIO_TAGGER)
+    private readonly hqAudioTagger: IHqAudioTagger,
     @Inject(LOGGER)
     private readonly logger: ILogger,
   ) {}
@@ -52,6 +58,8 @@ export class AcquireHqAudioUseCase {
       this.logger.warn('No HQ audio source found', { trackId, artist: track.artist, title: track.title });
       return;
     }
+
+    await this.hqAudioTagger.tagInPlace(result.filePath, track);
 
     await this.musicTrackRepository.updateOneById(trackId, {
       hqAudioPath: result.filePath,
