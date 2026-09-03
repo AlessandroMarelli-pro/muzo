@@ -6,6 +6,7 @@ import {
   useIsPlaying,
 } from '@/contexts/audio-player-context';
 import { useFilters } from '@/contexts/filter-context';
+import { usePlaybackProgress } from '@/contexts/playback-progress-context';
 import { apiUrl } from '@/lib/api-config';
 import {
   capitalizeEveryWord,
@@ -76,6 +77,97 @@ function PickerHeader() {
   );
 }
 
+/**
+ * A slim seek line for the row of the track that's currently loaded in the
+ * player — a plain track filled to the play position, click or drag to scrub.
+ * No waveform; it's a convenience so you needn't reach the docked bar behind
+ * the panel.
+ */
+function RowSeekBar({ label }: { label: string }) {
+  const progress = usePlaybackProgress();
+  const trackRef = useRef<HTMLDivElement>(null);
+  const [scrubbing, setScrubbing] = useState(false);
+  const [scrubPct, setScrubPct] = useState(0);
+
+  const duration = progress?.duration ?? 0;
+  const playedPct =
+    duration > 0 ? Math.min(100, Math.max(0, ((progress?.currentTime ?? 0) / duration) * 100)) : 0;
+  const pct = scrubbing ? scrubPct : playedPct;
+
+  const pctFromEvent = (clientX: number) => {
+    const el = trackRef.current;
+    if (!el) return 0;
+    const rect = el.getBoundingClientRect();
+    return Math.min(100, Math.max(0, ((clientX - rect.left) / rect.width) * 100));
+  };
+
+  const commit = (clientX: number) => {
+    if (!progress || duration <= 0) return;
+    progress.seek((pctFromEvent(clientX) / 100) * duration);
+  };
+
+  return (
+    <div
+      ref={trackRef}
+      role="slider"
+      tabIndex={0}
+      aria-label={`Seek ${label}`}
+      aria-valuemin={0}
+      aria-valuemax={Math.round(duration)}
+      aria-valuenow={Math.round((pct / 100) * duration)}
+      aria-valuetext={`${formatTime((pct / 100) * duration)} of ${formatTime(duration)}`}
+      onPointerDown={(e) => {
+        e.stopPropagation();
+        try {
+          e.currentTarget.setPointerCapture(e.pointerId);
+        } catch {
+          /* no real pointer (tests) — capture is optional */
+        }
+        setScrubbing(true);
+        setScrubPct(pctFromEvent(e.clientX));
+        // seek immediately on press; drag refines from here
+        commit(e.clientX);
+      }}
+      onPointerMove={(e) => {
+        if (!scrubbing) return;
+        const p = pctFromEvent(e.clientX);
+        setScrubPct(p);
+        commit(e.clientX);
+      }}
+      onPointerUp={(e) => {
+        if (scrubbing) commit(e.clientX);
+        setScrubbing(false);
+      }}
+      onClick={(e) => {
+        // fallback for environments that don't deliver pointer events
+        e.stopPropagation();
+        commit(e.clientX);
+      }}
+      onKeyDown={(e) => {
+        if (!progress || duration <= 0) return;
+        if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+          e.preventDefault();
+          const step = e.key === 'ArrowRight' ? 5 : -5;
+          progress.seek(Math.min(duration, Math.max(0, (progress.currentTime ?? 0) + step)));
+        }
+      }}
+      className="group/seek absolute inset-x-0 bottom-0 flex h-3 cursor-pointer items-end px-3 focus-visible:outline-none"
+    >
+      <div className="relative h-[3px] w-full overflow-hidden rounded-full bg-border">
+        <div
+          className="absolute inset-y-0 left-0 rounded-full bg-primary transition-[width] duration-100 ease-linear group-focus-visible/seek:bg-primary"
+          style={{ width: `${pct}%`, transitionProperty: scrubbing ? 'none' : undefined }}
+        />
+      </div>
+      <span
+        className="pointer-events-none absolute bottom-0 h-2 w-2 -translate-x-1/2 translate-y-1/2 rounded-full bg-primary opacity-0 transition-opacity group-hover/seek:opacity-100 group-focus-visible/seek:opacity-100"
+        style={{ left: `calc(${pct}% )` }}
+        aria-hidden
+      />
+    </div>
+  );
+}
+
 function PickerRow({
   track,
   inSet,
@@ -119,11 +211,12 @@ function PickerRow({
       data-current={isCurrent ? 'true' : undefined}
       className={cn(
         PICK_GRID,
-        'group border-l-2 border-l-transparent py-2 transition-colors hover:bg-muted/50',
-        isCurrent && 'border-l-primary bg-primary/5',
+        'group relative border-l-2 border-l-transparent py-2 transition-colors hover:bg-muted/50',
+        isCurrent && 'border-l-primary bg-primary/5 pb-3.5',
         resolved && 'opacity-45',
       )}
     >
+      {isCurrent && <RowSeekBar label={label} />}
       {/* Art + play-on-hover */}
       <div className="relative h-9 w-9 shrink-0">
         {artUrl ? (

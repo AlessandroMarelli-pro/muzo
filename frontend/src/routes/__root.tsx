@@ -7,6 +7,7 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import { AudioPlayerProvider, useCurrentTrack } from '@/contexts/audio-player-context';
 import { AuthProvider, useAuth } from '@/contexts/auth-context';
 import { FilterProvider } from '@/contexts/filter-context';
+import { PlaybackProgressProvider } from '@/contexts/playback-progress-context';
 import { ScanSessionProvider } from '@/contexts/scan-session.context';
 import { cn } from '@/lib/utils';
 import { queryClient } from '@/query-client';
@@ -147,7 +148,9 @@ const RootComponent = React.memo(function RootComponent() {
           <FilterProvider>
             <AuthProvider>
               <AudioPlayerProvider>
-                <RootContent />
+                <PlaybackProgressProvider>
+                  <RootContent />
+                </PlaybackProgressProvider>
               </AudioPlayerProvider>
             </AuthProvider>
           </FilterProvider>

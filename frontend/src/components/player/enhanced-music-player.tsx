@@ -9,6 +9,7 @@ import {
   useCurrentTrack,
   useIsPlaying,
 } from '@/contexts/audio-player-context';
+import { usePlaybackProgressPublisher } from '@/contexts/playback-progress-context';
 import { apiUrl } from '@/lib/api-config';
 import { cn, formatTime } from '@/lib/utils';
 import { useWaveformData } from '@/services/music-player-hooks';
@@ -227,11 +228,25 @@ export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
 
   const trackDuration = duration || currentTrack?.duration || 0;
 
-  const handleSeekSlider = (value: number) => {
+  const handleSeekSlider = useCallback((value: number) => {
     if (!audioRef.current) return;
     audioRef.current.currentTime = value;
     setCurrentTime(value);
-  };
+  }, []);
+
+  // Mirror playback position into the shared context so surfaces above the
+  // player bar (the add-track panel) can show progress and seek.
+  const { setProgress, registerSeek } = usePlaybackProgressPublisher();
+  useEffect(() => {
+    registerSeek(handleSeekSlider);
+  }, [registerSeek, handleSeekSlider]);
+  useEffect(() => {
+    setProgress({
+      trackId: currentTrack?.id ?? null,
+      currentTime,
+      duration: trackDuration,
+    });
+  }, [setProgress, currentTrack?.id, currentTime, trackDuration]);
 
   const handleTogglePlay = useCallback(() => {
     if (!currentTrack) return;
