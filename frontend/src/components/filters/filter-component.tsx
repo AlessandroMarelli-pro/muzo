@@ -65,9 +65,12 @@ const Section = ({ title, children }: { title: string; children: React.ReactNode
 export const FilterComponent = ({
   className,
   onLoadingChange,
+  /** Hide the artist/title text section — for surfaces with their own search field. */
+  hideTextSearch = false,
 }: {
   className?: string;
   onLoadingChange?: (loading: boolean) => void;
+  hideTextSearch?: boolean;
 }) => {
   const { filters, updateFilter, resetFilters, hasActiveFilters } = useFilters();
   const options = useFilterOptionsData();
@@ -78,28 +81,30 @@ export const FilterComponent = ({
 
   return (
     <div className={cn('flex w-full flex-col gap-6 py-6', className)}>
-      <Section title="Search">
-        <FieldGroup className="grid grid-cols-2">
-          <Field>
-            <FieldLabel htmlFor="input-artist">Artist</FieldLabel>
-            <Input
-              id="input-artist"
-              placeholder="Search artist..."
-              value={filters.artist}
-              onChange={(e) => updateFilter('artist', e.target.value)}
-            />
-          </Field>
-          <Field>
-            <FieldLabel htmlFor="input-title">Title</FieldLabel>
-            <Input
-              id="input-title"
-              placeholder="Search title..."
-              value={filters.title}
-              onChange={(e) => updateFilter('title', e.target.value)}
-            />
-          </Field>
-        </FieldGroup>
-      </Section>
+      {!hideTextSearch && (
+        <Section title="Search">
+          <FieldGroup className="grid grid-cols-2">
+            <Field>
+              <FieldLabel htmlFor="input-artist">Artist</FieldLabel>
+              <Input
+                id="input-artist"
+                placeholder="Search artist..."
+                value={filters.artist}
+                onChange={(e) => updateFilter('artist', e.target.value)}
+              />
+            </Field>
+            <Field>
+              <FieldLabel htmlFor="input-title">Title</FieldLabel>
+              <Input
+                id="input-title"
+                placeholder="Search title..."
+                value={filters.title}
+                onChange={(e) => updateFilter('title', e.target.value)}
+              />
+            </Field>
+          </FieldGroup>
+        </Section>
+      )}
 
       <Section title="Musical">
         <Field>

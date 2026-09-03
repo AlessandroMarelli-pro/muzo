@@ -280,6 +280,10 @@ export function PlaylistDetail({ id, onBack }: PlaylistDetailProps) {
     () => tracks.find((t) => t.track?.id === currentTrack?.id)?.position,
     [tracks, currentTrack?.id],
   );
+  const existingTrackIds = useMemo(
+    () => tracks.map((t) => t.track?.id).filter((tid): tid is string => Boolean(tid)),
+    [tracks],
+  );
 
   return (
     <div className="z-0 flex flex-col gap-6 p-4 lg:p-6">
@@ -292,7 +296,6 @@ export function PlaylistDetail({ id, onBack }: PlaylistDetailProps) {
             size="default"
             onClick={() => setIsAddTrackDrawerOpen(true)}
             disabled={!playlist}
-            className="shadow-none"
           >
             <Plus className="h-4 w-4" aria-hidden />
             Add tracks
@@ -377,6 +380,8 @@ export function PlaylistDetail({ id, onBack }: PlaylistDetailProps) {
         onOpenChange={setIsAddTrackDrawerOpen}
         addTrackToPlaylist={addTrackToPlaylist}
         playlistId={id}
+        playlistName={playlist?.name}
+        existingTrackIds={existingTrackIds}
       />
 
       <PlaylistHqBatchDownloadDialog
