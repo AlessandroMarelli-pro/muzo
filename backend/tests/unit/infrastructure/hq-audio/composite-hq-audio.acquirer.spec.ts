@@ -16,16 +16,22 @@ const loggerFactory = { createLogger: () => noopLogger };
 
 function build(
   order: string[] | undefined,
-  opts: { verifyLossless?: boolean; verifier?: { verify: ReturnType<typeof vi.fn> } } = {},
+  opts: {
+    verifyLossless?: boolean;
+    qualityTier?: string;
+    verifier?: { verify: ReturnType<typeof vi.fn> };
+  } = {},
 ) {
   const tidal = { acquire: vi.fn() };
   const qobuz = { acquire: vi.fn() };
   const deezer = { acquire: vi.fn() };
   const sockseek = { acquire: vi.fn() };
   const config = {
-    get: vi.fn((key: string) =>
-      key === 'hqAudio.verifyLossless' ? (opts.verifyLossless ?? false) : order,
-    ),
+    get: vi.fn((key: string) => {
+      if (key === 'hqAudio.verifyLossless') return opts.verifyLossless ?? false;
+      if (key === 'hqAudio.qualityTier') return opts.qualityTier ?? 'lossless';
+      return order;
+    }),
   } as unknown as ConfigService;
 
   const acquirer = new CompositeHqAudioAcquirer(
@@ -109,6 +115,18 @@ describe('CompositeHqAudioAcquirer', () => {
 
     expect(await acquirer.acquire('A', 'B', 100, '')).toBeNull();
     expect(tidal.acquire).not.toHaveBeenCalled();
+    expect(sockseek.acquire).not.toHaveBeenCalled();
+  });
+
+  it('drops soulseek to last on the hires quality tier', async () => {
+    const { acquirer, qobuz, sockseek } = build(['soulseek', 'qobuz'], {
+      qualityTier: 'hires',
+    });
+    (qobuz.acquire as ReturnType<typeof vi.fn>).mockResolvedValue(flac('/q/a.flac'));
+
+    const result = await acquirer.acquire('A', 'B', 100, '');
+
+    expect(result?.source).toBe('qobuz');
     expect(sockseek.acquire).not.toHaveBeenCalled();
   });
 

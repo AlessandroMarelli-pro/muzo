@@ -67,7 +67,14 @@ export class CompositeHqAudioAcquirer implements IHqAudioAcquirer {
   private resolveOrder(): HqAudioSource[] {
     const configured =
       this.configService.get<string[]>('hqAudio.sourceOrder') ?? ['tidal', 'soulseek'];
-    return configured.filter((name): name is HqAudioSource => name in this.registry);
+    let order = configured.filter((name): name is HqAudioSource => name in this.registry);
+
+    // Soulseek can't guarantee hi-res: on the 'hires' tier, drop it to last so
+    // the streaming sources get first crack at a 24-bit copy.
+    if (this.configService.get<string>('hqAudio.qualityTier') === 'hires') {
+      order = [...order.filter((s) => s !== 'soulseek'), ...order.filter((s) => s === 'soulseek')];
+    }
+    return order;
   }
 
   private verificationEnabled(): boolean {

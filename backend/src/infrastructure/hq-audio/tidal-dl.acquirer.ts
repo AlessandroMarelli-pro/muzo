@@ -13,12 +13,14 @@ import {
   ITidalSyncProvider,
   TIDAL_SYNC_PROVIDER,
 } from 'src/application/ports/infrastructure/ITidalSyncProvider';
+import { HqQualityTier } from 'src/config/hq-audio.config';
 import { getCurrentUserId } from 'src/kernel/types/context';
 import { normalizeForMatch } from './match';
 
 @Injectable()
 export class TidalDlAcquirer implements IHqAudioAcquirer {
   private readonly defaultOutputDir: string;
+  private readonly qualityTier: HqQualityTier;
 
   constructor(
     @Inject(TIDAL_SYNC_PROVIDER)
@@ -31,6 +33,30 @@ export class TidalDlAcquirer implements IHqAudioAcquirer {
   ) {
     this.logger = loggerFactory.createLogger('TidalDlAcquirer');
     this.defaultOutputDir = this.configService.get<string>('hqAudio.tidal.outputDir') ?? '';
+    this.qualityTier = this.configService.get<HqQualityTier>('hqAudio.qualityTier') ?? 'lossless';
+  }
+
+  /** tidal-dl-ng has no per-download quality flag; set it via `cfg` before `dl`. */
+  private tidalQualityValue(): string {
+    return this.qualityTier === 'hires' ? 'HI_RES_LOSSLESS' : 'LOSSLESS';
+  }
+
+  private runTidalCli(args: string[]): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const cmd = spawn('tidal-dl-ng', args, { stdio: ['ignore', 'pipe', 'pipe'] });
+      let stderr = '';
+      cmd.stderr.on('data', (chunk) => {
+        stderr += String(chunk);
+      });
+      cmd.on('error', (error) => reject(error));
+      cmd.on('close', (code) => {
+        if (code === 0) {
+          resolve();
+          return;
+        }
+        reject(new Error(`tidal-dl-ng ${args[0]} failed with code ${code}: ${stderr}`));
+      });
+    });
   }
 
   private async listAudioFiles(rootDir: string): Promise<string[]> {
@@ -53,24 +79,20 @@ export class TidalDlAcquirer implements IHqAudioAcquirer {
 
   private async runTidalDownload(trackId: string, outputDir: string): Promise<void> {
     const trackUrl = `https://tidal.com/browse/track/${trackId}`;
-    const args = ['dl', trackUrl];
     await fs.mkdir(outputDir, { recursive: true });
 
-    await new Promise<void>((resolve, reject) => {
-      const cmd = spawn('tidal-dl-ng', args, { stdio: ['ignore', 'pipe', 'pipe'] });
-      let stderr = '';
-      cmd.stderr.on('data', (chunk) => {
-        stderr += String(chunk);
+    // Apply the configured quality tier (best-effort: a cfg failure must not
+    // block the download, which falls back to whatever quality_audio is set to).
+    try {
+      await this.runTidalCli(['cfg', 'quality_audio', this.tidalQualityValue()]);
+    } catch (error) {
+      this.logger.warn('Failed to set tidal-dl-ng quality, using existing config', {
+        quality: this.tidalQualityValue(),
+        error: String(error),
       });
-      cmd.on('error', (error) => reject(error));
-      cmd.on('close', (code) => {
-        if (code === 0) {
-          resolve();
-          return;
-        }
-        reject(new Error(`tidal-dl-ng failed with code ${code}: ${stderr}`));
-      });
-    });
+    }
+
+    await this.runTidalCli(['dl', trackUrl]);
   }
 
   async acquire(
