@@ -5,10 +5,13 @@ import { LOGGER_FACTORY } from 'src/application/ports/infrastructure/ILoggerFact
 import { HqAudioConfig } from 'src/config/hq-audio.config';
 import { StreamripAcquirer } from './streamrip.acquirer';
 
-/** Qobuz via streamrip. streamrip quality ints: 2 = 16/44.1, 3 = 24/<=96, 4 = 24/<=192. */
+/**
+ * Deezer via streamrip. Deezer serves 16-bit/44.1 kHz FLAC only (quality 2);
+ * needs a personal `arl` cookie in the rip config file (DEEZER_RIP_CONFIG_PATH).
+ */
 @Injectable()
-export class QobuzAcquirer extends StreamripAcquirer {
-  protected readonly source = 'qobuz' as const;
+export class DeezerAcquirer extends StreamripAcquirer {
+  protected readonly source = 'deezer' as const;
 
   constructor(
     configService: ConfigService,
@@ -16,10 +19,10 @@ export class QobuzAcquirer extends StreamripAcquirer {
     loggerFactory: { createLogger: (name: string) => ILogger },
   ) {
     const hqAudio = configService.get<HqAudioConfig>('hqAudio')!;
-    super(hqAudio.qobuz, hqAudio.qualityTier, loggerFactory.createLogger('QobuzAcquirer'));
+    super(hqAudio.deezer, hqAudio.qualityTier, loggerFactory.createLogger('DeezerAcquirer'));
   }
 
   protected qualityFlag(): string {
-    return this.qualityTier === 'hires' ? '4' : '2';
+    return '2';
   }
 }

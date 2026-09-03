@@ -12,6 +12,7 @@ import {
   IHqAudioVerifier,
 } from 'src/application/ports/infrastructure/IHqAudioVerifier';
 import { HqAudioSource } from 'src/kernel/types/model-types';
+import { DeezerAcquirer } from './deezer.acquirer';
 import { QobuzAcquirer } from './qobuz.acquirer';
 import { SockseekAcquirer } from './sockseek.acquirer';
 import { TidalDlAcquirer } from './tidal-dl.acquirer';
@@ -42,6 +43,7 @@ export class CompositeHqAudioAcquirer implements IHqAudioAcquirer {
   constructor(
     private readonly tidalDlAcquirer: TidalDlAcquirer,
     private readonly qobuzAcquirer: QobuzAcquirer,
+    private readonly deezerAcquirer: DeezerAcquirer,
     private readonly sockseekAcquirer: SockseekAcquirer,
     private readonly configService: ConfigService,
     @Inject(LOGGER_FACTORY)
@@ -53,10 +55,11 @@ export class CompositeHqAudioAcquirer implements IHqAudioAcquirer {
     private readonly verifier?: IHqAudioVerifier,
   ) {
     this.logger = loggerFactory.createLogger('CompositeHqAudioAcquirer');
-    // New sources (deezer, bandcamp, ...) register here as their acquirers land.
+    // New sources (bandcamp, ...) register here as their acquirers land.
     this.registry = {
       tidal: this.tidalDlAcquirer,
       qobuz: this.qobuzAcquirer,
+      deezer: this.deezerAcquirer,
       soulseek: this.sockseekAcquirer,
     };
   }

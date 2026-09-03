@@ -20,6 +20,7 @@ function build(
 ) {
   const tidal = { acquire: vi.fn() };
   const qobuz = { acquire: vi.fn() };
+  const deezer = { acquire: vi.fn() };
   const sockseek = { acquire: vi.fn() };
   const config = {
     get: vi.fn((key: string) =>
@@ -30,13 +31,14 @@ function build(
   const acquirer = new CompositeHqAudioAcquirer(
     tidal as unknown as TidalDlAcquirer,
     qobuz as never,
+    deezer as never,
     sockseek as unknown as SockseekAcquirer,
     config,
     loggerFactory,
     noopLogger,
     opts.verifier as never,
   );
-  return { acquirer, tidal, qobuz, sockseek };
+  return { acquirer, tidal, qobuz, deezer, sockseek };
 }
 
 const flac = (filePath: string): HqAudioAcquireResult => ({ filePath, format: 'flac' });
@@ -85,7 +87,7 @@ describe('CompositeHqAudioAcquirer', () => {
   });
 
   it('skips sources named in the order but not registered', async () => {
-    const { acquirer, tidal, sockseek } = build(['deezer', 'tidal', 'soulseek']);
+    const { acquirer, tidal, sockseek } = build(['bandcamp', 'tidal', 'soulseek']);
     tidal.acquire.mockResolvedValue(flac('/tidal/a.flac'));
 
     const result = await acquirer.acquire('A', 'B', 100, '');
@@ -103,7 +105,7 @@ describe('CompositeHqAudioAcquirer', () => {
   });
 
   it('returns null when no known sources are in the order', async () => {
-    const { acquirer, tidal, sockseek } = build(['deezer']);
+    const { acquirer, tidal, sockseek } = build(['bandcamp']);
 
     expect(await acquirer.acquire('A', 'B', 100, '')).toBeNull();
     expect(tidal.acquire).not.toHaveBeenCalled();

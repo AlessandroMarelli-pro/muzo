@@ -37,6 +37,13 @@ export interface HqAudioConfig {
     ripBinaryPath: string;
     outputDir: string;
   };
+  deezer: {
+    enabled: boolean;
+    /** Path to the streamrip (`rip`) config file holding the Deezer ARL cookie. */
+    ripConfigPath: string;
+    ripBinaryPath: string;
+    outputDir: string;
+  };
   universr: {
     outputDir: string;
     timeoutMs: number;
@@ -75,6 +82,13 @@ export default registerAs(
       ripConfigPath: process.env.QOBUZ_RIP_CONFIG_PATH || '',
       ripBinaryPath: process.env.QOBUZ_RIP_BINARY_PATH || 'rip',
       outputDir: process.env.QOBUZ_OUTPUT_DIR || path.join(os.homedir(), 'Music', 'Qobuz'),
+    },
+    deezer: {
+      enabled: process.env.DEEZER_ENABLED === 'true',
+      ripConfigPath:
+        process.env.DEEZER_RIP_CONFIG_PATH || process.env.QOBUZ_RIP_CONFIG_PATH || '',
+      ripBinaryPath: process.env.DEEZER_RIP_BINARY_PATH || 'rip',
+      outputDir: process.env.DEEZER_OUTPUT_DIR || path.join(os.homedir(), 'Music', 'Deezer'),
     },
     universr: {
       outputDir: process.env.UNIVERSR_OUTPUT_DIR || path.join(os.homedir(), 'Music', 'Enhanced'),

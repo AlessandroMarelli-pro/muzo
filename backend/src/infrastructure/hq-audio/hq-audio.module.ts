@@ -4,6 +4,7 @@ import { HQ_AUDIO_ACQUIRER } from 'src/application/ports/infrastructure/IHqAudio
 import { HQ_AUDIO_TAGGER } from 'src/application/ports/infrastructure/IHqAudioTagger';
 import { ThirdPartySyncInfrastructureModule } from '../external-services/third-party-sync/third-party-sync.module';
 import { CompositeHqAudioAcquirer } from './composite-hq-audio.acquirer';
+import { DeezerAcquirer } from './deezer.acquirer';
 import { HqAudioTaggerAdapter } from './hq-audio-tagger.adapter';
 import { QobuzAcquirer } from './qobuz.acquirer';
 import { SockseekAcquirer } from './sockseek.acquirer';
@@ -14,6 +15,7 @@ import { TidalDlAcquirer } from './tidal-dl.acquirer';
   providers: [
     TidalDlAcquirer,
     QobuzAcquirer,
+    DeezerAcquirer,
     SockseekAcquirer,
     CompositeHqAudioAcquirer,
     { provide: HQ_AUDIO_ACQUIRER, useExisting: CompositeHqAudioAcquirer },
@@ -25,6 +27,7 @@ import { TidalDlAcquirer } from './tidal-dl.acquirer';
     SockseekAcquirer,
     TidalDlAcquirer,
     QobuzAcquirer,
+    DeezerAcquirer,
   ],
 })
 export class HqAudioInfrastructureModule {}
