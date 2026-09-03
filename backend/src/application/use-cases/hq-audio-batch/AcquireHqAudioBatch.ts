@@ -12,8 +12,11 @@ import {
 } from 'src/infrastructure/hq-audio/sockseek.acquirer';
 import { TidalDlAcquirer } from 'src/infrastructure/hq-audio/tidal-dl.acquirer';
 import { HqAudioBatchId, MusicTrackId } from 'src/kernel/ids';
+import { mapWithConcurrency } from 'src/kernel/utils/concurrency';
 
 const CONCURRENT_JOBS = 5;
+/** Tidal pre-pass: one search + one CLI spawn per track, so keep this modest. */
+const TIDAL_PREPASS_CONCURRENCY = 3;
 
 interface BatchTrackQuery {
   key: MusicTrackId;
@@ -65,18 +68,29 @@ export class AcquireHqAudioBatchUseCase {
       return;
     }
 
+    // Pre-pass: try Tidal for every track (bounded concurrency), then hand only
+    // the misses to sockseek's batch search. Tidal has richer metadata and does
+    // not lean on Soulseek peer availability, so it lifts the batch hit-rate.
+    const tidalResults = await mapWithConcurrency(
+      queries,
+      TIDAL_PREPASS_CONCURRENCY,
+      async (query) => {
+        await this.updateTrackStatus(batchId, query.key, 'downloading');
+        return { query, result: await this.tryTidal(query) };
+      },
+    );
+
     const sockseekQueries: SockseekBatchTrackQuery[] = [];
-    for (const query of queries) {
-      /*   await this.updateTrackStatus(batchId, query.key, 'downloading');
-      const tidalResult = await this.tryTidal(query);
-      if (tidalResult) {
+    for (const { query, result } of tidalResults) {
+      if (result) {
         await this.musicTrackRepository.updateOneById(query.key, {
-          hqAudioPath: tidalResult.filePath,
+          hqAudioPath: result.filePath,
+          hqAudioSource: 'tidal',
         });
         await this.updateTrackStatus(batchId, query.key, 'succeeded');
-        continue;
-      } */
-      sockseekQueries.push(query);
+      } else {
+        sockseekQueries.push(query);
+      }
     }
 
     if (sockseekQueries.length === 0) {
@@ -125,6 +139,7 @@ export class AcquireHqAudioBatchUseCase {
     if (outcome.status === 'succeeded') {
       await this.musicTrackRepository.updateOneById(trackId, {
         hqAudioPath: outcome.result.filePath,
+        hqAudioSource: 'soulseek',
       });
       await this.updateTrackStatus(batchId, trackId, 'succeeded');
     } else if (outcome.status === 'interrupted') {

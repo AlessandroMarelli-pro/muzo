@@ -25,7 +25,10 @@ export class AcquireHqAudioUseCase {
 
     const filePath = track.fileInfo.filePath;
     if (isTrackAlreadyHq(track)) {
-      await this.musicTrackRepository.updateOneById(trackId, { hqAudioPath: filePath });
+      await this.musicTrackRepository.updateOneById(trackId, {
+        hqAudioPath: filePath,
+        hqAudioSource: 'original',
+      });
       return;
     }
 
@@ -52,6 +55,7 @@ export class AcquireHqAudioUseCase {
 
     await this.musicTrackRepository.updateOneById(trackId, {
       hqAudioPath: result.filePath,
+      hqAudioSource: result.source,
     });
   }
 }
