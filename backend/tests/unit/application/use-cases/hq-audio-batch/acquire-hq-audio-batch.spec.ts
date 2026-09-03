@@ -6,8 +6,6 @@ import type { ILogger } from 'src/application/ports/infrastructure/ILogger';
 import type { IMusicTrackRepository } from 'src/application/ports/repositories/IMusicTrackRepository';
 import type { HqAudioBatchId, MusicTrackId } from 'src/kernel/ids';
 
-const { probeMock } = vi.hoisted(() => ({ probeMock: vi.fn() }));
-vi.mock('src/infrastructure/hq-audio/audio-probe', () => ({ probeAudioCodec: probeMock }));
 // persistAcquired guards on fs.access — treat every acquired path as present.
 vi.mock('fs/promises', () => ({ access: vi.fn().mockResolvedValue(undefined) }));
 
@@ -23,26 +21,36 @@ const BATCH = 'batch-1' as HqAudioBatchId;
 const T1 = 't1' as MusicTrackId;
 const T2 = 't2' as MusicTrackId;
 
+const flush = () => new Promise((r) => setTimeout(r, 0));
+
 function track(id: MusicTrackId) {
-  return {
-    id,
-    artist: 'A',
-    title: id,
-    technicalInfo: { duration: 100 },
-    metadata: {},
-  };
+  return { id, artist: 'A', title: id, technicalInfo: { duration: 100 }, metadata: {} };
 }
 
+type SettleOutcome =
+  | { status: 'succeeded'; result: { filePath: string; format: string } }
+  | { status: 'not-found' }
+  | { status: 'interrupted' };
+
 function makeUseCase(over: {
+  updateOneById?: ReturnType<typeof vi.fn>;
+  /** How Soulseek settles each track (by id). Default: not-found. */
+  soulseek?: Partial<Record<MusicTrackId, SettleOutcome>>;
   tidalMatch?: unknown;
   tidalDownload?: unknown;
-  updateOneById?: ReturnType<typeof vi.fn>;
-  acquireBatch?: ReturnType<typeof vi.fn>;
 }) {
   const repo = {
     getManyByIds: vi.fn().mockResolvedValue([track(T1), track(T2)]),
     updateOneById: over.updateOneById ?? vi.fn().mockResolvedValue(undefined),
   } as unknown as IMusicTrackRepository;
+
+  const acquireBatch = vi.fn(async (_b, queries, _o, _c, cbs) => {
+    for (const q of queries) {
+      const outcome = over.soulseek?.[q.key as MusicTrackId] ?? { status: 'not-found' };
+      cbs.onTrackSettled(q.key, outcome);
+    }
+  });
+  const sockseek = { acquireBatch };
 
   const tidal = {
     findMatch: vi
@@ -56,13 +64,9 @@ function makeUseCase(over: {
       .fn()
       .mockResolvedValue(
         over.tidalDownload === undefined
-          ? { filePath: '/tidal/f.flac', format: 'flac' }
+          ? { filePath: '/tidal/f.m4a', format: 'm4a' }
           : over.tidalDownload,
       ),
-  };
-
-  const sockseek = {
-    acquireBatch: over.acquireBatch ?? vi.fn().mockResolvedValue(undefined),
   };
 
   const publisher = {
@@ -73,9 +77,7 @@ function makeUseCase(over: {
   const verifier = {
     verify: vi.fn().mockResolvedValue({ verified: true, cutoffHz: 21000, reason: 'ok' }),
   } as unknown as IHqAudioVerifier;
-
   const tagger = { tagInPlace: vi.fn().mockResolvedValue(undefined) } as unknown as IHqAudioTagger;
-
   const config = { get: vi.fn().mockReturnValue(true) } as never;
 
   const uc = new AcquireHqAudioBatchUseCase(
@@ -93,68 +95,83 @@ function makeUseCase(over: {
 }
 
 describe('AcquireHqAudioBatchUseCase', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    probeMock.mockResolvedValue({ codec: 'flac', sampleRate: 44100, lossless: true });
-  });
+  beforeEach(() => vi.clearAllMocks());
 
-  it('persists a lossless Tidal result with hqAudioSource=tidal', async () => {
+  it('persists a Soulseek FLAC as hqAudioSource=soulseek', async () => {
     const update = vi.fn().mockResolvedValue(undefined);
-    const { uc } = makeUseCase({ updateOneById: update });
+    const { uc } = makeUseCase({
+      updateOneById: update,
+      soulseek: {
+        [T1]: { status: 'succeeded', result: { filePath: '/ss/1.flac', format: 'flac' } },
+        [T2]: { status: 'succeeded', result: { filePath: '/ss/2.flac', format: 'flac' } },
+      },
+    });
 
     await uc.execute(BATCH, [T1, T2]);
+    await flush();
 
     expect(update).toHaveBeenCalledWith(
       T1,
-      expect.objectContaining({ hqAudioPath: '/tidal/f.flac', hqAudioSource: 'tidal' }),
+      expect.objectContaining({ hqAudioPath: '/ss/1.flac', hqAudioSource: 'soulseek' }),
+    );
+  });
+
+  it('falls back to Tidal (lossy) for a Soulseek miss', async () => {
+    const update = vi.fn().mockResolvedValue(undefined);
+    const { uc, tidal } = makeUseCase({
+      updateOneById: update,
+      soulseek: {
+        [T1]: { status: 'not-found' },
+        [T2]: { status: 'succeeded', result: { filePath: '/ss/2.flac', format: 'flac' } },
+      },
+    });
+
+    await uc.execute(BATCH, [T1, T2]);
+    await flush();
+
+    expect(tidal.findMatch).toHaveBeenCalledTimes(1); // only the missed track
+    expect(update).toHaveBeenCalledWith(
+      T1,
+      expect.objectContaining({ hqAudioPath: '/tidal/f.m4a', hqAudioSource: 'tidal' }),
+    );
+  });
+
+  it('marks a track failed when both Soulseek and Tidal miss', async () => {
+    const { uc, publisher } = makeUseCase({
+      soulseek: { [T1]: { status: 'not-found' }, [T2]: { status: 'not-found' } },
+      tidalMatch: null,
+    });
+
+    await uc.execute(BATCH, [T1, T2]);
+    await flush();
+
+    expect(publisher.updateTrackStatus).toHaveBeenCalledWith(
+      BATCH,
+      T1,
+      'failed',
+      expect.stringContaining('No match found on any source'),
     );
   });
 
   it("does not abort the batch when one track's DB write throws", async () => {
-    const update = vi
-      .fn()
-      .mockRejectedValueOnce(new Error('P2025'))
-      .mockResolvedValue(undefined);
-    const { uc, publisher } = makeUseCase({ updateOneById: update });
+    const update = vi.fn().mockRejectedValueOnce(new Error('P2025')).mockResolvedValue(undefined);
+    const { uc, publisher } = makeUseCase({
+      updateOneById: update,
+      soulseek: {
+        [T1]: { status: 'succeeded', result: { filePath: '/ss/1.flac', format: 'flac' } },
+        [T2]: { status: 'succeeded', result: { filePath: '/ss/2.flac', format: 'flac' } },
+      },
+    });
 
     await uc.execute(BATCH, [T1, T2]);
+    await flush();
 
-    // both tracks attempted
     expect(update).toHaveBeenCalledTimes(2);
-    // the failing one is marked failed
     expect(publisher.updateTrackStatus).toHaveBeenCalledWith(
       BATCH,
       T1,
       'failed',
       expect.stringContaining('Persist failed'),
-    );
-  });
-
-  it('sends a lossy Tidal file to Soulseek, then keeps it if Soulseek misses', async () => {
-    probeMock.mockResolvedValue({ codec: 'aac', sampleRate: 44100, lossless: false });
-    const update = vi.fn().mockResolvedValue(undefined);
-    // Soulseek reports not-found for every track
-    const acquireBatch = vi.fn(async (_b, _q, _o, _c, cbs) => {
-      cbs.onTrackSettled(T1, { status: 'not-found' });
-      cbs.onTrackSettled(T2, { status: 'not-found' });
-    });
-    const { uc } = makeUseCase({
-      updateOneById: update,
-      acquireBatch,
-      tidalDownload: { filePath: '/tidal/f.m4a', format: 'm4a' },
-    });
-
-    await uc.execute(BATCH, [T1, T2]);
-    // onTrackSettled handlers are fire-and-forget; let their microtasks drain.
-    await new Promise((r) => setTimeout(r, 0));
-
-    expect(update).toHaveBeenCalledWith(
-      T1,
-      expect.objectContaining({
-        hqAudioPath: '/tidal/f.m4a',
-        hqAudioSource: 'tidal',
-        hqAudioVerified: false,
-      }),
     );
   });
 });

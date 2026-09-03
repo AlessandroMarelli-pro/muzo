@@ -173,9 +173,14 @@ export class TidalSyncAdapter implements ITidalSyncProvider {
     const url = `${BASE_URL}${endpoint}`;
 
     const MAX_RETRIES = 3;
+    // Hard per-request timeout: TIDAL occasionally leaves a connection open with
+    // no response, which would otherwise hang a caller (e.g. a batch pre-pass)
+    // indefinitely.
+    const REQUEST_TIMEOUT_MS = 15_000;
     for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
       const response = await fetch(url, {
         ...options,
+        signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
         headers: {
           'Content-Type': 'application/vnd.api+json',
           Authorization: `Bearer ${accessToken}`,
