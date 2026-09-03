@@ -116,6 +116,19 @@ export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
   const [volume, setVolume] = useState(1);
   const [muted, setMuted] = useState(false);
 
+  // Publish the bar height on the document root while the player is mounted,
+  // so surfaces portalled outside the app shell (e.g. a Sheet on <body>) can
+  // stop short of the docked bar. Cleared on unmount — no track, no bar.
+  useEffect(() => {
+    const root = document.documentElement;
+    root.style.setProperty('--music-player-height', MUSIC_PLAYER_HEIGHT);
+    root.style.setProperty('--music-player-height-sm', MUSIC_PLAYER_HEIGHT_SM);
+    return () => {
+      root.style.removeProperty('--music-player-height');
+      root.style.removeProperty('--music-player-height-sm');
+    };
+  }, []);
+
   // Restore the last-used volume once.
   useEffect(() => {
     try {
