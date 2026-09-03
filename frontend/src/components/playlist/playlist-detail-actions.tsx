@@ -12,7 +12,7 @@ import {
   useCurrentTrack,
   useIsPlaying,
 } from '@/contexts/audio-player-context';
-import { ChevronDown, Copy, Download, ListMusic, Pause, Play, Plus, Trash2 } from 'lucide-react';
+import { Copy, Download, ListMusic, MoreHorizontal, Pause, Play, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface PlaylistDetailActionsProps {
@@ -22,7 +22,6 @@ interface PlaylistDetailActionsProps {
   isSettingAsQueue: boolean;
   onDelete: () => void;
   onSetAsQueue: () => void;
-  onAddTrack: () => void;
   onDownloadAllHq: () => void;
 }
 
@@ -33,7 +32,6 @@ export function PlaylistDetailActions({
   isSettingAsQueue,
   onDelete,
   onSetAsQueue,
-  onAddTrack,
   onDownloadAllHq,
 }: PlaylistDetailActionsProps) {
   const { setCurrentTrack } = useCurrentTrack();
@@ -71,9 +69,13 @@ export function PlaylistDetailActions({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button size="sm" variant="ghost" disabled={isDisabled}>
-          Actions
-          <ChevronDown className="h-4 w-4" aria-hidden />
+        <Button
+          size="sm"
+          variant="ghost"
+          disabled={isDisabled}
+          aria-label="More playlist actions"
+        >
+          <MoreHorizontal className="h-4 w-4" aria-hidden />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
@@ -95,10 +97,6 @@ export function PlaylistDetailActions({
           {isSettingAsQueue ? 'Replacing queue…' : 'Replace queue with this'}
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={onAddTrack} disabled={isDisabled}>
-          <Plus className="h-4 w-4 mr-2" aria-hidden />
-          Add tracks
-        </DropdownMenuItem>
         <DropdownMenuItem onClick={handleCopyList} disabled={isDisabled}>
           <Copy className="h-4 w-4 mr-2" aria-hidden />
           Copy tracklist (CSV)

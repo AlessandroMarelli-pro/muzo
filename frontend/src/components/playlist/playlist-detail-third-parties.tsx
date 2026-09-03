@@ -179,9 +179,9 @@ export function PlaylistDetailThirdParties({
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button size="sm" variant="ghost" disabled={isDisabled}>
-            <Music2 className="h-4 w-4 mr-2" />
+            <Music2 className="h-4 w-4" aria-hidden />
             Sync
-            <ChevronDown className="h-4 w-4 ml-2" />
+            <ChevronDown className="h-4 w-4" aria-hidden />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">

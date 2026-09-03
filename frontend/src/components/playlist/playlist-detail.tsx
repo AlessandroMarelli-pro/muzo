@@ -25,15 +25,7 @@ import {
   usePlaylist,
   useUpdatePlaylistSorting,
 } from '@/services/playlist-hooks';
-import {
-  ArrowLeft,
-  ArrowUpDown,
-  ChevronDown,
-  Compass,
-  Disc3,
-  Plus,
-  Sparkles,
-} from 'lucide-react';
+import { ArrowUpDown, ChevronDown, Compass, Disc3, Plus, Sparkles } from 'lucide-react';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 // Note: This app uses custom view state instead of routing
@@ -82,20 +74,75 @@ const SetSheetMasthead = ({
 
   return (
     <div className="min-w-0 flex-1">
-      <h1 className="truncate text-2xl font-bold leading-tight">
+      <h1 className="truncate text-2xl font-bold leading-tight" title={playlist?.name ?? undefined}>
         {isLoading ? <Skeleton className="h-7 w-48" /> : playlist?.name}
       </h1>
       {isLoading ? (
         <Skeleton className="mt-1.5 h-4 w-64" />
       ) : (
-        <p className="mt-1 truncate font-mono text-xs uppercase text-muted-foreground [letter-spacing:0.04em]">
-          {meta}
-          {playlist?.description ? `  —  ${playlist.description}` : ''}
-        </p>
+        <>
+          <p className="mt-1 truncate font-mono text-xs uppercase text-muted-foreground [letter-spacing:0.04em]">
+            {meta}
+          </p>
+          {playlist?.description ? (
+            <p className="mt-1 truncate text-sm text-muted-foreground" title={playlist.description}>
+              {playlist.description}
+            </p>
+          ) : null}
+        </>
       )}
     </div>
   );
 };
+const SORT_LABELS: Record<string, string> = {
+  'position:asc': 'Manual order',
+  'position:desc': 'Manual order, reversed',
+  'addedAt:desc': 'Recently added',
+  'addedAt:asc': 'Oldest added',
+};
+
+/** Sort control for the tracks list — scoped to the list it reorders, not the playlist. */
+const TracksSortMenu = ({
+  value,
+  onChange,
+  disabled,
+  isPending,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  disabled: boolean;
+  isPending: boolean;
+}) => (
+  <DropdownMenu>
+    <DropdownMenuTrigger asChild>
+      <Button size="sm" variant="ghost" disabled={disabled}>
+        <ArrowUpDown className="h-4 w-4" aria-hidden />
+        <span className="text-muted-foreground">Sort:</span>
+        {SORT_LABELS[value] ?? 'Manual order'}
+        <ChevronDown className="h-4 w-4" aria-hidden />
+      </Button>
+    </DropdownMenuTrigger>
+    <DropdownMenuContent align="end">
+      <DropdownMenuLabel>Sort tracks by</DropdownMenuLabel>
+      <DropdownMenuRadioGroup value={value} onValueChange={onChange}>
+        <DropdownMenuRadioItem value="position:asc" disabled={isPending}>
+          Manual order
+        </DropdownMenuRadioItem>
+        <DropdownMenuRadioItem value="position:desc" disabled={isPending}>
+          Manual order, reversed
+        </DropdownMenuRadioItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuRadioItem value="addedAt:desc" disabled={isPending}>
+          Recently added
+        </DropdownMenuRadioItem>
+        <DropdownMenuRadioItem value="addedAt:asc" disabled={isPending}>
+          Oldest added
+        </DropdownMenuRadioItem>
+      </DropdownMenuRadioGroup>
+    </DropdownMenuContent>
+  </DropdownMenu>
+);
+
 export function PlaylistDetail({ id, onBack }: PlaylistDetailProps) {
   const { playlist, recommendations } = Route.useLoaderData();
   const router = useRouter();
@@ -237,86 +284,35 @@ export function PlaylistDetail({ id, onBack }: PlaylistDetailProps) {
   return (
     <div className="z-0 flex flex-col gap-6 p-4 lg:p-6">
       {/* Set-sheet masthead */}
-      <div className="space-y-3 border-b pb-4">
-        <div className="flex items-start gap-3">
-          <Button variant="ghost" size="sm" onClick={onBack} className="mt-0.5 shrink-0">
-            <ArrowLeft className="h-4 w-4" aria-hidden />
-            Back
-          </Button>
-          <SetSheetMasthead playlist={playlist || undefined} isLoading={loading} />
-        </div>
+      <div className="flex flex-col gap-3 border-b pb-4 sm:flex-row sm:items-start sm:justify-between sm:gap-x-4">
+        <SetSheetMasthead playlist={playlist || undefined} isLoading={loading} />
 
-        <div className="flex flex-wrap items-center justify-end gap-2">
+        <div className="flex shrink-0 items-center gap-2">
           <Button
-            size="sm"
+            size="default"
             onClick={() => setIsAddTrackDrawerOpen(true)}
             disabled={!playlist}
-            className="mr-auto shrink-0"
+            className="shadow-none"
           >
             <Plus className="h-4 w-4" aria-hidden />
             Add tracks
           </Button>
-          <div className="flex items-center gap-2">
-            <PlaylistDetailActions
-              playlist={playlist || undefined}
-              isLoading={loading}
-              isDeleting={isDeleting}
-              isSettingAsQueue={isSettingAsQueue}
-              onDelete={() => setIsDeleteDialogOpen(true)}
-              onSetAsQueue={handleSetAsQueue}
-              onAddTrack={() => setIsAddTrackDrawerOpen(true)}
-              onDownloadAllHq={() => setIsHqBatchDownloadDialogOpen(true)}
-            />
-            <PlaylistDetailThirdParties
-              playlist={playlist || undefined}
-              isLoading={loading}
-              onSyncToYouTube={syncToYouTube}
-              onSyncToTidal={syncToTidal}
-              onSyncToSpotify={syncToSpotify}
-            />
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button size="sm" variant="ghost" disabled={sortDisabled}>
-                  <ArrowUpDown className="h-4 w-4" aria-hidden />
-                  Sort
-                  <ChevronDown className="h-4 w-4" aria-hidden />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuLabel>Sort tracks by</DropdownMenuLabel>
-                <DropdownMenuRadioGroup
-                  value={currentSortValue}
-                  onValueChange={handleUpdateSorting}
-                >
-                  <DropdownMenuRadioItem
-                    value="position:asc"
-                    disabled={updatePlaylistSortingMutation.isPending}
-                  >
-                    Manual order
-                  </DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem
-                    value="position:desc"
-                    disabled={updatePlaylistSortingMutation.isPending}
-                  >
-                    Manual order, reversed
-                  </DropdownMenuRadioItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuRadioItem
-                    value="addedAt:desc"
-                    disabled={updatePlaylistSortingMutation.isPending}
-                  >
-                    Recently added
-                  </DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem
-                    value="addedAt:asc"
-                    disabled={updatePlaylistSortingMutation.isPending}
-                  >
-                    Oldest added
-                  </DropdownMenuRadioItem>
-                </DropdownMenuRadioGroup>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
+          <PlaylistDetailThirdParties
+            playlist={playlist || undefined}
+            isLoading={loading}
+            onSyncToYouTube={syncToYouTube}
+            onSyncToTidal={syncToTidal}
+            onSyncToSpotify={syncToSpotify}
+          />
+          <PlaylistDetailActions
+            playlist={playlist || undefined}
+            isLoading={loading}
+            isDeleting={isDeleting}
+            isSettingAsQueue={isSettingAsQueue}
+            onDelete={() => setIsDeleteDialogOpen(true)}
+            onSetAsQueue={handleSetAsQueue}
+            onDownloadAllHq={() => setIsHqBatchDownloadDialogOpen(true)}
+          />
         </div>
       </div>
 
@@ -346,6 +342,14 @@ export function PlaylistDetail({ id, onBack }: PlaylistDetailProps) {
         </TabsList>
 
         <TabsContent value="tracks" className="space-y-4">
+          <div className="flex justify-end">
+            <TracksSortMenu
+              value={currentSortValue}
+              onChange={handleUpdateSorting}
+              disabled={sortDisabled}
+              isPending={updatePlaylistSortingMutation.isPending}
+            />
+          </div>
           <PlaylistTracksList
             playlist={playlist}
             onUpdate={refetch}
