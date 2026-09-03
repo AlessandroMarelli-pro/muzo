@@ -14,7 +14,7 @@ export function tempoOriginAndScale(playlistFeatures: {
 }): { origin: number; scale: number } {
   const { tempo, tempoCenter } = playlistFeatures;
   if (tempoCenter != null && Number.isFinite(tempoCenter) && tempoCenter > 0) {
-    return { origin: tempoCenter, scale: 18 };
+    return { origin: tempoCenter, scale: 5 };
   }
   if (
     tempo != null &&
