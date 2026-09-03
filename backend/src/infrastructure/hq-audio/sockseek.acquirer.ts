@@ -12,6 +12,7 @@ import {
 import { ILogger, LOGGER } from 'src/application/ports/infrastructure/ILogger';
 import { LOGGER_FACTORY } from 'src/application/ports/infrastructure/ILoggerFactory';
 import type { Readable } from 'stream';
+import { readIndexCsvDownloads } from './sockseek-index-csv';
 
 type SockseekTrackStateEvent = {
   type: 'track_state';
@@ -264,6 +265,18 @@ export class SockseekAcquirer implements IHqAudioAcquirer {
     ].join('\n');
     await fs.writeFile(scriptPath, script, 'utf-8');
     return scriptPath;
+  }
+
+  private async readIndexCsv(
+    queryCsvPath: string,
+    outputDir: string,
+  ): Promise<Map<number, string>> {
+    try {
+      return await readIndexCsvDownloads(queryCsvPath, outputDir);
+    } catch (error) {
+      this.logger.warn('failed to read sockseek _index.csv', { error: String(error) });
+      return new Map();
+    }
   }
 
   /**
@@ -1108,6 +1121,31 @@ export class SockseekAcquirer implements IHqAudioAcquirer {
             continue;
           }
         }
+      }
+
+      // Authoritative reconciliation from sockseek's own `_index.csv` (rows in
+      // our query-CSV order). Any track it records as downloaded that we did not
+      // already settle as succeeded — e.g. its `track_state` line never reached
+      // our stdout parser — is recovered here so the file isn't orphaned.
+      const indexDownloads = await this.readIndexCsv(queryCsvPath, resolvedOutputDir);
+      for (const [index, filePath] of indexDownloads) {
+        const key = keyByIndex.get(index);
+        if (!key) {
+          continue;
+        }
+        const existing = finalOutcomeByKey.get(key);
+        if (existing?.status === 'succeeded' || emittedKeys.has(key)) {
+          continue;
+        }
+        const format = resolveHqFormat(path.extname(filePath).replace(/^\./, '').toLowerCase());
+        if (!format || !(await this.downloadPathExists(filePath))) {
+          continue;
+        }
+        this.logger.info('sockseek batch track recovered from _index.csv', {
+          trackKey: key,
+          downloadPath: filePath,
+        });
+        finalOutcomeByKey.set(key, { status: 'succeeded', result: { filePath, format } });
       }
 
       // Emit anything not already emitted (ambiguous rows + late corrections).
