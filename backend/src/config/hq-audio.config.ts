@@ -26,6 +26,8 @@ export interface HqAudioConfig {
     nicotinePlusDataDir: string;
     fastSearch: boolean;
     searchTimeoutMs: number;
+    /** sockseek `--concurrent-searches` (its default is only 2). Batch throughput. */
+    concurrentSearches: number;
   };
   tidal: {
     outputDir: string;
@@ -74,8 +76,11 @@ export default registerAs(
       outputDir: process.env.SOCKSEEK_OUTPUT_DIR || path.join(os.homedir(), 'Music', 'Soulseek'),
       nicotinePlusDataDir:
         process.env.NICOTINE_PLUS_DATA_DIR || path.join(os.homedir(), '.local', 'share', 'nicotine'),
-      fastSearch: process.env.SOCKSEEK_FAST_SEARCH === 'true',
-      searchTimeoutMs: parseInt(process.env.SOCKSEEK_SEARCH_TIMEOUT_MS || '30000', 10),
+      // Default on: start downloading as soon as a good candidate appears
+      // instead of waiting out the whole search window.
+      fastSearch: process.env.SOCKSEEK_FAST_SEARCH !== 'false',
+      searchTimeoutMs: parseInt(process.env.SOCKSEEK_SEARCH_TIMEOUT_MS || '15000', 10),
+      concurrentSearches: parseInt(process.env.SOCKSEEK_CONCURRENT_SEARCHES || '5', 10),
     },
     tidal: {
       outputDir: process.env.TIDAL_OUTPUT_DIR || path.join(os.homedir(), 'Music', 'Tidal'),

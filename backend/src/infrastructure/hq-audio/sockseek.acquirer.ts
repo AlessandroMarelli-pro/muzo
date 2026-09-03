@@ -119,6 +119,7 @@ export class SockseekAcquirer implements IHqAudioAcquirer {
   private readonly nicotinePlusDataDir: string;
   private readonly fastSearch: boolean;
   private readonly searchTimeoutMs: number;
+  private readonly concurrentSearches: number;
   private readonly logger: ILogger;
   private readonly activeBatchProcesses = new Map<
     string,
@@ -150,6 +151,8 @@ export class SockseekAcquirer implements IHqAudioAcquirer {
     this.fastSearch = this.configService.get<boolean>('hqAudio.sockseek.fastSearch') ?? false;
     this.searchTimeoutMs =
       this.configService.get<number>('hqAudio.sockseek.searchTimeoutMs') ?? 30000;
+    this.concurrentSearches =
+      this.configService.get<number>('hqAudio.sockseek.concurrentSearches') ?? 5;
   }
 
   private parseEventLine(line: string): SockseekEvent | null {
@@ -891,6 +894,8 @@ export class SockseekAcquirer implements IHqAudioAcquirer {
         this.searchTimeoutMs.toString(),
         '--concurrent-jobs',
         concurrentJobs.toString(),
+        '--concurrent-searches',
+        this.concurrentSearches.toString(),
         '--on-complete',
         `when=success -- node "${onCompleteScriptPath}" "${onCompleteSidecarPath}" {snum} "{path}"`,
       ];
