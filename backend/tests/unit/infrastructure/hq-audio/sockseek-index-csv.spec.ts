@@ -8,6 +8,7 @@ import {
   parseIndexCsvDownloads,
   parseIndexCsvRows,
   pruneStaleQueryDirs,
+  readAllPriorIndexCsvDownloads,
   removeIndexCsvDir,
 } from 'src/infrastructure/hq-audio/sockseek-index-csv';
 
@@ -116,23 +117,69 @@ describe('removeIndexCsvDir', () => {
 });
 
 describe('pruneStaleQueryDirs', () => {
-  it('removes only sockseek-*query-* dirs older than maxAge', async () => {
+  it('removes only stale sockseek-*query-* / sockseek-batch-* dirs', async () => {
     const out = mkdtempSync(join(tmpdir(), 'ss-prune-'));
-    const old = join(out, 'sockseek-batch-query-old');
-    const fresh = join(out, 'sockseek-query-fresh');
+    const oldQuery = join(out, 'sockseek-batch-query-old');
+    const oldBatch = join(out, 'sockseek-batch-abc123');
+    const freshBatch = join(out, 'sockseek-batch-def456');
     const unrelated = join(out, 'Some Album');
-    for (const d of [old, fresh, unrelated]) mkdirSync(d);
+    for (const d of [oldQuery, oldBatch, freshBatch, unrelated]) mkdirSync(d);
     const past = Date.now() / 1000 - 3 * 24 * 3600;
-    utimesSync(old, past, past);
+    utimesSync(oldQuery, past, past);
+    utimesSync(oldBatch, past, past);
 
     const removed = await pruneStaleQueryDirs(out, 24 * 3600 * 1000);
-    expect(removed).toBe(1);
-    expect(existsSync(old)).toBe(false);
-    expect(existsSync(fresh)).toBe(true);
+    expect(removed).toBe(2);
+    expect(existsSync(oldQuery)).toBe(false);
+    expect(existsSync(oldBatch)).toBe(false);
+    expect(existsSync(freshBatch)).toBe(true);
     expect(existsSync(unrelated)).toBe(true);
   });
 
   it('returns 0 for a missing dir', async () => {
     expect(await pruneStaleQueryDirs('/no/such/dir/xyz', 1000)).toBe(0);
+  });
+});
+
+describe('readAllPriorIndexCsvDownloads', () => {
+  const HEADER = 'filepath,artist,album,title,length,tracktype,state,failurereason';
+
+  it('collects downloaded rows across every prior batch dir, keyed by artist|title', async () => {
+    const out = mkdtempSync(join(tmpdir(), 'ss-prior-'));
+    const dirA = join(out, 'sockseek-batch-aaa');
+    const dirB = join(out, 'sockseek-batch-bbb');
+    mkdirSync(dirA);
+    mkdirSync(dirB);
+    writeFileSync(
+      join(dirA, '_index.csv'),
+      [HEADER, '/m/EBTG - Missing.flac,Everything But The Girl,,Missing,250,0,1,', ',The Trip,,Vibration,373,0,0,'].join('\n'),
+    );
+    writeFileSync(
+      join(dirB, '_index.csv'),
+      [HEADER, '/m/Daso - Meine.flac,Daso,,Meine,300,0,1,'].join('\n'),
+    );
+
+    const map = await readAllPriorIndexCsvDownloads(out);
+    expect(map.get('everything but the girl|missing')).toBe('/m/EBTG - Missing.flac');
+    expect(map.get('daso|meine')).toBe('/m/Daso - Meine.flac');
+    expect(map.has('the trip|vibration')).toBe(false); // not downloaded
+  });
+
+  it('newer batch dir wins on a key collision', async () => {
+    const out = mkdtempSync(join(tmpdir(), 'ss-prior-'));
+    const older = join(out, 'sockseek-batch-old');
+    const newer = join(out, 'sockseek-batch-new');
+    mkdirSync(older);
+    mkdirSync(newer);
+    writeFileSync(join(older, '_index.csv'), [HEADER, '/m/old.flac,A,,T,1,0,1,'].join('\n'));
+    writeFileSync(join(newer, '_index.csv'), [HEADER, '/m/new.flac,A,,T,1,0,1,'].join('\n'));
+    const past = Date.now() / 1000 - 3600;
+    utimesSync(older, past, past);
+
+    expect((await readAllPriorIndexCsvDownloads(out)).get('a|t')).toBe('/m/new.flac');
+  });
+
+  it('is empty for a missing output dir', async () => {
+    expect((await readAllPriorIndexCsvDownloads('/no/such/dir')).size).toBe(0);
   });
 });

@@ -1,5 +1,6 @@
 import * as fs from 'fs/promises';
 import * as path from 'path';
+import { normalizeForMatch } from './match';
 
 /** Minimal RFC-4180-ish CSV line parser (handles quoted fields containing commas). */
 export function parseCsvLine(line: string): string[] {
@@ -115,6 +116,56 @@ export async function readIndexCsvRowsAt(indexCsvFilePath: string): Promise<Inde
   return contents ? parseIndexCsvRows(contents) : [];
 }
 
+/** `artist|title` match key for a downloaded row, robust to sockseek's own
+ *  normalisation (`--remove-ft` etc.) and CSV quoting. */
+export function indexRowMatchKey(artist: string, title: string): string {
+  return `${normalizeForMatch(artist)}|${normalizeForMatch(title)}`;
+}
+
+/**
+ * Scans `outputDir` for every prior batch's `_index.csv` (under a
+ * `sockseek-batch-<id>` dir) and returns each track it downloaded, keyed by
+ * {@link indexRowMatchKey}. Lets a
+ * brand-new batch (new random `batchId`, hence a new scratch dir) still adopt files an
+ * earlier run downloaded but never persisted. Newer dirs win on key collision.
+ */
+export async function readAllPriorIndexCsvDownloads(
+  outputDir: string,
+): Promise<Map<string, string>> {
+  const result = new Map<string, string>();
+  let entries: import('fs').Dirent[];
+  try {
+    entries = await fs.readdir(outputDir, { withFileTypes: true });
+  } catch {
+    return result;
+  }
+
+  const dirs: { name: string; mtimeMs: number }[] = [];
+  for (const entry of entries) {
+    if (!entry.isDirectory() || !/^sockseek-batch-/.test(entry.name)) {
+      continue;
+    }
+    try {
+      const stat = await fs.stat(path.join(outputDir, entry.name));
+      dirs.push({ name: entry.name, mtimeMs: stat.mtimeMs });
+    } catch {
+      // ignore — best effort
+    }
+  }
+  // Oldest first so newer runs' downloads overwrite on key collision.
+  dirs.sort((a, b) => a.mtimeMs - b.mtimeMs);
+
+  for (const dir of dirs) {
+    const rows = await readIndexCsvRowsAt(path.join(outputDir, dir.name, '_index.csv'));
+    for (const row of rows) {
+      if (row.state === 'downloaded' && row.filepath) {
+        result.set(indexRowMatchKey(row.artist, row.title), row.filepath);
+      }
+    }
+  }
+  return result;
+}
+
 export async function removeIndexCsvDir(
   queryCsvPath: string,
   outputDir: string,
@@ -123,9 +174,10 @@ export async function removeIndexCsvDir(
 }
 
 /**
- * Deletes leftover `sockseek-*query-*` scratch dirs under `outputDir` that are
- * older than `maxAgeMs` — housekeeping so past runs don't accumulate. Never
- * throws.
+ * Deletes leftover `sockseek-*query-*` and `sockseek-batch-*` scratch dirs under
+ * `outputDir` that are older than `maxAgeMs` — housekeeping so past runs don't
+ * accumulate (a `sockseek-batch-*` dir is kept between runs as the cross-run
+ * adoption source, so it needs age-based pruning). Never throws.
  */
 export async function pruneStaleQueryDirs(
   outputDir: string,
@@ -140,7 +192,7 @@ export async function pruneStaleQueryDirs(
   }
   const cutoff = Date.now() - maxAgeMs;
   for (const entry of entries) {
-    if (!entry.isDirectory() || !/^sockseek-.*query-/.test(entry.name)) {
+    if (!entry.isDirectory() || !/^sockseek-(.*query-|batch-)/.test(entry.name)) {
       continue;
     }
     const dir = path.join(outputDir, entry.name);

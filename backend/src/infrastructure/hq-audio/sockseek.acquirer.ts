@@ -14,7 +14,9 @@ import { LOGGER_FACTORY } from 'src/application/ports/infrastructure/ILoggerFact
 import type { Readable } from 'stream';
 import {
   indexCsvPath,
+  indexRowMatchKey,
   pruneStaleQueryDirs,
+  readAllPriorIndexCsvDownloads,
   readIndexCsvDownloads,
   removeIndexCsvDir,
 } from './sockseek-index-csv';
@@ -785,34 +787,56 @@ export class SockseekAcquirer implements IHqAudioAcquirer {
     const resolvedOutputDir = outputDir || this.defaultOutputDir;
     const queryCsvPath = this.batchQueryCsvPath(batchId);
 
-    // A prior run of this same batch left a stable-named `_index.csv` (e.g. the
-    // process was killed before persisting). Adopt anything it downloaded so we
-    // don't re-fetch, then let the first pass clear it.
+    // Adopt anything a prior run already downloaded but never persisted so we
+    // don't re-fetch it. Two sources, in order of key specificity:
+    //  1. this same batchId's stable-named `_index.csv` (retry / reconnect) —
+    //     exact row-index match.
+    //  2. every OTHER `sockseek-batch-*/_index.csv` under the output dir (a
+    //     fresh scan gets a new random batchId) — artist+title match.
     const alreadyDone = new Set<string>();
+    const adopt = async (trackKey: string, filePath: string): Promise<boolean> => {
+      const format = resolveHqFormat(path.extname(filePath).replace(/^\./, '').toLowerCase());
+      if (!format || !(await this.downloadPathExists(filePath))) {
+        return false;
+      }
+      this.logger.info('sockseek batch: adopting a prior download from _index.csv', {
+        trackKey,
+        downloadPath: filePath,
+      });
+      alreadyDone.add(trackKey);
+      callbacks.onTrackSettled?.(trackKey, { status: 'succeeded', result: { filePath, format } });
+      return true;
+    };
+
     try {
       const prior = await readIndexCsvDownloads(queryCsvPath, resolvedOutputDir);
       for (const [index, filePath] of prior) {
         const track = tracks[index];
-        if (!track) {
-          continue;
-        }
-        const format = resolveHqFormat(
-          path.extname(filePath).replace(/^\./, '').toLowerCase(),
-        );
-        if (format && (await this.downloadPathExists(filePath))) {
-          this.logger.info('sockseek batch: adopting a prior download from _index.csv', {
-            trackKey: track.key,
-            downloadPath: filePath,
-          });
-          alreadyDone.add(track.key);
-          callbacks.onTrackSettled?.(track.key, {
-            status: 'succeeded',
-            result: { filePath, format },
-          });
+        if (track) {
+          await adopt(track.key, filePath);
         }
       }
     } catch (error) {
       this.logger.warn('sockseek batch: failed to read prior _index.csv', {
+        error: String(error),
+      });
+    }
+
+    try {
+      const priorByName = await readAllPriorIndexCsvDownloads(resolvedOutputDir);
+      if (priorByName.size > 0) {
+        for (const track of tracks) {
+          if (alreadyDone.has(track.key)) {
+            continue;
+          }
+          const filePath = priorByName.get(indexRowMatchKey(track.artist, track.title));
+          if (filePath) {
+            await adopt(track.key, filePath);
+          }
+        }
+      }
+    } catch (error) {
+      this.logger.warn('sockseek batch: failed to scan prior batch _index.csv files', {
         error: String(error),
       });
     }
@@ -867,8 +891,9 @@ export class SockseekAcquirer implements IHqAudioAcquirer {
       }
     } finally {
       this.cancelledBatchIds.delete(batchId);
-      // Reconciliation is done; drop the scratch dir so runs don't accumulate.
-      await removeIndexCsvDir(queryCsvPath, resolvedOutputDir).catch(() => undefined);
+      // Keep this batch's `_index.csv` dir: it is the adoption source for the
+      // NEXT scan (which gets a fresh random batchId). Age-based pruning at the
+      // top of each batch stops these from accumulating.
     }
   }
 
