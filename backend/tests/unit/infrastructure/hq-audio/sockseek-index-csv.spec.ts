@@ -6,6 +6,7 @@ import {
   indexCsvPath,
   parseCsvLine,
   parseIndexCsvDownloads,
+  indexRowMatchKey,
   parseIndexCsvRows,
   pruneStaleQueryDirs,
   readAllPriorIndexCsvDownloads,
@@ -139,6 +140,30 @@ describe('pruneStaleQueryDirs', () => {
   it('returns 0 for a missing dir', async () => {
     expect(await pruneStaleQueryDirs('/no/such/dir/xyz', 1000)).toBe(0);
   });
+});
+
+describe('indexRowMatchKey', () => {
+  it('normalises punctuation and case', () => {
+    expect(indexRowMatchKey('Robin S.', 'Back It Up (Club Mix)')).toBe(
+      'robin s|back it up club mix',
+    );
+  });
+
+  it('drops a featured-artist segment so a --remove-ft CSV row still matches', () => {
+    const csvSide = indexRowMatchKey('faithless', 'one step too far (alex neri club instrumental)');
+    const trackSide = indexRowMatchKey(
+      'faithless feat. dido',
+      'one step too far (alex neri club instrumental)',
+    );
+    expect(trackSide).toBe(csvSide);
+  });
+
+  it.each(['Jay-Z ft. Alicia Keys', 'Jay-Z featuring Alicia Keys', 'Jay-Z feat Alicia Keys'])(
+    'strips "%s" down to the primary artist',
+    (artist) => {
+      expect(indexRowMatchKey(artist, 'x')).toBe('jayz|x');
+    },
+  );
 });
 
 describe('readAllPriorIndexCsvDownloads', () => {

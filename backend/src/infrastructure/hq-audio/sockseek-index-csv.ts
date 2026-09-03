@@ -116,10 +116,20 @@ export async function readIndexCsvRowsAt(indexCsvFilePath: string): Promise<Inde
   return contents ? parseIndexCsvRows(contents) : [];
 }
 
+/**
+ * Drops a trailing "feat./ft./featuring/with ..." segment — sockseek writes its
+ * `_index.csv` with `--remove-ft` applied, so `Faithless feat. Dido` lands as
+ * `faithless`. Applied to both sides of {@link indexRowMatchKey} so the DB
+ * track's stored artist still cross-matches.
+ */
+function stripFeatured(value: string): string {
+  return value.replace(/\s*[([]?\s*(feat\.?|ft\.?|featuring)\s+.*$/i, '').trim();
+}
+
 /** `artist|title` match key for a downloaded row, robust to sockseek's own
  *  normalisation (`--remove-ft` etc.) and CSV quoting. */
 export function indexRowMatchKey(artist: string, title: string): string {
-  return `${normalizeForMatch(artist)}|${normalizeForMatch(title)}`;
+  return `${normalizeForMatch(stripFeatured(artist))}|${normalizeForMatch(title)}`;
 }
 
 /**
