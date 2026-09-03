@@ -6,6 +6,7 @@ import {
   indexCsvPath,
   parseCsvLine,
   parseIndexCsvDownloads,
+  parseIndexCsvRows,
   pruneStaleQueryDirs,
   removeIndexCsvDir,
 } from 'src/infrastructure/hq-audio/sockseek-index-csv';
@@ -63,6 +64,29 @@ describe('parseIndexCsvDownloads', () => {
 
   it('is empty for a header-only file', () => {
     expect(parseIndexCsvDownloads(HEADER).size).toBe(0);
+  });
+});
+
+describe('parseIndexCsvRows', () => {
+  const HEADER = 'filepath,artist,album,title,length,tracktype,state,failurereason';
+
+  it('classifies downloaded / failed / pending rows with 0-based index', () => {
+    const csv = [
+      HEADER,
+      ',freaky realistic,,something new,451,0,2,no sources', // row 0 - failed
+      '/m/EBTG - Missing.flac,everything but the girl,,missing,250,0,1,', // row 1 - downloaded
+      ',the trip,,vibration,373,0,0,', // row 2 - pending
+    ].join('\n');
+
+    expect(parseIndexCsvRows(csv)).toEqual([
+      { index: 0, filepath: '', artist: 'freaky realistic', title: 'something new', state: 'failed', failureReason: 'no sources' },
+      { index: 1, filepath: '/m/EBTG - Missing.flac', artist: 'everything but the girl', title: 'missing', state: 'downloaded', failureReason: '' },
+      { index: 2, filepath: '', artist: 'the trip', title: 'vibration', state: 'pending', failureReason: '' },
+    ]);
+  });
+
+  it('is empty for a header-only file', () => {
+    expect(parseIndexCsvRows(HEADER)).toEqual([]);
   });
 });
 

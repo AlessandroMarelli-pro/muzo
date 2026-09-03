@@ -13,6 +13,7 @@ import { ILogger, LOGGER } from 'src/application/ports/infrastructure/ILogger';
 import { LOGGER_FACTORY } from 'src/application/ports/infrastructure/ILoggerFactory';
 import type { Readable } from 'stream';
 import {
+  indexCsvPath,
   pruneStaleQueryDirs,
   readIndexCsvDownloads,
   removeIndexCsvDir,
@@ -245,6 +246,15 @@ export class SockseekAcquirer implements IHqAudioAcquirer {
   private batchQueryCsvPath(batchId: string): string {
     const safeId = batchId.replace(/[^A-Za-z0-9._-]/g, '_');
     return path.join(os.tmpdir(), `sockseek-batch-${safeId}.csv`);
+  }
+
+  /**
+   * Path to sockseek's `_index.csv` for a batch — its authoritative per-track
+   * final record (see `sockseek-index-csv.ts`). Callers can poll this while the
+   * batch runs to reconcile any settlement the stdout event stream dropped.
+   */
+  batchIndexCsvPath(batchId: string, outputDir: string): string {
+    return indexCsvPath(this.batchQueryCsvPath(batchId), outputDir || this.defaultOutputDir);
   }
 
   private async writeBatchQueryCsv(

@@ -41,19 +41,45 @@ export function parseCsvLine(line: string): string[] {
  */
 export function parseIndexCsvDownloads(contents: string): Map<number, string> {
   const result = new Map<number, string>();
+  for (const row of parseIndexCsvRows(contents)) {
+    if (row.state === 'downloaded' && row.filepath) {
+      result.set(row.index, row.filepath);
+    }
+  }
+  return result;
+}
+
+export interface IndexCsvRow {
+  /** 0-based, matching the query CSV data-row order. */
+  index: number;
+  filepath: string;
+  artist: string;
+  title: string;
+  /** downloaded (`1`) | failed (`2`) | pending (`0`/other). */
+  state: 'downloaded' | 'failed' | 'pending';
+  failureReason: string;
+}
+
+/** Full per-row view of `_index.csv` — downloaded, failed, and still-pending. */
+export function parseIndexCsvRows(contents: string): IndexCsvRow[] {
+  const rows: IndexCsvRow[] = [];
   const lines = contents.split('\n').filter((l) => l.trim());
   for (let i = 1; i < lines.length; i++) {
     const cols = parseCsvLine(lines[i]);
     if (cols.length < 8) {
       continue;
     }
-    const filepath = cols[0];
-    const state = cols[6];
-    if (state === '1' && filepath) {
-      result.set(i - 1, filepath);
-    }
+    const stateCol = cols[6];
+    rows.push({
+      index: i - 1,
+      filepath: cols[0],
+      artist: cols[1],
+      title: cols[3],
+      state: stateCol === '1' ? 'downloaded' : stateCol === '2' ? 'failed' : 'pending',
+      failureReason: cols[7],
+    });
   }
-  return result;
+  return rows;
 }
 
 /** The directory sockseek creates for a run's `_index.csv` (and partials). */
@@ -65,19 +91,28 @@ export function indexCsvPath(queryCsvPath: string, outputDir: string): string {
   return path.join(indexCsvDir(queryCsvPath, outputDir), '_index.csv');
 }
 
+async function readIndexCsvContents(filePath: string): Promise<string | null> {
+  try {
+    return await fs.readFile(filePath, 'utf-8');
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+      return null;
+    }
+    throw error;
+  }
+}
+
 export async function readIndexCsvDownloads(
   queryCsvPath: string,
   outputDir: string,
 ): Promise<Map<number, string>> {
-  try {
-    const contents = await fs.readFile(indexCsvPath(queryCsvPath, outputDir), 'utf-8');
-    return parseIndexCsvDownloads(contents);
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
-      return new Map();
-    }
-    throw error;
-  }
+  const contents = await readIndexCsvContents(indexCsvPath(queryCsvPath, outputDir));
+  return contents ? parseIndexCsvDownloads(contents) : new Map();
+}
+
+export async function readIndexCsvRowsAt(indexCsvFilePath: string): Promise<IndexCsvRow[]> {
+  const contents = await readIndexCsvContents(indexCsvFilePath);
+  return contents ? parseIndexCsvRows(contents) : [];
 }
 
 export async function removeIndexCsvDir(
