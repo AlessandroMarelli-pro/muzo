@@ -36,12 +36,15 @@ export type HqAudioBatchProgressEventType =
   | 'batch.state'
   | 'track.update'
   | 'batch.complete'
-  | 'batch.cancelled';
+  | 'batch.cancelled'
+  /** The batch is unknown or its state has expired — the client should stop. */
+  | 'batch.notfound';
 
 export interface HqAudioBatchProgressEvent {
   type: HqAudioBatchProgressEventType;
   batchId: string;
   timestamp: string;
   track?: HqAudioBatchTrackState;
-  state: HqAudioBatchState;
+  /** Absent on `batch.notfound`. */
+  state?: HqAudioBatchState;
 }

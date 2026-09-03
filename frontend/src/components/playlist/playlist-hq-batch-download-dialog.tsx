@@ -50,7 +50,7 @@ export function PlaylistHqBatchDownloadDialog({
   const [batchId, setBatchId] = useState<string | undefined>(undefined);
   const downloadPlaylistHqAudio = useDownloadPlaylistHqAudio();
   const cancelPlaylistHqAudioDownload = useCancelPlaylistHqAudioDownload();
-  const { state } = useHqAudioBatchProgress(batchId);
+  const { state, notFound } = useHqAudioBatchProgress(batchId);
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -67,6 +67,14 @@ export function PlaylistHqBatchDownloadDialog({
       localStorage.removeItem(batchIdStorageKey(playlist.id));
     }
   }, [playlist?.id, batchId, state?.status]);
+
+  // A stored batchId whose state has expired (or never existed) — drop it so the
+  // SSE stops reconnecting.
+  useEffect(() => {
+    if (!playlist?.id || !batchId || !notFound) return;
+    localStorage.removeItem(batchIdStorageKey(playlist.id));
+    setBatchId(undefined);
+  }, [playlist?.id, batchId, notFound]);
 
   // The batch writes `hqAudioPath` server-side as tracks succeed; refetch the
   // playlist so the HQ badges update live (throttled — a large batch fires many

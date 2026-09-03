@@ -716,6 +716,33 @@ export const useScanTrack = () => {
   });
 };
 
+/**
+ * `downloadHqAudio` / `enhanceHqAudio` return as soon as the job is *enqueued*;
+ * the file lands minutes later with no push notification for single tracks.
+ * Re-invalidate the track queries on a schedule that covers a typical
+ * acquisition (search + download + verify + tag), so the "HQ" badge and
+ * hqAudioPath appear without a manual reload.
+ */
+const HQ_ACQUIRE_REFRESH_DELAYS_MS = [8_000, 20_000, 45_000, 90_000, 180_000];
+// AI enhancement is a GPU job: ~12 min mono, ~24 min stereo.
+const HQ_ENHANCE_REFRESH_DELAYS_MS = [
+  60_000, 3 * 60_000, 6 * 60_000, 10 * 60_000, 15 * 60_000, 22 * 60_000, 30 * 60_000,
+];
+
+function scheduleHqRefresh(
+  queryClient: ReturnType<typeof useQueryClient>,
+  delays: readonly number[] = HQ_ACQUIRE_REFRESH_DELAYS_MS,
+) {
+  const keys = [['tracksList'], ['music-tracks'], ['tracks'], ['playlist'], ['favorites']];
+  for (const delay of delays) {
+    setTimeout(() => {
+      for (const queryKey of keys) {
+        queryClient.invalidateQueries({ queryKey });
+      }
+    }, delay);
+  }
+}
+
 export const useDownloadHqAudio = () => {
   const queryClient = useQueryClient();
 
@@ -739,6 +766,7 @@ export const useDownloadHqAudio = () => {
         duration: 3000,
       });
       queryClient.invalidateQueries({ queryKey: ['tracksList'] });
+      scheduleHqRefresh(queryClient);
     },
     onError: (error: any) => {
       const errorMessage =
@@ -771,6 +799,7 @@ export const useEnhanceHqAudio = () => {
         duration: 3000,
       });
       queryClient.invalidateQueries({ queryKey: ['tracksList'] });
+      scheduleHqRefresh(queryClient, HQ_ENHANCE_REFRESH_DELAYS_MS);
     },
     onError: (error: any) => {
       const errorMessage =

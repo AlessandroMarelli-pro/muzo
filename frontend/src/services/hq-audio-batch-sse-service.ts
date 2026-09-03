@@ -40,11 +40,12 @@ export interface HqAudioBatchState {
 }
 
 export interface HqAudioBatchProgressEvent {
-  type: 'batch.state' | 'track.update' | 'batch.complete' | 'batch.cancelled';
+  type: 'batch.state' | 'track.update' | 'batch.complete' | 'batch.cancelled' | 'batch.notfound';
   batchId: string;
   timestamp: string;
   track?: HqAudioBatchTrackState;
-  state: HqAudioBatchState;
+  /** Absent on `batch.notfound`. */
+  state?: HqAudioBatchState;
 }
 
 class HqAudioBatchSSEService {
@@ -134,6 +135,13 @@ export const useHqAudioBatchProgress = (batchId?: string) => {
   const [state, setState] = useState<HqAudioBatchState | null>(null);
   const [latestEvent, setLatestEvent] = useState<HqAudioBatchProgressEvent | null>(null);
   const [isConnected, setIsConnected] = useState(false);
+  /** Set when the backend says this batch is unknown/expired — stop reconnecting. */
+  const [notFound, setNotFound] = useState(false);
+
+  useEffect(() => {
+    setState(null);
+    setNotFound(false);
+  }, [batchId]);
 
   useEffect(() => {
     if (!batchId) {
@@ -146,13 +154,22 @@ export const useHqAudioBatchProgress = (batchId?: string) => {
 
       const unsubscribe = hqAudioBatchSSEService.subscribe(batchId, (event) => {
         setLatestEvent(event);
+        if (event.type === 'batch.notfound') {
+          setNotFound(true);
+          hqAudioBatchSSEService.disconnect(batchId);
+          return;
+        }
+        if (!event.state) {
+          return;
+        }
+        const nextState = event.state;
         setState((current) => {
           // Guard against an older snapshot arriving after a newer one (e.g. network delivery
           // jitter) from silently rolling the dialog back to a less-complete state.
-          if (current && event.state.updatedAt < current.updatedAt) {
+          if (current && nextState.updatedAt < current.updatedAt) {
             return current;
           }
-          return event.state;
+          return nextState;
         });
       });
 
@@ -176,7 +193,7 @@ export const useHqAudioBatchProgress = (batchId?: string) => {
     }
   }, [batchId, state?.status]);
 
-  return { state, latestEvent, isConnected };
+  return { state, latestEvent, isConnected, notFound };
 };
 
 export default hqAudioBatchSSEService;

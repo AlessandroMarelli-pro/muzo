@@ -324,7 +324,14 @@ export class AcquireHqAudioBatchUseCase {
       errorMessage,
     );
     if (!nextState) {
-      // Batch missing, or track already settled (e.g. cancelled) — ignore late/stale updates.
+      // Batch state missing (never persisted / expired), track already settled,
+      // or the track isn't in the batch. A missing batch means the frontend gets
+      // no progress at all, so log it rather than swallowing silently.
+      this.logger.warn('Batch progress update had no effect (missing state or already settled)', {
+        batchId,
+        trackId,
+        status,
+      });
       return;
     }
 

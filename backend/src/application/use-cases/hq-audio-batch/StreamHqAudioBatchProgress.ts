@@ -1,4 +1,4 @@
-import { catchError, EMPTY, map, merge, Observable } from 'rxjs';
+import { catchError, EMPTY, map, merge, Observable, of } from 'rxjs';
 import { HqAudioBatchProgressEvent } from 'src/application/ports/dtos/HqAudioBatchProgress.types';
 import { ILogger } from 'src/application/ports/infrastructure/ILogger';
 import { IHqAudioBatchProgressSubscriber } from 'src/application/ports/infrastructure/IHqAudioBatchProgressSubscriber';
@@ -23,7 +23,15 @@ export class StreamHqAudioBatchProgressUseCase {
       if (!currentState) {
         this.logger.debug(`Batch ${batchId} not found`);
         await this.hqAudioBatchProgressSubscriber.unsubscribeFromBatch(batchId);
-        return EMPTY;
+        // Emit a terminal event so the client stops reconnecting instead of
+        // treating an immediately-closed stream as a transient error.
+        return of({
+          data: {
+            type: 'batch.notfound' as const,
+            batchId,
+            timestamp: new Date().toISOString(),
+          },
+        });
       }
 
       const initialEvent: HqAudioBatchProgressEvent = {
