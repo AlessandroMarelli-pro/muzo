@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { HQ_AUDIO_ACQUIRER } from 'src/application/ports/infrastructure/IHqAudioAcquirer';
 import { ThirdPartySyncInfrastructureModule } from '../external-services/third-party-sync/third-party-sync.module';
 import { CompositeHqAudioAcquirer } from './composite-hq-audio.acquirer';
+import { QobuzAcquirer } from './qobuz.acquirer';
 import { SockseekAcquirer } from './sockseek.acquirer';
 import { TidalDlAcquirer } from './tidal-dl.acquirer';
 
@@ -10,10 +11,11 @@ import { TidalDlAcquirer } from './tidal-dl.acquirer';
   imports: [ConfigModule, ThirdPartySyncInfrastructureModule],
   providers: [
     TidalDlAcquirer,
+    QobuzAcquirer,
     SockseekAcquirer,
     CompositeHqAudioAcquirer,
     { provide: HQ_AUDIO_ACQUIRER, useExisting: CompositeHqAudioAcquirer },
   ],
-  exports: [HQ_AUDIO_ACQUIRER, SockseekAcquirer, TidalDlAcquirer],
+  exports: [HQ_AUDIO_ACQUIRER, SockseekAcquirer, TidalDlAcquirer, QobuzAcquirer],
 })
 export class HqAudioInfrastructureModule {}

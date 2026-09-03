@@ -14,6 +14,7 @@ import {
   TIDAL_SYNC_PROVIDER,
 } from 'src/application/ports/infrastructure/ITidalSyncProvider';
 import { getCurrentUserId } from 'src/kernel/types/context';
+import { normalizeForMatch } from './match';
 
 @Injectable()
 export class TidalDlAcquirer implements IHqAudioAcquirer {
@@ -30,14 +31,6 @@ export class TidalDlAcquirer implements IHqAudioAcquirer {
   ) {
     this.logger = loggerFactory.createLogger('TidalDlAcquirer');
     this.defaultOutputDir = this.configService.get<string>('hqAudio.tidal.outputDir') ?? '';
-  }
-
-  private normalizeForMatch(value: string): string {
-    return value
-      .toLowerCase()
-      .replace(/[^\w\s]/g, '')
-      .replace(/\s+/g, ' ')
-      .trim();
   }
 
   private async listAudioFiles(rootDir: string): Promise<string[]> {
@@ -133,10 +126,10 @@ export class TidalDlAcquirer implements IHqAudioAcquirer {
       return null;
     }
 
-    const normalizedArtist = this.normalizeForMatch(artist);
-    const normalizedTitle = this.normalizeForMatch(title);
+    const normalizedArtist = normalizeForMatch(artist);
+    const normalizedTitle = normalizeForMatch(title);
     const matchesArtistAndTitle = (filePath: string): boolean => {
-      const normalizedPath = this.normalizeForMatch(filePath);
+      const normalizedPath = normalizeForMatch(filePath);
       return normalizedPath.includes(normalizedArtist) && normalizedPath.includes(normalizedTitle);
     };
 
