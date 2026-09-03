@@ -52,17 +52,14 @@ const sheetVariants = cva(
 interface SheetContentProps
   extends
     React.ComponentPropsWithoutRef<typeof SheetPrimitive.Content>,
-    VariantProps<typeof sheetVariants> {
-  /** Extra classes for the backdrop overlay — e.g. to clear a docked bar. */
-  overlayClassName?: string;
-}
+    VariantProps<typeof sheetVariants> {}
 
 const SheetContent = React.forwardRef<
   React.ElementRef<typeof SheetPrimitive.Content>,
   SheetContentProps
->(({ side = 'right', className, overlayClassName, children, ...props }, ref) => (
+>(({ side = 'right', className, children, ...props }, ref) => (
   <SheetPortal>
-    <SheetOverlay className={overlayClassName} />
+    <SheetOverlay />
     <SheetPrimitive.Content
       ref={ref}
       className={cn(sheetVariants({ side }), 'overflow-y-auto overscroll-contain', className)}
