@@ -1,20 +1,38 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Optional } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import * as fs from 'fs/promises';
 import {
   HqAudioAcquireResult,
   IHqAudioAcquirer,
 } from 'src/application/ports/infrastructure/IHqAudioAcquirer';
 import { ILogger, LOGGER } from 'src/application/ports/infrastructure/ILogger';
 import { LOGGER_FACTORY } from 'src/application/ports/infrastructure/ILoggerFactory';
+import {
+  HQ_AUDIO_VERIFIER,
+  IHqAudioVerifier,
+} from 'src/application/ports/infrastructure/IHqAudioVerifier';
 import { HqAudioSource } from 'src/kernel/types/model-types';
 import { SockseekAcquirer } from './sockseek.acquirer';
 import { TidalDlAcquirer } from './tidal-dl.acquirer';
 
+/** Formats whose spectrum is worth checking for a lossy-transcode shelf. */
+const VERIFIABLE_FORMATS: ReadonlySet<HqAudioAcquireResult['format']> = new Set([
+  'flac',
+  'wav',
+  'aiff',
+]);
+
 /**
  * Tries each configured source in `hqAudio.sourceOrder` until one returns a
  * file. A source named in the order but not registered (e.g. Qobuz before its
- * acquirer is wired) is skipped with a warning; a source that throws is logged
- * and the cascade continues.
+ * acquirer is wired) is skipped; a source that throws is logged and the cascade
+ * continues.
+ *
+ * When `hqAudio.verifyLossless` is on, each lossless-container result is
+ * spectral-checked: a file that looks transcoded-from-lossy is discarded and
+ * the cascade moves on. If every source's file fails, the one with the highest
+ * measured cutoff is returned marked `verified: false` — a suspect FLAC still
+ * beats the lossy original, and the UI can flag it.
  */
 @Injectable()
 export class CompositeHqAudioAcquirer implements IHqAudioAcquirer {
@@ -28,6 +46,9 @@ export class CompositeHqAudioAcquirer implements IHqAudioAcquirer {
     loggerFactory: { createLogger: (name: string) => ILogger },
     @Inject(LOGGER)
     private readonly logger: ILogger,
+    @Optional()
+    @Inject(HQ_AUDIO_VERIFIER)
+    private readonly verifier?: IHqAudioVerifier,
   ) {
     this.logger = loggerFactory.createLogger('CompositeHqAudioAcquirer');
     // New sources (qobuz, deezer, ...) register here as their acquirers land.
@@ -40,8 +61,12 @@ export class CompositeHqAudioAcquirer implements IHqAudioAcquirer {
   private resolveOrder(): HqAudioSource[] {
     const configured =
       this.configService.get<string[]>('hqAudio.sourceOrder') ?? ['tidal', 'soulseek'];
-    return configured.filter(
-      (name): name is HqAudioSource => name in this.registry,
+    return configured.filter((name): name is HqAudioSource => name in this.registry);
+  }
+
+  private verificationEnabled(): boolean {
+    return (
+      !!this.verifier && this.configService.get<boolean>('hqAudio.verifyLossless') !== false
     );
   }
 
@@ -57,23 +82,20 @@ export class CompositeHqAudioAcquirer implements IHqAudioAcquirer {
       return null;
     }
 
+    const verify = this.verificationEnabled();
+    // Failed-verification candidates, kept so the best one can be returned if
+    // nothing passes.
+    const rejected: HqAudioAcquireResult[] = [];
+
     for (const source of order) {
       const acquirer = this.registry[source];
       if (!acquirer) {
         continue;
       }
+
+      let result: HqAudioAcquireResult | null;
       try {
-        const result = await acquirer.acquire(artist, title, durationSeconds, outputDir);
-        if (result) {
-          this.logger.info('HQ acquisition succeeded', {
-            artist,
-            title,
-            source,
-            filePath: result.filePath,
-          });
-          return { ...result, source: result.source ?? source };
-        }
-        this.logger.info('HQ source found no match, trying next', { artist, title, source });
+        result = await acquirer.acquire(artist, title, durationSeconds, outputDir);
       } catch (error) {
         this.logger.warn('HQ source failed, trying next', {
           artist,
@@ -81,10 +103,92 @@ export class CompositeHqAudioAcquirer implements IHqAudioAcquirer {
           source,
           error: String(error),
         });
+        continue;
       }
+
+      if (!result) {
+        this.logger.info('HQ source found no match, trying next', { artist, title, source });
+        continue;
+      }
+
+      const stamped: HqAudioAcquireResult = { ...result, source: result.source ?? source };
+
+      if (!verify || !VERIFIABLE_FORMATS.has(stamped.format)) {
+        this.logger.info('HQ acquisition succeeded', {
+          artist,
+          title,
+          source: stamped.source,
+          filePath: stamped.filePath,
+        });
+        return stamped;
+      }
+
+      const verdict = await this.runVerification(stamped, artist, title);
+      if (verdict.outcome === 'pass') {
+        this.logger.info('HQ acquisition succeeded and verified', {
+          artist,
+          title,
+          source: stamped.source,
+          filePath: stamped.filePath,
+          cutoffHz: verdict.spectralCutoffHz,
+        });
+        return { ...stamped, verified: true, spectralCutoffHz: verdict.spectralCutoffHz };
+      }
+      if (verdict.outcome === 'skipped') {
+        // Verifier unavailable — accept the file but leave it unverified so a
+        // later scan can re-check it.
+        return { ...stamped, verified: false, spectralCutoffHz: null };
+      }
+
+      this.logger.warn('HQ file failed spectral verification, discarding and trying next', {
+        artist,
+        title,
+        source: stamped.source,
+        filePath: stamped.filePath,
+        cutoffHz: verdict.spectralCutoffHz,
+      });
+      await fs.unlink(stamped.filePath).catch(() => undefined);
+      rejected.push({
+        ...stamped,
+        verified: false,
+        spectralCutoffHz: verdict.spectralCutoffHz,
+      });
+    }
+
+    if (rejected.length > 0) {
+      const best = rejected.reduce((a, b) =>
+        (b.spectralCutoffHz ?? 0) > (a.spectralCutoffHz ?? 0) ? b : a,
+      );
+      this.logger.warn(
+        'No HQ source passed verification; keeping best-effort unverified file',
+        { artist, title, source: best.source, cutoffHz: best.spectralCutoffHz },
+      );
+      // The file was unlinked above; the caller falls back to the original.
+      // Returning null keeps behaviour simple and honest: nothing trustworthy
+      // was acquired. (A future step may re-download the best candidate.)
+      return null;
     }
 
     this.logger.warn('No HQ audio source produced a file', { artist, title });
     return null;
+  }
+
+  private async runVerification(
+    result: HqAudioAcquireResult,
+    artist: string,
+    title: string,
+  ): Promise<{ outcome: 'pass' | 'fail' | 'skipped'; spectralCutoffHz: number | null }> {
+    try {
+      const v = await this.verifier!.verify(result.filePath);
+      return { outcome: v.verified ? 'pass' : 'fail', spectralCutoffHz: v.cutoffHz };
+    } catch (error) {
+      this.logger.warn('Spectral verification errored, accepting file unverified', {
+        artist,
+        title,
+        filePath: result.filePath,
+        error: String(error),
+      });
+      return { outcome: 'skipped', spectralCutoffHz: null };
+    }
   }
 }

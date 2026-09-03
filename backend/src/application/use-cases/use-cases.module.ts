@@ -14,6 +14,7 @@ import { FILE_MANAGER } from '../ports/infrastructure/IFileManager';
 import { HQ_AUDIO_ACQUIRE_PRODUCER } from '../ports/infrastructure/IHqAudioAcquireProducer';
 import { HQ_AUDIO_ACQUIRER } from '../ports/infrastructure/IHqAudioAcquirer';
 import { HQ_AUDIO_ENHANCER } from '../ports/infrastructure/IHqAudioEnhancer';
+import { HQ_AUDIO_VERIFIER } from '../ports/infrastructure/IHqAudioVerifier';
 import { HQ_AUDIO_BATCH_ACQUIRE_PRODUCER } from '../ports/infrastructure/IHqAudioBatchAcquireProducer';
 import { HQ_AUDIO_BATCH_PROGRESS_PUBLISHER } from '../ports/infrastructure/IHqAudioBatchProgressPublisher';
 import { HQ_AUDIO_BATCH_PROGRESS_SUBSCRIBER } from '../ports/infrastructure/IHqAudioBatchProgressSubscriber';
@@ -392,6 +393,8 @@ const useCasesProviders = [
     TidalDlAcquirer,
     SockseekAcquirer,
     HQ_AUDIO_BATCH_PROGRESS_PUBLISHER,
+    HQ_AUDIO_VERIFIER,
+    ConfigService,
     LOGGER_FACTORY,
     LOGGER,
   ]),

@@ -27,6 +27,7 @@ from src.api.batch_simple_analysis import BatchSimpleAnalysisResource
 from src.api.discogs_embedding import DiscogsEmbeddingResource
 from src.api.health import HealthResource
 from src.api.simple_analysis import SimpleAnalysisResource
+from src.api.verify_lossless import VerifyLosslessResource
 
 # Import configuration
 from src.config.settings import Config
@@ -231,6 +232,10 @@ def register_resources(api, app):
         logger.debug("✅ Audio enhancement endpoint registered")
     else:
         logger.debug("🚫 Audio enhancement endpoint disabled by configuration")
+
+    # Fake-lossless verification (always enabled; cheap, no model load)
+    api.add_resource(VerifyLosslessResource, "/audio/verify-lossless")
+    logger.debug("✅ Verify-lossless endpoint registered")
 
     logger.debug("API resources registered successfully")
 

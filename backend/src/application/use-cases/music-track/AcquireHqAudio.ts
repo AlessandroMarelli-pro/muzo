@@ -56,6 +56,8 @@ export class AcquireHqAudioUseCase {
     await this.musicTrackRepository.updateOneById(trackId, {
       hqAudioPath: result.filePath,
       hqAudioSource: result.source,
+      hqAudioVerified: result.verified ?? false,
+      hqAudioSpectralCutoffHz: result.spectralCutoffHz ?? undefined,
     });
   }
 }

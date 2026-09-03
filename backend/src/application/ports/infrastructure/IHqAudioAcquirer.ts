@@ -9,6 +9,13 @@ export type HqAudioAcquireResult = {
    * composite cascade stamps it from the acquirer that succeeded.
    */
   source?: HqAudioSource;
+  /**
+   * Spectral fake-lossless verdict, set by the composite when verification is
+   * enabled. Undefined means "not checked" (e.g. non-lossless container).
+   */
+  verified?: boolean;
+  /** Measured high-frequency cutoff in Hz from verification, if run. */
+  spectralCutoffHz?: number | null;
 };
 
 export const HQ_AUDIO_ACQUIRER = createToken<IHqAudioAcquirer>('HQ_AUDIO_ACQUIRER');

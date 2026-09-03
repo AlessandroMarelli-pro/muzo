@@ -14,11 +14,16 @@ const noopLogger = {
 
 const loggerFactory = { createLogger: () => noopLogger };
 
-function build(order: string[] | undefined) {
+function build(
+  order: string[] | undefined,
+  opts: { verifyLossless?: boolean; verifier?: { verify: ReturnType<typeof vi.fn> } } = {},
+) {
   const tidal = { acquire: vi.fn() };
   const sockseek = { acquire: vi.fn() };
   const config = {
-    get: vi.fn().mockReturnValue(order),
+    get: vi.fn((key: string) =>
+      key === 'hqAudio.verifyLossless' ? (opts.verifyLossless ?? false) : order,
+    ),
   } as unknown as ConfigService;
 
   const acquirer = new CompositeHqAudioAcquirer(
@@ -27,6 +32,7 @@ function build(order: string[] | undefined) {
     config,
     loggerFactory,
     noopLogger,
+    opts.verifier as never,
   );
   return { acquirer, tidal, sockseek };
 }
@@ -100,5 +106,63 @@ describe('CompositeHqAudioAcquirer', () => {
     expect(await acquirer.acquire('A', 'B', 100, '')).toBeNull();
     expect(tidal.acquire).not.toHaveBeenCalled();
     expect(sockseek.acquire).not.toHaveBeenCalled();
+  });
+
+  describe('spectral verification', () => {
+    it('accepts and stamps a file that passes verification', async () => {
+      const verify = vi.fn().mockResolvedValue({ verified: true, cutoffHz: 21500, reason: 'ok' });
+      const { acquirer, tidal } = build(['tidal', 'soulseek'], {
+        verifyLossless: true,
+        verifier: { verify },
+      });
+      tidal.acquire.mockResolvedValue(flac('/tidal/a.flac'));
+
+      const result = await acquirer.acquire('A', 'B', 100, '');
+
+      expect(verify).toHaveBeenCalledWith('/tidal/a.flac');
+      expect(result).toMatchObject({ verified: true, spectralCutoffHz: 21500, source: 'tidal' });
+    });
+
+    it('discards a flagged file and falls through to the next source', async () => {
+      const verify = vi
+        .fn()
+        .mockResolvedValueOnce({ verified: false, cutoffHz: 16000, reason: 'transcoded' })
+        .mockResolvedValueOnce({ verified: true, cutoffHz: 22000, reason: 'ok' });
+      const { acquirer, tidal, sockseek } = build(['tidal', 'soulseek'], {
+        verifyLossless: true,
+        verifier: { verify },
+      });
+      tidal.acquire.mockResolvedValue(flac('/tidal/fake.flac'));
+      sockseek.acquire.mockResolvedValue(flac('/ss/real.flac'));
+
+      const result = await acquirer.acquire('A', 'B', 100, '');
+
+      expect(result).toMatchObject({ filePath: '/ss/real.flac', verified: true, source: 'soulseek' });
+    });
+
+    it('returns null when every source fails verification', async () => {
+      const verify = vi.fn().mockResolvedValue({ verified: false, cutoffHz: 15000, reason: 'bad' });
+      const { acquirer, tidal, sockseek } = build(['tidal', 'soulseek'], {
+        verifyLossless: true,
+        verifier: { verify },
+      });
+      tidal.acquire.mockResolvedValue(flac('/tidal/fake1.flac'));
+      sockseek.acquire.mockResolvedValue(flac('/ss/fake2.flac'));
+
+      expect(await acquirer.acquire('A', 'B', 100, '')).toBeNull();
+    });
+
+    it('accepts the file unverified when the verifier errors', async () => {
+      const verify = vi.fn().mockRejectedValue(new Error('ai-service down'));
+      const { acquirer, tidal } = build(['tidal', 'soulseek'], {
+        verifyLossless: true,
+        verifier: { verify },
+      });
+      tidal.acquire.mockResolvedValue(flac('/tidal/a.flac'));
+
+      const result = await acquirer.acquire('A', 'B', 100, '');
+
+      expect(result).toMatchObject({ filePath: '/tidal/a.flac', verified: false, source: 'tidal' });
+    });
   });
 });

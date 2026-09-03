@@ -4,6 +4,8 @@ import {
 } from 'src/application/ports/dtos/HqAudioBatchProgress.types';
 import { IHqAudioBatchProgressPublisher } from 'src/application/ports/infrastructure/IHqAudioBatchProgressPublisher';
 import { ILogger } from 'src/application/ports/infrastructure/ILogger';
+import { ConfigService } from '@nestjs/config';
+import { IHqAudioVerifier } from 'src/application/ports/infrastructure/IHqAudioVerifier';
 import { IMusicTrackRepository } from 'src/application/ports/repositories/IMusicTrackRepository';
 import {
   SockseekAcquirer,
@@ -32,10 +34,16 @@ export class AcquireHqAudioBatchUseCase {
     private readonly tidalDlAcquirer: TidalDlAcquirer,
     private readonly sockseekAcquirer: SockseekAcquirer,
     private readonly hqAudioBatchProgressPublisher: IHqAudioBatchProgressPublisher,
+    private readonly hqAudioVerifier: IHqAudioVerifier,
+    private readonly configService: ConfigService,
     loggerFactory: { createLogger: (name: string) => ILogger },
     private readonly logger: ILogger,
   ) {
     this.logger = loggerFactory.createLogger('AcquireHqAudioBatchUseCase');
+  }
+
+  private get verifyLossless(): boolean {
+    return this.configService.get<boolean>('hqAudio.verifyLossless') !== false;
   }
 
   async execute(batchId: HqAudioBatchId, trackIds: MusicTrackId[]): Promise<void> {
@@ -83,9 +91,12 @@ export class AcquireHqAudioBatchUseCase {
     const sockseekQueries: SockseekBatchTrackQuery[] = [];
     for (const { query, result } of tidalResults) {
       if (result) {
+        const verification = await this.verify(result.filePath, result.format);
         await this.musicTrackRepository.updateOneById(query.key, {
           hqAudioPath: result.filePath,
           hqAudioSource: 'tidal',
+          hqAudioVerified: verification.verified,
+          hqAudioSpectralCutoffHz: verification.cutoffHz ?? undefined,
         });
         await this.updateTrackStatus(batchId, query.key, 'succeeded');
       } else {
@@ -111,15 +122,14 @@ export class AcquireHqAudioBatchUseCase {
     });
   }
 
-  private async tryTidal(query: BatchTrackQuery): Promise<{ filePath: string } | null> {
+  private async tryTidal(query: BatchTrackQuery) {
     try {
-      const result = await this.tidalDlAcquirer.acquire(
+      return await this.tidalDlAcquirer.acquire(
         query.artist,
         query.title,
         query.durationSeconds,
         '',
       );
-      return result;
     } catch (error) {
       this.logger.warn('Tidal acquisition failed in batch, falling back to sockseek', {
         trackId: query.key,
@@ -131,15 +141,54 @@ export class AcquireHqAudioBatchUseCase {
     }
   }
 
+  /**
+   * Spectral fake-lossless check for a batch-acquired file. Unlike the
+   * single-track composite cascade, the batch keeps a flagged file (there is no
+   * cheap "try the next source" here) but records verified=false so the UI can
+   * surface it and a later re-check can replace it.
+   */
+  private async verify(
+    filePath: string,
+    format: string,
+  ): Promise<{ verified: boolean; cutoffHz: number | null }> {
+    const verifiable = format === 'flac' || format === 'wav' || format === 'aiff';
+    if (!this.verifyLossless || !verifiable) {
+      return { verified: false, cutoffHz: null };
+    }
+    try {
+      const v = await this.hqAudioVerifier.verify(filePath);
+      if (!v.verified) {
+        this.logger.warn('Batch HQ file failed spectral verification (kept, flagged)', {
+          filePath,
+          cutoffHz: v.cutoffHz,
+          reason: v.reason,
+        });
+      }
+      return { verified: v.verified, cutoffHz: v.cutoffHz };
+    } catch (error) {
+      this.logger.warn('Batch spectral verification errored, leaving file unverified', {
+        filePath,
+        error: String(error),
+      });
+      return { verified: false, cutoffHz: null };
+    }
+  }
+
   private async handleTrackSettled(
     batchId: HqAudioBatchId,
     trackId: MusicTrackId,
     outcome: SockseekBatchTrackOutcome,
   ): Promise<void> {
     if (outcome.status === 'succeeded') {
+      const verification = await this.verify(
+        outcome.result.filePath,
+        outcome.result.format,
+      );
       await this.musicTrackRepository.updateOneById(trackId, {
         hqAudioPath: outcome.result.filePath,
         hqAudioSource: 'soulseek',
+        hqAudioVerified: verification.verified,
+        hqAudioSpectralCutoffHz: verification.cutoffHz ?? undefined,
       });
       await this.updateTrackStatus(batchId, trackId, 'succeeded');
     } else if (outcome.status === 'interrupted') {
