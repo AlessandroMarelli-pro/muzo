@@ -304,13 +304,15 @@ export function AddTrackDrawer({
   const title = playlistName ? `Add to “${playlistName}”` : 'Add tracks to the set';
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
+    // Non-modal so the docked player bar below the panel stays interactive.
+    <Sheet open={open} onOpenChange={onOpenChange} modal={false}>
       <SheetContent
         side="right"
         onInteractOutside={(e) => e.preventDefault()}
-        overlayClassName="!bottom-[var(--music-player-height-sm,0px)] sm:!bottom-[var(--music-player-height,0px)]"
+        onPointerDownOutside={(e) => e.preventDefault()}
+        overlayClassName="!hidden"
         className={cn(
-          'flex w-full flex-col gap-0 p-0 sm:max-w-[560px]',
+          'flex w-full flex-col gap-0 p-0 shadow-xl sm:max-w-[560px]',
           // stop above the docked player bar so its transport stays usable
           '!bottom-[var(--music-player-height-sm,0px)] !h-auto sm:!bottom-[var(--music-player-height,0px)]',
           showRefine && 'sm:max-w-[860px]',
