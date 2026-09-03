@@ -108,6 +108,20 @@ export class ProcessBatchAudioScanUseCase {
         batchIndex,
       );
 
+      // Durable per-batch progress checkpoint: this is what makes completedTracks advance
+      // with real work done, independent of whether the ai-service could reach Redis (it
+      // can't on Hugging Face -- DISABLE_REDIS=true there). ProcessEndBatchAudioScan only
+      // advances completedBatches now; the track-level split is recorded here, right after
+      // the batch's actual results are known.
+      if (sessionId) {
+        const successful = result.results.filter((r) => r.status === 'success').length;
+        const failed = result.results.length - successful;
+        await this.scanSessionRepository.updateSessionProgress(sessionId, {
+          completedTracks: successful,
+          failedTracks: failed,
+        });
+      }
+
       this.logger.debug(`Analyzed ${result.results.length} files in batch`, {
         result: result.results.map((track) => ({
           ...{

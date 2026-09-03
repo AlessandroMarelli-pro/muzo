@@ -8,20 +8,16 @@ import { useEffect, useState } from 'react';
 
 import { API_BASE_URL } from '@/lib/api-config';
 
+// Only event types the backend actually emits. It used to also list 'scan.started',
+// 'batch.created', 'batch.processing', 'track.processing', 'llm.filename', 'llm.metadata',
+// 'audio.analysis' and 'saving' -- those were either never wired up on the backend, or were
+// only ever published by the ai-service's Redis-based publisher, which is disabled on Hugging
+// Face (DISABLE_REDIS=true) and has since been removed entirely. See
+// backend/src/application/ports/dtos/ScanProgress.types.ts for the source of truth.
+export type EtaConfidence = 'warming-up' | 'low' | 'medium' | 'high';
+
 export interface ScanProgressEvent {
-  type:
-    | 'state'
-    | 'scan.started'
-    | 'batch.created'
-    | 'batch.processing'
-    | 'track.processing'
-    | 'llm.filename'
-    | 'llm.metadata'
-    | 'audio.analysis'
-    | 'saving'
-    | 'track.complete'
-    | 'batch.complete'
-    | 'scan.complete';
+  type: 'state' | 'track.complete' | 'tracks.already.analyzed' | 'batch.complete' | 'scan.complete';
   sessionId: string;
   timestamp: string;
   libraryId?: string;
@@ -36,14 +32,18 @@ export interface ScanProgressEvent {
     failedTracks?: number;
     startedAt?: string;
     updatedAt?: string;
-    tracksInBatch?: number;
     trackIndex?: number;
     fileName?: string;
-    progress?: number;
     successful?: number;
     failed?: number;
     duration?: number;
+    success?: boolean;
+    etaSeconds?: number | null;
+    tracksPerSecond?: number | null;
+    confidence?: EtaConfidence;
+    elapsedSeconds?: number;
   };
+  /** 0-100 percentage -- the backend normalizes basis points to this at the SSE/REST boundary. */
   overallProgress?: number;
 }
 
@@ -66,9 +66,14 @@ export interface ScanErrorEvent {
 
 export type ScanEvent = ScanProgressEvent | ScanErrorEvent;
 
+const RECONNECT_BASE_DELAY_MS = 1000;
+const RECONNECT_MAX_DELAY_MS = 15000;
+
 class SSEService {
   private connections = new Map<string, EventSource>();
   private listeners = new Map<string, Set<(event: ScanEvent) => void>>();
+  private reconnectAttempts = new Map<string, number>();
+  private reconnectTimers = new Map<string, ReturnType<typeof setTimeout>>();
   private queryClient: any = null;
 
   setQueryClient(queryClient: any) {
@@ -92,6 +97,7 @@ class SSEService {
 
       eventSource.onopen = () => {
         console.log(`SSE connection opened for session: ${sessionId}`);
+        this.reconnectAttempts.delete(sessionId);
       };
 
       eventSource.onmessage = (event) => {
@@ -105,7 +111,15 @@ class SSEService {
 
       eventSource.onerror = (error) => {
         console.error(`SSE connection error for session ${sessionId}:`, error);
-        // EventSource will automatically attempt to reconnect
+        // A browser-managed retry (readyState CONNECTING) needs nothing from us. A terminal
+        // error (readyState CLOSED -- e.g. the server returned 4xx/5xx, or explicitly closed
+        // the stream) leaves the EventSource dead but still in `connections`, so a bare
+        // `connect()` would short-circuit and never retry. Clear the slot and schedule our
+        // own retry with backoff.
+        if (eventSource.readyState === EventSource.CLOSED) {
+          this.connections.delete(sessionId);
+          this.scheduleReconnect(sessionId);
+        }
       };
 
       this.connections.set(sessionId, eventSource);
@@ -116,10 +130,36 @@ class SSEService {
     }
   }
 
+  private scheduleReconnect(sessionId: string): void {
+    // Don't reconnect a session nothing is listening to any more.
+    if (!this.listeners.get(sessionId)?.size) {
+      return;
+    }
+    if (this.reconnectTimers.has(sessionId)) {
+      return;
+    }
+    const attempt = (this.reconnectAttempts.get(sessionId) ?? 0) + 1;
+    this.reconnectAttempts.set(sessionId, attempt);
+    const delay = Math.min(RECONNECT_BASE_DELAY_MS * 2 ** (attempt - 1), RECONNECT_MAX_DELAY_MS);
+
+    const timer = setTimeout(() => {
+      this.reconnectTimers.delete(sessionId);
+      this.connect(sessionId);
+    }, delay);
+    this.reconnectTimers.set(sessionId, timer);
+  }
+
   /**
    * Disconnect from SSE endpoint
    */
   disconnect(sessionId: string): void {
+    const timer = this.reconnectTimers.get(sessionId);
+    if (timer) {
+      clearTimeout(timer);
+      this.reconnectTimers.delete(sessionId);
+    }
+    this.reconnectAttempts.delete(sessionId);
+
     const eventSource = this.connections.get(sessionId);
     if (eventSource) {
       eventSource.close();
@@ -227,6 +267,12 @@ export const useScanProgress = (sessionId?: string) => {
 
   useEffect(() => {
     if (!sessionId) {
+      // No active session (e.g. the scan just completed and was removed from
+      // activeSessions) -- clear any event from a previous session so callers don't keep
+      // rendering a stale 'scan.complete' forever.
+      setProgress(null);
+      setError(null);
+      setIsConnected(false);
       return;
     }
 
@@ -245,15 +291,9 @@ export const useScanProgress = (sessionId?: string) => {
         }
       });
 
-      // Check connection status periodically
-      const statusInterval = setInterval(() => {
-        setIsConnected(sseService.isConnected(sessionId));
-      }, 1000);
-
       // Cleanup
       return () => {
         unsubscribe();
-        clearInterval(statusInterval);
         // Note: We don't disconnect here to allow reconnection
         // Connection will be cleaned up when session completes
       };

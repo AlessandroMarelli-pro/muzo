@@ -139,36 +139,26 @@ export class ScanSessionRepository implements IScanSessionRepository {
   }
 
   /**
-   * Update session progress
-   * Uses atomic increment for overallProgress to prevent race conditions
+   * Update session progress.
+   *
+   * completedBatches/completedTracks/failedTracks are applied as atomic increments.
+   * overallProgress is *derived*, not incremented: it is recomputed from
+   * completedBatches/totalBatches after the increments are applied, inside the same
+   * transaction. Deriving it (instead of adding a precomputed per-batch increment, as
+   * this used to do) avoids two real bugs that increment-based tracking had: rounding
+   * error across many small increments never quite summing to 10000, and a growing
+   * totalBatches denominator (criteria scans call incrementSessionTotals more than once
+   * per session) silently invalidating increments that were already applied.
    */
   async updateSessionProgress(
     sessionId: SessionId,
     updates: UpdateScanSessionInput,
   ): Promise<Session | null> {
-    // Extract progressPercentage before modifying updates object
-    const progressPercentage = updates.progressPercentage;
-    delete updates.progressPercentage;
-
-    // Prepare update data with atomic increment for overallProgress
     const updateData: any = {
       ...updates,
       updatedAt: new Date(),
     };
 
-    // Use atomic increment if progressPercentage is provided
-    // progressPercentage is a decimal (e.g., 0.5 for 0.5%)
-    // overallProgress is stored as Int representing percentage (0-100)
-    // We increment by rounding the decimal percentage to the nearest integer
-    if (progressPercentage !== undefined && progressPercentage !== null) {
-      // Convert the decimal percentage to integer for atomic increment
-      const incrementValue = progressPercentage;
-      if (incrementValue !== 0) {
-        updateData.overallProgress = {
-          increment: incrementValue,
-        };
-      }
-    }
     if (updates.completedBatches !== undefined && updates.completedBatches !== null) {
       updateData.completedBatches = {
         increment: updates.completedBatches,
@@ -206,14 +196,32 @@ export class ScanSessionRepository implements IScanSessionRepository {
           return null;
         }
 
-        // Perform atomic update with increment
-        return await tx.scanSession.update({
+        const updated = await tx.scanSession.update({
           where: {
             sessionId: extractModelId(sessionId).dbId,
             createdById: getCurrentUserId(),
           },
           data: updateData,
         });
+
+        // Derive overallProgress (basis points, 0-10000) from the post-increment row.
+        if (updated.totalBatches > 0) {
+          const derivedProgress = Math.min(
+            10000,
+            Math.round((updated.completedBatches / updated.totalBatches) * 10000),
+          );
+          if (derivedProgress !== updated.overallProgress) {
+            return tx.scanSession.update({
+              where: {
+                sessionId: extractModelId(sessionId).dbId,
+                createdById: getCurrentUserId(),
+              },
+              data: { overallProgress: derivedProgress },
+            });
+          }
+        }
+
+        return updated;
       })
       .then((result) => (result ? toDomain(result) : null))
       .catch((error) => {

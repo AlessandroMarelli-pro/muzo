@@ -1,25 +1,31 @@
 /**
- * Event types and interfaces for scan progress tracking
+ * Event types and interfaces for scan progress tracking.
+ *
+ * This union only lists event types something actually emits. It used to also declare
+ * 'scan.started', 'batch.created', 'batch.processing', 'track.processing', 'llm.filename',
+ * 'llm.metadata', 'audio.analysis' and 'saving' -- those were either never wired up, or were
+ * only ever published by the ai-service's Redis-based publisher, which HF disables entirely
+ * (DISABLE_REDIS=true) and which has since been removed. A contract that lists events nobody
+ * sends is how a stale totalTracks: 0 on the frontend went unnoticed for so long -- keep this
+ * list honest.
+ *
+ * Progress correctness does not depend on any of these events arriving: `state` is also
+ * pushed by StreamSession on a short poll of the ScanSession DB row, which is the source of
+ * truth. The others are a low-latency nudge on top of that, nothing more.
  */
 
 import { MaybeUndefined } from 'src/kernel/common';
 
 export type ScanProgressEventType =
   | 'state'
-  | 'scan.started'
-  | 'batch.created'
-  | 'batch.processing'
-  | 'track.processing'
-  | 'llm.filename'
-  | 'llm.metadata'
-  | 'audio.analysis'
-  | 'saving'
   | 'track.complete'
   | 'tracks.already.analyzed'
   | 'batch.complete'
   | 'scan.complete';
 
 export type ScanErrorSeverity = 'warning' | 'error' | 'critical';
+
+export type EtaConfidence = 'warming-up' | 'low' | 'medium' | 'high';
 
 export interface BaseScanProgressEvent {
   type: ScanProgressEventType;
@@ -42,74 +48,17 @@ export interface ScanStateEvent extends BaseScanProgressEvent {
     failedTracks: number;
     startedAt: Date;
     updatedAt: MaybeUndefined<Date>;
+    /** Seconds until completion at the current average rate, or null with not enough signal
+     * yet / nothing left to estimate. See estimate-completion.ts. */
+    etaSeconds: number | null;
+    /** Session-wide average tracks processed per second. Null under the same conditions as etaSeconds. */
+    tracksPerSecond: number | null;
+    /** How much to trust etaSeconds -- 'warming-up' means the UI should show no number at all. */
+    confidence: EtaConfidence;
+    elapsedSeconds: number;
   };
-  overallProgress: number; // percentage
-}
-
-export interface BatchCreatedEvent extends BaseScanProgressEvent {
-  type: 'batch.created';
-  data: {
-    totalBatches: number;
-    totalTracks: number;
-  };
+  /** 0-100 percentage. Stored as basis points (0-10000) in the DB; converted at this boundary. */
   overallProgress: number;
-}
-
-export interface BatchProcessingEvent extends BaseScanProgressEvent {
-  type: 'batch.processing';
-  batchIndex: number;
-  totalBatches: number;
-  data: {
-    tracksInBatch: number;
-  };
-  overallProgress: number;
-}
-
-export interface TrackProcessingEvent extends BaseScanProgressEvent {
-  type: 'track.processing';
-  batchIndex: number;
-  data: {
-    trackIndex: number;
-    totalTracks: number;
-    fileName: string;
-  };
-}
-
-export interface LLMFilenameEvent extends BaseScanProgressEvent {
-  type: 'llm.filename';
-  batchIndex: number;
-  data: {
-    trackIndex: number;
-    fileName: string;
-  };
-}
-
-export interface LLMMetadataEvent extends BaseScanProgressEvent {
-  type: 'llm.metadata';
-  batchIndex: number;
-  data: {
-    trackIndex: number;
-    fileName: string;
-  };
-}
-
-export interface AudioAnalysisEvent extends BaseScanProgressEvent {
-  type: 'audio.analysis';
-  batchIndex: number;
-  data: {
-    trackIndex: number;
-    progress: number; // percentage
-    fileName: string;
-  };
-}
-
-export interface SavingEvent extends BaseScanProgressEvent {
-  type: 'saving';
-  batchIndex: number;
-  data: {
-    trackIndex: number;
-    fileName: string;
-  };
 }
 
 export interface TrackCompleteEvent extends BaseScanProgressEvent {
@@ -139,6 +88,7 @@ export interface BatchCompleteEvent extends BaseScanProgressEvent {
     failed: number;
     totalTracks: number;
   };
+  /** 0-100 percentage -- see ScanStateEvent.overallProgress. */
   overallProgress: number;
 }
 
@@ -151,6 +101,7 @@ export interface ScanCompleteEvent extends BaseScanProgressEvent {
     failed: number;
     duration: number; // milliseconds
   };
+  /** 0-100 percentage -- see ScanStateEvent.overallProgress. */
   overallProgress: number;
 }
 
@@ -172,13 +123,6 @@ export interface ScanErrorEvent {
 
 export type ScanProgressEvent =
   | ScanStateEvent
-  | BatchCreatedEvent
-  | BatchProcessingEvent
-  | TrackProcessingEvent
-  | LLMFilenameEvent
-  | LLMMetadataEvent
-  | AudioAnalysisEvent
-  | SavingEvent
   | TrackCompleteEvent
   | TrackAlreadyAnalyzedEvent
   | BatchCompleteEvent

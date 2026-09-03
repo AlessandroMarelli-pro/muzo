@@ -21,7 +21,6 @@ import src.api.simple_analysis as simple_analysis_module
 from src.scrappers.scrapper_dispatcher import get_album_art
 from src.services.simple_analysis import SimpleAnalysisService
 from src.utils.performance_optimizer import monitor_performance
-from src.utils.scan_progress_publisher import ScanProgressPublisher
 from src.utils.trace import trace_start
 
 _TRACE_FILE = "batch_simple_analysis"
@@ -43,7 +42,6 @@ class BatchSimpleAnalysisResource(Resource):
     def __init__(self):
         """Initialize the batch simple analysis resource."""
         self.simple_analysis = SimpleAnalysisService()
-        self.progress_publisher = ScanProgressPublisher()
 
     @monitor_performance("batch_simple_analysis_api")
     def post(self):
@@ -125,15 +123,6 @@ class BatchSimpleAnalysisResource(Resource):
             batch_index = request.form.get("batch_index")
             batch_index_int = int(batch_index) if batch_index else None
 
-            # Publish batch.processing event if session_id is provided
-            if session_id:
-                self.progress_publisher.publish_event(
-                    session_id,
-                    "batch.processing",
-                    {"tracksInBatch": len(audio_files)},
-                    batchIndex=batch_index_int,
-                )
-
             # Save all uploaded files temporarily
             file_items: List[Tuple[str, str]] = []
             for audio_file in audio_files:
@@ -170,7 +159,6 @@ class BatchSimpleAnalysisResource(Resource):
                     skip_intro=skip_intro,
                     session_id=session_id,
                     batch_index=batch_index_int,
-                    progress_publisher=self.progress_publisher if session_id else None,
                 )
 
             # Start album art fetching in parallel for successful results (non-blocking)

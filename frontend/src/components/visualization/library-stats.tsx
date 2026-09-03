@@ -169,11 +169,13 @@ export const LibraryStats: React.FC<LibraryStatsProps> = ({
   const formatDistribution = getFormatDistribution(tracks);
   const yearDistribution = getYearDistribution(tracks);
 
-  const analysisProgress = scanProgress?.overallProgress
-    ? scanProgress.overallProgress / 100
-    : totalTracks > 0
-      ? ((analysisStatusCounts.COMPLETED || 0) / totalTracks) * 100
-      : 0;
+  // overallProgress is a 0-100 percentage from the backend boundary onward -- see
+  // ScanStateEvent.overallProgress in ScanProgress.types.ts. Using `?? undefined` rather than
+  // `||`/ternary-on-truthiness means a legitimate 0 (scan just started) doesn't fall through
+  // to the DB-derived fallback.
+  const analysisProgress =
+    scanProgress?.overallProgress ??
+    (totalTracks > 0 ? ((analysisStatusCounts.COMPLETED || 0) / totalTracks) * 100 : 0);
 
   const processedFiles = scanProgress?.data?.completedTracks || 0;
   const totalFiles = scanProgress?.data?.totalTracks || totalTracks;

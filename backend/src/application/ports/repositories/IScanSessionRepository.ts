@@ -14,7 +14,6 @@ export interface UpdateScanSessionInput {
   failedTracks?: number;
   status?: ScanStatus;
   errorMessage?: string;
-  progressPercentage?: number;
 }
 
 export interface IScanSessionRepository {

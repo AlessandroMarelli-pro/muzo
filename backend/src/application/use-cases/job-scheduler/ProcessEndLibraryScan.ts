@@ -42,7 +42,8 @@ export class ProcessEndLibraryScanUseCase {
         failed: session.failedTracks,
         duration: Date.now() - session.startedAt.getTime(),
       },
-      overallProgress: 10000,
+      // 0-100 percentage -- see ScanStateEvent.overallProgress in ScanProgress.types.ts.
+      overallProgress: 100,
     });
 
     const analysisStatusCounts =

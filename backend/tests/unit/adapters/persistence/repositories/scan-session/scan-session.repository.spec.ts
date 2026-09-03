@@ -203,19 +203,26 @@ describe('ScanSessionRepository', () => {
       );
     });
 
-    it('optimal: updates progress when session is SCANNING and returns domain model', async () => {
+    it('optimal: updates progress when session is SCANNING and derives overallProgress from completedBatches/totalBatches', async () => {
       const sessionId = models.session.id(SESSION_DB_ID) as SessionId;
-      const updatedRow = makePrismaScanSessionRow({
-        overallProgress: 50,
-        completedBatches: 1,
-      });
       prismaMock.scanSession.findUnique.mockResolvedValue({
         status: PrismaScanStatus.SCANNING,
       } as PrismaScanSession);
-      prismaMock.scanSession.update.mockResolvedValue(updatedRow);
+      // First update() applies the increments; second update() applies the derived
+      // overallProgress once the post-increment row is known. 1/2 batches -> 5000 bp.
+      prismaMock.scanSession.update
+        .mockResolvedValueOnce(
+          makePrismaScanSessionRow({ totalBatches: 2, completedBatches: 1, overallProgress: 0 }),
+        )
+        .mockResolvedValueOnce(
+          makePrismaScanSessionRow({
+            totalBatches: 2,
+            completedBatches: 1,
+            overallProgress: 5000,
+          }),
+        );
 
       const result = await repo.updateSessionProgress(sessionId, {
-        progressPercentage: 50,
         completedBatches: 1,
       });
 
@@ -226,15 +233,38 @@ describe('ScanSessionRepository', () => {
         },
         select: { status: true },
       });
-      expect(prismaMock.scanSession.update).toHaveBeenCalledWith({
+      expect(prismaMock.scanSession.update).toHaveBeenNthCalledWith(1, {
         where: {
           sessionId: SESSION_DB_ID,
           createdById: TEST_USER_ID,
         },
         data: expect.any(Object),
       });
+      expect(prismaMock.scanSession.update).toHaveBeenNthCalledWith(2, {
+        where: {
+          sessionId: SESSION_DB_ID,
+          createdById: TEST_USER_ID,
+        },
+        data: { overallProgress: 5000 },
+      });
       expect(result).not.toBeNull();
-      expect(result!.overallProgress).toBe(50);
+      expect(result!.overallProgress).toBe(5000);
+    });
+
+    it('optimal: skips the second update when the derived overallProgress is unchanged', async () => {
+      const sessionId = models.session.id(SESSION_DB_ID) as SessionId;
+      prismaMock.scanSession.findUnique.mockResolvedValue({
+        status: PrismaScanStatus.SCANNING,
+      } as PrismaScanSession);
+      // 1/1 batches -> derived 10000, already matches the row's overallProgress.
+      prismaMock.scanSession.update.mockResolvedValueOnce(
+        makePrismaScanSessionRow({ totalBatches: 1, completedBatches: 1, overallProgress: 10000 }),
+      );
+
+      const result = await repo.updateSessionProgress(sessionId, { completedBatches: 1 });
+
+      expect(prismaMock.scanSession.update).toHaveBeenCalledTimes(1);
+      expect(result!.overallProgress).toBe(10000);
     });
 
     it('failure: rethrows when Prisma transaction throws', async () => {
@@ -242,7 +272,7 @@ describe('ScanSessionRepository', () => {
       prismaMock.$transaction.mockRejectedValue(new Error('Transaction failed'));
 
       await expect(
-        repo.updateSessionProgress(sessionId, { progressPercentage: 1 }),
+        repo.updateSessionProgress(sessionId, { completedBatches: 1 }),
       ).rejects.toThrow('Transaction failed');
     });
 
@@ -278,7 +308,7 @@ describe('ScanSessionRepository', () => {
       } as PrismaScanSession);
 
       const result = await repo.updateSessionProgress(sessionId, {
-        progressPercentage: 1,
+        completedBatches: 1,
       });
 
       expect(result).toBeNull();
@@ -290,7 +320,7 @@ describe('ScanSessionRepository', () => {
       prismaMock.scanSession.findUnique.mockResolvedValue(null);
 
       const result = await repo.updateSessionProgress(sessionId, {
-        progressPercentage: 1,
+        completedBatches: 1,
       });
 
       expect(result).toBeNull();

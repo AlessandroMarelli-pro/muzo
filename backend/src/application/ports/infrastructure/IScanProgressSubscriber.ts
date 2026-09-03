@@ -1,6 +1,5 @@
 import { Observable } from 'rxjs';
 import { SessionId } from 'src/kernel/ids';
-import { Session } from 'src/kernel/types';
 import { createToken } from '../../utils/create-token';
 import { ScanErrorEvent, ScanProgressEvent } from '../dtos/ScanProgress.types';
 
@@ -13,5 +12,4 @@ export interface IScanProgressSubscriber {
   unsubscribeFromSession(sessionId: SessionId): Promise<void>;
   getEventStream(sessionId: SessionId): Observable<ScanProgressEvent>;
   getErrorStream(sessionId: SessionId): Observable<ScanErrorEvent>;
-  getCurrentState(sessionId: SessionId): Promise<Session>;
 }

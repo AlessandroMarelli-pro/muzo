@@ -168,7 +168,8 @@ describe('ProcessEndLibraryScanUseCase', () => {
         expect.objectContaining({
           type: 'scan.complete',
           libraryId: LIBRARY_ID,
-          overallProgress: 10000,
+          // 0-100 percentage -- see ScanStateEvent.overallProgress in ScanProgress.types.ts.
+          overallProgress: 100,
           data: expect.objectContaining({
             totalBatches: 1,
             totalTracks: 2,
@@ -204,7 +205,7 @@ describe('ProcessEndLibraryScanUseCase', () => {
       expect(event.data.failed).toBe(1);
       expect(event.data.duration).toBeGreaterThanOrEqual(59_000);
       expect(event.data.duration).toBeLessThanOrEqual(61_000);
-      expect(event.overallProgress).toBe(10000);
+      expect(event.overallProgress).toBe(100);
     });
 
     it('when incremental true: updates library with lastIncrementalScanAt (scan still ends IDLE)', async () => {

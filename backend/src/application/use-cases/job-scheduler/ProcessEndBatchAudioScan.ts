@@ -25,17 +25,20 @@ export class ProcessEndBatchAudioScanUseCase {
     contextUser: ActionContext['user'],
     batchFailed = false,
   ): Promise<void> {
-    const { totalFiles, totalBatches, audioFiles, sessionId, batchIndex } = data;
-    const progressPercentage = Math.round((1 / totalBatches!) * 10000);
+    const { totalFiles, audioFiles, sessionId, batchIndex } = data;
     // Update session progress. Even when the batch failed (e.g. AI analysis or a downstream
     // sync threw), completedBatches must still advance -- otherwise the scan can never reach
-    // totalBatches and stalls forever. Failed batches are counted as failedTracks instead of
-    // completedTracks so the final tally still reflects what actually succeeded.
+    // totalBatches and stalls forever. overallProgress is derived from completedBatches/
+    // totalBatches inside updateSessionProgress, not passed in here.
+    //
+    // completedTracks/failedTracks are NOT incremented here: ProcessBatchAudioScanUseCase
+    // already records the real per-file successful/failed split as soon as the batch's
+    // results are known, right after analyzeAudioBatch returns. Incrementing them again here
+    // would double-count every track. The one exception is a batch that failed outright
+    // (batchFailed) before any per-file split could be recorded -- account those as failed here.
     const session = await this.scanSessionRepository.updateSessionProgress(sessionId, {
       completedBatches: 1,
-      progressPercentage,
-      completedTracks: batchFailed ? 0 : audioFiles.length,
-      failedTracks: batchFailed ? audioFiles.length : 0,
+      ...(batchFailed ? { failedTracks: audioFiles.length } : {}),
     });
     if (!session) {
       this.logger.error(
@@ -45,11 +48,13 @@ export class ProcessEndBatchAudioScanUseCase {
     }
     this.logger.info(`Updated session progress for session ${sessionId}`, {
       ...data,
-      progressPercentage,
       completedBatches: session.completedBatches,
       totalBatches: session.totalBatches,
     });
     const isComplete = session.completedBatches === session.totalBatches;
+    // overallProgress leaves the backend as a 0-100 percentage; session.overallProgress is
+    // basis points (0-10000) in the DB.
+    const overallProgressPercent = isComplete ? 100 : session.overallProgress / 100;
     const batchCompleteEvent: BatchCompleteEvent = {
       type: 'batch.complete',
       sessionId,
@@ -61,11 +66,11 @@ export class ProcessEndBatchAudioScanUseCase {
         failed: batchFailed ? totalFiles : 0,
         totalTracks: totalFiles,
       },
-      overallProgress: isComplete ? 10000 : session.overallProgress,
+      overallProgress: overallProgressPercent,
     };
 
     this.logger.debug(
-      `Progress update for ${libraryId}: ${session.completedBatches}/${session.totalBatches} (${(session.overallProgress / 100).toFixed(1)}%)`,
+      `Progress update for ${libraryId}: ${session.completedBatches}/${session.totalBatches} (${overallProgressPercent.toFixed(1)}%)`,
     );
     await this.scanProgressPublisher.publishEvent(sessionId, batchCompleteEvent);
 

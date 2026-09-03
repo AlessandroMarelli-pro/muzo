@@ -88,7 +88,6 @@ class TestBatchOriginalFilename:
             30.0,
             None,
             None,
-            None,
             raw_filename="014. Original Upload Name.mp3",
         )
 
@@ -141,7 +140,6 @@ class TestBatchOriginalFilename:
             30.0,
             None,
             None,
-            None,
             # raw_filename omitted
         )
 
@@ -163,7 +161,6 @@ class TestBatchOriginalFilename:
             1,
             10.0,
             30.0,
-            None,
             None,
             None,
             raw_filename="014. Original Upload Name.mp3",

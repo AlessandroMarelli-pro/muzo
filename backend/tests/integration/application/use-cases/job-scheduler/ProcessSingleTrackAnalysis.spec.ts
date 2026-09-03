@@ -210,6 +210,9 @@ describe('ProcessSingleTrackAnalysisUseCase', () => {
             totalTracks: 1,
             trackIndex: 0,
             fileName: 'single.mp3',
+            // Regression guard: this used to be hardcoded to `false` on every call,
+            // including the success path -- see sendTrackCompleteEvent.
+            success: true,
           }),
         }),
       );
@@ -260,7 +263,7 @@ describe('ProcessSingleTrackAnalysisUseCase', () => {
         SESSION_ID,
         expect.objectContaining({
           type: 'track.complete',
-          data: expect.objectContaining({ fileName: 'no-meta.mp3' }),
+          data: expect.objectContaining({ fileName: 'no-meta.mp3', success: false }),
         }),
       );
     });

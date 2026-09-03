@@ -385,7 +385,9 @@ describe('ProcessEndBatchAudioScanUseCase', () => {
             failed: 4,
             totalTracks: 4,
           },
-          overallProgress: 10000,
+          // overallProgress leaves the backend as a 0-100 percentage now (basis points
+          // in the DB are converted at the publish boundary).
+          overallProgress: 100,
         }),
       );
       // completedBatches reached totalBatches despite the failure -- completion still fires.
@@ -393,8 +395,13 @@ describe('ProcessEndBatchAudioScanUseCase', () => {
 
       const session = await prisma.scanSession.findFirst({ where: { sessionId: 'session-1' } });
       expect(session?.completedBatches).toBe(2);
-      expect(session?.completedTracks).toBe(2); // only batch 0's 2 files
-      expect(session?.failedTracks).toBe(2); // batch 1's 2 files, marked failed
+      // ProcessEndBatchAudioScanUseCase no longer attributes a successful batch's tracks to
+      // completedTracks -- that's now recorded durably by ProcessBatchAudioScanUseCase right
+      // after analyzeAudioBatch returns (see its own spec), so both counters stay 0 here: this
+      // test only drives ProcessEndBatchAudioScanUseCase in isolation.
+      expect(session?.completedTracks).toBe(0);
+      // failedTracks: audioFiles.length is batch 1's own file array (2), not totalFiles (4).
+      expect(session?.failedTracks).toBe(2); // batch 1's failure, recorded by this use-case
     });
   });
 });

@@ -73,6 +73,10 @@ export const useActiveScanSessions = () => {
           startedAt: string;
           completedAt?: string;
           overallProgress: number;
+          etaSeconds: number | null;
+          tracksPerSecond: number | null;
+          confidence: 'warming-up' | 'low' | 'medium' | 'high';
+          elapsedSeconds: number;
         }>;
       }>('/scan-progress/active');
       return response.data;
@@ -98,6 +102,10 @@ export const useCompletedScanSessions = () => {
           startedAt: string;
           completedAt?: string;
           overallProgress: number;
+          etaSeconds: number | null;
+          tracksPerSecond: number | null;
+          confidence: 'warming-up' | 'low' | 'medium' | 'high';
+          elapsedSeconds: number;
         }>;
       }>('/scan-progress/completed');
       return response.data;

@@ -71,19 +71,34 @@ function useActiveScan() {
     if (sessions.length === 0) return null;
     const totalTracks = sessions.reduce((sum, s) => sum + (s.totalTracks || 0), 0);
     const completedTracks = sessions.reduce((sum, s) => sum + (s.completedTracks || 0), 0);
+    // overallProgress is a 0-100 percentage from the backend boundary onward -- see
+    // ScanStateEvent.overallProgress in ScanProgress.types.ts.
     const rawProgress =
       sessions.reduce((sum, s) => sum + (s.overallProgress || 0), 0) / sessions.length;
-    const progress =
-      totalTracks > 0
-        ? Math.round((completedTracks / totalTracks) * 100)
-        : Math.round(rawProgress > 1 ? rawProgress : rawProgress * 100);
-    return { totalTracks, completedTracks, progress: Math.min(Math.max(progress, 0), 100) };
+    const progress = totalTracks > 0 ? Math.round((completedTracks / totalTracks) * 100) : Math.round(rawProgress);
+    const etaSeconds =
+      sessions.length === 1 && sessions[0]?.confidence !== 'warming-up'
+        ? (sessions[0]?.etaSeconds ?? null)
+        : null;
+    return {
+      totalTracks,
+      completedTracks,
+      progress: Math.min(Math.max(progress, 0), 100),
+      etaSeconds,
+    };
   }, [activeSessions]);
 }
 
 function ScanningBriefing() {
   const active = useActiveScan();
   if (!active) return null;
+
+  const etaLabel =
+    active.etaSeconds === null
+      ? null
+      : active.etaSeconds < 60
+        ? `~${active.etaSeconds}s remaining`
+        : `~${Math.round(active.etaSeconds / 60)} min remaining`;
 
   return (
     <div className="flex flex-col gap-3 rounded-xl border bg-card px-5 py-4 shadow-sm">
@@ -92,10 +107,13 @@ function ScanningBriefing() {
           <Loader2 className="h-4 w-4 animate-spin text-primary" aria-hidden />
           Analyzing your library
         </span>
-        <span className="font-mono text-sm text-muted-foreground tabular-nums">
-          {active.totalTracks > 0
-            ? `${active.completedTracks.toLocaleString()} / ${active.totalTracks.toLocaleString()}`
-            : `${active.progress}%`}
+        <span className="flex items-center gap-2 font-mono text-sm text-muted-foreground tabular-nums">
+          <span>
+            {active.totalTracks > 0
+              ? `${active.completedTracks.toLocaleString()} / ${active.totalTracks.toLocaleString()}`
+              : `${active.progress}%`}
+          </span>
+          {etaLabel && <span>{etaLabel}</span>}
         </span>
       </div>
       <Progress value={active.progress} className="h-1.5" aria-label="Analysis progress" />

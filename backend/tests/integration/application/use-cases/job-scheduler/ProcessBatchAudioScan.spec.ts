@@ -172,9 +172,30 @@ describe('ProcessBatchAudioScanUseCase', () => {
     await prisma.musicLibrary.deleteMany({});
     await prisma.genre.deleteMany({});
     await prisma.subgenre.deleteMany({});
+    await prisma.scanSession.deleteMany({});
     fakeAnalyzeBatch.mockReset();
     fakePublishEvent.mockClear();
   });
+
+  async function seedSession(
+    overrides: { totalBatches?: number; totalTracks?: number } = {},
+  ) {
+    await prisma.scanSession.create({
+      data: {
+        id: extractModelId(SESSION_ID).dbId,
+        sessionId: extractModelId(SESSION_ID).dbId,
+        status: 'SCANNING',
+        totalBatches: overrides.totalBatches ?? 1,
+        completedBatches: 0,
+        totalTracks: overrides.totalTracks ?? 1,
+        completedTracks: 0,
+        failedTracks: 0,
+        overallProgress: 0,
+        startedAt: new Date(),
+        createdById: TEST_USER_ID,
+      },
+    });
+  }
 
   /** Seed an already-analyzed track (COMPLETED + genre + subgenre) so areFilesAnalyzed returns true for it. */
   async function seedAlreadyAnalyzedTrack(filePath: string, libraryDbId: string) {
@@ -385,6 +406,86 @@ describe('ProcessBatchAudioScanUseCase', () => {
 
       const data = makeBatchJobData();
       await expect(useCase.execute(data)).rejects.toThrow('Analysis service unavailable');
+    });
+
+    it('durable checkpoint: records the real successful/failed split on the session row as soon as results are known', async () => {
+      const library = makeLibrary({ id: 'lib-1' });
+      await musicLibraryRepository.save(library);
+      await seedSession({ totalBatches: 1, totalTracks: 2 });
+
+      const batchResponse: AudioAnalysisBatchResponse = {
+        status: 'partial_success',
+        total_files: 2,
+        successful: 1,
+        failed: 1,
+        results: [
+          {
+            status: 'success',
+            processing_time: 1,
+            processing_mode: 'simple',
+            schema_version: 2,
+            track: { filename: 'track1.mp3', original_filename: 'track1.mp3', extension: 'mp3', mime_type: 'audio/mpeg', size_bytes: 0, size_mb: 0 },
+            audio: null,
+            tags: {},
+            features: {},
+            labels: {},
+            classifications: { genre_styles: [], genres: [], styles: [], instruments: [], tags: [] },
+            embedding: null,
+            warnings: [],
+          },
+          {
+            status: 'error',
+            message: 'Analysis failed',
+            processing_time: 1,
+            processing_mode: 'simple',
+            schema_version: 2,
+            track: null,
+            audio: null,
+            tags: null,
+            features: {},
+            labels: {},
+            classifications: { genre_styles: [], genres: [], styles: [], instruments: [], tags: [] },
+            embedding: null,
+            warnings: [],
+          },
+        ],
+        processing_time: 1,
+        processing_mode: 'batch',
+      };
+      fakeAnalyzeBatch.mockResolvedValue(batchResponse);
+
+      const data = makeBatchJobData({
+        audioFiles: [
+          {
+            filePath: TRACK1_PATH,
+            fileName: 'track1.mp3',
+            fileSize: 1024,
+            extension: '.mp3',
+            lastModified: new Date(),
+            trackIndex: 0,
+            libraryId: LIBRARY_ID,
+          },
+          {
+            filePath: TRACK2_PATH,
+            fileName: 'track2.mp3',
+            fileSize: 2048,
+            extension: '.mp3',
+            lastModified: new Date(),
+            trackIndex: 1,
+            libraryId: LIBRARY_ID,
+          },
+        ],
+        totalFiles: 2,
+      });
+
+      await useCase.execute(data);
+
+      const session = await prisma.scanSession.findFirst({
+        where: { sessionId: extractModelId(SESSION_ID).dbId },
+      });
+      // completedBatches is untouched here -- that's ProcessEndBatchAudioScanUseCase's job.
+      expect(session?.completedTracks).toBe(1);
+      expect(session?.failedTracks).toBe(1);
     });
   });
 });

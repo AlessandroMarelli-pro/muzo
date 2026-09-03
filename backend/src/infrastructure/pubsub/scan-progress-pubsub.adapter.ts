@@ -24,14 +24,13 @@ export class ScanProgressPubSubAdapter
   >();
   private readonly channelPrefix: string;
   private redisPublisher: Redis;
-  private redisState: Redis;
 
   constructor(private readonly configService: ConfigService) {
     const queueConfig = this.configService.get<QueueConfig>('queue')!;
     this.channelPrefix =
       this.configService.get<string>('REDIS_SCAN_CHANNEL_PREFIX') || 'scan:session';
 
-    // Create Redis clients for publishing and state management
+    // Create Redis client for publishing
     this.redisPublisher = new Redis({
       host: queueConfig.redis.host,
       port: queueConfig.redis.port,
@@ -40,16 +39,6 @@ export class ScanProgressPubSubAdapter
     });
     this.redisPublisher.on('error', (error) => {
       this.logger.error('Redis publisher connection error:', error);
-    });
-
-    this.redisState = new Redis({
-      host: queueConfig.redis.host,
-      port: queueConfig.redis.port,
-      password: queueConfig.redis.password,
-      db: queueConfig.redis.db,
-    });
-    this.redisState.on('error', (error) => {
-      this.logger.error('Redis state connection error:', error);
     });
   }
 
@@ -233,25 +222,6 @@ export class ScanProgressPubSubAdapter
   }
 
   /**
-   * Get current state from Redis (if stored)
-   */
-  async getCurrentState(sessionId: string): Promise<any> {
-    try {
-      this.logger.debug(`Getting current state for session ${sessionId}`);
-      const stateKey = `${this.channelPrefix}:${sessionId}:state`;
-      const state = await this.redisState.get(stateKey);
-      if (!state) {
-        return null;
-      }
-      // State should be small, so synchronous parse is acceptable
-      return JSON.parse(state);
-    } catch (error) {
-      this.logger.error(`Failed to get current state for session ${sessionId}:`, error);
-      return null;
-    }
-  }
-
-  /**
    * Cleanup on module destroy
    */
   async onModuleDestroy() {
@@ -261,8 +231,7 @@ export class ScanProgressPubSubAdapter
       await this.unsubscribeFromSession(sessionId);
     }
 
-    // Disconnect Redis clients
+    // Disconnect Redis client
     this.redisPublisher.disconnect();
-    this.redisState.disconnect();
   }
 }

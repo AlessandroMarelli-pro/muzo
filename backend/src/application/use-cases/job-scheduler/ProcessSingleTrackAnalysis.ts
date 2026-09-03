@@ -49,7 +49,7 @@ export class ProcessSingleTrackAnalysisUseCase {
           analysisCompletedAt: new Date(),
         });
 
-        await this.sendTrackCompleteEvent(fileName, batchInfo);
+        await this.sendTrackCompleteEvent(fileName, batchInfo, false);
 
         return { isSuccess: false };
       }
@@ -83,7 +83,7 @@ export class ProcessSingleTrackAnalysisUseCase {
       this.logger.info(`Successfully analyzed audio file: ${fileName}`);
 
       // Publish track complete event
-      await this.sendTrackCompleteEvent(fileName, batchInfo);
+      await this.sendTrackCompleteEvent(fileName, batchInfo, true);
 
       return { isSuccess: true };
     } catch (error) {
@@ -129,6 +129,7 @@ export class ProcessSingleTrackAnalysisUseCase {
       totalTracks: number;
       libraryId: MusicLibraryId;
     },
+    success: boolean,
   ) => {
     const { trackIndex, sessionId, batchIndex, totalTracks, libraryId } = batchInfo;
     if (!sessionId) {
@@ -146,7 +147,7 @@ export class ProcessSingleTrackAnalysisUseCase {
         totalTracks,
         trackIndex,
         fileName,
-        success: false,
+        success,
       },
     };
     await this.scanProgressPublisher.publishEvent(sessionId, trackCompleteEvent);

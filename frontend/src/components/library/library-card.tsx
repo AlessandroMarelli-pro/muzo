@@ -95,8 +95,8 @@ export const LibraryCard: React.FC<LibraryCardProps> = ({
   // source of truth here -- no separate local copy that could drift from it.
   const scanStatus: LibraryScanStatus =
     (session?.status as LibraryScanStatus) ?? library.scanStatus;
-  // `overallProgress` is already stored as a 0-100 percentage by the backend; dividing it
-  // again rendered 0% for the whole scan.
+  // ScanSession.overallProgress leaves the backend as a 0-100 percentage (basis points in
+  // the DB are converted at the boundary -- see scan-progress.mapper.ts), so it's used as-is.
   const scanProgress = session?.overallProgress ?? 0;
 
   const formatDate = (dateString?: string) => {

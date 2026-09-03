@@ -9,12 +9,9 @@ import gc
 import os
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from loguru import logger
-
-if TYPE_CHECKING:
-    from src.utils.scan_progress_publisher import ScanProgressPublisher
 
 from src.services.analysis_response import (
     AnalysisResponseBuilder,
@@ -698,7 +695,6 @@ class SimpleAnalysisService:
         skip_intro: float,
         session_id: Optional[str],
         batch_index: Optional[int],
-        progress_publisher: Optional[Any],
         raw_filename: Optional[str] = None,
     ) -> Tuple[Dict[str, Any], bool]:
         """
@@ -715,7 +711,10 @@ class SimpleAnalysisService:
             total_files: Total files in the batch
             sample_duration: Audio sample duration in seconds
             skip_intro: Seconds to skip from the start
-            session_id, batch_index, progress_publisher: Progress reporting context
+            session_id, batch_index: request-scoped context, used for logging only. Fine-
+                grained progress is no longer published from here -- the backend tracks
+                per-batch progress durably in Postgres once this call returns (see
+                ProcessBatchAudioScanUseCase), which works whether or not Redis is reachable.
             raw_filename: The caller's pre-cleaning upload filename, surfaced as
                 `track.original_filename` in the response -- callers that join a
                 batch result back to a source-of-truth record keyed on the file
@@ -730,19 +729,6 @@ class SimpleAnalysisService:
         file_start_time = time.time()
         converted_wav_path = None
         original_filepath = file_path
-
-        # Publish track.processing event
-        if progress_publisher and session_id:
-            progress_publisher.publish_event(
-                session_id,
-                "track.processing",
-                {
-                    "trackIndex": idx,
-                    "totalTracks": total_files,
-                    "fileName": original_filename,
-                },
-                batchIndex=batch_index,
-            )
 
         ctx = track_context(original_filename or os.path.basename(original_filepath))
         ctx.__enter__()
@@ -782,17 +768,6 @@ class SimpleAnalysisService:
                 "subtype": ti["subtype"],
             }
 
-            # Publish audio.analysis progress (25%)
-            if progress_publisher and session_id:
-                progress_publisher.publish_track_progress(
-                    session_id,
-                    batch_index or 0,
-                    idx,
-                    total_files,
-                    original_filename,
-                    25,
-                )
-
             # Load the full track once and share it across every generate_*()
             # call below that needs the whole file (embedding, tempo, mood, key)
             # -- each extractor resamples internally to its own target rate, so
@@ -803,28 +778,6 @@ class SimpleAnalysisService:
             )
 
             pipeline = self._run_model_pipeline(y_full, sr, builder)
-
-            # Publish audio.analysis progress (50%)
-            if progress_publisher and session_id:
-                progress_publisher.publish_track_progress(
-                    session_id,
-                    batch_index or 0,
-                    idx,
-                    total_files,
-                    original_filename,
-                    50,
-                )
-
-            # Publish audio.analysis progress (75%)
-            if progress_publisher and session_id:
-                progress_publisher.publish_track_progress(
-                    session_id,
-                    batch_index or 0,
-                    idx,
-                    total_files,
-                    original_filename,
-                    75,
-                )
 
             # Extract ID3 tags. When batch cleaning rewrote the filename
             # (raw_filename differs), original_filename is the LLM-cleaned
@@ -853,17 +806,6 @@ class SimpleAnalysisService:
                 classifications=pipeline["classifications"],
                 embedding=pipeline["embedding"],
             )
-
-            # Publish audio.analysis progress (100% - complete)
-            if progress_publisher and session_id:
-                progress_publisher.publish_track_progress(
-                    session_id,
-                    batch_index or 0,
-                    idx,
-                    total_files,
-                    original_filename,
-                    100,
-                )
 
             logger.debug(
                 f"✅ File {idx + 1}/{total_files} completed in {processing_time:.3f}s"
@@ -912,7 +854,6 @@ class SimpleAnalysisService:
         skip_intro: float = 30.0,
         session_id: Optional[str] = None,
         batch_index: Optional[int] = None,
-        progress_publisher: Optional[Any] = None,
     ) -> Dict[str, Any]:
         """
         Analyze multiple audio files in batch with efficient filename cleaning.
@@ -955,19 +896,6 @@ class SimpleAnalysisService:
             ]
             if self.ai_extractor and self.ai_extractor._is_available():
                 try:
-                    # Publish llm.metadata events for all tracks
-                    if progress_publisher and session_id:
-                        for track_idx, (_, original_filename) in enumerate(file_items):
-                            progress_publisher.publish_event(
-                                session_id,
-                                "llm.metadata",
-                                {
-                                    "trackIndex": track_idx,
-                                    "fileName": original_filename,
-                                },
-                                batchIndex=batch_index,
-                            )
-
                     filenames_to_clean = [
                         original_filename for _, original_filename in file_items
                     ]
@@ -1028,7 +956,6 @@ class SimpleAnalysisService:
                         skip_intro,
                         session_id,
                         batch_index,
-                        progress_publisher,
                         original_filename,  # raw_filename: file_items' own filename,
                         # never overwritten by cleaned_filenames -- see
                         # _analyze_single_file_in_batch's raw_filename docstring.
