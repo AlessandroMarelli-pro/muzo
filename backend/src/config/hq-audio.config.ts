@@ -53,8 +53,9 @@ export interface HqAudioConfig {
 export default registerAs(
   'hqAudio',
   (): HqAudioConfig => ({
-    // Tidal only yields FLAC with an active HiFi Plus subscription; without one
-    // it contributes AAC 320 as a last-resort fallback, so it goes last.
+    // TIDAL's unofficial-downloader clients are now capped at 320 kbps AAC
+    // (no HiFi client available), so Tidal is a lossy last-resort fallback and
+    // goes last. Qobuz (real FLAC / hi-res) first, then Soulseek.
     sourceOrder: (process.env.HQ_SOURCE_ORDER || 'qobuz,soulseek,tidal')
       .split(',')
       .map((s) => s.trim().toLowerCase())
