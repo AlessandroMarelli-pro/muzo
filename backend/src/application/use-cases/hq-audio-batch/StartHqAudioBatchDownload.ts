@@ -7,22 +7,7 @@ import { IPlaylistRepository } from 'src/application/ports/repositories/IPlaylis
 import { IPlaylistSortingRepository } from 'src/application/ports/repositories/IPlaylistSortingRepository';
 import { HqAudioBatchId, MusicTrackId, PlaylistId } from 'src/kernel/ids';
 import { getCurrentUser } from 'src/kernel/types/context';
-
-function isTrackAlreadyHq(track: { hqAudioPath?: string | null; fileInfo: { filePath: string }; technicalInfo?: { format?: string | null } | null }): boolean {
-  if (track.hqAudioPath) {
-    return true;
-  }
-  const ext = track.fileInfo.filePath.split('.').pop()?.toLowerCase();
-  return (
-    ext === 'flac' ||
-    ext === 'wav' ||
-    ext === 'aiff' ||
-    ext === 'aif' ||
-    track.technicalInfo?.format?.toLowerCase() === 'flac' ||
-    track.technicalInfo?.format?.toLowerCase() === 'wav' ||
-    track.technicalInfo?.format?.toLowerCase() === 'aiff'
-  );
-}
+import { isTrackAlreadyHq } from '../music-track/hq-audio-status';
 
 export class StartHqAudioBatchDownloadUseCase {
   constructor(

@@ -48,6 +48,9 @@ model MusicTrack {
   id                    String   @id @default(uuid())
   filePath              String   @unique
   hqAudioPath           String?
+  hqAudioSource         HqAudioSource?
+  hqAudioVerified       Boolean  @default(false)
+  hqAudioSpectralCutoffHz Float?
   fileName              String
   fileSize              Int
   format                String
@@ -497,6 +500,17 @@ enum AnalysisStatus {
   PROCESSING
   COMPLETED
   FAILED
+}
+
+// Which acquirer produced the file at hqAudioPath.
+enum HqAudioSource {
+  TIDAL
+  QOBUZ
+  DEEZER
+  BANDCAMP
+  SOULSEEK
+  ORIGINAL
+  ENHANCED
 }
 
 enum RepeatMode {

@@ -95,11 +95,23 @@ export type HiddenMusicTrack = Readonly<ModelBase<HiddenMusicTrackId>> & {
   technicalInfo: MaybeUndefined<AudioTechnical>;
 };
 
+export type HqAudioSource =
+  | 'tidal'
+  | 'qobuz'
+  | 'deezer'
+  | 'bandcamp'
+  | 'soulseek'
+  | 'original'
+  | 'enhanced';
+
 export type MusicTrack = Readonly<ModelBase<MusicTrackId>> & {
   artist: MaybeUndefined<string>;
   title: MaybeUndefined<string>;
   imagePath?: string;
   hqAudioPath?: string;
+  hqAudioSource?: HqAudioSource;
+  hqAudioVerified?: boolean;
+  hqAudioSpectralCutoffHz?: number;
   libraryId: MusicLibraryId;
   stats: MaybeUndefined<MusicTrackStats>;
   fileInfo: AudioFileInfo;

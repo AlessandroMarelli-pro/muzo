@@ -1,6 +1,7 @@
 import {
   AudioFingerprint as PrismaAudioFingerprint,
   Genre as PrismaGenre,
+  HqAudioSource as PrismaHqAudioSource,
   MusicTrack as PrismaMusicTrack,
   Subgenre as PrismaSubgenre,
   TrackGenre as PrismaTrackGenre,
@@ -18,11 +19,22 @@ import {
   AudioFileInfo,
   AudioFileMetadata,
   AudioTechnical,
+  HqAudioSource,
   MusicTrack,
   MusicTrackStats,
 } from 'src/kernel/types/model-types';
 import { models } from 'src/kernel/types/models';
 import { toDbModel } from '../db';
+
+const hqAudioSourceToDomain = (
+  value: PrismaHqAudioSource | null,
+): HqAudioSource | undefined =>
+  value ? (value.toLowerCase() as HqAudioSource) : undefined;
+
+const hqAudioSourceToPrisma = (
+  value: HqAudioSource | undefined,
+): PrismaHqAudioSource | undefined =>
+  value ? (value.toUpperCase() as PrismaHqAudioSource) : undefined;
 import { toDomainModel } from '../domain';
 
 export type ImageSearchLite = {
@@ -195,6 +207,9 @@ export const toDomain: ToDomain = (row) => {
     title: row.originalTitle ?? undefined,
     artist: row.originalArtist ?? undefined,
     hqAudioPath: row.hqAudioPath ?? undefined,
+    hqAudioSource: hqAudioSourceToDomain(row.hqAudioSource),
+    hqAudioVerified: row.hqAudioVerified ?? undefined,
+    hqAudioSpectralCutoffHz: row.hqAudioSpectralCutoffHz ?? undefined,
     stats: toMusicTrackStats(row),
     fileInfo: toAudioFileInfo(row),
     technicalInfo: toAudioTechnical(row),
@@ -225,6 +240,9 @@ export const toPrisma: ToPrisma = (domainModel) => {
     libraryId: extractModelId(domainModel.libraryId).dbId,
     filePath: domainModel.fileInfo?.filePath,
     hqAudioPath: domainModel.hqAudioPath ?? null,
+    hqAudioSource: hqAudioSourceToPrisma(domainModel.hqAudioSource) ?? null,
+    hqAudioVerified: domainModel.hqAudioVerified ?? false,
+    hqAudioSpectralCutoffHz: domainModel.hqAudioSpectralCutoffHz ?? null,
     fileName: domainModel.fileInfo?.fileName ?? null,
     fileSize: domainModel.fileInfo?.fileSize ?? null,
     format: domainModel.technicalInfo?.format ?? '',
@@ -263,6 +281,9 @@ export const toPrismaUpdate: ToPrismaUpdate = (data) => {
     fileCreatedAt: data.fileCreatedAt ?? undefined,
     filePath: data.filePath ?? undefined,
     hqAudioPath: data.hqAudioPath ?? undefined,
+    hqAudioSource: hqAudioSourceToPrisma(data.hqAudioSource),
+    hqAudioVerified: data.hqAudioVerified ?? undefined,
+    hqAudioSpectralCutoffHz: data.hqAudioSpectralCutoffHz ?? undefined,
     fileName: data.fileName ?? undefined,
     fileSize: data.fileSize ?? undefined,
   };

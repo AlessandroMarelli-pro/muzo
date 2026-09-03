@@ -47,6 +47,15 @@ export class Track {
   @Field(() => String, { nullable: true })
   hqAudioPath?: string;
 
+  @Field(() => String, { nullable: true })
+  hqAudioSource?: string;
+
+  @Field(() => Boolean, { nullable: true })
+  hqAudioVerified?: boolean;
+
+  @Field(() => Float, { nullable: true })
+  hqAudioSpectralCutoffHz?: number;
+
   @Field(() => String)
   fileName: string;
 

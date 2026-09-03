@@ -8,6 +8,7 @@ import { ILogger, LOGGER } from 'src/application/ports/infrastructure/ILogger';
 import { HqAudioConfig } from 'src/config/hq-audio.config';
 import { MusicTrackId } from 'src/kernel/ids';
 import { IMusicTrackRepository } from '../../ports/repositories/IMusicTrackRepository';
+import { isTrackAlreadyHq } from './hq-audio-status';
 
 export class EnhanceHqAudioUseCase {
   constructor(
@@ -24,18 +25,7 @@ export class EnhanceHqAudioUseCase {
 
     // Defensive re-check: this runs async via a BullMQ job, so the track's
     // HQ status may have changed between menu render and job execution.
-    const ext = track.fileInfo.filePath.split('.').pop()?.toLowerCase();
-    const isAlreadyHq =
-      !!track.hqAudioPath ||
-      ext === 'flac' ||
-      ext === 'wav' ||
-      ext === 'aiff' ||
-      ext === 'aif' ||
-      track.technicalInfo?.format?.toLowerCase() === 'flac' ||
-      track.technicalInfo?.format?.toLowerCase() === 'wav' ||
-      track.technicalInfo?.format?.toLowerCase() === 'aiff';
-
-    if (isAlreadyHq) {
+    if (isTrackAlreadyHq(track)) {
       this.logger.info('Skipping enhance: track already HQ', { trackId });
       return;
     }

@@ -399,6 +399,9 @@ type Track implements Node {
   format: String
   genres: [String!]
   hqAudioPath: String
+  hqAudioSource: String
+  hqAudioSpectralCutoffHz: Float
+  hqAudioVerified: Boolean
   id: Base64ID!
   imagePath: String
   isBanger: Boolean!

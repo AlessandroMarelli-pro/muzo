@@ -6,6 +6,7 @@ import {
 import { ILogger, LOGGER } from 'src/application/ports/infrastructure/ILogger';
 import { MusicTrackId } from 'src/kernel/ids';
 import { IMusicTrackRepository } from '../../ports/repositories/IMusicTrackRepository';
+import { isTrackAlreadyHq } from './hq-audio-status';
 
 export class AcquireHqAudioUseCase {
   constructor(
@@ -23,16 +24,7 @@ export class AcquireHqAudioUseCase {
     }
 
     const filePath = track.fileInfo.filePath;
-    const ext = filePath.split('.').pop()?.toLowerCase();
-    const isAlreadyHq =
-      ext === 'flac' ||
-      ext === 'wav' ||
-      ext === 'aiff' ||
-      ext === 'aif' ||
-      track.technicalInfo?.format?.toLowerCase() === 'flac' ||
-      track.technicalInfo?.format?.toLowerCase() === 'wav' ||
-      track.technicalInfo?.format?.toLowerCase() === 'aiff';
-    if (isAlreadyHq) {
+    if (isTrackAlreadyHq(track)) {
       await this.musicTrackRepository.updateOneById(trackId, { hqAudioPath: filePath });
       return;
     }

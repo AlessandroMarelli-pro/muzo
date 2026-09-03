@@ -3,6 +3,7 @@ import { MusicLibraryId, MusicTrackId, SubgenreId } from 'src/kernel/ids';
 import {
   AudioFileAnalysisStatusEnum,
   FilterCriteria,
+  HqAudioSource,
   MusicTrack,
 } from 'src/kernel/types/model-types';
 import {
@@ -19,6 +20,9 @@ export const MUSIC_TRACK_REPOSITORY = createToken<IMusicTrackRepository>('MUSIC_
 
 export type MusicTrackUpdateData = {
   hqAudioPath?: string;
+  hqAudioSource?: HqAudioSource;
+  hqAudioVerified?: boolean;
+  hqAudioSpectralCutoffHz?: number;
   stats?: {
     isFavorite?: boolean;
     isBanger?: boolean;
