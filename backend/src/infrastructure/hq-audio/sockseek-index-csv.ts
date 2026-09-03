@@ -56,12 +56,13 @@ export function parseIndexCsvDownloads(contents: string): Map<number, string> {
   return result;
 }
 
+/** The directory sockseek creates for a run's `_index.csv` (and partials). */
+export function indexCsvDir(queryCsvPath: string, outputDir: string): string {
+  return path.join(outputDir, path.basename(queryCsvPath, path.extname(queryCsvPath)));
+}
+
 export function indexCsvPath(queryCsvPath: string, outputDir: string): string {
-  return path.join(
-    outputDir,
-    path.basename(queryCsvPath, path.extname(queryCsvPath)),
-    '_index.csv',
-  );
+  return path.join(indexCsvDir(queryCsvPath, outputDir), '_index.csv');
 }
 
 export async function readIndexCsvDownloads(
@@ -77,4 +78,46 @@ export async function readIndexCsvDownloads(
     }
     throw error;
   }
+}
+
+export async function removeIndexCsvDir(
+  queryCsvPath: string,
+  outputDir: string,
+): Promise<void> {
+  await fs.rm(indexCsvDir(queryCsvPath, outputDir), { recursive: true, force: true });
+}
+
+/**
+ * Deletes leftover `sockseek-*query-*` scratch dirs under `outputDir` that are
+ * older than `maxAgeMs` — housekeeping so past runs don't accumulate. Never
+ * throws.
+ */
+export async function pruneStaleQueryDirs(
+  outputDir: string,
+  maxAgeMs: number,
+): Promise<number> {
+  let removed = 0;
+  let entries: import('fs').Dirent[];
+  try {
+    entries = await fs.readdir(outputDir, { withFileTypes: true });
+  } catch {
+    return 0;
+  }
+  const cutoff = Date.now() - maxAgeMs;
+  for (const entry of entries) {
+    if (!entry.isDirectory() || !/^sockseek-.*query-/.test(entry.name)) {
+      continue;
+    }
+    const dir = path.join(outputDir, entry.name);
+    try {
+      const stat = await fs.stat(dir);
+      if (stat.mtimeMs < cutoff) {
+        await fs.rm(dir, { recursive: true, force: true });
+        removed++;
+      }
+    } catch {
+      // ignore — best effort
+    }
+  }
+  return removed;
 }

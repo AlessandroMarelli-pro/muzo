@@ -12,7 +12,14 @@ import {
 import { ILogger, LOGGER } from 'src/application/ports/infrastructure/ILogger';
 import { LOGGER_FACTORY } from 'src/application/ports/infrastructure/ILoggerFactory';
 import type { Readable } from 'stream';
-import { readIndexCsvDownloads } from './sockseek-index-csv';
+import {
+  pruneStaleQueryDirs,
+  readIndexCsvDownloads,
+  removeIndexCsvDir,
+} from './sockseek-index-csv';
+
+/** Delete leftover sockseek query scratch dirs older than this on each batch. */
+const STALE_QUERY_DIR_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 
 type SockseekTrackStateEvent = {
   type: 'track_state';
@@ -230,8 +237,21 @@ export class SockseekAcquirer implements IHqAudioAcquirer {
     return csvPath;
   }
 
-  private async writeBatchQueryCsv(tracks: SockseekBatchTrackQuery[]): Promise<string> {
-    const csvPath = path.join(os.tmpdir(), `sockseek-batch-query-${crypto.randomUUID()}.csv`);
+  /**
+   * Deterministic per-batch query-CSV path (not a random UUID) so sockseek's
+   * `<outputDir>/<name>/_index.csv` is stable: a re-run of the same batch can
+   * read and clear the previous index instead of accumulating scratch dirs.
+   */
+  private batchQueryCsvPath(batchId: string): string {
+    const safeId = batchId.replace(/[^A-Za-z0-9._-]/g, '_');
+    return path.join(os.tmpdir(), `sockseek-batch-${safeId}.csv`);
+  }
+
+  private async writeBatchQueryCsv(
+    batchId: string,
+    tracks: SockseekBatchTrackQuery[],
+  ): Promise<string> {
+    const csvPath = this.batchQueryCsvPath(batchId);
     const rows = [
       'Artist,Title,Length,Album',
       ...tracks.map((track) =>
@@ -752,7 +772,49 @@ export class SockseekAcquirer implements IHqAudioAcquirer {
     callbacks: SockseekBatchProgressCallbacks = {},
   ): Promise<void> {
     this.cancelledBatchIds.delete(batchId);
-    let remainingTracks = tracks;
+    const resolvedOutputDir = outputDir || this.defaultOutputDir;
+    const queryCsvPath = this.batchQueryCsvPath(batchId);
+
+    // A prior run of this same batch left a stable-named `_index.csv` (e.g. the
+    // process was killed before persisting). Adopt anything it downloaded so we
+    // don't re-fetch, then let the first pass clear it.
+    const alreadyDone = new Set<string>();
+    try {
+      const prior = await readIndexCsvDownloads(queryCsvPath, resolvedOutputDir);
+      for (const [index, filePath] of prior) {
+        const track = tracks[index];
+        if (!track) {
+          continue;
+        }
+        const format = resolveHqFormat(
+          path.extname(filePath).replace(/^\./, '').toLowerCase(),
+        );
+        if (format && (await this.downloadPathExists(filePath))) {
+          this.logger.info('sockseek batch: adopting a prior download from _index.csv', {
+            trackKey: track.key,
+            downloadPath: filePath,
+          });
+          alreadyDone.add(track.key);
+          callbacks.onTrackSettled?.(track.key, {
+            status: 'succeeded',
+            result: { filePath, format },
+          });
+        }
+      }
+    } catch (error) {
+      this.logger.warn('sockseek batch: failed to read prior _index.csv', {
+        error: String(error),
+      });
+    }
+    void pruneStaleQueryDirs(resolvedOutputDir, STALE_QUERY_DIR_MAX_AGE_MS)
+      .then((n) => {
+        if (n > 0) {
+          this.logger.info('sockseek: pruned stale query scratch dirs', { removed: n });
+        }
+      })
+      .catch(() => undefined);
+
+    let remainingTracks = tracks.filter((t) => !alreadyDone.has(t.key));
     try {
       for (let attempt = 1; attempt <= SockseekAcquirer.MAX_ACQUIRE_ATTEMPTS; attempt++) {
         if (remainingTracks.length === 0 || this.cancelledBatchIds.has(batchId)) {
@@ -795,6 +857,8 @@ export class SockseekAcquirer implements IHqAudioAcquirer {
       }
     } finally {
       this.cancelledBatchIds.delete(batchId);
+      // Reconciliation is done; drop the scratch dir so runs don't accumulate.
+      await removeIndexCsvDir(queryCsvPath, resolvedOutputDir).catch(() => undefined);
     }
   }
 
@@ -875,12 +939,17 @@ export class SockseekAcquirer implements IHqAudioAcquirer {
       return queue && queue.length > 0 ? queue[0] : null;
     };
 
-    const queryCsvPath = await this.writeBatchQueryCsv(tracks);
+    const queryCsvPath = await this.writeBatchQueryCsv(batchId, tracks);
     const onCompleteScriptPath = await this.writeOnCompleteHelper();
     const onCompleteSidecarPath = path.join(
       os.tmpdir(),
       `sockseek-batch-snum-${crypto.randomUUID()}.tsv`,
     );
+
+    // Start each pass from a clean `_index.csv` — the deterministic per-batch
+    // path is reused across retry attempts, and stale rows would misalign with
+    // this pass's (possibly smaller) track list.
+    await removeIndexCsvDir(queryCsvPath, resolvedOutputDir).catch(() => undefined);
 
     this.logger.info('sockseek batch acquisition starting', {
       trackCount: tracks.length,
@@ -1181,6 +1250,9 @@ export class SockseekAcquirer implements IHqAudioAcquirer {
       await fs.unlink(queryCsvPath).catch(() => undefined);
       await fs.unlink(onCompleteScriptPath).catch(() => undefined);
       await fs.unlink(onCompleteSidecarPath).catch(() => undefined);
+      // The `_index.csv` dir is left for the retry-pass wrapper to clear once,
+      // after the final attempt — retry passes reuse the same (deterministic)
+      // path.
     }
   }
 
