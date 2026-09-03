@@ -3,7 +3,7 @@ import { createToken } from '../../utils/create-token';
 
 export type HqAudioAcquireResult = {
   filePath: string;
-  format: 'flac' | 'wav' | 'm4a' | 'aiff';
+  format: 'flac' | 'wav' | 'm4a' | 'aiff' | 'aif';
   /**
    * Which source produced the file. Individual acquirers may omit it; the
    * composite cascade stamps it from the acquirer that succeeded.

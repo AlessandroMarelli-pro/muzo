@@ -82,7 +82,7 @@ type SockseekEvent =
 type HqAudioFormat = HqAudioAcquireResult['format'];
 
 /**
- * `--pref-format` only ranks flac/wav/m4a/aiff ahead of other formats, it does not exclude
+ * `--pref-format` only ranks flac/wav/m4a/aiff/aif ahead of other formats, it does not exclude
  * them, so sockseek can still hand back an mp3 (or anything else). Only the formats we
  * actually asked for count as a successful HQ acquisition; anything else is treated as
  * "no acceptable match" rather than being mislabeled as flac.
@@ -292,7 +292,7 @@ export class SockseekAcquirer implements IHqAudioAcquirer {
     const script = [
       "const fs = require('fs');",
       'const [, , sidecarPath, snum, downloadPath] = process.argv;',
-      "fs.appendFileSync(sidecarPath, `${snum}\\t${downloadPath}\\n`);",
+      'fs.appendFileSync(sidecarPath, `${snum}\\t${downloadPath}\\n`);',
       '',
     ].join('\n');
     await fs.writeFile(scriptPath, script, 'utf-8');
@@ -585,7 +585,7 @@ export class SockseekAcquirer implements IHqAudioAcquirer {
         '-p',
         resolvedOutputDir,
         '--pref-format',
-        'flac,wav,m4a,aiff',
+        'flac,wav,m4a,aiff,aif',
         '--pref-strict-title',
         '--pref-strict-artist',
         '--search-timeout',
@@ -1006,7 +1006,7 @@ export class SockseekAcquirer implements IHqAudioAcquirer {
         '-p',
         resolvedOutputDir,
         '--pref-format',
-        'flac,wav,m4a,aiff',
+        'flac,wav,m4a,aiff,aif',
         '--pref-strict-title',
         '--pref-strict-artist',
         '--pref-strict-album',
@@ -1194,7 +1194,9 @@ export class SockseekAcquirer implements IHqAudioAcquirer {
       // overwrite a `finalOutcomeByKey` entry with a success - it never turns a real success
       // into a failure, and any key it doesn't cover keeps whatever the name-matched
       // `track_state` handling already decided.
-      const anyTrackSucceeded = [...finalOutcomeByKey.values()].some((o) => o.status === 'succeeded');
+      const anyTrackSucceeded = [...finalOutcomeByKey.values()].some(
+        (o) => o.status === 'succeeded',
+      );
       const snumToPath = await this.readOnCompleteSidecar(onCompleteSidecarPath);
       if (snumToPath.size === 0 && anyTrackSucceeded) {
         // The sidecar produced nothing at all (e.g. `node` is unavailable on PATH) even

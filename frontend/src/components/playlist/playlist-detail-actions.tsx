@@ -38,6 +38,14 @@ export function PlaylistDetailActions({
   const actions = useAudioPlayerActions();
   const isPlaying = useIsPlaying();
 
+  // Opening a Radix dialog from inside a menu item — while the menu is still
+  // closing — makes the two primitives fight over `document.body`'s
+  // `pointer-events` / scroll lock, and the menu's cleanup can restore
+  // `pointer-events: none` permanently (page becomes unscrollable and
+  // unclickable after the dialog closes). Defer the open until the menu has
+  // fully unmounted.
+  const afterMenuCloses = (fn: () => void) => () => window.setTimeout(fn, 0);
+
   const handlePlay = () => {
     if (!playlist?.tracks?.[0]?.track) return;
     setCurrentTrack(playlist?.tracks[0]?.track || undefined);
@@ -92,7 +100,10 @@ export function PlaylistDetailActions({
             </>
           )}
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={onSetAsQueue} disabled={isDisabled || isSettingAsQueue}>
+        <DropdownMenuItem
+          onClick={afterMenuCloses(onSetAsQueue)}
+          disabled={isDisabled || isSettingAsQueue}
+        >
           <ListMusic className="h-4 w-4 mr-2" aria-hidden />
           {isSettingAsQueue ? 'Replacing queue…' : 'Replace queue with this'}
         </DropdownMenuItem>
@@ -101,13 +112,13 @@ export function PlaylistDetailActions({
           <Copy className="h-4 w-4 mr-2" aria-hidden />
           Copy tracklist (CSV)
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={onDownloadAllHq} disabled={isDisabled}>
+        <DropdownMenuItem onClick={afterMenuCloses(onDownloadAllHq)} disabled={isDisabled}>
           <Download className="h-4 w-4 mr-2" aria-hidden />
           Download all in HQ…
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem
-          onClick={onDelete}
+          onClick={afterMenuCloses(onDelete)}
           disabled={isDisabled || isDeleting}
           className="text-destructive focus:text-destructive"
         >

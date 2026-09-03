@@ -20,6 +20,7 @@ import {
   Disc3,
   Heart,
   ListMusic,
+  ListPlus,
   Pause,
   Play,
   Repeat,
@@ -34,6 +35,7 @@ import {
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { QueueDrawer } from '../queue/queue-sidebar';
 import { AudioQualityBadge } from '../track/audio-quality-badge';
+import { SelectPlaylistDialog } from '../playlist/select-playlist-dialog';
 import { TrackMoreMenu } from '../track/track-more-menu';
 import { AlbumArt } from './album-art';
 import { MUSIC_PLAYER_HEIGHT, MUSIC_PLAYER_HEIGHT_SM } from './player-constants';
@@ -106,6 +108,9 @@ export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
   const { data: queueItems = [] } = useQueue();
 
   const [queueOpen, setQueueOpen] = useState(false);
+  const [playlistOpen, setPlaylistOpen] = useState(false);
+  // Only mount the playlist dialog (and its data fetch) once it's first opened.
+  const [playlistDialogMounted, setPlaylistDialogMounted] = useState(false);
   // Seed with the CSS min-height so the queue panel docks correctly on the
   // very first open, before the ResizeObserver has reported a real height.
   const [playerBarHeight, setPlayerBarHeight] = useState(() =>
@@ -297,6 +302,12 @@ export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
         case 'm':
         case 'M':
           setMuted((v) => !v);
+          break;
+        case 'p':
+        case 'P':
+          e.preventDefault();
+          setPlaylistDialogMounted(true);
+          setPlaylistOpen(true);
           break;
         default:
           break;
@@ -609,6 +620,25 @@ export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
                 </Badge>
               )}
             </Button>
+            <Tooltip delayDuration={HINT_DELAY}>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="iconSm"
+                  onClick={() => {
+                    setPlaylistDialogMounted(true);
+                    setPlaylistOpen(true);
+                  }}
+                  aria-label="Add this track to a playlist"
+                  className="size-9"
+                >
+                  <ListPlus className="size-4" aria-hidden />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                Add to playlist <kbd className="ml-1 font-mono text-xs opacity-70">P</kbd>
+              </TooltipContent>
+            </Tooltip>
             <TrackMoreMenu
               trackId={currentTrack.id}
               artist={artist}
@@ -649,6 +679,15 @@ export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
         />
       </section>
       {queueDrawer}
+      {playlistDialogMounted && (
+        <SelectPlaylistDialog
+          open={playlistOpen}
+          onOpenChange={setPlaylistOpen}
+          trackId={currentTrack.id}
+          artist={artist}
+          title={title}
+        />
+      )}
     </>
   );
 });

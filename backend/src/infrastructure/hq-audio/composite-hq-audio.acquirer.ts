@@ -23,6 +23,7 @@ const VERIFIABLE_FORMATS: ReadonlySet<HqAudioAcquireResult['format']> = new Set(
   'flac',
   'wav',
   'aiff',
+  'aif',
 ]);
 
 /**
@@ -66,8 +67,10 @@ export class CompositeHqAudioAcquirer implements IHqAudioAcquirer {
   }
 
   private resolveOrder(): HqAudioSource[] {
-    const configured =
-      this.configService.get<string[]>('hqAudio.sourceOrder') ?? ['tidal', 'soulseek'];
+    const configured = this.configService.get<string[]>('hqAudio.sourceOrder') ?? [
+      'tidal',
+      'soulseek',
+    ];
     let order = configured.filter((name): name is HqAudioSource => name in this.registry);
 
     // Soulseek can't guarantee hi-res: on the 'hires' tier, drop it to last so
@@ -79,9 +82,7 @@ export class CompositeHqAudioAcquirer implements IHqAudioAcquirer {
   }
 
   private verificationEnabled(): boolean {
-    return (
-      !!this.verifier && this.configService.get<boolean>('hqAudio.verifyLossless') !== false
-    );
+    return !!this.verifier && this.configService.get<boolean>('hqAudio.verifyLossless') !== false;
   }
 
   async acquire(
