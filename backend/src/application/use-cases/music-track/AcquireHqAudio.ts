@@ -1,4 +1,5 @@
 import { Inject } from '@nestjs/common';
+import * as fs from 'fs/promises';
 import {
   HQ_AUDIO_ACQUIRER,
   IHqAudioAcquirer,
@@ -11,6 +12,15 @@ import { ILogger, LOGGER } from 'src/application/ports/infrastructure/ILogger';
 import { MusicTrackId } from 'src/kernel/ids';
 import { IMusicTrackRepository } from '../../ports/repositories/IMusicTrackRepository';
 import { isTrackAlreadyHq } from './hq-audio-status';
+
+async function fileExists(filePath: string): Promise<boolean> {
+  try {
+    await fs.access(filePath);
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 export class AcquireHqAudioUseCase {
   constructor(
@@ -56,6 +66,14 @@ export class AcquireHqAudioUseCase {
 
     if (!result) {
       this.logger.warn('No HQ audio source found', { trackId, artist: track.artist, title: track.title });
+      return;
+    }
+
+    if (!(await fileExists(result.filePath))) {
+      this.logger.error('Acquired HQ file is missing from disk, not persisting', {
+        trackId,
+        filePath: result.filePath,
+      });
       return;
     }
 

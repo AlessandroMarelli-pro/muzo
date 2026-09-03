@@ -8,6 +8,8 @@ import type { HqAudioBatchId, MusicTrackId } from 'src/kernel/ids';
 
 const { probeMock } = vi.hoisted(() => ({ probeMock: vi.fn() }));
 vi.mock('src/infrastructure/hq-audio/audio-probe', () => ({ probeAudioCodec: probeMock }));
+// persistAcquired guards on fs.access — treat every acquired path as present.
+vi.mock('fs/promises', () => ({ access: vi.fn().mockResolvedValue(undefined) }));
 
 const noopLogger = {
   debug: vi.fn(),
@@ -143,6 +145,8 @@ describe('AcquireHqAudioBatchUseCase', () => {
     });
 
     await uc.execute(BATCH, [T1, T2]);
+    // onTrackSettled handlers are fire-and-forget; let their microtasks drain.
+    await new Promise((r) => setTimeout(r, 0));
 
     expect(update).toHaveBeenCalledWith(
       T1,

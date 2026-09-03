@@ -157,6 +157,84 @@ export class TidalDlAcquirer implements IHqAudioAcquirer {
   }
 
   /**
+   * `tidal-dl-ng` names files `Tracks/{artist} - {title}[ (Explicit)].{ext}` from
+   * Tidal's own metadata. A prior run (or a crash between download and DB write)
+   * can leave that file on disk with no `hqAudioPath`. Look for it before
+   * spawning the CLI: matching the basename against exactly that template using
+   * Tidal's own metadata is tight enough to be safe, and skipping the download
+   * makes re-runs cheap. The download step's looser substring match is kept only
+   * for the post-download `skip_existing` case.
+   */
+  private async findExistingDownload(
+    match: TidalMatch,
+    dir: string,
+  ): Promise<HqAudioAcquireResult | null> {
+    // `tidal-dl-ng`'s `format_track` is "Tracks/{artist} - {title}[ (Explicit)]".
+    // Match the file's basename against exactly that shape using Tidal's own
+    // metadata, so a different track can't be adopted by accident.
+    const wantArtist = normalizeForMatch(match.matchedArtist ?? match.queryArtist);
+    const wantTitle = normalizeForMatch(match.matchedTitle ?? match.queryTitle);
+    if (!wantArtist || !wantTitle) {
+      return null;
+    }
+
+    // Normalize both sides the same way and collapse the "_" that pathvalidate
+    // substitutes for invalid chars, so a sanitized filename still lines up.
+    const canon = (s: string) => normalizeForMatch(s).replace(/_/g, ' ').replace(/\s+/g, ' ').trim();
+    const wanted = `${canon(wantArtist)} ${canon(wantTitle)}`;
+
+    const files = await this.listAudioFiles(dir);
+    const candidate = files.find((filePath) => {
+      const stem = canon(path.basename(filePath, path.extname(filePath)));
+      // Anchored prefix: "{artist} {title}" then only an optional " explicit"
+      // (tidal-dl-ng's format_track suffix). No partial-word matches.
+      return stem === wanted || stem === `${wanted} explicit`;
+    });
+    if (!candidate) {
+      return null;
+    }
+
+    const result = await this.classifyFile(candidate, 'already-on-disk', match);
+    if (result) {
+      this.logger.info('Tidal file already on disk, adopting without re-download', {
+        artist: match.queryArtist,
+        title: match.queryTitle,
+        filePath: candidate,
+        format: result.format,
+      });
+    }
+    return result;
+  }
+
+  /** Codec-probe a file and map it to an HqAudioAcquireResult. */
+  private async classifyFile(
+    filePath: string,
+    resolvedVia: string,
+    match: TidalMatch,
+  ): Promise<HqAudioAcquireResult> {
+    const probed = await probeAudioCodec(filePath);
+    const ext = path.extname(filePath).toLowerCase();
+    let format: HqAudioAcquireResult['format'];
+    if (probed?.codec === 'flac') {
+      format = 'flac';
+    } else if (probed && probed.codec.startsWith('pcm_')) {
+      format = ext === '.aiff' || ext === '.aif' ? 'aiff' : 'wav';
+    } else {
+      format = ext === '.wav' ? 'wav' : ext === '.m4a' ? 'm4a' : 'flac';
+    }
+    this.logger.info('Tidal acquisition matched file', {
+      artist: match.queryArtist,
+      title: match.queryTitle,
+      filePath,
+      format,
+      codec: probed?.codec ?? 'unknown',
+      lossless: probed?.lossless ?? false,
+      resolvedVia,
+    });
+    return { filePath, format };
+  }
+
+  /**
    * Downloads a previously found match. Serialised process-wide via
    * `downloadChain` so the output-directory diff is race-free.
    */
@@ -176,6 +254,12 @@ export class TidalDlAcquirer implements IHqAudioAcquirer {
   ): Promise<HqAudioAcquireResult | null> {
     const resolvedOutputDir = outputDir || this.defaultOutputDir;
     const { queryArtist: artist, queryTitle: title } = match;
+
+    // Adopt a matching file from a previous run instead of re-downloading.
+    const existing = await this.findExistingDownload(match, resolvedOutputDir);
+    if (existing) {
+      return existing;
+    }
 
     const filesBefore = new Set(await this.listAudioFiles(resolvedOutputDir));
     this.logger.info('Tidal download starting', {
@@ -230,31 +314,11 @@ export class TidalDlAcquirer implements IHqAudioAcquirer {
       return null;
     }
 
-    // The extension lies: Tidal ships 320 kbps AAC in `.m4a` for accounts
-    // without a lossless entitlement. Trust the codec, not the container.
-    const probed = await probeAudioCodec(bestCandidate);
-    const ext = path.extname(bestCandidate).toLowerCase();
-    let format: HqAudioAcquireResult['format'];
-    if (probed?.codec === 'flac') {
-      format = 'flac';
-    } else if (probed && probed.codec.startsWith('pcm_')) {
-      format = ext === '.aiff' || ext === '.aif' ? 'aiff' : 'wav';
-    } else {
-      // alac / aac / unknown → m4a container. The composite's codec guard
-      // decides whether this counts as HQ.
-      format = ext === '.wav' ? 'wav' : ext === '.m4a' ? 'm4a' : 'flac';
-    }
-
-    this.logger.info('Tidal acquisition matched file', {
-      artist,
-      title,
-      filePath: bestCandidate,
-      format,
-      codec: probed?.codec ?? 'unknown',
-      lossless: probed?.lossless ?? false,
-      resolvedVia: newFiles.includes(bestCandidate) ? 'new-file-diff' : 'text-match-fallback',
-    });
-    return { filePath: bestCandidate, format };
+    return this.classifyFile(
+      bestCandidate,
+      newFiles.includes(bestCandidate) ? 'new-file-diff' : 'text-match-fallback',
+      match,
+    );
   }
 
   async acquire(

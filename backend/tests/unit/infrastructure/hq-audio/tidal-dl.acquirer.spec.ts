@@ -15,6 +15,7 @@ vi.mock('fs/promises', () => ({
   readdir: readdirMock,
 }));
 vi.mock('src/infrastructure/hq-audio/audio-probe', () => ({ probeAudioCodec: probeMock }));
+vi.mock('src/kernel/types/context', () => ({ getCurrentUserId: () => 'user-1' }));
 
 const noopLogger = {
   debug: vi.fn(),
@@ -32,32 +33,48 @@ function fakeProc(code = 0) {
 }
 const dirent = (name: string) => ({ name, isDirectory: () => false });
 
-function build(match: { trackId: string | null } = { trackId: 't1' }) {
+/** readdir returns `files` on every call (flat dir, no recursion). */
+function dirHas(...names: string[]) {
+  readdirMock.mockResolvedValue(names.map(dirent));
+}
+
+function build(
+  match: { trackId: string | null; matchedArtist?: string; matchedTitle?: string } = {
+    trackId: 't1',
+  },
+) {
   const sync = {
     findBestMatch: vi.fn().mockResolvedValue({
       trackId: match.trackId,
       confidence: match.trackId ? 'exact' : 'none',
       matchedTrack: match.trackId
-        ? { id: match.trackId, title: 'T', artist: 'A', duration: 100 }
+        ? {
+            id: match.trackId,
+            title: match.matchedTitle ?? 'T',
+            artist: match.matchedArtist ?? 'A',
+            duration: 100,
+          }
         : undefined,
     }),
   } as unknown as ITidalSyncProvider;
   const config = {
     get: vi.fn((k: string) =>
-      k === 'hqAudio.tidal.outputDir' ? '/tidal' : k === 'hqAudio.qualityTier' ? 'lossless' : undefined,
+      k === 'hqAudio.tidal.outputDir'
+        ? '/tidal'
+        : k === 'hqAudio.qualityTier'
+          ? 'lossless'
+          : undefined,
     ),
   } as unknown as ConfigService;
   return new TidalDlAcquirer(sync, config, loggerFactory, noopLogger);
 }
-
-// getCurrentUserId reads AsyncLocalStorage; stub the module.
-vi.mock('src/kernel/types/context', () => ({ getCurrentUserId: () => 'user-1' }));
 
 describe('TidalDlAcquirer', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     readdirMock.mockResolvedValue([]);
     spawnMock.mockImplementation(() => fakeProc(0));
+    probeMock.mockResolvedValue({ codec: 'flac', sampleRate: 44100, lossless: true });
   });
 
   it('findMatch returns null when Tidal has no match', async () => {
@@ -65,28 +82,78 @@ describe('TidalDlAcquirer', () => {
     expect(await acq.findMatch('A', 'T', 100)).toBeNull();
   });
 
-  it('downloadMatch reports format flac when the codec probe says flac', async () => {
-    readdirMock.mockResolvedValueOnce([]).mockResolvedValueOnce([dirent('A - T.flac')]);
-    probeMock.mockResolvedValue({ codec: 'flac', sampleRate: 44100, lossless: true });
+  describe('already-on-disk adoption', () => {
+    it('adopts an existing file without spawning tidal-dl-ng', async () => {
+      dirHas('A - T.flac');
+      const acq = build({ trackId: 't1', matchedArtist: 'A', matchedTitle: 'T' });
+      const result = await acq.downloadMatch((await acq.findMatch('A', 'T', 100))!, '');
 
-    const acq = build();
-    const match = await acq.findMatch('A', 'T', 100);
-    const result = await acq.downloadMatch(match!, '');
+      expect(result).toEqual({ filePath: '/tidal/A - T.flac', format: 'flac' });
+      expect(spawnMock).not.toHaveBeenCalled();
+    });
 
-    expect(result).toEqual({ filePath: '/tidal/A - T.flac', format: 'flac' });
+    it('adopts using Tidal metadata even when it differs from our query', async () => {
+      dirHas('Everything But The Girl, Todd Terry - Missing (Todd Terry Lite Mix).m4a');
+      probeMock.mockResolvedValue({ codec: 'aac', sampleRate: 44100, lossless: false });
+      const acq = build({
+        trackId: 't1',
+        matchedArtist: 'Everything But The Girl, Todd Terry',
+        matchedTitle: 'Missing (Todd Terry Lite Mix)',
+      });
+      const result = await acq.downloadMatch(
+        (await acq.findMatch('everything but the girl', 'missing (todd terry lite mix)', 250))!,
+        '',
+      );
+
+      expect(result?.format).toBe('m4a');
+      expect(spawnMock).not.toHaveBeenCalled();
+    });
+
+    it('does NOT adopt a file that only shares one of artist/title', async () => {
+      dirHas('A - Different Song.flac');
+      const acq = build({ trackId: 't1', matchedArtist: 'A', matchedTitle: 'T' });
+      await acq.downloadMatch((await acq.findMatch('A', 'T', 100))!, '');
+
+      // no adoption → falls through to the download
+      expect(spawnMock).toHaveBeenCalled();
+    });
+
+    it('does NOT adopt when title appears before artist (wrong track)', async () => {
+      dirHas('T - A song by someone else.flac');
+      const acq = build({ trackId: 't1', matchedArtist: 'A', matchedTitle: 'T' });
+      await acq.downloadMatch((await acq.findMatch('A', 'T', 100))!, '');
+      expect(spawnMock).toHaveBeenCalled();
+    });
   });
 
-  it('downloadMatch reports format m4a for an AAC file (lossy — composite decides)', async () => {
-    readdirMock.mockResolvedValueOnce([]).mockResolvedValueOnce([dirent('A - T.m4a')]);
-    probeMock.mockResolvedValue({ codec: 'aac', sampleRate: 44100, lossless: false });
+  it('downloads and reports format from the codec probe when nothing is on disk', async () => {
+    // empty before, one new .flac after
+    readdirMock
+      .mockResolvedValueOnce([]) // findExistingDownload
+      .mockResolvedValueOnce([]) // filesBefore
+      .mockResolvedValueOnce([dirent('A - T.flac')]); // after download
+    const acq = build({ trackId: 't1', matchedArtist: 'ZZ', matchedTitle: 'YY' });
 
-    const acq = build();
+    const result = await acq.downloadMatch((await acq.findMatch('A', 'T', 100))!, '');
+
+    expect(result).toEqual({ filePath: '/tidal/A - T.flac', format: 'flac' });
+    expect(spawnMock).toHaveBeenCalled();
+  });
+
+  it('reports m4a for a downloaded AAC file', async () => {
+    readdirMock
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([dirent('A - T.m4a')]);
+    probeMock.mockResolvedValue({ codec: 'aac', sampleRate: 44100, lossless: false });
+    const acq = build({ trackId: 't1', matchedArtist: 'ZZ', matchedTitle: 'YY' });
+
     const result = await acq.downloadMatch((await acq.findMatch('A', 'T', 100))!, '');
 
     expect(result).toEqual({ filePath: '/tidal/A - T.m4a', format: 'm4a' });
   });
 
-  it('serialises concurrent downloads (only one dl process at a time)', async () => {
+  it('serialises concurrent downloads (only one tidal-dl-ng process at a time)', async () => {
     let running = 0;
     let peak = 0;
     spawnMock.mockImplementation(() => {
@@ -100,14 +167,12 @@ describe('TidalDlAcquirer', () => {
       }, 5);
       return p;
     });
-    readdirMock.mockResolvedValue([dirent('A - T.flac')]);
-    probeMock.mockResolvedValue({ codec: 'flac', sampleRate: 44100, lossless: true });
-
-    const acq = build();
+    // no file on disk so each call downloads
+    readdirMock.mockResolvedValue([]);
+    const acq = build({ trackId: 't1', matchedArtist: 'ZZ', matchedTitle: 'YY' });
     const m = (await acq.findMatch('A', 'T', 100))!;
     await Promise.all([acq.downloadMatch(m, ''), acq.downloadMatch(m, ''), acq.downloadMatch(m, '')]);
 
-    // cfg (once) + dl calls, but never two dl in parallel.
     expect(peak).toBe(1);
   });
 });

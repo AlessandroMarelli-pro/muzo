@@ -8,6 +8,7 @@ import { ConfigService } from '@nestjs/config';
 import { IHqAudioTagger } from 'src/application/ports/infrastructure/IHqAudioTagger';
 import { IHqAudioVerifier } from 'src/application/ports/infrastructure/IHqAudioVerifier';
 import { IMusicTrackRepository } from 'src/application/ports/repositories/IMusicTrackRepository';
+import * as fs from 'fs/promises';
 import { probeAudioCodec } from 'src/infrastructure/hq-audio/audio-probe';
 import {
   SockseekAcquirer,
@@ -26,6 +27,15 @@ import { mapWithConcurrency } from 'src/kernel/utils/concurrency';
 const CONCURRENT_JOBS = 5;
 /** Tidal *search* runs in parallel; downloads are serialised inside the acquirer. */
 const TIDAL_SEARCH_CONCURRENCY = 3;
+
+async function fileExists(filePath: string): Promise<boolean> {
+  try {
+    await fs.access(filePath);
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 interface BatchTrackQuery {
   key: MusicTrackId;
@@ -198,6 +208,15 @@ export class AcquireHqAudioBatchUseCase {
     track: MusicTrack | undefined,
   ): Promise<void> {
     try {
+      if (!(await fileExists(result.filePath))) {
+        this.logger.error('Acquired HQ file is missing from disk, not persisting', {
+          trackId,
+          source,
+          filePath: result.filePath,
+        });
+        await this.updateTrackStatus(batchId, trackId, 'failed', 'Acquired file not found on disk');
+        return;
+      }
       const verification = await this.verify(result.filePath, result.format);
       await this.musicTrackRepository.updateOneById(trackId, {
         hqAudioPath: result.filePath,
