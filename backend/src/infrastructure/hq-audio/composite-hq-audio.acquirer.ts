@@ -12,6 +12,7 @@ import {
   IHqAudioVerifier,
 } from 'src/application/ports/infrastructure/IHqAudioVerifier';
 import { HqAudioSource } from 'src/kernel/types/model-types';
+import { probeAudioCodec } from './audio-probe';
 import { DeezerAcquirer } from './deezer.acquirer';
 import { QobuzAcquirer } from './qobuz.acquirer';
 import { SockseekAcquirer } from './sockseek.acquirer';
@@ -30,11 +31,11 @@ const VERIFIABLE_FORMATS: ReadonlySet<HqAudioAcquireResult['format']> = new Set(
  * acquirer is wired) is skipped; a source that throws is logged and the cascade
  * continues.
  *
- * When `hqAudio.verifyLossless` is on, each lossless-container result is
- * spectral-checked: a file that looks transcoded-from-lossy is discarded and
- * the cascade moves on. If every source's file fails, the one with the highest
- * measured cutoff is returned marked `verified: false` — a suspect FLAC still
- * beats the lossy original, and the UI can flag it.
+ * Every returned file is codec-probed first: a lossy codec (AAC/MP3/…, e.g.
+ * Tidal without a HiFi entitlement) does not count as lossless — the cascade
+ * moves on, keeping that file only as a last-resort fallback. A lossless file
+ * then goes through the spectral `verifyLossless` check. If nothing lossless is
+ * found, the best lossy fallback is returned marked `verified: false`.
  */
 @Injectable()
 export class CompositeHqAudioAcquirer implements IHqAudioAcquirer {
@@ -96,9 +97,9 @@ export class CompositeHqAudioAcquirer implements IHqAudioAcquirer {
     }
 
     const verify = this.verificationEnabled();
-    // Failed-verification candidates, kept so the best one can be returned if
-    // nothing passes.
-    const rejected: HqAudioAcquireResult[] = [];
+    // A lossy-codec file (e.g. Tidal AAC) kept in case nothing lossless is
+    // found. Not unlinked — it's a real, usable upgrade for some originals.
+    let lossyFallback: HqAudioAcquireResult | null = null;
 
     for (const source of order) {
       const acquirer = this.registry[source];
@@ -126,14 +127,32 @@ export class CompositeHqAudioAcquirer implements IHqAudioAcquirer {
 
       const stamped: HqAudioAcquireResult = { ...result, source: result.source ?? source };
 
+      // Codec guard: the container extension is not trustworthy (Tidal ships
+      // 320k AAC as .m4a). Probe the real codec.
+      const probed = await probeAudioCodec(stamped.filePath);
+      if (probed && !probed.lossless) {
+        this.logger.warn('HQ source returned a lossy codec, keeping only as fallback', {
+          artist,
+          title,
+          source: stamped.source,
+          codec: probed.codec,
+          filePath: stamped.filePath,
+        });
+        if (!lossyFallback) {
+          lossyFallback = { ...stamped, verified: false, spectralCutoffHz: null };
+        }
+        continue;
+      }
+
       if (!verify || !VERIFIABLE_FORMATS.has(stamped.format)) {
         this.logger.info('HQ acquisition succeeded', {
           artist,
           title,
           source: stamped.source,
           filePath: stamped.filePath,
+          codec: probed?.codec ?? 'unknown',
         });
-        return stamped;
+        return { ...stamped, verified: probed?.lossless ? true : undefined };
       }
 
       const verdict = await this.runVerification(stamped, artist, title);
@@ -153,6 +172,8 @@ export class CompositeHqAudioAcquirer implements IHqAudioAcquirer {
         return { ...stamped, verified: false, spectralCutoffHz: null };
       }
 
+      // A FLAC that's really a transcode-from-lossy is worthless — discard it
+      // outright (unlike a genuine lossy file, which we keep as a fallback).
       this.logger.warn('HQ file failed spectral verification, discarding and trying next', {
         artist,
         title,
@@ -161,25 +182,16 @@ export class CompositeHqAudioAcquirer implements IHqAudioAcquirer {
         cutoffHz: verdict.spectralCutoffHz,
       });
       await fs.unlink(stamped.filePath).catch(() => undefined);
-      rejected.push({
-        ...stamped,
-        verified: false,
-        spectralCutoffHz: verdict.spectralCutoffHz,
-      });
     }
 
-    if (rejected.length > 0) {
-      const best = rejected.reduce((a, b) =>
-        (b.spectralCutoffHz ?? 0) > (a.spectralCutoffHz ?? 0) ? b : a,
-      );
-      this.logger.warn(
-        'No HQ source passed verification; keeping best-effort unverified file',
-        { artist, title, source: best.source, cutoffHz: best.spectralCutoffHz },
-      );
-      // The file was unlinked above; the caller falls back to the original.
-      // Returning null keeps behaviour simple and honest: nothing trustworthy
-      // was acquired. (A future step may re-download the best candidate.)
-      return null;
+    if (lossyFallback) {
+      this.logger.warn('No lossless HQ source; returning lossy fallback (verified: false)', {
+        artist,
+        title,
+        source: lossyFallback.source,
+        filePath: lossyFallback.filePath,
+      });
+      return lossyFallback;
     }
 
     this.logger.warn('No HQ audio source produced a file', { artist, title });

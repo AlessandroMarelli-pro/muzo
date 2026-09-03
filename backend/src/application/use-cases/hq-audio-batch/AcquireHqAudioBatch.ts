@@ -8,18 +8,24 @@ import { ConfigService } from '@nestjs/config';
 import { IHqAudioTagger } from 'src/application/ports/infrastructure/IHqAudioTagger';
 import { IHqAudioVerifier } from 'src/application/ports/infrastructure/IHqAudioVerifier';
 import { IMusicTrackRepository } from 'src/application/ports/repositories/IMusicTrackRepository';
+import { probeAudioCodec } from 'src/infrastructure/hq-audio/audio-probe';
 import {
   SockseekAcquirer,
   SockseekBatchTrackOutcome,
   SockseekBatchTrackQuery,
 } from 'src/infrastructure/hq-audio/sockseek.acquirer';
-import { TidalDlAcquirer } from 'src/infrastructure/hq-audio/tidal-dl.acquirer';
+import {
+  TidalDlAcquirer,
+  TidalMatch,
+} from 'src/infrastructure/hq-audio/tidal-dl.acquirer';
 import { HqAudioBatchId, MusicTrackId } from 'src/kernel/ids';
+import type { HqAudioAcquireResult } from 'src/application/ports/infrastructure/IHqAudioAcquirer';
+import type { MusicTrack } from 'src/kernel/types/model-types';
 import { mapWithConcurrency } from 'src/kernel/utils/concurrency';
 
 const CONCURRENT_JOBS = 5;
-/** Tidal pre-pass: one search + one CLI spawn per track, so keep this modest. */
-const TIDAL_PREPASS_CONCURRENCY = 3;
+/** Tidal *search* runs in parallel; downloads are serialised inside the acquirer. */
+const TIDAL_SEARCH_CONCURRENCY = 3;
 
 interface BatchTrackQuery {
   key: MusicTrackId;
@@ -78,77 +84,149 @@ export class AcquireHqAudioBatchUseCase {
       return;
     }
 
-    // Pre-pass: try Tidal for every track (bounded concurrency), then hand only
-    // the misses to sockseek's batch search. Tidal has richer metadata and does
-    // not lean on Soulseek peer availability, so it lifts the batch hit-rate.
-    const tidalResults = await mapWithConcurrency(
+    // Pre-pass: search Tidal for every track in parallel, then download the
+    // matches one at a time (the acquirer serialises `dl` internally, but we
+    // also want deterministic per-track handling here). A lossless Tidal file
+    // is persisted immediately; a lossy one (AAC — no HiFi entitlement) is
+    // stashed and the track still goes to Soulseek for a lossless copy, with
+    // the lossy file persisted afterwards only if Soulseek also misses.
+    const matches = await mapWithConcurrency(
       queries,
-      TIDAL_PREPASS_CONCURRENCY,
+      TIDAL_SEARCH_CONCURRENCY,
       async (query) => {
         await this.updateTrackStatus(batchId, query.key, 'downloading');
-        return { query, result: await this.tryTidal(query) };
+        return { query, match: await this.findTidalMatch(query) };
       },
     );
 
     const sockseekQueries: SockseekBatchTrackQuery[] = [];
-    for (const { query, result } of tidalResults) {
-      if (result) {
-        const verification = await this.verify(result.filePath, result.format);
-        const track = trackById.get(query.key);
-        if (track) {
-          await this.hqAudioTagger.tagInPlace(result.filePath, track);
-        }
-        await this.musicTrackRepository.updateOneById(query.key, {
-          hqAudioPath: result.filePath,
-          hqAudioSource: 'tidal',
-          hqAudioVerified: verification.verified,
-          hqAudioSpectralCutoffHz: verification.cutoffHz ?? undefined,
-        });
-        await this.updateTrackStatus(batchId, query.key, 'succeeded');
-      } else {
+    /** Tidal lossy files kept as a fallback if Soulseek also misses. */
+    const tidalLossyFallback = new Map<MusicTrackId, HqAudioAcquireResult>();
+
+    for (const { query, match } of matches) {
+      if (!match) {
         sockseekQueries.push(query);
+        continue;
       }
+
+      let result: HqAudioAcquireResult | null = null;
+      try {
+        result = await this.tidalDlAcquirer.downloadMatch(match, '');
+      } catch (error) {
+        this.logger.warn('Tidal download failed in batch, falling back to sockseek', {
+          trackId: query.key,
+          artist: query.artist,
+          title: query.title,
+          error: String(error),
+        });
+      }
+
+      if (!result) {
+        sockseekQueries.push(query);
+        continue;
+      }
+
+      const probed = await probeAudioCodec(result.filePath);
+      if (probed && !probed.lossless) {
+        this.logger.info('Tidal returned lossy codec in batch; trying Soulseek for lossless', {
+          trackId: query.key,
+          codec: probed.codec,
+        });
+        tidalLossyFallback.set(query.key, result);
+        sockseekQueries.push(query);
+        continue;
+      }
+
+      await this.persistAcquired(
+        batchId,
+        query.key,
+        result,
+        'tidal',
+        trackById.get(query.key),
+      );
     }
 
-    if (sockseekQueries.length === 0) {
-      return;
+    if (sockseekQueries.length > 0) {
+      await this.sockseekAcquirer.acquireBatch(batchId, sockseekQueries, '', CONCURRENT_JOBS, {
+        onTrackSearchStart: (key) => {
+          this.updateTrackStatus(batchId, key as MusicTrackId, 'downloading').catch((error) =>
+            this.logger.error('Failed to publish downloading status', { batchId, key, error }),
+          );
+        },
+        onTrackSettled: (key, outcome) => {
+          this.handleTrackSettled(
+            batchId,
+            key as MusicTrackId,
+            outcome,
+            trackById.get(key as MusicTrackId),
+            tidalLossyFallback.get(key as MusicTrackId),
+          ).catch((error) =>
+            this.logger.error('Failed to handle track settlement', { batchId, key, error }),
+          );
+        },
+      });
     }
-
-    await this.sockseekAcquirer.acquireBatch(batchId, sockseekQueries, '', CONCURRENT_JOBS, {
-      onTrackSearchStart: (key) => {
-        this.updateTrackStatus(batchId, key as MusicTrackId, 'downloading').catch((error) =>
-          this.logger.error('Failed to publish downloading status', { batchId, key, error }),
-        );
-      },
-      onTrackSettled: (key, outcome) => {
-        this.handleTrackSettled(
-          batchId,
-          key as MusicTrackId,
-          outcome,
-          trackById.get(key as MusicTrackId),
-        ).catch((error) =>
-          this.logger.error('Failed to handle track settlement', { batchId, key, error }),
-        );
-      },
-    });
   }
 
-  private async tryTidal(query: BatchTrackQuery) {
+  private async findTidalMatch(query: BatchTrackQuery): Promise<TidalMatch | null> {
     try {
-      return await this.tidalDlAcquirer.acquire(
+      return await this.tidalDlAcquirer.findMatch(
         query.artist,
         query.title,
         query.durationSeconds,
-        '',
       );
     } catch (error) {
-      this.logger.warn('Tidal acquisition failed in batch, falling back to sockseek', {
+      this.logger.warn('Tidal search failed in batch', {
         trackId: query.key,
         artist: query.artist,
         title: query.title,
         error: String(error),
       });
       return null;
+    }
+  }
+
+  /**
+   * verify → persist → mark succeeded → tag (best-effort, last). Isolated so one
+   * track's failure never aborts the batch.
+   */
+  private async persistAcquired(
+    batchId: HqAudioBatchId,
+    trackId: MusicTrackId,
+    result: HqAudioAcquireResult,
+    source: 'tidal' | 'soulseek',
+    track: MusicTrack | undefined,
+  ): Promise<void> {
+    try {
+      const verification = await this.verify(result.filePath, result.format);
+      await this.musicTrackRepository.updateOneById(trackId, {
+        hqAudioPath: result.filePath,
+        hqAudioSource: source,
+        hqAudioVerified: verification.verified,
+        hqAudioSpectralCutoffHz: verification.cutoffHz ?? undefined,
+      });
+      this.logger.info('persisted HQ audio', {
+        trackId,
+        source,
+        hqAudioPath: result.filePath,
+        verified: verification.verified,
+      });
+      await this.updateTrackStatus(batchId, trackId, 'succeeded');
+      if (track) {
+        await this.hqAudioTagger.tagInPlace(result.filePath, track);
+      }
+    } catch (error) {
+      this.logger.error('Failed to persist acquired HQ audio', {
+        trackId,
+        source,
+        error: String(error),
+      });
+      await this.updateTrackStatus(
+        batchId,
+        trackId,
+        'failed',
+        `Persist failed: ${String(error)}`,
+      );
     }
   }
 
@@ -189,33 +267,29 @@ export class AcquireHqAudioBatchUseCase {
     batchId: HqAudioBatchId,
     trackId: MusicTrackId,
     outcome: SockseekBatchTrackOutcome,
-    track?: import('src/kernel/types/model-types').MusicTrack,
+    track?: MusicTrack,
+    tidalLossyFallback?: HqAudioAcquireResult,
   ): Promise<void> {
     if (outcome.status === 'succeeded') {
-      const verification = await this.verify(
-        outcome.result.filePath,
-        outcome.result.format,
-      );
-      if (track) {
-        await this.hqAudioTagger.tagInPlace(outcome.result.filePath, track);
-      }
-      await this.musicTrackRepository.updateOneById(trackId, {
-        hqAudioPath: outcome.result.filePath,
-        hqAudioSource: 'soulseek',
-        hqAudioVerified: verification.verified,
-        hqAudioSpectralCutoffHz: verification.cutoffHz ?? undefined,
-      });
-      await this.updateTrackStatus(batchId, trackId, 'succeeded');
-    } else if (outcome.status === 'interrupted') {
+      await this.persistAcquired(batchId, trackId, outcome.result, 'soulseek', track);
+      return;
+    }
+    if (outcome.status === 'interrupted') {
       await this.updateTrackStatus(
         batchId,
         trackId,
         'cancelled',
         'Interrupted by batch timeout before completion',
       );
-    } else {
-      await this.updateTrackStatus(batchId, trackId, 'failed', 'No match found on Soulseek');
+      return;
     }
+    // not-found on Soulseek. If Tidal had a lossy copy, keep it now.
+    if (tidalLossyFallback) {
+      this.logger.info('Soulseek missed; keeping Tidal lossy fallback', { trackId });
+      await this.persistAcquired(batchId, trackId, tidalLossyFallback, 'tidal', track);
+      return;
+    }
+    await this.updateTrackStatus(batchId, trackId, 'failed', 'No match found on Soulseek');
   }
 
   private async updateTrackStatus(

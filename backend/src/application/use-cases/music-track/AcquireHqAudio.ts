@@ -59,13 +59,14 @@ export class AcquireHqAudioUseCase {
       return;
     }
 
-    await this.hqAudioTagger.tagInPlace(result.filePath, track);
-
+    // Persist first — a cosmetic tag failure must never cost the hqAudioPath.
     await this.musicTrackRepository.updateOneById(trackId, {
       hqAudioPath: result.filePath,
       hqAudioSource: result.source,
       hqAudioVerified: result.verified ?? false,
       hqAudioSpectralCutoffHz: result.spectralCutoffHz ?? undefined,
     });
+
+    await this.hqAudioTagger.tagInPlace(result.filePath, track);
   }
 }

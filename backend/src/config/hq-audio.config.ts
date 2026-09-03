@@ -53,7 +53,9 @@ export interface HqAudioConfig {
 export default registerAs(
   'hqAudio',
   (): HqAudioConfig => ({
-    sourceOrder: (process.env.HQ_SOURCE_ORDER || 'tidal,qobuz,soulseek')
+    // Tidal only yields FLAC with an active HiFi Plus subscription; without one
+    // it contributes AAC 320 as a last-resort fallback, so it goes last.
+    sourceOrder: (process.env.HQ_SOURCE_ORDER || 'qobuz,soulseek,tidal')
       .split(',')
       .map((s) => s.trim().toLowerCase())
       .filter(Boolean),

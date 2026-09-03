@@ -5,6 +5,15 @@ import type { ILogger } from 'src/application/ports/infrastructure/ILogger';
 import type { SockseekAcquirer } from 'src/infrastructure/hq-audio/sockseek.acquirer';
 import type { TidalDlAcquirer } from 'src/infrastructure/hq-audio/tidal-dl.acquirer';
 
+const { probeMock } = vi.hoisted(() => ({ probeMock: vi.fn() }));
+vi.mock('src/infrastructure/hq-audio/audio-probe', () => ({
+  probeAudioCodec: probeMock,
+}));
+
+// Default: every probed file is genuine FLAC. Individual tests override.
+const losslessProbe = { codec: 'flac', sampleRate: 44100, lossless: true };
+const lossyProbe = { codec: 'aac', sampleRate: 44100, lossless: false };
+
 const noopLogger = {
   debug: vi.fn(),
   info: vi.fn(),
@@ -50,7 +59,10 @@ function build(
 const flac = (filePath: string): HqAudioAcquireResult => ({ filePath, format: 'flac' });
 
 describe('CompositeHqAudioAcquirer', () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    probeMock.mockResolvedValue(losslessProbe);
+  });
 
   it('tries sources in the configured order and stamps the winning source', async () => {
     const { acquirer, tidal, sockseek } = build(['tidal', 'soulseek']);
@@ -58,7 +70,7 @@ describe('CompositeHqAudioAcquirer', () => {
 
     const result = await acquirer.acquire('A', 'B', 100, '');
 
-    expect(result).toEqual({ filePath: '/tidal/a.flac', format: 'flac', source: 'tidal' });
+    expect(result).toMatchObject({ filePath: '/tidal/a.flac', format: 'flac', source: 'tidal' });
     expect(sockseek.acquire).not.toHaveBeenCalled();
   });
 
@@ -128,6 +140,36 @@ describe('CompositeHqAudioAcquirer', () => {
 
     expect(result?.source).toBe('qobuz');
     expect(sockseek.acquire).not.toHaveBeenCalled();
+  });
+
+  describe('codec guard', () => {
+    it('skips a lossy-codec file and prefers a lossless source after it', async () => {
+      probeMock.mockImplementation(async (p: string) =>
+        p.startsWith('/tidal') ? lossyProbe : losslessProbe,
+      );
+      const { acquirer, tidal, sockseek } = build(['tidal', 'soulseek']);
+      tidal.acquire.mockResolvedValue(flac('/tidal/aac.m4a'));
+      sockseek.acquire.mockResolvedValue(flac('/ss/real.flac'));
+
+      const result = await acquirer.acquire('A', 'B', 100, '');
+
+      expect(result).toMatchObject({ filePath: '/ss/real.flac', source: 'soulseek', verified: true });
+    });
+
+    it('returns the lossy file (verified:false) when no lossless source has it', async () => {
+      probeMock.mockResolvedValue(lossyProbe);
+      const { acquirer, tidal, sockseek } = build(['tidal', 'soulseek']);
+      tidal.acquire.mockResolvedValue({ filePath: '/tidal/aac.m4a', format: 'm4a' });
+      sockseek.acquire.mockResolvedValue(null);
+
+      const result = await acquirer.acquire('A', 'B', 100, '');
+
+      expect(result).toMatchObject({
+        filePath: '/tidal/aac.m4a',
+        source: 'tidal',
+        verified: false,
+      });
+    });
   });
 
   describe('spectral verification', () => {

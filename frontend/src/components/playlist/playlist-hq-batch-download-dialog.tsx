@@ -12,8 +12,9 @@ import {
 import { Progress } from '@/components/ui/progress';
 import { useCancelPlaylistHqAudioDownload, useDownloadPlaylistHqAudio } from '@/services/api-hooks';
 import { useHqAudioBatchProgress } from '@/services/hq-audio-batch-sse-service';
+import { useQueryClient } from '@tanstack/react-query';
 import { Ban, CheckCircle2, Download, Loader2, SkipForward, Square, XCircle } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { isHqAudio } from '../track/audio-quality-badge';
 
 interface PlaylistHqBatchDownloadDialogProps {
@@ -50,6 +51,7 @@ export function PlaylistHqBatchDownloadDialog({
   const downloadPlaylistHqAudio = useDownloadPlaylistHqAudio();
   const cancelPlaylistHqAudioDownload = useCancelPlaylistHqAudioDownload();
   const { state } = useHqAudioBatchProgress(batchId);
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     if (!playlist?.id) return;
@@ -65,6 +67,21 @@ export function PlaylistHqBatchDownloadDialog({
       localStorage.removeItem(batchIdStorageKey(playlist.id));
     }
   }, [playlist?.id, batchId, state?.status]);
+
+  // The batch writes `hqAudioPath` server-side as tracks succeed; refetch the
+  // playlist so the HQ badges update live (throttled — a large batch fires many
+  // track.update events).
+  const succeededCount = state?.succeeded ?? 0;
+  const lastRefetchAt = useRef(0);
+  useEffect(() => {
+    if (!playlist?.id || !batchId) return;
+    const done = state?.status === 'completed';
+    const now = Date.now();
+    if (done || now - lastRefetchAt.current > 2000) {
+      lastRefetchAt.current = now;
+      queryClient.invalidateQueries({ queryKey: ['playlist', playlist.id] });
+    }
+  }, [playlist?.id, batchId, succeededCount, state?.status, queryClient]);
 
   const tracksNeedingDownload = (playlist?.tracks ?? []).filter(
     (playlistTrack) => !isHqAudio(playlistTrack.track?.format, playlistTrack.track?.hqAudioPath),

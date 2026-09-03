@@ -15,12 +15,33 @@ import {
 } from 'src/application/ports/infrastructure/ITidalSyncProvider';
 import { HqQualityTier } from 'src/config/hq-audio.config';
 import { getCurrentUserId } from 'src/kernel/types/context';
+import { probeAudioCodec } from './audio-probe';
 import { normalizeForMatch } from './match';
+
+export interface TidalMatch {
+  trackId: string;
+  matchedArtist?: string;
+  matchedTitle?: string;
+  /** The artist/title we searched with — used to disambiguate the output file. */
+  queryArtist: string;
+  queryTitle: string;
+}
 
 @Injectable()
 export class TidalDlAcquirer implements IHqAudioAcquirer {
   private readonly defaultOutputDir: string;
   private readonly qualityTier: HqQualityTier;
+
+  /**
+   * Serialises `tidal-dl-ng dl` across concurrent callers: every download awaits
+   * (and extends) this chain, so only one CLI process runs at a time. Without
+   * this, parallel downloads into the shared Tidal dir race the before/after
+   * file diff and get mis-assigned to the wrong track.
+   */
+  private downloadChain: Promise<unknown> = Promise.resolve();
+
+  /** Runs `cfg quality_audio` at most once per process. */
+  private qualityConfigured?: Promise<void>;
 
   constructor(
     @Inject(TIDAL_SYNC_PROVIDER)
@@ -59,8 +80,29 @@ export class TidalDlAcquirer implements IHqAudioAcquirer {
     });
   }
 
+  private ensureQualityConfigured(): Promise<void> {
+    if (!this.qualityConfigured) {
+      this.qualityConfigured = this.runTidalCli([
+        'cfg',
+        'quality_audio',
+        this.tidalQualityValue(),
+      ]).catch((error) => {
+        this.logger.warn('Failed to set tidal-dl-ng quality, using existing config', {
+          quality: this.tidalQualityValue(),
+          error: String(error),
+        });
+      });
+    }
+    return this.qualityConfigured;
+  }
+
   private async listAudioFiles(rootDir: string): Promise<string[]> {
-    const entries = await fs.readdir(rootDir, { withFileTypes: true });
+    let entries: import('fs').Dirent[];
+    try {
+      entries = await fs.readdir(rootDir, { withFileTypes: true });
+    } catch {
+      return [];
+    }
     const nested = await Promise.all(
       entries.map(async (entry) => {
         const entryPath = path.join(rootDir, entry.name);
@@ -77,31 +119,12 @@ export class TidalDlAcquirer implements IHqAudioAcquirer {
     return nested.flat();
   }
 
-  private async runTidalDownload(trackId: string, outputDir: string): Promise<void> {
-    const trackUrl = `https://tidal.com/browse/track/${trackId}`;
-    await fs.mkdir(outputDir, { recursive: true });
-
-    // Apply the configured quality tier (best-effort: a cfg failure must not
-    // block the download, which falls back to whatever quality_audio is set to).
-    try {
-      await this.runTidalCli(['cfg', 'quality_audio', this.tidalQualityValue()]);
-    } catch (error) {
-      this.logger.warn('Failed to set tidal-dl-ng quality, using existing config', {
-        quality: this.tidalQualityValue(),
-        error: String(error),
-      });
-    }
-
-    await this.runTidalCli(['dl', trackUrl]);
-  }
-
-  async acquire(
+  /** Pure Tidal API search — safe to run in parallel. */
+  async findMatch(
     artist: string,
     title: string,
     durationSeconds: number,
-    outputDir: string,
-  ): Promise<HqAudioAcquireResult | null> {
-    const resolvedOutputDir = outputDir || this.defaultOutputDir;
+  ): Promise<TidalMatch | null> {
     const userId = getCurrentUserId();
     this.logger.info('Tidal search starting', { artist, title, durationSeconds });
 
@@ -118,9 +141,43 @@ export class TidalDlAcquirer implements IHqAudioAcquirer {
       this.logger.warn('Tidal search found no match', { artist, title });
       return null;
     }
+    return {
+      trackId: match.trackId,
+      matchedArtist: match.matchedTrack?.artist,
+      matchedTitle: match.matchedTrack?.title,
+      queryArtist: artist,
+      queryTitle: title,
+    };
+  }
+
+  private async runTidalDownload(trackId: string, outputDir: string): Promise<void> {
+    await fs.mkdir(outputDir, { recursive: true });
+    await this.ensureQualityConfigured();
+    await this.runTidalCli(['dl', `https://tidal.com/browse/track/${trackId}`]);
+  }
+
+  /**
+   * Downloads a previously found match. Serialised process-wide via
+   * `downloadChain` so the output-directory diff is race-free.
+   */
+  async downloadMatch(
+    match: TidalMatch,
+    outputDir: string,
+  ): Promise<HqAudioAcquireResult | null> {
+    const run = this.downloadChain.then(() => this.downloadMatchInner(match, outputDir));
+    // Keep the chain alive regardless of this download's outcome.
+    this.downloadChain = run.catch(() => undefined);
+    return run;
+  }
+
+  private async downloadMatchInner(
+    match: TidalMatch,
+    outputDir: string,
+  ): Promise<HqAudioAcquireResult | null> {
+    const resolvedOutputDir = outputDir || this.defaultOutputDir;
+    const { queryArtist: artist, queryTitle: title } = match;
 
     const filesBefore = new Set(await this.listAudioFiles(resolvedOutputDir));
-
     this.logger.info('Tidal download starting', {
       artist,
       title,
@@ -155,9 +212,9 @@ export class TidalDlAcquirer implements IHqAudioAcquirer {
       return normalizedPath.includes(normalizedArtist) && normalizedPath.includes(normalizedTitle);
     };
 
-    // Prefer a newly downloaded file (deterministic, scales regardless of library size).
-    // Fall back to a text match across the whole directory only when nothing new appeared,
-    // e.g. tidal-dl-ng skipped because the track was already downloaded in a prior run.
+    // Downloads are serialised, so exactly one new file means it is ours.
+    // Fall back to a text match only when nothing new appeared (tidal-dl-ng
+    // skipped because the track was already downloaded in a prior run).
     const bestCandidate =
       (newFiles.length === 1 ? newFiles[0] : newFiles.find(matchesArtistAndTitle)) ??
       files.find(matchesArtistAndTitle);
@@ -173,18 +230,43 @@ export class TidalDlAcquirer implements IHqAudioAcquirer {
       return null;
     }
 
+    // The extension lies: Tidal ships 320 kbps AAC in `.m4a` for accounts
+    // without a lossless entitlement. Trust the codec, not the container.
+    const probed = await probeAudioCodec(bestCandidate);
     const ext = path.extname(bestCandidate).toLowerCase();
-    const format = ext === '.wav' ? 'wav' : ext === '.m4a' ? 'm4a' : 'flac';
+    let format: HqAudioAcquireResult['format'];
+    if (probed?.codec === 'flac') {
+      format = 'flac';
+    } else if (probed && probed.codec.startsWith('pcm_')) {
+      format = ext === '.aiff' || ext === '.aif' ? 'aiff' : 'wav';
+    } else {
+      // alac / aac / unknown → m4a container. The composite's codec guard
+      // decides whether this counts as HQ.
+      format = ext === '.wav' ? 'wav' : ext === '.m4a' ? 'm4a' : 'flac';
+    }
+
     this.logger.info('Tidal acquisition matched file', {
       artist,
       title,
       filePath: bestCandidate,
       format,
+      codec: probed?.codec ?? 'unknown',
+      lossless: probed?.lossless ?? false,
       resolvedVia: newFiles.includes(bestCandidate) ? 'new-file-diff' : 'text-match-fallback',
     });
-    return {
-      filePath: bestCandidate,
-      format,
-    };
+    return { filePath: bestCandidate, format };
+  }
+
+  async acquire(
+    artist: string,
+    title: string,
+    durationSeconds: number,
+    outputDir: string,
+  ): Promise<HqAudioAcquireResult | null> {
+    const match = await this.findMatch(artist, title, durationSeconds);
+    if (!match) {
+      return null;
+    }
+    return this.downloadMatch(match, outputDir);
   }
 }
