@@ -107,3 +107,6 @@ backend/coverage/**
 frontend/.claude/**
 frontend/.agents/**
 backend/wipe-db.sh
+
+# Local DB backups
+backend/backups/

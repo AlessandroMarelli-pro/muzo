@@ -17,8 +17,19 @@ git pull
 echo "🐳 Rebuilding images..."
 docker compose build
 
+# AI_SERVICE_MODE decides whether the local-ai profile (and its published image, not built
+# locally) is part of this update -- see scripts/start.sh for the same check.
+ai_service_mode=$(grep -E "^AI_SERVICE_MODE=" .env | cut -d= -f2)
+ai_service_replicas=$(grep -E "^AI_SERVICE_REPLICAS=" .env | cut -d= -f2)
+ai_service_replicas=${ai_service_replicas:-1}
+
 echo "🔄 Restarting (only containers whose image actually changed are recreated)..."
-docker compose up -d
+if [ "$ai_service_mode" = "local" ]; then
+  docker compose --profile local-ai pull ai-service
+  docker compose --profile local-ai up -d --scale "ai-service=${ai_service_replicas}"
+else
+  docker compose up -d
+fi
 
 echo ""
 echo "✅ Update complete. Your data was not touched."

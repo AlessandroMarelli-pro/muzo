@@ -58,8 +58,8 @@ export interface QueueConfig {
        * Documentation only: actual worker concurrency is read from EMBEDDING_BACKFILL_CONCURRENCY
        * directly in embedding-backfill-consumer.adapter.ts, since @Processor's worker-options
        * argument is evaluated at class-definition time, before ConfigService is available. Default
-       * kept modest (3) because all jobs share one pinned ai-service instance (see that file for
-       * why), not the full AI_SIMPLE_URLS pool.
+       * kept modest (3): in remote mode there is only one ai-service URL to send to regardless of
+       * concurrency; in local mode requests do round-robin across replicas (see that file).
        */
       concurrency: number;
       attempts: number;

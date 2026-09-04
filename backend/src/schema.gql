@@ -7,6 +7,32 @@ input AddTrackToPlaylistInput {
   trackId: Base64ID!
 }
 
+type AiServiceActionResult {
+  message: String!
+  success: Boolean!
+}
+
+type AiServiceHealth {
+  instances: [AiServiceInstanceHealth!]!
+  overall: Boolean!
+  timestamp: String!
+}
+
+type AiServiceInstanceHealth {
+  activeConnections: Int!
+  isHealthy: Boolean!
+  lastChecked: Date!
+  url: String!
+}
+
+type AiServiceSettings {
+  hasAuthToken: Boolean!
+  health: AiServiceHealth!
+  mode: String!
+  remoteUrl: String
+  replicas: Int!
+}
+
 """ID encoded as base64 for transport"""
 scalar Base64ID
 
@@ -188,15 +214,18 @@ type Mutation {
   scanIncompleteTracks(libraryId: Base64ID!): Base64ID!
   scanPlaylistTracks(force: Boolean, playlistId: Base64ID!): Base64ID!
   scanTrack(force: Boolean, trackId: Base64ID!): Base64ID!
+  setAiServiceReplicas(replicas: Int!): AiServiceActionResult!
   startLibraryScan(force: Boolean, incremental: Boolean, libraryId: Base64ID!): Base64ID!
   stopLibraryScan(libraryId: Base64ID!, sessionId: Base64ID): Boolean!
   syncPlaylistToSpotify(playlistId: Base64ID!, userId: String!): ThirdPartySyncResult!
   syncPlaylistToTidal(playlistId: Base64ID!, userId: String!): ThirdPartySyncResult!
   syncPlaylistToYouTube(playlistId: Base64ID!, userId: String!): ThirdPartySyncResult!
+  testAiServiceConnection(input: TestAiServiceConnectionGqlInput!): AiServiceActionResult!
   toggleBanger(trackId: Base64ID!): Track!
   toggleDislike(trackId: Base64ID!): Boolean!
   toggleFavorite(trackId: Base64ID!): Track!
   toggleLike(trackId: Base64ID!): Track!
+  updateAiServiceSettings(input: UpdateAiServiceSettingsGqlInput!): AiServiceActionResult!
   updatePlaylistSorting(input: UpdatePlaylistSortingInput!, playlistId: Base64ID!): PlaylistSorting!
   updatePlaylistTracksPositions(input: UpdatePlaylistPositionsInput!, playlistId: Base64ID!): Boolean!
   updateQueuePositions(input: UpdateQueuePositionsInput!): [QueueItem!]!
@@ -279,6 +308,7 @@ type PlaylistsResult {
 }
 
 type Query {
+  aiServiceSettings: AiServiceSettings!
   connectedProviders(userId: String!): [ConnectedProvider!]!
   cosineRecommendationsForTrack(trackId: Base64ID!, userId: String): [CosineRecommendedTrack!]!
   discoverSimilarTracksForPlaylist(playlistId: Base64ID!, userId: String!): [DiscoveredTrack!]!
@@ -354,6 +384,11 @@ type StaticFilterOptions {
   keys: [FilterWithID!]!
   libraries: [FilterWithID!]!
   subgenres: [FilterWithID!]!
+}
+
+input TestAiServiceConnectionGqlInput {
+  authToken: String
+  url: String!
 }
 
 type ThirdPartySyncResult {
@@ -435,6 +470,12 @@ type TrackRecommendation {
   reasons: [String!]!
   similarity: Float!
   track: Track!
+}
+
+input UpdateAiServiceSettingsGqlInput {
+  authToken: String
+  mode: String!
+  remoteUrl: String
 }
 
 input UpdatePlaylistInput {

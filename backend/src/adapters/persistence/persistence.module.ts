@@ -12,6 +12,7 @@ import { METRICS_QUERY } from 'src/application/ports/queries/IMetricsQuery';
 import { PLAYLIST_STATS_QUERY } from 'src/application/ports/queries/IPlaylistStatsQuery';
 import { RECOMMENDATION_DATA_PORT } from 'src/application/ports/queries/IRecommendationDataPort';
 import { SAVED_FILTER_QUERY } from 'src/application/ports/queries/ISavedFilterQuery';
+import { AI_SERVICE_SETTINGS_REPOSITORY } from 'src/application/ports/repositories/IAiServiceSettingsRepository';
 import { COSINE_TRACK_MATCH_REPOSITORY } from 'src/application/ports/repositories/ICosineTrackMatchRepository';
 import { IMAGE_SEARCH_REPOSITORY } from 'src/application/ports/repositories/IImageSearchRepository';
 import { MUSIC_LIBRARY_REPOSITORY } from 'src/application/ports/repositories/IMusicLibraryRepository';
@@ -32,6 +33,7 @@ import { MetricsQuery } from './queries/metrics/metrics.query';
 import { PlaylistStatsQuery } from './queries/playlist/playlist-stats.query';
 import { SavedFilterQuery } from './queries/saved-filter/saved-filter.query';
 import { RecommendationDataAdapter } from './recommendation/recommendation-data.adapter';
+import { AiServiceSettingsRepository } from './repositories/ai-service-settings/ai-service-settings.repository';
 import { CosineTrackMatchRepository } from './repositories/cosine-track-match/cosine-track-match.repository';
 import { ImageSearchRepository } from './repositories/image-search/image-search.repository';
 import { MusicLibraryRepository } from './repositories/music-library/music-library.repository';
@@ -80,6 +82,7 @@ const queriesProviders = [
   { provide: ID3_READER, useClass: Id3ReaderAdapter },
   { provide: METRICS_QUERY, useClass: MetricsQuery },
   { provide: OAUTH_TOKEN_REPOSITORY, useClass: OAuthTokenRepository },
+  { provide: AI_SERVICE_SETTINGS_REPOSITORY, useClass: AiServiceSettingsRepository },
   { provide: AUDIO_WAVEFORM_GENERATOR, useClass: WaveformGenerator },
   { provide: RECOMMENDATION_DATA_PORT, useClass: RecommendationDataAdapter },
   { provide: MUSIC_LIBRARY_REPOSITORY, useClass: MusicLibraryRepository },

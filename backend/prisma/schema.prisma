@@ -464,6 +464,25 @@ model HiddenMusicTrack {
   @@map("hidden_music_tracks")
 }
 
+model AiServiceSettings {
+  id        String   @id @default("singleton")
+  mode      String   @default("remote") // "local" | "remote" -- see backend/src/config/ai-service.config.ts
+  remoteUrl String?
+  authToken String?  // Bearer token for the remote endpoint; plaintext, same precedent as ThirdPartyOAuthToken
+  replicas  Int      @default(1) // desired local ai-service replica count
+
+  // Timestamps -- createdById/updatedById follow the ThirdPartyOAuthToken convention for a
+  // system-level row with no real per-user owner (ModelBase requires a UserId either way).
+  // updatedAt nullable like every other model here (not UserPreferences' outlier) --
+  // toDbModel()/toDbModelUpdate() produce Date | null, matching this everywhere else.
+  createdAt   DateTime  @default(now())
+  createdById String    @default("userId")
+  updatedAt   DateTime? @updatedAt
+  updatedById String?
+
+  @@map("ai_service_settings")
+}
+
 model ThirdPartyOAuthToken {
   id                String   @id @default(uuid())
   provider          String   // 'youtube', 'spotify', 'tidal', etc.

@@ -1,30 +1,39 @@
-import { InjectQueue } from '@nestjs/bullmq';
-import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Inject, Injectable, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import axios from 'axios';
-import { Queue } from 'bullmq';
+import dns from 'dns';
 import {
+  AiServiceHealthInfo,
+  AiServiceTarget,
   IAiServicePool,
   ServiceInstance,
 } from 'src/application/ports/infrastructure/IAiServicePool';
 import { ILogger, LOGGER } from 'src/application/ports/infrastructure/ILogger';
 import { LOGGER_FACTORY } from 'src/application/ports/infrastructure/ILoggerFactory';
+import {
+  AI_SERVICE_SETTINGS_REPOSITORY,
+  IAiServiceSettingsRepository,
+} from 'src/application/ports/repositories/IAiServiceSettingsRepository';
 import { AiServiceConfig } from 'src/config';
-import { AssignedServers, ServerAssignment } from './ai-server-pool.types';
+
+/** Port the ai-service Flask app listens on inside the container (see ai-service/gunicorn.conf.py). */
+const AI_SERVICE_PORT = 4000;
+
+/**
+ * Docker's embedded DNS resolves a compose service name to every replica's IP when the service
+ * has more than one running container -- this is how local mode discovers replicas created by
+ * live scaling (see DockerScalingService) without either side tracking container IDs.
+ */
+const LOCAL_AI_SERVICE_DNS_NAME = 'ai-service';
 
 @Injectable()
-export class AiServerPoolAdapter implements IAiServicePool {
+export class AiServerPoolAdapter implements IAiServicePool, OnModuleInit {
   private readonly aiServiceConfig: AiServiceConfig;
-  private readonly simpleInstances: ServiceInstance[] = [];
-  private readonly hierarchicalInstances: ServiceInstance[] = [];
-  private readonly assignedServers: AssignedServers = {
-    simple: null,
-    hierarchical: null,
-  };
-  private readonly assignmentKey = 'ai-service:assignments';
-  private readonly serviceId = process.env.HOSTNAME || `muzo-backend-${Date.now()}`;
+  private instances: ServiceInstance[] = [];
+  private authToken: string | undefined;
+  /** Round-robin cursor into `instances`. */
+  private nextIndex = 0;
   private healthCheckInterval: NodeJS.Timeout | null = null;
-  private heartbeatInterval: NodeJS.Timeout | null = null;
 
   constructor(
     @Inject(LOGGER_FACTORY)
@@ -32,341 +41,149 @@ export class AiServerPoolAdapter implements IAiServicePool {
     @Inject(LOGGER)
     private readonly logger: ILogger,
     private readonly configService: ConfigService,
-    @InjectQueue('library-scan') private readonly queue: Queue,
+    @Inject(AI_SERVICE_SETTINGS_REPOSITORY)
+    private readonly settingsRepository: IAiServiceSettingsRepository,
   ) {
     this.logger = loggerFactory.createLogger('AiServerPoolAdapter');
-    // Get AI service configuration from centralized config
     this.aiServiceConfig = this.configService.get<AiServiceConfig>('aiService')!;
+  }
 
-    // Initialize service instances
-    this.initializeServiceInstances();
-
-    // Assign servers at startup
-    this.assignServersAtStartup();
-
-    // Start health checking
+  async onModuleInit(): Promise<void> {
+    await this.seedSettingsFromEnvIfUnconfigured();
+    await this.reload();
     this.startHealthChecking();
-
-    // Start heartbeat for assigned servers
-    this.startHeartbeat();
-
-    this.logger.info(
-      `AI Integration Service initialized with ${this.simpleInstances.length} simple instances and ${this.hierarchicalInstances.length} hierarchical instances`,
-    );
   }
 
   /**
-   * Get assigned server for a specific type
+   * Every existing install runs remote via AI_SERVICE_URL/AI_SERVICE_TOKEN in .env. The settings
+   * table defaults to mode "remote" with a null remoteUrl (see schema.prisma), which is
+   * indistinguishable from "never configured" -- so on first boot with a still-default row and an
+   * env URL present, seed the row from env once. After that the settings UI is the only source of
+   * truth; this never overwrites a row a user has actually saved.
    */
-  getAssignedServer(type: 'simple' | 'hierarchical'): ServiceInstance {
-    const server = this.assignedServers[type];
-    if (!server) {
-      throw new HttpException(
-        `No ${type} server assigned or available`,
-        HttpStatus.SERVICE_UNAVAILABLE,
-      );
+  private async seedSettingsFromEnvIfUnconfigured(): Promise<void> {
+    const settings = await this.settingsRepository.get();
+    const isUnconfigured = settings.mode === 'remote' && settings.remoteUrl === null;
+    if (!isUnconfigured || !this.aiServiceConfig.bootstrapUrl) {
+      return;
     }
-    return server;
+    this.logger.info(`Seeding ai-service settings from AI_SERVICE_URL: ${this.aiServiceConfig.bootstrapUrl}`);
+    await this.settingsRepository.save({
+      mode: 'remote',
+      remoteUrl: this.aiServiceConfig.bootstrapUrl,
+      authToken: this.aiServiceConfig.bootstrapAuthToken ?? null,
+    });
   }
 
   /**
-   * Get AI service health information
-   *
-   * @returns Promise<any> - Health information from all service instances
+   * Picks the next healthy instance round-robin and returns its URL plus auth headers. Returning
+   * both together (rather than a bare URL) is what keeps a token change from going stale --
+   * consumers no longer read a separately-captured config snapshot.
    */
-  async getHealthInfo(): Promise<any> {
-    const stats = await this.getConnectionPoolStats();
+  getTarget(): AiServiceTarget {
+    const healthyInstances = this.instances.filter((instance) => instance.isHealthy);
+    if (healthyInstances.length === 0) {
+      throw new HttpException('No healthy ai-service instance available', HttpStatus.SERVICE_UNAVAILABLE);
+    }
+
+    const instance = healthyInstances[this.nextIndex % healthyInstances.length];
+    this.nextIndex = (this.nextIndex + 1) % healthyInstances.length;
+
+    return { url: instance.url, headers: this.authHeaders() };
+  }
+
+  async getHealthInfo(): Promise<AiServiceHealthInfo> {
     return {
-      overall: await this.checkHealth(),
-      instances: stats,
+      overall: this.instances.some((instance) => instance.isHealthy),
+      instances: this.instances.map((instance) => ({
+        url: instance.url,
+        isHealthy: instance.isHealthy,
+        activeConnections: instance.activeConnections,
+        lastChecked: instance.lastChecked,
+      })),
       timestamp: new Date().toISOString(),
     };
   }
 
   /**
-   * Initialize service instances from configuration
+   * Re-reads AiServiceSettings and rebuilds the instance list. Called on boot and after every
+   * settings change (mode switch, URL/token edit, replica count change) so those apply live with
+   * no backend restart -- the whole point of moving settings out of constructor-frozen env config.
    */
-  private initializeServiceInstances(): void {
-    const ports = [3000, 3002, 3003, 3004, 3005, 3006];
-    // Initialize simple service instances
-    this.aiServiceConfig.simpleUrls.forEach((url, index) => {
-      this.simpleInstances.push({
-        backendPort: ports[index],
-        url,
-        isHealthy: true,
-        lastChecked: new Date(),
-        activeConnections: 0,
-      });
+  async reload(): Promise<void> {
+    const settings = await this.settingsRepository.get();
+    this.authToken = settings.authToken ?? this.aiServiceConfig.bootstrapAuthToken;
+
+    const urls =
+      settings.mode === 'local'
+        ? await this.resolveLocalInstanceUrls()
+        : this.resolveRemoteInstanceUrls(settings.remoteUrl);
+
+    const previousByUrl = new Map(this.instances.map((instance) => [instance.url, instance]));
+    this.instances = urls.map((url) => {
+      const previous = previousByUrl.get(url);
+      // Keep a known-healthy instance's state across a reload; a brand new one (a freshly scaled
+      // replica, or a URL just switched to) starts unhealthy -- it may still be cold-loading its
+      // ~2-3 GB of models, and routing real analysis traffic at it before the health loop confirms
+      // it is up would just fail the request.
+      return (
+        previous ?? {
+          url,
+          isHealthy: false,
+          lastChecked: new Date(0),
+          activeConnections: 0,
+        }
+      );
     });
-
-    // Initialize hierarchical service instances
-    this.aiServiceConfig.hierarchicalUrls.forEach((url, index) => {
-      this.hierarchicalInstances.push({
-        backendPort: ports[index],
-        url,
-        isHealthy: true,
-        lastChecked: new Date(),
-        activeConnections: 0,
-      });
-    });
-  }
-
-  /**
-   * Assign servers at startup using Redis-based coordination
-   */
-  private async assignServersAtStartup(): Promise<void> {
-    this.logger.info(`Assigning servers at startup for service: ${this.serviceId}`);
-
-    // Check health of all instances first
-    await this.checkAllInstancesHealth();
-
-    // Try to assign simple server
-    await this.tryAssignServer('simple');
-
-    // Try to assign hierarchical server
-    await this.tryAssignServer('hierarchical');
+    this.nextIndex = 0;
 
     this.logger.info(
-      `Server assignment completed - Simple: ${this.assignedServers.simple?.url || 'none'}, Hierarchical: ${this.assignedServers.hierarchical?.url || 'none'}`,
+      `ai-service pool reloaded: mode=${settings.mode} instances=${JSON.stringify(urls)}`,
+    );
+
+    // Confirm health immediately rather than waiting for the next 30s tick -- a mode switch or a
+    // fresh scale-up should reflect in getHealthInfo()/the settings UI right away.
+    await this.checkAllInstancesHealth();
+  }
+
+  private resolveRemoteInstanceUrls(remoteUrl: string | null): string[] {
+    return remoteUrl ? [remoteUrl] : [];
+  }
+
+  private async resolveLocalInstanceUrls(): Promise<string[]> {
+    try {
+      const addresses = await dns.promises.resolve4(LOCAL_AI_SERVICE_DNS_NAME);
+      return addresses.map((address) => `http://${address}:${AI_SERVICE_PORT}`);
+    } catch (error: any) {
+      // ENOTFOUND -- the ai-service compose profile isn't running (or DNS hasn't caught up with a
+      // container that just started). Not an error worth logging at warn: this is the expected
+      // state before `docker compose --profile local-ai up` has run.
+      this.logger.info(`Could not resolve local ai-service instances: ${error.message}`);
+      return [];
+    }
+  }
+
+  private authHeaders(): Record<string, string> {
+    return this.authToken ? { Authorization: `Bearer ${this.authToken}` } : {};
+  }
+
+  private startHealthChecking(): void {
+    this.healthCheckInterval = setInterval(async () => {
+      await this.checkAllInstancesHealth();
+    }, 30000);
+  }
+
+  private async checkAllInstancesHealth(): Promise<void> {
+    await Promise.allSettled(
+      this.instances.map((instance) => this.checkInstanceHealth(instance)),
     );
   }
 
-  /**
-   * Try to assign a server of the specified type using Redis coordination
-   */
-  private async tryAssignServer(type: 'simple' | 'hierarchical'): Promise<void> {
-    const instances = type === 'simple' ? this.simpleInstances : this.hierarchicalInstances;
-    const healthyInstances = instances.filter((instance) => instance.isHealthy);
-
-    if (healthyInstances.length === 0) {
-      this.logger.warn(`No healthy ${type} servers available`);
-      return;
-    }
-
-    const currentPort = parseInt(process.env.PORT || '3000', 10);
-    // Try to assign each healthy instance until one succeeds
-    for (const instance of healthyInstances) {
-      if (await this.reserveServer(instance.url, type)) {
-        this.assignedServers[type] = instance;
-        this.logger.info(`Successfully assigned ${type} server: ${instance.url}`);
-        return;
-      }
-    }
-    const serverByPort = instances.find((instance) => instance.backendPort === currentPort);
-
-    if (serverByPort) {
-      this.assignedServers[type] = serverByPort;
-      this.logger.info(`Successfully assigned ${type} server: ${serverByPort.url}`);
-      return;
-    }
-
-    this.logger.warn(`Could not assign any ${type} server - all are taken by other services`);
-  }
-
-  /**
-   * Reserve a server using Redis atomic operations
-   */
-  private async reserveServer(url: string, type: 'simple' | 'hierarchical'): Promise<boolean> {
-    try {
-      const redis = await this.queue.client;
-      const lockKey = `${this.assignmentKey}:${type}:${url}`;
-      const assignment: ServerAssignment = {
-        url,
-        assignedTo: this.serviceId,
-        assignedAt: new Date().toISOString(),
-        lastHeartbeat: new Date().toISOString(),
-        serviceId: this.serviceId,
-      };
-
-      // Use SET with NX (only if not exists) and EX (expiration) for atomic reservation
-      const result = await redis.set(
-        lockKey,
-        JSON.stringify(assignment),
-        'EX',
-        30, // 30 seconds expiration
-        'NX', // Only set if not exists
-      );
-
-      return result === 'OK';
-    } catch (error) {
-      this.logger.error(`Failed to reserve server ${url}:`, error);
-      return false;
-    }
-  }
-
-  /**
-   * Release a server assignment
-   */
-  private async releaseServer(url: string, type: 'simple' | 'hierarchical'): Promise<void> {
-    try {
-      const redis = await this.queue.client;
-      const lockKey = `${this.assignmentKey}:${type}:${url}`;
-      await redis.del(lockKey);
-      this.logger.info(`Released ${type} server: ${url}`);
-    } catch (error) {
-      this.logger.error(`Failed to release server ${url}:`, error);
-    }
-  }
-
-  /**
-   * Start heartbeat mechanism to maintain server assignments
-   */
-  private startHeartbeat(): void {
-    // Send heartbeat every 10 seconds
-    this.heartbeatInterval = setInterval(async () => {
-      await this.sendHeartbeat();
-    }, 10000);
-
-    // Initial heartbeat
-    this.sendHeartbeat();
-  }
-
-  /**
-   * Send heartbeat for assigned servers
-   */
-  private async sendHeartbeat(): Promise<void> {
-    try {
-      const redis = await this.queue.client;
-      const now = new Date().toISOString();
-
-      // Update heartbeat for simple server
-      if (this.assignedServers.simple) {
-        const lockKey = `${this.assignmentKey}:simple:${this.assignedServers.simple.url}`;
-        const existingAssignment = await redis.get(lockKey);
-
-        if (existingAssignment) {
-          const assignment: ServerAssignment = JSON.parse(existingAssignment);
-          assignment.lastHeartbeat = now;
-          await redis.setex(lockKey, 30, JSON.stringify(assignment));
-        }
-      }
-
-      // Update heartbeat for hierarchical server
-      if (this.assignedServers.hierarchical) {
-        const lockKey = `${this.assignmentKey}:hierarchical:${this.assignedServers.hierarchical.url}`;
-        const existingAssignment = await redis.get(lockKey);
-
-        if (existingAssignment) {
-          const assignment: ServerAssignment = JSON.parse(existingAssignment);
-          assignment.lastHeartbeat = now;
-          await redis.setex(lockKey, 30, JSON.stringify(assignment));
-        }
-      }
-    } catch (error) {
-      this.logger.error('Failed to send heartbeat:', error);
-    }
-  }
-
-  /**
-   * Check for expired assignments and reassign if needed
-   */
-  private async checkExpiredAssignments(): Promise<void> {
-    try {
-      const redis = await this.queue.client;
-      const _now = new Date();
-
-      // Check simple server assignment
-      if (this.assignedServers.simple) {
-        const lockKey = `${this.assignmentKey}:simple:${this.assignedServers.simple.url}`;
-        const assignment = await redis.get(lockKey);
-
-        if (!assignment) {
-          // Assignment expired, try to reassign
-          this.logger.info(`Simple server assignment expired, attempting reassignment`);
-          this.assignedServers.simple = null;
-          await this.tryAssignServer('simple');
-        }
-      }
-
-      // Check hierarchical server assignment
-      if (this.assignedServers.hierarchical) {
-        const lockKey = `${this.assignmentKey}:hierarchical:${this.assignedServers.hierarchical.url}`;
-        const assignment = await redis.get(lockKey);
-
-        if (!assignment) {
-          // Assignment expired, try to reassign
-          this.logger.info(`Hierarchical server assignment expired, attempting reassignment`);
-          this.assignedServers.hierarchical = null;
-          await this.tryAssignServer('hierarchical');
-        }
-      }
-    } catch (error) {
-      this.logger.error('Failed to check expired assignments:', error);
-    }
-  }
-
-  /**
-   * Reassign servers if current assignments become unhealthy
-   */
-  private async reassignServersIfNeeded(): Promise<void> {
-    // Check if simple server needs reassignment
-    if (this.assignedServers.simple && !this.assignedServers.simple.isHealthy) {
-      this.logger.info(
-        `Simple server ${this.assignedServers.simple.url} became unhealthy, releasing assignment`,
-      );
-      await this.releaseServer(this.assignedServers.simple.url, 'simple');
-      this.assignedServers.simple = null;
-      await this.tryAssignServer('simple');
-    }
-
-    // Check if hierarchical server needs reassignment
-    if (this.assignedServers.hierarchical && !this.assignedServers.hierarchical.isHealthy) {
-      this.logger.info(
-        `Hierarchical server ${this.assignedServers.hierarchical.url} became unhealthy, releasing assignment`,
-      );
-      await this.releaseServer(this.assignedServers.hierarchical.url, 'hierarchical');
-      this.assignedServers.hierarchical = null;
-      await this.tryAssignServer('hierarchical');
-    }
-
-    // Try to assign servers if we don't have any assigned
-    if (!this.assignedServers.simple) {
-      await this.tryAssignServer('simple');
-    }
-    if (!this.assignedServers.hierarchical) {
-      await this.tryAssignServer('hierarchical');
-    }
-  }
-
-  /**
-   * Start periodic health checking for all service instances
-   */
-  private startHealthChecking(): void {
-    // Check health every 30 seconds
-    this.healthCheckInterval = setInterval(async () => {
-      await this.checkAllInstancesHealth();
-      await this.checkExpiredAssignments();
-      await this.reassignServersIfNeeded();
-    }, 30000);
-
-    // Initial health check
-    this.checkAllInstancesHealth();
-  }
-
-  /**
-   * Check health of all service instances
-   */
-  private async checkAllInstancesHealth(): Promise<void> {
-    const healthChecks = [
-      ...this.simpleInstances.map((instance) => this.checkInstanceHealth(instance, 'simple')),
-      ...this.hierarchicalInstances.map((instance) =>
-        this.checkInstanceHealth(instance, 'hierarchical'),
-      ),
-    ];
-
-    await Promise.allSettled(healthChecks);
-  }
-
-  /**
-   * Check health of a specific service instance
-   */
-  private async checkInstanceHealth(instance: ServiceInstance, type: string): Promise<void> {
+  private async checkInstanceHealth(instance: ServiceInstance): Promise<void> {
     try {
       const response = await axios.get(`${instance.url}/api/v1/health`, {
         timeout: 5000,
-        headers: this.aiServiceConfig.authToken
-          ? { Authorization: `Bearer ${this.aiServiceConfig.authToken}` }
-          : undefined,
+        headers: this.authHeaders(),
       });
 
       const wasHealthy = instance.isHealthy;
@@ -375,7 +192,7 @@ export class AiServerPoolAdapter implements IAiServicePool {
 
       if (wasHealthy !== instance.isHealthy) {
         this.logger.info(
-          `${type} service instance ${instance.url} health changed: ${instance.isHealthy ? 'healthy' : 'unhealthy'}`,
+          `ai-service instance ${instance.url} health changed: ${instance.isHealthy ? 'healthy' : 'unhealthy'}`,
         );
       }
     } catch (error: any) {
@@ -384,94 +201,14 @@ export class AiServerPoolAdapter implements IAiServicePool {
       instance.lastChecked = new Date();
 
       if (wasHealthy) {
-        this.logger.warn(
-          `${type} service instance ${instance.url} became unhealthy: ${error.message}`,
-        );
+        this.logger.warn(`ai-service instance ${instance.url} became unhealthy: ${error.message}`);
       }
     }
   }
 
-  /**
-   * Get connection pool statistics including Redis assignments
-   */
-  private async getConnectionPoolStats(): Promise<any> {
-    const redis = await this.queue.client;
-
-    // Get all current assignments from Redis
-    const simpleAssignments = await redis.keys(`${this.assignmentKey}:simple:*`);
-    const hierarchicalAssignments = await redis.keys(`${this.assignmentKey}:hierarchical:*`);
-
-    const simpleStats = this.simpleInstances.map((instance) => {
-      const assignmentKey = `${this.assignmentKey}:simple:${instance.url}`;
-      const isAssigned = simpleAssignments.includes(assignmentKey);
-      return {
-        url: instance.url,
-        isHealthy: instance.isHealthy,
-        activeConnections: instance.activeConnections,
-        lastChecked: instance.lastChecked,
-        isAssigned,
-        isAssignedToMe: this.assignedServers.simple?.url === instance.url,
-      };
-    });
-
-    const hierarchicalStats = this.hierarchicalInstances.map((instance) => {
-      const assignmentKey = `${this.assignmentKey}:hierarchical:${instance.url}`;
-      const isAssigned = hierarchicalAssignments.includes(assignmentKey);
-      return {
-        url: instance.url,
-        isHealthy: instance.isHealthy,
-        activeConnections: instance.activeConnections,
-        lastChecked: instance.lastChecked,
-        isAssigned,
-        isAssignedToMe: this.assignedServers.hierarchical?.url === instance.url,
-      };
-    });
-
-    return {
-      serviceId: this.serviceId,
-      assignedServers: {
-        simple: this.assignedServers.simple?.url || null,
-        hierarchical: this.assignedServers.hierarchical?.url || null,
-      },
-      simple: simpleStats,
-      hierarchical: hierarchicalStats,
-      totalHealthySimple: this.simpleInstances.filter((i) => i.isHealthy).length,
-      totalHealthyHierarchical: this.hierarchicalInstances.filter((i) => i.isHealthy).length,
-      totalAssignedSimple: simpleAssignments.length,
-      totalAssignedHierarchical: hierarchicalAssignments.length,
-    };
-  }
-
-  /**
-   * Cleanup resources on service destruction
-   */
-  async onModuleDestroy(): Promise<void> {
+  onModuleDestroy(): void {
     if (this.healthCheckInterval) {
       clearInterval(this.healthCheckInterval);
     }
-    if (this.heartbeatInterval) {
-      clearInterval(this.heartbeatInterval);
-    }
-
-    // Release assigned servers
-    if (this.assignedServers.simple) {
-      await this.releaseServer(this.assignedServers.simple.url, 'simple');
-    }
-    if (this.assignedServers.hierarchical) {
-      await this.releaseServer(this.assignedServers.hierarchical.url, 'hierarchical');
-    }
-
-    this.logger.info('AI Integration Service destroyed');
-  }
-
-  /**
-   * Check AI service health status
-   *
-   * @returns Promise<boolean> - True if any service instance is healthy, false otherwise
-   */
-  private async checkHealth(): Promise<boolean> {
-    const healthySimple = this.simpleInstances.some((instance) => instance.isHealthy);
-    const healthyHierarchical = this.hierarchicalInstances.some((instance) => instance.isHealthy);
-    return healthySimple && healthyHierarchical;
   }
 }

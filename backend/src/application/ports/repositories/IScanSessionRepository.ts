@@ -40,6 +40,13 @@ export interface IScanSessionRepository {
   getSession(sessionId: SessionId): Promise<Maybe<Session>>;
   completeSession(sessionId: SessionId, success: boolean): Promise<Session>;
   getActiveSessions(): Promise<Session[]>;
+  /**
+   * Unscoped (not filtered by current user) check for any SCANNING/ANALYZING session across
+   * every user. Used to block actions -- like switching the ai-service endpoint or changing its
+   * replica count -- that would yank instances out from under an in-progress scan no matter who
+   * started it. getActiveSessions() is user-scoped and would miss another user's scan here.
+   */
+  hasAnyActiveSession(): Promise<boolean>;
   getCompletedSessions(): Promise<Session[]>;
   deleteSession(sessionId: SessionId): Promise<void>;
   deleteAllSessionsForLibrary(libraryId: MusicLibraryId): Promise<void>;

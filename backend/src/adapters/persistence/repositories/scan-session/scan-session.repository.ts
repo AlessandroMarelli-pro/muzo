@@ -268,6 +268,18 @@ export class ScanSessionRepository implements IScanSessionRepository {
       .then((sessions) => sessions.map(toDomain));
   }
 
+  /**
+   * Unscoped: counts across every user, not just the current one. See the port doc for why.
+   */
+  async hasAnyActiveSession(): Promise<boolean> {
+    const count = await this.prisma.scanSession.count({
+      where: {
+        status: { in: [ScanStatusEnum.SCANNING, ScanStatusEnum.ANALYZING] },
+      },
+    });
+    return count > 0;
+  }
+
   async getCompletedSessions() {
     return this.prisma.scanSession
       .findMany({

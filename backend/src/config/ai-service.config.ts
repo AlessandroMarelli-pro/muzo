@@ -1,23 +1,22 @@
 import { registerAs } from '@nestjs/config';
 
 export interface AiServiceConfig {
-  simpleUrls: string[];
-  hierarchicalUrls: string[];
   timeout: number;
-  /** Bearer token for authenticated AI service instances (e.g. HF Inference Endpoints). */
-  authToken?: string;
+  /**
+   * Boot-time fallback only, consulted by the AiServiceSettings bootstrap use-case to seed the
+   * first-ever settings row (remote mode, this URL/token) so an existing .env-configured install
+   * keeps working unchanged. Once a settings row exists, the pool never reads these again --
+   * AiServiceSettingsRepository is the source of truth.
+   */
+  bootstrapUrl?: string;
+  bootstrapAuthToken?: string;
 }
 
 export default registerAs(
   'aiService',
   (): AiServiceConfig => ({
-    simpleUrls: process.env.AI_SIMPLE_URLS
-      ? process.env.AI_SIMPLE_URLS.split(',')
-      : [process.env.AI_SERVICE_URL || 'http://localhost:4000'],
-    hierarchicalUrls: process.env.AI_HIERARCHICAL_URLS
-      ? process.env.AI_HIERARCHICAL_URLS.split(',')
-      : [process.env.AI_SERVICE_URL || 'http://localhost:4000'],
-    timeout: parseInt(process.env.AI_SERVICE_TIMEOUT || '90000', 10), // Reduced to 45s
-    authToken: process.env.AI_SERVICE_TOKEN,
+    timeout: parseInt(process.env.AI_SERVICE_TIMEOUT || '90000', 10),
+    bootstrapUrl: process.env.AI_SERVICE_URL || undefined,
+    bootstrapAuthToken: process.env.AI_SERVICE_TOKEN,
   }),
 );

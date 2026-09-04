@@ -82,10 +82,16 @@ RUN ldconfig
 # CPU-only variant of the community-built TensorFlow C library (same source
 # as essentia-gpu.Dockerfile, just the non-GPU .deb) -- no CUDA/cuDNN
 # runtime needed anywhere in this image.
+#
+# TARGETARCH is populated by BuildKit for the platform actually being built (amd64 or arm64 in
+# our matrix -- see .github/workflows/ai-service-cpu-image.yml); it must be declared with an ARG
+# in THIS stage to be available here, a global ARG before the first FROM is not enough. Upstream
+# publishes both: libtensorflow-cc_<version>_amd64.deb and libtensorflow-cc_<version>_arm64.deb.
+ARG TARGETARCH
 ARG TENSORFLOW_VERSION=2.13.0
-RUN wget -q https://github.com/ika-rwth-aachen/libtensorflow_cc/releases/download/v${TENSORFLOW_VERSION}/libtensorflow-cc_${TENSORFLOW_VERSION}_amd64.deb && \
-    dpkg -i libtensorflow-cc_${TENSORFLOW_VERSION}_amd64.deb && \
-    rm -f libtensorflow-cc_${TENSORFLOW_VERSION}_amd64.deb && \
+RUN wget -q https://github.com/ika-rwth-aachen/libtensorflow_cc/releases/download/v${TENSORFLOW_VERSION}/libtensorflow-cc_${TENSORFLOW_VERSION}_${TARGETARCH}.deb && \
+    dpkg -i libtensorflow-cc_${TENSORFLOW_VERSION}_${TARGETARCH}.deb && \
+    rm -f libtensorflow-cc_${TENSORFLOW_VERSION}_${TARGETARCH}.deb && \
     ln -sf /usr/local/lib/libtensorflow_cc.so /usr/local/lib/libtensorflow.so && \
     mkdir -p /usr/local/lib/pkgconfig && \
     printf '%s\n' \

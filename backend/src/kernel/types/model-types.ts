@@ -1,5 +1,6 @@
 import { Maybe, MaybeUndefined } from '../common';
 import type {
+  AiServiceSettingsId,
   Brand,
   CosineTrackMatchId,
   GenreId,
@@ -41,7 +42,8 @@ export type Model =
   | SavedFilter
   | QueueItem
   | HiddenMusicTrack
-  | Session;
+  | Session
+  | AiServiceSettings;
 
 export type ModelBase<Id extends string | Brand<T, string> = string, T = unknown> = {
   id: Id;
@@ -391,4 +393,14 @@ export type Session = Readonly<ModelBase<SessionId>> & {
   startedAt: Date;
   completedAt: MaybeUndefined<Date>;
   errorMessage: MaybeUndefined<string>;
+};
+
+export type AiServiceMode = 'local' | 'remote';
+
+/** Singleton row (fixed id "singleton") -- there is exactly one of these. */
+export type AiServiceSettings = Readonly<ModelBase<AiServiceSettingsId>> & {
+  mode: AiServiceMode;
+  remoteUrl: Maybe<string>;
+  authToken: Maybe<string>;
+  replicas: number;
 };

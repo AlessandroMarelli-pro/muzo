@@ -3,6 +3,7 @@ import { APP_FILTER } from '@nestjs/core';
 import { UseCasesModule } from 'src/application/use-cases/use-cases.module';
 import { AuthGuard } from './context/auth.guard';
 import { DomainErrorExceptionFilter } from './filters/domain-error.exception-filter';
+import { AiServiceSettingsResolver } from './resolvers/ai-service-settings.resolver';
 import { DiscoveryResolver } from './resolvers/discovery.resolver';
 import { MusicLibraryResolver } from './resolvers/music-library.resolver';
 import { MusicPlayerResolver } from './resolvers/music-player.resolver';
@@ -34,6 +35,7 @@ import { DateScalar } from './scalars/date.scalar';
     MusicLibraryResolver,
     ThirdPartySyncResolver,
     DiscoveryResolver,
+    AiServiceSettingsResolver,
     {
       provide: APP_FILTER,
       useClass: DomainErrorExceptionFilter,

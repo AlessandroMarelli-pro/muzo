@@ -1,5 +1,4 @@
 import { HttpModule } from '@nestjs/axios';
-import { BullModule } from '@nestjs/bullmq';
 import { Global, Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 
@@ -12,9 +11,12 @@ import { AiAudioEnhancementAdapter } from './ai-audio-enhancement.adapter';
 import { AiAudioLosslessVerifierAdapter } from './ai-audio-lossless-verifier.adapter';
 import { AiServerPoolAdapter } from './ai-server-pool.adapter';
 
+// AI_SERVICE_SETTINGS_REPOSITORY comes from the (@Global) persistence module -- no import needed
+// here, same as PrismaService/DatabaseModule.
+
 @Global()
 @Module({
-  imports: [ConfigModule, HttpModule, BullModule.registerQueue({ name: 'library-scan' })],
+  imports: [ConfigModule, HttpModule],
   providers: [
     {
       provide: AI_SERVICE_POOL,

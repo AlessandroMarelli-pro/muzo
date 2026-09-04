@@ -1,6 +1,5 @@
 import { HttpService } from '@nestjs/axios';
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import FormData from 'form-data';
 import fs from 'fs';
 import { firstValueFrom } from 'rxjs';
@@ -12,7 +11,6 @@ import {
   HqAudioVerificationResult,
   IHqAudioVerifier,
 } from 'src/application/ports/infrastructure/IHqAudioVerifier';
-import { AiServiceConfig } from 'src/config';
 
 type VerifyLosslessResponse = {
   status: string;
@@ -25,35 +23,25 @@ type VerifyLosslessResponse = {
 @Injectable()
 export class AiAudioLosslessVerifierAdapter implements IHqAudioVerifier {
   private readonly logger = new Logger(AiAudioLosslessVerifierAdapter.name);
-  private readonly aiServiceConfig: AiServiceConfig;
 
   constructor(
     @Inject(AI_SERVICE_POOL)
     private readonly aiServicePool: IAiServicePool,
     private readonly httpService: HttpService,
-    private readonly configService: ConfigService,
-  ) {
-    this.aiServiceConfig = this.configService.get<AiServiceConfig>('aiService')!;
-  }
-
-  private authHeaders(): Record<string, string> {
-    return this.aiServiceConfig.authToken
-      ? { Authorization: `Bearer ${this.aiServiceConfig.authToken}` }
-      : {};
-  }
+  ) {}
 
   async verify(filePath: string): Promise<HqAudioVerificationResult> {
-    const instance = this.aiServicePool.getAssignedServer('simple');
+    const target = this.aiServicePool.getTarget();
 
     const formData = new FormData();
     formData.append('audio_file', fs.createReadStream(filePath));
 
     const response = await firstValueFrom(
       this.httpService.post<VerifyLosslessResponse>(
-        `${instance.url}/api/v1/audio/verify-lossless`,
+        `${target.url}/api/v1/audio/verify-lossless`,
         formData,
         {
-          headers: { ...formData.getHeaders(), ...this.authHeaders() },
+          headers: { ...formData.getHeaders(), ...target.headers },
           timeout: 120_000,
         },
       ),

@@ -1,9 +1,23 @@
 # Root orchestration for the full distributable Muzo stack: this includes
 # backend/docker-compose.yml (postgres, redis, elasticsearch, kibana) and
-# adds the backend and frontend app containers on top. ai-service is
-# intentionally NOT here -- it runs as a separately-deployed Hugging Face
-# Inference Endpoint (see ai-service/docker/deploy-hf.sh); this stack only
-# needs AI_SERVICE_URL/AI_SERVICE_TOKEN pointing at it.
+# adds the backend, frontend, and (optionally) ai-service containers on top.
+#
+# ai-service can run two ways, switchable live from Settings in the app (no
+# restart needed):
+#   - remote: a separately-hosted Hugging Face Inference Endpoint (see
+#     ai-service/docker/deploy-hf.sh to deploy your own). Nothing in this
+#     compose file is needed for this mode.
+#   - local: the `ai-service` service below, under the `local-ai` profile so
+#     a remote-only install never pulls or runs it. Start it explicitly with
+#     `docker compose --profile local-ai up -d`, or let the app do it when
+#     you switch to local mode in Settings (see scripts/start.sh).
+#
+# The backend mounts the Docker socket (see its `volumes:` below) so it can
+# scale ai-service replicas live from the Settings UI. That grants the
+# backend root-equivalent control of the host's Docker daemon -- the
+# tradeoff for live scaling from the app instead of a manual
+# `docker compose --scale` -- so only enable local mode on a host you trust
+# the app with.
 #
 # `include:` requires Docker Compose v2.20+. If your Docker Desktop bundles
 # an older Compose, run the two files layered instead:
@@ -33,6 +47,12 @@ services:
       # without any translation. Configure MUSIC_DIR in .env if your music
       # doesn't live under ~/Music.
       - '${MUSIC_DIR:-${HOME}/Music}:${MUSIC_DIR:-${HOME}/Music}'
+      # Lets the backend scale the ai-service service live from the Settings
+      # UI via the Docker Engine API (docker compose --scale isn't usable
+      # in-container -- compose's own project metadata points at host paths
+      # that don't exist inside this container). See
+      # src/infrastructure/docker/docker-scaling.service.ts.
+      - '/var/run/docker.sock:/var/run/docker.sock'
     depends_on:
       postgres:
         condition: service_healthy
@@ -54,6 +74,46 @@ services:
       - '${FRONTEND_PORT:-3001}:80'
     depends_on:
       - backend
+    restart: unless-stopped
+    networks:
+      - muzo-network
+
+  # Local ai-service. NOT started by default -- gated behind the `local-ai`
+  # profile so a remote-only install never pulls or runs it:
+  #   docker compose --profile local-ai up -d --scale ai-service=<N>
+  #
+  # No container_name (a named container can't be scaled) and no published
+  # host port (would collide across replicas at N>1) -- the backend reaches
+  # every replica in-network via the `ai-service` DNS name, which Docker's
+  # embedded DNS resolves to every running replica's IP
+  # (see AiServerPoolAdapter.resolveLocalInstanceUrls).
+  ai-service:
+    image: ghcr.io/alessandromarelli-pro/muzo/ai-service-cpu:latest
+    profiles: [local-ai]
+    environment:
+      # Override the image's HF-endpoint-sized defaults (WEB_CONCURRENCY=2,
+      # ANALYSIS_THREADS=8, baked for a 16-vCPU intel-spr x8 instance).
+      # Docker Desktop's default VM is far smaller (commonly ~5 CPU / ~8 GB)
+      # and also runs Postgres/Elasticsearch/Redis/backend/frontend
+      # alongside it -- keep replicas * WEB_CONCURRENCY * ANALYSIS_THREADS
+      # within your Docker VM's CPU budget, and replicas * WEB_CONCURRENCY *
+      # ~2.5 GB within its memory budget (each worker holds its own copy of
+      # the ~2-3 GB analysis models once warm).
+      - WEB_CONCURRENCY=${AI_WEB_CONCURRENCY:-1}
+      - ANALYSIS_THREADS=${AI_ANALYSIS_THREADS:-4}
+    healthcheck:
+      # Not curl/wget -- the runtime stage installs neither (see
+      # ai-service/docker/essentia-cpu.Dockerfile's runtime stage). python3.11
+      # is already there.
+      test:
+        [
+          'CMD-SHELL',
+          'python3.11 -c "import urllib.request; urllib.request.urlopen(''http://localhost:4000/api/v1/health'')" || exit 1',
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 120s
     restart: unless-stopped
     networks:
       - muzo-network

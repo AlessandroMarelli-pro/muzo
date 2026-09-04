@@ -26,14 +26,12 @@ describe('AiAudioAnalysisAdapter', () => {
       ),
     };
     aiServicePool = {
-      getAssignedServer: vi.fn().mockReturnValue({
-        backendPort: 5000,
+      getTarget: vi.fn().mockReturnValue({
         url: 'http://localhost:5000',
-        isHealthy: true,
-        lastChecked: new Date(),
-        activeConnections: 0,
+        headers: {},
       }),
       getHealthInfo: vi.fn(),
+      reload: vi.fn(),
     };
     const configService = {
       get: vi.fn().mockReturnValue({ timeout: 90000 }),

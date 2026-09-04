@@ -83,16 +83,26 @@ Muzo is an intelligent personal assistant for music collections that uses audio 
                               │
                               ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│         AI Service (Python/Flask, hosted separately)            │
-│  Deployed as a Hugging Face Inference Endpoint --                │
+│           AI Service (Python/Flask) -- local OR remote          │
 │  librosa • PyTorch • audioflux • MusicBrainz • Discogs         │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
 Postgres, Redis, and Elasticsearch run as local Docker containers alongside
-the app. The AI service runs remotely as a Hugging Face Inference Endpoint
-rather than locally — see `ai-service/docker/deploy-hf.sh` to deploy your
-own; the app works without one configured, just without AI analysis.
+the app. The AI service runs one of two ways, switchable live from
+**Settings** in the app (takes effect immediately, no restart):
+
+- **Remote** — a separately-hosted Hugging Face Inference Endpoint (or any
+  host implementing the same API) you deploy yourself. See
+  `ai-service/docker/deploy-hf.sh`.
+- **Local** — the `ai-service` Docker Compose service, started under the
+  `local-ai` profile (`docker compose --profile local-ai up -d`). The
+  Settings UI lets you pick the replica count and scales it live via the
+  Docker socket the backend mounts — see `docker-compose.yml`'s comments for
+  the tradeoff that requires (root-equivalent Docker access for the backend
+  container).
+
+The app works with neither configured, just without AI analysis.
 
 ## 🚀 Quick Start
 
@@ -116,10 +126,10 @@ cd muzo
 # sockseek), creates .env from .env.example, builds the Docker images.
 ./scripts/install.sh
 
-# Edit .env: at minimum set AI_SERVICE_URL/AI_SERVICE_TOKEN if you want AI
-# analysis (genre/BPM/key/mood detection) -- see ai-service/docker/deploy-hf.sh
-# to deploy your own AI service endpoint. The app runs fine without it, just
-# without that feature.
+# AI analysis (genre/BPM/key/mood detection) is configured after first start,
+# from Settings in the app -- pick Local or Remote there, it applies
+# immediately. The app runs fine without either configured, just without that
+# feature.
 
 # Starts everything and waits for the backend to be ready.
 ./scripts/start.sh
@@ -159,7 +169,7 @@ Ports are configurable via `BACKEND_PORT`/`FRONTEND_PORT` in `.env`.
 muzo/
 ├── frontend/          # React 19 + Vite + TanStack (Dockerfile: local container)
 ├── backend/           # NestJS + GraphQL + Prisma (Dockerfile: local container)
-├── ai-service/        # Python Flask AI analysis (deployed remotely, see ai-service/docker/)
+├── ai-service/        # Python Flask AI analysis (local Docker service or remote HF endpoint, see ai-service/docker/)
 ├── model-trainer/     # ML model training scripts
 ├── scripts/           # install.sh / start.sh / stop.sh / update.sh
 ├── docker-compose.yml # Root orchestration (backend + frontend + infra)

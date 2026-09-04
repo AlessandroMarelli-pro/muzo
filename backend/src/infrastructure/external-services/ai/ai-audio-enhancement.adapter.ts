@@ -13,7 +13,6 @@ import {
   AI_SERVICE_POOL,
   IAiServicePool,
 } from 'src/application/ports/infrastructure/IAiServicePool';
-import { AiServiceConfig } from 'src/config';
 import { HqAudioConfig } from 'src/config/hq-audio.config';
 
 @Injectable()
@@ -21,7 +20,6 @@ export class AiAudioEnhancementAdapter implements IHqAudioEnhancer {
   private readonly logger = new Logger(AiAudioEnhancementAdapter.name);
 
   private readonly hqAudioConfig: HqAudioConfig;
-  private readonly aiServiceConfig: AiServiceConfig;
 
   constructor(
     @Inject(AI_SERVICE_POOL)
@@ -30,29 +28,22 @@ export class AiAudioEnhancementAdapter implements IHqAudioEnhancer {
     private readonly configService: ConfigService,
   ) {
     this.hqAudioConfig = this.configService.get<HqAudioConfig>('hqAudio')!;
-    this.aiServiceConfig = this.configService.get<AiServiceConfig>('aiService')!;
-  }
-
-  private authHeaders(): Record<string, string> {
-    return this.aiServiceConfig.authToken
-      ? { Authorization: `Bearer ${this.aiServiceConfig.authToken}` }
-      : {};
   }
 
   async enhance(inputFilePath: string, outputDir: string): Promise<HqAudioEnhanceResult> {
     try {
       this.logger.log(`Enhancing audio: ${inputFilePath}`);
 
-      const instance = this.aiServicePool.getAssignedServer('simple');
+      const target = this.aiServicePool.getTarget();
 
       const formData = new FormData();
       formData.append('audio_file', fs.createReadStream(inputFilePath));
 
       const response = await firstValueFrom(
-        this.httpService.post(`${instance.url}/api/v1/audio/enhance`, formData, {
+        this.httpService.post(`${target.url}/api/v1/audio/enhance`, formData, {
           headers: {
             ...formData.getHeaders(),
-            ...this.authHeaders(),
+            ...target.headers,
           },
           responseType: 'arraybuffer',
           timeout: this.hqAudioConfig.universr.timeoutMs,

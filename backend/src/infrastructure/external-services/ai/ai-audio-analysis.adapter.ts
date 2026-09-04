@@ -30,12 +30,6 @@ export class AiAudioAnalysisAdapter implements IAudioAnalysisStructure {
     this.aiServiceConfig = this.configService.get<AiServiceConfig>('aiService')!;
   }
 
-  private authHeaders(): Record<string, string> {
-    return this.aiServiceConfig.authToken
-      ? { Authorization: `Bearer ${this.aiServiceConfig.authToken}` }
-      : {};
-  }
-
   async analyzeAudioBatch(
     audioFilePaths: string[],
     sessionId?: string,
@@ -45,8 +39,7 @@ export class AiAudioAnalysisAdapter implements IAudioAnalysisStructure {
     try {
       this.logger.log(`Analyzing ${audioFilePaths.length} audio files in batch`);
 
-      // Get assigned simple server
-      const simpleInstance = this.aiServicePool.getAssignedServer('simple');
+      const target = this.aiServicePool.getTarget();
 
       // Create form data with multiple files
       const formData = new FormData();
@@ -67,10 +60,10 @@ export class AiAudioAnalysisAdapter implements IAudioAnalysisStructure {
       }
       // Make request to batch endpoint
       const response = await firstValueFrom(
-        this.httpService.post(`${simpleInstance.url}/api/v1/audio/analyze/batch`, formData, {
+        this.httpService.post(`${target.url}/api/v1/audio/analyze/batch`, formData, {
           headers: {
             ...formData.getHeaders(),
-            ...this.authHeaders(),
+            ...target.headers,
           },
           timeout: this.aiServiceConfig.timeout * audioFilePaths.length, // Increase timeout for batch
         }),
@@ -101,16 +94,16 @@ export class AiAudioAnalysisAdapter implements IAudioAnalysisStructure {
     discogsTempo: DiscogsTempo;
   }> {
     try {
-      const simpleInstance = this.aiServicePool.getAssignedServer('simple');
+      const target = this.aiServicePool.getTarget();
 
       const formData = new FormData();
       formData.append('audio_file', fs.createReadStream(audioFilePath));
 
       const response = await firstValueFrom(
-        this.httpService.post(`${simpleInstance.url}/api/v1/audio/embedding/discogs`, formData, {
+        this.httpService.post(`${target.url}/api/v1/audio/embedding/discogs`, formData, {
           headers: {
             ...formData.getHeaders(),
-            ...this.authHeaders(),
+            ...target.headers,
           },
           timeout: this.aiServiceConfig.timeout,
         }),

@@ -20,13 +20,10 @@ import { als } from 'src/kernel/types/context';
 
 /**
  * Every job in this queue calls extractDiscogsEmbedding, which goes through
- * AiServerPoolAdapter.getAssignedServer('simple') -- a single ai-service instance
- * pinned for the lifetime of this backend process (see ai-server-pool.adapter.ts),
- * not round-robined across the multiple `simple` instances configured via
- * AI_SIMPLE_URLS. So concurrent jobs here don't get real multi-process
- * parallelism; they share one Flask process's threaded dev server, which can
- * overlap I/O (audio decode, network) but not truly parallelize CPU-bound work
- * (GIL). Keep this default modest accordingly.
+ * AiServerPoolAdapter.getTarget() -- round-robined across every healthy ai-service
+ * instance (see ai-server-pool.adapter.ts), so concurrent jobs here do spread
+ * across replicas in local mode. In remote (single-URL) mode there is still only
+ * one instance to send to, so this default stays modest regardless.
  */
 const EMBEDDING_BACKFILL_CONCURRENCY = parseInt(
   process.env.EMBEDDING_BACKFILL_CONCURRENCY || '3',

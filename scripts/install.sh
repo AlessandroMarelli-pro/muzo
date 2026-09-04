@@ -150,10 +150,12 @@ if [ ! -f .env ]; then
   echo "✅ MUSIC_DIR set to ${music_dir}"
 
   echo ""
-  echo "⚠️  Edit .env and fill in AI_SERVICE_URL / AI_SERVICE_TOKEN to enable AI"
-  echo "   analysis (genre/BPM/key/mood detection). The app runs without them,"
-  echo "   just without that feature. See ai-service/docker/deploy-hf.sh to"
-  echo "   deploy your own AI service endpoint."
+  echo "⚠️  AI analysis (genre/BPM/key/mood detection) needs an ai-service."
+  echo "   Configure it after first start from Settings in the app -- pick"
+  echo "   Local (runs on this machine) or Remote (a Hugging Face Inference"
+  echo "   Endpoint you deploy yourself, see ai-service/docker/deploy-hf.sh)"
+  echo "   and it takes effect immediately, no restart needed. The app runs"
+  echo "   fine without either configured, just without that feature."
   echo ""
 else
   echo "✅ .env already exists."

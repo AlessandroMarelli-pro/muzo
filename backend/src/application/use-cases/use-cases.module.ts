@@ -5,8 +5,10 @@ import { ThirdPartySyncInfrastructureModule } from 'src/infrastructure/external-
 import { HqAudioInfrastructureModule } from 'src/infrastructure/hq-audio/hq-audio.module';
 import { SockseekAcquirer } from 'src/infrastructure/hq-audio/sockseek.acquirer';
 import { TidalDlAcquirer } from 'src/infrastructure/hq-audio/tidal-dl.acquirer';
+import { AI_SERVICE_POOL } from '../ports/infrastructure/IAiServicePool';
 import { AUDIO_ANALYSIS_STRUCTURE } from '../ports/infrastructure/IAudioAnalysisStructure';
 import { AUDIO_SCAN_SCHEDULER_PRODUCER } from '../ports/infrastructure/IAudioScanSchedulerProducer';
+import { DOCKER_SCALING_SERVICE } from '../ports/infrastructure/IDockerScalingService';
 import { EMBEDDING_BACKFILL_PRODUCER } from '../ports/infrastructure/IEmbeddingBackfillProducer';
 import { AUDIO_WAVEFORM_GENERATOR } from '../ports/infrastructure/IAudioWaveformGenerator';
 import { COPY_AUDIO_WITH_METADATA } from '../ports/infrastructure/ICopyAudioWithMetadata';
@@ -39,6 +41,7 @@ import { RECOMMENDATION_DATA_PORT } from '../ports/queries/IRecommendationDataPo
 import { RECOMMENDATION_SEARCH_PORT } from '../ports/queries/IRecommendationSearchPort';
 import { SAVED_FILTER_QUERY } from '../ports/queries/ISavedFilterQuery';
 import { TRACK_INDEXER_PORT } from '../ports/queries/ITrackIndexerPort';
+import { AI_SERVICE_SETTINGS_REPOSITORY } from '../ports/repositories/IAiServiceSettingsRepository';
 import { AUDIO_ANALYSIS_REPOSITORY } from '../ports/repositories/IAudioAnalysisRepository';
 import { HIDDEN_MUSIC_TRACK_REPOSITORY } from '../ports/repositories/IHiddenMusicTrackRepository';
 import { IMAGE_SEARCH_REPOSITORY } from '../ports/repositories/IImageSearchRepository';
@@ -147,6 +150,12 @@ import {
   SyncPlaylistToTidalUseCase,
   SyncPlaylistToYouTubeUseCase,
 } from './third-party-sync';
+import {
+  GetAiServiceSettingsUseCase,
+  SetAiServiceReplicasUseCase,
+  TestAiServiceConnectionUseCase,
+  UpdateAiServiceSettingsUseCase,
+} from './ai-service';
 
 const useCasesProviders = [
   createUseCaseProvider(GetTrackUseCase, [MUSIC_TRACK_REPOSITORY]),
@@ -451,6 +460,20 @@ const useCasesProviders = [
   createUseCaseProvider(ExchangeSpotifyCodeUseCase, [SPOTIFY_SYNC_PROVIDER]),
   createUseCaseProvider(GetConnectedProvidersUseCase, [OAUTH_TOKEN_REPOSITORY]),
   createUseCaseProvider(DisconnectProviderUseCase, [OAUTH_TOKEN_REPOSITORY]),
+  createUseCaseProvider(TestAiServiceConnectionUseCase, []),
+  createUseCaseProvider(GetAiServiceSettingsUseCase, [AI_SERVICE_SETTINGS_REPOSITORY, AI_SERVICE_POOL]),
+  createUseCaseProvider(UpdateAiServiceSettingsUseCase, [
+    AI_SERVICE_SETTINGS_REPOSITORY,
+    AI_SERVICE_POOL,
+    SCAN_SESSION_REPOSITORY,
+    TestAiServiceConnectionUseCase,
+  ]),
+  createUseCaseProvider(SetAiServiceReplicasUseCase, [
+    AI_SERVICE_SETTINGS_REPOSITORY,
+    AI_SERVICE_POOL,
+    SCAN_SESSION_REPOSITORY,
+    DOCKER_SCALING_SERVICE,
+  ]),
 ];
 
 @Module({

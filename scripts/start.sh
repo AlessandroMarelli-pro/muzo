@@ -12,7 +12,19 @@ if [ ! -f .env ]; then
 fi
 
 echo "🐳 Starting Muzo..."
-docker compose up -d
+
+# AI_SERVICE_MODE only decides what starts here -- switching modes afterwards is a live UI action
+# in Settings, not a re-run of this script (see AiServerPoolAdapter.reload()).
+ai_service_mode=$(grep -E "^AI_SERVICE_MODE=" .env | cut -d= -f2)
+ai_service_replicas=$(grep -E "^AI_SERVICE_REPLICAS=" .env | cut -d= -f2)
+ai_service_replicas=${ai_service_replicas:-1}
+
+if [ "$ai_service_mode" = "local" ]; then
+  echo "   (local ai-service mode: starting ${ai_service_replicas} replica(s))"
+  docker compose --profile local-ai up -d --scale "ai-service=${ai_service_replicas}"
+else
+  docker compose up -d
+fi
 
 # Ports may be overridden in .env -- read them the same way Compose does.
 backend_port=$(grep -E "^BACKEND_PORT=" .env | cut -d= -f2)

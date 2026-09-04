@@ -31,11 +31,13 @@ import { AuthModule } from './infrastructure/auth/auth.module';
 import { BETTER_AUTH_INSTANCE } from './infrastructure/auth/auth.module';
 import { AiModule } from './infrastructure/external-services/ai/ai.module';
 import { ElasticsearchModule } from './infrastructure/external-services/elasticsearch/elasticsearch.module';
+import { DockerInfrastructureModule } from './infrastructure/docker/docker.module';
 import { NestjsLoggerModule } from './infrastructure/logging/nestjs-logger.module';
 
 @Module({
   imports: [
     AiModule,
+    DockerInfrastructureModule,
     // Configuration module
     ConfigModuleSetup,
 
