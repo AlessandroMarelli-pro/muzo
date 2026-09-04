@@ -1,36 +1,16 @@
 import { Playlist } from '@/__generated__/types';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
 import { apiUrl } from '@/lib/api-config';
 import { cn } from '@/lib/utils';
-import {
-  useDeletePlaylist,
-  useDownloadPlaylistToFolder,
-  useExportPlaylistToM3U,
-  useScanPlaylistTracks,
-} from '@/services/playlist-hooks';
+import { usePlaylistActions } from '@/services/use-playlist-actions';
 import { useRouter } from '@tanstack/react-router';
-import { Eye, MoreHorizontal } from 'lucide-react';
+import { Eye } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useState } from 'react';
-import { toast } from 'sonner';
 import { Button } from '../ui/button';
 import { Card, CardContent } from '../ui/card';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '../ui/dropdown-menu';
 import { Skeleton } from '../ui/skeleton';
+import { PlaylistActionsDialogs } from './playlist-actions-dialogs';
+import { PlaylistActionsMenu } from './playlist-actions-menu';
 
 const albumArtUrl = (imagePath?: string | null) =>
   imagePath ? apiUrl(`/api/images/serve?imagePath=${encodeURIComponent(imagePath)}`) : undefined;
@@ -67,86 +47,13 @@ export const PlaylistCardSkeleton = () => {
 };
 
 export function PlaylistCard({ playlist, onViewDetails, onCardClick }: PlaylistCardProps) {
-  const deletePlaylistMutation = useDeletePlaylist();
-  const exportPlaylistMutation = useExportPlaylistToM3U();
-  const downloadPlaylistMutation = useDownloadPlaylistToFolder();
-  const scanPlaylistTracksMutation = useScanPlaylistTracks();
   const [isHovered, setIsHovered] = useState(false);
-  const [isDownloading, setIsDownloading] = useState(false);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [isRescanDialogOpen, setIsRescanDialogOpen] = useState(false);
-
   const router = useRouter();
-  const refetch = async () => router.invalidate();
-  const handleDelete = async () => {
-    try {
-      await deletePlaylistMutation.mutateAsync({
-        id: playlist.id,
-        name: playlist.name,
-      });
-      setIsDeleteDialogOpen(false);
-      await refetch();
-    } catch (error) {
-      console.error('Failed to delete playlist:', error);
-      toast.error('Could not delete this playlist. Please try again.');
-    }
-  };
-
-  const handlePlay = () => {
-    // TODO: Implement playlist playback
-    console.log('Playing playlist:', playlist.id);
-  };
+  const refetch = () => router.invalidate();
+  const actions = usePlaylistActions(playlist, { onDeleted: refetch, onChanged: refetch });
 
   const handleEdit = () => {
     onViewDetails?.(playlist.id);
-  };
-
-  const handleExport = async () => {
-    try {
-      const m3uContent = await exportPlaylistMutation.mutateAsync(playlist.id);
-
-      // Create a blob and download the file
-      const blob = new Blob([m3uContent], { type: 'audio/mpegurl' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `${playlist.name.replace(/[^a-z0-9]/gi, '_')}.m3u`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-      toast.success('Playlist exported as .m3u');
-    } catch (error) {
-      console.error('Failed to export playlist:', error);
-      toast.error('Could not export the playlist. Please try again.');
-    }
-  };
-
-  const handleDownloadFolder = async () => {
-    setIsDownloading(true);
-    try {
-      const ok = await downloadPlaylistMutation.mutateAsync(playlist.id);
-      if (ok) {
-        toast.success('Audio files copied to the server’s export folder.');
-      } else {
-        toast.error('Could not export the playlist.');
-      }
-    } catch (error) {
-      console.error('Failed to export playlist:', error);
-      toast.error('Could not export the playlist. Please try again.');
-    } finally {
-      setIsDownloading(false);
-    }
-  };
-  const handleRescanTracks = async () => {
-    try {
-      await scanPlaylistTracksMutation.mutateAsync({ playlistId: playlist.id, force: true });
-      setIsRescanDialogOpen(false);
-      toast.success('Re-scan scheduled. This can take a while.');
-    } catch (error) {
-      console.error('Failed to schedule playlist scan:', error);
-      toast.error('Could not schedule the re-scan. Please try again.');
-    }
   };
 
   const images = playlist.stats?.images?.slice(0, 4) || [];
@@ -206,42 +113,13 @@ export function PlaylistCard({ playlist, onViewDetails, onCardClick }: PlaylistC
               >
                 <Eye className="h-5 w-5" aria-hidden />
               </Button>
-              <DropdownMenu modal={false}>
-                <DropdownMenuTrigger asChild className="z-1000 absolute bottom-2 right-2">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    aria-label={`Options for ${playlist.name}`}
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <MoreHorizontal className="h-5 w-5" aria-hidden />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent
-                  align="start"
-                  className="z-1000"
-                  side="bottom"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <DropdownMenuItem onClick={handlePlay}>Add to queue</DropdownMenuItem>
-                  <DropdownMenuItem onClick={handleExport}>Export as .m3u</DropdownMenuItem>
-                  <DropdownMenuItem onClick={handleDownloadFolder} disabled={isDownloading}>
-                    Copy files to export folder
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => setIsRescanDialogOpen(true)}
-                    disabled={scanPlaylistTracksMutation.isPending}
-                  >
-                    Force re-scan all tracks…
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    className="text-destructive focus:text-destructive"
-                    onClick={() => setIsDeleteDialogOpen(true)}
-                  >
-                    Delete playlist…
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <PlaylistActionsMenu
+                playlist={playlist}
+                actions={actions}
+                variant="card"
+                triggerClassName="z-1000 absolute bottom-2 right-2"
+                onTriggerClick={(e) => e.stopPropagation()}
+              />
             </motion.div>
           )}
         </AnimatePresence>
@@ -290,59 +168,7 @@ export function PlaylistCard({ playlist, onViewDetails, onCardClick }: PlaylistC
         </div>
       </CardContent>
 
-      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <AlertDialogContent onClick={(e) => e.stopPropagation()}>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete this playlist?</AlertDialogTitle>
-            <AlertDialogDescription>
-              <span className="font-medium text-foreground">{playlist.name}</span> will be
-              permanently removed. Your tracks stay in your library. This can&rsquo;t be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={deletePlaylistMutation.isPending}>
-              Keep playlist
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={(e) => {
-                e.preventDefault();
-                void handleDelete();
-              }}
-              disabled={deletePlaylistMutation.isPending}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {deletePlaylistMutation.isPending ? 'Deleting…' : 'Delete playlist'}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      <AlertDialog open={isRescanDialogOpen} onOpenChange={setIsRescanDialogOpen}>
-        <AlertDialogContent onClick={(e) => e.stopPropagation()}>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Force re-scan all tracks?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Every track in{' '}
-              <span className="font-medium text-foreground">{playlist.name}</span> will be
-              re-analysed (DSP). This runs in the background and can take a while.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={scanPlaylistTracksMutation.isPending}>
-              Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={(e) => {
-                e.preventDefault();
-                void handleRescanTracks();
-              }}
-              disabled={scanPlaylistTracksMutation.isPending}
-            >
-              {scanPlaylistTracksMutation.isPending ? 'Scheduling…' : 'Re-scan tracks'}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <PlaylistActionsDialogs playlist={playlist} actions={actions} onHqDialogClosed={refetch} />
     </Card>
   );
 }

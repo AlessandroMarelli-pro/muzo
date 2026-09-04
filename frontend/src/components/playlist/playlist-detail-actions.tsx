@@ -1,131 +1,37 @@
 import { Playlist } from '@/__generated__/types';
-import { Button } from '@/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import {
-  useAudioPlayerActions,
-  useCurrentTrack,
-  useIsPlaying,
-} from '@/contexts/audio-player-context';
-import { Copy, Download, ListMusic, MoreHorizontal, Pause, Play, Trash2 } from 'lucide-react';
-import { toast } from 'sonner';
+import { usePlaylistActions } from '@/services/use-playlist-actions';
+import { PlaylistActionsDialogs } from './playlist-actions-dialogs';
+import { PlaylistActionsMenu } from './playlist-actions-menu';
 
 interface PlaylistDetailActionsProps {
   playlist: Playlist | undefined;
   isLoading: boolean;
-  isDeleting: boolean;
-  isSettingAsQueue: boolean;
-  onDelete: () => void;
-  onSetAsQueue: () => void;
-  onDownloadAllHq: () => void;
+  /** Navigate away once the playlist is deleted. */
+  onDeleted: () => void;
+  /** Refetch after playlist contents change (re-scan, HQ download). */
+  onChanged: () => void;
 }
 
 export function PlaylistDetailActions({
   playlist,
   isLoading,
-  isDeleting,
-  isSettingAsQueue,
-  onDelete,
-  onSetAsQueue,
-  onDownloadAllHq,
+  onDeleted,
+  onChanged,
 }: PlaylistDetailActionsProps) {
-  const { setCurrentTrack } = useCurrentTrack();
-  const actions = useAudioPlayerActions();
-  const isPlaying = useIsPlaying();
-
-  // Opening a Radix dialog from inside a menu item — while the menu is still
-  // closing — makes the two primitives fight over `document.body`'s
-  // `pointer-events` / scroll lock, and the menu's cleanup can restore
-  // `pointer-events: none` permanently (page becomes unscrollable and
-  // unclickable after the dialog closes). Defer the open until the menu has
-  // fully unmounted.
-  const afterMenuCloses = (fn: () => void) => () => window.setTimeout(fn, 0);
-
-  const handlePlay = () => {
-    if (!playlist?.tracks?.[0]?.track) return;
-    setCurrentTrack(playlist?.tracks[0]?.track || undefined);
-    actions.play(playlist?.tracks[0]?.track?.id || '');
-  };
-
-  const handleCopyList = async () => {
-    if (!playlist?.tracks?.length) return;
-    const escapeCsvField = (value: string) => `"${value.replace(/"/g, '""')}"`;
-    const rows = [
-      ['Artist', 'Title'],
-      ...playlist.tracks.map((playlistTrack) => [
-        playlistTrack.track?.artist || '',
-        playlistTrack.track?.title || '',
-      ]),
-    ];
-    const csv = rows.map((row) => row.map(escapeCsvField).join(',')).join('\n');
-    try {
-      await navigator.clipboard.writeText(csv);
-      toast.success('Tracklist copied to clipboard as CSV');
-    } catch (error) {
-      console.error('Failed to copy playlist:', error);
-      toast.error('Could not copy the tracklist. Please try again.');
-    }
-  };
-
-  const isDisabled = isLoading || !playlist;
+  const actions = usePlaylistActions(playlist, { onDeleted, onChanged });
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
-          size="sm"
-          variant="ghost"
-          disabled={isDisabled}
-          aria-label="More playlist actions"
-        >
-          <MoreHorizontal className="h-4 w-4" aria-hidden />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={handlePlay} disabled={isDisabled}>
-          {isPlaying ? (
-            <>
-              <Pause className="h-4 w-4 mr-2" aria-hidden />
-              Pause
-            </>
-          ) : (
-            <>
-              <Play className="h-4 w-4 mr-2" aria-hidden />
-              Play from the top
-            </>
-          )}
-        </DropdownMenuItem>
-        <DropdownMenuItem
-          onClick={afterMenuCloses(onSetAsQueue)}
-          disabled={isDisabled || isSettingAsQueue}
-        >
-          <ListMusic className="h-4 w-4 mr-2" aria-hidden />
-          {isSettingAsQueue ? 'Replacing queue…' : 'Replace queue with this'}
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={handleCopyList} disabled={isDisabled}>
-          <Copy className="h-4 w-4 mr-2" aria-hidden />
-          Copy tracklist (CSV)
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={afterMenuCloses(onDownloadAllHq)} disabled={isDisabled}>
-          <Download className="h-4 w-4 mr-2" aria-hidden />
-          Download all in HQ…
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem
-          onClick={afterMenuCloses(onDelete)}
-          disabled={isDisabled || isDeleting}
-          className="text-destructive focus:text-destructive"
-        >
-          <Trash2 className="h-4 w-4 mr-2" aria-hidden />
-          Delete playlist…
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <>
+      <PlaylistActionsMenu
+        playlist={isLoading ? undefined : playlist}
+        actions={actions}
+        variant="detail"
+      />
+      <PlaylistActionsDialogs
+        playlist={playlist}
+        actions={actions}
+        onHqDialogClosed={onChanged}
+      />
+    </>
   );
 }

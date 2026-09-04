@@ -1,13 +1,3 @@
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -21,7 +11,6 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   useAddTrackToPlaylist,
-  useDeletePlaylist,
   usePlaylist,
   useUpdatePlaylistSorting,
 } from '@/services/playlist-hooks';
@@ -31,10 +20,9 @@ import { toast } from 'sonner';
 // Note: This app uses custom view state instead of routing
 // The id should be passed as a prop from the parent component
 import { Playlist } from '@/__generated__/types';
-import { useAudioPlayerActions, useCurrentTrack } from '@/contexts/audio-player-context';
+import { useCurrentTrack } from '@/contexts/audio-player-context';
 import { formatCoarseDuration } from '@/lib/utils';
 import { Route } from '@/routes/playlists.$playlistId';
-import { useAddTracksToQueue, useQueue, useRemoveTrackFromQueue } from '@/services/queue-hooks';
 import { useRouter } from '@tanstack/react-router';
 import { Skeleton } from '../ui/skeleton';
 import { AddTrackDrawer } from './add-track-drawer';
@@ -42,7 +30,6 @@ import { PlaylistDetailActions } from './playlist-detail-actions';
 import { PlaylistDetailChart } from './playlist-detail-chart';
 import { PlaylistDetailThirdParties } from './playlist-detail-third-parties';
 import { PlaylistDiscovery } from './playlist-discovery';
-import { PlaylistHqBatchDownloadDialog } from './playlist-hq-batch-download-dialog';
 import { PlaylistTracksList, type PlaylistTracksListHandle } from './playlist-tracks-list';
 import { TrackRecommendations } from './track-recommendations';
 
@@ -147,20 +134,10 @@ export function PlaylistDetail({ id, onBack }: PlaylistDetailProps) {
   const { playlist, recommendations } = Route.useLoaderData();
   const router = useRouter();
   const loading = false;
-  const { setCurrentTrack, currentTrack } = useCurrentTrack();
-  const actions = useAudioPlayerActions();
-  const { data: currentQueue = [] } = useQueue();
-  const addTracksToQueue = useAddTracksToQueue();
-  const removeTrackFromQueue = useRemoveTrackFromQueue();
+  const { currentTrack } = useCurrentTrack();
   const [activeTab, setActiveTab] = useState('tracks');
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [isSettingAsQueue, setIsSettingAsQueue] = useState(false);
   const [isAddTrackDrawerOpen, setIsAddTrackDrawerOpen] = useState(false);
-  const [isHqBatchDownloadDialogOpen, setIsHqBatchDownloadDialogOpen] = useState(false);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [isReplaceQueueDialogOpen, setIsReplaceQueueDialogOpen] = useState(false);
   const { syncToYouTube, syncToTidal, syncToSpotify } = usePlaylist(id, 'default');
-  const deletePlaylistMutation = useDeletePlaylist();
   const updatePlaylistSortingMutation = useUpdatePlaylistSorting('default');
   const addTrackToPlaylistMutation = useAddTrackToPlaylist();
 
@@ -193,61 +170,6 @@ export function PlaylistDetail({ id, onBack }: PlaylistDetailProps) {
     [addTrackToPlaylistMutation, playlist?.id, refetch],
   );
 
-  const handleConfirmDelete = useCallback(async () => {
-    if (!playlist) return;
-    setIsDeleting(true);
-    try {
-      await deletePlaylistMutation.mutateAsync({ id: playlist.id, name: playlist.name });
-      setIsDeleteDialogOpen(false);
-      onBack();
-    } catch (error) {
-      console.error('Failed to delete playlist:', error);
-      toast.error('Could not delete this playlist. Please try again.');
-    } finally {
-      setIsDeleting(false);
-    }
-  }, [playlist, deletePlaylistMutation, onBack]);
-
-  const replaceQueueWithPlaylist = useCallback(async () => {
-    if (!playlist) return;
-    setIsSettingAsQueue(true);
-    try {
-      // Clear the existing queue (per-item failures are non-fatal).
-      await Promise.all(
-        currentQueue.map((item) =>
-          removeTrackFromQueue.mutateAsync(item.trackId).catch((err) => {
-            console.warn(`Failed to remove track ${item.trackId} from queue:`, err);
-          }),
-        ),
-      );
-
-      const trackIds =
-        playlist.tracks?.filter((pt) => pt.track?.id).map((pt) => pt.track!.id) ?? [];
-      await addTracksToQueue.mutateAsync(trackIds);
-
-      if (playlist.tracks?.[0]?.track) {
-        setCurrentTrack(playlist.tracks[0].track);
-        actions.play(playlist.tracks[0].track.id || '');
-      }
-      toast.success(`Queue replaced with "${playlist.name}"`);
-    } catch (error) {
-      console.error('Failed to set playlist as queue:', error);
-      toast.error('Could not replace the queue. Please try again.');
-    } finally {
-      setIsSettingAsQueue(false);
-      setIsReplaceQueueDialogOpen(false);
-    }
-  }, [playlist, currentQueue, removeTrackFromQueue, addTracksToQueue, setCurrentTrack, actions]);
-
-  // If the queue is empty there's nothing to lose — skip the confirmation.
-  const handleSetAsQueue = useCallback(() => {
-    if (currentQueue.length === 0) {
-      void replaceQueueWithPlaylist();
-    } else {
-      setIsReplaceQueueDialogOpen(true);
-    }
-  }, [currentQueue.length, replaceQueueWithPlaylist]);
-
   const handleUpdateSorting = useCallback(
     async (value: string) => {
       if (!playlist) return;
@@ -273,7 +195,6 @@ export function PlaylistDetail({ id, onBack }: PlaylistDetailProps) {
   const currentSortingDirection = playlist?.sorting?.sortingDirection === 'desc' ? 'desc' : 'asc';
   const currentSortValue = `${currentSortingKey}:${currentSortingDirection}`;
 
-  const queueCount = currentQueue.length;
   const sortDisabled = loading || updatePlaylistSortingMutation.isPending || !playlist;
   const tracks = useMemo(() => playlist?.tracks ?? [], [playlist?.tracks]);
   const currentPosition = useMemo(
@@ -311,11 +232,8 @@ export function PlaylistDetail({ id, onBack }: PlaylistDetailProps) {
           <PlaylistDetailActions
             playlist={playlist || undefined}
             isLoading={loading}
-            isDeleting={isDeleting}
-            isSettingAsQueue={isSettingAsQueue}
-            onDelete={() => setIsDeleteDialogOpen(true)}
-            onSetAsQueue={handleSetAsQueue}
-            onDownloadAllHq={() => setIsHqBatchDownloadDialogOpen(true)}
+            onDeleted={onBack}
+            onChanged={refetch}
           />
         </div>
       </div>
@@ -385,66 +303,6 @@ export function PlaylistDetail({ id, onBack }: PlaylistDetailProps) {
         existingTrackIds={existingTrackIds}
       />
 
-      <PlaylistHqBatchDownloadDialog
-        playlist={playlist || undefined}
-        open={isHqBatchDownloadDialogOpen}
-        onOpenChange={(nextOpen) => {
-          setIsHqBatchDownloadDialogOpen(nextOpen);
-          if (!nextOpen) {
-            refetch();
-          }
-        }}
-      />
-
-      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete this playlist?</AlertDialogTitle>
-            <AlertDialogDescription>
-              <span className="font-medium text-foreground">{playlist?.name}</span> will be
-              permanently removed. Your tracks stay in your library — only the playlist is deleted.
-              This can&rsquo;t be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>Keep playlist</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={(e) => {
-                e.preventDefault();
-                void handleConfirmDelete();
-              }}
-              disabled={isDeleting}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {isDeleting ? 'Deleting…' : 'Delete playlist'}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      <AlertDialog open={isReplaceQueueDialogOpen} onOpenChange={setIsReplaceQueueDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Replace your current queue?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Your queue has {queueCount} {queueCount === 1 ? 'track' : 'tracks'} in it. Loading
-              this playlist will clear it and start from the top.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isSettingAsQueue}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={(e) => {
-                e.preventDefault();
-                void replaceQueueWithPlaylist();
-              }}
-              disabled={isSettingAsQueue}
-            >
-              {isSettingAsQueue ? 'Replacing…' : 'Replace queue'}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 }
