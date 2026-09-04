@@ -6,8 +6,10 @@ import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { useScanSessionContext } from '@/contexts/scan-session.context';
 import {
   useAiServiceSettings,
+  useApplyAiServiceApiKeys,
   useSetAiServiceReplicas,
   useTestAiServiceConnection,
+  useUpdateAiServiceApiKeys,
   useUpdateAiServiceSettings,
 } from '@/services/ai-service-hooks';
 import { CheckCircle2, CircleDashed, Loader2 } from 'lucide-react';
@@ -19,6 +21,8 @@ export function AiServiceSettings() {
   const { testConnection, isTesting } = useTestAiServiceConnection();
   const { updateSettings, isUpdating } = useUpdateAiServiceSettings();
   const { setReplicas, isScaling } = useSetAiServiceReplicas();
+  const { updateApiKeys, isSavingApiKeys } = useUpdateAiServiceApiKeys();
+  const { applyApiKeys, isApplyingApiKeys } = useApplyAiServiceApiKeys();
   // Mirrors the backend's own guard (UpdateAiServiceSettingsUseCase /
   // SetAiServiceReplicasUseCase both refuse while any scan is active) so the control is disabled
   // before the user hits it, not just after a rejected request. This context is user-scoped; the
@@ -30,6 +34,14 @@ export function AiServiceSettings() {
   const [remoteUrl, setRemoteUrl] = useState('');
   const [authToken, setAuthToken] = useState('');
   const [replicas, setReplicasInput] = useState(1);
+
+  // API-key fields start empty -- secrets are never returned. An empty field on save means
+  // "leave the stored value unchanged"; the `has*` flags drive the placeholder.
+  const [geminiApiKey, setGeminiApiKey] = useState('');
+  const [hfToken, setHfToken] = useState('');
+  const [lastfmApiKey, setLastfmApiKey] = useState('');
+  const [lastfmSecret, setLastfmSecret] = useState('');
+  const [discogsApiKeys, setDiscogsApiKeys] = useState('');
 
   // Seed local form state from the loaded settings once, then let the user's own edits win --
   // a background refetch (e.g. after a successful save) shouldn't stomp on an in-progress edit.
@@ -92,6 +104,49 @@ export function AiServiceSettings() {
       toast.error(`Failed to scale: ${error?.message || 'Unknown error'}`);
     }
   };
+
+  const handleSaveApiKeys = async () => {
+    try {
+      const result = await updateApiKeys({
+        // Only send fields the user actually typed into -- an untouched field must not clear the
+        // stored value.
+        ...(geminiApiKey && { geminiApiKey }),
+        ...(hfToken && { hfToken }),
+        ...(lastfmApiKey && { lastfmApiKey }),
+        ...(lastfmSecret && { lastfmSecret }),
+        ...(discogsApiKeys && { discogsApiKeys }),
+      });
+      if (result.success) {
+        toast.success(result.message);
+        setGeminiApiKey('');
+        setHfToken('');
+        setLastfmApiKey('');
+        setLastfmSecret('');
+        setDiscogsApiKeys('');
+        refetch();
+      } else {
+        toast.error(result.message);
+      }
+    } catch (error: any) {
+      toast.error(`Failed to save keys: ${error?.message || 'Unknown error'}`);
+    }
+  };
+
+  const handleApplyApiKeys = async () => {
+    try {
+      const result = await applyApiKeys();
+      if (result.success) {
+        toast.success(result.message);
+      } else {
+        toast.error(result.message);
+      }
+      refetch();
+    } catch (error: any) {
+      toast.error(`Failed to apply keys: ${error?.message || 'Unknown error'}`);
+    }
+  };
+
+  const hasLocalInstance = (settings?.health?.instances?.length ?? 0) > 0;
 
   return (
     <div className="rounded-lg border">
@@ -223,6 +278,108 @@ export function AiServiceSettings() {
             </div>
           </div>
         )}
+
+        <div className="space-y-3 border-t pt-4">
+          <div>
+            <h3 className="text-sm font-medium">API keys</h3>
+            <p className="text-xs text-muted-foreground">
+              {mode === 'local'
+                ? "Save stores your keys. Apply recreates the local analysis container to load them now (~30-60s to reload models); otherwise they apply on the next restart or replica change."
+                : 'Stored for when you run local mode. A remote endpoint uses its own environment, not these.'}
+            </p>
+          </div>
+
+          {(
+            [
+              {
+                id: 'gemini',
+                label: 'Gemini API key',
+                stored: settings?.hasGeminiApiKey,
+                value: geminiApiKey,
+                set: setGeminiApiKey,
+                hint: 'Google AI Studio key -- LLM filename cleaning.',
+              },
+              {
+                id: 'hf',
+                label: 'Hugging Face token',
+                stored: settings?.hasHfToken,
+                value: hfToken,
+                set: setHfToken,
+                hint: 'Only needed for private model repositories.',
+              },
+              {
+                id: 'lastfm-key',
+                label: 'Last.fm API key',
+                stored: settings?.hasLastfmApiKey,
+                value: lastfmApiKey,
+                set: setLastfmApiKey,
+                hint: 'Album art lookup.',
+              },
+              {
+                id: 'lastfm-secret',
+                label: 'Last.fm shared secret',
+                stored: settings?.hasLastfmSecret,
+                value: lastfmSecret,
+                set: setLastfmSecret,
+                hint: '',
+              },
+              {
+                id: 'discogs',
+                label: 'Discogs API keys',
+                stored: settings?.hasDiscogsApiKeys,
+                value: discogsApiKeys,
+                set: setDiscogsApiKeys,
+                hint: 'Comma-separated to rotate across a pool.',
+              },
+            ] as const
+          ).map((field) => (
+            <div key={field.id} className="space-y-1.5">
+              <Label htmlFor={`ai-key-${field.id}`}>
+                {field.label}{' '}
+                {field.stored && !field.value ? (
+                  <span className="text-xs font-normal text-muted-foreground">
+                    (leave blank to keep current)
+                  </span>
+                ) : null}
+              </Label>
+              <Input
+                id={`ai-key-${field.id}`}
+                type="password"
+                autoComplete="off"
+                placeholder={field.stored ? '••••••••' : ''}
+                value={field.value}
+                onChange={(e) => field.set(e.target.value)}
+              />
+              {field.hint ? (
+                <p className="text-xs text-muted-foreground">{field.hint}</p>
+              ) : null}
+            </div>
+          ))}
+
+          <div className="flex gap-2">
+            <Button size="sm" disabled={isSavingApiKeys} onClick={handleSaveApiKeys}>
+              {isSavingApiKeys && <Loader2 className="h-3 w-3 animate-spin" />}
+              Save API keys
+            </Button>
+            {settings?.mode === 'local' && (
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={isApplyingApiKeys || scanInProgress || !hasLocalInstance}
+                onClick={handleApplyApiKeys}
+              >
+                {isApplyingApiKeys && <Loader2 className="h-3 w-3 animate-spin" />}
+                Apply to running container
+              </Button>
+            )}
+          </div>
+          {mode === 'local' && settings?.mode !== 'local' && (
+            <p className="text-xs text-muted-foreground">
+              Switch to Local mode above and save it first -- then you can apply keys to the
+              running container.
+            </p>
+          )}
+        </div>
       </div>
     </div>
   );

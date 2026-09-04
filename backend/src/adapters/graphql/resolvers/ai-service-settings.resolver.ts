@@ -1,8 +1,10 @@
 import { Args, Field, InputType, Int, Mutation, Query, Resolver } from '@nestjs/graphql';
 import {
+  ApplyAiServiceApiKeysUseCase,
   GetAiServiceSettingsUseCase,
   SetAiServiceReplicasUseCase,
   TestAiServiceConnectionUseCase,
+  UpdateAiServiceApiKeysUseCase,
   UpdateAiServiceSettingsUseCase,
 } from 'src/application/use-cases/ai-service';
 import { AiServiceMode } from 'src/kernel/types/model-types';
@@ -22,6 +24,25 @@ class UpdateAiServiceSettingsGqlInput {
 }
 
 @InputType()
+class UpdateAiServiceApiKeysGqlInput {
+  /** Each field: omit to leave unchanged, pass "" to clear, pass a value to replace. */
+  @Field({ nullable: true })
+  geminiApiKey?: string;
+
+  @Field({ nullable: true })
+  hfToken?: string;
+
+  @Field({ nullable: true })
+  lastfmApiKey?: string;
+
+  @Field({ nullable: true })
+  lastfmSecret?: string;
+
+  @Field({ nullable: true })
+  discogsApiKeys?: string;
+}
+
+@InputType()
 class TestAiServiceConnectionGqlInput {
   @Field()
   url: string;
@@ -37,6 +58,8 @@ export class AiServiceSettingsResolver {
     private readonly updateAiServiceSettingsUseCase: UpdateAiServiceSettingsUseCase,
     private readonly testAiServiceConnectionUseCase: TestAiServiceConnectionUseCase,
     private readonly setAiServiceReplicasUseCase: SetAiServiceReplicasUseCase,
+    private readonly updateAiServiceApiKeysUseCase: UpdateAiServiceApiKeysUseCase,
+    private readonly applyAiServiceApiKeysUseCase: ApplyAiServiceApiKeysUseCase,
   ) {}
 
   @Query(() => AiServiceSettings)
@@ -68,5 +91,17 @@ export class AiServiceSettingsResolver {
     @Args('replicas', { type: () => Int }) replicas: number,
   ): Promise<AiServiceActionResult> {
     return this.setAiServiceReplicasUseCase.execute({ replicas });
+  }
+
+  @Mutation(() => AiServiceActionResult)
+  async updateAiServiceApiKeys(
+    @Args('input') input: UpdateAiServiceApiKeysGqlInput,
+  ): Promise<AiServiceActionResult> {
+    return this.updateAiServiceApiKeysUseCase.execute(input);
+  }
+
+  @Mutation(() => AiServiceActionResult)
+  async applyAiServiceApiKeys(): Promise<AiServiceActionResult> {
+    return this.applyAiServiceApiKeysUseCase.execute();
   }
 }

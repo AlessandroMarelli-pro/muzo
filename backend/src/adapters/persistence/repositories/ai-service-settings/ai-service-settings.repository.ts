@@ -44,6 +44,11 @@ export class AiServiceSettingsRepository implements IAiServiceSettingsRepository
         // authToken undefined on create (no prior row) means "no token yet", not "unchanged".
         ...(update.authToken !== undefined && { authToken: update.authToken || null }),
         ...(update.replicas !== undefined && { replicas: update.replicas }),
+        ...(update.geminiApiKey !== undefined && { geminiApiKey: update.geminiApiKey || null }),
+        ...(update.hfToken !== undefined && { hfToken: update.hfToken || null }),
+        ...(update.lastfmApiKey !== undefined && { lastfmApiKey: update.lastfmApiKey || null }),
+        ...(update.lastfmSecret !== undefined && { lastfmSecret: update.lastfmSecret || null }),
+        ...(update.discogsApiKeys !== undefined && { discogsApiKeys: update.discogsApiKeys || null }),
       }),
       update: toPrismaUpdate({
         updatedById: SYSTEM_USER_ID,
@@ -52,6 +57,11 @@ export class AiServiceSettingsRepository implements IAiServiceSettingsRepository
         // omitted (undefined) -> leave stored token untouched; null/"" -> clear it.
         ...(update.authToken !== undefined && { authToken: update.authToken || null }),
         ...(update.replicas !== undefined && { replicas: update.replicas }),
+        ...(update.geminiApiKey !== undefined && { geminiApiKey: update.geminiApiKey || null }),
+        ...(update.hfToken !== undefined && { hfToken: update.hfToken || null }),
+        ...(update.lastfmApiKey !== undefined && { lastfmApiKey: update.lastfmApiKey || null }),
+        ...(update.lastfmSecret !== undefined && { lastfmSecret: update.lastfmSecret || null }),
+        ...(update.discogsApiKeys !== undefined && { discogsApiKeys: update.discogsApiKeys || null }),
       }),
     });
     return toDomain(row);
@@ -69,6 +79,11 @@ export class AiServiceSettingsRepository implements IAiServiceSettingsRepository
       remoteUrl: null,
       authToken: null,
       replicas: 1,
+      geminiApiKey: null,
+      hfToken: null,
+      lastfmApiKey: null,
+      lastfmSecret: null,
+      discogsApiKeys: null,
     };
   }
 }

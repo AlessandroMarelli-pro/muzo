@@ -20,6 +20,11 @@ export const toDomain: ToDomain = (row) => {
     remoteUrl: row.remoteUrl,
     authToken: row.authToken,
     replicas: row.replicas,
+    geminiApiKey: row.geminiApiKey,
+    hfToken: row.hfToken,
+    lastfmApiKey: row.lastfmApiKey,
+    lastfmSecret: row.lastfmSecret,
+    discogsApiKeys: row.discogsApiKeys,
   };
 };
 
@@ -33,6 +38,11 @@ export const toPrisma: ToPrisma = (domainModel) => {
     remoteUrl: domainModel.remoteUrl ?? null,
     authToken: domainModel.authToken ?? null,
     replicas: domainModel.replicas,
+    geminiApiKey: domainModel.geminiApiKey ?? null,
+    hfToken: domainModel.hfToken ?? null,
+    lastfmApiKey: domainModel.lastfmApiKey ?? null,
+    lastfmSecret: domainModel.lastfmSecret ?? null,
+    discogsApiKeys: domainModel.discogsApiKeys ?? null,
   };
 };
 
@@ -47,5 +57,10 @@ export const toPrismaUpdate: ToPrismaUpdate = (domainModel) => {
     ...(domainModel.remoteUrl !== undefined && { remoteUrl: domainModel.remoteUrl }),
     ...(domainModel.authToken !== undefined && { authToken: domainModel.authToken }),
     ...(domainModel.replicas !== undefined && { replicas: domainModel.replicas }),
+    ...(domainModel.geminiApiKey !== undefined && { geminiApiKey: domainModel.geminiApiKey }),
+    ...(domainModel.hfToken !== undefined && { hfToken: domainModel.hfToken }),
+    ...(domainModel.lastfmApiKey !== undefined && { lastfmApiKey: domainModel.lastfmApiKey }),
+    ...(domainModel.lastfmSecret !== undefined && { lastfmSecret: domainModel.lastfmSecret }),
+    ...(domainModel.discogsApiKeys !== undefined && { discogsApiKeys: domainModel.discogsApiKeys }),
   };
 };

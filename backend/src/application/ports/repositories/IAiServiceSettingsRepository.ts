@@ -12,6 +12,16 @@ export interface AiServiceSettingsUpdate {
    */
   authToken?: string | null;
   replicas?: number;
+
+  /**
+   * Third-party API keys for the local ai-service. Same tri-state as `authToken`:
+   * `undefined` -- leave unchanged; `null`/`""` -- clear; any other string -- replace.
+   */
+  geminiApiKey?: string | null;
+  hfToken?: string | null;
+  lastfmApiKey?: string | null;
+  lastfmSecret?: string | null;
+  discogsApiKeys?: string | null;
 }
 
 export const AI_SERVICE_SETTINGS_REPOSITORY = createToken<IAiServiceSettingsRepository>(

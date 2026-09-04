@@ -54,7 +54,7 @@ export class DockerScalingService implements IDockerScalingService {
     this.logger = loggerFactory.createLogger('DockerScalingService');
   }
 
-  async scaleAiService(replicas: number): Promise<void> {
+  async scaleAiService(replicas: number, envOverrides: Record<string, string> = {}): Promise<void> {
     const existing = await this.listAiServiceContainers();
     const running = existing.filter((c) => c.State === 'running');
 
@@ -64,10 +64,56 @@ export class DockerScalingService implements IDockerScalingService {
     }
 
     if (running.length < replicas) {
-      await this.scaleUp(existing, replicas);
+      await this.scaleUp(existing, replicas, envOverrides);
     } else {
       await this.scaleDown(running, replicas);
     }
+  }
+
+  async recreateAiServiceReplicas(envOverrides: Record<string, string>): Promise<boolean> {
+    const existing = await this.listAiServiceContainers();
+    if (existing.length === 0) {
+      this.logger.warn('recreateAiServiceReplicas: no ai-service container to clone from');
+      return false;
+    }
+
+    // Capture the template BEFORE tearing anything down -- once every replica is removed there is
+    // nothing left to clone Env/HostConfig from.
+    const templateSummary = existing.find((c) => c.State === 'running') ?? existing[0];
+    const templateInspect = await this.docker.get<DockerContainerInspect>(
+      `/containers/${templateSummary.Id}/json`,
+    );
+    const project = templateSummary.Labels[COMPOSE_PROJECT_LABEL];
+    const networkName = Object.keys(templateInspect.NetworkSettings.Networks)[0];
+
+    const runningCount = existing.filter((c) => c.State === 'running').length;
+    const targetCount = Math.max(1, runningCount);
+
+    // Remove every existing container (running or stopped) so container numbers restart cleanly.
+    for (const container of existing) {
+      this.logger.info(`Removing ai-service container ${container.Names[0]} for recreate`);
+      if (container.State === 'running') {
+        await this.docker.post(`/containers/${container.Id}/stop?t=30`);
+      }
+      await this.docker.delete(`/containers/${container.Id}`);
+    }
+
+    for (let i = 1; i <= targetCount; i++) {
+      await this.createAndStartReplica(templateInspect, project, networkName, i, envOverrides);
+    }
+
+    this.logger.info(
+      `Recreated ${targetCount} ai-service replica(s) with ${Object.keys(envOverrides).length} env override(s)`,
+    );
+    return true;
+  }
+
+  /** Merges `overrides` over a container's Env array: replaces any `KEY=` line, appends new keys. */
+  private mergeEnv(env: string[], overrides: Record<string, string>): string[] {
+    if (Object.keys(overrides).length === 0) return env;
+    const overrideKeys = new Set(Object.keys(overrides));
+    const kept = env.filter((line) => !overrideKeys.has(line.split('=', 1)[0]));
+    return [...kept, ...Object.entries(overrides).map(([k, v]) => `${k}=${v}`)];
   }
 
   async getMaxReplicas(): Promise<number> {
@@ -95,6 +141,7 @@ export class DockerScalingService implements IDockerScalingService {
   private async scaleUp(
     existing: DockerContainerSummary[],
     targetCount: number,
+    envOverrides: Record<string, string> = {},
   ): Promise<void> {
     // Prefer a running container's config (freshest); fall back to any stopped one rather than
     // failing outright -- Env/HostConfig don't change just because a container is stopped.
@@ -121,7 +168,13 @@ export class DockerScalingService implements IDockerScalingService {
     const toCreate = targetCount - existing.filter((c) => c.State === 'running').length;
 
     for (let i = 0; i < toCreate; i++) {
-      await this.createAndStartReplica(templateInspect, project, networkName, nextContainerNumber);
+      await this.createAndStartReplica(
+        templateInspect,
+        project,
+        networkName,
+        nextContainerNumber,
+        envOverrides,
+      );
       nextContainerNumber++;
     }
   }
@@ -131,6 +184,7 @@ export class DockerScalingService implements IDockerScalingService {
     project: string,
     networkName: string,
     containerNumber: number,
+    envOverrides: Record<string, string> = {},
   ): Promise<void> {
     const name = `${project}-${COMPOSE_SERVICE_NAME}-${containerNumber}`;
     this.logger.info(`Creating ai-service replica ${name}`);
@@ -139,7 +193,7 @@ export class DockerScalingService implements IDockerScalingService {
       `/containers/create?name=${encodeURIComponent(name)}`,
       {
         Image: templateInspect.Config.Image,
-        Env: templateInspect.Config.Env,
+        Env: this.mergeEnv(templateInspect.Config.Env, envOverrides),
         HostConfig: templateInspect.HostConfig,
         Labels: {
           ...templateInspect.Config.Labels,

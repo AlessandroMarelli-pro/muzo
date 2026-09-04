@@ -20,6 +20,11 @@ export interface AiServiceSettings {
   hasAuthToken: boolean;
   replicas: number;
   health: AiServiceHealth;
+  hasGeminiApiKey: boolean;
+  hasHfToken: boolean;
+  hasLastfmApiKey: boolean;
+  hasLastfmSecret: boolean;
+  hasDiscogsApiKeys: boolean;
 }
 
 export interface AiServiceActionResult {
@@ -36,6 +41,11 @@ const GET_AI_SERVICE_SETTINGS = gql`
       remoteUrl
       hasAuthToken
       replicas
+      hasGeminiApiKey
+      hasHfToken
+      hasLastfmApiKey
+      hasLastfmSecret
+      hasDiscogsApiKeys
       health {
         overall
         timestamp
@@ -71,6 +81,24 @@ const UPDATE_AI_SERVICE_SETTINGS = gql`
 const SET_AI_SERVICE_REPLICAS = gql`
   mutation SetAiServiceReplicas($replicas: Int!) {
     setAiServiceReplicas(replicas: $replicas) {
+      success
+      message
+    }
+  }
+`;
+
+const UPDATE_AI_SERVICE_API_KEYS = gql`
+  mutation UpdateAiServiceApiKeys($input: UpdateAiServiceApiKeysGqlInput!) {
+    updateAiServiceApiKeys(input: $input) {
+      success
+      message
+    }
+  }
+`;
+
+const APPLY_AI_SERVICE_API_KEYS = gql`
+  mutation ApplyAiServiceApiKeys {
+    applyAiServiceApiKeys {
       success
       message
     }
@@ -122,6 +150,32 @@ const setAiServiceReplicas = async (replicas: number): Promise<AiServiceActionRe
     { replicas },
   );
   return data.setAiServiceReplicas;
+};
+
+/** Each field: omit to keep the stored value, "" to clear, a string to replace. */
+export interface UpdateAiServiceApiKeysInput {
+  geminiApiKey?: string;
+  hfToken?: string;
+  lastfmApiKey?: string;
+  lastfmSecret?: string;
+  discogsApiKeys?: string;
+}
+
+const updateAiServiceApiKeys = async (
+  input: UpdateAiServiceApiKeysInput,
+): Promise<AiServiceActionResult> => {
+  const data = await graffleClient.request<{ updateAiServiceApiKeys: AiServiceActionResult }>(
+    UPDATE_AI_SERVICE_API_KEYS,
+    { input },
+  );
+  return data.updateAiServiceApiKeys;
+};
+
+const applyAiServiceApiKeys = async (): Promise<AiServiceActionResult> => {
+  const data = await graffleClient.request<{ applyAiServiceApiKeys: AiServiceActionResult }>(
+    APPLY_AI_SERVICE_API_KEYS,
+  );
+  return data.applyAiServiceApiKeys;
 };
 
 export function useAiServiceSettings() {
@@ -182,5 +236,41 @@ export function useSetAiServiceReplicas() {
   return {
     setReplicas: mutation.mutateAsync,
     isScaling: mutation.isPending,
+  };
+}
+
+export function useUpdateAiServiceApiKeys() {
+  const queryClient = useQueryClient();
+
+  const mutation = useMutation({
+    mutationFn: updateAiServiceApiKeys,
+    onSuccess: (result) => {
+      if (result.success) {
+        queryClient.invalidateQueries({ queryKey: AI_SERVICE_SETTINGS_QUERY_KEY });
+      }
+    },
+  });
+
+  return {
+    updateApiKeys: mutation.mutateAsync,
+    isSavingApiKeys: mutation.isPending,
+  };
+}
+
+export function useApplyAiServiceApiKeys() {
+  const queryClient = useQueryClient();
+
+  const mutation = useMutation({
+    mutationFn: applyAiServiceApiKeys,
+    onSuccess: (result) => {
+      if (result.success) {
+        queryClient.invalidateQueries({ queryKey: AI_SERVICE_SETTINGS_QUERY_KEY });
+      }
+    },
+  });
+
+  return {
+    applyApiKeys: mutation.mutateAsync,
+    isApplyingApiKeys: mutation.isPending,
   };
 }

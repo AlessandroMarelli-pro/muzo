@@ -2,6 +2,7 @@ import { IAiServicePool } from 'src/application/ports/infrastructure/IAiServiceP
 import { IAiServiceSettingsRepository } from 'src/application/ports/repositories/IAiServiceSettingsRepository';
 import { IScanSessionRepository } from 'src/application/ports/repositories/IScanSessionRepository';
 import { IDockerScalingService } from 'src/application/ports/infrastructure/IDockerScalingService';
+import { buildLocalAiEnvOverrides } from './buildLocalAiEnvOverrides';
 
 export interface SetAiServiceReplicasInput {
   replicas: number;
@@ -48,7 +49,13 @@ export class SetAiServiceReplicasUseCase {
       };
     }
 
-    await this.dockerScalingService.scaleAiService(input.replicas);
+    // Carry any stored API keys onto freshly created replicas so a scale-up right after a
+    // `docker compose up` doesn't leave the new container without them.
+    const settings = await this.settingsRepository.get();
+    await this.dockerScalingService.scaleAiService(
+      input.replicas,
+      buildLocalAiEnvOverrides(settings),
+    );
     await this.settingsRepository.save({ replicas: input.replicas });
     await this.aiServicePool.reload();
 

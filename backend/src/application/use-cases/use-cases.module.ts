@@ -151,9 +151,11 @@ import {
   SyncPlaylistToYouTubeUseCase,
 } from './third-party-sync';
 import {
+  ApplyAiServiceApiKeysUseCase,
   GetAiServiceSettingsUseCase,
   SetAiServiceReplicasUseCase,
   TestAiServiceConnectionUseCase,
+  UpdateAiServiceApiKeysUseCase,
   UpdateAiServiceSettingsUseCase,
 } from './ai-service';
 
@@ -469,6 +471,13 @@ const useCasesProviders = [
     TestAiServiceConnectionUseCase,
   ]),
   createUseCaseProvider(SetAiServiceReplicasUseCase, [
+    AI_SERVICE_SETTINGS_REPOSITORY,
+    AI_SERVICE_POOL,
+    SCAN_SESSION_REPOSITORY,
+    DOCKER_SCALING_SERVICE,
+  ]),
+  createUseCaseProvider(UpdateAiServiceApiKeysUseCase, [AI_SERVICE_SETTINGS_REPOSITORY]),
+  createUseCaseProvider(ApplyAiServiceApiKeysUseCase, [
     AI_SERVICE_SETTINGS_REPOSITORY,
     AI_SERVICE_POOL,
     SCAN_SESSION_REPOSITORY,

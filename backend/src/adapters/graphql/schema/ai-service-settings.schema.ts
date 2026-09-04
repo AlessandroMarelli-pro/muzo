@@ -42,6 +42,22 @@ export class AiServiceSettings {
   @Field(() => Int)
   replicas: number;
 
+  // Whether each third-party API key is stored -- never the value itself.
+  @Field()
+  hasGeminiApiKey: boolean;
+
+  @Field()
+  hasHfToken: boolean;
+
+  @Field()
+  hasLastfmApiKey: boolean;
+
+  @Field()
+  hasLastfmSecret: boolean;
+
+  @Field()
+  hasDiscogsApiKeys: boolean;
+
   @Field(() => AiServiceHealth)
   health: AiServiceHealth;
 }

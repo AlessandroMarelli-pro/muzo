@@ -9,6 +9,12 @@ export interface AiServiceSettingsView {
   hasAuthToken: boolean;
   replicas: number;
   health: any;
+  // Whether each third-party API key is stored -- never the value.
+  hasGeminiApiKey: boolean;
+  hasHfToken: boolean;
+  hasLastfmApiKey: boolean;
+  hasLastfmSecret: boolean;
+  hasDiscogsApiKeys: boolean;
 }
 
 export class GetAiServiceSettingsUseCase {
@@ -29,6 +35,11 @@ export class GetAiServiceSettingsUseCase {
       hasAuthToken: !!settings.authToken,
       replicas: settings.replicas,
       health,
+      hasGeminiApiKey: !!settings.geminiApiKey,
+      hasHfToken: !!settings.hfToken,
+      hasLastfmApiKey: !!settings.lastfmApiKey,
+      hasLastfmSecret: !!settings.lastfmSecret,
+      hasDiscogsApiKeys: !!settings.discogsApiKeys,
     };
   }
 }

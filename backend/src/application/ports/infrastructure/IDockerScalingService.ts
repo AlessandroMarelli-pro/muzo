@@ -11,7 +11,17 @@ export interface IDockerScalingService {
    * get, so they stay visible to `docker compose ps`/`down` and to the pool's DNS-based
    * discovery (see AiServerPoolAdapter.resolveLocalInstanceUrls).
    */
-  scaleAiService(replicas: number): Promise<void>;
+  scaleAiService(replicas: number, envOverrides?: Record<string, string>): Promise<void>;
+
+  /**
+   * Stops and recreates every local `ai-service` replica so a changed environment (e.g. API keys
+   * pasted in Settings) takes effect -- a container's Env is fixed at create time, so an
+   * in-place update is not possible. `envOverrides` is merged over each replica's cloned Env
+   * (keys replaced, new keys appended). Returns `false` and does nothing if there is no existing
+   * `ai-service` container to clone from -- the caller should tell the user to start the
+   * local-ai profile first. The replica count is preserved.
+   */
+  recreateAiServiceReplicas(envOverrides: Record<string, string>): Promise<boolean>;
 
   /**
    * Reads Docker Engine /info (NCPU, MemTotal) over the same socket and returns the largest

@@ -403,4 +403,10 @@ export type AiServiceSettings = Readonly<ModelBase<AiServiceSettingsId>> & {
   remoteUrl: Maybe<string>;
   authToken: Maybe<string>;
   replicas: number;
+  // Third-party API keys for the local ai-service container (see schema.prisma).
+  geminiApiKey: Maybe<string>;
+  hfToken: Maybe<string>;
+  lastfmApiKey: Maybe<string>;
+  lastfmSecret: Maybe<string>;
+  discogsApiKeys: Maybe<string>;
 };

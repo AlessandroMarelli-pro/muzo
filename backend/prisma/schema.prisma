@@ -471,6 +471,16 @@ model AiServiceSettings {
   authToken String?  // Bearer token for the remote endpoint; plaintext, same precedent as ThirdPartyOAuthToken
   replicas  Int      @default(1) // desired local ai-service replica count
 
+  // Third-party API keys injected into the LOCAL ai-service container's env when the user hits
+  // "Apply" in Settings. Plaintext, same precedent as authToken above. Unused in remote mode
+  // (a remote endpoint reads its own env). Each maps to one ai-service env var -- see
+  // buildLocalAiEnvOverrides in the ai-service use-cases.
+  geminiApiKey   String? // -> GOOGLE_API_KEY (Gemini filename cleaning)
+  hfToken        String? // -> HF_TOKEN (private model downloads)
+  lastfmApiKey   String? // -> LAST_FM_API_KEY (album art)
+  lastfmSecret   String? // -> LAST_FM_SECRET_KEY
+  discogsApiKeys String? // -> DISCOGS_API_KEYS (comma-separated, passed through verbatim)
+
   // Timestamps -- createdById/updatedById follow the ThirdPartyOAuthToken convention for a
   // system-level row with no real per-user owner (ModelBase requires a UserId either way).
   // updatedAt nullable like every other model here (not UserPreferences' outlier) --

@@ -27,6 +27,11 @@ type AiServiceInstanceHealth {
 
 type AiServiceSettings {
   hasAuthToken: Boolean!
+  hasDiscogsApiKeys: Boolean!
+  hasGeminiApiKey: Boolean!
+  hasHfToken: Boolean!
+  hasLastfmApiKey: Boolean!
+  hasLastfmSecret: Boolean!
   health: AiServiceHealth!
   mode: String!
   remoteUrl: String
@@ -190,6 +195,7 @@ type Mutation {
   addTrackToPlaylist(input: AddTrackToPlaylistInput!, playlistId: Base64ID!): PlaylistTrack!
   addTrackToQueue(trackId: Base64ID!): QueueItem!
   addTracksToQueue(trackIds: [Base64ID!]!): [QueueItem!]!
+  applyAiServiceApiKeys: AiServiceActionResult!
   authenticateSpotify(code: String!, codeVerifier: String!, userId: String!): SpotifyAuthResult!
   authenticateTidal(code: String!, codeVerifier: String!, userId: String!): TidalAuthResult!
   authenticateYouTube(code: String!, userId: String!): YouTubeAuthResult!
@@ -225,6 +231,7 @@ type Mutation {
   toggleDislike(trackId: Base64ID!): Boolean!
   toggleFavorite(trackId: Base64ID!): Track!
   toggleLike(trackId: Base64ID!): Track!
+  updateAiServiceApiKeys(input: UpdateAiServiceApiKeysGqlInput!): AiServiceActionResult!
   updateAiServiceSettings(input: UpdateAiServiceSettingsGqlInput!): AiServiceActionResult!
   updatePlaylistSorting(input: UpdatePlaylistSortingInput!, playlistId: Base64ID!): PlaylistSorting!
   updatePlaylistTracksPositions(input: UpdatePlaylistPositionsInput!, playlistId: Base64ID!): Boolean!
@@ -470,6 +477,14 @@ type TrackRecommendation {
   reasons: [String!]!
   similarity: Float!
   track: Track!
+}
+
+input UpdateAiServiceApiKeysGqlInput {
+  discogsApiKeys: String
+  geminiApiKey: String
+  hfToken: String
+  lastfmApiKey: String
+  lastfmSecret: String
 }
 
 input UpdateAiServiceSettingsGqlInput {
