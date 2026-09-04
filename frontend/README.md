@@ -103,7 +103,7 @@ frontend/
 │   │   ├── library/               # Music library management
 │   │   ├── player/                # Music player & visualizers
 │   │   ├── playlist/              # Playlist management
-│   │   ├── research/              # Track research/analysis
+│   │   ├── similar/               # Track "similar tracks" / analysis
 │   │   ├── track/                 # Track cards, tables, details
 │   │   ├── ui/                    # Shadcn/ui components
 │   │   └── visualization/         # Audio visualizations
@@ -138,8 +138,7 @@ frontend/
 │   │   ├── libraries.$libraryId.tsx
 │   │   ├── favorites.tsx
 │   │   ├── categories.tsx
-│   │   ├── research.index.tsx
-│   │   ├── research.$trackId.tsx
+│   │   ├── similar.{-$trackId}.tsx
 │   │   └── settings.tsx
 │   ├── services/              # API & data services
 │   │   ├── api-hooks.ts       # TanStack Query hooks
@@ -237,7 +236,7 @@ frontend/
 - Beat visualizer
 - Interactive p5.js canvas components
 
-### Research & Analysis
+### Similar Tracks & Analysis
 
 - Track analysis and metadata display
 - Audio feature visualization

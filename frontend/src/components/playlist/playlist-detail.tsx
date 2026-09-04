@@ -221,7 +221,8 @@ export function PlaylistDetail({ id, onBack }: PlaylistDetailProps) {
         ),
       );
 
-      const trackIds = playlist.tracks?.filter((pt) => pt.track?.id).map((pt) => pt.track!.id) ?? [];
+      const trackIds =
+        playlist.tracks?.filter((pt) => pt.track?.id).map((pt) => pt.track!.id) ?? [];
       await addTracksToQueue.mutateAsync(trackIds);
 
       if (playlist.tracks?.[0]?.track) {
@@ -269,8 +270,7 @@ export function PlaylistDetail({ id, onBack }: PlaylistDetailProps) {
   );
 
   const currentSortingKey = playlist?.sorting?.sortingKey === 'addedAt' ? 'addedAt' : 'position';
-  const currentSortingDirection =
-    playlist?.sorting?.sortingDirection === 'desc' ? 'desc' : 'asc';
+  const currentSortingDirection = playlist?.sorting?.sortingDirection === 'desc' ? 'desc' : 'asc';
   const currentSortValue = `${currentSortingKey}:${currentSortingDirection}`;
 
   const queueCount = currentQueue.length;
@@ -296,6 +296,7 @@ export function PlaylistDetail({ id, onBack }: PlaylistDetailProps) {
             size="default"
             onClick={() => setIsAddTrackDrawerOpen(true)}
             disabled={!playlist}
+            variant="link"
           >
             <Plus className="h-4 w-4" aria-hidden />
             Add tracks
@@ -401,8 +402,8 @@ export function PlaylistDetail({ id, onBack }: PlaylistDetailProps) {
             <AlertDialogTitle>Delete this playlist?</AlertDialogTitle>
             <AlertDialogDescription>
               <span className="font-medium text-foreground">{playlist?.name}</span> will be
-              permanently removed. Your tracks stay in your library — only the playlist is
-              deleted. This can&rsquo;t be undone.
+              permanently removed. Your tracks stay in your library — only the playlist is deleted.
+              This can&rsquo;t be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

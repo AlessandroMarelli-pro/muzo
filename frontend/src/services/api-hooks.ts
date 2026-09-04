@@ -262,7 +262,7 @@ export const useRandomTrackWithStats = () => {
 };
 
 /** `boost` is a comma-joined list of RecommendationBoostKey (see
- * recommendation-types.ts), matching the `?boost=` search param the research
+ * recommendation-types.ts), matching the `?boost=` search param the similar
  * page keeps in the URL. An unrecognized key is silently ignored server-side. */
 export const fetchTrackRecommendations = async (id?: string, boost?: string) => {
   const boosts = boost ? boost.split(',').filter(Boolean) : undefined;

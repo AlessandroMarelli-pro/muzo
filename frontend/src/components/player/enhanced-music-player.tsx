@@ -1,28 +1,36 @@
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Slider } from '@/components/ui/slider';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Slider } from "@/components/ui/slider";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
   useAudioPlayerActions,
   useAudioPlayerContext,
   useCurrentTrack,
   useIsPlaying,
-} from '@/contexts/audio-player-context';
-import { usePlaybackProgressPublisher } from '@/contexts/playback-progress-context';
-import { apiUrl } from '@/lib/api-config';
-import { cn, formatTime } from '@/lib/utils';
-import { useWaveformData } from '@/services/music-player-hooks';
-import { useQueue } from '@/services/queue-hooks';
-import { useNavigate } from '@tanstack/react-router';
+} from "@/contexts/audio-player-context";
+import { usePlaybackProgressPublisher } from "@/contexts/playback-progress-context";
+import { apiUrl } from "@/lib/api-config";
+import { cn, formatTime } from "@/lib/utils";
+import { useWaveformData } from "@/services/music-player-hooks";
+import { useQueue } from "@/services/queue-hooks";
+import { useNavigate } from "@tanstack/react-router";
 import {
-  Brain,
   Disc3,
   Heart,
   ListMusic,
   ListPlus,
   Pause,
   Play,
+  Radar,
   Repeat,
   Repeat1,
   Shuffle,
@@ -31,23 +39,32 @@ import {
   Volume1,
   Volume2,
   VolumeX,
-} from 'lucide-react';
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { QueueDrawer } from '../queue/queue-sidebar';
-import { AudioQualityBadge } from '../track/audio-quality-badge';
-import { SelectPlaylistDialog } from '../playlist/select-playlist-dialog';
-import { TrackMoreMenu } from '../track/track-more-menu';
-import { AlbumArt } from './album-art';
-import { MUSIC_PLAYER_HEIGHT, MUSIC_PLAYER_HEIGHT_SM } from './player-constants';
-import { WaveformVisualizer } from './waveform-visualizer';
+} from "lucide-react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { QueueDrawer } from "../queue/queue-sidebar";
+import { AudioQualityBadge } from "../track/audio-quality-badge";
+import { SelectPlaylistDialog } from "../playlist/select-playlist-dialog";
+import { TrackMoreMenu } from "../track/track-more-menu";
+import { AlbumArt } from "./album-art";
+import {
+  MUSIC_PLAYER_HEIGHT,
+  MUSIC_PLAYER_HEIGHT_SM,
+} from "./player-constants";
+import { WaveformVisualizer } from "./waveform-visualizer";
 
 interface EnhancedMusicPlayerProps {
   onToggleShuffle?: () => void;
   className?: string;
 }
 
-type RepeatMode = 'off' | 'all' | 'one';
-const VOLUME_KEY = 'muzo.player.volume';
+type RepeatMode = "off" | "all" | "one";
+const VOLUME_KEY = "muzo.player.volume";
 /** Tooltips that survive are informational — hold before showing them. */
 const HINT_DELAY = 600;
 
@@ -76,7 +93,7 @@ function ControlButton({
       disabled={disabled}
       aria-label={label}
       aria-pressed={pressed}
-      className={cn('size-9', pressed && 'text-primary')}
+      className={cn("size-9", pressed && "text-primary")}
     >
       {children}
     </Button>
@@ -89,8 +106,8 @@ function ControlButton({
  * casing like "deadmau5", "RÜFÜS DU SOL" or "will.i.am" is left as tagged.
  */
 function tidyMeta(value?: string | null): string {
-  const v = (value ?? '').trim();
-  return v ? v[0].toLocaleUpperCase() + v.slice(1) : '';
+  const v = (value ?? "").trim();
+  return v ? v[0].toLocaleUpperCase() + v.slice(1) : "";
 }
 
 export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
@@ -114,11 +131,11 @@ export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
   // Seed with the CSS min-height so the queue panel docks correctly on the
   // very first open, before the ResizeObserver has reported a real height.
   const [playerBarHeight, setPlayerBarHeight] = useState(() =>
-    typeof window !== 'undefined' && window.innerWidth >= 640 ? 72 : 88,
+    typeof window !== "undefined" && window.innerWidth >= 640 ? 72 : 88,
   );
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [repeatMode, setRepeatMode] = useState<RepeatMode>('off');
+  const [repeatMode, setRepeatMode] = useState<RepeatMode>("off");
   const [volume, setVolume] = useState(1);
   const [muted, setMuted] = useState(false);
 
@@ -148,10 +165,15 @@ export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
 
   // Stable queue position — distinguishes "first track" from "not in queue".
   const queueTracks = useMemo(
-    () => queueItems.map((item) => item.track).filter((t): t is NonNullable<typeof t> => t != null),
+    () =>
+      queueItems
+        .map((item) => item.track)
+        .filter((t): t is NonNullable<typeof t> => t != null),
     [queueItems],
   );
-  const queueIndex = currentTrack ? queueTracks.findIndex((t) => t.id === currentTrack.id) : -1;
+  const queueIndex = currentTrack
+    ? queueTracks.findIndex((t) => t.id === currentTrack.id)
+    : -1;
   const inQueue = queueIndex !== -1;
   const canPrevious = inQueue && queueIndex > 0;
   const canNext = inQueue && queueIndex < queueTracks.length - 1;
@@ -169,7 +191,7 @@ export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
     if (!audio || !currentTrack) return;
     if (isPlaying && playbackState.trackId === currentTrack.id) {
       audio.play().catch((error) => {
-        console.error('Error playing audio:', error);
+        console.error("Error playing audio:", error);
       });
     } else {
       audio.pause();
@@ -184,22 +206,23 @@ export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
     }
   }, [volume, muted, currentTrack?.id]);
 
-  const waveformId = currentTrack?.id ?? '';
-  const { data: waveformData, isLoading: waveformLoading } = useWaveformData(waveformId);
+  const waveformId = currentTrack?.id ?? "";
+  const { data: waveformData, isLoading: waveformLoading } =
+    useWaveformData(waveformId);
 
   // Audio element events.
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
     const handleEnded = () => {
-      if (repeatMode === 'one') {
+      if (repeatMode === "one") {
         audio.currentTime = 0;
         audio.play().catch(() => {});
         return;
       }
       if (canNext) {
         actions.next();
-      } else if (repeatMode === 'all' && queueTracks.length > 0) {
+      } else if (repeatMode === "all" && queueTracks.length > 0) {
         // Loop back to the first queued track.
         const first = queueTracks[0];
         if (first && first.id !== currentTrack?.id) actions.next();
@@ -208,13 +231,13 @@ export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
     const handleTimeUpdate = () => setCurrentTime(audio.currentTime);
     const handleLoadedMetadata = () => setDuration(audio.duration || 0);
 
-    audio.addEventListener('ended', handleEnded);
-    audio.addEventListener('timeupdate', handleTimeUpdate);
-    audio.addEventListener('loadedmetadata', handleLoadedMetadata);
+    audio.addEventListener("ended", handleEnded);
+    audio.addEventListener("timeupdate", handleTimeUpdate);
+    audio.addEventListener("loadedmetadata", handleLoadedMetadata);
     return () => {
-      audio.removeEventListener('ended', handleEnded);
-      audio.removeEventListener('timeupdate', handleTimeUpdate);
-      audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
+      audio.removeEventListener("ended", handleEnded);
+      audio.removeEventListener("timeupdate", handleTimeUpdate);
+      audio.removeEventListener("loadedmetadata", handleLoadedMetadata);
     };
   }, [actions, repeatMode, canNext, queueTracks, currentTrack?.id]);
 
@@ -251,7 +274,7 @@ export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
   }, [currentTrack, actions]);
 
   const cycleRepeat = () =>
-    setRepeatMode((m) => (m === 'off' ? 'all' : m === 'all' ? 'one' : 'off'));
+    setRepeatMode((m) => (m === "off" ? "all" : m === "all" ? "one" : "off"));
 
   const changeVolume = (v: number) => {
     const clamped = Math.min(1, Math.max(0, v));
@@ -271,40 +294,44 @@ export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
       const target = e.target as HTMLElement | null;
       if (
         target &&
-        (target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName))
+        (target.isContentEditable ||
+          ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName))
       ) {
         return;
       }
       const audio = audioRef.current;
       switch (e.key) {
-        case ' ':
+        case " ":
           e.preventDefault();
           handleTogglePlay();
           break;
-        case 'ArrowRight':
+        case "ArrowRight":
           if (e.shiftKey) {
             if (canNext) actions.next();
           } else if (audio) {
-            audio.currentTime = Math.min(audio.currentTime + 5, trackDuration || audio.duration);
+            audio.currentTime = Math.min(
+              audio.currentTime + 5,
+              trackDuration || audio.duration,
+            );
           }
           break;
-        case 'ArrowLeft':
+        case "ArrowLeft":
           if (e.shiftKey) {
             if (canPrevious) actions.previous();
           } else if (audio) {
             audio.currentTime = Math.max(audio.currentTime - 5, 0);
           }
           break;
-        case 'f':
-        case 'F':
+        case "f":
+        case "F":
           handleToggleFavorite();
           break;
-        case 'm':
-        case 'M':
+        case "m":
+        case "M":
           setMuted((v) => !v);
           break;
-        case 'p':
-        case 'P':
+        case "p":
+        case "P":
           e.preventDefault();
           setPlaylistDialogMounted(true);
           setPlaylistOpen(true);
@@ -313,8 +340,8 @@ export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
           break;
       }
     };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
   }, [
     currentTrack,
     handleTogglePlay,
@@ -328,7 +355,11 @@ export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
   // Rendered once, as a sibling of whichever bar variant is on screen, so the
   // panel never remounts when a track loads or clears.
   const queueDrawer = (
-    <QueueDrawer open={queueOpen} onOpenChange={setQueueOpen} offsetBottom={playerBarHeight} />
+    <QueueDrawer
+      open={queueOpen}
+      onOpenChange={setQueueOpen}
+      offsetBottom={playerBarHeight}
+    />
   );
 
   // Resting state — the bar stays docked with nothing loaded, so the surface
@@ -341,13 +372,13 @@ export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
           aria-label="Music player"
           style={
             {
-              '--music-player-height': MUSIC_PLAYER_HEIGHT,
-              '--music-player-height-sm': MUSIC_PLAYER_HEIGHT_SM,
+              "--music-player-height": MUSIC_PLAYER_HEIGHT,
+              "--music-player-height-sm": MUSIC_PLAYER_HEIGHT_SM,
             } as React.CSSProperties
           }
           className={cn(
-            'fixed inset-x-0 bottom-0 z-[var(--z-player)] flex items-center gap-3 border-t border-border bg-card px-4',
-            'h-[var(--music-player-height-sm)] sm:h-[var(--music-player-height)]',
+            "fixed inset-x-0 bottom-0 z-[var(--z-player)] flex items-center gap-3 border-t border-border bg-card px-4",
+            "h-[var(--music-player-height-sm)] sm:h-[var(--music-player-height)]",
             className,
           )}
         >
@@ -371,7 +402,7 @@ export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
                 variant="secondary"
                 className="absolute -right-1.5 -top-1.5 h-4 min-w-4 justify-center px-1 text-xs leading-none tabular-nums"
               >
-                {queueItems.length > 99 ? '99+' : queueItems.length}
+                {queueItems.length > 99 ? "99+" : queueItems.length}
               </Badge>
             )}
           </Button>
@@ -383,13 +414,14 @@ export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
 
   const bpm = currentTrack.mfTempo ? Math.round(currentTrack.mfTempo) : null;
   const musicalKey = currentTrack.mfCamelotKey || currentTrack.mfKey || null;
-  const title = tidyMeta(currentTrack.title) || 'Unknown title';
-  const artist = tidyMeta(currentTrack.artist) || 'Unknown artist';
+  const title = tidyMeta(currentTrack.title) || "Unknown title";
+  const artist = tidyMeta(currentTrack.artist) || "Unknown artist";
   const primaryGenre = tidyMeta(currentTrack.genres?.[0]) || null;
   const isFavorite = !!playbackState?.isFavorite;
 
-  const VolumeIcon = muted || volume === 0 ? VolumeX : volume < 0.5 ? Volume1 : Volume2;
-  const RepeatIcon = repeatMode === 'one' ? Repeat1 : Repeat;
+  const VolumeIcon =
+    muted || volume === 0 ? VolumeX : volume < 0.5 ? Volume1 : Volume2;
+  const RepeatIcon = repeatMode === "one" ? Repeat1 : Repeat;
 
   return (
     <>
@@ -398,14 +430,14 @@ export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
         aria-label="Music player"
         style={
           {
-            '--music-player-height': MUSIC_PLAYER_HEIGHT,
-            '--music-player-height-sm': MUSIC_PLAYER_HEIGHT_SM,
+            "--music-player-height": MUSIC_PLAYER_HEIGHT,
+            "--music-player-height-sm": MUSIC_PLAYER_HEIGHT_SM,
           } as React.CSSProperties
         }
         className={cn(
-          'fixed inset-x-0 bottom-0 z-[var(--z-player)] isolate flex flex-col',
-          'min-h-[var(--music-player-height-sm)] sm:min-h-[var(--music-player-height)]',
-          'border-t border-border',
+          "fixed inset-x-0 bottom-0 z-[var(--z-player)] isolate flex flex-col",
+          "min-h-[var(--music-player-height-sm)] sm:min-h-[var(--music-player-height)]",
+          "border-t border-border",
           className,
         )}
       >
@@ -433,7 +465,9 @@ export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
                 {/* Delayed hint — only useful when the title is clipped. */}
                 <Tooltip delayDuration={HINT_DELAY}>
                   <TooltipTrigger asChild>
-                    <p className="truncate text-sm font-semibold leading-tight">{title}</p>
+                    <p className="truncate text-sm font-semibold leading-tight">
+                      {title}
+                    </p>
                   </TooltipTrigger>
                   <TooltipContent>{title}</TooltipContent>
                 </Tooltip>
@@ -446,7 +480,9 @@ export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
               {/* The numbers a DJ actually mixes on. */}
               {(bpm || musicalKey || primaryGenre) && (
                 <div className="mt-1 flex items-center gap-2 text-xs leading-none text-muted-foreground">
-                  {bpm && <span className="font-mono tabular-nums">{bpm} BPM</span>}
+                  {bpm && (
+                    <span className="font-mono tabular-nums">{bpm} BPM</span>
+                  )}
                   {musicalKey && (
                     <>
                       <span aria-hidden className="opacity-40">
@@ -473,7 +509,7 @@ export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
             {/* Primary transport */}
             <div className="flex shrink-0 items-center gap-0.5">
               <ControlButton
-                label={canPrevious ? 'Previous track' : 'No previous track'}
+                label={canPrevious ? "Previous track" : "No previous track"}
                 onClick={actions.previous}
                 disabled={!canPrevious}
               >
@@ -483,8 +519,8 @@ export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
                 variant="default"
                 size="icon"
                 onClick={handleTogglePlay}
-                aria-label={isPlaying ? 'Pause' : 'Play'}
-                title={isPlaying ? 'Pause (Space)' : 'Play (Space)'}
+                aria-label={isPlaying ? "Pause" : "Play"}
+                title={isPlaying ? "Pause (Space)" : "Play (Space)"}
                 className="size-10 rounded-full"
               >
                 {isPlaying ? (
@@ -494,7 +530,7 @@ export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
                 )}
               </Button>
               <ControlButton
-                label={canNext ? 'Next track' : 'No next track'}
+                label={canNext ? "Next track" : "No next track"}
                 onClick={actions.next}
                 disabled={!canNext}
               >
@@ -509,20 +545,25 @@ export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
               </ControlButton>
               <ControlButton
                 label={
-                  repeatMode === 'off'
-                    ? 'Repeat off'
-                    : repeatMode === 'all'
-                      ? 'Repeat queue'
-                      : 'Repeat track'
+                  repeatMode === "off"
+                    ? "Repeat off"
+                    : repeatMode === "all"
+                      ? "Repeat queue"
+                      : "Repeat track"
                 }
                 onClick={cycleRepeat}
-                pressed={repeatMode !== 'off'}
+                pressed={repeatMode !== "off"}
               >
                 <RepeatIcon className="size-4" aria-hidden />
               </ControlButton>
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button variant="ghost" size="iconSm" className="size-9" aria-label="Volume">
+                  <Button
+                    variant="ghost"
+                    size="iconSm"
+                    className="size-9"
+                    aria-label="Volume"
+                  >
                     <VolumeIcon className="size-4" aria-hidden />
                   </Button>
                 </PopoverTrigger>
@@ -544,7 +585,7 @@ export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
                     className="flex-1"
                   />
                   <ControlButton
-                    label={muted ? 'Unmute' : 'Mute'}
+                    label={muted ? "Unmute" : "Mute"}
                     onClick={() => setMuted((v) => !v)}
                   >
                     {muted ? (
@@ -578,29 +619,34 @@ export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
           {/* ── Track actions ──────────────────────────── */}
           <div className="flex shrink-0 items-center gap-0.5 border-border/60 sm:border-l sm:pl-2">
             <ControlButton
-              label={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+              label={isFavorite ? "Remove from favorites" : "Add to favorites"}
               onClick={handleToggleFavorite}
               pressed={isFavorite}
             >
               <Heart
-                className={cn('size-4', isFavorite && 'fill-primary text-primary')}
+                className={cn(
+                  "size-4",
+                  isFavorite && "fill-primary text-primary",
+                )}
                 aria-hidden
               />
             </ControlButton>
-            {/* Research is not self-evident from the icon — keep a delayed hint. */}
+            {/* "Similar" is not self-evident from the icon — keep a delayed hint. */}
             <Tooltip delayDuration={HINT_DELAY}>
               <TooltipTrigger asChild>
                 <Button
                   variant="ghost"
                   size="iconSm"
-                  onClick={() => navigate({ to: `/research/${currentTrack.id}` })}
-                  aria-label="Open research for this track"
+                  onClick={() =>
+                    navigate({ to: `/similar/${currentTrack.id}` })
+                  }
+                  aria-label="Open similar tracks for this track"
                   className="size-9"
                 >
-                  <Brain className="size-4" aria-hidden />
+                  <Radar className="size-4" aria-hidden />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>Research this track</TooltipContent>
+              <TooltipContent>Find similar tracks</TooltipContent>
             </Tooltip>
             <Button
               variant="ghost"
@@ -616,7 +662,7 @@ export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
                   variant="secondary"
                   className="absolute -right-1.5 -top-1.5 h-4 min-w-4 justify-center px-1 text-xs leading-none tabular-nums"
                 >
-                  {queueItems.length > 99 ? '99+' : queueItems.length}
+                  {queueItems.length > 99 ? "99+" : queueItems.length}
                 </Badge>
               )}
             </Button>
@@ -636,7 +682,8 @@ export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
-                Add to playlist <kbd className="ml-1 font-mono text-xs opacity-70">P</kbd>
+                Add to playlist{" "}
+                <kbd className="ml-1 font-mono text-xs opacity-70">P</kbd>
               </TooltipContent>
             </Tooltip>
             <TrackMoreMenu

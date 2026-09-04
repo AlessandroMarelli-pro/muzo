@@ -47,7 +47,7 @@ else's database. Recommendations are computed from the user's own collection
 - Real-time player sync over WebSocket (Socket.IO) — playback state is shared/live.
 - `/swipe` is Tinder-style track triage: one track at a time, accept/reject to
   quickly sort tracks (e.g. into favorites/playlists) at speed.
-- Track research view: per-track analysis, audio features, and cosine-similarity
+- Track "similar" view: per-track analysis, audio features, and cosine-similarity
   recommendations.
 
 ## Capabilities and Constraints
@@ -59,15 +59,15 @@ else's database. Recommendations are computed from the user's own collection
 - Music player: full playback controls, real-time p5.js waveform visualization,
   beat visualizer / audio analysis, WebSocket sync.
 - Data tables: faceted filtering, sorting, pagination, column visibility.
-- Track research & analysis: metadata display, audio-feature visualization,
+- Track "similar" & analysis: metadata display, audio-feature visualization,
   AI insights, cosine recommendations.
 - Scan pipeline: detects and flags incomplete tracks for follow-up.
 - SPA: React 19, TanStack Router (file-based), TanStack Query for server state,
   React Context for audio player / filters, nuqs for URL state.
 - API: GraphQL (graphql-request, codegen types) + REST; Socket.IO for real-time.
 - Terminology: "library" (a collection of tracks), "crate"/"playlist",
-  "incomplete track" (scanned but missing required metadata), "research" (the
-  per-track analysis surface), "swipe" (rapid triage).
+  "incomplete track" (scanned but missing required metadata), "similar" (the
+  per-track similar-tracks / analysis surface), "swipe" (rapid triage).
 
 ## Brand Commitments
 

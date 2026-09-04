@@ -1,16 +1,27 @@
-import { Button } from '@/components/ui/button';
+import { Button } from "@/components/ui/button";
 import {
   useAudioPlayerActions,
   useCurrentTrack,
   useIsPlaying,
-} from '@/contexts/audio-player-context';
-import { capitalizeEveryWord, cn, formatDuration } from '@/lib/utils';
-import { QueueItem } from '@/services/queue-hooks';
-import { Link } from '@tanstack/react-router';
-import { Brain, GripVertical, Music2, Pause, Play, Trash2, AudioLines } from 'lucide-react';
-import { memo } from 'react';
-import { apiUrl } from '@/lib/api-config';
-import type { DraggableAttributes, DraggableSyntheticListeners } from '@dnd-kit/core';
+} from "@/contexts/audio-player-context";
+import { capitalizeEveryWord, cn, formatDuration } from "@/lib/utils";
+import { QueueItem } from "@/services/queue-hooks";
+import { Link } from "@tanstack/react-router";
+import {
+  Radar,
+  GripVertical,
+  Music2,
+  Pause,
+  Play,
+  Trash2,
+  AudioLines,
+} from "lucide-react";
+import { memo } from "react";
+import { apiUrl } from "@/lib/api-config";
+import type {
+  DraggableAttributes,
+  DraggableSyntheticListeners,
+} from "@dnd-kit/core";
 
 interface QueueItemCardProps {
   queueItem: QueueItem;
@@ -24,7 +35,13 @@ interface QueueItemCardProps {
 }
 
 export const QueueItemCard = memo(
-  ({ queueItem, index, onRemove, removingTrackId, dragHandleProps }: QueueItemCardProps) => {
+  ({
+    queueItem,
+    index,
+    onRemove,
+    removingTrackId,
+    dragHandleProps,
+  }: QueueItemCardProps) => {
     const { currentTrack, setCurrentTrack } = useCurrentTrack();
     const actions = useAudioPlayerActions();
     const isPlaying = useIsPlaying();
@@ -37,8 +54,12 @@ export const QueueItemCard = memo(
     const isThisTrackPlaying = isCurrentTrack && isPlaying;
     const isRemoving = removingTrackId === queueItem.trackId;
 
-    const trackTitle = capitalizeEveryWord(queueItem.track.title || 'Untitled Track');
-    const trackArtist = capitalizeEveryWord(queueItem.track.artist || 'Unknown Artist');
+    const trackTitle = capitalizeEveryWord(
+      queueItem.track.title || "Untitled Track",
+    );
+    const trackArtist = capitalizeEveryWord(
+      queueItem.track.artist || "Unknown Artist",
+    );
 
     const handlePlay = (e: React.SyntheticEvent<any>) => {
       e.stopPropagation();
@@ -58,13 +79,16 @@ export const QueueItemCard = memo(
     return (
       <div
         className={cn(
-          'group relative flex items-center gap-3 px-4 py-2.5 transition-colors hover:bg-muted/50',
-          isCurrentTrack && 'bg-primary/10',
-          isRemoving && 'opacity-50',
+          "group relative flex items-center gap-3 px-4 py-2.5 transition-colors hover:bg-muted/50",
+          isCurrentTrack && "bg-primary/10",
+          isRemoving && "opacity-50",
         )}
       >
         {isCurrentTrack && (
-          <span className="absolute inset-y-0 left-0 w-0.5 bg-primary" aria-hidden />
+          <span
+            className="absolute inset-y-0 left-0 w-0.5 bg-primary"
+            aria-hidden
+          />
         )}
         {/* Drag handle — sits in the gutter, only visible on hover/focus. */}
         {dragHandleProps && (
@@ -84,7 +108,9 @@ export const QueueItemCard = memo(
         <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-md bg-muted">
           {queueItem.track.imagePath ? (
             <img
-              src={apiUrl(`/api/images/serve?imagePath=${queueItem.track.imagePath}`)}
+              src={apiUrl(
+                `/api/images/serve?imagePath=${queueItem.track.imagePath}`,
+              )}
               alt={`${trackTitle} album art`}
               width={44}
               height={44}
@@ -97,7 +123,10 @@ export const QueueItemCard = memo(
           )}
           {isThisTrackPlaying && (
             <div className="absolute inset-0 flex items-center justify-center bg-background/60">
-              <AudioLines className="h-5 w-5 text-primary animate-pulse" aria-hidden />
+              <AudioLines
+                className="h-5 w-5 text-primary animate-pulse"
+                aria-hidden
+              />
             </div>
           )}
         </div>
@@ -106,8 +135,8 @@ export const QueueItemCard = memo(
         <div className="flex-1 min-w-0">
           <div
             className={cn(
-              'line-clamp-2 text-sm font-medium leading-snug',
-              isCurrentTrack && 'font-semibold text-primary',
+              "line-clamp-2 text-sm font-medium leading-snug",
+              isCurrentTrack && "font-semibold text-primary",
             )}
             title={trackTitle}
           >
@@ -115,8 +144,8 @@ export const QueueItemCard = memo(
           </div>
           <div
             className={cn(
-              'text-xs truncate',
-              isCurrentTrack ? 'text-primary/80' : 'text-muted-foreground',
+              "text-xs truncate",
+              isCurrentTrack ? "text-primary/80" : "text-muted-foreground",
             )}
           >
             {trackArtist}
@@ -135,7 +164,7 @@ export const QueueItemCard = memo(
             size="iconSm"
             className="size-8"
             onClick={handlePlay}
-            aria-label={isThisTrackPlaying ? 'Pause' : 'Play'}
+            aria-label={isThisTrackPlaying ? "Pause" : "Play"}
           >
             {isThisTrackPlaying ? (
               <Pause className="size-4" aria-hidden />
@@ -155,12 +184,12 @@ export const QueueItemCard = memo(
           </Button>
           <Button asChild size="iconSm" variant="ghost" className="size-8">
             <Link
-              to="/research/{-$trackId}"
-              params={{ trackId: queueItem.track?.id ?? '' }}
+              to="/similar/{-$trackId}"
+              params={{ trackId: queueItem.track?.id ?? "" }}
               preload="intent"
-              aria-label="Open research"
+              aria-label="Open similar tracks"
             >
-              <Brain className="size-4" aria-hidden />
+              <Radar className="size-4" aria-hidden />
             </Link>
           </Button>
         </div>

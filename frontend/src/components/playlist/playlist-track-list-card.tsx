@@ -1,11 +1,11 @@
-import { PlaylistTrack, Track } from '@/__generated__/types';
-import { Button } from '@/components/ui/button';
+import { PlaylistTrack, Track } from "@/__generated__/types";
+import { Button } from "@/components/ui/button";
 import {
   useAudioPlayerActions,
   useCurrentTrack,
   useIsPlaying,
-} from '@/contexts/audio-player-context';
-import { apiUrl } from '@/lib/api-config';
+} from "@/contexts/audio-player-context";
+import { apiUrl } from "@/lib/api-config";
 import {
   capitalizeEveryWord,
   cn,
@@ -13,23 +13,34 @@ import {
   formatTime,
   isHarmonicTransition,
   toCamelotCode,
-} from '@/lib/utils';
-import { useAddTrackToQueue } from '@/services/queue-hooks';
-import { Link } from '@tanstack/react-router';
-import { AudioLines, Brain, GripVertical, ListMusic, Pause, Play, Trash2 } from 'lucide-react';
-import { memo } from 'react';
-import { AudioQualityBadge } from '../track/audio-quality-badge';
-import { Skeleton } from '../ui/skeleton';
+} from "@/lib/utils";
+import { useAddTrackToQueue } from "@/services/queue-hooks";
+import { Link } from "@tanstack/react-router";
+import {
+  AudioLines,
+  GripVertical,
+  ListMusic,
+  Pause,
+  Play,
+  Radar,
+  Trash2,
+} from "lucide-react";
+import { memo } from "react";
+import { AudioQualityBadge } from "../track/audio-quality-badge";
+import { Skeleton } from "../ui/skeleton";
 
 /** Album-art URL, or null when the track has no artwork (avoids a broken request). */
 const albumArtUrl = (imagePath?: string | null) =>
-  imagePath ? apiUrl(`/api/images/serve?imagePath=${encodeURIComponent(imagePath)}`) : null;
+  imagePath
+    ? apiUrl(`/api/images/serve?imagePath=${encodeURIComponent(imagePath)}`)
+    : null;
 
 const artistOf = (track?: Track | null) =>
-  track?.artist ? capitalizeEveryWord(track.artist) : 'Unknown artist';
+  track?.artist ? capitalizeEveryWord(track.artist) : "Unknown artist";
 const titleOf = (track?: Track | null) =>
-  track?.title ? capitalizeEveryWord(track.title) : 'Unknown title';
-const trackLabel = (track?: Track | null) => `${artistOf(track)} — ${titleOf(track)}`;
+  track?.title ? capitalizeEveryWord(track.title) : "Unknown title";
+const trackLabel = (track?: Track | null) =>
+  `${artistOf(track)} — ${titleOf(track)}`;
 
 /**
  * The ledger's column template — shared by the header and every row, so they
@@ -39,14 +50,14 @@ const trackLabel = (track?: Track | null) => `${artistOf(track)} — ${titleOf(t
  * same 2px left border (transparent unless a transition needs a mark).
  */
 export const LEDGER_GRID =
-  'grid grid-cols-[1.75rem_2.5rem_minmax(0,1fr)_auto] md:grid-cols-[1.75rem_2.5rem_minmax(0,1fr)_3.5rem_2.75rem_3.75rem_9.5rem] items-center gap-x-3 border-l-2 border-l-transparent pl-3 pr-3';
+  "grid grid-cols-[1.75rem_2.5rem_minmax(0,1fr)_auto] md:grid-cols-[1.75rem_2.5rem_minmax(0,1fr)_3.5rem_2.75rem_3.75rem_9.5rem] items-center gap-x-3 border-l-2 border-l-transparent pl-3 pr-3";
 
 export function PlaylistLedgerHeader() {
   return (
     <div
       className={cn(
         LEDGER_GRID,
-        'border-b bg-card py-2 text-xs font-medium uppercase tracking-wide text-muted-foreground',
+        "border-b bg-card py-2 text-xs font-medium uppercase tracking-wide text-muted-foreground",
       )}
     >
       <span className="text-right">#</span>
@@ -60,9 +71,13 @@ export function PlaylistLedgerHeader() {
   );
 }
 
-export const PlaylistTrackListCardSkeleton = ({ position }: { position: number }) => {
+export const PlaylistTrackListCardSkeleton = ({
+  position,
+}: {
+  position: number;
+}) => {
   return (
-    <div className={cn(LEDGER_GRID, 'py-2.5')}>
+    <div className={cn(LEDGER_GRID, "py-2.5")}>
       <span className="text-right font-mono text-xs tabular-nums text-muted-foreground">
         {position}
       </span>
@@ -76,13 +91,22 @@ export const PlaylistTrackListCardSkeleton = ({ position }: { position: number }
   );
 };
 
-type TransitionKind = 'bpm' | 'key' | null;
+type TransitionKind = "bpm" | "key" | null;
 
-function transitionBefore(prev?: Track | null, cur?: Track | null): TransitionKind {
+function transitionBefore(
+  prev?: Track | null,
+  cur?: Track | null,
+): TransitionKind {
   if (!prev || !cur) return null;
-  if (prev.mfTempo && cur.mfTempo && Math.abs(cur.mfTempo - prev.mfTempo) >= 8) return 'bpm';
-  if (!isHarmonicTransition(prev.mfCamelotKey ?? prev.mfKey, cur.mfCamelotKey ?? cur.mfKey)) {
-    return 'key';
+  if (prev.mfTempo && cur.mfTempo && Math.abs(cur.mfTempo - prev.mfTempo) >= 8)
+    return "bpm";
+  if (
+    !isHarmonicTransition(
+      prev.mfCamelotKey ?? prev.mfKey,
+      cur.mfCamelotKey ?? cur.mfKey,
+    )
+  ) {
+    return "key";
   }
   return null;
 }
@@ -117,7 +141,7 @@ export const PlaylistTrackListCard = memo(
     const artUrl = albumArtUrl(track?.imagePath);
     const label = trackLabel(track);
     const tempo = track?.mfTempo;
-    const rawKey = (track?.mfCamelotKey || track?.mfKey || '').trim();
+    const rawKey = (track?.mfCamelotKey || track?.mfKey || "").trim();
     const camelot = toCamelotCode(rawKey);
     const genreLine = formatGenreLine(track?.genres, track?.subgenres);
     const transition = transitionBefore(prevTrack, track);
@@ -126,31 +150,31 @@ export const PlaylistTrackListCard = memo(
       e.stopPropagation();
       if (currentTrack?.id !== track?.id) {
         setCurrentTrack(track as Track);
-        actions.play(track?.id || '');
+        actions.play(track?.id || "");
       } else if (isThisTrackPlaying) {
-        actions.pause(track?.id || '');
+        actions.pause(track?.id || "");
       } else {
-        actions.play(track?.id || '');
+        actions.play(track?.id || "");
       }
     };
 
     return (
       <div
-        aria-current={isCurrentTrack ? 'true' : undefined}
-        data-current={isCurrentTrack ? 'true' : undefined}
+        aria-current={isCurrentTrack ? "true" : undefined}
+        data-current={isCurrentTrack ? "true" : undefined}
         title={
-          transition === 'bpm'
-            ? 'Big BPM jump from the previous track'
-            : transition === 'key'
-              ? 'Key clash with the previous track'
+          transition === "bpm"
+            ? "Big BPM jump from the previous track"
+            : transition === "key"
+              ? "Key clash with the previous track"
               : undefined
         }
         className={cn(
           LEDGER_GRID,
-          'group py-2 transition-colors hover:bg-muted/50',
+          "group py-2 transition-colors hover:bg-muted/50",
           // a hairline grease-pencil mark on rows whose transition needs attention
-          transition && 'border-l-destructive/60',
-          isCurrentTrack && 'border-l-primary bg-primary/5',
+          transition && "border-l-destructive/60",
+          isCurrentTrack && "border-l-primary bg-primary/5",
         )}
       >
         {/* # / drag handle */}
@@ -167,8 +191,8 @@ export const PlaylistTrackListCard = memo(
           ) : null}
           <span
             className={cn(
-              'font-mono text-xs tabular-nums',
-              isCurrentTrack ? 'text-primary' : 'text-muted-foreground',
+              "font-mono text-xs tabular-nums",
+              isCurrentTrack ? "text-primary" : "text-muted-foreground",
             )}
           >
             {playlistTrack.position}
@@ -186,7 +210,10 @@ export const PlaylistTrackListCard = memo(
             className="h-9 w-9 rounded object-cover"
           />
         ) : (
-          <div className="flex h-9 w-9 items-center justify-center rounded bg-muted" aria-hidden>
+          <div
+            className="flex h-9 w-9 items-center justify-center rounded bg-muted"
+            aria-hidden
+          >
             <ListMusic className="h-4 w-4 text-muted-foreground" />
           </div>
         )}
@@ -195,34 +222,43 @@ export const PlaylistTrackListCard = memo(
         <div className="min-w-0">
           <div className="flex items-center gap-1.5">
             {isThisTrackPlaying && (
-              <AudioLines className="h-3.5 w-3.5 shrink-0 text-primary" aria-label="Now playing" />
+              <AudioLines
+                className="h-3.5 w-3.5 shrink-0 text-primary"
+                aria-label="Now playing"
+              />
             )}
-            <span className="truncate text-sm font-medium">{titleOf(track)}</span>
-            <AudioQualityBadge format={track?.format} hqAudioPath={track?.hqAudioPath} />
+            <span className="truncate text-sm font-medium">
+              {titleOf(track)}
+            </span>
+            <AudioQualityBadge
+              format={track?.format}
+              hqAudioPath={track?.hqAudioPath}
+            />
           </div>
           <p className="truncate text-xs text-muted-foreground">
             <span>{artistOf(track)}</span>
             {genreLine && <span className="capitalize"> · {genreLine}</span>}
             {/* BPM/key inline on mobile where the columns are hidden */}
             <span className="font-mono tabular-nums md:hidden">
-              {' · '}
-              {tempo ? `${Math.round(tempo)}` : '—'} BPM
-              {camelot ? ` · ${camelot}` : ''}
+              {" · "}
+              {tempo ? `${Math.round(tempo)}` : "—"} BPM
+              {camelot ? ` · ${camelot}` : ""}
             </span>
           </p>
         </div>
 
         {/* BPM column */}
         <div className="hidden text-right font-mono text-xs tabular-nums text-muted-foreground md:block">
-          {tempo ? Math.round(tempo) : '—'}
+          {tempo ? Math.round(tempo) : "—"}
         </div>
         {/* Key column */}
         <div className="hidden text-right font-mono text-xs tabular-nums text-muted-foreground md:block">
-          {camelot ?? (rawKey ? <span title={rawKey}>{rawKey.split(' ')[0]}</span> : '—')}
+          {camelot ??
+            (rawKey ? <span title={rawKey}>{rawKey.split(" ")[0]}</span> : "—")}
         </div>
         {/* Length column */}
         <div className="hidden text-right font-mono text-xs tabular-nums text-muted-foreground md:block">
-          {track?.duration ? formatTime(track.duration) : '—'}
+          {track?.duration ? formatTime(track.duration) : "—"}
         </div>
 
         {/* Actions — reserved lane, revealed on hover / when current */}
@@ -244,7 +280,7 @@ export const PlaylistTrackListCard = memo(
             size="iconSm"
             onClick={(e) => {
               e.stopPropagation();
-              addToQueueMutation.mutate(track?.id || '');
+              addToQueueMutation.mutate(track?.id || "");
             }}
             aria-label={`Add ${label} to queue`}
           >
@@ -254,19 +290,19 @@ export const PlaylistTrackListCard = memo(
             variant="ghost"
             size="iconSm"
             className="text-destructive hover:text-destructive"
-            onClick={() => handleRemoveTrack(track?.id || '')}
+            onClick={() => handleRemoveTrack(track?.id || "")}
             aria-label={`Remove ${label} from playlist`}
           >
             <Trash2 className="h-4 w-4" aria-hidden />
           </Button>
           <Button asChild size="iconSm" variant="ghost">
             <Link
-              to="/research/{-$trackId}"
-              params={{ trackId: track?.id ?? '' }}
+              to="/similar/{-$trackId}"
+              params={{ trackId: track?.id ?? "" }}
               preload="intent"
-              aria-label={`Open research for ${label}`}
+              aria-label={`Open similar tracks for ${label}`}
             >
-              <Brain className="h-4 w-4" aria-hidden />
+              <Radar className="h-4 w-4" aria-hidden />
             </Link>
           </Button>
         </div>
@@ -274,4 +310,4 @@ export const PlaylistTrackListCard = memo(
     );
   },
 );
-PlaylistTrackListCard.displayName = 'PlaylistTrackListCard';
+PlaylistTrackListCard.displayName = "PlaylistTrackListCard";

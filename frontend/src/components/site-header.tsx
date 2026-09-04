@@ -1,13 +1,13 @@
-import { Separator } from '@/components/ui/separator';
-import { SidebarTrigger } from '@/components/ui/sidebar';
-import { useLocation } from '@tanstack/react-router';
+import { Separator } from "@/components/ui/separator";
+import { SidebarTrigger } from "@/components/ui/sidebar";
+import { useLocation } from "@tanstack/react-router";
 
-import { Moon, Sun } from 'lucide-react';
-import { useTheme } from 'next-themes';
-import { useEffect } from 'react';
+import { Moon, Sun } from "lucide-react";
+import { useTheme } from "next-themes";
+import { useEffect } from "react";
 
-import { Switch } from '@/components/ui/switch';
-import { ScanProgress } from './scan-progress';
+import { Switch } from "@/components/ui/switch";
+import { ScanProgress } from "./scan-progress";
 
 interface SiteHeaderProps {}
 
@@ -15,7 +15,7 @@ export function SiteHeader(_props: SiteHeaderProps) {
   const location = useLocation();
   const { setTheme, resolvedTheme } = useTheme();
 
-  const isDark = resolvedTheme === 'dark';
+  const isDark = resolvedTheme === "dark";
 
   // Keyboard shortcut: CMD+J (Mac) or Ctrl+J (Windows/Linux) to toggle theme
   useEffect(() => {
@@ -30,34 +30,34 @@ export function SiteHeader(_props: SiteHeaderProps) {
       }
 
       // Check for CMD+J (Mac) or Ctrl+J (Windows/Linux)
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'j') {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "j") {
         event.preventDefault();
-        setTheme(isDark ? 'light' : 'dark');
+        setTheme(isDark ? "light" : "dark");
       }
     };
 
-    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown);
     return () => {
-      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener("keydown", handleKeyDown);
     };
   }, [isDark, setTheme]);
 
   // Get the current page title from the pathname
   const getPageTitle = (pathname: string) => {
-    if (pathname === '/') return 'Home';
-    if (pathname === '/music/harmonic') return 'Harmonic Mixing';
-    if (pathname === '/music') return 'Music';
-    if (pathname === '/pending') return 'Pending';
-    if (pathname === '/swipe') return 'Swipe';
-    if (pathname === '/libraries') return 'Libraries';
-    if (pathname.startsWith('/libraries/')) return 'Library';
-    if (pathname === '/playlists') return 'Playlists';
-    if (pathname.startsWith('/playlists/')) return 'Playlist Details';
-    if (pathname === '/favorites') return 'Favorites';
-    if (pathname === '/settings') return 'Settings';
-    if (pathname === '/research') return 'Research';
-    if (pathname.startsWith('/research/')) return 'Research';
-    return 'Muzo';
+    if (pathname === "/") return "Home";
+    if (pathname === "/music/harmonic") return "Harmonic Mixing";
+    if (pathname === "/music") return "Music";
+    if (pathname === "/pending") return "Pending";
+    if (pathname === "/swipe") return "Swipe";
+    if (pathname === "/libraries") return "Libraries";
+    if (pathname.startsWith("/libraries/")) return "Library";
+    if (pathname === "/playlists") return "Playlists";
+    if (pathname.startsWith("/playlists/")) return "Playlist Details";
+    if (pathname === "/favorites") return "Favorites";
+    if (pathname === "/settings") return "Settings";
+    if (pathname === "/similar") return "Similar";
+    if (pathname.startsWith("/similar/")) return "Similar";
+    return "Muzo";
   };
 
   return (
@@ -78,7 +78,9 @@ export function SiteHeader(_props: SiteHeaderProps) {
             <ScanProgress />
             <Switch
               checked={isDark}
-              onCheckedChange={(checked: boolean) => setTheme(checked ? 'dark' : 'light')}
+              onCheckedChange={(checked: boolean) =>
+                setTheme(checked ? "dark" : "light")
+              }
               aria-label="Toggle night mode"
             >
               {isDark ? (

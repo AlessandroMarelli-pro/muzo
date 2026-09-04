@@ -1,19 +1,22 @@
-import { Research } from '@/components/research/research';
-import { randomTrackQueryOptions, trackRecommendationsQueryOptions } from '@/services/api-hooks';
-import { createFileRoute } from '@tanstack/react-router';
-import { z } from 'zod';
+import { Similar } from "@/components/similar/similar";
+import {
+  randomTrackQueryOptions,
+  trackRecommendationsQueryOptions,
+} from "@/services/api-hooks";
+import { createFileRoute } from "@tanstack/react-router";
+import { z } from "zod";
 
-function ResearchTrackDetailPage() {
-  return <Research />;
+function SimilarTrackDetailPage() {
+  return <Similar />;
 }
 
-const researchSearchSchema = z.object({
+const similarSearchSchema = z.object({
   boost: z.string().optional(),
 });
 
-export const Route = createFileRoute('/research/{-$trackId}')({
-  component: ResearchTrackDetailPage,
-  validateSearch: researchSearchSchema,
+export const Route = createFileRoute("/similar/{-$trackId}")({
+  component: SimilarTrackDetailPage,
+  validateSearch: similarSearchSchema,
   staleTime: 10_000,
 
   loaderDeps: ({ search }) => ({

@@ -19,7 +19,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as SwipeIndexRouteImport } from './routes/swipe.index'
 import { Route as PlaylistsIndexRouteImport } from './routes/playlists.index'
 import { Route as LibrariesIndexRouteImport } from './routes/libraries.index'
-import { Route as ResearchChar123TrackIdChar125RouteImport } from './routes/research.{-$trackId}'
+import { Route as SimilarChar123TrackIdChar125RouteImport } from './routes/similar.{-$trackId}'
 import { Route as PlaylistsPlaylistIdRouteImport } from './routes/playlists.$playlistId'
 import { Route as MusicHarmonicRouteImport } from './routes/music_.harmonic'
 import { Route as LibrariesLibraryIdRouteImport } from './routes/libraries.$libraryId'
@@ -74,10 +74,10 @@ const LibrariesIndexRoute = LibrariesIndexRouteImport.update({
   path: '/libraries/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ResearchChar123TrackIdChar125Route =
-  ResearchChar123TrackIdChar125RouteImport.update({
-    id: '/research/{-$trackId}',
-    path: '/research/{-$trackId}',
+const SimilarChar123TrackIdChar125Route =
+  SimilarChar123TrackIdChar125RouteImport.update({
+    id: '/similar/{-$trackId}',
+    path: '/similar/{-$trackId}',
     getParentRoute: () => rootRouteImport,
   } as any)
 const PlaylistsPlaylistIdRoute = PlaylistsPlaylistIdRouteImport.update({
@@ -107,7 +107,7 @@ export interface FileRoutesByFullPath {
   '/libraries/$libraryId': typeof LibrariesLibraryIdRoute
   '/music/harmonic': typeof MusicHarmonicRoute
   '/playlists/$playlistId': typeof PlaylistsPlaylistIdRoute
-  '/research/{-$trackId}': typeof ResearchChar123TrackIdChar125Route
+  '/similar/{-$trackId}': typeof SimilarChar123TrackIdChar125Route
   '/libraries/': typeof LibrariesIndexRoute
   '/playlists/': typeof PlaylistsIndexRoute
   '/swipe/': typeof SwipeIndexRoute
@@ -123,7 +123,7 @@ export interface FileRoutesByTo {
   '/libraries/$libraryId': typeof LibrariesLibraryIdRoute
   '/music/harmonic': typeof MusicHarmonicRoute
   '/playlists/$playlistId': typeof PlaylistsPlaylistIdRoute
-  '/research/{-$trackId}': typeof ResearchChar123TrackIdChar125Route
+  '/similar/{-$trackId}': typeof SimilarChar123TrackIdChar125Route
   '/libraries': typeof LibrariesIndexRoute
   '/playlists': typeof PlaylistsIndexRoute
   '/swipe': typeof SwipeIndexRoute
@@ -140,7 +140,7 @@ export interface FileRoutesById {
   '/libraries/$libraryId': typeof LibrariesLibraryIdRoute
   '/music_/harmonic': typeof MusicHarmonicRoute
   '/playlists/$playlistId': typeof PlaylistsPlaylistIdRoute
-  '/research/{-$trackId}': typeof ResearchChar123TrackIdChar125Route
+  '/similar/{-$trackId}': typeof SimilarChar123TrackIdChar125Route
   '/libraries/': typeof LibrariesIndexRoute
   '/playlists/': typeof PlaylistsIndexRoute
   '/swipe/': typeof SwipeIndexRoute
@@ -158,7 +158,7 @@ export interface FileRouteTypes {
     | '/libraries/$libraryId'
     | '/music/harmonic'
     | '/playlists/$playlistId'
-    | '/research/{-$trackId}'
+    | '/similar/{-$trackId}'
     | '/libraries/'
     | '/playlists/'
     | '/swipe/'
@@ -174,7 +174,7 @@ export interface FileRouteTypes {
     | '/libraries/$libraryId'
     | '/music/harmonic'
     | '/playlists/$playlistId'
-    | '/research/{-$trackId}'
+    | '/similar/{-$trackId}'
     | '/libraries'
     | '/playlists'
     | '/swipe'
@@ -190,7 +190,7 @@ export interface FileRouteTypes {
     | '/libraries/$libraryId'
     | '/music_/harmonic'
     | '/playlists/$playlistId'
-    | '/research/{-$trackId}'
+    | '/similar/{-$trackId}'
     | '/libraries/'
     | '/playlists/'
     | '/swipe/'
@@ -207,7 +207,7 @@ export interface RootRouteChildren {
   LibrariesLibraryIdRoute: typeof LibrariesLibraryIdRoute
   MusicHarmonicRoute: typeof MusicHarmonicRoute
   PlaylistsPlaylistIdRoute: typeof PlaylistsPlaylistIdRoute
-  ResearchChar123TrackIdChar125Route: typeof ResearchChar123TrackIdChar125Route
+  SimilarChar123TrackIdChar125Route: typeof SimilarChar123TrackIdChar125Route
   LibrariesIndexRoute: typeof LibrariesIndexRoute
   PlaylistsIndexRoute: typeof PlaylistsIndexRoute
   SwipeIndexRoute: typeof SwipeIndexRoute
@@ -285,11 +285,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LibrariesIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/research/{-$trackId}': {
-      id: '/research/{-$trackId}'
-      path: '/research/{-$trackId}'
-      fullPath: '/research/{-$trackId}'
-      preLoaderRoute: typeof ResearchChar123TrackIdChar125RouteImport
+    '/similar/{-$trackId}': {
+      id: '/similar/{-$trackId}'
+      path: '/similar/{-$trackId}'
+      fullPath: '/similar/{-$trackId}'
+      preLoaderRoute: typeof SimilarChar123TrackIdChar125RouteImport
       parentRoute: typeof rootRouteImport
     }
     '/playlists/$playlistId': {
@@ -327,7 +327,7 @@ const rootRouteChildren: RootRouteChildren = {
   LibrariesLibraryIdRoute: LibrariesLibraryIdRoute,
   MusicHarmonicRoute: MusicHarmonicRoute,
   PlaylistsPlaylistIdRoute: PlaylistsPlaylistIdRoute,
-  ResearchChar123TrackIdChar125Route: ResearchChar123TrackIdChar125Route,
+  SimilarChar123TrackIdChar125Route: SimilarChar123TrackIdChar125Route,
   LibrariesIndexRoute: LibrariesIndexRoute,
   PlaylistsIndexRoute: PlaylistsIndexRoute,
   SwipeIndexRoute: SwipeIndexRoute,

@@ -1,37 +1,40 @@
-import { User } from '@/__generated__/types';
-import { AppSidebar, AppSidebarProps } from '@/components/layout/app-sidebar';
-import { EnhancedMusicPlayer } from '@/components/player/enhanced-music-player';
-import { SiteHeader } from '@/components/site-header';
-import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
-import { TooltipProvider } from '@/components/ui/tooltip';
-import { AudioPlayerProvider, useCurrentTrack } from '@/contexts/audio-player-context';
-import { AuthProvider, useAuth } from '@/contexts/auth-context';
-import { FilterProvider } from '@/contexts/filter-context';
-import { PlaybackProgressProvider } from '@/contexts/playback-progress-context';
-import { ScanSessionProvider } from '@/contexts/scan-session.context';
-import { cn } from '@/lib/utils';
-import { queryClient } from '@/query-client';
-import type { QueryClient } from '@tanstack/react-query';
-import { QueryClientProvider } from '@tanstack/react-query';
-import { RouteError, RouteNotFound } from '@/components/route-error';
+import { User } from "@/__generated__/types";
+import { AppSidebar, AppSidebarProps } from "@/components/layout/app-sidebar";
+import { EnhancedMusicPlayer } from "@/components/player/enhanced-music-player";
+import { SiteHeader } from "@/components/site-header";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import {
+  AudioPlayerProvider,
+  useCurrentTrack,
+} from "@/contexts/audio-player-context";
+import { AuthProvider, useAuth } from "@/contexts/auth-context";
+import { FilterProvider } from "@/contexts/filter-context";
+import { PlaybackProgressProvider } from "@/contexts/playback-progress-context";
+import { ScanSessionProvider } from "@/contexts/scan-session.context";
+import { cn } from "@/lib/utils";
+import { queryClient } from "@/query-client";
+import type { QueryClient } from "@tanstack/react-query";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { RouteError, RouteNotFound } from "@/components/route-error";
 import {
   createRootRouteWithContext,
   Outlet,
   useNavigate,
   useRouterState,
-} from '@tanstack/react-router';
+} from "@tanstack/react-router";
 import {
   BookHeadphones,
-  Brain,
   Clock3,
   Disc3,
   Heart,
   Home,
   Library,
   ListMusic,
-} from 'lucide-react';
-import { ThemeProvider, useTheme } from 'next-themes';
-import * as React from 'react';
+  Radar,
+} from "lucide-react";
+import { ThemeProvider, useTheme } from "next-themes";
+import * as React from "react";
 
 interface RouterContext {
   queryClient: QueryClient;
@@ -42,7 +45,7 @@ interface RouterContext {
 const MusicPlayerInset = React.memo(function MusicPlayerInset({
   className,
   ...props
-}: React.ComponentProps<'div'>) {
+}: React.ComponentProps<"div">) {
   const { currentTrack } = useCurrentTrack();
   // The player bar is always docked; it grows a little on mobile when a
   // track is loaded (extra scrubber row), hence the two reserved heights.
@@ -51,8 +54,8 @@ const MusicPlayerInset = React.memo(function MusicPlayerInset({
   return (
     <div
       className={cn(
-        ' flex w-full flex-col transition-[margin-bottom] duration-200 ease-linear   h-full ',
-        hasTrack ? 'mb-[7.5rem] sm:mb-[4.75rem]' : 'mb-[5.5rem] sm:mb-[4.5rem]',
+        " flex w-full flex-col transition-[margin-bottom] duration-200 ease-linear   h-full ",
+        hasTrack ? "mb-[7.5rem] sm:mb-[4.75rem]" : "mb-[5.5rem] sm:mb-[4.5rem]",
         className,
       )}
       {...props}
@@ -60,27 +63,32 @@ const MusicPlayerInset = React.memo(function MusicPlayerInset({
   );
 });
 
-const navigationData: AppSidebarProps['data'] = {
+const navigationData: AppSidebarProps["data"] = {
   sections: [
     {
       // Where the collection lives — the entry points for browsing and scanning.
-      label: 'Library',
+      label: "Library",
       items: [
-        { title: 'Home', url: '/', icon: Home },
-        { title: 'Music', url: '/music', icon: ListMusic },
-        { title: 'Harmonic', url: '/music/harmonic', icon: Disc3, preload: false },
-        { title: 'Libraries', url: '/libraries', icon: Library },
+        { title: "Home", url: "/", icon: Home },
+        { title: "Music", url: "/music", icon: ListMusic },
+        {
+          title: "Harmonic",
+          url: "/music/harmonic",
+          icon: Disc3,
+          preload: false,
+        },
+        { title: "Libraries", url: "/libraries", icon: Library },
       ],
     },
     {
       // The off-gig prep loop: triage what came back rough, dig, favourite,
       // assemble the set.
-      label: 'Prep',
+      label: "Prep",
       items: [
-        { title: 'Pending', url: '/pending', icon: Clock3, preload: false },
-        { title: 'Research', url: '/research', icon: Brain, preload: false },
-        { title: 'Favorites', url: '/favorites', icon: Heart },
-        { title: 'Playlists', url: '/playlists', icon: BookHeadphones },
+        { title: "Pending", url: "/pending", icon: Clock3, preload: false },
+        { title: "Similar", url: "/similar", icon: Radar, preload: false },
+        { title: "Favorites", url: "/favorites", icon: Heart },
+        { title: "Playlists", url: "/playlists", icon: BookHeadphones },
       ],
     },
   ],
@@ -89,17 +97,18 @@ function RootContent() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const navigate = useNavigate();
   const { isAuthenticated, isLoading } = useAuth();
-  const isAuthPage = pathname === '/login' || pathname === '/sign-up';
+  const isAuthPage = pathname === "/login" || pathname === "/sign-up";
 
   const { resolvedTheme } = useTheme();
 
   React.useEffect(() => {
-    document.documentElement.style.colorScheme = resolvedTheme === 'dark' ? 'dark' : 'light';
+    document.documentElement.style.colorScheme =
+      resolvedTheme === "dark" ? "dark" : "light";
   }, [resolvedTheme]);
 
   React.useEffect(() => {
     if (!isLoading && !isAuthenticated && !isAuthPage) {
-      void navigate({ to: '/login' });
+      void navigate({ to: "/login" });
     }
   }, [isLoading, isAuthenticated, isAuthPage, navigate]);
 

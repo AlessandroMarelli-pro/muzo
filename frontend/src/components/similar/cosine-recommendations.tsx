@@ -1,11 +1,18 @@
-import { capitalizeEveryWord, cn } from '@/lib/utils';
-import { type CosineRecommendedTrack, useCosineRecommendationsForTrack } from '@/services/playlist-hooks';
-import { ExternalLink, Play } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { capitalizeEveryWord, cn } from "@/lib/utils";
+import {
+  type CosineRecommendedTrack,
+  useCosineRecommendationsForTrack,
+} from "@/services/playlist-hooks";
+import { ExternalLink, Play } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 
 const HOVER_PREVIEW_DELAY_MS = 100;
 
-function CosineRecommendationCard({ track }: { track: CosineRecommendedTrack }) {
+function CosineRecommendationCard({
+  track,
+}: {
+  track: CosineRecommendedTrack;
+}) {
   const [isPreviewing, setIsPreviewing] = useState(false);
   const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -19,7 +26,10 @@ function CosineRecommendationCard({ track }: { track: CosineRecommendedTrack }) 
   const handleMouseEnter = () => {
     if (!track.videoId) return;
     clearHoverTimeout();
-    hoverTimeoutRef.current = setTimeout(() => setIsPreviewing(true), HOVER_PREVIEW_DELAY_MS);
+    hoverTimeoutRef.current = setTimeout(
+      () => setIsPreviewing(true),
+      HOVER_PREVIEW_DELAY_MS,
+    );
   };
 
   const handleMouseLeave = () => {
@@ -35,8 +45,8 @@ function CosineRecommendationCard({ track }: { track: CosineRecommendedTrack }) 
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
         className={cn(
-          'group relative block aspect-video w-full overflow-hidden rounded-xl bg-muted',
-          !track.videoId && 'opacity-60',
+          "group relative block aspect-video w-full overflow-hidden rounded-xl bg-muted",
+          !track.videoId && "opacity-60",
         )}
       >
         {isPreviewing && track.videoId ? (
@@ -77,7 +87,9 @@ function CosineRecommendationCard({ track }: { track: CosineRecommendedTrack }) 
           <p className="truncate text-sm font-medium leading-tight">
             {capitalizeEveryWord(track.title)}
           </p>
-          <p className="truncate text-xs text-muted-foreground">{capitalizeEveryWord(track.artist)}</p>
+          <p className="truncate text-xs text-muted-foreground">
+            {capitalizeEveryWord(track.artist)}
+          </p>
         </div>
         {track.externalLink && (
           <a
@@ -112,17 +124,24 @@ interface CosineRecommendationsProps {
 }
 
 export function CosineRecommendations({ trackId }: CosineRecommendationsProps) {
-  const { tracks, isLoading, error } = useCosineRecommendationsForTrack(trackId);
+  const { tracks, isLoading, error } =
+    useCosineRecommendationsForTrack(trackId);
 
   if (error) {
-    return <p className="text-sm text-destructive py-8">Failed to load recommendations: {error}</p>;
+    return (
+      <p className="text-sm text-destructive py-8">
+        Failed to load recommendations: {error}
+      </p>
+    );
   }
 
   if (isLoading) {
     return (
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
         {Array.from({ length: 8 }).map((_, i) => (
-          <CosineRecommendationCardSkeleton key={`cosine-recommendation-skeleton-${i}`} />
+          <CosineRecommendationCardSkeleton
+            key={`cosine-recommendation-skeleton-${i}`}
+          />
         ))}
       </div>
     );
@@ -139,7 +158,10 @@ export function CosineRecommendations({ trackId }: CosineRecommendationsProps) {
   return (
     <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
       {tracks.map((track) => (
-        <CosineRecommendationCard key={`${track.artist}::${track.title}`} track={track} />
+        <CosineRecommendationCard
+          key={`${track.artist}::${track.title}`}
+          track={track}
+        />
       ))}
     </div>
   );
