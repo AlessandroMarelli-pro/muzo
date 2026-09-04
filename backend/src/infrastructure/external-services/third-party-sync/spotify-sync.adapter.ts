@@ -7,6 +7,10 @@ import {
   SpotifyTrackMatchResult,
 } from 'src/application/ports/infrastructure/ISpotifySyncProvider';
 import {
+  IIntegrationSettingsRepository,
+  INTEGRATION_SETTINGS_REPOSITORY,
+} from 'src/application/ports/repositories/IIntegrationSettingsRepository';
+import {
   IOAuthTokenRepository,
   OAUTH_TOKEN_REPOSITORY,
 } from 'src/application/ports/repositories/IOAuthTokenRepository';
@@ -16,19 +20,27 @@ const AUTH_URL = 'https://accounts.spotify.com';
 
 @Injectable()
 export class SpotifySyncAdapter implements ISpotifySyncProvider {
-  private readonly clientId: string;
-  private readonly clientSecret: string;
   private readonly redirectUri: string;
 
   constructor(
     private readonly configService: ConfigService,
     @Inject(OAUTH_TOKEN_REPOSITORY)
     private readonly oauthTokenRepository: IOAuthTokenRepository,
+    @Inject(INTEGRATION_SETTINGS_REPOSITORY)
+    private readonly integrationSettingsRepository: IIntegrationSettingsRepository,
   ) {
-    this.clientId = this.configService.get<string>('SPOTIFY_CLIENT_ID') || '';
-    this.clientSecret = this.configService.get<string>('SPOTIFY_CLIENT_SECRET') || '';
     this.redirectUri =
       this.configService.get<string>('SPOTIFY_REDIRECT_URI') || 'http://localhost:3000';
+  }
+
+  /** Settings row wins per field; falls back to SPOTIFY_CLIENT_ID / _SECRET in the environment. */
+  private async resolveCreds(): Promise<{ clientId: string; clientSecret: string }> {
+    const s = await this.integrationSettingsRepository.get();
+    return {
+      clientId: s.spotifyClientId || this.configService.get<string>('SPOTIFY_CLIENT_ID') || '',
+      clientSecret:
+        s.spotifyClientSecret || this.configService.get<string>('SPOTIFY_CLIENT_SECRET') || '',
+    };
   }
 
   private base64URLEncode(buffer: Buffer): string {
@@ -47,8 +59,9 @@ export class SpotifySyncAdapter implements ISpotifySyncProvider {
     return { codeVerifier, codeChallenge };
   }
 
-  getAuthUrl(): SpotifyAuthUrlResult {
-    if (!this.clientId) throw new Error('Spotify OAuth2 not configured');
+  async getAuthUrl(): Promise<SpotifyAuthUrlResult> {
+    const { clientId } = await this.resolveCreds();
+    if (!clientId) throw new Error('Spotify OAuth2 not configured');
     const { codeVerifier, codeChallenge } = this.generatePKCE();
     const scopes = [
       'playlist-modify-public',
@@ -57,7 +70,7 @@ export class SpotifySyncAdapter implements ISpotifySyncProvider {
       'user-read-email',
     ].join(' ');
     const params = new URLSearchParams({
-      client_id: this.clientId,
+      client_id: clientId,
       response_type: 'code',
       redirect_uri: this.redirectUri,
       scope: scopes,
@@ -73,16 +86,17 @@ export class SpotifySyncAdapter implements ISpotifySyncProvider {
     codeVerifier: string,
     userId: string,
   ): Promise<{ accessToken: string; refreshToken: string }> {
-    if (!this.clientId) throw new Error('Spotify OAuth2 not configured');
+    const { clientId, clientSecret } = await this.resolveCreds();
+    if (!clientId) throw new Error('Spotify OAuth2 not configured');
     const tokenUrl = `${AUTH_URL}/api/token`;
     const params = new URLSearchParams({
       grant_type: 'authorization_code',
       code,
       redirect_uri: this.redirectUri,
-      client_id: this.clientId,
+      client_id: clientId,
       code_verifier: codeVerifier,
     });
-    const credentials = Buffer.from(`${this.clientId}:${this.clientSecret}`).toString('base64');
+    const credentials = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
     const response = await fetch(tokenUrl, {
       method: 'POST',
       headers: {
@@ -133,12 +147,13 @@ export class SpotifySyncAdapter implements ISpotifySyncProvider {
   }
 
   private async refreshAccessToken(userId: string, refreshToken: string): Promise<string> {
+    const { clientId, clientSecret } = await this.resolveCreds();
     const tokenUrl = `${AUTH_URL}/api/token`;
     const params = new URLSearchParams({
       grant_type: 'refresh_token',
       refresh_token: refreshToken,
     });
-    const credentials = Buffer.from(`${this.clientId}:${this.clientSecret}`).toString('base64');
+    const credentials = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
     const response = await fetch(tokenUrl, {
       method: 'POST',
       headers: {

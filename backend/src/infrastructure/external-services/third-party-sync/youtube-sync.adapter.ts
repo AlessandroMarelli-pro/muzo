@@ -6,39 +6,49 @@ import {
   VideoMatchResult,
 } from 'src/application/ports/infrastructure/IYouTubeSyncProvider';
 import {
+  IIntegrationSettingsRepository,
+  INTEGRATION_SETTINGS_REPOSITORY,
+} from 'src/application/ports/repositories/IIntegrationSettingsRepository';
+import {
   IOAuthTokenRepository,
   OAUTH_TOKEN_REPOSITORY,
 } from 'src/application/ports/repositories/IOAuthTokenRepository';
 
 @Injectable()
 export class YoutubeSyncAdapter implements IYouTubeSyncProvider {
-  private oauth2Client: Auth.OAuth2Client | null = null;
-
   constructor(
     private readonly configService: ConfigService,
     @Inject(OAUTH_TOKEN_REPOSITORY)
     private readonly oauthTokenRepository: IOAuthTokenRepository,
-  ) {
-    this.initializeOAuth2();
-  }
+    @Inject(INTEGRATION_SETTINGS_REPOSITORY)
+    private readonly integrationSettingsRepository: IIntegrationSettingsRepository,
+  ) {}
 
-  private initializeOAuth2(): void {
-    const clientId = this.configService.get<string>('YOUTUBE_CLIENT_ID');
-    const clientSecret = this.configService.get<string>('YOUTUBE_CLIENT_SECRET');
+  /**
+   * Builds a fresh OAuth2 client from the current credentials -- the settings row wins per field,
+   * falling back to YOUTUBE_CLIENT_ID / _SECRET / _REDIRECT_URI in the environment. Returns null
+   * when no client id/secret/redirect is available anywhere.
+   */
+  private async getOAuth2Client(): Promise<Auth.OAuth2Client | null> {
+    const s = await this.integrationSettingsRepository.get();
+    const clientId = s.youtubeClientId || this.configService.get<string>('YOUTUBE_CLIENT_ID');
+    const clientSecret =
+      s.youtubeClientSecret || this.configService.get<string>('YOUTUBE_CLIENT_SECRET');
     const redirectUri = this.configService.get<string>('YOUTUBE_REDIRECT_URI');
-    if (!clientId || !clientSecret || !redirectUri) return;
-    this.oauth2Client = new google.auth.OAuth2(clientId, clientSecret, redirectUri);
+    if (!clientId || !clientSecret || !redirectUri) return null;
+    return new google.auth.OAuth2(clientId, clientSecret, redirectUri);
   }
 
-  getAuthUrl(): string {
-    if (!this.oauth2Client) {
+  async getAuthUrl(): Promise<string> {
+    const oauth2Client = await this.getOAuth2Client();
+    if (!oauth2Client) {
       throw new Error('YouTube OAuth2 not configured');
     }
     const scopes = [
       'https://www.googleapis.com/auth/youtube',
       'https://www.googleapis.com/auth/youtube.force-ssl',
     ];
-    return this.oauth2Client.generateAuthUrl({
+    return oauth2Client.generateAuthUrl({
       access_type: 'offline',
       scope: scopes,
       prompt: 'consent',
@@ -49,10 +59,11 @@ export class YoutubeSyncAdapter implements IYouTubeSyncProvider {
     code: string,
     userId: string,
   ): Promise<{ accessToken: string; refreshToken: string }> {
-    if (!this.oauth2Client) {
+    const oauth2Client = await this.getOAuth2Client();
+    if (!oauth2Client) {
       throw new Error('YouTube OAuth2 not configured');
     }
-    const { tokens } = await this.oauth2Client.getToken(code);
+    const { tokens } = await oauth2Client.getToken(code);
     const accessToken = tokens.access_token;
     const refreshToken = tokens.refresh_token;
     if (!accessToken) {
@@ -80,11 +91,12 @@ export class YoutubeSyncAdapter implements IYouTubeSyncProvider {
   }
 
   private async refreshAccessToken(userId: string, refreshToken: string | null): Promise<string> {
-    if (!refreshToken || !this.oauth2Client) {
+    const oauth2Client = await this.getOAuth2Client();
+    if (!refreshToken || !oauth2Client) {
       throw new Error('No refresh token available');
     }
-    this.oauth2Client.setCredentials({ refresh_token: refreshToken });
-    const { credentials } = await this.oauth2Client.refreshAccessToken();
+    oauth2Client.setCredentials({ refresh_token: refreshToken });
+    const { credentials } = await oauth2Client.refreshAccessToken();
     const newAccessToken = credentials.access_token;
     if (!newAccessToken) {
       throw new Error('Failed to refresh access token');
@@ -176,10 +188,10 @@ export class YoutubeSyncAdapter implements IYouTubeSyncProvider {
     userId: string,
     maxResults: number,
   ): Promise<{ id: string; title: string; duration: number }[]> {
-    await this.setAuthCredentials(userId);
+    const oauth2Client = await this.getAuthedClient(userId);
     const youtube = google.youtube({
       version: 'v3',
-      auth: this.oauth2Client!,
+      auth: oauth2Client,
     });
     const response = await youtube.search.list({
       part: ['snippet', 'id'],
@@ -203,9 +215,12 @@ export class YoutubeSyncAdapter implements IYouTubeSyncProvider {
     }));
   }
 
-  private async setAuthCredentials(userId: string): Promise<void> {
+  private async getAuthedClient(userId: string): Promise<Auth.OAuth2Client> {
+    const oauth2Client = await this.getOAuth2Client();
+    if (!oauth2Client) throw new Error('YouTube OAuth2 not configured');
     const accessToken = await this.getAccessToken(userId);
-    this.oauth2Client?.setCredentials({ access_token: accessToken });
+    oauth2Client.setCredentials({ access_token: accessToken });
+    return oauth2Client;
   }
 
   private parseDuration(duration: string): number {
@@ -218,10 +233,10 @@ export class YoutubeSyncAdapter implements IYouTubeSyncProvider {
   }
 
   async createPlaylist(userId: string, name: string, description?: string): Promise<string> {
-    await this.setAuthCredentials(userId);
+    const oauth2Client = await this.getAuthedClient(userId);
     const youtube = google.youtube({
       version: 'v3',
-      auth: this.oauth2Client!,
+      auth: oauth2Client,
     });
     const response = await youtube.playlists.insert({
       part: ['snippet', 'status'],
@@ -239,10 +254,10 @@ export class YoutubeSyncAdapter implements IYouTubeSyncProvider {
   }
 
   async addVideosToPlaylist(userId: string, playlistId: string, videoIds: string[]): Promise<void> {
-    await this.setAuthCredentials(userId);
+    const oauth2Client = await this.getAuthedClient(userId);
     const youtube = google.youtube({
       version: 'v3',
-      auth: this.oauth2Client!,
+      auth: oauth2Client,
     });
     for (let i = 0; i < videoIds.length; i++) {
       try {

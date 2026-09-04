@@ -4,7 +4,7 @@ import type { ISpotifySyncProvider } from '../../ports/infrastructure/ISpotifySy
 export class GetSpotifyAuthUrlUseCase {
   constructor(private readonly spotifyProvider: ISpotifySyncProvider) {}
 
-  execute(): SpotifyAuthUrlResult {
+  execute(): Promise<SpotifyAuthUrlResult> {
     return this.spotifyProvider.getAuthUrl();
   }
 }

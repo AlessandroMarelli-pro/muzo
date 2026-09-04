@@ -1,5 +1,6 @@
 import {
   AiServiceSettingsId,
+  IntegrationSettingsId,
   CosineTrackMatchId,
   GenreId,
   HiddenMusicTrackId,
@@ -21,6 +22,7 @@ import { modelIdFactory } from '../ids/factory';
 import { modelFactory } from './factory';
 import {
   AiServiceSettings,
+  IntegrationSettings,
   CosineTrackMatch,
   Genre,
   HiddenMusicTrack,
@@ -65,5 +67,8 @@ export const models = {
   trackSubgenre: modelFactory<TrackSubgenre, TrackSubgenreId>(modelIdFactory('TrackSubgenre')),
   aiServiceSettings: modelFactory<AiServiceSettings, AiServiceSettingsId>(
     modelIdFactory('AiServiceSettings'),
+  ),
+  integrationSettings: modelFactory<IntegrationSettings, IntegrationSettingsId>(
+    modelIdFactory('IntegrationSettings'),
   ),
 };

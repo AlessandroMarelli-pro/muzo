@@ -14,7 +14,7 @@ export interface SpotifyTrackMatchResult {
 export const SPOTIFY_SYNC_PROVIDER = createToken<ISpotifySyncProvider>('SPOTIFY_SYNC_PROVIDER');
 
 export interface ISpotifySyncProvider {
-  getAuthUrl(): SpotifyAuthUrlResult;
+  getAuthUrl(): Promise<SpotifyAuthUrlResult>;
   exchangeCodeForTokens(
     code: string,
     codeVerifier: string,

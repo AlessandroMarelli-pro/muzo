@@ -69,8 +69,8 @@ export class ThirdPartySyncResolver {
   }
 
   @Query(() => YouTubeAuthUrl)
-  getYouTubeAuthUrl(): YouTubeAuthUrl {
-    const authUrl = this.getYouTubeAuthUrlUseCase.execute();
+  async getYouTubeAuthUrl(): Promise<YouTubeAuthUrl> {
+    const authUrl = await this.getYouTubeAuthUrlUseCase.execute();
     return { authUrl };
   }
 
@@ -107,8 +107,8 @@ export class ThirdPartySyncResolver {
   }
 
   @Query(() => TidalAuthUrl)
-  getTidalAuthUrl(): TidalAuthUrl {
-    const { authUrl, codeVerifier } = this.getTidalAuthUrlUseCase.execute();
+  async getTidalAuthUrl(): Promise<TidalAuthUrl> {
+    const { authUrl, codeVerifier } = await this.getTidalAuthUrlUseCase.execute();
     return { authUrl, codeVerifier };
   }
 
@@ -145,8 +145,8 @@ export class ThirdPartySyncResolver {
   }
 
   @Query(() => SpotifyAuthUrl)
-  getSpotifyAuthUrl(): SpotifyAuthUrl {
-    const { authUrl, codeVerifier } = this.getSpotifyAuthUrlUseCase.execute();
+  async getSpotifyAuthUrl(): Promise<SpotifyAuthUrl> {
+    const { authUrl, codeVerifier } = await this.getSpotifyAuthUrlUseCase.execute();
     return { authUrl, codeVerifier };
   }
 

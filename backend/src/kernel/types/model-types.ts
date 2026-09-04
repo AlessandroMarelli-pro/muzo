@@ -1,6 +1,7 @@
 import { Maybe, MaybeUndefined } from '../common';
 import type {
   AiServiceSettingsId,
+  IntegrationSettingsId,
   Brand,
   CosineTrackMatchId,
   GenreId,
@@ -43,7 +44,8 @@ export type Model =
   | QueueItem
   | HiddenMusicTrack
   | Session
-  | AiServiceSettings;
+  | AiServiceSettings
+  | IntegrationSettings;
 
 export type ModelBase<Id extends string | Brand<T, string> = string, T = unknown> = {
   id: Id;
@@ -409,4 +411,15 @@ export type AiServiceSettings = Readonly<ModelBase<AiServiceSettingsId>> & {
   lastfmApiKey: Maybe<string>;
   lastfmSecret: Maybe<string>;
   discogsApiKeys: Maybe<string>;
+};
+
+/** Singleton row (fixed id "singleton"). Third-party credentials the backend process reads. */
+export type IntegrationSettings = Readonly<ModelBase<IntegrationSettingsId>> & {
+  cosineApiKey: Maybe<string>;
+  spotifyClientId: Maybe<string>;
+  spotifyClientSecret: Maybe<string>;
+  tidalClientId: Maybe<string>;
+  tidalClientSecret: Maybe<string>;
+  youtubeClientId: Maybe<string>;
+  youtubeClientSecret: Maybe<string>;
 };

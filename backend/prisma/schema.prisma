@@ -493,6 +493,28 @@ model AiServiceSettings {
   @@map("ai_service_settings")
 }
 
+/// Singleton row (fixed id "singleton"). Third-party API credentials the BACKEND process reads --
+/// distinct from AiServiceSettings, which holds config for the ai-service container. Plaintext,
+/// same precedent as AiServiceSettings.authToken. Each field falls back to the matching env var
+/// when null, so an existing .env-configured install keeps working unchanged.
+model IntegrationSettings {
+  id                  String  @id @default("singleton")
+  cosineApiKey        String? // COSINE_API_KEY -- cosine.club playlist discovery
+  spotifyClientId     String? // SPOTIFY_CLIENT_ID
+  spotifyClientSecret String? // SPOTIFY_CLIENT_SECRET
+  tidalClientId       String? // TIDAL_CLIENT_ID
+  tidalClientSecret   String? // TIDAL_CLIENT_SECRET
+  youtubeClientId     String? // YOUTUBE_CLIENT_ID
+  youtubeClientSecret String? // YOUTUBE_CLIENT_SECRET
+
+  createdAt   DateTime  @default(now())
+  createdById String    @default("userId")
+  updatedAt   DateTime? @updatedAt
+  updatedById String?
+
+  @@map("integration_settings")
+}
+
 model ThirdPartyOAuthToken {
   id                String   @id @default(uuid())
   provider          String   // 'youtube', 'spotify', 'tidal', etc.

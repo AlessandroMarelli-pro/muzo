@@ -9,7 +9,7 @@ export interface VideoMatchResult {
 export const YOUTUBE_SYNC_PROVIDER = createToken<IYouTubeSyncProvider>('YOUTUBE_SYNC_PROVIDER');
 
 export interface IYouTubeSyncProvider {
-  getAuthUrl(): string;
+  getAuthUrl(): Promise<string>;
   exchangeCodeForTokens(
     code: string,
     userId: string,

@@ -42,6 +42,7 @@ import { RECOMMENDATION_SEARCH_PORT } from '../ports/queries/IRecommendationSear
 import { SAVED_FILTER_QUERY } from '../ports/queries/ISavedFilterQuery';
 import { TRACK_INDEXER_PORT } from '../ports/queries/ITrackIndexerPort';
 import { AI_SERVICE_SETTINGS_REPOSITORY } from '../ports/repositories/IAiServiceSettingsRepository';
+import { INTEGRATION_SETTINGS_REPOSITORY } from '../ports/repositories/IIntegrationSettingsRepository';
 import { AUDIO_ANALYSIS_REPOSITORY } from '../ports/repositories/IAudioAnalysisRepository';
 import { HIDDEN_MUSIC_TRACK_REPOSITORY } from '../ports/repositories/IHiddenMusicTrackRepository';
 import { IMAGE_SEARCH_REPOSITORY } from '../ports/repositories/IImageSearchRepository';
@@ -158,6 +159,10 @@ import {
   UpdateAiServiceApiKeysUseCase,
   UpdateAiServiceSettingsUseCase,
 } from './ai-service';
+import {
+  GetIntegrationSettingsUseCase,
+  UpdateIntegrationSettingsUseCase,
+} from './integration-settings';
 
 const useCasesProviders = [
   createUseCaseProvider(GetTrackUseCase, [MUSIC_TRACK_REPOSITORY]),
@@ -483,6 +488,8 @@ const useCasesProviders = [
     SCAN_SESSION_REPOSITORY,
     DOCKER_SCALING_SERVICE,
   ]),
+  createUseCaseProvider(GetIntegrationSettingsUseCase, [INTEGRATION_SETTINGS_REPOSITORY]),
+  createUseCaseProvider(UpdateIntegrationSettingsUseCase, [INTEGRATION_SETTINGS_REPOSITORY]),
 ];
 
 @Module({

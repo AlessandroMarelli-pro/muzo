@@ -7,6 +7,10 @@ import {
   CosineTrack,
   ICosineProvider,
 } from 'src/application/ports/infrastructure/ICosineProvider';
+import {
+  IIntegrationSettingsRepository,
+  INTEGRATION_SETTINGS_REPOSITORY,
+} from 'src/application/ports/repositories/IIntegrationSettingsRepository';
 import { normalizeForMatch } from 'src/application/use-cases/discovery/normalize-string';
 
 const BASE_URL = 'https://cosine.club/api/v1';
@@ -14,25 +18,31 @@ const SEARCH_CANDIDATES_LIMIT = 10;
 
 @Injectable()
 export class CosineAdapter implements ICosineProvider {
-  private readonly apiKey: string;
-
   constructor(
     private readonly configService: ConfigService,
     @Inject(LOGGER_FACTORY)
     loggerFactory: { createLogger: (name: string) => ILogger },
     @Inject(LOGGER)
     private readonly logger: ILogger,
+    @Inject(INTEGRATION_SETTINGS_REPOSITORY)
+    private readonly integrationSettingsRepository: IIntegrationSettingsRepository,
   ) {
-    this.apiKey = this.configService.get<string>('COSINE_API_KEY') || '';
     this.logger = loggerFactory.createLogger('CosineAdapter');
   }
 
+  /** Settings row wins; falls back to COSINE_API_KEY in the environment. */
+  private async resolveApiKey(): Promise<string> {
+    const settings = await this.integrationSettingsRepository.get();
+    return settings.cosineApiKey || this.configService.get<string>('COSINE_API_KEY') || '';
+  }
+
   private async makeRequest(path: string): Promise<unknown> {
-    if (!this.apiKey) return null;
+    const apiKey = await this.resolveApiKey();
+    if (!apiKey) return null;
     try {
       const response = await fetch(`${BASE_URL}${path}`, {
         headers: {
-          Authorization: `Bearer ${this.apiKey}`,
+          Authorization: `Bearer ${apiKey}`,
           'User-Agent': 'muzo/1.0',
         },
       });

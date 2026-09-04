@@ -156,6 +156,21 @@ type HqAudioBatchDownload {
   totalToDownload: Int!
 }
 
+type IntegrationSettings {
+  hasCosineApiKey: Boolean!
+  hasSpotifyClientId: Boolean!
+  hasSpotifyClientSecret: Boolean!
+  hasTidalClientId: Boolean!
+  hasTidalClientSecret: Boolean!
+  hasYoutubeClientId: Boolean!
+  hasYoutubeClientSecret: Boolean!
+}
+
+type IntegrationSettingsActionResult {
+  message: String!
+  success: Boolean!
+}
+
 type Library implements Node {
   analyzedTracks: Float!
   createdAt: Date!
@@ -233,6 +248,7 @@ type Mutation {
   toggleLike(trackId: Base64ID!): Track!
   updateAiServiceApiKeys(input: UpdateAiServiceApiKeysGqlInput!): AiServiceActionResult!
   updateAiServiceSettings(input: UpdateAiServiceSettingsGqlInput!): AiServiceActionResult!
+  updateIntegrationSettings(input: UpdateIntegrationSettingsGqlInput!): IntegrationSettingsActionResult!
   updatePlaylistSorting(input: UpdatePlaylistSortingInput!, playlistId: Base64ID!): PlaylistSorting!
   updatePlaylistTracksPositions(input: UpdatePlaylistPositionsInput!, playlistId: Base64ID!): Boolean!
   updateQueuePositions(input: UpdateQueuePositionsInput!): [QueueItem!]!
@@ -322,6 +338,7 @@ type Query {
   getSpotifyAuthUrl: SpotifyAuthUrl!
   getTidalAuthUrl: TidalAuthUrl!
   getYouTubeAuthUrl: YouTubeAuthUrl!
+  integrationSettings: IntegrationSettings!
   me: User!
 
   """
@@ -491,6 +508,16 @@ input UpdateAiServiceSettingsGqlInput {
   authToken: String
   mode: String!
   remoteUrl: String
+}
+
+input UpdateIntegrationSettingsGqlInput {
+  cosineApiKey: String
+  spotifyClientId: String
+  spotifyClientSecret: String
+  tidalClientId: String
+  tidalClientSecret: String
+  youtubeClientId: String
+  youtubeClientSecret: String
 }
 
 input UpdatePlaylistInput {

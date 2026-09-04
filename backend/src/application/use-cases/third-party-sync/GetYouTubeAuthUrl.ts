@@ -3,7 +3,7 @@ import type { IYouTubeSyncProvider } from '../../ports/infrastructure/IYouTubeSy
 export class GetYouTubeAuthUrlUseCase {
   constructor(private readonly youtubeProvider: IYouTubeSyncProvider) {}
 
-  execute(): string {
+  execute(): Promise<string> {
     return this.youtubeProvider.getAuthUrl();
   }
 }

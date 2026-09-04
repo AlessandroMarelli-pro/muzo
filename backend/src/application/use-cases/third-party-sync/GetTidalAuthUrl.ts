@@ -4,7 +4,7 @@ import type { ITidalSyncProvider } from '../../ports/infrastructure/ITidalSyncPr
 export class GetTidalAuthUrlUseCase {
   constructor(private readonly tidalProvider: ITidalSyncProvider) {}
 
-  execute(): TidalAuthUrlResult {
+  execute(): Promise<TidalAuthUrlResult> {
     return this.tidalProvider.getAuthUrl();
   }
 }

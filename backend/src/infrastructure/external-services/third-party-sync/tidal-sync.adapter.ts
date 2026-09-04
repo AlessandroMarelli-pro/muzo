@@ -7,6 +7,10 @@ import {
   TrackMatchResult,
 } from 'src/application/ports/infrastructure/ITidalSyncProvider';
 import {
+  IIntegrationSettingsRepository,
+  INTEGRATION_SETTINGS_REPOSITORY,
+} from 'src/application/ports/repositories/IIntegrationSettingsRepository';
+import {
   IOAuthTokenRepository,
   OAUTH_TOKEN_REPOSITORY,
 } from 'src/application/ports/repositories/IOAuthTokenRepository';
@@ -15,8 +19,6 @@ const BASE_URL = 'https://openapi.tidal.com/v2';
 
 @Injectable()
 export class TidalSyncAdapter implements ITidalSyncProvider {
-  private readonly clientId: string;
-  private readonly clientSecret: string;
   private readonly redirectUri: string;
   private readonly countryCode: string;
 
@@ -24,12 +26,22 @@ export class TidalSyncAdapter implements ITidalSyncProvider {
     private readonly configService: ConfigService,
     @Inject(OAUTH_TOKEN_REPOSITORY)
     private readonly oauthTokenRepository: IOAuthTokenRepository,
+    @Inject(INTEGRATION_SETTINGS_REPOSITORY)
+    private readonly integrationSettingsRepository: IIntegrationSettingsRepository,
   ) {
-    this.clientId = this.configService.get<string>('TIDAL_CLIENT_ID') || '';
-    this.clientSecret = this.configService.get<string>('TIDAL_CLIENT_SECRET') || '';
     this.redirectUri =
       this.configService.get<string>('TIDAL_REDIRECT_URI') || 'http://localhost:3000';
     this.countryCode = this.configService.get<string>('TIDAL_COUNTRY_CODE') || 'FR';
+  }
+
+  /** Settings row wins per field; falls back to TIDAL_CLIENT_ID / _SECRET in the environment. */
+  private async resolveCreds(): Promise<{ clientId: string; clientSecret: string }> {
+    const s = await this.integrationSettingsRepository.get();
+    return {
+      clientId: s.tidalClientId || this.configService.get<string>('TIDAL_CLIENT_ID') || '',
+      clientSecret:
+        s.tidalClientSecret || this.configService.get<string>('TIDAL_CLIENT_SECRET') || '',
+    };
   }
 
   private base64URLEncode(buffer: Buffer): string {
@@ -48,12 +60,13 @@ export class TidalSyncAdapter implements ITidalSyncProvider {
     return { codeVerifier, codeChallenge };
   }
 
-  getAuthUrl(): TidalAuthUrlResult {
-    if (!this.clientId) throw new Error('TIDAL OAuth2 not configured');
+  async getAuthUrl(): Promise<TidalAuthUrlResult> {
+    const { clientId } = await this.resolveCreds();
+    if (!clientId) throw new Error('TIDAL OAuth2 not configured');
     const { codeVerifier, codeChallenge } = this.generatePKCE();
     const scopes = ['playlists.read', 'playlists.write', 'user.read', 'search.read'].join(' ');
     const params = new URLSearchParams({
-      client_id: this.clientId,
+      client_id: clientId,
       redirect_uri: this.redirectUri,
       response_type: 'code',
       scope: scopes,
@@ -69,7 +82,8 @@ export class TidalSyncAdapter implements ITidalSyncProvider {
     codeVerifier: string,
     userId: string,
   ): Promise<{ accessToken: string; refreshToken: string }> {
-    if (!this.clientId || !this.clientSecret) {
+    const { clientId, clientSecret } = await this.resolveCreds();
+    if (!clientId || !clientSecret) {
       throw new Error('TIDAL OAuth2 not configured');
     }
     const tokenUrl = 'https://auth.tidal.com/v1/oauth2/token';
@@ -77,8 +91,8 @@ export class TidalSyncAdapter implements ITidalSyncProvider {
       grant_type: 'authorization_code',
       code,
       redirect_uri: this.redirectUri,
-      client_id: this.clientId,
-      client_secret: this.clientSecret,
+      client_id: clientId,
+      client_secret: clientSecret,
       code_verifier: codeVerifier,
     });
     const response = await fetch(tokenUrl, {
@@ -128,12 +142,13 @@ export class TidalSyncAdapter implements ITidalSyncProvider {
   }
 
   private async refreshAccessToken(userId: string, refreshToken: string): Promise<string> {
+    const { clientId, clientSecret } = await this.resolveCreds();
     const tokenUrl = 'https://auth.tidal.com/v1/oauth2/token';
     const params = new URLSearchParams({
       grant_type: 'refresh_token',
       refresh_token: refreshToken,
-      client_id: this.clientId,
-      client_secret: this.clientSecret,
+      client_id: clientId,
+      client_secret: clientSecret,
     });
     const response = await fetch(tokenUrl, {
       method: 'POST',

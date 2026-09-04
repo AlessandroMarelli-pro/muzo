@@ -19,7 +19,7 @@ export interface TrackMatchResult {
 export const TIDAL_SYNC_PROVIDER = createToken<ITidalSyncProvider>('TIDAL_SYNC_PROVIDER');
 
 export interface ITidalSyncProvider {
-  getAuthUrl(): TidalAuthUrlResult;
+  getAuthUrl(): Promise<TidalAuthUrlResult>;
   exchangeCodeForTokens(
     code: string,
     codeVerifier: string,
