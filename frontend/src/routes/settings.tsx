@@ -1,20 +1,24 @@
-import { PageHeader, PageShell } from '@/components/layout/page-shell';
-import { AccountConnections } from '@/components/settings/account-connections';
-import { AiServiceSettings } from '@/components/settings/ai-service-settings';
-import { IntegrationSettings } from '@/components/settings/integration-settings';
-import { createFileRoute } from '@tanstack/react-router';
+import { SettingsShell, type SettingsSection } from '@/components/settings/settings-shell';
+import { createFileRoute, useNavigate } from '@tanstack/react-router';
+import { z } from 'zod';
 
 function SettingsPage() {
+  const { section } = Route.useSearch();
+  const navigate = useNavigate({ from: Route.fullPath });
+
   return (
-    <PageShell className="max-w-2xl">
-      <PageHeader title="Settings" description="Connect the services Muzo syncs with." />
-      <AiServiceSettings />
-      <IntegrationSettings />
-      <AccountConnections />
-    </PageShell>
+    <SettingsShell
+      section={section}
+      onSectionChange={(next: SettingsSection) =>
+        navigate({ search: (prev) => ({ ...prev, section: next }) })
+      }
+    />
   );
 }
 
 export const Route = createFileRoute('/settings')({
   component: SettingsPage,
+  validateSearch: z.object({
+    section: z.enum(['analysis', 'streaming', 'discovery']).default('analysis'),
+  }),
 });
