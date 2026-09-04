@@ -3,6 +3,7 @@ import {
   favoritePlaylistQueryOptions,
   playlistRecommendationsQueryOptions,
 } from '@/services/playlist-hooks';
+import { RouteError, RouteNotFound } from '@/components/route-error';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { z } from 'zod';
 
@@ -25,6 +26,14 @@ function FavoritesRoute() {
 
 export const Route = createFileRoute('/favorites')({
   component: FavoritesRoute,
+  errorComponent: ({ error }) => (
+    <RouteError
+      title="Can't load your favorites"
+      message="Muzo couldn't reach the library service. Check that the backend is running, then try again."
+      error={error}
+    />
+  ),
+  notFoundComponent: () => <RouteNotFound title="Favorites unavailable" />,
   validateSearch: z.object({
     tab: z.enum(['tracks', 'recommendations']).default('tracks'),
   }),
