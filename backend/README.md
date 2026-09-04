@@ -32,7 +32,7 @@ Muzo Backend is the core API service for the Muzo music library application. It 
 - Real-time progress tracking via WebSockets
 - Background job processing for audio scanning and AI analysis
 - Integration with an external AI service for genre classification and audio fingerprinting
-- Smart recommendations powered by Elasticsearch
+- Smart recommendations powered by PostgreSQL + pgvector
 
 The backend is designed to handle large music libraries efficiently through asynchronous processing and intelligent caching.
 
@@ -46,7 +46,7 @@ The backend is designed to handle large music libraries efficiently through asyn
 - **Database** — Prisma ORM with PostgreSQL
 - **Queue System** — BullMQ for async audio scanning, metadata extraction, and AI analysis
 - **AI Integration** — Genre classification, BPM detection, audio fingerprinting, mood analysis
-- **Recommendations** — Smart track suggestions powered by Elasticsearch with customizable weights
+- **Recommendations** — Smart track suggestions powered by PostgreSQL + pgvector with customizable weights
 
 ### Audio & Playback
 
@@ -76,9 +76,8 @@ The backend is designed to handle large music libraries efficiently through asyn
 | ---------------- | ----------------------------------- |
 | Framework        | NestJS 11.x                         |
 | API              | GraphQL (Apollo Server 4.x)         |
-| Database         | Prisma 7.x + PostgreSQL              |
+| Database         | Prisma 7.x + PostgreSQL (pgvector)   |
 | Queues           | BullMQ 5.x + Redis (via ioredis)    |
-| Search           | Elasticsearch 9.x                   |
 | Real-time        | Socket.IO 4.x                       |
 | Language         | TypeScript 5.x                      |
 | Runtime          | Node.js 18+                         |
@@ -112,10 +111,10 @@ The backend is designed to handle large music libraries efficiently through asyn
 │  └────────────────────────────────────────────────────────────┘ │
 │         │                 │                    │                 │
 │         ▼                 ▼                    ▼                 │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────────────┐   │
-│  │   Prisma     │  │   BullMQ     │  │   Elasticsearch      │   │
-│  │  (Postgres)  │  │   (Redis)    │  │   (Search/Recs)      │   │
-│  └──────────────┘  └──────────────┘  └──────────────────────┘   │
+│  ┌──────────────────────────────┐  ┌──────────────────────┐     │
+│  │   Prisma                     │  │   BullMQ              │     │
+│  │  (Postgres + pgvector recs)  │  │   (Redis)             │     │
+│  └──────────────────────────────┘  └──────────────────────┘     │
 └─────────────────────────────────────────────────────────────────┘
                               │
                               ▼
@@ -133,10 +132,9 @@ The backend is designed to handle large music libraries efficiently through asyn
 ### Prerequisites
 
 - **Node.js** 18+ (LTS recommended)
-- **Docker & Docker Compose** (for Redis)
+- **Docker & Docker Compose** (for Postgres + Redis)
 - **npm** (comes with Node.js)
 - **AI Service** running on port 4000 (optional, for audio analysis)
-- **Elasticsearch** (optional, for recommendations)
 
 ### Quick Setup
 
@@ -209,8 +207,7 @@ backend/
 │   │   ├── app.config.ts          # App settings (port, cors, etc.)
 │   │   ├── database.config.ts     # Prisma/DB configuration
 │   │   ├── queue.config.ts        # BullMQ settings
-│   │   ├── ai-service.config.ts   # AI service connection config
-│   │   └── elasticsearch.config.ts
+│   │   └── ai-service.config.ts   # AI service connection config
 │   │
 │   ├── modules/
 │   │   ├── ai-integration/        # AI service client & types
@@ -281,14 +278,12 @@ backend/
 │   │   │       ├── audio-scan.processor.ts
 │   │   │       └── bpm-update.processor.ts
 │   │   │
-│   │   ├── recommendation/        # Smart recommendations + ES
+│   │   ├── recommendation/        # Smart recommendations (Postgres + pgvector)
 │   │   │   ├── recommendation.module.ts
 │   │   │   ├── controllers/
-│   │   │   │   ├── recommendation.controller.ts
 │   │   │   │   └── user-recommendation-preferences.controller.ts
 │   │   │   ├── services/
 │   │   │   │   ├── recommendation.service.ts
-│   │   │   │   ├── elasticsearch-sync.service.ts
 │   │   │   │   └── user-recommendation-preferences.service.ts
 │   │   │   ├── dto/
 │   │   │   │   └── recommendation.dto.ts
@@ -309,7 +304,6 @@ backend/
 │   │   ├── constants/
 │   │   └── services/
 │   │       ├── prisma.service.ts
-│   │       ├── elasticsearch.service.ts
 │   │       └── file-scanning.service.ts
 │   │
 │   ├── common/                    # Cross-cutting concerns
@@ -345,7 +339,7 @@ backend/
 ├── default-images/                # Fallback album art (3 defaults)
 ├── dist/                          # Compiled JavaScript output
 │
-├── docker-compose.yml             # Postgres, Redis, Elasticsearch, Kibana
+├── docker-compose.yml             # Postgres (pgvector), Redis
 │
 ├── bull-board.js                  # Queue monitoring UI server
 ├── setup-dev.sh                   # Development setup script
@@ -622,15 +616,11 @@ The GraphQL Playground is enabled by default in development mode.
 
 #### Recommendations
 
-| Method | Endpoint                                          | Description                  |
-| ------ | ------------------------------------------------- | ---------------------------- |
-| POST   | `/recommendations/playlist`                       | Get playlist recommendations |
-| GET    | `/recommendations/sync/:trackId`                  | Sync track to Elasticsearch  |
-| GET    | `/recommendations/sync-all`                       | Sync all tracks to ES        |
-| POST   | `/recommendations/recreate-index`                 | Recreate ES index            |
-| POST   | `/recommendations/update-mapping`                 | Update ES mapping            |
-| POST   | `/recommendations/test-genre-scoring/:playlistId` | Debug scoring                |
-| POST   | `/recommendations/debug/:playlistId`              | Debug recommendations        |
+Recommendations (track and playlist) are exposed via GraphQL, not REST -- see the
+`TrackRecommendation` type and resolvers in `music-track.resolver.ts` / `playlist.resolver.ts`.
+There is no separate recommendation index to sync or manage: scoring runs directly against
+Postgres (`AudioFingerprint.embeddingVector`, a pgvector column), and stays in sync automatically
+as tracks are analyzed.
 
 ---
 
@@ -992,14 +982,6 @@ Copy `env.template` to `.env` and configure:
 | `AI_RETRY_ATTEMPTS`    | `3`                     | Retry count            |
 | `AI_RETRY_DELAY`       | `1000`                  | Retry delay (ms)       |
 
-### Elasticsearch
-
-| Variable                 | Default                 | Description |
-| ------------------------ | ----------------------- | ----------- |
-| `ELASTICSEARCH_NODE`     | `http://localhost:9200` | ES endpoint |
-| `ELASTICSEARCH_USERNAME` | `elastic`               | Username    |
-| `ELASTICSEARCH_PASSWORD` | `changeme`              | Password    |
-
 ### Redis
 
 | Variable         | Default     | Description          |
@@ -1024,7 +1006,7 @@ Copy `env.template` to `.env` and configure:
 
 ## Docker
 
-A single `docker-compose.yml` runs every infra dependency: Postgres, Redis, and Elasticsearch + Kibana. Soulseek downloads go through the local `sockseek` CLI binary directly, not a container.
+A single `docker-compose.yml` runs every infra dependency: Postgres (with the `pgvector` extension) and Redis. Soulseek downloads go through the local `sockseek` CLI binary directly, not a container.
 
 ```bash
 # Start everything
@@ -1041,12 +1023,9 @@ npm run redis:logs
 
 # Access Redis CLI
 npm run redis:cli
-
-# Access Kibana (once elasticsearch is up)
-open http://localhost:5601
 ```
 
-Elasticsearch is required for the recommendation system.
+The recommendation system runs entirely inside Postgres via `pgvector` -- no separate service to start, sync, or manage.
 
 ---
 
@@ -1170,17 +1149,13 @@ Error: connect ECONNREFUSED 127.0.0.1:4000
 
 **Solution**: Ensure the AI service is running on port 4000, or the backend will still work but without AI analysis capabilities.
 
-#### Elasticsearch Connection Failed
+#### pgvector Extension Missing
 
 ```
-Error: connect ECONNREFUSED 127.0.0.1:9200
+Error: type "vector" does not exist
 ```
 
-**Solution**: Start Elasticsearch or disable recommendations:
-
-```bash
-docker-compose up -d elasticsearch kibana
-```
+**Solution**: This means Postgres is running from a plain `postgres` image instead of one with `pgvector` bundled. The bundled `docker-compose.yml` uses `pgvector/pgvector:pg16` for this reason -- if you're running your own Postgres instance instead, install the `pgvector` extension and run `CREATE EXTENSION IF NOT EXISTS vector;` on the `muzo` database before running migrations.
 
 ### Debugging
 

@@ -30,7 +30,7 @@ import { BetterAuthCatchAllMiddleware } from './infrastructure/auth/better-auth-
 import { AuthModule } from './infrastructure/auth/auth.module';
 import { BETTER_AUTH_INSTANCE } from './infrastructure/auth/auth.module';
 import { AiModule } from './infrastructure/external-services/ai/ai.module';
-import { ElasticsearchModule } from './infrastructure/external-services/elasticsearch/elasticsearch.module';
+import { PostgresRecommendationModule } from './infrastructure/external-services/postgres-recommendation/postgres-recommendation.module';
 import { DockerInfrastructureModule } from './infrastructure/docker/docker.module';
 import { NestjsLoggerModule } from './infrastructure/logging/nestjs-logger.module';
 
@@ -101,7 +101,7 @@ import { NestjsLoggerModule } from './infrastructure/logging/nestjs-logger.modul
 
     HttpModule,
     AdminMethodsModule,
-    ElasticsearchModule,
+    PostgresRecommendationModule,
     BullModule.forRootAsync({
       useFactory: (configService: ConfigService) => {
         const queueConfig = configService.get<QueueConfig>('queue');

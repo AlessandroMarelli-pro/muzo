@@ -8,7 +8,6 @@ import { HealthController } from './controllers/health.controller';
 import { HqAudioBatchProgressController } from './controllers/hq-audio-batch-progress.controller';
 import { ImageController } from './controllers/image.controller';
 import { OAuthRedirectController } from './controllers/oauth-redirect.controller';
-import { RecommendationController } from './controllers/recommendation.controller';
 import { ScanProgressController } from './controllers/scan-progress.controller';
 import { ScanTracksByCriteriaController } from './controllers/scan-tracks-by-criteria.controller';
 
@@ -17,7 +16,6 @@ import { ScanTracksByCriteriaController } from './controllers/scan-tracks-by-cri
   controllers: [
     ImageController,
     AudioStreamingController,
-    RecommendationController,
     HealthController,
     ScanProgressController,
     HqAudioBatchProgressController,

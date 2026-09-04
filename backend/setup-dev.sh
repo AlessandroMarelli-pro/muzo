@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Muzo Backend Development Setup Script
-# Brings up Postgres/Redis/Elasticsearch, runs migrations, and starts the dev server.
+# Brings up Postgres (with pgvector)/Redis, runs migrations, and starts the dev server.
 
 set -e
 
@@ -26,9 +26,9 @@ fi
 echo "📦 Installing dependencies..."
 npm install
 
-# Start infra containers (Postgres, Redis, Elasticsearch, Kibana)
-echo "🐳 Starting Postgres, Redis, and Elasticsearch containers..."
-docker-compose up -d postgres redis elasticsearch
+# Start infra containers (Postgres, Redis)
+echo "🐳 Starting Postgres and Redis containers..."
+docker-compose up -d postgres redis
 
 # Wait for Postgres to be ready
 echo "⏳ Waiting for Postgres to be ready..."
@@ -58,20 +58,6 @@ for i in $(seq 1 15); do
     sleep 2
 done
 
-# Wait for Elasticsearch to be ready (slower to start -- JVM cold start)
-echo "⏳ Waiting for Elasticsearch to be ready (this can take a minute)..."
-for i in $(seq 1 60); do
-    if curl -sf http://localhost:9200/_cluster/health > /dev/null 2>&1; then
-        echo "✅ Elasticsearch is ready!"
-        break
-    fi
-    if [ "$i" -eq 60 ]; then
-        echo "❌ Elasticsearch failed to start. Check logs with: docker-compose logs elasticsearch"
-        exit 1
-    fi
-    sleep 2
-done
-
 # Generate Prisma client
 echo "🔧 Generating Prisma client..."
 npm run prisma:generate
@@ -86,7 +72,6 @@ echo ""
 echo "Useful commands (in another terminal):"
 echo "- View Prisma Studio: npm run prisma:studio"
 echo "- Access Redis CLI: npm run redis:cli"
-echo "- Access Kibana: open http://localhost:5601"
 echo "- Stop everything: docker-compose down"
 echo ""
 

@@ -9,12 +9,45 @@ import { IAudioAnalysisRepository } from 'src/application/ports/repositories/IAu
 import { PRISMA_SERVICE, PrismaService } from 'src/infrastructure/database/prisma.service';
 import { extractModelId, MusicTrackId } from 'src/kernel/ids';
 import { getCurrentUserId, models } from 'src/kernel/types';
+import { Prisma } from '@prisma/client';
 import {
   toPrismaGenre,
   toPrismaSubgenre,
   toPrismaTrackGenre,
   toPrismaTrackSubgenre,
 } from './audio-analysis.mapper';
+
+const EMBEDDING_DIM = 1280;
+
+function isValidEmbeddingVector(vector: number[] | undefined): vector is number[] {
+  return (
+    Array.isArray(vector) &&
+    vector.length === EMBEDDING_DIM &&
+    vector.every((value) => Number.isFinite(value))
+  );
+}
+
+/**
+ * Prisma has no native `vector` type -- `AudioFingerprint.embeddingVector` is declared
+ * `Unsupported("vector(1280)")` and can only be written via raw SQL, never through the
+ * typed `upsert`/`update` API. Called after every write to the JSON-string `embedding`
+ * column so the two stay in sync (the pgvector column is what recommendation scoring
+ * reads; see infrastructure/external-services/postgres-recommendation).
+ */
+async function syncEmbeddingVector(
+  prisma: PrismaService,
+  trackId: MusicTrackId,
+  embedding: number[] | undefined,
+): Promise<void> {
+  if (!isValidEmbeddingVector(embedding)) {
+    return;
+  }
+  const { dbId } = extractModelId(trackId);
+  const vectorLiteral = `[${embedding.join(',')}]`;
+  await prisma.$executeRaw(
+    Prisma.sql`UPDATE "audio_fingerprints" SET "embeddingVector" = ${vectorLiteral}::vector WHERE "trackId" = ${dbId}`,
+  );
+}
 
 @Injectable()
 export class AudioAnalysisRepository implements IAudioAnalysisRepository {
@@ -94,6 +127,7 @@ export class AudioAnalysisRepository implements IAudioAnalysisRepository {
         createdById: getCurrentUserId(),
       },
     });
+    await syncEmbeddingVector(this.prisma, trackId, embedding?.vector);
   }
 
   async updateEmbedding(trackId: MusicTrackId, embedding: number[]): Promise<void> {
@@ -107,6 +141,7 @@ export class AudioAnalysisRepository implements IAudioAnalysisRepository {
         embeddingDim: embedding.length || null,
       },
     });
+    await syncEmbeddingVector(this.prisma, trackId, embedding);
   }
 
   async updateDiscogsClassifiers(

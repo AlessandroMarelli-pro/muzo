@@ -9,7 +9,7 @@ import { AddImageSearchRecordUseCase } from 'src/application/use-cases/image/Add
 import { ProcessBatchAudioScanUseCase } from 'src/application/use-cases/job-scheduler/ProcessBatchAudioScan';
 import { ProcessEndBatchAudioScanUseCase } from 'src/application/use-cases/job-scheduler/ProcessEndBatchAudioScan';
 import { ProcessSingleTrackAnalysisUseCase } from 'src/application/use-cases/job-scheduler/ProcessSingleTrackAnalysis';
-import { SyncTrackToElasticSearchUseCase } from 'src/application/use-cases/recommendation/SyncTrackToElasticSearch';
+import { SyncTrackToRecommendationIndexUseCase } from 'src/application/use-cases/recommendation/SyncTrackToRecommendationIndex';
 import { als } from 'src/kernel/types/context';
 
 const AUDIO_SCAN_CONCURRENCY = parseInt(process.env.AUDIO_SCAN_CONCURRENCY || '3', 10);
@@ -24,7 +24,7 @@ export class AudioScanSchedulerConsumerAdapter
     private readonly processSingleTrackAnalysisUseCase: ProcessSingleTrackAnalysisUseCase,
     private readonly addImageSearchRecordUseCase: AddImageSearchRecordUseCase,
     private readonly processEndBatchAudioScanUseCase: ProcessEndBatchAudioScanUseCase,
-    private readonly syncTrackToElasticSearchUseCase: SyncTrackToElasticSearchUseCase,
+    private readonly syncTrackToRecommendationIndexUseCase: SyncTrackToRecommendationIndexUseCase,
     @Inject(LOGGER_FACTORY)
     loggerFactory: { createLogger: (name: string) => ILogger },
     @Inject(LOGGER)
@@ -134,7 +134,7 @@ export class AudioScanSchedulerConsumerAdapter
               });
             }
 
-            await this.syncTrackToElasticSearchUseCase.execute(track.id);
+            await this.syncTrackToRecommendationIndexUseCase.execute(track.id);
           }),
         );
       }

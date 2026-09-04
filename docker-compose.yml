@@ -1,6 +1,6 @@
 # Root orchestration for the full distributable Muzo stack: this includes
-# backend/docker-compose.yml (postgres, redis, elasticsearch, kibana) and
-# adds the backend, frontend, and (optionally) ai-service containers on top.
+# backend/docker-compose.yml (postgres w/ pgvector, redis) and adds the
+# backend, frontend, and (optionally) ai-service containers on top.
 #
 # ai-service can run two ways, switchable live from Settings in the app (no
 # restart needed):
@@ -35,7 +35,6 @@ services:
     environment:
       - DATABASE_URL=${DATABASE_URL:-postgresql://muzo:muzo@postgres:5432/muzo}
       - REDIS_HOST=${REDIS_HOST:-redis}
-      - ELASTICSEARCH_NODE=${ELASTICSEARCH_NODE:-http://elasticsearch:9200}
     ports:
       - '${BACKEND_PORT:-3000}:3000'
     volumes:
@@ -57,8 +56,6 @@ services:
       postgres:
         condition: service_healthy
       redis:
-        condition: service_healthy
-      elasticsearch:
         condition: service_healthy
     restart: unless-stopped
     networks:

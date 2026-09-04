@@ -1,7 +1,7 @@
 #!/bin/bash
 # Updates an already-running Muzo instance: pulls the latest code, rebuilds
-# images, and restarts. Data volumes (Postgres, Elasticsearch, Redis) are
-# never touched -- your library survives an update.
+# images, and restarts. Data volumes (Postgres, Redis) are never touched --
+# your library survives an update.
 #
 # Database migrations run automatically on backend startup (see
 # backend/docker-entrypoint.sh) -- no separate migrate step needed here.

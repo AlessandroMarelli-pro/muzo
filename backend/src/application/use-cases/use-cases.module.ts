@@ -109,7 +109,6 @@ import {
   ProcessEndLibraryScanUseCase,
   ProcessSingleTrackAnalysisUseCase,
   ProcessStartLibraryScanUseCase,
-  RecreateElasticsearchIndexUseCase,
   RegisterPlayedTrackUseCase,
   RemoveTrackFromPlaylistUseCase,
   RemoveTrackFromQueueUseCase,
@@ -123,8 +122,7 @@ import {
   ServeImageUseCase,
   ServeTrackImageUseCase,
   StopLibraryScanUseCase,
-  SyncAllTracksToElasticsearchUseCase,
-  SyncTrackToElasticSearchUseCase,
+  SyncTrackToRecommendationIndexUseCase,
   ToggleBangerUseCase,
   ToggleDislikeUseCase,
   ToggleFavoriteUseCase,
@@ -231,13 +229,7 @@ const useCasesProviders = [
   createUseCaseProvider(UpdateQueuePositionsUseCase, [QUEUE_REPOSITORY]),
   createUseCaseProvider(GetHomeMetricsUseCase, [METRICS_QUERY]),
   createUseCaseProvider(GetWaveformDataUseCase, [AUDIO_WAVEFORM_GENERATOR, MUSIC_TRACK_REPOSITORY]),
-  createUseCaseProvider(RecreateElasticsearchIndexUseCase, [TRACK_INDEXER_PORT]),
-  createUseCaseProvider(SyncAllTracksToElasticsearchUseCase, [
-    MUSIC_TRACK_REPOSITORY,
-    TRACK_INDEXER_PORT,
-    RECOMMENDATION_DATA_PORT,
-  ]),
-  createUseCaseProvider(SyncTrackToElasticSearchUseCase, [
+  createUseCaseProvider(SyncTrackToRecommendationIndexUseCase, [
     TRACK_INDEXER_PORT,
     MUSIC_TRACK_REPOSITORY,
     LOGGER_FACTORY,

@@ -5,7 +5,7 @@ import { MusicTrackId } from 'src/kernel/ids';
 import { ITrackIndexerPort } from '../../ports/queries/ITrackIndexerPort';
 import { IMusicTrackRepository } from '../../ports/repositories/IMusicTrackRepository';
 
-export class SyncTrackToElasticSearchUseCase {
+export class SyncTrackToRecommendationIndexUseCase {
   constructor(
     private readonly trackIndexerPort: ITrackIndexerPort,
     private readonly musicTrackRepository: IMusicTrackRepository,
@@ -14,12 +14,12 @@ export class SyncTrackToElasticSearchUseCase {
     @Inject(LOGGER)
     private readonly logger: ILogger,
   ) {
-    this.logger = loggerFactory.createLogger('SyncTrackToElasticSearchUseCase');
+    this.logger = loggerFactory.createLogger('SyncTrackToRecommendationIndexUseCase');
   }
 
   async execute(trackId: MusicTrackId): Promise<void> {
     const track = await this.musicTrackRepository.getOneById(trackId);
-    this.logger.info('Syncing track to elasticsearch', {
+    this.logger.info('Syncing track to recommendation index', {
       trackId,
       track: {
         ...track,
