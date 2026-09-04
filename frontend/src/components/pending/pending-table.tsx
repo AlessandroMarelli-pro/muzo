@@ -100,6 +100,10 @@ export function PendingTable({
         'data-focused': row.original.id === focusedTrackId,
         className: cn(
           'cursor-pointer',
+          // Soft accent wash on the focused row; the left-edge marker bar is
+          // drawn on the first cell by DataTable (the <tr>'s content-visibility
+          // containment blocks a transition there). TableRow carries the
+          // background/box-shadow transition.
           'data-[focused=true]:bg-accent/50 data-[focused=true]:ring-1 data-[focused=true]:ring-ring data-[focused=true]:ring-inset',
         ),
       })}

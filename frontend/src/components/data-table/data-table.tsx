@@ -77,12 +77,18 @@ export function DataTable<TData>({
                       rowClassName,
                     )}
                   >
-                    {row.getVisibleCells().map((cell) => (
+                    {row.getVisibleCells().map((cell, cellIndex) => (
                       <TableCell
                         key={cell.id}
                         className={cn(
                           cell.column.getIsPinned() &&
                             'bg-background group-hover/row:bg-muted/50 group-data-[state=selected]/row:bg-muted group-data-[focused=true]/row:bg-accent/50',
+                          // The focused-row edge marker: a spot-blue bar on the
+                          // first cell that grows from nothing as focus lands.
+                          // Lives on the <td> (not the <tr>, whose
+                          // content-visibility containment blocks the transition).
+                          cellIndex === 0 &&
+                            'relative before:absolute before:inset-y-0 before:left-0 before:w-[3px] before:origin-center before:scale-y-0 before:bg-ring before:transition-transform before:duration-200 before:ease-[cubic-bezier(0.16,1,0.3,1)] group-data-[focused=true]/row:before:scale-y-100 motion-reduce:before:transition-none',
                         )}
                         style={{
                           ...getCommonPinningStyles({ column: cell.column }),

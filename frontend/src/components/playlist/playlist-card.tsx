@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils';
 import { usePlaylistActions } from '@/services/use-playlist-actions';
 import { useRouter } from '@tanstack/react-router';
 import { Eye } from 'lucide-react';
-import { AnimatePresence, motion } from 'motion/react';
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { useState } from 'react';
 import { Button } from '../ui/button';
 import { Card, CardContent } from '../ui/card';
@@ -48,6 +48,7 @@ export const PlaylistCardSkeleton = () => {
 
 export function PlaylistCard({ playlist, onViewDetails, onCardClick }: PlaylistCardProps) {
   const [isHovered, setIsHovered] = useState(false);
+  const reduceMotion = useReducedMotion();
   const router = useRouter();
   const refetch = () => router.invalidate();
   const actions = usePlaylistActions(playlist, { onDeleted: refetch, onChanged: refetch });
@@ -77,7 +78,7 @@ export function PlaylistCard({ playlist, onViewDetails, onCardClick }: PlaylistC
       className={cn(
         'flex flex-col rounded-none p-0 border-none bg-background gap-2 shadow-none',
         onCardClick &&
-          'cursor-pointer rounded-md focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
+          'cursor-pointer rounded-md transition-shadow duration-[200ms] ease-[cubic-bezier(0.16,1,0.3,1)] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
       )}
       onClick={handleCardClick}
       onKeyDown={handleCardKeyDown}
@@ -89,7 +90,7 @@ export function PlaylistCard({ playlist, onViewDetails, onCardClick }: PlaylistC
         onMouseLeave={() => {
           setIsHovered(false);
         }}
-        className="  flex justify-center items-center flex-wrap gap-0 p-0 max-w-65 max-h-60 min-w-65 min-h-60 shadow-md rounded-t-md hover:scale-105 transition-[opacity,transform] duration-300"
+        className="flex justify-center items-center flex-wrap gap-0 p-0 max-w-65 max-h-60 min-w-65 min-h-60 shadow-md rounded-t-md transition-[opacity,transform] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:scale-[1.03] active:scale-100 motion-reduce:hover:scale-100"
       >
         <AnimatePresence initial={false}>
           {isHovered && (
@@ -98,28 +99,43 @@ export function PlaylistCard({ playlist, onViewDetails, onCardClick }: PlaylistC
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.3, ease: 'easeInOut' }}
+              transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
             >
               <div className="absolute top-0 left-0 h-full w-full mask-t-from-0% mask-t-to-50% transition-[opacity,transform] duration-300 bg-background/90  rounded-t-md " />
-              <Button
-                size="icon"
-                variant="outline"
-                className="z-1000 absolute bottom-2 left-2 border-none"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleEdit();
-                }}
-                aria-label={`Open playlist ${playlist.name}`}
+              <motion.div
+                className="z-1000 absolute bottom-2 left-2"
+                initial={reduceMotion ? false : { opacity: 0, y: 4 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 4 }}
+                transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
               >
-                <Eye className="h-5 w-5" aria-hidden />
-              </Button>
-              <PlaylistActionsMenu
-                playlist={playlist}
-                actions={actions}
-                variant="card"
-                triggerClassName="z-1000 absolute bottom-2 right-2"
-                onTriggerClick={(e) => e.stopPropagation()}
-              />
+                <Button
+                  size="icon"
+                  variant="outline"
+                  className="border-none"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleEdit();
+                  }}
+                  aria-label={`Open playlist ${playlist.name}`}
+                >
+                  <Eye className="h-5 w-5" aria-hidden />
+                </Button>
+              </motion.div>
+              <motion.div
+                className="z-1000 absolute bottom-2 right-2"
+                initial={reduceMotion ? false : { opacity: 0, y: 4 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 4 }}
+                transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1], delay: reduceMotion ? 0 : 0.04 }}
+              >
+                <PlaylistActionsMenu
+                  playlist={playlist}
+                  actions={actions}
+                  variant="card"
+                  onTriggerClick={(e) => e.stopPropagation()}
+                />
+              </motion.div>
             </motion.div>
           )}
         </AnimatePresence>

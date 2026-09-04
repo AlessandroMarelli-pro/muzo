@@ -431,7 +431,9 @@ carries at least a 1rem radius.
 - **Ghost:** transparent at rest, hover fills `bg-accent`. For low-emphasis
   toolbar actions.
 - **Link:** spot-blue text, underline on hover.
-- **Transition:** `transition-colors` only. Focus: `ring-1 ring-ring` (spot blue).
+- **Transition:** colour, background, box-shadow and `transform` on the app's
+  `--ease-out` curve at `--dur-press` (120ms). **Press feedback:** `active:scale-[0.97]`
+  (reset under `prefers-reduced-motion`). Focus: `ring-1 ring-ring` (spot blue).
 - **Cursor:** buttons set `cursor-pointer` explicitly.
 
 ### Chips / Badges
@@ -528,7 +530,35 @@ light mode (flat `bg-card` in dark). This is the primary browse-a-lot pattern.
 - **Do** use Roboto Mono for BPM, key, duration, and file paths only.
 - **Do** support horizontal scrolling rails as a real browsing pattern.
 - **Do** honor `prefers-reduced-motion` — the base layer already forces near-zero
-  durations; keep motion non-essential.
+  durations; keep motion non-essential. `motion/react` components (WAAPI-driven,
+  not covered by the CSS clamp) must gate spatial props behind `useReducedMotion()`
+  and fall back to an opacity/colour transition.
+- **Do** draw timing from the shared scale in `index.css` — `--ease-out`
+  (`cubic-bezier(0.16,1,0.3,1)`, the confident-arrival curve), `--dur-press` 120ms,
+  `--dur-state` 200ms, `--dur-move` 320ms. `motion` components use the same numbers
+  (`{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }`).
+
+### Motion inventory
+- **Buttons** — press dip (see Buttons).
+- **Tabs** (`ui/tabs.tsx`) — same mechanism as the nav rail: one
+  absolutely-positioned marker element in `TabsList` that measures the active
+  trigger and slides between triggers via a CSS `transform`/`width` transition
+  (300ms, `--ease-out`). Re-measures on tab change (MutationObserver on
+  `data-state`) and resize; the first placement is transition-suppressed.
+- **Idle nudge** (`.nudge-idle` in `index.css`) — a small periodic hop
+  (`nudge-hop`, ~3.2s cycle, mostly rest) that draws the eye to an idle CTA;
+  stops on hover/focus/active and under `prefers-reduced-motion`. Used on the
+  home briefing's "Open playlist" button.
+- **Camelot wheel** (`harmonic/camelot-wheel.tsx`) — the one authored moment:
+  on select, compatible segments settle / the rest recede (`transition-[opacity,transform]`),
+  the chosen segment lifts `scale-1.04`, its outline draws in (`motion.path` `pathLength`),
+  and the centre label swaps.
+- **Pending table focus** (`data-table/data-table.tsx`) — 3px spot-blue bar on
+  the focused row's first cell, growing in via a `scale-y` transform transition
+  (200ms). Drawn on the `<td>`, not the `<tr>`, whose `content-visibility`
+  containment blocks the transition. Row tint fades via `TableRow`'s transition.
+- **Playlist card hover** (`playlist/playlist-card.tsx`) — art `scale-1.03`,
+  overlay + action buttons fade and rise (`y: 4 → 0`, 40ms stagger).
 
 ### Don't:
 - **Don't** introduce a second field colour. The spot blue is the whole palette;

@@ -193,10 +193,18 @@ function BriefingBlock({ briefing }: { briefing: Briefing }) {
     <div className="flex flex-col gap-3 rounded-xl border bg-card px-5 py-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
       <p className="text-base text-muted-foreground">{headline}</p>
       {action && (
-        <Button asChild variant="default" size="sm" className="shrink-0 gap-2 self-start sm:self-auto">
+        <Button
+          asChild
+          variant="default"
+          size="sm"
+          className="nudge-idle group shrink-0 gap-2 self-start sm:self-auto"
+        >
           <Link to={action.to} preload="intent">
             {action.label}
-            <ArrowRight className="h-4 w-4" aria-hidden />
+            <ArrowRight
+              className="h-4 w-4 transition-transform duration-[200ms] ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:translate-x-0.5"
+              aria-hidden
+            />
           </Link>
         </Button>
       )}

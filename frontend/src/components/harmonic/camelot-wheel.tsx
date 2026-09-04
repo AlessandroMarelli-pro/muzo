@@ -1,5 +1,6 @@
 import { CAMELOT_KEYS, getCompatibleKeys, normalizeCamelot } from '@/lib/camelot';
 import { cn } from '@/lib/utils';
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import * as React from 'react';
 
 interface CamelotWheelProps {
@@ -16,6 +17,9 @@ const MID_R = 108; // boundary between minor (outer) and major (inner)
 const INNER_R = 60; // major ring inner edge
 const LABEL_R_MINOR = (OUTER_R + MID_R) / 2;
 const LABEL_R_MAJOR = (MID_R + INNER_R) / 2;
+
+/** Confident-arrival curve, shared with the rest of the app (see index.css). */
+const EASE_OUT = [0.16, 1, 0.3, 1] as const;
 
 /** Polar → cartesian. Angle 0 = 12 o'clock, growing clockwise. */
 function pointOnCircle(radius: number, angleDeg: number) {
@@ -43,10 +47,15 @@ function segmentPath(rInner: number, rOuter: number, startAngle: number, endAngl
  * clock positions 1–12 clockwise from the top. Click a segment to select it;
  * harmonically compatible keys stay lit, everything else dims.
  *
+ * Selecting a key is the one authored moment on this screen: compatible
+ * segments settle into their lit state while the rest recede, the chosen
+ * segment lifts a hair out of the ring, and its outline draws itself in.
+ *
  * The traditional per-position hues live only here (see DESIGN.md — the one
  * screen where multi-hue is the domain content).
  */
 export function CamelotWheel({ selected, onSelect, className }: CamelotWheelProps) {
+  const reduce = useReducedMotion();
   const selectedCode = normalizeCamelot(selected);
   const compatible = React.useMemo(
     () => new Set(getCompatibleKeys(selectedCode)),
@@ -81,8 +90,13 @@ export function CamelotWheel({ selected, onSelect, className }: CamelotWheelProp
             <path
               d={segmentPath(rInner, rOuter, startAngle, endAngle)}
               fill={key.color}
+              style={{
+                transformBox: 'fill-box',
+                transformOrigin: 'center',
+                transform: isSelected && !reduce ? 'scale(1.04)' : undefined,
+              }}
               className={cn(
-                'cursor-pointer transition-opacity outline-none',
+                'cursor-pointer outline-none transition-[opacity,transform] duration-[200ms] ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none',
                 dimmed ? 'opacity-20' : 'opacity-100',
                 'hover:opacity-90 focus-visible:opacity-90',
               )}
@@ -106,7 +120,7 @@ export function CamelotWheel({ selected, onSelect, className }: CamelotWheelProp
               textAnchor="middle"
               dominantBaseline="central"
               className={cn(
-                'pointer-events-none font-mono',
+                'pointer-events-none font-mono transition-opacity duration-[200ms] ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none',
                 isMinor ? 'text-[11px]' : 'text-[10px]',
                 isSelected && 'font-semibold',
                 dimmed ? 'opacity-55' : 'opacity-100',
@@ -119,7 +133,8 @@ export function CamelotWheel({ selected, onSelect, className }: CamelotWheelProp
         );
       })}
 
-      {/* Selected-key outline, drawn on top so no neighbour clips it. */}
+      {/* Selected-key outline, drawn on top so no neighbour clips it. It
+          re-draws itself on every new selection. */}
       {selectedCode != null &&
         (() => {
           const key = CAMELOT_KEYS.find((k) => k.code === selectedCode);
@@ -129,27 +144,44 @@ export function CamelotWheel({ selected, onSelect, className }: CamelotWheelProp
           const rOuter = isMinor ? OUTER_R : MID_R;
           const centerAngle = (key.number % 12) * anglePer;
           return (
-            <path
-              d={segmentPath(rInner + 2, rOuter - 2, centerAngle - anglePer / 2, centerAngle + anglePer / 2)}
+            <motion.path
+              key={selectedCode}
+              d={segmentPath(
+                rInner + 2,
+                rOuter - 2,
+                centerAngle - anglePer / 2,
+                centerAngle + anglePer / 2,
+              )}
               fill="none"
               stroke="var(--ring)"
               strokeWidth={4}
               strokeLinejoin="round"
               pointerEvents="none"
+              initial={reduce ? false : { pathLength: 0, opacity: 0 }}
+              animate={{ pathLength: 1, opacity: 1 }}
+              transition={{ duration: reduce ? 0 : 0.45, ease: EASE_OUT }}
             />
           );
         })()}
 
-      <text
-        x={CENTER}
-        y={CENTER}
-        textAnchor="middle"
-        dominantBaseline="central"
-        className="pointer-events-none text-[11px]"
-        fill="var(--muted-foreground)"
-      >
-        {selectedCode ?? 'Camelot'}
-      </text>
+      <AnimatePresence mode="popLayout" initial={false}>
+        <motion.text
+          key={selectedCode ?? 'Camelot'}
+          x={CENTER}
+          y={CENTER}
+          textAnchor="middle"
+          dominantBaseline="central"
+          className="pointer-events-none text-[11px]"
+          fill="var(--muted-foreground)"
+          style={{ transformBox: 'fill-box', transformOrigin: 'center' }}
+          initial={reduce ? { opacity: 0 } : { opacity: 0, translateY: 4 }}
+          animate={{ opacity: 1, translateY: 0 }}
+          exit={reduce ? { opacity: 0 } : { opacity: 0, translateY: -4 }}
+          transition={{ duration: reduce ? 0 : 0.15, ease: EASE_OUT }}
+        >
+          {selectedCode ?? 'Camelot'}
+        </motion.text>
+      </AnimatePresence>
     </svg>
   );
 }

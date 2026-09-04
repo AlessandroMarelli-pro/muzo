@@ -49,6 +49,16 @@
   --shadow-2xl: 2px 2px 10px 4px hsl(228 2.8902% 66.0784% / 0.45);
   --tracking-normal: 0em;
   --spacing: 0.25rem;
+
+  /* Motion — one shared scale. `--ease-out` is the app's confident-arrival
+     curve (also written inline in nav-main.tsx). Durations express distance:
+     press feedback is near-instant, routine state changes settle, travel and
+     layout moves take longer. `motion/react` components use the same numbers
+     as { duration: 0.2, ease: [0.16, 1, 0.3, 1] }. */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --dur-press: 120ms;
+  --dur-state: 200ms;
+  --dur-move: 320ms;
 }
 
 .dark {
@@ -166,6 +176,37 @@ Retrieved 2026-01-14, License - CC BY-SA 4.0
       animation-iteration-count: 1 !important;
       transition-duration: 0.01ms !important;
     }
+  }
+}
+
+/* A small, periodic hop that draws the eye to an idle call-to-action without
+   nagging — a short bounce, then a long rest before it repeats. Pair with
+   `nudge-idle` and stop it on hover/focus (see `.nudge-idle`). */
+@keyframes nudge-hop {
+  0%,
+  82%,
+  100% {
+    transform: translateY(0);
+  }
+  88% {
+    transform: translateY(-3px);
+  }
+  94% {
+    transform: translateY(-1px);
+  }
+}
+
+.nudge-idle {
+  animation: nudge-hop 3.2s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+}
+.nudge-idle:hover,
+.nudge-idle:focus-visible,
+.nudge-idle:active {
+  animation: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .nudge-idle {
+    animation: none;
   }
 }
 

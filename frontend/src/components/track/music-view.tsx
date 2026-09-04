@@ -171,9 +171,9 @@ export const MusicView = React.memo<MusicViewProps>(function MusicView({
             </ToggleGroupItem>
           </ToggleGroup>
         )}
-        <Button asChild variant="outline" size="sm">
+        <Button asChild variant="outline" size="sm" className="group">
           <Link to="/music/harmonic">
-            <CircleDashed className="h-4 w-4" />
+            <CircleDashed className="h-4 w-4 transition-transform duration-[320ms] ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:rotate-90 motion-reduce:group-hover:rotate-0" />
             Harmonic
           </Link>
         </Button>
