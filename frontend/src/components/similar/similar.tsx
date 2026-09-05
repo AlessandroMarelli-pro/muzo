@@ -3,11 +3,12 @@ import { NoData } from "@/components/no-data";
 import { Toggle } from "@/components/ui/toggle";
 import { cn } from "@/lib/utils";
 import { Route } from "@/routes/similar.{-$trackId}";
-import { fetchRandomTrack } from "@/services/api-hooks";
+import { fetchRandomTrackWithStats } from "@/services/api-hooks";
 import { RECOMMENDATION_BOOSTS } from "@/services/recommendation-types";
 import { useNavigate, useRouter } from "@tanstack/react-router";
 import { Radar } from "lucide-react";
 import { useMemo } from "react";
+import { toast } from "sonner";
 import { TrackRecommandationsComponent } from "../playlist/track-recommendations";
 import { DetailedTrackCard } from "../track/detailed-track-card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
@@ -25,7 +26,11 @@ export function Similar() {
   } = Route.useLoaderData();
 
   const refetch = async () => {
-    const randomTrack = await fetchRandomTrack();
+    const { track: randomTrack } = await fetchRandomTrackWithStats();
+    if (!randomTrack) {
+      toast.error("No more tracks to explore.");
+      return;
+    }
     navigate({
       to: "/similar/{-$trackId}",
       params: { trackId: randomTrack.id },

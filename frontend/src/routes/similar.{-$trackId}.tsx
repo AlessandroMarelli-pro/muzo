@@ -29,6 +29,10 @@ export const Route = createFileRoute("/similar/{-$trackId}")({
 
     const boost = deps.boost ?? undefined;
 
+    if (!randomTrackId) {
+      return { randomTrack: undefined, trackRecommendations: [], isLoading: false };
+    }
+
     const randomTrack = await context.queryClient.ensureQueryData(
       randomTrackQueryOptions(randomTrackId),
     );

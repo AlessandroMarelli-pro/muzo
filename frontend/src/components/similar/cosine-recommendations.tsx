@@ -1,4 +1,5 @@
-import { capitalizeEveryWord, cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
+import { capitalizeEveryWord, cn, formatSimilarity } from "@/lib/utils";
 import {
   type CosineRecommendedTrack,
   useCosineRecommendationsForTrack,
@@ -80,6 +81,9 @@ function CosineRecommendationCard({
             )}
           </>
         )}
+        <Badge className="absolute right-2 top-2">
+          {formatSimilarity(track.score)} match
+        </Badge>
       </div>
 
       <div className="mt-2 flex items-start justify-between gap-2">
