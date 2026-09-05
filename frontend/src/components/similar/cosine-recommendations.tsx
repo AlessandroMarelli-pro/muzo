@@ -6,14 +6,17 @@ import {
 } from "@/services/playlist-hooks";
 import { ExternalLink, Play } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { NoData } from "../no-data";
+import { Skeleton } from "../ui/skeleton";
 
 const HOVER_PREVIEW_DELAY_MS = 100;
 
-function CosineRecommendationCard({
-  track,
-}: {
-  track: CosineRecommendedTrack;
-}) {
+/** Mirrors REC_GRID in track-recommendations-card.tsx so the Cosine tab reads
+ * as the same ledger, not a second layout language. */
+const COSINE_GRID =
+  "grid grid-cols-[2.5rem_minmax(0,1fr)_auto] items-center gap-x-3 border-l-2 border-l-transparent pl-3 pr-3";
+
+function CosineRecommendationRow({ track }: { track: CosineRecommendedTrack }) {
   const [isPreviewing, setIsPreviewing] = useState(false);
   const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -24,7 +27,7 @@ function CosineRecommendationCard({
     }
   };
 
-  const handleMouseEnter = () => {
+  const startPreview = () => {
     if (!track.videoId) return;
     clearHoverTimeout();
     hoverTimeoutRef.current = setTimeout(
@@ -33,92 +36,106 @@ function CosineRecommendationCard({
     );
   };
 
-  const handleMouseLeave = () => {
+  const stopPreview = () => {
     clearHoverTimeout();
     setIsPreviewing(false);
   };
 
   useEffect(() => clearHoverTimeout, []);
 
+  const artist = capitalizeEveryWord(track.artist);
+  const title = capitalizeEveryWord(track.title);
+  const label = `${artist} — ${title}`;
+
   return (
-    <div className="w-full">
+    <div className="border-b last:border-b-0">
       <div
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={handleMouseLeave}
-        className={cn(
-          "group relative block aspect-video w-full overflow-hidden rounded-xl bg-muted",
-          !track.videoId && "opacity-60",
-        )}
+        className={cn(COSINE_GRID, "group py-2 transition-colors hover:bg-muted/50")}
       >
-        {isPreviewing && track.videoId ? (
+        <div
+          onMouseEnter={startPreview}
+          onMouseLeave={stopPreview}
+          onFocus={startPreview}
+          onBlur={stopPreview}
+          tabIndex={track.videoId ? 0 : undefined}
+          role={track.videoId ? "button" : undefined}
+          aria-label={track.videoId ? `Preview ${label}` : undefined}
+          className={cn(
+            "relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded bg-muted focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
+            !track.videoId && "opacity-60",
+          )}
+        >
+          {track.videoId ? (
+            <>
+              <img
+                src={`https://i.ytimg.com/vi/${track.videoId}/hqdefault.jpg`}
+                alt=""
+                loading="lazy"
+                className="h-full w-full object-cover"
+              />
+              <div className="absolute inset-0 flex items-center justify-center bg-black/0 transition-colors group-hover:bg-black/40 group-focus-within:bg-black/40">
+                <Play className="h-3.5 w-3.5 fill-white text-white opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100" />
+              </div>
+            </>
+          ) : (
+            <span className="sr-only">No video match</span>
+          )}
+        </div>
+
+        <div className="min-w-0">
+          <div className="flex items-center gap-1.5">
+            <span className="truncate text-sm font-medium">{title}</span>
+          </div>
+          <div className="flex items-center gap-1.5 truncate text-xs text-muted-foreground">
+            <span className="truncate">{artist}</span>
+            <span className="shrink-0 text-border">·</span>
+            <span className="shrink-0 italic">{formatSimilarity(track.score)} match</span>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-end gap-1">
+          <Badge variant="secondary" className="hidden sm:inline-flex">
+            {formatSimilarity(track.score)}
+          </Badge>
+          {track.externalLink && (
+            <a
+              href={track.externalLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex h-8 w-8 items-center justify-center rounded text-muted-foreground opacity-0 transition-opacity hover:text-foreground focus-visible:opacity-100 group-hover:opacity-100"
+              aria-label={`View source for ${label}`}
+              title="View source"
+            >
+              <ExternalLink className="h-3.5 w-3.5" />
+            </a>
+          )}
+        </div>
+      </div>
+
+      {isPreviewing && track.videoId && (
+        <div className="mx-3 mb-3 aspect-video overflow-hidden rounded-xl bg-black">
           <iframe
             className="h-full w-full"
             src={`https://www.youtube.com/embed/${track.videoId}?autoplay=1`}
-            title={`${track.artist} - ${track.title}`}
+            title={label}
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
             allowFullScreen
           />
-        ) : (
-          <>
-            {track.videoId ? (
-              <img
-                src={`https://i.ytimg.com/vi/${track.videoId}/hqdefault.jpg`}
-                alt={`${track.artist} - ${track.title}`}
-                className="h-full w-full object-cover transition-transform group-hover:scale-105"
-                loading="lazy"
-              />
-            ) : (
-              <div className="flex h-full w-full items-center justify-center text-xs text-muted-foreground">
-                No video match
-              </div>
-            )}
-            {track.videoId && (
-              <div className="absolute inset-0 flex items-center justify-center bg-black/0 transition-colors group-hover:bg-black/30">
-                <div className="flex h-11 w-11 items-center justify-center rounded-full bg-black/70 opacity-0 transition-opacity group-hover:opacity-100">
-                  <Play className="h-5 w-5 fill-white text-white" />
-                </div>
-              </div>
-            )}
-          </>
-        )}
-        <Badge className="absolute right-2 top-2">
-          {formatSimilarity(track.score)} match
-        </Badge>
-      </div>
-
-      <div className="mt-2 flex items-start justify-between gap-2">
-        <div className="min-w-0">
-          <p className="truncate text-sm font-medium leading-tight">
-            {capitalizeEveryWord(track.title)}
-          </p>
-          <p className="truncate text-xs text-muted-foreground">
-            {capitalizeEveryWord(track.artist)}
-          </p>
         </div>
-        {track.externalLink && (
-          <a
-            href={track.externalLink}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="shrink-0 text-muted-foreground hover:text-foreground"
-            title="View source"
-          >
-            <ExternalLink className="h-3.5 w-3.5" />
-          </a>
-        )}
-      </div>
+      )}
     </div>
   );
 }
 
-function CosineRecommendationCardSkeleton() {
+function CosineRecommendationRowSkeleton() {
   return (
-    <div className="w-full animate-pulse">
-      <div className="aspect-video w-full rounded-xl bg-muted" />
-      <div className="mt-2 space-y-1.5">
-        <div className="h-3.5 w-3/4 rounded bg-muted" />
-        <div className="h-3 w-1/2 rounded bg-muted" />
+    <div className={cn(COSINE_GRID, "py-2.5")}>
+      <Skeleton className="h-9 w-9 rounded" />
+      <div className="min-w-0 space-y-1.5">
+        <Skeleton className="h-4 w-2/3" />
+        <Skeleton className="h-3 w-1/2" />
       </div>
+      <Skeleton className="h-6 w-12 justify-self-end" />
     </div>
   );
 }
@@ -128,24 +145,26 @@ interface CosineRecommendationsProps {
 }
 
 export function CosineRecommendations({ trackId }: CosineRecommendationsProps) {
-  const { tracks, isLoading, error } =
+  const { tracks, isLoading, error, refetch } =
     useCosineRecommendationsForTrack(trackId);
 
   if (error) {
     return (
-      <p className="text-sm text-destructive py-8">
-        Failed to load recommendations: {error}
-      </p>
+      <NoData
+        Icon={ExternalLink}
+        title="Couldn't load recommendations"
+        subtitle={error}
+        buttonAction={refetch}
+        buttonLabel="Try again"
+      />
     );
   }
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+      <div className="divide-y">
         {Array.from({ length: 8 }).map((_, i) => (
-          <CosineRecommendationCardSkeleton
-            key={`cosine-recommendation-skeleton-${i}`}
-          />
+          <CosineRecommendationRowSkeleton key={`cosine-recommendation-skeleton-${i}`} />
         ))}
       </div>
     );
@@ -160,12 +179,9 @@ export function CosineRecommendations({ trackId }: CosineRecommendationsProps) {
   }
 
   return (
-    <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+    <div className="divide-y">
       {tracks.map((track) => (
-        <CosineRecommendationCard
-          key={`${track.artist}::${track.title}`}
-          track={track}
-        />
+        <CosineRecommendationRow key={`${track.artist}::${track.title}`} track={track} />
       ))}
     </div>
   );

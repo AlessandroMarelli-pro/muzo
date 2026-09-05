@@ -612,7 +612,7 @@ export const fetchCosineRecommendationsForTrack = async (
 };
 
 export function useCosineRecommendationsForTrack(trackId?: string) {
-  const { data, isLoading, error } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['cosineRecommendationsForTrack', trackId],
     queryFn: () => fetchCosineRecommendationsForTrack(trackId!),
     enabled: !!trackId,
@@ -622,6 +622,7 @@ export function useCosineRecommendationsForTrack(trackId?: string) {
     tracks: data || [],
     isLoading,
     error: error?.message,
+    refetch,
   };
 }
 
