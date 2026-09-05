@@ -15,6 +15,7 @@ import {
   Download,
   FileDown,
   FolderDown,
+  GitMerge,
   ListMusic,
   MoreHorizontal,
   Pause,
@@ -131,6 +132,20 @@ export function PlaylistActionsMenu({
 
         {/* Maintenance */}
         <DropdownMenuGroup>
+          <DropdownMenuItem
+            onSelect={(e) => {
+              e.preventDefault();
+              void actions.duplicatePlaylist();
+            }}
+            disabled={disabled || pending.duplicate}
+          >
+            <Copy aria-hidden />
+            {pending.duplicate ? 'Duplicating…' : 'Duplicate playlist'}
+          </DropdownMenuItem>
+          <DropdownMenuItem onSelect={afterMenuCloses(actions.requestMerge)} disabled={disabled}>
+            <GitMerge aria-hidden />
+            Merge into new playlist…
+          </DropdownMenuItem>
           <DropdownMenuItem
             onSelect={afterMenuCloses(actions.requestRescan)}
             disabled={disabled || pending.rescan}

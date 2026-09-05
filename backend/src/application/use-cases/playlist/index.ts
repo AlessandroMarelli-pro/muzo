@@ -3,6 +3,8 @@ export * from './CreatePlaylist';
 export * from './CreatePlaylist.input';
 export * from './DeletePlaylist';
 export * from './DownloadPlaylistToFolder';
+export * from './DuplicatePlaylist';
+export * from './MergePlaylists';
 export * from './ExportPlaylistToM3U';
 export * from './GetFavorite';
 export * from './GetPlaylist';

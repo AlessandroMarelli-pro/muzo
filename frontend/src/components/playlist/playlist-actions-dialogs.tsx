@@ -10,6 +10,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import type { PlaylistActions } from '@/services/use-playlist-actions';
+import { MergePlaylistsDialog } from './merge-playlists-dialog';
 import { PlaylistHqBatchDownloadDialog } from './playlist-hq-batch-download-dialog';
 
 interface PlaylistActionsDialogsProps {
@@ -123,6 +124,12 @@ export function PlaylistActionsDialogs({
           actions.setHqDownloadOpen(nextOpen);
           if (!nextOpen) onHqDialogClosed?.();
         }}
+      />
+
+      <MergePlaylistsDialog
+        playlist={playlist}
+        open={actions.mergeOpen}
+        onOpenChange={actions.setMergeOpen}
       />
     </>
   );

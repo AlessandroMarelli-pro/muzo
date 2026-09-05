@@ -40,6 +40,18 @@ export class CreatePlaylistInput {
 }
 
 @InputType()
+export class MergePlaylistsInput {
+  @Field(() => Base64ID)
+  sourceIdA: string;
+
+  @Field(() => Base64ID)
+  sourceIdB: string;
+
+  @Field()
+  name: string;
+}
+
+@InputType()
 export class UpdatePlaylistInput {
   @Field({ nullable: true })
   name?: string;

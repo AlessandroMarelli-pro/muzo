@@ -204,6 +204,12 @@ type ListeningStats {
   totalPlays: Int!
 }
 
+input MergePlaylistsInput {
+  name: String!
+  sourceIdA: Base64ID!
+  sourceIdB: Base64ID!
+}
+
 type MusicPlayer {
   currentWaveformData(trackId: Base64ID!): [Float!]
 }
@@ -228,8 +234,10 @@ type Mutation {
   downloadHqAudio(trackId: Base64ID!): Boolean!
   downloadPlaylistHqAudio(playlistId: Base64ID!): HqAudioBatchDownload!
   downloadPlaylistToFolder(playlistId: Base64ID!): Boolean!
+  duplicatePlaylist(id: Base64ID!): Playlist!
   enhanceHqAudio(trackId: Base64ID!): Boolean!
   exportPlaylistToM3U(playlistId: Base64ID!): String!
+  mergePlaylists(input: MergePlaylistsInput!): Playlist!
   registerPlayedTrack(trackId: Base64ID!): Boolean!
   removeTrackFromPlaylist(playlistId: Base64ID!, trackId: Base64ID!): Boolean!
   removeTrackFromQueue(trackId: Base64ID!): RemoveTrackFromQueueResponse!

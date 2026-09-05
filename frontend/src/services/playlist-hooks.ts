@@ -87,6 +87,30 @@ const DELETE_PLAYLIST = gql`
   }
 `;
 
+const DUPLICATE_PLAYLIST = gql`
+  mutation DuplicatePlaylist($id: Base64ID!) {
+    duplicatePlaylist(id: $id) {
+      id
+      name
+      description
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+const MERGE_PLAYLISTS = gql`
+  mutation MergePlaylists($input: MergePlaylistsInput!) {
+    mergePlaylists(input: $input) {
+      id
+      name
+      description
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
 const EXPORT_PLAYLIST_TO_M3U = gql`
   mutation ExportPlaylistToM3U($playlistId: Base64ID!) {
     exportPlaylistToM3U(playlistId: $playlistId)
@@ -395,6 +419,24 @@ const deletePlaylist = async (
 ): Promise<{ success: boolean; name: string }> => {
   const data = await graffleClient.request<{ deletePlaylist: boolean }>(DELETE_PLAYLIST, { id });
   return { success: data.deletePlaylist, name };
+};
+
+const duplicatePlaylist = async (id: string): Promise<Playlist> => {
+  const data = await graffleClient.request<{ duplicatePlaylist: Playlist }>(DUPLICATE_PLAYLIST, {
+    id,
+  });
+  return data.duplicatePlaylist;
+};
+
+const mergePlaylists = async (input: {
+  sourceIdA: string;
+  sourceIdB: string;
+  name: string;
+}): Promise<Playlist> => {
+  const data = await graffleClient.request<{ mergePlaylists: Playlist }>(MERGE_PLAYLISTS, {
+    input,
+  });
+  return data.mergePlaylists;
 };
 
 const exportPlaylistToM3U = async (playlistId: string): Promise<string> => {
@@ -993,6 +1035,65 @@ export function useDeletePlaylist() {
     onError: (error: any) => {
       const errorMessage =
         error?.response?.errors?.[0]?.message || error?.message || 'Failed to delete playlist';
+      console.error(errorMessage);
+      toast.error(errorMessage, {
+        duration: 3000,
+      });
+    },
+  });
+}
+
+export function useDuplicatePlaylist() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => duplicatePlaylist(id),
+    onSuccess: async (data) => {
+      await queryClient.invalidateQueries({
+        queryKey: playlistsQueryOptions().queryKey,
+      });
+      await queryClient.refetchQueries({
+        queryKey: playlistsQueryOptions().queryKey,
+      });
+
+      toast.success(`Playlist duplicated successfully`, {
+        description: data.name,
+      });
+      return data;
+    },
+    onError: (error: any) => {
+      const errorMessage =
+        error?.response?.errors?.[0]?.message || error?.message || 'Failed to duplicate playlist';
+      console.error(errorMessage);
+      toast.error(errorMessage, {
+        duration: 3000,
+      });
+    },
+  });
+}
+
+export function useMergePlaylists() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: { sourceIdA: string; sourceIdB: string; name: string }) =>
+      mergePlaylists(input),
+    onSuccess: async (data) => {
+      await queryClient.invalidateQueries({
+        queryKey: playlistsQueryOptions().queryKey,
+      });
+      await queryClient.refetchQueries({
+        queryKey: playlistsQueryOptions().queryKey,
+      });
+
+      toast.success(`Playlists merged successfully`, {
+        description: data.name,
+      });
+      return data;
+    },
+    onError: (error: any) => {
+      const errorMessage =
+        error?.response?.errors?.[0]?.message || error?.message || 'Failed to merge playlists';
       console.error(errorMessage);
       toast.error(errorMessage, {
         duration: 3000,

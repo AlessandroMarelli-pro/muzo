@@ -4,11 +4,13 @@ import { PlaylistStatsLoader } from 'src/adapters/persistence/queries/playlist/p
 import {
   CreatePlaylistUseCase,
   DeletePlaylistUseCase,
+  DuplicatePlaylistUseCase,
   ExportPlaylistToM3UUseCase,
   DownloadPlaylistToFolderUseCase,
   GetPlaylistAutomixOrderUseCase,
   GetPlaylistRecommendationsUseCase,
   GetPlaylistSortingByPlaylistIdUseCase,
+  MergePlaylistsUseCase,
   SchedulePlaylistTracksScanUseCase,
   UpdatePlaylistUseCase,
 } from 'src/application/use-cases';
@@ -30,7 +32,11 @@ import { UpdatePlaylistSortingInput } from '../schema/playlist-sorting.input';
 import { PlaylistSorting } from '../schema/playlist-sorting.schema';
 import { PlaylistStats } from '../schema/playlist-stats.schema';
 import { PlaylistTrack } from '../schema/playlist-track.schema';
-import { CreatePlaylistInput, UpdatePlaylistInput } from '../schema/playlist.input';
+import {
+  CreatePlaylistInput,
+  MergePlaylistsInput,
+  UpdatePlaylistInput,
+} from '../schema/playlist.input';
 import { Playlist } from '../schema/playlist.schema';
 import { TrackRecommendation } from '../schema/recommendation.schema';
 
@@ -50,6 +56,8 @@ export class PlaylistResolver {
     private readonly startHqAudioBatchDownloadUseCase: StartHqAudioBatchDownloadUseCase,
     private readonly acquireHqAudioBatchUseCase: AcquireHqAudioBatchUseCase,
     private readonly schedulePlaylistTracksScanUseCase: SchedulePlaylistTracksScanUseCase,
+    private readonly duplicatePlaylistUseCase: DuplicatePlaylistUseCase,
+    private readonly mergePlaylistsUseCase: MergePlaylistsUseCase,
   ) {}
 
   @ResolveField(() => PlaylistStats)
@@ -135,6 +143,20 @@ export class PlaylistResolver {
   @Mutation(() => Boolean)
   async deletePlaylist(@Args('id', { type: () => Base64ID }) id: string): Promise<boolean> {
     return this.deletePlaylistUseCase.execute(parsePlaylistId(id));
+  }
+
+  @Mutation(() => Playlist)
+  async duplicatePlaylist(@Args('id', { type: () => Base64ID }) id: string): Promise<Playlist> {
+    return this.duplicatePlaylistUseCase.execute(parsePlaylistId(id));
+  }
+
+  @Mutation(() => Playlist)
+  async mergePlaylists(@Args('input') input: MergePlaylistsInput): Promise<Playlist> {
+    return this.mergePlaylistsUseCase.execute(
+      parsePlaylistId(input.sourceIdA),
+      parsePlaylistId(input.sourceIdB),
+      input.name,
+    );
   }
 
   /** (Re-)schedule DSP analysis for every track in a playlist. `force: true` re-analyses

@@ -236,6 +236,12 @@ export type ListeningStats = {
   totalPlays: Scalars['Int']['output'];
 };
 
+export type MergePlaylistsInput = {
+  name: Scalars['String']['input'];
+  sourceIdA: Scalars['Base64ID']['input'];
+  sourceIdB: Scalars['Base64ID']['input'];
+};
+
 export type MusicPlayer = {
   __typename?: 'MusicPlayer';
   currentWaveformData?: Maybe<Array<Scalars['Float']['output']>>;
@@ -267,8 +273,10 @@ export type Mutation = {
   downloadHqAudio: Scalars['Boolean']['output'];
   downloadPlaylistHqAudio: HqAudioBatchDownload;
   downloadPlaylistToFolder: Scalars['Boolean']['output'];
+  duplicatePlaylist: Playlist;
   enhanceHqAudio: Scalars['Boolean']['output'];
   exportPlaylistToM3U: Scalars['String']['output'];
+  mergePlaylists: Playlist;
   registerPlayedTrack: Scalars['Boolean']['output'];
   removeTrackFromPlaylist: Scalars['Boolean']['output'];
   removeTrackFromQueue: RemoveTrackFromQueueResponse;
@@ -395,6 +403,11 @@ export type MutationDownloadPlaylistToFolderArgs = {
 };
 
 
+export type MutationDuplicatePlaylistArgs = {
+  id: Scalars['Base64ID']['input'];
+};
+
+
 export type MutationEnhanceHqAudioArgs = {
   trackId: Scalars['Base64ID']['input'];
 };
@@ -402,6 +415,11 @@ export type MutationEnhanceHqAudioArgs = {
 
 export type MutationExportPlaylistToM3UArgs = {
   playlistId: Scalars['Base64ID']['input'];
+};
+
+
+export type MutationMergePlaylistsArgs = {
+  input: MergePlaylistsInput;
 };
 
 
@@ -1249,6 +1267,20 @@ export type DeletePlaylistMutationVariables = Exact<{
 
 
 export type DeletePlaylistMutation = { __typename?: 'Mutation', deletePlaylist: boolean };
+
+export type DuplicatePlaylistMutationVariables = Exact<{
+  id: Scalars['Base64ID']['input'];
+}>;
+
+
+export type DuplicatePlaylistMutation = { __typename?: 'Mutation', duplicatePlaylist: { __typename?: 'Playlist', id: any, name: string, description?: string | null, createdAt: any, updatedAt?: any | null } };
+
+export type MergePlaylistsMutationVariables = Exact<{
+  input: MergePlaylistsInput;
+}>;
+
+
+export type MergePlaylistsMutation = { __typename?: 'Mutation', mergePlaylists: { __typename?: 'Playlist', id: any, name: string, description?: string | null, createdAt: any, updatedAt?: any | null } };
 
 export type ExportPlaylistToM3UMutationVariables = Exact<{
   playlistId: Scalars['Base64ID']['input'];

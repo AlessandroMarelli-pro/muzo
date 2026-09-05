@@ -7,6 +7,7 @@ import {
 import {
   useDeletePlaylist,
   useDownloadPlaylistToFolder,
+  useDuplicatePlaylist,
   useExportPlaylistToM3U,
   useScanPlaylistTracks,
 } from '@/services/playlist-hooks';
@@ -25,6 +26,8 @@ export interface UsePlaylistActionsOptions {
   onDeleted?: () => void;
   /** Called after any mutation that changes playlist contents settles. */
   onChanged?: () => void;
+  /** Called after a playlist is successfully duplicated, with the new playlist's id. */
+  onDuplicated?: (newPlaylistId: string) => void;
 }
 
 /**
@@ -41,7 +44,7 @@ export interface UsePlaylistActionsOptions {
  */
 export function usePlaylistActions(
   playlist: Playlist | undefined,
-  { onDeleted, onChanged }: UsePlaylistActionsOptions = {},
+  { onDeleted, onChanged, onDuplicated }: UsePlaylistActionsOptions = {},
 ) {
   const { setCurrentTrack } = useCurrentTrack();
   const playerActions = useAudioPlayerActions();
@@ -52,12 +55,14 @@ export function usePlaylistActions(
   const removeTrackFromQueue = useRemoveTrackFromQueue();
 
   const deletePlaylistMutation = useDeletePlaylist();
+  const duplicatePlaylistMutation = useDuplicatePlaylist();
   const exportM3uMutation = useExportPlaylistToM3U();
   const copyFilesMutation = useDownloadPlaylistToFolder();
   const scanTracksMutation = useScanPlaylistTracks();
 
   const [confirm, setConfirm] = useState<PlaylistConfirmKind>(null);
   const [hqDownloadOpen, setHqDownloadOpen] = useState(false);
+  const [mergeOpen, setMergeOpen] = useState(false);
   const [isReplacingQueue, setIsReplacingQueue] = useState(false);
   const [isCopyingCsv, setIsCopyingCsv] = useState(false);
 
@@ -211,6 +216,23 @@ export function usePlaylistActions(
     }
   }, [playlist, deletePlaylistMutation, onDeleted]);
 
+  // ---- Duplicate ----------------------------------------------------------
+
+  const duplicatePlaylist = useCallback(async () => {
+    if (!playlist) return;
+    try {
+      const duplicated = await duplicatePlaylistMutation.mutateAsync(playlist.id);
+      onDuplicated?.(duplicated.id);
+    } catch (error) {
+      // useDuplicatePlaylist already toasts on error.
+      console.error('Failed to duplicate playlist:', error);
+    }
+  }, [playlist, duplicatePlaylistMutation, onDuplicated]);
+
+  // ---- Merge ----------------------------------------------------------
+
+  const requestMerge = useCallback(() => setMergeOpen(true), []);
+
   return {
     isPlaying,
 
@@ -222,6 +244,8 @@ export function usePlaylistActions(
     openHqBatchDownload,
     requestRescan,
     requestDelete,
+    duplicatePlaylist,
+    requestMerge,
 
     afterMenuCloses,
 
@@ -234,6 +258,9 @@ export function usePlaylistActions(
     hqDownloadOpen,
     setHqDownloadOpen,
 
+    mergeOpen,
+    setMergeOpen,
+
     queueCount: currentQueue.length,
 
     pending: {
@@ -243,6 +270,7 @@ export function usePlaylistActions(
       copyTracklistCsv: isCopyingCsv,
       rescan: scanTracksMutation.isPending,
       delete: deletePlaylistMutation.isPending,
+      duplicate: duplicatePlaylistMutation.isPending,
     },
   };
 }
