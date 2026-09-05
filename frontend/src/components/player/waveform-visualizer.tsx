@@ -1,3 +1,4 @@
+import { useIsPlaying } from '@/contexts/audio-player-context';
 import { cn } from '@/lib/utils';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
@@ -16,6 +17,112 @@ interface WaveformVisualizerProps {
 
 const BAR_GAP = 1;
 const BAR_WIDTH = 2;
+const BOUNDARY_SOFTEN_PX = 7;
+const REVEAL_MS = 480;
+const PLAYHEAD_LERP = 0.35;
+const PULSE_RADIUS_BARS = 5;
+
+function easeOutCubic(t: number) {
+  return 1 - (1 - t) ** 3;
+}
+
+interface DrawOptions {
+  bars: number[];
+  size: { w: number; h: number };
+  progress: number;
+  duration: number;
+  bpm?: number | null;
+  playheadX: number;
+  revealProgress: number;
+  pulsePhase: number;
+  pulseActive: boolean;
+  reducedMotion: boolean;
+}
+
+function drawWaveform(canvas: HTMLCanvasElement, opts: DrawOptions) {
+  const { bars, size, duration, bpm, playheadX, revealProgress, pulsePhase, pulseActive, reducedMotion } = opts;
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = size.w * dpr;
+  canvas.height = size.h * dpr;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return;
+  ctx.scale(dpr, dpr);
+  ctx.clearRect(0, 0, size.w, size.h);
+
+  const style = getComputedStyle(canvas);
+  const played = style.getPropertyValue('--wave-played').trim() || '#7c7fd6';
+  const unplayed = style.getPropertyValue('--wave-unplayed').trim() || '#c9cad6';
+  const grid = style.getPropertyValue('--wave-grid').trim() || 'rgba(124,127,214,0.16)';
+
+  const mid = size.h / 2;
+
+  // Phrase grid — short stubs at the top and bottom edge every 4 bars
+  // (a 16-beat phrase), so structure reads without a picket fence.
+  if (bpm && bpm > 0 && duration) {
+    const secondsPerPhrase = (60 / bpm) * 16;
+    // Skip if phrases would be closer than 24px apart — too dense to help.
+    const phrasePx = (secondsPerPhrase / duration) * size.w;
+    if (phrasePx >= 24) {
+      ctx.strokeStyle = grid;
+      ctx.lineWidth = 1;
+      const stub = Math.max(3, size.h * 0.14);
+      for (let t = secondsPerPhrase; t < duration; t += secondsPerPhrase) {
+        const x = Math.round((t / duration) * size.w) + 0.5;
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, stub);
+        ctx.moveTo(x, size.h - stub);
+        ctx.lineTo(x, size.h);
+        ctx.stroke();
+      }
+    }
+  }
+
+  // Peak bars. The played/unplayed boundary softens across a small window
+  // around the playhead instead of hard-cutting per pixel, and (while
+  // playing) the couple of bars nearest the playhead take a slight,
+  // disciplined amplitude lift — a needle reading live, not a flicker.
+  const barStep = BAR_WIDTH + BAR_GAP;
+  const pulseWindowPx = PULSE_RADIUS_BARS * barStep;
+  for (let i = 0; i < bars.length; i++) {
+    const x = i * barStep;
+
+    let reveal = 1;
+    if (!reducedMotion && revealProgress < 1) {
+      const barDelay = size.w > 0 ? x / size.w : 0;
+      const local = (revealProgress - barDelay * 0.6) / 0.4;
+      reveal = easeOutCubic(Math.min(1, Math.max(0, local)));
+    }
+
+    let amp = Math.max(0.03, bars[i]);
+    if (pulseActive && !reducedMotion) {
+      const dist = Math.abs(x - playheadX);
+      if (dist <= pulseWindowPx) {
+        const falloff = 1 - dist / pulseWindowPx;
+        amp *= 1 + 0.05 * falloff * Math.sin(pulsePhase);
+      }
+    }
+
+    const h = amp * (size.h - 4) * reveal;
+
+    const dist = x - playheadX;
+    if (dist < -BOUNDARY_SOFTEN_PX) {
+      ctx.fillStyle = played;
+    } else if (dist > BOUNDARY_SOFTEN_PX) {
+      ctx.fillStyle = unplayed;
+    } else {
+      const t = (dist + BOUNDARY_SOFTEN_PX) / (BOUNDARY_SOFTEN_PX * 2);
+      ctx.fillStyle = t < 0.5 ? played : unplayed;
+    }
+    ctx.fillRect(x, mid - h / 2, BAR_WIDTH, h);
+  }
+
+  // Playhead.
+  if (duration) {
+    ctx.fillStyle = played;
+    ctx.fillRect(Math.round(playheadX), 0, 1.5, size.h);
+  }
+}
 
 /**
  * The waveform IS the scrubber. It renders the track's peak envelope split at
@@ -37,6 +144,18 @@ export function WaveformVisualizer({
   const [hoverRatio, setHoverRatio] = useState<number | null>(null);
   const [size, setSize] = useState({ w: 0, h: 40 });
   const draggingRef = useRef(false);
+  const isPlaying = useIsPlaying();
+
+  const reducedMotionRef = useRef(false);
+  useEffect(() => {
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    reducedMotionRef.current = mq.matches;
+    const onChange = () => {
+      reducedMotionRef.current = mq.matches;
+    };
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, []);
 
   // Track playhead position from the audio element.
   useEffect(() => {
@@ -135,63 +254,92 @@ export function WaveformVisualizer({
 
   const progress = duration ? currentTime / duration : 0;
 
-  // Paint.
+  // "Print developing" bar entrance: when a new track's peaks land, sweep
+  // them in left-to-right instead of popping in fully formed.
+  const revealStartRef = useRef<number | null>(null);
+  const prevWaveformRef = useRef<number[]>(waveformData);
+  if (prevWaveformRef.current !== waveformData) {
+    prevWaveformRef.current = waveformData;
+    if (waveformData.length && !reducedMotionRef.current) {
+      revealStartRef.current = performance.now();
+    } else {
+      revealStartRef.current = null;
+    }
+  }
+
+  // Smoothed playhead x (lerped toward the true progress position) and the
+  // live-pulse phase, both advanced every animation frame while playing.
+  const displayXRef = useRef(0);
+  const pulsePhaseRef = useRef(0);
+
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas || size.w === 0) return;
-    const dpr = window.devicePixelRatio || 1;
-    canvas.width = size.w * dpr;
-    canvas.height = size.h * dpr;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-    ctx.scale(dpr, dpr);
-    ctx.clearRect(0, 0, size.w, size.h);
 
-    const style = getComputedStyle(canvas);
-    const played = style.getPropertyValue('--wave-played').trim() || '#7c7fd6';
-    const unplayed = style.getPropertyValue('--wave-unplayed').trim() || '#c9cad6';
-    const grid = style.getPropertyValue('--wave-grid').trim() || 'rgba(124,127,214,0.16)';
+    const reducedMotion = reducedMotionRef.current;
+    let rafId: number | null = null;
+    let lastFrame = performance.now();
 
-    const mid = size.h / 2;
-    const playedX = progress * size.w;
+    const revealProgressAt = (now: number) => {
+      const start = revealStartRef.current;
+      if (start === null) return 1;
+      const t = Math.min(1, (now - start) / REVEAL_MS);
+      if (t >= 1) revealStartRef.current = null;
+      return t;
+    };
 
-    // Phrase grid — short stubs at the top and bottom edge every 4 bars
-    // (a 16-beat phrase), so structure reads without a picket fence.
-    if (bpm && bpm > 0 && duration) {
-      const secondsPerPhrase = (60 / bpm) * 16;
-      // Skip if phrases would be closer than 24px apart — too dense to help.
-      const phrasePx = (secondsPerPhrase / duration) * size.w;
-      if (phrasePx >= 24) {
-        ctx.strokeStyle = grid;
-        ctx.lineWidth = 1;
-        const stub = Math.max(3, size.h * 0.14);
-        for (let t = secondsPerPhrase; t < duration; t += secondsPerPhrase) {
-          const x = Math.round((t / duration) * size.w) + 0.5;
-          ctx.beginPath();
-          ctx.moveTo(x, 0);
-          ctx.lineTo(x, stub);
-          ctx.moveTo(x, size.h - stub);
-          ctx.lineTo(x, size.h);
-          ctx.stroke();
-        }
+    const renderFrame = (targetX: number, now: number) => {
+      drawWaveform(canvas, {
+        bars,
+        size,
+        progress,
+        duration,
+        bpm,
+        playheadX: targetX,
+        revealProgress: revealProgressAt(now),
+        pulsePhase: pulsePhaseRef.current,
+        pulseActive: isPlaying && !!duration,
+        reducedMotion,
+      });
+    };
+
+    const targetX = progress * size.w;
+
+    if (reducedMotion || !isPlaying) {
+      // No interpolation: land exactly on the real position and stop.
+      displayXRef.current = targetX;
+      renderFrame(targetX, performance.now());
+      // Still let a bar-entrance sweep finish even when reduced motion is
+      // off but playback isn't running (e.g. paint right after track load).
+      if (revealStartRef.current !== null) {
+        const tick = (now: number) => {
+          renderFrame(targetX, now);
+          if (revealStartRef.current !== null) rafId = requestAnimationFrame(tick);
+        };
+        rafId = requestAnimationFrame(tick);
       }
+      return () => {
+        if (rafId !== null) cancelAnimationFrame(rafId);
+      };
     }
 
-    // Peak bars.
-    for (let i = 0; i < bars.length; i++) {
-      const x = i * (BAR_WIDTH + BAR_GAP);
-      const amp = Math.max(0.03, bars[i]);
-      const h = amp * (size.h - 4);
-      ctx.fillStyle = x < playedX ? played : unplayed;
-      ctx.fillRect(x, mid - h / 2, BAR_WIDTH, h);
-    }
+    const tick = (now: number) => {
+      const dt = now - lastFrame;
+      lastFrame = now;
+      const live = duration ? (audioRef.current?.currentTime ?? currentTime) / duration : progress;
+      const liveX = live * size.w;
+      const lerpAmount = 1 - (1 - PLAYHEAD_LERP) ** (dt / 16.7);
+      displayXRef.current += (liveX - displayXRef.current) * lerpAmount;
+      pulsePhaseRef.current += dt * 0.006;
+      renderFrame(displayXRef.current, now);
+      rafId = requestAnimationFrame(tick);
+    };
+    rafId = requestAnimationFrame(tick);
 
-    // Playhead.
-    if (duration) {
-      ctx.fillStyle = played;
-      ctx.fillRect(Math.round(playedX), 0, 1.5, size.h);
-    }
-  }, [bars, progress, size, bpm, duration]);
+    return () => {
+      if (rafId !== null) cancelAnimationFrame(rafId);
+    };
+  }, [bars, progress, size, bpm, duration, isPlaying, audioRef, currentTime]);
 
   const label = duration
     ? `Seek. ${Math.round(progress * 100)}% through the track.`
@@ -237,7 +385,7 @@ export function WaveformVisualizer({
       {/* Hover scrub hint. */}
       {hoverRatio !== null && duration && !isLoading && (
         <div
-          className="pointer-events-none absolute top-0 bottom-0 w-px bg-foreground/30"
+          className="pointer-events-none absolute top-0 bottom-0 w-px bg-foreground/30 transition-[left] duration-100 ease-out motion-reduce:transition-none"
           style={{ left: `${Math.min(100, Math.max(0, hoverRatio * 100))}%` }}
         />
       )}
