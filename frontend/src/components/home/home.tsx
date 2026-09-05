@@ -8,8 +8,8 @@ import { cn } from '@/lib/utils';
 import { librariesQueryOptions, recentlyPlayedQueryOptions } from '@/services/api-hooks';
 import { libraryMetricsQueryOptions } from '@/services/metrics-hooks';
 import { playlistsQueryOptions } from '@/services/playlist-hooks';
-import { Link, useNavigate } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
+import { Link, useNavigate } from '@tanstack/react-router';
 import { formatDistanceToNow, isAfter, subDays } from 'date-fns';
 import { ArrowRight, CircleDashed, FolderPlus, Loader2, PlugZap } from 'lucide-react';
 import * as React from 'react';
@@ -75,7 +75,8 @@ function useActiveScan() {
     // ScanStateEvent.overallProgress in ScanProgress.types.ts.
     const rawProgress =
       sessions.reduce((sum, s) => sum + (s.overallProgress || 0), 0) / sessions.length;
-    const progress = totalTracks > 0 ? Math.round((completedTracks / totalTracks) * 100) : Math.round(rawProgress);
+    const progress =
+      totalTracks > 0 ? Math.round((completedTracks / totalTracks) * 100) : Math.round(rawProgress);
     const etaSeconds =
       sessions.length === 1 && sessions[0]?.confidence !== 'warming-up'
         ? (sessions[0]?.etaSeconds ?? null)
@@ -520,7 +521,7 @@ export function Home() {
             <SectionHeading id="pipeline-heading">Your library</SectionHeading>
             <Button asChild variant="outline" size="sm" className="shrink-0 gap-2">
               <Link to="/music/harmonic" preload="intent">
-                <CircleDashed className="h-4 w-4" aria-hidden />
+                <CircleDashed className="h-4 w-4 " aria-hidden />
                 Harmonic
               </Link>
             </Button>

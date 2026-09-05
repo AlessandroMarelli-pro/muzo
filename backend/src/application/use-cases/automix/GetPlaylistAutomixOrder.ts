@@ -14,7 +14,7 @@ import { IPlaylistTrackRepository } from '../../ports/repositories/IPlaylistTrac
 const BPM_SCALE = 8;
 const KEY_WEIGHT = 1;
 const UNKNOWN_KEY_PENALTY = 1;
-const EMBED_WEIGHT = 40;
+const EMBED_WEIGHT = 10;
 
 export class GetPlaylistAutomixOrderUseCase {
   constructor(private readonly playlistTrackRepository: IPlaylistTrackRepository) {}

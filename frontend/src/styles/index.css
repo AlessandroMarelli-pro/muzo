@@ -184,7 +184,7 @@ Retrieved 2026-01-14, License - CC BY-SA 4.0
    `nudge-idle` and stop it on hover/focus (see `.nudge-idle`). */
 @keyframes nudge-hop {
   0%,
-  82%,
+  50%,
   100% {
     transform: translateY(0);
   }
@@ -197,7 +197,7 @@ Retrieved 2026-01-14, License - CC BY-SA 4.0
 }
 
 .nudge-idle {
-  animation: nudge-hop 3.2s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+  animation: nudge-hop 1.2s cubic-bezier(0.16, 1, 0.3, 1) infinite;
 }
 .nudge-idle:hover,
 .nudge-idle:focus-visible,
