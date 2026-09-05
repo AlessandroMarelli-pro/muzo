@@ -266,6 +266,8 @@ const DISCOVER_SIMILAR_TRACKS_FOR_PLAYLIST = gql`
   query DiscoverSimilarTracksForPlaylist($playlistId: Base64ID!, $userId: String!) {
     discoverSimilarTracksForPlaylist(playlistId: $playlistId, userId: $userId) {
       sourceArtist
+      sourceTitle
+      sourceImagePath
       artist
       title
       matchScore
@@ -576,6 +578,8 @@ export const fetchPlaylistRecommendations = async (
 
 export interface DiscoveredTrack {
   sourceArtist: string;
+  sourceTitle: string;
+  sourceImagePath?: string | null;
   artist: string;
   title: string;
   matchScore: number;

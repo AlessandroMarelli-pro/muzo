@@ -98,6 +98,8 @@ type DiscoveredTrack {
   externalLink: String
   matchScore: Float!
   sourceArtist: String!
+  sourceImagePath: String
+  sourceTitle: String!
   title: String!
   videoId: String
 }

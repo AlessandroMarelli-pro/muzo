@@ -12,6 +12,8 @@ import { forgetCosineTrackMatch, resolveCosineTrackId } from './resolve-cosine-t
 
 export type DiscoveredTrack = {
   sourceArtist: string;
+  sourceTitle: string;
+  sourceImagePath?: string;
   artist: string;
   title: string;
   matchScore: number;
@@ -24,6 +26,7 @@ type ArtistSeed = {
   musicTrackId: MusicTrackId;
   artist: string;
   title: string;
+  imagePath?: string;
   durationSeconds: number;
 };
 
@@ -105,6 +108,7 @@ export class DiscoverSimilarTracksForPlaylistUseCase {
           musicTrackId: playlistTrack.track.id,
           artist,
           title,
+          imagePath: playlistTrack.track.imagePath,
           durationSeconds: playlistTrack.track.technicalInfo?.duration ?? 0,
         });
       }
@@ -126,6 +130,8 @@ export class DiscoverSimilarTracksForPlaylistUseCase {
 
     type Candidate = {
       sourceArtist: string;
+      sourceTitle: string;
+      sourceImagePath?: string;
       artist: string;
       title: string;
       matchScore: number;
@@ -176,6 +182,8 @@ export class DiscoverSimilarTracksForPlaylistUseCase {
 
         candidates.set(key, {
           sourceArtist: seed.artist,
+          sourceTitle: seed.title,
+          sourceImagePath: seed.imagePath,
           artist: candidate.artist,
           title: candidate.title,
           matchScore: candidate.score,
@@ -199,6 +207,8 @@ export class DiscoverSimilarTracksForPlaylistUseCase {
       .slice(0, limit)
       .map((candidate) => ({
         sourceArtist: candidate.sourceArtist,
+        sourceTitle: candidate.sourceTitle,
+        sourceImagePath: candidate.sourceImagePath,
         artist: candidate.artist,
         title: candidate.title,
         matchScore: candidate.matchScore,

@@ -6,6 +6,12 @@ export class DiscoveredTrack {
   sourceArtist: string;
 
   @Field()
+  sourceTitle: string;
+
+  @Field({ nullable: true })
+  sourceImagePath?: string;
+
+  @Field()
   artist: string;
 
   @Field()

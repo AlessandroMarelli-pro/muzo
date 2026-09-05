@@ -1,9 +1,10 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { apiUrl } from '@/lib/api-config';
 import { capitalizeEveryWord, cn, formatSimilarity } from '@/lib/utils';
 import { type DiscoveredTrack, useDiscoverSimilarTracksForPlaylist } from '@/services/playlist-hooks';
-import { Compass, ExternalLink, Play } from 'lucide-react';
+import { Compass, ExternalLink, ListMusic, Play } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { NoData } from '../no-data';
 
@@ -166,6 +167,9 @@ export function PlaylistDiscovery({ playlistId }: PlaylistDiscoveryProps) {
     return Array.from(bySourceArtist.entries());
   }, [tracks]);
 
+  const groupArtUrl = (imagePath?: string | null) =>
+    imagePath ? apiUrl(`/api/images/serve?imagePath=${encodeURIComponent(imagePath)}`) : null;
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -198,10 +202,31 @@ export function PlaylistDiscovery({ playlistId }: PlaylistDiscoveryProps) {
 
       {!isLoading && groups.length > 0 && (
         <div className="space-y-8">
-          {groups.map(([sourceArtist, groupTracks]) => (
+          {groups.map(([sourceArtist, groupTracks]) => {
+            const seedArtUrl = groupArtUrl(groupTracks[0]?.sourceImagePath);
+            const seedTitle = groupTracks[0]?.sourceTitle;
+            return (
             <div key={sourceArtist} className="space-y-3">
-              <h3 className="text-sm font-semibold">
-                Similar to {capitalizeEveryWord(sourceArtist)}
+              <h3 className="flex items-center gap-2 text-sm font-semibold">
+                {seedArtUrl ? (
+                  <img
+                    src={seedArtUrl}
+                    alt=""
+                    loading="lazy"
+                    className="h-9 w-9 shrink-0 rounded object-cover"
+                  />
+                ) : (
+                  <span
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded bg-muted"
+                    aria-hidden
+                  >
+                    <ListMusic className="h-4 w-4 text-muted-foreground" />
+                  </span>
+                )}
+                <span>
+                  Similar to {capitalizeEveryWord(sourceArtist)}
+                  {seedTitle ? ` — ${capitalizeEveryWord(seedTitle)}` : ''}
+                </span>
               </h3>
               <div className="divide-y rounded-xl border">
                 {groupTracks.map((track) => (
@@ -209,7 +234,8 @@ export function PlaylistDiscovery({ playlistId }: PlaylistDiscoveryProps) {
                 ))}
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
