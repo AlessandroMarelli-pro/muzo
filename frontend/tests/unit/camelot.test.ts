@@ -1,10 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  CAMELOT_KEYS,
-  getCamelotKey,
-  getCompatibleKeys,
-  normalizeCamelot,
-} from '@/lib/camelot';
+import { CAMELOT_KEYS, getCamelotKey, getCompatibleKeys, normalizeCamelot } from '@/lib/camelot';
 
 describe('camelot wheel data', () => {
   it('has all 24 keys, 12 minor + 12 major', () => {

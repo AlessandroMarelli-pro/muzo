@@ -21,6 +21,41 @@ export type AddTrackToPlaylistInput = {
   trackId: Scalars['Base64ID']['input'];
 };
 
+export type AiServiceActionResult = {
+  __typename?: 'AiServiceActionResult';
+  message: Scalars['String']['output'];
+  success: Scalars['Boolean']['output'];
+};
+
+export type AiServiceHealth = {
+  __typename?: 'AiServiceHealth';
+  instances: Array<AiServiceInstanceHealth>;
+  overall: Scalars['Boolean']['output'];
+  timestamp: Scalars['String']['output'];
+};
+
+export type AiServiceInstanceHealth = {
+  __typename?: 'AiServiceInstanceHealth';
+  activeConnections: Scalars['Int']['output'];
+  isHealthy: Scalars['Boolean']['output'];
+  lastChecked: Scalars['Date']['output'];
+  url: Scalars['String']['output'];
+};
+
+export type AiServiceSettings = {
+  __typename?: 'AiServiceSettings';
+  hasAuthToken: Scalars['Boolean']['output'];
+  hasDiscogsApiKeys: Scalars['Boolean']['output'];
+  hasGeminiApiKey: Scalars['Boolean']['output'];
+  hasHfToken: Scalars['Boolean']['output'];
+  hasLastfmApiKey: Scalars['Boolean']['output'];
+  hasLastfmSecret: Scalars['Boolean']['output'];
+  health: AiServiceHealth;
+  mode: Scalars['String']['output'];
+  remoteUrl?: Maybe<Scalars['String']['output']>;
+  replicas: Scalars['Int']['output'];
+};
+
 export type ConnectedProvider = {
   __typename?: 'ConnectedProvider';
   provider: Scalars['String']['output'];
@@ -80,6 +115,8 @@ export type DiscoveredTrack = {
   externalLink?: Maybe<Scalars['String']['output']>;
   matchScore: Scalars['Float']['output'];
   sourceArtist: Scalars['String']['output'];
+  sourceImagePath?: Maybe<Scalars['String']['output']>;
+  sourceTitle: Scalars['String']['output'];
   title: Scalars['String']['output'];
   videoId?: Maybe<Scalars['String']['output']>;
 };
@@ -143,6 +180,23 @@ export type HqAudioBatchDownload = {
   totalToDownload: Scalars['Int']['output'];
 };
 
+export type IntegrationSettings = {
+  __typename?: 'IntegrationSettings';
+  hasCosineApiKey: Scalars['Boolean']['output'];
+  hasSpotifyClientId: Scalars['Boolean']['output'];
+  hasSpotifyClientSecret: Scalars['Boolean']['output'];
+  hasTidalClientId: Scalars['Boolean']['output'];
+  hasTidalClientSecret: Scalars['Boolean']['output'];
+  hasYoutubeClientId: Scalars['Boolean']['output'];
+  hasYoutubeClientSecret: Scalars['Boolean']['output'];
+};
+
+export type IntegrationSettingsActionResult = {
+  __typename?: 'IntegrationSettingsActionResult';
+  message: Scalars['String']['output'];
+  success: Scalars['Boolean']['output'];
+};
+
 export type Library = Node & {
   __typename?: 'Library';
   analyzedTracks: Scalars['Float']['output'];
@@ -197,6 +251,7 @@ export type Mutation = {
   addTrackToPlaylist: PlaylistTrack;
   addTrackToQueue: QueueItem;
   addTracksToQueue: Array<QueueItem>;
+  applyAiServiceApiKeys: AiServiceActionResult;
   authenticateSpotify: SpotifyAuthResult;
   authenticateTidal: TidalAuthResult;
   authenticateYouTube: YouTubeAuthResult;
@@ -219,16 +274,22 @@ export type Mutation = {
   removeTrackFromQueue: RemoveTrackFromQueueResponse;
   resetQueue: Scalars['Boolean']['output'];
   scanIncompleteTracks: Scalars['Base64ID']['output'];
+  scanPlaylistTracks: Scalars['Base64ID']['output'];
   scanTrack: Scalars['Base64ID']['output'];
+  setAiServiceReplicas: AiServiceActionResult;
   startLibraryScan: Scalars['Base64ID']['output'];
   stopLibraryScan: Scalars['Boolean']['output'];
   syncPlaylistToSpotify: ThirdPartySyncResult;
   syncPlaylistToTidal: ThirdPartySyncResult;
   syncPlaylistToYouTube: ThirdPartySyncResult;
+  testAiServiceConnection: AiServiceActionResult;
   toggleBanger: Track;
   toggleDislike: Scalars['Boolean']['output'];
   toggleFavorite: Track;
   toggleLike: Track;
+  updateAiServiceApiKeys: AiServiceActionResult;
+  updateAiServiceSettings: AiServiceActionResult;
+  updateIntegrationSettings: IntegrationSettingsActionResult;
   updatePlaylistSorting: PlaylistSorting;
   updatePlaylistTracksPositions: Scalars['Boolean']['output'];
   updateQueuePositions: Array<QueueItem>;
@@ -365,9 +426,20 @@ export type MutationScanIncompleteTracksArgs = {
 };
 
 
+export type MutationScanPlaylistTracksArgs = {
+  force?: InputMaybe<Scalars['Boolean']['input']>;
+  playlistId: Scalars['Base64ID']['input'];
+};
+
+
 export type MutationScanTrackArgs = {
   force?: InputMaybe<Scalars['Boolean']['input']>;
   trackId: Scalars['Base64ID']['input'];
+};
+
+
+export type MutationSetAiServiceReplicasArgs = {
+  replicas: Scalars['Int']['input'];
 };
 
 
@@ -402,6 +474,11 @@ export type MutationSyncPlaylistToYouTubeArgs = {
 };
 
 
+export type MutationTestAiServiceConnectionArgs = {
+  input: TestAiServiceConnectionGqlInput;
+};
+
+
 export type MutationToggleBangerArgs = {
   trackId: Scalars['Base64ID']['input'];
 };
@@ -419,6 +496,21 @@ export type MutationToggleFavoriteArgs = {
 
 export type MutationToggleLikeArgs = {
   trackId: Scalars['Base64ID']['input'];
+};
+
+
+export type MutationUpdateAiServiceApiKeysArgs = {
+  input: UpdateAiServiceApiKeysGqlInput;
+};
+
+
+export type MutationUpdateAiServiceSettingsArgs = {
+  input: UpdateAiServiceSettingsGqlInput;
+};
+
+
+export type MutationUpdateIntegrationSettingsArgs = {
+  input: UpdateIntegrationSettingsGqlInput;
 };
 
 
@@ -466,6 +558,7 @@ export type PaginationArgs = {
 
 export type Playlist = Node & {
   __typename?: 'Playlist';
+  automixOrder: Array<PlaylistTrack>;
   /** True if the given track is already in this playlist */
   containsTrack?: Maybe<Scalars['Boolean']['output']>;
   createdAt: Scalars['Date']['output'];
@@ -479,6 +572,11 @@ export type Playlist = Node & {
   stats?: Maybe<PlaylistStats>;
   tracks?: Maybe<Array<PlaylistTrack>>;
   updatedAt?: Maybe<Scalars['Date']['output']>;
+};
+
+
+export type PlaylistAutomixOrderArgs = {
+  seedTrackId?: InputMaybe<Scalars['Base64ID']['input']>;
 };
 
 
@@ -539,12 +637,14 @@ export type PlaylistsResult = {
 
 export type Query = {
   __typename?: 'Query';
+  aiServiceSettings: AiServiceSettings;
   connectedProviders: Array<ConnectedProvider>;
   cosineRecommendationsForTrack: Array<CosineRecommendedTrack>;
   discoverSimilarTracksForPlaylist: Array<DiscoveredTrack>;
   getSpotifyAuthUrl: SpotifyAuthUrl;
   getTidalAuthUrl: TidalAuthUrl;
   getYouTubeAuthUrl: YouTubeAuthUrl;
+  integrationSettings: IntegrationSettings;
   me: User;
   /** Fetch any node by global ID. Use inline fragments (... on Playlist { ... }) to request fields. */
   node?: Maybe<Node>;
@@ -643,6 +743,11 @@ export type StaticFilterOptions = {
   subgenres: Array<FilterWithId>;
 };
 
+export type TestAiServiceConnectionGqlInput = {
+  authToken?: InputMaybe<Scalars['String']['input']>;
+  url: Scalars['String']['input'];
+};
+
 export type ThirdPartySyncResult = {
   __typename?: 'ThirdPartySyncResult';
   errors: Array<Scalars['String']['output']>;
@@ -692,6 +797,9 @@ export type Track = Node & {
   format?: Maybe<Scalars['String']['output']>;
   genres?: Maybe<Array<Scalars['String']['output']>>;
   hqAudioPath?: Maybe<Scalars['String']['output']>;
+  hqAudioSource?: Maybe<Scalars['String']['output']>;
+  hqAudioSpectralCutoffHz?: Maybe<Scalars['Float']['output']>;
+  hqAudioVerified?: Maybe<Scalars['Boolean']['output']>;
   id: Scalars['Base64ID']['output'];
   imagePath?: Maybe<Scalars['String']['output']>;
   isBanger: Scalars['Boolean']['output'];
@@ -733,6 +841,30 @@ export type TrackRecommendation = {
   reasons: Array<Scalars['String']['output']>;
   similarity: Scalars['Float']['output'];
   track: Track;
+};
+
+export type UpdateAiServiceApiKeysGqlInput = {
+  discogsApiKeys?: InputMaybe<Scalars['String']['input']>;
+  geminiApiKey?: InputMaybe<Scalars['String']['input']>;
+  hfToken?: InputMaybe<Scalars['String']['input']>;
+  lastfmApiKey?: InputMaybe<Scalars['String']['input']>;
+  lastfmSecret?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type UpdateAiServiceSettingsGqlInput = {
+  authToken?: InputMaybe<Scalars['String']['input']>;
+  mode: Scalars['String']['input'];
+  remoteUrl?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type UpdateIntegrationSettingsGqlInput = {
+  cosineApiKey?: InputMaybe<Scalars['String']['input']>;
+  spotifyClientId?: InputMaybe<Scalars['String']['input']>;
+  spotifyClientSecret?: InputMaybe<Scalars['String']['input']>;
+  tidalClientId?: InputMaybe<Scalars['String']['input']>;
+  tidalClientSecret?: InputMaybe<Scalars['String']['input']>;
+  youtubeClientId?: InputMaybe<Scalars['String']['input']>;
+  youtubeClientSecret?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type UpdatePlaylistInput = {
@@ -812,6 +944,44 @@ export type YouTubeAuthUrl = {
   __typename?: 'YouTubeAuthUrl';
   authUrl: Scalars['String']['output'];
 };
+
+export type AiServiceSettingsQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type AiServiceSettingsQuery = { __typename?: 'Query', aiServiceSettings: { __typename?: 'AiServiceSettings', mode: string, remoteUrl?: string | null, hasAuthToken: boolean, replicas: number, hasGeminiApiKey: boolean, hasHfToken: boolean, hasLastfmApiKey: boolean, hasLastfmSecret: boolean, hasDiscogsApiKeys: boolean, health: { __typename?: 'AiServiceHealth', overall: boolean, timestamp: string, instances: Array<{ __typename?: 'AiServiceInstanceHealth', url: string, isHealthy: boolean, activeConnections: number, lastChecked: any }> } } };
+
+export type TestAiServiceConnectionMutationVariables = Exact<{
+  input: TestAiServiceConnectionGqlInput;
+}>;
+
+
+export type TestAiServiceConnectionMutation = { __typename?: 'Mutation', testAiServiceConnection: { __typename?: 'AiServiceActionResult', success: boolean, message: string } };
+
+export type UpdateAiServiceSettingsMutationVariables = Exact<{
+  input: UpdateAiServiceSettingsGqlInput;
+}>;
+
+
+export type UpdateAiServiceSettingsMutation = { __typename?: 'Mutation', updateAiServiceSettings: { __typename?: 'AiServiceActionResult', success: boolean, message: string } };
+
+export type SetAiServiceReplicasMutationVariables = Exact<{
+  replicas: Scalars['Int']['input'];
+}>;
+
+
+export type SetAiServiceReplicasMutation = { __typename?: 'Mutation', setAiServiceReplicas: { __typename?: 'AiServiceActionResult', success: boolean, message: string } };
+
+export type UpdateAiServiceApiKeysMutationVariables = Exact<{
+  input: UpdateAiServiceApiKeysGqlInput;
+}>;
+
+
+export type UpdateAiServiceApiKeysMutation = { __typename?: 'Mutation', updateAiServiceApiKeys: { __typename?: 'AiServiceActionResult', success: boolean, message: string } };
+
+export type ApplyAiServiceApiKeysMutationVariables = Exact<{ [key: string]: never; }>;
+
+
+export type ApplyAiServiceApiKeysMutation = { __typename?: 'Mutation', applyAiServiceApiKeys: { __typename?: 'AiServiceActionResult', success: boolean, message: string } };
 
 export type GetLibrariesQueryVariables = Exact<{ [key: string]: never; }>;
 
@@ -1004,6 +1174,18 @@ export type FilterFragmentFragment = { __typename?: 'FilterCriteriaResult', id: 
 
 export type LibraryFragmentFragment = { __typename?: 'Library', id: any, name: string, rootPath: string, totalTracks: number, analyzedTracks: number, pendingTracks: number, failedTracks: number, lastScanAt?: any | null, lastIncrementalScanAt?: any | null, scanStatus: string, createdAt: any, updatedAt?: any | null, settings: { __typename?: 'LibrarySettings', autoScan: boolean, includeSubdirectories: boolean, supportedFormats: string, maxFileSize?: number | null, scanInterval?: number | null } };
 
+export type IntegrationSettingsQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type IntegrationSettingsQuery = { __typename?: 'Query', integrationSettings: { __typename?: 'IntegrationSettings', hasCosineApiKey: boolean, hasSpotifyClientId: boolean, hasSpotifyClientSecret: boolean, hasTidalClientId: boolean, hasTidalClientSecret: boolean, hasYoutubeClientId: boolean, hasYoutubeClientSecret: boolean } };
+
+export type UpdateIntegrationSettingsMutationVariables = Exact<{
+  input: UpdateIntegrationSettingsGqlInput;
+}>;
+
+
+export type UpdateIntegrationSettingsMutation = { __typename?: 'Mutation', updateIntegrationSettings: { __typename?: 'IntegrationSettingsActionResult', success: boolean, message: string } };
+
 export type HomeMetricsQueryVariables = Exact<{ [key: string]: never; }>;
 
 
@@ -1081,6 +1263,14 @@ export type DownloadPlaylistToFolderMutationVariables = Exact<{
 
 
 export type DownloadPlaylistToFolderMutation = { __typename?: 'Mutation', downloadPlaylistToFolder: boolean };
+
+export type ScanPlaylistTracksMutationVariables = Exact<{
+  playlistId: Scalars['Base64ID']['input'];
+  force?: InputMaybe<Scalars['Boolean']['input']>;
+}>;
+
+
+export type ScanPlaylistTracksMutation = { __typename?: 'Mutation', scanPlaylistTracks: any };
 
 export type SyncPlaylistToYouTubeMutationVariables = Exact<{
   playlistId: Scalars['Base64ID']['input'];
@@ -1193,6 +1383,19 @@ export type GetPlaylistRecommendationsQuery = { __typename?: 'Query', node?:
     | { __typename?: 'User' }
    | null };
 
+export type GetPlaylistAutomixOrderQueryVariables = Exact<{
+  playlistId: Scalars['Base64ID']['input'];
+  seedTrackId?: InputMaybe<Scalars['Base64ID']['input']>;
+}>;
+
+
+export type GetPlaylistAutomixOrderQuery = { __typename?: 'Query', node?:
+    | { __typename?: 'Library' }
+    | { __typename?: 'Playlist', automixOrder: Array<{ __typename?: 'PlaylistTrack', id: any, position: number, addedAt: any, trackId: any, playlistId: any, track?: { __typename?: 'Track', id: any, artist?: string | null, title?: string | null, listeningCount: number, lastPlayedAt?: any | null, isFavorite: boolean, isLiked: boolean, isBanger: boolean, filePath: string, fileName: string, fileCreatedAt: any, fileSize: number, hqAudioPath?: string | null, duration: number, genres?: Array<string> | null, subgenres?: Array<string> | null, createdAt?: any | null, updatedAt?: any | null, mfTempo?: number | null, mfKey?: string | null, mfCamelotKey?: string | null, mfValenceMood?: string | null, mfArousalMood?: string | null, mfDanceabilityFeeling?: string | null, mfDanceability?: number | null, mfInstrumentalness?: number | null, mfVoice?: number | null, mfMoodHappy?: number | null, mfMoodSad?: number | null, mfMoodRelaxed?: number | null, mfMoodAggressive?: number | null, mfMoodParty?: number | null, imagePath?: string | null, lastScannedAt?: any | null, libraryId?: any | null, analysisStatus?: string | null, date?: any | null, format?: string | null } | null }> }
+    | { __typename?: 'Track' }
+    | { __typename?: 'User' }
+   | null };
+
 export type UpdatePlaylistPositionsMutationVariables = Exact<{
   playlistId: Scalars['Base64ID']['input'];
   input: UpdatePlaylistPositionsInput;
@@ -1207,7 +1410,7 @@ export type DiscoverSimilarTracksForPlaylistQueryVariables = Exact<{
 }>;
 
 
-export type DiscoverSimilarTracksForPlaylistQuery = { __typename?: 'Query', discoverSimilarTracksForPlaylist: Array<{ __typename?: 'DiscoveredTrack', sourceArtist: string, artist: string, title: string, matchScore: number, externalLink?: string | null, videoId?: string | null, confidence: string }> };
+export type DiscoverSimilarTracksForPlaylistQuery = { __typename?: 'Query', discoverSimilarTracksForPlaylist: Array<{ __typename?: 'DiscoveredTrack', sourceArtist: string, sourceTitle: string, sourceImagePath?: string | null, artist: string, title: string, matchScore: number, externalLink?: string | null, videoId?: string | null, confidence: string }> };
 
 export type CosineRecommendationsForTrackQueryVariables = Exact<{
   trackId: Scalars['Base64ID']['input'];

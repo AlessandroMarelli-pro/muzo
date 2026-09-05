@@ -14,7 +14,6 @@ import {
   isHarmonicTransition,
   toCamelotCode,
 } from "@/lib/utils";
-import { useAddTrackToQueue } from "@/services/queue-hooks";
 import { Link } from "@tanstack/react-router";
 import {
   AudioLines,
@@ -23,6 +22,7 @@ import {
   Pause,
   Play,
   Radar,
+  Sparkles,
   Trash2,
 } from "lucide-react";
 import { memo } from "react";
@@ -116,6 +116,7 @@ export const PlaylistTrackListCard = memo(
     playlistTrack,
     prevTrack,
     handleRemoveTrack,
+    onAutomixFrom,
     removingTrackId: _removingTrackId,
     dragHandleProps,
     index: _index,
@@ -124,6 +125,7 @@ export const PlaylistTrackListCard = memo(
     playlistTrack: PlaylistTrack;
     prevTrack?: Track | null;
     handleRemoveTrack: (trackId: string) => void;
+    onAutomixFrom: (seedTrackId: string) => void;
     removingTrackId: string | null;
     dragHandleProps?: any;
     index: number;
@@ -132,7 +134,6 @@ export const PlaylistTrackListCard = memo(
     const { currentTrack, setCurrentTrack } = useCurrentTrack();
     const actions = useAudioPlayerActions();
     const isPlaying = useIsPlaying();
-    const addToQueueMutation = useAddTrackToQueue();
     const track = playlistTrack.track ?? null;
 
     const isCurrentTrack = currentTrack?.id === track?.id;
@@ -280,11 +281,12 @@ export const PlaylistTrackListCard = memo(
             size="iconSm"
             onClick={(e) => {
               e.stopPropagation();
-              addToQueueMutation.mutate(track?.id || "");
+              onAutomixFrom(playlistTrack.id);
             }}
-            aria-label={`Add ${label} to queue`}
+            aria-label={`Automix from ${label}`}
+            title="Automix from here"
           >
-            <ListMusic className="h-4 w-4" aria-hidden />
+            <Sparkles className="h-4 w-4" aria-hidden />
           </Button>
           <Button
             variant="ghost"

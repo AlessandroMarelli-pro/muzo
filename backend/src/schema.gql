@@ -277,6 +277,8 @@ input PaginationArgs {
 }
 
 type Playlist implements Node {
+  automixOrder(seedTrackId: Base64ID): [PlaylistTrack!]!
+
   """True if the given track is already in this playlist"""
   containsTrack(trackId: Base64ID): Boolean
   createdAt: Date!

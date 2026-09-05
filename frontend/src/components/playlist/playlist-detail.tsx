@@ -264,7 +264,16 @@ export function PlaylistDetail({ id, onBack }: PlaylistDetailProps) {
         </TabsList>
 
         <TabsContent value="tracks" className="space-y-4">
-          <div className="flex justify-end">
+          <div className="flex justify-end gap-2">
+            <Button
+              size="sm"
+              variant="ghost"
+              disabled={sortDisabled || (playlist?.tracks?.length ?? 0) < 3}
+              onClick={() => tracksListRef.current?.runAutomix()}
+            >
+              <Sparkles className="h-4 w-4" aria-hidden />
+              Automix
+            </Button>
             <TracksSortMenu
               value={currentSortValue}
               onChange={handleUpdateSorting}

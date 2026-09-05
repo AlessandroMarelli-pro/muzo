@@ -3,7 +3,11 @@ import { Card, CardContent } from '@/components/ui/card';
 
 import { Playlist } from '@/__generated__/types';
 import { capitalizeEveryWord } from '@/lib/utils';
-import { useRemoveTrackFromPlaylist, useUpdatePlaylistPositions } from '@/services/playlist-hooks';
+import {
+  useBackendAutomixOrder,
+  useRemoveTrackFromPlaylist,
+  useUpdatePlaylistPositions,
+} from '@/services/playlist-hooks';
 import {
   DndContext,
   KeyboardSensor,
@@ -33,6 +37,7 @@ import {
 
 export interface PlaylistTracksListHandle {
   scrollToPosition: (position: number) => void;
+  runAutomix: (seedTrackId?: string) => Promise<void>;
 }
 
 interface PlaylistTracksListProps {
@@ -56,6 +61,7 @@ export function PlaylistTracksList({
 
   const removeTrackMutation = useRemoveTrackFromPlaylist();
   const updatePositionsMutation = useUpdatePlaylistPositions();
+  const backendAutomixMutation = useBackendAutomixOrder();
 
   // Sync localTracks with playlist.tracks when the playlist changes (e.g. after
   // sorting). Keyed only on a signature of ids+positions so a fresh array
@@ -80,8 +86,6 @@ export function PlaylistTracksList({
     el.classList.add('ring-1', 'ring-primary', 'ring-inset');
     window.setTimeout(() => el.classList.remove('ring-1', 'ring-primary', 'ring-inset'), 1400);
   }, []);
-
-  useImperativeHandle(handleRef, () => ({ scrollToPosition: flashRow }), [flashRow]);
 
   const sensors = useSensors(
     useSensor(MouseSensor, {}),
@@ -126,43 +130,89 @@ export function PlaylistTracksList({
     [localTracks, playlist?.id, removeTrackMutation, addTrackToPlaylist, onUpdate],
   );
 
+  // Optimistically applies `newTracks`, persists the resulting positions, and
+  // rolls back to `previousTracks` on failure. Shared by drag-and-drop and
+  // Automix so both go through one save/rollback path.
+  const persistReorder = useCallback(
+    async (newTracks: PlaylistTrack[], previousTracks: PlaylistTrack[]) => {
+      setLocalTracks(newTracks);
+      try {
+        if (!playlist?.id || !playlist?.tracks?.length) return false;
+        const sortingOrder = playlist.sorting?.sortingDirection === 'asc' ? 1 : -1;
+        const initialPosition = sortingOrder > 0 ? 0 : playlist.tracks.length;
+        const positions = newTracks.map((track, index) => ({
+          id: track.id,
+          position: sortingOrder > 0 ? index + 1 : initialPosition - index,
+        }));
+        await updatePositionsMutation.mutateAsync({
+          playlistId: playlist.id,
+          positions,
+        });
+        onUpdate();
+        return true;
+      } catch (error) {
+        console.error('Failed to update playlist positions:', error);
+        toast.error('Could not save the new order. Reverting.');
+        setLocalTracks(previousTracks);
+        return false;
+      }
+    },
+    [playlist, updatePositionsMutation, onUpdate],
+  );
+
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
-    const sortingOrder = playlist?.sorting?.sortingDirection === 'asc' ? 1 : -1;
     if (!active || !over || active.id !== over.id) {
       const oldIndex = trackIds.indexOf(active.id as string);
       const newIndex = trackIds.indexOf(over?.id as string);
 
       if (oldIndex !== -1 && newIndex !== -1) {
-        // Optimistically update local state
         const newTracks = arrayMove(localTracks, oldIndex, newIndex);
-        setLocalTracks(newTracks);
-
-        // Update positions in backend
-        try {
-          if (!playlist?.tracks?.length) return;
-          const initialPosition = sortingOrder > 0 ? 0 : playlist.tracks.length;
-          const positions = newTracks.map((track, index) => {
-            const position = sortingOrder > 0 ? index + 1 : initialPosition - index;
-            return {
-              id: track.id,
-              position,
-            };
-          });
-          await updatePositionsMutation.mutateAsync({
-            playlistId: playlist?.id || '',
-            positions,
-          });
-          onUpdate();
-        } catch (error) {
-          console.error('Failed to update playlist positions:', error);
-          toast.error('Could not save the new order. Reverting.');
-          // Revert on error
-          setLocalTracks(playlist?.tracks || []);
-        }
+        await persistReorder(newTracks, localTracks);
       }
     }
   };
+
+  const runAutomix = useCallback(
+    async (seedTrackId?: string) => {
+      if (!playlist?.id) return;
+      const previous = localTracks;
+      let reordered: PlaylistTrack[];
+      try {
+        reordered = await backendAutomixMutation.mutateAsync({
+          playlistId: playlist.id,
+          seedTrackId,
+        });
+      } catch (error) {
+        console.error('Backend automix failed:', error);
+        toast.error('Could not compute automix order. Please try again.');
+        return;
+      }
+      const changed = reordered.some((track, index) => track.id !== previous[index]?.id);
+      if (!changed) {
+        toast.info('Already in optimal order');
+        return;
+      }
+      const ok = await persistReorder(reordered, previous);
+      if (ok) {
+        toast.success('Reordered by Automix', {
+          action: {
+            label: 'Undo',
+            onClick: () => {
+              void persistReorder(previous, reordered);
+            },
+          },
+        });
+      }
+    },
+    [localTracks, persistReorder, backendAutomixMutation, playlist?.id],
+  );
+
+  useImperativeHandle(
+    handleRef,
+    () => ({ scrollToPosition: flashRow, runAutomix }),
+    [flashRow, runAutomix],
+  );
 
   return (
     <Card className="overflow-hidden py-0">
@@ -183,6 +233,7 @@ export function PlaylistTracksList({
                       playlistTrack={playlistTrack}
                       prevTrack={index > 0 ? localTracks[index - 1]?.track ?? null : null}
                       onRemove={handleRemoveTrack}
+                      onAutomixFrom={runAutomix}
                       removingTrackId={removingTrackId}
                       index={index}
                       playlistLength={localTracks.length}
@@ -206,6 +257,7 @@ function SortablePlaylistTrack({
   playlistTrack,
   prevTrack,
   onRemove,
+  onAutomixFrom,
   removingTrackId,
   index,
   playlistLength,
@@ -213,6 +265,7 @@ function SortablePlaylistTrack({
   playlistTrack: PlaylistTrack;
   prevTrack?: Track | null;
   onRemove: (trackId: string) => void;
+  onAutomixFrom: (seedTrackId: string) => void;
   removingTrackId: string | null;
   index: number;
   playlistLength: number;
@@ -251,6 +304,7 @@ function SortablePlaylistTrack({
         playlistTrack={playlistTrack}
         prevTrack={prevTrack}
         handleRemoveTrack={onRemove}
+        onAutomixFrom={onAutomixFrom}
         removingTrackId={removingTrackId}
         dragHandleProps={dragHandleProps}
         index={index}

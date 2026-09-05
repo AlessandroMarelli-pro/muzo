@@ -256,6 +256,26 @@ const GET_PLAYLIST_RECOMMENDATIONS = gql`
   }
 `;
 
+const GET_PLAYLIST_AUTOMIX_ORDER = gql`
+  ${trackFragment}
+  query GetPlaylistAutomixOrder($playlistId: Base64ID!, $seedTrackId: Base64ID) {
+    node(id: $playlistId) {
+      ... on Playlist {
+        automixOrder(seedTrackId: $seedTrackId) {
+          id
+          position
+          addedAt
+          trackId
+          playlistId
+          track {
+            ...TrackFragment
+          }
+        }
+      }
+    }
+  }
+`;
+
 const UPDATE_PLAYLIST_POSITIONS = gql`
   mutation UpdatePlaylistPositions($playlistId: Base64ID!, $input: UpdatePlaylistPositionsInput!) {
     updatePlaylistTracksPositions(playlistId: $playlistId, input: $input)
@@ -555,6 +575,21 @@ const removeTrackFromPlaylist = async (
       title,
     },
   };
+};
+
+export const fetchPlaylistAutomixOrder = async (
+  playlistId: string,
+  seedTrackId?: string,
+): Promise<PlaylistTrack[]> => {
+  const data = await graffleClient.request<{
+    node: {
+      automixOrder: PlaylistTrack[];
+    };
+  }>(GET_PLAYLIST_AUTOMIX_ORDER, {
+    playlistId,
+    seedTrackId,
+  });
+  return data.node.automixOrder;
 };
 
 export const fetchPlaylistRecommendations = async (
@@ -1102,6 +1137,13 @@ export function useDiscoverSimilarTracksForPlaylist(
     error: error?.message,
     discover: refetch,
   };
+}
+
+export function useBackendAutomixOrder() {
+  return useMutation({
+    mutationFn: ({ playlistId, seedTrackId }: { playlistId: string; seedTrackId?: string }) =>
+      fetchPlaylistAutomixOrder(playlistId, seedTrackId),
+  });
 }
 
 export function useUpdatePlaylistPositions() {

@@ -6,6 +6,7 @@ import {
   DeletePlaylistUseCase,
   ExportPlaylistToM3UUseCase,
   DownloadPlaylistToFolderUseCase,
+  GetPlaylistAutomixOrderUseCase,
   GetPlaylistRecommendationsUseCase,
   GetPlaylistSortingByPlaylistIdUseCase,
   SchedulePlaylistTracksScanUseCase,
@@ -18,7 +19,7 @@ import { UpdatePlaylistSortingUseCase } from 'src/application/use-cases/playlist
 import { Maybe } from 'src/kernel/common';
 import { RecommendationSeedStrategy } from 'src/kernel/types';
 
-import { parseMusicTrackId, parsePlaylistId } from '../../common/utils/parse-id';
+import { parseMusicTrackId, parsePlaylistId, parsePlaylistTrackId } from '../../common/utils/parse-id';
 import { PlaylistContainsTrackLoader } from '../../persistence/repositories/playlist-track/playlist-contains-track.loader';
 import { PlaylistTracksWithTrackLoader } from '../../persistence/repositories/playlist-track/playlist-track-with-track.loader';
 import { AuthGuard } from '../context/auth.guard';
@@ -45,6 +46,7 @@ export class PlaylistResolver {
     private readonly downloadPlaylistToFolderUseCase: DownloadPlaylistToFolderUseCase,
     private readonly updatePlaylistSortingUseCase: UpdatePlaylistSortingUseCase,
     private readonly getPlaylistRecommendationsUseCase: GetPlaylistRecommendationsUseCase,
+    private readonly getPlaylistAutomixOrderUseCase: GetPlaylistAutomixOrderUseCase,
     private readonly startHqAudioBatchDownloadUseCase: StartHqAudioBatchDownloadUseCase,
     private readonly acquireHqAudioBatchUseCase: AcquireHqAudioBatchUseCase,
     private readonly schedulePlaylistTracksScanUseCase: SchedulePlaylistTracksScanUseCase,
@@ -212,6 +214,24 @@ export class PlaylistResolver {
       track: toTrack(recommendation.track),
       similarity: recommendation.similarity,
       reasons: recommendation.reasons,
+    }));
+  }
+
+  @ResolveField(() => [PlaylistTrack])
+  async automixOrder(
+    @Parent() parent: Playlist,
+    @Args('seedTrackId', { type: () => Base64ID, nullable: true }) seedTrackId?: string,
+  ): Promise<PlaylistTrack[]> {
+    if (parent.id == null) {
+      return [];
+    }
+    const ordered = await this.getPlaylistAutomixOrderUseCase.execute(
+      parsePlaylistId(parent.id),
+      seedTrackId ? parsePlaylistTrackId(seedTrackId) : undefined,
+    );
+    return ordered.map((playlistTrack) => ({
+      ...playlistTrack,
+      track: toTrack(playlistTrack.track),
     }));
   }
 }

@@ -85,6 +85,7 @@ import {
   GetLibrariesUseCase,
   GetLibraryUseCase,
   GetPendingTracksUseCase,
+  GetPlaylistAutomixOrderUseCase,
   GetPlaylistRecommendationsUseCase,
   GetPlaylistSortingByPlaylistIdUseCase,
   GetPlaylistsStatsUseCase,
@@ -235,6 +236,7 @@ const useCasesProviders = [
     LOGGER_FACTORY,
     LOGGER,
   ]),
+  createUseCaseProvider(GetPlaylistAutomixOrderUseCase, [PLAYLIST_TRACK_REPOSITORY]),
   createUseCaseProvider(GetPlaylistRecommendationsUseCase, [
     RECOMMENDATION_SEARCH_PORT,
     PLAYLIST_TRACK_REPOSITORY,
