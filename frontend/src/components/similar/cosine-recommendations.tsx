@@ -53,72 +53,77 @@ function CosineRecommendationRow({ track }: { track: CosineRecommendedTrack }) {
       onMouseLeave={stopPreview}
       onFocus={startPreview}
       onBlur={stopPreview}
-      tabIndex={track.videoId ? 0 : undefined}
-      role={track.videoId ? "button" : undefined}
-      aria-label={track.videoId ? `Preview ${label}` : undefined}
-      className={cn(
-        COSINE_GRID,
-        "group border-b py-2 transition-colors last:border-b-0 hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-inset",
-      )}
+      className="group border-b transition-colors last:border-b-0 hover:bg-muted/50"
     >
-      <div
-        className={cn(
-          "relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded bg-muted",
-          !track.videoId && "opacity-60",
-        )}
-      >
-        {isPreviewing && track.videoId ? (
+      <div className={cn(COSINE_GRID, "py-2")}>
+        <button
+          type="button"
+          tabIndex={track.videoId ? 0 : -1}
+          aria-label={track.videoId ? `Preview ${label}` : undefined}
+          disabled={!track.videoId}
+          className={cn(
+            "relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded bg-muted focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
+            !track.videoId && "opacity-60",
+          )}
+        >
+          {track.videoId ? (
+            <>
+              <img
+                src={`https://i.ytimg.com/vi/${track.videoId}/hqdefault.jpg`}
+                alt=""
+                loading="lazy"
+                className="h-full w-full object-cover"
+              />
+              <div className="absolute inset-0 flex items-center justify-center bg-black/0 transition-colors group-hover:bg-black/40 group-focus-within:bg-black/40">
+                <Play className="h-3.5 w-3.5 fill-white text-white opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100" />
+              </div>
+            </>
+          ) : (
+            <span className="sr-only">No video match</span>
+          )}
+        </button>
+
+        <div className="min-w-0">
+          <div className="flex items-center gap-1.5">
+            <span className="truncate text-sm font-medium">{title}</span>
+          </div>
+          <div className="flex items-center gap-1.5 truncate text-xs text-muted-foreground">
+            <span className="truncate">{artist}</span>
+            <span className="shrink-0 text-border">·</span>
+            <span className="shrink-0 italic">{formatSimilarity(track.score)} match</span>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-end gap-1">
+          <Badge variant="secondary" className="hidden sm:inline-flex">
+            {formatSimilarity(track.score)}
+          </Badge>
+          {track.externalLink && (
+            <a
+              href={track.externalLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex h-8 w-8 items-center justify-center rounded text-muted-foreground opacity-0 transition-opacity hover:text-foreground focus-visible:opacity-100 group-hover:opacity-100"
+              aria-label={`View source for ${label}`}
+              title="View source"
+            >
+              <ExternalLink className="h-3.5 w-3.5" />
+            </a>
+          )}
+        </div>
+      </div>
+
+      {isPreviewing && track.videoId && (
+        <div className="mx-3 mb-3 aspect-video max-w-md overflow-hidden rounded-xl bg-black">
           <iframe
-            className="pointer-events-none h-full w-full"
-            src={`https://www.youtube.com/embed/${track.videoId}?autoplay=1&controls=0`}
+            className="h-full w-full"
+            src={`https://www.youtube.com/embed/${track.videoId}?autoplay=1`}
             title={label}
-            allow="accelerometer; autoplay; encrypted-media; gyroscope"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
           />
-        ) : track.videoId ? (
-          <>
-            <img
-              src={`https://i.ytimg.com/vi/${track.videoId}/hqdefault.jpg`}
-              alt=""
-              loading="lazy"
-              className="h-full w-full object-cover"
-            />
-            <div className="absolute inset-0 flex items-center justify-center bg-black/0 transition-colors group-hover:bg-black/40 group-focus-within:bg-black/40">
-              <Play className="h-3.5 w-3.5 fill-white text-white opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100" />
-            </div>
-          </>
-        ) : (
-          <span className="sr-only">No video match</span>
-        )}
-      </div>
-
-      <div className="min-w-0">
-        <div className="flex items-center gap-1.5">
-          <span className="truncate text-sm font-medium">{title}</span>
         </div>
-        <div className="flex items-center gap-1.5 truncate text-xs text-muted-foreground">
-          <span className="truncate">{artist}</span>
-          <span className="shrink-0 text-border">·</span>
-          <span className="shrink-0 italic">{formatSimilarity(track.score)} match</span>
-        </div>
-      </div>
-
-      <div className="flex items-center justify-end gap-1">
-        <Badge variant="secondary" className="hidden sm:inline-flex">
-          {formatSimilarity(track.score)}
-        </Badge>
-        {track.externalLink && (
-          <a
-            href={track.externalLink}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex h-8 w-8 items-center justify-center rounded text-muted-foreground opacity-0 transition-opacity hover:text-foreground focus-visible:opacity-100 group-hover:opacity-100"
-            aria-label={`View source for ${label}`}
-            title="View source"
-          >
-            <ExternalLink className="h-3.5 w-3.5" />
-          </a>
-        )}
-      </div>
+      )}
     </div>
   );
 }
