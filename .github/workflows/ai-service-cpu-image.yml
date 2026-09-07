@@ -164,10 +164,22 @@ jobs:
 
       - name: Create and push multi-arch manifest
         working-directory: /tmp/digests
+        env:
+          # Newline-separated (latest, sha-xxxxxxx) -- keep it in an env var so the
+          # newlines survive; a bare ${{ }} splice into the `run` script breaks the
+          # shell parse ("syntax error near unexpected token").
+          TAGS: ${{ steps.meta.outputs.tags }}
+          IMAGE: ${{ steps.image.outputs.name }}
         run: |
-          docker buildx imagetools create \
-            $(for tag in ${{ steps.meta.outputs.tags }}; do echo "--tag $tag"; done) \
-            $(for digest in *; do echo "${{ steps.image.outputs.name }}@sha256:$digest"; done)
+          tag_args=()
+          while IFS= read -r tag; do
+            [ -n "$tag" ] && tag_args+=(--tag "$tag")
+          done <<< "$TAGS"
+          digest_args=()
+          for digest in *; do
+            digest_args+=("${IMAGE}@sha256:${digest}")
+          done
+          docker buildx imagetools create "${tag_args[@]}" "${digest_args[@]}"
 
       - name: Inspect assembled manifest
         run: docker buildx imagetools inspect ${{ steps.image.outputs.name }}:latest
