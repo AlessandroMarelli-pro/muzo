@@ -17,20 +17,24 @@ from loguru import logger
 #
 # CRITICAL: `torch` must NOT be imported at module level here (or anywhere else
 # before audioflux's first real computation runs in a given process) -- verified
-# live this session that `import torch` before any actual audioflux call (not
-# just `import audioflux`, an actual `BFT(...).bft(...)` computation) reliably
+# live that `import torch` before any actual audioflux call (not just
+# `import audioflux`, an actual `BFT(...).bft(...)` computation) reliably
 # segfaults the process (reproduced deterministically via faulthandler; root
 # cause not isolated further, presumably a native FFT/threading-runtime symbol
 # collision, same category as the documented TF/GPU crash in git history).
-# Importing torch lazily inside methods, after audioflux has already done real
-# work at least once via smart_audio_sample_loading (SimpleAudioLoader) earlier
-# in the real pipeline, avoids the crash. Do not hoist this import back to
-# module level. (Note: SharedFeatures.extract_shared_features -- another
-# audioflux call site -- is no longer invoked by simple_feature_extractor.py as
-# of the response-shape trim that dropped spectral_features/rhythm_fingerprint/
-# melodic_fingerprint; smart_audio_sample_loading remains the audioflux call
-# that establishes safe ordering and still runs before generate_skey() in both
-# analyze_audio and _analyze_single_file_in_batch -- verified live.)
+# Importing torch lazily inside methods avoids the crash, PROVIDED audioflux has
+# already done real work at least once in the process. The thing that guarantees
+# that ordering is `model_warmup._warm_audioflux()` -- it runs one real
+# `af.BFT(...).bft(...)` on silence, then loads S-KEY (which imports torch), in
+# `warm_all_models()` (gunicorn post_fork; see gunicorn.conf.py). Do not hoist
+# this import back to module level.
+#
+# NOTE: earlier revisions relied on SimpleAudioLoader's audioflux-based
+# harmonic/percussive scorers (or SharedFeatures) running in the analysis path
+# before S-KEY. Both are gone -- `load_audio_sample()` is now a plain soundfile
+# read and SharedFeatures was deleted. `_warm_audioflux` is the sole ordering
+# guarantee. (`python app.py` / Werkzeug dev has no warmup at all -- a known gap,
+# see the plan file; it apparently doesn't trip the segfault in practice.)
 
 
 class SkeyExtractor:

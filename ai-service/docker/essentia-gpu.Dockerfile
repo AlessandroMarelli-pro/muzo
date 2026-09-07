@@ -226,11 +226,8 @@ ENV TF_FORCE_GPU_ALLOW_GROWTH=true
 
 # Runtime .so packages for every essentia dependency confirmed by its own
 # waf configure checks (eigen3 is header-only, no runtime package needed).
-# python3.11-dev is needed later for madmom, which compiles Cython/C
-# extensions from source at pip-install time (no prebuilt wheel exists for
-# any platform) and needs Python.h.
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    python3.11 python3.11-dev python3-pip \
+    python3.11 python3-pip \
     ffmpeg libsndfile1 libchromaprint-tools libchromaprint1 \
     libtag1v5 libsamplerate0 libyaml-0-2 libfftw3-single3 \
     && rm -rf /var/lib/apt/lists/*
@@ -290,11 +287,10 @@ RUN python3.11 -m pip install --no-cache-dir six "numpy>=1.26.0,<2.0"
 # inference smoke test runs on a CUDA host (see this file's git history / PR).
 RUN python3.11 -c "import essentia, essentia.standard as es; import tensorflow as tf; print('essentia', essentia.__version__, '/ tf', tf.__version__, 'OK'); print('TensorflowPredictEffnetDiscogs:', hasattr(es, 'TensorflowPredictEffnetDiscogs'))"
 
-# The rest of ai-service's dependencies. build-essential/cython/numpy are
-# needed first since madmom has no prebuilt wheel for any platform (source
-# tarball only) and its setup.py imports numpy/cython at build time.
+# git is needed at build time for the `skey @ git+https://...` install below.
+# (No compiler any more -- madmom, the only source-built wheel, was removed.)
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential git \
+    git \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
@@ -316,15 +312,9 @@ COPY requirements.txt .
 #                          needs (torch/torchaudio/soundfile/nnAudio/einops/tqdm)
 #                          is already pinned in requirements.txt -- so install it
 #                          `--no-deps`.
-#   madmom              -- no wheel anywhere; source build needs to SEE the
-#                          already-installed cython/numpy, which PEP 517 build
-#                          isolation hides -> `--no-build-isolation`.
 RUN grep -vE '^(essentia-tensorflow|numpy|skey )' requirements.txt > requirements.docker.txt && \
-    python3.11 -m pip install --no-cache-dir cython==3.0.1 "numpy>=1.26.0,<2.0" && \
-    grep -v '^madmom' requirements.docker.txt > requirements.nomadmom.txt && \
-    python3.11 -m pip install --no-cache-dir -r requirements.nomadmom.txt "numpy>=1.26.0,<2.0" && \
+    python3.11 -m pip install --no-cache-dir -r requirements.docker.txt "numpy>=1.26.0,<2.0" && \
     python3.11 -m pip install --no-cache-dir --no-deps "$(grep '^skey ' requirements.txt)" && \
-    python3.11 -m pip install --no-cache-dir --no-build-isolation "$(grep '^madmom' requirements.docker.txt)" && \
     python3.11 -c "import tensorflow as tf, numpy, skey; print('tf', tf.__version__, 'numpy', numpy.__version__, 'skey OK')"
 
 # Includes models/essentia_cache (see essentia-cpu.Dockerfile) so the image

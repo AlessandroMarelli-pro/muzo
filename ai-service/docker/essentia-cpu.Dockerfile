@@ -129,11 +129,8 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 # Runtime .so packages for every essentia dependency confirmed by its own
 # waf configure checks (eigen3 is header-only, no runtime package needed).
-# python3.11-dev is needed later for madmom, which compiles Cython/C
-# extensions from source at pip-install time (no prebuilt wheel exists for
-# any platform) and needs Python.h.
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    python3.11 python3.11-dev python3-pip \
+    python3.11 python3-pip \
     ffmpeg libsndfile1 libchromaprint-tools libchromaprint1 \
     libtag1v5 libsamplerate0 libyaml-0-2 libfftw3-single3 \
     && rm -rf /var/lib/apt/lists/*
@@ -156,30 +153,21 @@ RUN python3.11 -m pip install --no-cache-dir numpy six
 
 RUN python3.11 -c "import essentia; import essentia.standard as es; print('essentia', essentia.__version__, 'OK'); print('TensorflowPredictEffnetDiscogs:', hasattr(es, 'TensorflowPredictEffnetDiscogs'))"
 
-# The rest of ai-service's dependencies. build-essential/cython/numpy are
-# needed first since madmom has no prebuilt wheel for any platform (source
-# tarball only) and its setup.py imports numpy/cython at build time.
+# git is needed at build time: requirements.txt installs S-KEY via
+# `skey @ git+https://github.com/deezer/skey.git@<commit>` and pip shells out
+# to `git` to clone it. (No compiler needed any more -- madmom, the only
+# source-built wheel, was removed.)
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential git \
+    git \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 COPY requirements.txt .
 # essentia-tensorflow is already built from source above (see essentia-libs);
-# pip would otherwise try and fail to fetch it from PyPI (no Linux wheel).
-#
-# --no-build-isolation for madmom specifically: madmom's setup.py does
-# `import Cython` at build time (no prebuilt wheel exists for any platform),
-# but pip's default PEP 517 build isolation builds each package in its own
-# throwaway env that does NOT see the cython/numpy already installed on the
-# line above -- confirmed via CI (see essentia-gpu.Dockerfile history),
-# "ModuleNotFoundError: No module named 'Cython'" despite cython==3.0.1
-# being installed and reported as already satisfied immediately beforehand.
+# pip would otherwise try and fail to fetch it from PyPI (no Linux wheel), so
+# strip it from the list before installing.
 RUN grep -v '^essentia-tensorflow' requirements.txt > requirements.docker.txt && \
-    python3.11 -m pip install --no-cache-dir cython==3.0.1 "numpy>=1.26.0" && \
-    grep -v '^madmom' requirements.docker.txt > requirements.nomadmom.txt && \
-    python3.11 -m pip install --no-cache-dir -r requirements.nomadmom.txt && \
-    python3.11 -m pip install --no-cache-dir --no-build-isolation "$(grep '^madmom' requirements.docker.txt)"
+    python3.11 -m pip install --no-cache-dir -r requirements.docker.txt
 
 # Includes models/essentia_cache (kept out of .dockerignore) so the image ships
 # with the ~35 MB of essentia .pb model files -- no download from

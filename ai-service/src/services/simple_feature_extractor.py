@@ -16,21 +16,6 @@ from loguru import logger
 
 from src.services.features.key_detector import KeyDetector
 from src.utils.redis_cache import RedisCache
-
-# Compatibility shim for madmom
-import numpy as np
-
-try:
-    # Restore deprecated numpy aliases for madmom compatibility
-    if not hasattr(np, "float"):
-        np.float = float
-    if not hasattr(np, "int"):
-        np.int = int
-    if not hasattr(np, "complex"):
-        np.complex = complex
-except Exception:
-    pass
-
 from src.utils.performance_optimizer import monitor_performance
 
 

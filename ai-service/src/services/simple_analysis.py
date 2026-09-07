@@ -97,15 +97,20 @@ class SimpleAnalysisService:
         self.gc_interval = 10  # Force GC every 10 analyses
 
         # Parallelism for per-file audio analysis within a batch.
-        # Disabled by default (1 = sequential): audioflux's native BFT/Onset/Spectral calls
-        # (used in smart_audio_sample_loading, shared_features, key_detector) are not
-        # thread-safe -- audioflux bundles its own OpenMP runtime plus Apple's Accelerate
-        # framework, and calling into it from
-        # multiple Python threads concurrently reproducibly crashes the process with SIGBUS
-        # (confirmed: ~40% crash rate across repeated concurrent runs). Since this service is
-        # already horizontally scaled across multiple instances, cross-batch throughput comes
-        # from running more instances, not from intra-batch threading here. Override via
-        # BATCH_AUDIO_WORKERS only if audioflux calls are made thread-safe (e.g. behind a lock).
+        # Disabled by default (1 = sequential). Historically this was because
+        # audioflux's native BFT/Onset/Spectral calls -- which the per-track path
+        # used to make -- are not thread-safe (audioflux bundles its own OpenMP
+        # runtime plus Apple's Accelerate framework; concurrent calls from
+        # multiple Python threads reproducibly crash the process with SIGBUS,
+        # ~40% crash rate across repeated runs). Those calls are gone now (the
+        # only remaining in-process audioflux call is the single-threaded
+        # `model_warmup._warm_audioflux()` at startup), but the TF/BLAS/torch
+        # thread pools are still sized as vCPU / WEB_CONCURRENCY (see
+        # src/config/threads.py), so intra-batch threading here would
+        # oversubscribe them. This service is horizontally scaled anyway --
+        # cross-batch throughput comes from more instances, not more threads
+        # here. Override via BATCH_AUDIO_WORKERS only if you also shrink
+        # ANALYSIS_THREADS accordingly.
         try:
             self.batch_audio_workers = max(
                 1, int(os.getenv("BATCH_AUDIO_WORKERS", "1"))
