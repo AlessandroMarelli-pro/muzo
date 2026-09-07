@@ -1,6 +1,6 @@
 import { PlaylistDetail } from '@/components/playlist/playlist-detail';
 import { RouteError, RouteNotFound } from '@/components/route-error';
-import { fetchPlaylist, fetchPlaylistRecommendations } from '@/services/playlist-hooks';
+import { playlistQueryOptions, playlistRecommendationsQueryOptions } from '@/services/playlist-hooks';
 import { createFileRoute, notFound, useNavigate } from '@tanstack/react-router';
 
 function PlaylistDetailPage() {
@@ -14,27 +14,32 @@ function PlaylistDetailPage() {
   return <PlaylistDetail id={playlistId} onBack={handleBackToPlaylists} />;
 }
 
-const loader = async ({ params }: { params: { playlistId: string } }) => {
-  const { playlistId } = params;
-  if (!playlistId) {
-    throw notFound();
-  }
-
-  const [playlist, recommendations] = await Promise.all([
-    fetchPlaylist(playlistId).catch(() => null),
-    fetchPlaylistRecommendations(playlistId, 20).catch(() => []),
-  ]);
-
-  if (!playlist) {
-    throw notFound();
-  }
-
-  return { playlist, recommendations };
-};
-
 export const Route = createFileRoute('/playlists/$playlistId')({
   component: PlaylistDetailPage,
-  loader,
+  loader: async ({ params, context }) => {
+    const { playlistId } = params;
+    if (!playlistId) {
+      throw notFound();
+    }
+
+    const playlist = await context.queryClient
+      .ensureQueryData(playlistQueryOptions(playlistId))
+      .catch(() => null);
+
+    if (!playlist) {
+      throw notFound();
+    }
+
+    // Recommendations are expensive (library-wide similarity search). Warm the
+    // cache without blocking the loader so navigating in — and every
+    // router.invalidate() from a track add/remove — stays fast. The
+    // Recommendations tab reads this query and shows its own loading state.
+    void context.queryClient.prefetchQuery(
+      playlistRecommendationsQueryOptions(playlistId, 20),
+    );
+
+    return { playlist };
+  },
   errorComponent: ({ error }) => (
     <RouteError
       error={error}

@@ -217,12 +217,17 @@ EXPOSE 4000
 # TF model stages ~1.3-1.9x. It can shift low-order float bits (op reordering) --
 # below this pipeline's reported output precision, changes no label. Set to 0 at
 # deploy time if a consumer needs bit-exact reproducibility. See threads.py.
+# TF_SET_ONEDNN_FPMATH_MODE=BF16: plain FP32 never uses AMX (AMX = BF16/INT8
+# tiles only); this lets oneDNN down-convert the heavy conv/matmul to BF16 and
+# run them on AMX. More numeric drift than ONEDNN_OPTS alone, still below this
+# pipeline's reported precision. Set to FP32 to disable. See threads.py.
 ENV ANALYSIS_THREADS=8 \
     OMP_NUM_THREADS=8 \
     TF_NUM_INTRAOP_THREADS=8 \
     TF_NUM_INTEROP_THREADS=1 \
     TF_CPP_MIN_LOG_LEVEL=2 \
-    TF_ENABLE_ONEDNN_OPTS=1
+    TF_ENABLE_ONEDNN_OPTS=1 \
+    TF_SET_ONEDNN_FPMATH_MODE=BF16
 
 # 2 gunicorn workers by default -- matches the `intel-spr x8` deploy (16 vCPU /
 # 2 workers * ANALYSIS_THREADS=8). Baked into the image (not just the deploy

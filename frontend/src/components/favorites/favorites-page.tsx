@@ -265,7 +265,6 @@ export function FavoritesPage({ playlist, recommendations, tab, onTabChange }: F
           <TrackRecommendations
             playlistId={playlist?.id ?? ''}
             onTrackAdded={handleAddToFavorites}
-            recommendations={recommendations}
           />
         </TabsContent>
       </Tabs>

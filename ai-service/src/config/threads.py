@@ -60,6 +60,18 @@ os.environ.setdefault("TF_CPP_MIN_LOG_LEVEL", "2")
 # force bit-for-bit reproducibility back on if a downstream consumer needs it.
 os.environ.setdefault("TF_ENABLE_ONEDNN_OPTS", "1")
 
+# oneDNN FPMATH mode: BF16. FP32 matmul/conv on Sapphire Rapids otherwise runs on
+# AVX-512 -- AMX tiles only execute BF16/INT8, so plain FP32 never touches AMX.
+# Setting this lets oneDNN down-convert FP32 -> BF16 internally for the heavy conv
+# / matmul ops (the discogs-effnet embedding + classifier heads) and run them on
+# AMX, with the FP32<->BF16 casts handled inside the library -- no model-code
+# change. It costs more numeric drift than TF_ENABLE_ONEDNN_OPTS alone (BF16 has
+# ~3 decimal digits of mantissa); for this pipeline's outputs (argmax
+# genre/mood/instrument labels, tempo to 1 BPM, valence/arousal to 2 dp) that
+# stays below the reported precision. Set TF_SET_ONEDNN_FPMATH_MODE=FP32 at
+# deploy time to disable and fall back to AVX-512 FP32.
+os.environ.setdefault("TF_SET_ONEDNN_FPMATH_MODE", "BF16")
+
 
 def analysis_threads() -> int:
     """The pinned thread count, for callers that need it as an int (e.g.

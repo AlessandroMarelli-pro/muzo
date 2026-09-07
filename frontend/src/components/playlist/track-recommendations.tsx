@@ -3,7 +3,6 @@ import { Card, CardContent } from '@/components/ui/card';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { useAddTrackToPlaylist, usePlaylistRecommendations } from '@/services/playlist-hooks';
 import type { RecommendationSeedStrategy } from '@/services/recommendation-types';
-import { useRouter } from '@tanstack/react-router';
 import { Sparkles } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -16,7 +15,6 @@ import {
 interface TrackRecommendationsProps {
   playlistId: string;
   onTrackAdded: (trackId: string, artist: string, title: string) => void;
-  recommendations: TrackRecommendation[];
 }
 
 export const TrackRecommandationsComponent = ({
@@ -59,27 +57,23 @@ export const TrackRecommandationsComponent = ({
   );
 };
 
-export function TrackRecommendations({
-  playlistId,
-  onTrackAdded,
-  recommendations: initialRecommendations,
-}: TrackRecommendationsProps) {
+export function TrackRecommendations({ playlistId, onTrackAdded }: TrackRecommendationsProps) {
   const addTrackMutation = useAddTrackToPlaylist('default');
-  const router = useRouter();
   const [seedStrategy, setSeedStrategy] = useState<RecommendationSeedStrategy>('mean');
   const [addedIds, setAddedIds] = useState<Set<string>>(new Set());
 
-  // The playlist route loader already fetched `mean` recommendations for the
-  // initial render -- only issue a client-side fetch once the user actually
-  // switches strategy, instead of refetching on mount.
-  const {
-    data: fetchedRecommendations,
-    isLoading,
-    refetch: refetchRecommendations,
-  } = usePlaylistRecommendations(playlistId, 20, seedStrategy, undefined, {
-    enabled: seedStrategy !== 'mean',
-  });
-  const recommendations = seedStrategy === 'mean' ? initialRecommendations : fetchedRecommendations;
+  // Recommendations live entirely in React Query. The route loader warms the
+  // `mean` query in the background; switching strategy fetches that variant.
+  // A track add/remove intentionally does NOT refresh this — it's expensive and
+  // the just-added row is greyed via `addedIds` until the user revisits the tab.
+  // Pass `undefined` for the default so the query key matches the route
+  // loaders' prefetch (which omit seedStrategy).
+  const { data: recommendations, isLoading } = usePlaylistRecommendations(
+    playlistId,
+    20,
+    seedStrategy === 'mean' ? undefined : seedStrategy,
+    undefined,
+  );
 
   const handleAddTrack = async (trackId: string, artist: string, title: string) => {
     // Grey the row out immediately instead of letting it vanish on refetch.
@@ -92,12 +86,6 @@ export function TrackRecommendations({
         title,
       });
       onTrackAdded(trackId, artist, title);
-
-      if (seedStrategy === 'mean') {
-        router.invalidate();
-      } else {
-        refetchRecommendations();
-      }
     } catch (error) {
       console.error('Failed to add track:', error);
       toast.error('Could not add that track. Please try again.');
@@ -135,9 +123,9 @@ export function TrackRecommendations({
         </ToggleGroup>
       </div>
       <TrackRecommandationsComponent
-        recommendations={recommendations ?? []}
+        recommendations={recommendations}
         onAddTrack={handleAddTrack}
-        isLoading={seedStrategy !== 'mean' && isLoading}
+        isLoading={isLoading}
         addedIds={addedIds}
       />
     </div>

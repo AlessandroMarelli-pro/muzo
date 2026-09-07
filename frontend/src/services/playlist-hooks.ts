@@ -359,6 +359,17 @@ export const playlistsQueryOptions = (search?: string, verifyTrackId?: string) =
     queryFn: async () => await fetchPlaylists(search, verifyTrackId),
   });
 
+/**
+ * Query options for a single playlist. Used by the playlist detail route so a
+ * track add/remove can refresh just the playlist (cheap) without re-running the
+ * loader's expensive recommendations fetch.
+ */
+export const playlistQueryOptions = (id: string, userId: string = 'default') =>
+  queryOptions({
+    queryKey: ['playlist', id, userId] as const,
+    queryFn: () => fetchPlaylist(id, userId),
+  });
+
 export const favoritePlaylistQueryOptions = () =>
   queryOptions({
     queryKey: ['favoritePlaylist'] as const,
@@ -1144,20 +1155,13 @@ export function useAddTrackToPlaylist(userId: string = 'default') {
       artist: string;
       title: string;
     }) => addTrackToPlaylist(playlistId, input, artist, title),
-    onSuccess: async (data, { playlistId }) => {
+    onSuccess: (data, { playlistId }) => {
+      // Invalidate lists + the single playlist; let observers refetch lazily.
+      // Deliberately not touching ['playlistRecommendations', ...] — recomputing
+      // them on every track add is expensive and not worth it here.
       queryClient.invalidateQueries({ queryKey: ['playlists'] });
-      await queryClient.invalidateQueries({
-        queryKey: playlistsQueryOptions(undefined, undefined).queryKey,
-      });
-      // Ensure the playlists query has refetched and cache is updated
-      await queryClient.refetchQueries({
-        queryKey: playlistsQueryOptions(undefined, undefined).queryKey,
-      });
       queryClient.invalidateQueries({
         queryKey: ['playlist', playlistId, userId],
-      });
-      queryClient.invalidateQueries({
-        queryKey: ['playlistRecommendations', playlistId, 50],
       });
       const trackName = ` ${data?.track?.title} by ${data?.track?.artist}`;
       toast.success(`Track added to playlist`, {

@@ -75,6 +75,10 @@ DEPLOY_ARGS=(
   # track. Also code defaults in src/services/simple_analysis.py.
   --env SKEY_WINDOW_S=90
   --env SKEY_SKIP_INTRO_S=30
+  # Let oneDNN down-convert FP32 conv/matmul to BF16 so the TF model stages run
+  # on Sapphire Rapids' AMX tiles (plain FP32 stays on AVX-512). Also baked into
+  # essentia-cpu.Dockerfile ENV. Set to FP32 to disable. See src/config/threads.py.
+  --env TF_SET_ONEDNN_FPMATH_MODE=BF16
   --type authenticated
 )
 

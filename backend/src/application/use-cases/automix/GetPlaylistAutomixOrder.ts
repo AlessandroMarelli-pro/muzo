@@ -15,6 +15,7 @@ const BPM_SCALE = 8;
 const KEY_WEIGHT = 1;
 const UNKNOWN_KEY_PENALTY = 1;
 const EMBED_WEIGHT = 10;
+const TEMPO_WEIGHT = 5;
 
 export class GetPlaylistAutomixOrderUseCase {
   constructor(private readonly playlistTrackRepository: IPlaylistTrackRepository) {}
@@ -67,7 +68,8 @@ export class GetPlaylistAutomixOrderUseCase {
 
     const tempoA = a.track.features?.musicalFeatures?.tempo;
     const tempoB = b.track.features?.musicalFeatures?.tempo;
-    const bpmScore = tempoA != null && tempoB != null ? Math.abs(tempoA - tempoB) / BPM_SCALE : 0;
+    const bpmScore =
+      tempoA != null && tempoB != null ? (TEMPO_WEIGHT * Math.abs(tempoA - tempoB)) / BPM_SCALE : 0;
 
     const keyA =
       a.track.features?.musicalFeatures?.camelotKey ?? a.track.features?.musicalFeatures?.key;

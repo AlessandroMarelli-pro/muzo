@@ -10,10 +10,12 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
+  playlistQueryOptions,
   useAddTrackToPlaylist,
   usePlaylist,
   useUpdatePlaylistSorting,
 } from '@/services/playlist-hooks';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowUpDown, ChevronDown, Compass, Disc3, Plus, Sparkles } from 'lucide-react';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
@@ -23,7 +25,6 @@ import { Playlist } from '@/__generated__/types';
 import { useCurrentTrack } from '@/contexts/audio-player-context';
 import { formatCoarseDuration } from '@/lib/utils';
 import { Route } from '@/routes/playlists.$playlistId';
-import { useRouter } from '@tanstack/react-router';
 import { Skeleton } from '../ui/skeleton';
 import { AddTrackDrawer } from './add-track-drawer';
 import { PlaylistDetailActions } from './playlist-detail-actions';
@@ -131,8 +132,15 @@ const TracksSortMenu = ({
 );
 
 export function PlaylistDetail({ id, onBack }: PlaylistDetailProps) {
-  const { playlist, recommendations } = Route.useLoaderData();
-  const router = useRouter();
+  const { playlist: loaderPlaylist } = Route.useLoaderData();
+  const queryClient = useQueryClient();
+  // Read the playlist from React Query (seeded by the loader) so a track
+  // add/remove can refresh just this query instead of router.invalidate()ing
+  // the whole route — which would also recompute the expensive recommendations.
+  const { data: playlist = loaderPlaylist } = useQuery({
+    ...playlistQueryOptions(id),
+    initialData: loaderPlaylist,
+  });
   const loading = false;
   const { currentTrack } = useCurrentTrack();
   const [activeTab, setActiveTab] = useState('tracks');
@@ -144,8 +152,9 @@ export function PlaylistDetail({ id, onBack }: PlaylistDetailProps) {
   const tracksListRef = useRef<PlaylistTracksListHandle>(null);
 
   const refetch = useCallback(() => {
-    router.invalidate();
-  }, [router]);
+    // Playlist only — deliberately not the recommendations query.
+    queryClient.invalidateQueries({ queryKey: playlistQueryOptions(id).queryKey });
+  }, [queryClient, id]);
 
   const seekToPosition = useCallback((position: number) => {
     setActiveTab('tracks');
@@ -291,11 +300,7 @@ export function PlaylistDetail({ id, onBack }: PlaylistDetailProps) {
         </TabsContent>
 
         <TabsContent value="recommendations" className="space-y-4">
-          <TrackRecommendations
-            playlistId={playlist?.id || ''}
-            onTrackAdded={refetch}
-            recommendations={recommendations}
-          />
+          <TrackRecommendations playlistId={playlist?.id || ''} onTrackAdded={refetch} />
         </TabsContent>
 
         <TabsContent value="discovery" className="space-y-4">
