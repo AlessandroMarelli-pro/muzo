@@ -209,13 +209,18 @@ EXPOSE 4000
 # tiles only); this lets oneDNN down-convert the heavy conv/matmul to BF16 and
 # run them on AMX. More numeric drift than ONEDNN_OPTS alone, still below this
 # pipeline's reported precision. Set to FP32 to disable. See threads.py.
+# AUDIO_DECODER=ffmpeg: decode opus/m4a via the ffmpeg binary (~2x faster than
+# libsndfile on the full-track decode -- the biggest per-track stage). Validated
+# no label/embedding impact. Set to soundfile to fall back. See
+# src/services/simple_audio_loader.py.
 ENV ANALYSIS_THREADS=8 \
     OMP_NUM_THREADS=8 \
     TF_NUM_INTRAOP_THREADS=8 \
     TF_NUM_INTEROP_THREADS=1 \
     TF_CPP_MIN_LOG_LEVEL=2 \
     TF_ENABLE_ONEDNN_OPTS=1 \
-    TF_SET_ONEDNN_FPMATH_MODE=BF16
+    TF_SET_ONEDNN_FPMATH_MODE=BF16 \
+    AUDIO_DECODER=ffmpeg
 
 # 2 gunicorn workers by default -- matches the `intel-spr x8` deploy (16 vCPU /
 # 2 workers * ANALYSIS_THREADS=8). Baked into the image (not just the deploy

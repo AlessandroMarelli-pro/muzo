@@ -79,6 +79,10 @@ DEPLOY_ARGS=(
   # on Sapphire Rapids' AMX tiles (plain FP32 stays on AVX-512). Also baked into
   # essentia-cpu.Dockerfile ENV. Set to FP32 to disable. See src/config/threads.py.
   --env TF_SET_ONEDNN_FPMATH_MODE=BF16
+  # Decode opus/m4a via the ffmpeg binary (~2x faster than libsndfile on the
+  # full-track decode). No label/embedding impact (validated). Set to soundfile
+  # to fall back. See src/services/simple_audio_loader.py.
+  --env AUDIO_DECODER=ffmpeg
   --type authenticated
 )
 
