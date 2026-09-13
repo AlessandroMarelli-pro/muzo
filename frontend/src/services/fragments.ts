@@ -5,6 +5,7 @@ export const trackFragment = gql`
     id
     artist
     title
+    metadataManuallyEdited
     listeningCount
     lastPlayedAt
     isFavorite

@@ -18,6 +18,7 @@ import {
   ToggleDislikeUseCase,
   ToggleFavoriteUseCase,
   ToggleLikeUseCase,
+  UpdateTrackMetadataUseCase,
 } from 'src/application/use-cases/music-track';
 import { SessionId } from 'src/kernel/ids';
 import { getCurrentUser } from 'src/kernel/types/context';
@@ -38,6 +39,7 @@ export class MusicTrackResolver {
     private readonly toggleLikeUseCase: ToggleLikeUseCase,
     private readonly toggleDislikeUseCase: ToggleDislikeUseCase,
     private readonly toggleBangerUseCase: ToggleBangerUseCase,
+    private readonly updateTrackMetadataUseCase: UpdateTrackMetadataUseCase,
     @Inject(HQ_AUDIO_ACQUIRE_PRODUCER)
     private readonly hqAudioAcquireProducer: IHqAudioAcquireProducer,
     @Inject(HQ_AUDIO_ENHANCE_PRODUCER)
@@ -81,6 +83,17 @@ export class MusicTrackResolver {
   @Mutation(() => Track)
   async toggleBanger(@Args('trackId', { type: () => Base64ID }) trackId: string): Promise<Track> {
     return this.toggleBangerUseCase.execute(parseMusicTrackId(trackId)).then(toTrack);
+  }
+
+  @Mutation(() => Track)
+  async updateTrackMetadata(
+    @Args('trackId', { type: () => Base64ID }) trackId: string,
+    @Args('artist') artist: string,
+    @Args('title') title: string,
+  ): Promise<Track> {
+    return this.updateTrackMetadataUseCase
+      .execute(parseMusicTrackId(trackId), artist, title)
+      .then(toTrack);
   }
 
   @Mutation(() => Base64ID)

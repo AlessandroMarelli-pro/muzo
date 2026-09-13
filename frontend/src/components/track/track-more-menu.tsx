@@ -11,11 +11,13 @@ import {
   Download,
   ListEnd,
   Music,
+  Pencil,
   RefreshCw,
   Sparkles,
   SquareArrowOutUpRight,
 } from "lucide-react";
 import { useState } from "react";
+import { EditTrackMetadataDialog } from "./edit-track-metadata-dialog";
 import { SelectPlaylistTrigger } from "../playlist/select-playlist-dialog";
 import {
   AlertDialog,
@@ -70,6 +72,7 @@ export const TrackMoreMenu = ({
   const scanning = scanTrackMutation.isPending;
 
   const [confirm, setConfirm] = useState<ConfirmKind>(null);
+  const [editOpen, setEditOpen] = useState(false);
 
   const handleAddToQueue = () => {
     addToQueueMutation.mutate(trackId);
@@ -164,6 +167,15 @@ export const TrackMoreMenu = ({
               <SquareArrowOutUpRight />
               View details
             </DropdownMenuItem>
+            <DropdownMenuItem
+              onSelect={(e) => {
+                e.preventDefault();
+                setEditOpen(true);
+              }}
+            >
+              <Pencil />
+              Edit artist/title
+            </DropdownMenuItem>
           </DropdownMenuGroup>
 
           <DropdownMenuSeparator />
@@ -247,8 +259,8 @@ export const TrackMoreMenu = ({
                   <span className="font-medium text-foreground">
                     {title || "this track"}
                   </span>{" "}
-                  and rebuilds everything. Any manual corrections will be lost.
-                  Takes about a minute.
+                  and rebuilds everything. Manually edited artist/title are
+                  kept. Takes about a minute.
                 </>
               ) : (
                 <>
@@ -280,6 +292,14 @@ export const TrackMoreMenu = ({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <EditTrackMetadataDialog
+        trackId={trackId}
+        artist={artist}
+        title={title}
+        open={editOpen}
+        onOpenChange={setEditOpen}
+      />
     </>
   );
 };

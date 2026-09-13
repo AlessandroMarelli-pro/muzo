@@ -135,6 +135,7 @@ import {
   UpdatePlaylistUseCase,
   UpdateQueuePositionsUseCase,
   UpdateSavedFilterUseCase,
+  UpdateTrackMetadataUseCase,
 } from './index';
 import { GetActiveSessionsUseCase } from './scan-session/GetActiveSessions';
 import { GetCompleteSessionsUseCase } from './scan-session/GetCompleteSessions';
@@ -302,6 +303,7 @@ const useCasesProviders = [
     LOGGER,
   ]),
   createUseCaseProvider(ToggleBangerUseCase, [MUSIC_TRACK_REPOSITORY, HQ_AUDIO_ACQUIRE_PRODUCER]),
+  createUseCaseProvider(UpdateTrackMetadataUseCase, [MUSIC_TRACK_REPOSITORY]),
   createUseCaseProvider(GetRandomTrackWithStatsUseCase, [MUSIC_TRACK_QUERIES]),
   createUseCaseProvider(GetRecentlyPlayedUseCase, [MUSIC_TRACK_REPOSITORY]),
   createUseCaseProvider(RegisterPlayedTrackUseCase, [MUSIC_TRACK_REPOSITORY]),

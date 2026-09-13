@@ -206,6 +206,7 @@ export const toDomain: ToDomain = (row) => {
     libraryId: models.musicLibrary.id(row.libraryId),
     title: row.originalTitle ?? undefined,
     artist: row.originalArtist ?? undefined,
+    metadataManuallyEdited: row.metadataManuallyEdited ?? false,
     hqAudioPath: row.hqAudioPath ?? undefined,
     hqAudioSource: hqAudioSourceToDomain(row.hqAudioSource),
     hqAudioVerified: row.hqAudioVerified ?? undefined,
@@ -228,6 +229,7 @@ export const toPrisma: ToPrisma = (domainModel) => {
     id: extractModelId(domainModel.id).dbId,
     originalTitle: domainModel.title ?? null,
     originalArtist: domainModel.artist ?? null,
+    metadataManuallyEdited: domainModel.metadataManuallyEdited ?? false,
     duration: domainModel.technicalInfo?.duration ?? 0,
     originalDate: domainModel.metadata?.date ?? null,
     isFavorite: domainModel.stats?.isFavorite ?? false,
@@ -269,6 +271,9 @@ export type ToPrismaUpdate = (data: MusicTrackUpdateData) => Partial<PrismaMusic
 export const toPrismaUpdate: ToPrismaUpdate = (data) => {
   const stats = data.stats ?? undefined;
   return {
+    originalTitle: data.title ?? undefined,
+    originalArtist: data.artist ?? undefined,
+    metadataManuallyEdited: data.metadataManuallyEdited ?? undefined,
     isLiked: stats?.isLiked ?? undefined,
     isBanger: stats?.isBanger ?? undefined,
     isFavorite: stats?.isFavorite ?? undefined,

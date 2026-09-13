@@ -43,7 +43,7 @@ export const TrackRecommandationsComponent = ({
                   recommendationsLength={recommendations.length}
                   added={
                     recommendation.track?.id
-                      ? addedIds?.has(recommendation.track.id) ?? false
+                      ? (addedIds?.has(recommendation.track.id) ?? false)
                       : false
                   }
                 />
@@ -70,7 +70,7 @@ export function TrackRecommendations({ playlistId, onTrackAdded }: TrackRecommen
   // loaders' prefetch (which omit seedStrategy).
   const { data: recommendations, isLoading } = usePlaylistRecommendations(
     playlistId,
-    20,
+    50,
     seedStrategy === 'mean' ? undefined : seedStrategy,
     undefined,
   );

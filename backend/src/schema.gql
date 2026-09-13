@@ -263,6 +263,7 @@ type Mutation {
   updatePlaylistTracksPositions(input: UpdatePlaylistPositionsInput!, playlistId: Base64ID!): Boolean!
   updateQueuePositions(input: UpdateQueuePositionsInput!): [QueueItem!]!
   updateSavedFilter(id: Base64ID!, input: SavedFilterInput!): FilterCriteriaResult!
+  updateTrackMetadata(artist: String!, title: String!, trackId: Base64ID!): Track!
 }
 
 interface Node {
@@ -482,6 +483,7 @@ type Track implements Node {
   lastScannedAt: Date
   libraryId: Base64ID
   listeningCount: Float!
+  metadataManuallyEdited: Boolean!
   mfArousalMood: String
   mfCamelotKey: String
   mfDanceability: Float

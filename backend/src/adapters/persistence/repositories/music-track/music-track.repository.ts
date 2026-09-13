@@ -154,6 +154,7 @@ export class MusicTrackRepository implements IMusicTrackRepository {
             imagePath: undefined,
             artist: undefined,
             title: undefined,
+            metadataManuallyEdited: false,
             stats: undefined,
           }),
         ),
@@ -494,11 +495,20 @@ export class MusicTrackRepository implements IMusicTrackRepository {
 
     // Update original metadata if available
     if (analysisResult.tags) {
-      if (analysisResult.tags.title) {
-        updateData.originalTitle = analysisResult.tags.title;
-      }
-      if (analysisResult.tags.artist) {
-        updateData.originalArtist = analysisResult.tags.artist;
+      // A manually corrected artist/title must survive rescans -- skip both.
+      const existing = await this.prisma.musicTrack.findUnique({
+        where: { id: extractModelId(trackId).dbId },
+        select: { metadataManuallyEdited: true },
+      });
+      const manuallyEdited = existing?.metadataManuallyEdited ?? false;
+
+      if (!manuallyEdited) {
+        if (analysisResult.tags.title) {
+          updateData.originalTitle = analysisResult.tags.title;
+        }
+        if (analysisResult.tags.artist) {
+          updateData.originalArtist = analysisResult.tags.artist;
+        }
       }
       if (analysisResult.tags.album) {
         updateData.originalAlbum = analysisResult.tags.album;

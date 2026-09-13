@@ -111,6 +111,7 @@ export type HqAudioSource =
 export type MusicTrack = Readonly<ModelBase<MusicTrackId>> & {
   artist: MaybeUndefined<string>;
   title: MaybeUndefined<string>;
+  metadataManuallyEdited: boolean;
   imagePath?: string;
   hqAudioPath?: string;
   hqAudioSource?: HqAudioSource;

@@ -14,3 +14,4 @@ export * from './ToggleBangerTrack';
 export * from './ToggleDislikeTrack';
 export * from './ToggleFavorite';
 export * from './ToggleLikeTrack';
+export * from './UpdateTrackMetadata';

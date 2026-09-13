@@ -19,6 +19,9 @@ import { AudioAnalysisResponse } from '../dtos/AudioAnalysis';
 export const MUSIC_TRACK_REPOSITORY = createToken<IMusicTrackRepository>('MUSIC_TRACK_REPOSITORY');
 
 export type MusicTrackUpdateData = {
+  title?: string;
+  artist?: string;
+  metadataManuallyEdited?: boolean;
   hqAudioPath?: string;
   hqAudioSource?: HqAudioSource;
   hqAudioVerified?: boolean;

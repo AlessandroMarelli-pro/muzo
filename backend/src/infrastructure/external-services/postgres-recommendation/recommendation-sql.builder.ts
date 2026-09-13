@@ -40,7 +40,10 @@ function toVectorLiteral(vector: number[]): string {
  */
 function gaussScoreSql(fieldSql: Prisma.Sql, origin: number, scale: number, weight: number) {
   const safeScale = Number.isFinite(scale) && scale > 0 ? scale : 0.18;
-  return Prisma.sql`(${weight}::float8 * EXP(LN(0.5) * POWER(GREATEST(0, ABS(${fieldSql} - ${origin}::float8) - 0.04) / ${safeScale}::float8, 2)))`;
+  // GREATEST floors the EXP exponent at -700 (float8 underflows below ~-745,
+  // raising Postgres error 22003) -- EXP(-700) is already ~0, so the clamp
+  // doesn't change the score, only avoids the error for far-off values.
+  return Prisma.sql`(${weight}::float8 * EXP(GREATEST(LN(0.5) * POWER(GREATEST(0, ABS(${fieldSql} - ${origin}::float8) - 0.04) / ${safeScale}::float8, 2), -700)))`;
 }
 
 function termScoreSql(fieldSql: Prisma.Sql, value: string, weight: number) {

@@ -1,6 +1,9 @@
 import { PlaylistDetail } from '@/components/playlist/playlist-detail';
 import { RouteError, RouteNotFound } from '@/components/route-error';
-import { playlistQueryOptions, playlistRecommendationsQueryOptions } from '@/services/playlist-hooks';
+import {
+  playlistQueryOptions,
+  playlistRecommendationsQueryOptions,
+} from '@/services/playlist-hooks';
 import { createFileRoute, notFound, useNavigate } from '@tanstack/react-router';
 
 function PlaylistDetailPage() {
@@ -34,9 +37,7 @@ export const Route = createFileRoute('/playlists/$playlistId')({
     // cache without blocking the loader so navigating in — and every
     // router.invalidate() from a track add/remove — stays fast. The
     // Recommendations tab reads this query and shows its own loading state.
-    void context.queryClient.prefetchQuery(
-      playlistRecommendationsQueryOptions(playlistId, 20),
-    );
+    void context.queryClient.prefetchQuery(playlistRecommendationsQueryOptions(playlistId, 50));
 
     return { playlist };
   },

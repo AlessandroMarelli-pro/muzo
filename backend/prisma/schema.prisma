@@ -64,6 +64,7 @@ model MusicTrack {
   // Original Metadata
   originalTitle         String?
   originalArtist        String?
+  metadataManuallyEdited Boolean @default(false)
   originalAlbum         String?
   originalYear          Int?
   originalAlbumartist   String?

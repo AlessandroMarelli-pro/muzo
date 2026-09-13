@@ -61,17 +61,20 @@ export class AudioAnalysisRepository implements IAudioAnalysisRepository {
    * seed_discogs_genre_taxonomy migration), so the create path is a fallback.
    */
   private async findOrCreateGenreByName(name: string) {
-    const existing = await this.prisma.genre.findUnique({ where: { name } });
-    if (existing) return existing;
-    try {
-      return await this.prisma.genre.create({
-        data: toPrismaGenre(models.genre.instantiateNew({ name, description: null })),
-      });
-    } catch (error) {
-      if ((error as { code?: string }).code !== 'P2002') throw error;
-      const row = await this.prisma.genre.findUnique({ where: { name } });
-      if (!row) throw error;
-      return row;
+    // A batch analyzes many tracks concurrently (Promise.all in
+    // ProcessBatchAudioScanUseCase), so more than two requests can race the
+    // same never-before-seen name at once. One retry only covers 2-way
+    // contention; loop until we either find or win the row.
+    for (let attempt = 0; ; attempt++) {
+      const existing = await this.prisma.genre.findUnique({ where: { name } });
+      if (existing) return existing;
+      try {
+        return await this.prisma.genre.create({
+          data: toPrismaGenre(models.genre.instantiateNew({ name, description: null })),
+        });
+      } catch (error) {
+        if ((error as { code?: string }).code !== 'P2002' || attempt >= 5) throw error;
+      }
     }
   }
 
@@ -235,9 +238,13 @@ export class AudioAnalysisRepository implements IAudioAnalysisRepository {
       // Seeded from the Discogs taxonomy; see the genre note above for why this
       // is findOrCreate rather than upsert (subgenres_name_key). A newly created
       // row gets the parent genre we just saw; an existing row whose parent
-      // differs is realigned to it.
-      let subgenre = await this.prisma.subgenre.findUnique({ where: { name: normalizedName } });
-      if (!subgenre) {
+      // differs is realigned to it. Looped for the same reason as
+      // findOrCreateGenreByName: a batch races many tracks concurrently, so
+      // more than 2-way contention on a never-before-seen name is possible.
+      let subgenre: Awaited<ReturnType<typeof this.prisma.subgenre.findUnique>> = null;
+      for (let attempt = 0; ; attempt++) {
+        subgenre = await this.prisma.subgenre.findUnique({ where: { name: normalizedName } });
+        if (subgenre) break;
         try {
           subgenre = await this.prisma.subgenre.create({
             data: toPrismaSubgenre(
@@ -248,12 +255,12 @@ export class AudioAnalysisRepository implements IAudioAnalysisRepository {
               }),
             ),
           });
+          break;
         } catch (error) {
-          if ((error as { code?: string }).code !== 'P2002') throw error;
-          subgenre = await this.prisma.subgenre.findUnique({ where: { name: normalizedName } });
-          if (!subgenre) throw error;
+          if ((error as { code?: string }).code !== 'P2002' || attempt >= 5) throw error;
         }
-      } else if (parentGenreId && subgenre.genreId !== parentGenreId) {
+      }
+      if (parentGenreId && subgenre.genreId !== parentGenreId) {
         subgenre = await this.prisma.subgenre.update({
           where: { id: subgenre.id },
           data: { genreId: parentGenreId },

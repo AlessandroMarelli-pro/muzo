@@ -121,6 +121,7 @@ export function toTrack(domain: MusicTrack): Track {
     id: domain.id,
     artist: domain.artist,
     title: domain.title,
+    metadataManuallyEdited: domain.metadataManuallyEdited,
     ...toTrackStats(domain.stats),
     ...toTrackFileInfo(domain.fileInfo),
     hqAudioPath: domain.hqAudioPath,

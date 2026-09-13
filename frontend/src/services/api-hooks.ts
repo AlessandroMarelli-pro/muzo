@@ -289,7 +289,7 @@ export const fetchTrackRecommendations = async (id?: string, boost?: string) => 
         }
       }
     `,
-    { trackId: id, recommendationsLimit: 50, boosts },
+    { trackId: id, recommendationsLimit: 20, boosts },
   );
   return response.node.recommendations;
 };
@@ -716,6 +716,49 @@ export const useScanTrack = () => {
   });
 };
 
+export const useUpdateTrackMetadata = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      trackId,
+      artist,
+      title,
+    }: {
+      trackId: string;
+      artist: string;
+      title: string;
+    }) => {
+      const response = await graffleClient.request<{
+        updateTrackMetadata: Track;
+      }>(
+        gql`
+          ${trackFragment}
+          mutation UpdateTrackMetadata($trackId: Base64ID!, $artist: String!, $title: String!) {
+            updateTrackMetadata(trackId: $trackId, artist: $artist, title: $title) {
+              ...TrackFragment
+            }
+          }
+        `,
+        { trackId, artist, title },
+      );
+      return response.updateTrackMetadata;
+    },
+    onSuccess: () => {
+      toast.success('Track updated');
+      queryClient.invalidateQueries({ queryKey: ['tracksList'] });
+      queryClient.invalidateQueries({ queryKey: ['tracks'] });
+      queryClient.invalidateQueries({ queryKey: ['libraries'] });
+      queryClient.invalidateQueries({ queryKey: PENDING_TRACKS_ROOT_KEY });
+    },
+    onError: (error: any) => {
+      const errorMessage =
+        error?.response?.errors?.[0]?.message ?? error?.message ?? 'Failed to update track';
+      toast.error(errorMessage, { duration: 3000 });
+    },
+  });
+};
+
 /**
  * `downloadHqAudio` / `enhanceHqAudio` return as soon as the job is *enqueued*;
  * the file lands minutes later with no push notification for single tracks.
@@ -726,7 +769,13 @@ export const useScanTrack = () => {
 const HQ_ACQUIRE_REFRESH_DELAYS_MS = [8_000, 20_000, 45_000, 90_000, 180_000];
 // AI enhancement is a GPU job: ~12 min mono, ~24 min stereo.
 const HQ_ENHANCE_REFRESH_DELAYS_MS = [
-  60_000, 3 * 60_000, 6 * 60_000, 10 * 60_000, 15 * 60_000, 22 * 60_000, 30 * 60_000,
+  60_000,
+  3 * 60_000,
+  6 * 60_000,
+  10 * 60_000,
+  15 * 60_000,
+  22 * 60_000,
+  30 * 60_000,
 ];
 
 function scheduleHqRefresh(

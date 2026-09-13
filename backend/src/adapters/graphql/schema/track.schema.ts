@@ -17,6 +17,9 @@ export class Track {
   @Field(() => String, { nullable: true })
   title: MaybeUndefined<string>;
 
+  @Field(() => Boolean)
+  metadataManuallyEdited: boolean;
+
   @Field({ nullable: true })
   date?: Date;
 
