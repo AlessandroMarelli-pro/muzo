@@ -858,6 +858,36 @@ export const useEnhanceHqAudio = () => {
   });
 };
 
+export const useDeleteHqAudio = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (trackId: string) => {
+      const response = await graffleClient.request<{
+        deleteHqAudio: boolean;
+      }>(
+        gql`
+          mutation DeleteHqAudio($trackId: Base64ID!) {
+            deleteHqAudio(trackId: $trackId)
+          }
+        `,
+        { trackId },
+      );
+      return response.deleteHqAudio;
+    },
+    onSuccess: () => {
+      toast.success('HQ audio deleted');
+      queryClient.invalidateQueries({ queryKey: ['tracksList'] });
+      scheduleHqRefresh(queryClient, [0]);
+    },
+    onError: (error: any) => {
+      const errorMessage =
+        error?.response?.errors?.[0]?.message || error?.message || 'Failed to delete HQ audio';
+      toast.error(errorMessage, { duration: 3000 });
+    },
+  });
+};
+
 export const useDownloadPlaylistHqAudio = () => {
   return useMutation({
     mutationFn: async (playlistId: string) => {

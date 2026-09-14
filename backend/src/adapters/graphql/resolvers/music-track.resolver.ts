@@ -14,6 +14,7 @@ import {
   IHqAudioEnhanceProducer,
 } from 'src/application/ports/infrastructure/IHqAudioEnhanceProducer';
 import {
+  DeleteHqAudioUseCase,
   ToggleBangerUseCase,
   ToggleDislikeUseCase,
   ToggleFavoriteUseCase,
@@ -40,6 +41,7 @@ export class MusicTrackResolver {
     private readonly toggleDislikeUseCase: ToggleDislikeUseCase,
     private readonly toggleBangerUseCase: ToggleBangerUseCase,
     private readonly updateTrackMetadataUseCase: UpdateTrackMetadataUseCase,
+    private readonly deleteHqAudioUseCase: DeleteHqAudioUseCase,
     @Inject(HQ_AUDIO_ACQUIRE_PRODUCER)
     private readonly hqAudioAcquireProducer: IHqAudioAcquireProducer,
     @Inject(HQ_AUDIO_ENHANCE_PRODUCER)
@@ -126,5 +128,12 @@ export class MusicTrackResolver {
       getCurrentUser(),
     );
     return true;
+  }
+
+  @Mutation(() => Boolean)
+  async deleteHqAudio(
+    @Args('trackId', { type: () => Base64ID }) trackId: string,
+  ): Promise<boolean> {
+    return this.deleteHqAudioUseCase.execute(parseMusicTrackId(trackId));
   }
 }

@@ -70,6 +70,7 @@ import {
   CreateLibraryUseCase,
   CreatePlaylistUseCase,
   CreateSavedFilterUseCase,
+  DeleteHqAudioUseCase,
   DeleteLibraryUseCase,
   DeletePlaylistUseCase,
   DeleteSavedFilterUseCase,
@@ -296,6 +297,7 @@ const useCasesProviders = [
     LOGGER,
     ConfigService,
   ]),
+  createUseCaseProvider(DeleteHqAudioUseCase, [MUSIC_TRACK_REPOSITORY]),
   createUseCaseProvider(ToggleDislikeUseCase, [
     MUSIC_TRACK_REPOSITORY,
     HIDDEN_MUSIC_TRACK_REPOSITORY,

@@ -229,7 +229,8 @@ export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
       }
     };
     const handleTimeUpdate = () => setCurrentTime(audio.currentTime);
-    const handleLoadedMetadata = () => setDuration(audio.duration || 0);
+    const handleLoadedMetadata = () =>
+      setDuration(Number.isFinite(audio.duration) ? audio.duration : 0);
 
     audio.addEventListener("ended", handleEnded);
     audio.addEventListener("timeupdate", handleTimeUpdate);

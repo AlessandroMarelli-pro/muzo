@@ -1,6 +1,7 @@
 import { apiUrl } from "@/lib/api-config";
 import { useScanSessionContext } from "@/contexts/scan-session.context";
 import {
+  useDeleteHqAudio,
   useDownloadHqAudio,
   useEnhanceHqAudio,
   useScanTrack,
@@ -15,6 +16,7 @@ import {
   RefreshCw,
   Sparkles,
   SquareArrowOutUpRight,
+  Trash2,
 } from "lucide-react";
 import { useState } from "react";
 import { EditTrackMetadataDialog } from "./edit-track-metadata-dialog";
@@ -45,7 +47,7 @@ import {
 import { MoreHorizontal } from "lucide-react";
 import { isHqAudio } from "./audio-quality-badge";
 
-type ConfirmKind = "reanalyze" | "enhance" | null;
+type ConfirmKind = "reanalyze" | "enhance" | "deleteHq" | null;
 
 export const TrackMoreMenu = ({
   trackId,
@@ -68,6 +70,7 @@ export const TrackMoreMenu = ({
   const scanTrackMutation = useScanTrack();
   const downloadHqAudioMutation = useDownloadHqAudio();
   const enhanceHqAudioMutation = useEnhanceHqAudio();
+  const deleteHqAudioMutation = useDeleteHqAudio();
   const alreadyHq = isHqAudio(format, hqAudioPath);
   const scanning = scanTrackMutation.isPending;
 
@@ -97,6 +100,10 @@ export const TrackMoreMenu = ({
 
   const handleDownloadHqAudio = () => {
     downloadHqAudioMutation.mutate(trackId);
+  };
+
+  const handleDeleteHqAudio = () => {
+    deleteHqAudioMutation.mutate(trackId);
   };
 
   const handleViewDetails = () => {
@@ -206,6 +213,17 @@ export const TrackMoreMenu = ({
               />
               {alreadyHq ? "HQ audio available" : "Enhance with AI"}
             </DropdownMenuItem>
+            <DropdownMenuItem
+              onSelect={(e) => {
+                e.preventDefault();
+                setConfirm("deleteHq");
+              }}
+              disabled={!alreadyHq || deleteHqAudioMutation.isPending}
+              className="text-destructive focus:text-destructive"
+            >
+              <Trash2 />
+              Delete HQ audio
+            </DropdownMenuItem>
           </DropdownMenuGroup>
 
           <DropdownMenuSeparator />
@@ -250,7 +268,9 @@ export const TrackMoreMenu = ({
             <AlertDialogTitle>
               {confirm === "reanalyze"
                 ? "Re-analyze this track from scratch?"
-                : "Enhance with AI?"}
+                : confirm === "deleteHq"
+                  ? "Delete HQ audio?"
+                  : "Enhance with AI?"}
             </AlertDialogTitle>
             <AlertDialogDescription>
               {confirm === "reanalyze" ? (
@@ -261,6 +281,15 @@ export const TrackMoreMenu = ({
                   </span>{" "}
                   and rebuilds everything. Manually edited artist/title are
                   kept. Takes about a minute.
+                </>
+              ) : confirm === "deleteHq" ? (
+                <>
+                  This deletes the HQ audio file for{" "}
+                  <span className="font-medium text-foreground">
+                    {title || "this track"}
+                  </span>{" "}
+                  and falls back to the original file. Use this if the HQ
+                  match was wrong.
                 </>
               ) : (
                 <>
@@ -279,15 +308,20 @@ export const TrackMoreMenu = ({
               onClick={() => {
                 if (confirm === "reanalyze") runScan(true);
                 if (confirm === "enhance") handleEnhanceHqAudio();
+                if (confirm === "deleteHq") handleDeleteHqAudio();
                 setConfirm(null);
               }}
               className={
-                confirm === "reanalyze"
+                confirm === "reanalyze" || confirm === "deleteHq"
                   ? "bg-destructive text-destructive-foreground hover:bg-destructive/90"
                   : undefined
               }
             >
-              {confirm === "reanalyze" ? "Re-analyze" : "Enhance"}
+              {confirm === "reanalyze"
+                ? "Re-analyze"
+                : confirm === "deleteHq"
+                  ? "Delete"
+                  : "Enhance"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

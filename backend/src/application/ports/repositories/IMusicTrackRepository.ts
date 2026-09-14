@@ -22,10 +22,10 @@ export type MusicTrackUpdateData = {
   title?: string;
   artist?: string;
   metadataManuallyEdited?: boolean;
-  hqAudioPath?: string;
-  hqAudioSource?: HqAudioSource;
+  hqAudioPath?: string | null;
+  hqAudioSource?: HqAudioSource | null;
   hqAudioVerified?: boolean;
-  hqAudioSpectralCutoffHz?: number;
+  hqAudioSpectralCutoffHz?: number | null;
   stats?: {
     isFavorite?: boolean;
     isBanger?: boolean;

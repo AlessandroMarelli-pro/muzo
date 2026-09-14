@@ -578,7 +578,15 @@ export class SockseekAcquirer implements IHqAudioAcquirer {
 
     try {
       const args = hasKnownDuration
-        ? [queryCsvPath as string, '--input-type', 'csv', '--length-tol', '9', '--remove-ft']
+        ? [
+            queryCsvPath as string,
+            '--input-type',
+            'csv',
+            '--length-tol',
+            '7',
+            '--strict-conditions',
+            '--remove-ft',
+          ]
         : [`${artist} - ${title}`, '-s'];
       args.push(
         '--progress-json',
@@ -591,6 +599,8 @@ export class SockseekAcquirer implements IHqAudioAcquirer {
         '--search-timeout',
         this.searchTimeoutMs.toString(),
       );
+      console.log(args);
+
       if (this.fastSearch) {
         args.push('--fast-search');
       }
@@ -1001,7 +1011,8 @@ export class SockseekAcquirer implements IHqAudioAcquirer {
         '--album-col',
         'Album',
         '--length-tol',
-        '9',
+        '7',
+        '--strict-conditions',
         '--progress-json',
         '-p',
         resolvedOutputDir,
@@ -1026,7 +1037,7 @@ export class SockseekAcquirer implements IHqAudioAcquirer {
       if (this.configPath) {
         args.push('--config', this.configPath);
       }
-
+      console.log(args);
       let stdoutBuffer = '';
       let stderr = '';
       let timedOut = false;

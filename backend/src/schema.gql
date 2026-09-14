@@ -227,6 +227,7 @@ type Mutation {
   createLibrary(input: CreateLibraryInput!): Library!
   createPlaylist(input: CreatePlaylistInput!): Playlist!
   createSavedFilter(input: SavedFilterInput!): FilterCriteriaResult!
+  deleteHqAudio(trackId: Base64ID!): Boolean!
   deleteLibrary(id: Base64ID!): Boolean!
   deletePlaylist(id: Base64ID!): Boolean!
   deleteSavedFilter(id: Base64ID!): Boolean!

@@ -266,6 +266,7 @@ export type Mutation = {
   createLibrary: Library;
   createPlaylist: Playlist;
   createSavedFilter: FilterCriteriaResult;
+  deleteHqAudio: Scalars['Boolean']['output'];
   deleteLibrary: Scalars['Boolean']['output'];
   deletePlaylist: Scalars['Boolean']['output'];
   deleteSavedFilter: Scalars['Boolean']['output'];
@@ -365,6 +366,11 @@ export type MutationCreatePlaylistArgs = {
 
 export type MutationCreateSavedFilterArgs = {
   input: SavedFilterInput;
+};
+
+
+export type MutationDeleteHqAudioArgs = {
+  trackId: Scalars['Base64ID']['input'];
 };
 
 
@@ -1131,6 +1137,15 @@ export type ScanTrackMutationVariables = Exact<{
 
 export type ScanTrackMutation = { __typename?: 'Mutation', scanTrack: any };
 
+export type UpdateTrackMetadataMutationVariables = Exact<{
+  trackId: Scalars['Base64ID']['input'];
+  artist: Scalars['String']['input'];
+  title: Scalars['String']['input'];
+}>;
+
+
+export type UpdateTrackMetadataMutation = { __typename?: 'Mutation', updateTrackMetadata: { __typename?: 'Track', id: any, artist?: string | null, title?: string | null, metadataManuallyEdited: boolean, listeningCount: number, lastPlayedAt?: any | null, isFavorite: boolean, isLiked: boolean, isBanger: boolean, filePath: string, fileName: string, fileCreatedAt: any, fileSize: number, hqAudioPath?: string | null, duration: number, genres?: Array<string> | null, subgenres?: Array<string> | null, createdAt?: any | null, updatedAt?: any | null, mfTempo?: number | null, mfKey?: string | null, mfCamelotKey?: string | null, mfValenceMood?: string | null, mfArousalMood?: string | null, mfDanceabilityFeeling?: string | null, mfDanceability?: number | null, mfInstrumentalness?: number | null, mfVoice?: number | null, mfMoodHappy?: number | null, mfMoodSad?: number | null, mfMoodRelaxed?: number | null, mfMoodAggressive?: number | null, mfMoodParty?: number | null, imagePath?: string | null, lastScannedAt?: any | null, libraryId?: any | null, analysisStatus?: string | null, date?: any | null, format?: string | null } };
+
 export type DownloadHqAudioMutationVariables = Exact<{
   trackId: Scalars['Base64ID']['input'];
 }>;
@@ -1144,6 +1159,13 @@ export type EnhanceHqAudioMutationVariables = Exact<{
 
 
 export type EnhanceHqAudioMutation = { __typename?: 'Mutation', enhanceHqAudio: boolean };
+
+export type DeleteHqAudioMutationVariables = Exact<{
+  trackId: Scalars['Base64ID']['input'];
+}>;
+
+
+export type DeleteHqAudioMutation = { __typename?: 'Mutation', deleteHqAudio: boolean };
 
 export type DownloadPlaylistHqAudioMutationVariables = Exact<{
   playlistId: Scalars['Base64ID']['input'];

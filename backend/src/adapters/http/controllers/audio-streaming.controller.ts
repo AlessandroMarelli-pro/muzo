@@ -9,6 +9,7 @@ import {
   Res,
   UseGuards,
 } from '@nestjs/common';
+import { spawn } from 'child_process';
 import { Response } from 'express';
 import * as fs from 'fs';
 import { createReadStream, statSync } from 'fs';
@@ -47,8 +48,33 @@ export class AudioStreamingController {
       throw new BadRequestException(`Audio file not found at path: ${filePath}`);
     }
 
-    const fileSize = statSync(filePath).size;
     const fileExtension = path.extname(filePath).toLowerCase();
+
+    // AIFF isn't reliably playable in browsers, so transcode to AAC on the fly.
+    // Transcoded output length is unknown up front, so range/seek support is dropped for this path.
+    if (fileExtension === '.aiff' || fileExtension === '.aif') {
+      const baseName = (track.fileInfo?.fileName || 'audio').replace(/\.\w+$/, '');
+      res.set({
+        'Cache-Control': 'public, max-age=31536000',
+        'Content-Type': 'audio/aac',
+        'Content-Disposition': `inline; filename="${encodeURI(baseName)}.aac"`,
+      });
+      res.status(HttpStatus.OK);
+
+      const ffmpeg = spawn('ffmpeg', [
+        '-i', filePath,
+        '-f', 'adts',
+        '-c:a', 'aac',
+        '-b:a', '256k',
+        'pipe:1',
+      ]);
+      ffmpeg.stdout.pipe(res);
+      ffmpeg.on('error', () => res.destroy());
+      res.on('close', () => ffmpeg.kill('SIGKILL'));
+      return;
+    }
+
+    const fileSize = statSync(filePath).size;
 
     // Set appropriate content type based on file extension
     const contentType = getContentType(fileExtension);

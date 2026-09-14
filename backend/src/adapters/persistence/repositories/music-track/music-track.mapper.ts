@@ -32,9 +32,9 @@ const hqAudioSourceToDomain = (
   value ? (value.toLowerCase() as HqAudioSource) : undefined;
 
 const hqAudioSourceToPrisma = (
-  value: HqAudioSource | undefined,
-): PrismaHqAudioSource | undefined =>
-  value ? (value.toUpperCase() as PrismaHqAudioSource) : undefined;
+  value: HqAudioSource | undefined | null,
+): PrismaHqAudioSource | undefined | null =>
+  value === null ? null : value ? (value.toUpperCase() as PrismaHqAudioSource) : undefined;
 import { toDomainModel } from '../domain';
 
 export type ImageSearchLite = {
@@ -285,10 +285,11 @@ export const toPrismaUpdate: ToPrismaUpdate = (data) => {
     format: data.format ?? undefined,
     fileCreatedAt: data.fileCreatedAt ?? undefined,
     filePath: data.filePath ?? undefined,
-    hqAudioPath: data.hqAudioPath ?? undefined,
+    hqAudioPath: data.hqAudioPath === null ? null : data.hqAudioPath ?? undefined,
     hqAudioSource: hqAudioSourceToPrisma(data.hqAudioSource),
     hqAudioVerified: data.hqAudioVerified ?? undefined,
-    hqAudioSpectralCutoffHz: data.hqAudioSpectralCutoffHz ?? undefined,
+    hqAudioSpectralCutoffHz:
+      data.hqAudioSpectralCutoffHz === null ? null : data.hqAudioSpectralCutoffHz ?? undefined,
     fileName: data.fileName ?? undefined,
     fileSize: data.fileSize ?? undefined,
   };
