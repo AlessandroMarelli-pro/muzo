@@ -34,11 +34,11 @@ export function isAnonymousUser(user: ActionContext['user']): boolean {
  */
 export const DEFAULT_RECOMMENDATION_WEIGHTS: RecommendationWeights = {
   audioSimilarity: 0, // unused: embedding is always the base
-  genreSimilarity: 0.1,
+  genreSimilarity: 0.2,
   metadataSimilarity: 0, // unused
   userBehavior: 0, // unused
-  audioFeatures: 0.08, // tempo
-  moodSimilarity: 0.2,
+  audioFeatures: 0, // tempo
+  moodSimilarity: 0,
   arousalSimilarity: 0.12,
   danceabilitySimilarity: 0.12,
   instrumentalnessSimilarity: 0.05,

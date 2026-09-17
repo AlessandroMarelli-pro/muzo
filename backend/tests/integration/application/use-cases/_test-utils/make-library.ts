@@ -30,7 +30,7 @@ export function makeLibrary(
       scanInterval: 24,
       includeSubdirectories: true,
       supportedFormats: ['MP3', 'FLAC', 'WAV'],
-      maxFileSize: 100 * 1024 * 1024,
+      maxFileSize: 200 * 1024 * 1024,
     },
     ...overrides,
     id,

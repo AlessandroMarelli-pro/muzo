@@ -34,7 +34,6 @@ export class AudioStreamingController {
     @Headers('range') range?: string,
   ): Promise<void> {
     const decodedTrackId = fromBase64Id(trackId);
-
     const track = await this.getTrackUseCase.execute(parseMusicTrackId(decodedTrackId));
 
     if (!track) {
@@ -62,10 +61,14 @@ export class AudioStreamingController {
       res.status(HttpStatus.OK);
 
       const ffmpeg = spawn('ffmpeg', [
-        '-i', filePath,
-        '-f', 'adts',
-        '-c:a', 'aac',
-        '-b:a', '256k',
+        '-i',
+        filePath,
+        '-f',
+        'adts',
+        '-c:a',
+        'aac',
+        '-b:a',
+        '256k',
         'pipe:1',
       ]);
       ffmpeg.stdout.pipe(res);

@@ -35,7 +35,7 @@ export class CreateLibraryUseCase {
           'OPUS',
           'M4A',
         ],
-        maxFileSize: libraryData.maxFileSize ?? 100 * 1024 * 1024,
+        maxFileSize: libraryData.maxFileSize ?? 200 * 1024 * 1024,
       },
     });
     return this.musicLibraryRepository.save(musicLibrary);

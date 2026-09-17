@@ -108,10 +108,10 @@ class BatchSimpleAnalysisResource(Resource):
                         "message": f"File {audio_file.filename} exceeds 100MB limit",
                     }, 413
 
-            logger.debug(f"Processing batch audio analysis for {len(audio_files)} files")
-            h = trace_start(
-                "batch_api", file=_TRACE_FILE, files=len(audio_files)
+            logger.debug(
+                f"Processing batch audio analysis for {len(audio_files)} files"
             )
+            h = trace_start("batch_api", file=_TRACE_FILE, files=len(audio_files))
 
             # Get parameters with optimized defaults
             sample_duration = float(request.form.get("sample_duration", "10.0"))
@@ -182,7 +182,9 @@ class BatchSimpleAnalysisResource(Resource):
                                     or file_items[idx][1]
                                 )
                                 if cleaned and " - " in cleaned:
-                                    guess_artist, _, guess_title = cleaned.partition(" - ")
+                                    guess_artist, _, guess_title = cleaned.partition(
+                                        " - "
+                                    )
                                     artist = artist or guess_artist.strip()
                                     title = title or guess_title.strip()
                                 elif cleaned:
@@ -325,7 +327,7 @@ class BatchSimpleAnalysisResource(Resource):
             bool: True if file size is acceptable
         """
         # Check file size (100MB limit for simple analysis)
-        max_size = 100 * 1024 * 1024  # 100MB
+        max_size = 200 * 1024 * 1024  # 100MB
 
         # Get file size
         audio_file.seek(0, 2)  # Seek to end

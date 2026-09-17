@@ -1,7 +1,7 @@
+import { Prisma } from '@prisma/client';
 import type { AudioFeatures } from 'src/application/ports/dtos/AudioFeatures';
 import { extractModelId } from 'src/kernel/ids';
 import type { RecommendationCriteria } from 'src/kernel/types/model-types';
-import { Prisma } from '@prisma/client';
 
 const EMBEDDING_DIM = 1280;
 
@@ -115,8 +115,7 @@ export function buildRecommendationSql(
   if (usedEmbeddingBase) {
     const strategy = criteria.seedStrategy ?? 'mean';
     const similarityExprs = seedVectors.map(
-      (vector) =>
-        Prisma.sql`(1 - (af."embeddingVector" <=> ${toVectorLiteral(vector)}::vector))`,
+      (vector) => Prisma.sql`(1 - (af."embeddingVector" <=> ${toVectorLiteral(vector)}::vector))`,
     );
     const combined =
       strategy === 'max'
@@ -162,7 +161,12 @@ export function buildRecommendationSql(
     Number.isFinite(playlistFeatures.arousal)
   ) {
     scoreTerms.push(
-      gaussScoreSql(Prisma.sql`af."arousal"`, playlistFeatures.arousal, 0.18, weights.arousalSimilarity),
+      gaussScoreSql(
+        Prisma.sql`af."arousal"`,
+        playlistFeatures.arousal,
+        0.18,
+        weights.arousalSimilarity,
+      ),
     );
   }
 
@@ -199,12 +203,20 @@ export function buildRecommendationSql(
 
     if (playlistFeatures.valenceMood) {
       scoreTerms.push(
-        termScoreSql(Prisma.sql`af."valenceMood"`, playlistFeatures.valenceMood, weights.moodSimilarity),
+        termScoreSql(
+          Prisma.sql`af."valenceMood"`,
+          playlistFeatures.valenceMood,
+          weights.moodSimilarity,
+        ),
       );
     }
     if (playlistFeatures.arousalMood) {
       scoreTerms.push(
-        termScoreSql(Prisma.sql`af."arousalMood"`, playlistFeatures.arousalMood, weights.moodSimilarity),
+        termScoreSql(
+          Prisma.sql`af."arousalMood"`,
+          playlistFeatures.arousalMood,
+          weights.moodSimilarity,
+        ),
       );
     }
     if (playlistFeatures.danceabilityFeeling) {
@@ -218,8 +230,7 @@ export function buildRecommendationSql(
     }
   }
 
-  const voiceWeight =
-    (weights.voiceSimilarity ?? 0) + (weights.instrumentalnessSimilarity ?? 0);
+  const voiceWeight = (weights.voiceSimilarity ?? 0) + (weights.instrumentalnessSimilarity ?? 0);
   if (voiceWeight > 0) {
     const origin =
       playlistFeatures.voice != null && Number.isFinite(playlistFeatures.voice)
@@ -249,8 +260,7 @@ export function buildRecommendationSql(
     }
   }
 
-  const scoreSql =
-    scoreTerms.length > 0 ? Prisma.join(scoreTerms, ' + ') : Prisma.sql`0::float8`;
+  const scoreSql = scoreTerms.length > 0 ? Prisma.join(scoreTerms, ' + ') : Prisma.sql`0::float8`;
 
   const filters: Prisma.Sql[] = [];
   if (usedEmbeddingBase) {

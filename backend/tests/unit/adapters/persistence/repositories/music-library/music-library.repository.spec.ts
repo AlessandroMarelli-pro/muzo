@@ -1,11 +1,11 @@
 import { Test } from '@nestjs/testing';
 import { MusicLibrary as PrismaMusicLibrary, ScanStatus as PrismaScanStatus } from '@prisma/client';
-import { PRISMA_SERVICE } from 'src/infrastructure/database/prisma.service';
 import { MusicLibraryRepository } from 'src/adapters/persistence/repositories/music-library/music-library.repository';
-import { createMockPrisma } from '../_test-utils/prisma-mock';
-import { models } from 'src/kernel/types/models';
-import type { MusicLibrary } from 'src/kernel/types/model-types';
+import { PRISMA_SERVICE } from 'src/infrastructure/database/prisma.service';
 import { MusicLibraryId } from 'src/kernel/ids';
+import type { MusicLibrary } from 'src/kernel/types/model-types';
+import { models } from 'src/kernel/types/models';
+import { createMockPrisma } from '../_test-utils/prisma-mock';
 
 const TEST_USER_ID = 'test-user-id';
 
@@ -32,7 +32,7 @@ function makePrismaLibraryRow(overrides: Partial<PrismaMusicLibrary> = {}): Pris
     scanInterval: 24,
     includeSubdirectories: true,
     supportedFormats: 'MP3,FLAC,WAV',
-    maxFileSize: 100 * 1024 * 1024,
+    maxFileSize: 200 * 1024 * 1024,
     createdAt: new Date(),
     createdById: TEST_USER_ID,
     updatedAt: null,
@@ -66,7 +66,7 @@ function makeDomainLibrary(overrides: Partial<MusicLibrary> = {}): MusicLibrary 
       scanInterval: 24,
       includeSubdirectories: true,
       supportedFormats: ['MP3', 'FLAC', 'WAV'],
-      maxFileSize: 100 * 1024 * 1024,
+      maxFileSize: 200 * 1024 * 1024,
     },
     ...overrides,
   };

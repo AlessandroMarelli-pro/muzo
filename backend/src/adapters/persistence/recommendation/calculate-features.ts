@@ -15,7 +15,7 @@ function calculateMean(values?: (number | undefined)[]): number {
 }
 
 const EMBEDDING_DIM = 1280;
-const MAX_SEED_EMBEDDINGS = 10;
+const MAX_SEED_EMBEDDINGS = 100;
 const MAX_SEED_INSTRUMENTS = 6;
 
 /**

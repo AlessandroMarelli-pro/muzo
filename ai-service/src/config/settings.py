@@ -22,7 +22,7 @@ class Config:
 
     # Audio processing configuration
     MAX_AUDIO_FILE_SIZE = int(
-        os.environ.get("MAX_AUDIO_FILE_SIZE", 100 * 1024 * 1024)
+        os.environ.get("MAX_AUDIO_FILE_SIZE", 200 * 1024 * 1024)
     )  # 100MB
     SUPPORTED_AUDIO_FORMATS = ["wav", "mp3", "flac", "m4a", "aac", "ogg", "opus"]
     TEMP_AUDIO_DIR = os.environ.get("TEMP_AUDIO_DIR", "/tmp/muzo_audio")

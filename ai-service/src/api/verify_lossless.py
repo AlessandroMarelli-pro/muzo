@@ -14,7 +14,7 @@ from loguru import logger
 
 from src.services.features.lossless_verifier import LosslessVerifier
 from src.services.simple_audio_loader import SimpleAudioLoader
-from src.utils.trace import track_context, trace_start
+from src.utils.trace import trace_start, track_context
 
 _TRACE_FILE = "verify_lossless"
 
@@ -63,7 +63,9 @@ class VerifyLosslessResource(Resource):
 
             analysis_path = temp_file_path
             if temp_file_path.endswith(".m4a"):
-                converted_wav_path = self.audio_loader.convert_m4a_to_wav(temp_file_path)
+                converted_wav_path = self.audio_loader.convert_m4a_to_wav(
+                    temp_file_path
+                )
                 analysis_path = converted_wav_path
 
             _ctx = track_context(audio_file.filename)
@@ -86,7 +88,11 @@ class VerifyLosslessResource(Resource):
             logger.error(f"verify-lossless failed: {e}")
             if h:
                 h.done(error=str(e))
-            return {"error": "Verification failed", "message": str(e), "status": "error"}, 500
+            return {
+                "error": "Verification failed",
+                "message": str(e),
+                "status": "error",
+            }, 500
 
         finally:
             if _ctx is not None:
@@ -101,7 +107,7 @@ class VerifyLosslessResource(Resource):
         return ext in VALID_EXTENSIONS
 
     def _validate_file_size(self, audio_file) -> bool:
-        max_size = 100 * 1024 * 1024
+        max_size = 200 * 1024 * 1024
         audio_file.seek(0, 2)
         file_size = audio_file.tell()
         audio_file.seek(0)

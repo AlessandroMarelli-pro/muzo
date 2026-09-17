@@ -1,12 +1,12 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { ILogger, LOGGER } from 'src/application/ports/infrastructure/ILogger';
-import { LOGGER_FACTORY } from 'src/application/ports/infrastructure/ILoggerFactory';
 import {
   CosineSimilarTrack,
   CosineTrack,
   ICosineProvider,
 } from 'src/application/ports/infrastructure/ICosineProvider';
+import { ILogger, LOGGER } from 'src/application/ports/infrastructure/ILogger';
+import { LOGGER_FACTORY } from 'src/application/ports/infrastructure/ILoggerFactory';
 import {
   IIntegrationSettingsRepository,
   INTEGRATION_SETTINGS_REPOSITORY,
@@ -67,7 +67,7 @@ export class CosineAdapter implements ICosineProvider {
       data?: { id: string; artist: string; track: string }[];
     } | null;
     const results = data?.data ?? [];
-
+    console.log(results);
     const normalizedArtist = normalizeForMatch(artist);
     const normalizedTitle = normalizeForMatch(title);
     const strictMatch = results.find(

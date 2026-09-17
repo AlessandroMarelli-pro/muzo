@@ -45,7 +45,7 @@ export const toDomain: ToDomain = (row) => {
         'OPUS',
         'M4A',
       ],
-      maxFileSize: row.maxFileSize ?? 100 * 1024 * 1024,
+      maxFileSize: row.maxFileSize ?? 200 * 1024 * 1024,
     },
   };
 };

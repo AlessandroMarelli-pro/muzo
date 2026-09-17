@@ -256,7 +256,7 @@ class SimpleAnalysisResource(Resource):
             bool: True if file size is acceptable
         """
         # Check file size (100MB limit for simple analysis)
-        max_size = 100 * 1024 * 1024  # 100MB
+        max_size = 200 * 1024 * 1024  # 100MB
 
         # Get file size
         audio_file.seek(0, 2)  # Seek to end

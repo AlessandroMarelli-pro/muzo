@@ -20,18 +20,22 @@ from flask import request
 from flask_restful import Resource
 from loguru import logger
 
-from src.services.features.discogs_classifiers_extractor import DiscogsClassifiersExtractor
+from src.services.features.discogs_classifiers_extractor import (
+    DiscogsClassifiersExtractor,
+)
 from src.services.features.discogs_embedding_extractor import DiscogsEmbeddingExtractor
 from src.services.features.tempo_cnn_extractor import TempoCnnExtractor
 from src.services.simple_audio_loader import SimpleAudioLoader
 from src.utils.performance_optimizer import monitor_performance
-from src.utils.trace import track_context, trace_start
+from src.utils.trace import trace_start, track_context
 
 _TRACE_FILE = "discogs_embedding"
 
 # Same gate as SimpleAnalysisService.DISCOGS_CLASSIFIERS_ENABLED, read independently
 # here since this resource deliberately doesn't import SimpleAnalysisService.
-DISCOGS_CLASSIFIERS_ENABLED = os.getenv("DISCOGS_CLASSIFIERS_ENABLED", "true").lower() != "false"
+DISCOGS_CLASSIFIERS_ENABLED = (
+    os.getenv("DISCOGS_CLASSIFIERS_ENABLED", "true").lower() != "false"
+)
 
 
 class DiscogsEmbeddingResource(Resource):
@@ -115,7 +119,9 @@ class DiscogsEmbeddingResource(Resource):
             converted_wav_path = None
             analysis_path = temp_file_path
             if temp_file_path.endswith(".m4a"):
-                converted_wav_path = self.audio_loader.convert_m4a_to_wav(temp_file_path)
+                converted_wav_path = self.audio_loader.convert_m4a_to_wav(
+                    temp_file_path
+                )
                 analysis_path = converted_wav_path
 
             h = trace_start(
@@ -148,8 +154,8 @@ class DiscogsEmbeddingResource(Resource):
                     )
                     if DISCOGS_CLASSIFIERS_ENABLED:
                         with h.step("classifiers"):
-                            discogs_classifiers = self.classifiers_extractor.predict_all(
-                                embedding
+                            discogs_classifiers = (
+                                self.classifiers_extractor.predict_all(embedding)
                             )
                         if discogs_classifiers:
                             genres = discogs_classifiers.get("genres") or []
@@ -218,7 +224,7 @@ class DiscogsEmbeddingResource(Resource):
             }, 500
 
     def _validate_file_size(self, audio_file) -> bool:
-        max_size = 100 * 1024 * 1024  # 100MB
+        max_size = 200 * 1024 * 1024  # 100MB
 
         audio_file.seek(0, 2)
         file_size = audio_file.tell()
