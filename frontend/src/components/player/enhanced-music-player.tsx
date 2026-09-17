@@ -6,6 +6,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Slider } from "@/components/ui/slider";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
   Tooltip,
   TooltipContent,
@@ -23,8 +24,11 @@ import { cn, formatTime } from "@/lib/utils";
 import { useWaveformData } from "@/services/music-player-hooks";
 import { useQueue } from "@/services/queue-hooks";
 import { useNavigate } from "@tanstack/react-router";
+import { PhaseVocoderNode } from "@soundtouchjs/phase-vocoder-worklet";
+import pitchProcessorUrl from "@soundtouchjs/phase-vocoder-worklet/processor?url";
 import {
   Disc3,
+  Gauge,
   Heart,
   ListMusic,
   ListPlus,
@@ -33,6 +37,7 @@ import {
   Radar,
   Repeat,
   Repeat1,
+  RotateCcw,
   Shuffle,
   SkipBack,
   SkipForward,
@@ -65,6 +70,15 @@ interface EnhancedMusicPlayerProps {
 
 type RepeatMode = "off" | "all" | "one";
 const VOLUME_KEY = "muzo.player.volume";
+/** Turntable pitch offsets — plain playbackRate shifts speed and pitch together. */
+const PITCH_RATES = [0.84, 0.92, 1, 1.08, 1.16] as const;
+const PITCH_LABELS: Record<(typeof PITCH_RATES)[number], string> = {
+  0.84: "-16%",
+  0.92: "-8%",
+  1: "Normal",
+  1.08: "+8%",
+  1.16: "+16%",
+};
 /** Tooltips that survive are informational — hold before showing them. */
 const HINT_DELAY = 600;
 
@@ -138,6 +152,57 @@ export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
   const [repeatMode, setRepeatMode] = useState<RepeatMode>("off");
   const [volume, setVolume] = useState(1);
   const [muted, setMuted] = useState(false);
+  const [playbackRate, setPlaybackRate] = useState<number>(1);
+  const [pitchSemitones, setPitchSemitones] = useState(0);
+  // Built once, the first time the <audio> element exists (it isn't rendered
+  // until a track is selected) — a MediaElementAudioSourceNode may only be
+  // created once per <audio> element for its entire lifetime, and wiring it
+  // in *after* playback has already been requested strands the element's
+  // resource-fetch algorithm in Chrome.
+  const pitchNodeRef = useRef<PhaseVocoderNode | null>(null);
+  const pitchNodeSetupStarted = useRef(false);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio || pitchNodeSetupStarted.current) return;
+    pitchNodeSetupStarted.current = true;
+    let cancelled = false;
+    (async () => {
+      try {
+        const AudioContextCtor =
+          window.AudioContext ||
+          (window as unknown as { webkitAudioContext: typeof AudioContext })
+            .webkitAudioContext;
+        const audioCtx = new AudioContextCtor();
+        await PhaseVocoderNode.register(audioCtx, pitchProcessorUrl);
+        if (cancelled) return;
+        const stNode = new PhaseVocoderNode({ context: audioCtx });
+        const source = audioCtx.createMediaElementSource(audio);
+        source.connect(stNode);
+        stNode.connect(audioCtx.destination);
+        // Let SoundTouch own pitch correction — the browser's built-in
+        // resampler is what causes audible flickering at faster/slower rates.
+        audio.preservesPitch = false;
+        stNode.playbackRate.value = audio.playbackRate;
+        stNode.pitchSemitones.value = pitchSemitones;
+        pitchNodeRef.current = stNode;
+      } catch (error) {
+        console.error("Failed to set up SoundTouch audio graph:", error);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // Re-checked on every currentTrack change (cheap: bails out instantly
+    // once pitchNodeSetupStarted is set) so it fires as soon as the <audio>
+    // element first mounts, whichever track that happens to be.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentTrack]);
+
+  const resumeAudioContextIfNeeded = useCallback(() => {
+    const ctx = pitchNodeRef.current?.context as AudioContext | undefined;
+    if (ctx?.state === "suspended") void ctx.resume();
+  }, []);
 
   // Restore the last-used volume once.
   useEffect(() => {
@@ -183,28 +248,45 @@ export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
     if (audioRef.current && currentTrack) audioRef.current.load();
     setCurrentTime(0);
     setDuration(0);
+    setPlaybackRate(1);
+    setPitchSemitones(0);
   }, [currentTrack?.id]);
 
-  // Reflect play/pause intent onto the element.
+  // Reflect play/pause intent onto the element. Resuming the AudioContext
+  // needs a user gesture, so it's kicked off from here too.
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio || !currentTrack) return;
     if (isPlaying && playbackState.trackId === currentTrack.id) {
+      resumeAudioContextIfNeeded();
       audio.play().catch((error) => {
         console.error("Error playing audio:", error);
       });
     } else {
       audio.pause();
     }
-  }, [isPlaying, playbackState.trackId, currentTrack?.id]);
+  }, [
+    isPlaying,
+    playbackState.trackId,
+    currentTrack?.id,
+    resumeAudioContextIfNeeded,
+  ]);
 
-  // Apply volume / mute to the element.
+  // Apply volume / mute to the element, and playback rate / detune to the
+  // SoundTouch node (falls back to native playbackRate if the graph never
+  // initialized, e.g. no AudioWorklet support).
   useEffect(() => {
-    if (audioRef.current) {
-      audioRef.current.volume = volume;
-      audioRef.current.muted = muted;
+    const audio = audioRef.current;
+    if (!audio) return;
+    audio.volume = volume;
+    audio.muted = muted;
+    audio.playbackRate = playbackRate;
+    const stNode = pitchNodeRef.current;
+    if (stNode) {
+      stNode.playbackRate.value = playbackRate;
+      stNode.pitchSemitones.value = pitchSemitones;
     }
-  }, [volume, muted, currentTrack?.id]);
+  }, [volume, muted, playbackRate, pitchSemitones, currentTrack?.id]);
 
   const waveformId = currentTrack?.id ?? "";
   const { data: waveformData, isLoading: waveformLoading } =
@@ -414,6 +496,8 @@ export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
   }
 
   const bpm = currentTrack.mfTempo ? Math.round(currentTrack.mfTempo) : null;
+  const adjustedBpm =
+    bpm && playbackRate !== 1 ? Math.round(bpm * playbackRate) : null;
   const musicalKey = currentTrack.mfCamelotKey || currentTrack.mfKey || null;
   const title = tidyMeta(currentTrack.title) || "Unknown title";
   const artist = tidyMeta(currentTrack.artist) || "Unknown artist";
@@ -482,7 +566,19 @@ export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
               {(bpm || musicalKey || primaryGenre) && (
                 <div className="mt-1 flex items-center gap-2 text-xs leading-none text-muted-foreground">
                   {bpm && (
-                    <span className="font-mono tabular-nums">{bpm} BPM</span>
+                    <span className="font-mono tabular-nums">
+                      {adjustedBpm ? (
+                        <>
+                          <span className="text-primary">{adjustedBpm}</span>{" "}
+                          <span className="line-through opacity-60">
+                            {bpm}
+                          </span>
+                        </>
+                      ) : (
+                        bpm
+                      )}{" "}
+                      BPM
+                    </span>
                   )}
                   {musicalKey && (
                     <>
@@ -595,6 +691,95 @@ export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
                       <Volume1 className="size-4" aria-hidden />
                     )}
                   </ControlButton>
+                </PopoverContent>
+              </Popover>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="iconSm"
+                    className={cn(
+                      "size-9",
+                      (playbackRate !== 1 || pitchSemitones !== 0) &&
+                        "text-primary",
+                    )}
+                    aria-label="Speed and detune"
+                    aria-pressed={playbackRate !== 1 || pitchSemitones !== 0}
+                  >
+                    <Gauge className="size-4" aria-hidden />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent
+                  side="top"
+                  className="z-[var(--z-player-overlay)] w-72 px-4 py-4"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-xs font-medium text-foreground">
+                      Speed
+                    </span>
+                    <span className="font-mono text-xs tabular-nums text-muted-foreground">
+                      {adjustedBpm && `${adjustedBpm} BPM · `}
+                      {PITCH_LABELS[
+                        playbackRate as (typeof PITCH_RATES)[number]
+                      ] ?? `${Math.round((playbackRate - 1) * 100)}%`}
+                    </span>
+                  </div>
+                  <ToggleGroup
+                    type="single"
+                    value={String(playbackRate)}
+                    onValueChange={(v) => {
+                      if (v) setPlaybackRate(Number(v));
+                    }}
+                    aria-label="Playback speed"
+                    className="mt-2 w-full"
+                  >
+                    {PITCH_RATES.map((rate) => (
+                      <ToggleGroupItem
+                        key={rate}
+                        value={String(rate)}
+                        className="px-1 text-xs data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+                      >
+                        {PITCH_LABELS[rate]}
+                      </ToggleGroupItem>
+                    ))}
+                  </ToggleGroup>
+
+                  <div
+                    aria-hidden
+                    className="my-4 h-px bg-border"
+                  />
+
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-xs font-medium text-foreground">
+                      Detune
+                    </span>
+                    <span className="font-mono text-xs tabular-nums text-muted-foreground">
+                      {pitchSemitones > 0 ? `+${pitchSemitones}` : pitchSemitones}
+                      {" st"}
+                    </span>
+                  </div>
+                  <Slider
+                    value={[pitchSemitones]}
+                    min={-12}
+                    max={12}
+                    step={1}
+                    onValueChange={([v]) => setPitchSemitones(v)}
+                    aria-label="Detune (semitones)"
+                    className="mt-3"
+                  />
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPlaybackRate(1);
+                      setPitchSemitones(0);
+                    }}
+                    disabled={playbackRate === 1 && pitchSemitones === 0}
+                    className="mt-4 flex w-full items-center justify-center gap-1.5 rounded-md py-1.5 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground disabled:pointer-events-none disabled:opacity-40"
+                  >
+                    <RotateCcw className="size-3" aria-hidden />
+                    Reset to normal
+                  </button>
                 </PopoverContent>
               </Popover>
             </div>
@@ -723,6 +908,12 @@ export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
           ref={audioRef}
           src={apiUrl(`/api/audio/stream/${currentTrack.id}`)}
           preload="metadata"
+          // Required for createMediaElementSource (SoundTouch graph) to pull
+          // samples from a cross-origin stream. Must be "use-credentials" —
+          // the stream route reads the Better Auth session cookie (same as
+          // graffle-client/rest-client's credentials: 'include'); "anonymous"
+          // silently drops the cookie and every track 404s as anonymous.
+          crossOrigin="use-credentials"
           className="hidden"
         />
       </section>
