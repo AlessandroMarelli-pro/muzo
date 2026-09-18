@@ -1,5 +1,6 @@
 import { PlaylistTrack, Track } from "@/__generated__/types";
 import { Button } from "@/components/ui/button";
+import { arousalMoodOptions } from "@/components/track/track-feature-options";
 import {
   useAudioPlayerActions,
   useCurrentTrack,
@@ -42,6 +43,59 @@ const titleOf = (track?: Track | null) =>
 const trackLabel = (track?: Track | null) =>
   `${artistOf(track)} — ${titleOf(track)}`;
 
+/** Energy is a 5-bucket mood string (very calm → very energetic); its index
+ * in `arousalMoodOptions` doubles as a 1-5 meter level. */
+const energyLevel = (mood?: string | null): number | null => {
+  if (!mood) return null;
+  const index = arousalMoodOptions.findIndex((o) => o.value === mood);
+  return index === -1 ? null : index + 1;
+};
+
+/** Level → warmth. Derived from the single `--warning` token (the system has
+ * no 5-step warm ramp) by mixing it toward the card surface, same hue at
+ * graduated strength — cool/pale for calm, full warning-strength amber for
+ * energetic. The whole bar takes on this step's colour (not just each tick
+ * standing alone), so a calm track reads as a faint sliver and an energetic
+ * one as a bold block at a glance. */
+const ENERGY_MIX = [20, 40, 60, 80, 100];
+
+/** Five ticks, filled left-to-right up to the current level — the same
+ * glance-readable shorthand as the BPM/Key/Len readouts beside it. Unfilled
+ * ticks stay `bg-muted`, same dark/quiet mark as an empty BPM or Key cell. */
+function EnergyMeter({ mood }: { mood?: string | null }) {
+  const level = energyLevel(mood);
+  return (
+    <div
+      className="flex items-center justify-end gap-0.5"
+      role="img"
+      aria-label={
+        level
+          ? `Energy: ${arousalMoodOptions[level - 1].label}`
+          : "Energy: unknown"
+      }
+      title={level ? arousalMoodOptions[level - 1].label : undefined}
+    >
+      {Array.from({ length: 5 }, (_, i) => (
+        <span
+          key={i}
+          aria-hidden
+          className={cn(
+            "h-2.5 w-1 rounded-full",
+            level && i < level ? undefined : "bg-muted",
+          )}
+          style={
+            level && i < level
+              ? {
+                  backgroundColor: `color-mix(in oklab, var(--warning) ${ENERGY_MIX[level - 1]}%, var(--card))`,
+                }
+              : undefined
+          }
+        />
+      ))}
+    </div>
+  );
+}
+
 /**
  * The ledger's column template — shared by the header and every row, so they
  * stay aligned. Genres live inside the title cell (not their own column) and the
@@ -50,7 +104,7 @@ const trackLabel = (track?: Track | null) =>
  * same 2px left border (transparent unless a transition needs a mark).
  */
 export const LEDGER_GRID =
-  "grid grid-cols-[1.75rem_2.5rem_minmax(0,1fr)_auto] md:grid-cols-[1.75rem_2.5rem_minmax(0,1fr)_3.5rem_2.75rem_3.75rem_9.5rem] items-center gap-x-3 border-l-2 border-l-transparent pl-3 pr-3";
+  "grid grid-cols-[1.75rem_2.5rem_minmax(0,1fr)_auto] md:grid-cols-[1.75rem_2.5rem_minmax(0,1fr)_3.25rem_3.5rem_2.75rem_3.75rem_9.5rem] items-center gap-x-3 border-l-2 border-l-transparent pl-3 pr-3";
 
 export function PlaylistLedgerHeader() {
   return (
@@ -63,6 +117,7 @@ export function PlaylistLedgerHeader() {
       <span className="text-right">#</span>
       <span aria-hidden />
       <span>Title / Artist</span>
+      <span className="hidden text-right md:block">Energy</span>
       <span className="hidden text-right md:block">BPM</span>
       <span className="hidden text-right md:block">Key</span>
       <span className="hidden text-right md:block">Len</span>
@@ -83,6 +138,7 @@ export const PlaylistTrackListCardSkeleton = ({
       </span>
       <Skeleton className="h-9 w-9 rounded" />
       <Skeleton className="h-4 w-2/3 rounded" />
+      <Skeleton className="hidden h-2.5 w-8 justify-self-end rounded-full md:block" />
       <Skeleton className="hidden h-3.5 w-8 justify-self-end rounded md:block" />
       <Skeleton className="hidden h-3.5 w-8 justify-self-end rounded md:block" />
       <Skeleton className="hidden h-3.5 w-10 justify-self-end rounded md:block" />
@@ -248,6 +304,10 @@ export const PlaylistTrackListCard = memo(
           </p>
         </div>
 
+        {/* Energy column */}
+        <div className="hidden md:block">
+          <EnergyMeter mood={track?.mfArousalMood} />
+        </div>
         {/* BPM column */}
         <div className="hidden text-right font-mono text-xs tabular-nums text-muted-foreground md:block">
           {tempo ? Math.round(tempo) : "—"}

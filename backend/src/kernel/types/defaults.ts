@@ -34,7 +34,7 @@ export function isAnonymousUser(user: ActionContext['user']): boolean {
  */
 export const DEFAULT_RECOMMENDATION_WEIGHTS: RecommendationWeights = {
   audioSimilarity: 0, // unused: embedding is always the base
-  genreSimilarity: 0.2,
+  genreSimilarity: 0.1,
   metadataSimilarity: 0, // unused
   userBehavior: 0, // unused
   audioFeatures: 0, // tempo
@@ -89,7 +89,7 @@ export function applyRecommendationBoosts(
   boostKeys: readonly string[] | undefined,
 ): RecommendationWeights {
   if (!boostKeys || boostKeys.length === 0) {
-    return DEFAULT_RECOMMENDATION_WEIGHTS;
+    return ZERO_RECOMMENDATION_WEIGHTS;
   }
   const selected = new Set(
     boostKeys.filter((key): key is RecommendationBoostKey =>
@@ -97,9 +97,9 @@ export function applyRecommendationBoosts(
     ),
   );
   if (selected.size === 0) {
-    return DEFAULT_RECOMMENDATION_WEIGHTS;
+    return ZERO_RECOMMENDATION_WEIGHTS;
   }
-  const weights = { ...DEFAULT_RECOMMENDATION_WEIGHTS };
+  const weights = { ...ZERO_RECOMMENDATION_WEIGHTS };
   for (const key of selected) {
     weights[key] = weights[key] * BOOST_MULTIPLIER;
   }
