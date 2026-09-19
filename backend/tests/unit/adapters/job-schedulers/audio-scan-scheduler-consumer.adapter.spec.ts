@@ -160,5 +160,69 @@ describe('AudioScanSchedulerConsumerAdapter', () => {
 
       await expect(adapter.process(job)).rejects.toThrow('Unknown job name: unknown-job');
     });
+
+    it('regression: two tracks sharing a basename each get their OWN analysis result', async () => {
+      // `fileInfo.fileName` is a basename, so the same name in two folders used to
+      // match the first result twice -- writing one track's tempo/key/genres onto
+      // the other. Each result must be consumed once instead.
+      const makeTrack = (id: string, filePath: string) => ({
+        id,
+        libraryId: LIBRARY_ID,
+        fileInfo: { fileName: 'The Call.opus', filePath },
+      });
+
+      processBatchAudioScanUseCase.execute.mockResolvedValueOnce({
+        isBatchComplete: false,
+        files: [],
+        createdTracks: [
+          makeTrack('track-summer', '/Music/Summer/The Call.opus'),
+          makeTrack('track-winter', '/Music/Winter/The Call.opus'),
+        ],
+        analysisResults: [
+          { track: { original_filename: 'The Call.opus' }, tempo: 120 },
+          { track: { original_filename: 'The Call.opus' }, tempo: 174 },
+        ],
+      });
+
+      const job = makeJob<AudioScanBatchJobData>({
+        name: 'audio-scan-batch',
+        data: makeAudioScanBatchJobData(),
+      });
+
+      await adapter.process(job);
+
+      expect(processSingleTrackAnalysisUseCase.execute).toHaveBeenCalledTimes(2);
+      const pairs = processSingleTrackAnalysisUseCase.execute.mock.calls.map(
+        ([track, result]) => [track.id, result.tempo],
+      );
+      // Distinct results, paired in upload order -- not the same one twice.
+      expect(pairs).toEqual([
+        ['track-summer', 120],
+        ['track-winter', 174],
+      ]);
+    });
+
+    it('regression: a track with no matching result is skipped, not handed another track’s', async () => {
+      processBatchAudioScanUseCase.execute.mockResolvedValueOnce({
+        isBatchComplete: false,
+        files: [],
+        createdTracks: [
+          { id: 'track-a', libraryId: LIBRARY_ID, fileInfo: { fileName: 'A.opus' } },
+          { id: 'track-b', libraryId: LIBRARY_ID, fileInfo: { fileName: 'B.opus' } },
+        ],
+        // Only one result came back, and it is not B's.
+        analysisResults: [{ track: { original_filename: 'A.opus' }, tempo: 120 }],
+      });
+
+      const job = makeJob<AudioScanBatchJobData>({
+        name: 'audio-scan-batch',
+        data: makeAudioScanBatchJobData(),
+      });
+
+      await adapter.process(job);
+
+      expect(processSingleTrackAnalysisUseCase.execute).toHaveBeenCalledTimes(1);
+      expect(processSingleTrackAnalysisUseCase.execute.mock.calls[0][0].id).toBe('track-a');
+    });
   });
 });

@@ -6,7 +6,15 @@ services:
     # postgres image -- required for the pgvector-based recommendation engine
     # (see infrastructure/external-services/postgres-recommendation), which
     # replaced Elasticsearch's brute-force cosine-similarity scoring.
-    image: pgvector/pgvector:pg16
+    #
+    # PINNED BY DIGEST, deliberately. The floating `:pg16` tag once moved to a
+    # build with a different glibc while `postgres_data` persisted; text
+    # collation changed underneath the existing B-tree indexes, silently
+    # corrupting their sort order. `music_tracks_filePath_key` then stopped
+    # matching rows that were really there, so the scanner's upsert took its
+    # create branch and inserted duplicate tracks. Re-pin (and REINDEX) only as
+    # a deliberate, verified upgrade -- never by letting the tag drift.
+    image: pgvector/pgvector:pg16@sha256:ccc6e83d6e35e931dc7c5def2022729d5a6c370318d099181995567ff1fb4d6b
     container_name: muzo-postgres
     environment:
       - POSTGRES_USER=muzo

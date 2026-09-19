@@ -79,16 +79,32 @@ export class AudioScanSchedulerConsumerAdapter
       let successCount = 0;
       let failedCount = 0;
       if (!isBatchComplete) {
+        // Match on original_filename, not filename: the batch endpoint may
+        // LLM-clean `filename` for display (e.g. stripping a "014. "
+        // track-number prefix), but `original_filename` is always the exact
+        // upload filename, unmodified -- the stable key `fileInfo.fileName`
+        // was written from.
+        //
+        // `fileName` is only a basename, so two files with the same name in
+        // different folders collide. A plain .find() handed BOTH of them the
+        // first result, writing one track's tempo/key/genres onto the other.
+        // The service response carries no path to disambiguate by, so instead
+        // each result is consumed once: pop it from its name's bucket, in the
+        // order the tracks were uploaded. Same-named files then pair up by
+        // position rather than both matching the first hit, and a track with no
+        // result left over is reported missing instead of silently mis-tagged.
+        const resultsByName = new Map<string, typeof analysisResults>();
+        for (const result of analysisResults) {
+          const name = result.track?.original_filename;
+          if (!name) continue;
+          const bucket = resultsByName.get(name) ?? [];
+          bucket.push(result);
+          resultsByName.set(name, bucket);
+        }
+
         await Promise.all(
           createdTracks.map(async (track, index) => {
-            // Match on original_filename, not filename: the batch endpoint may
-            // LLM-clean `filename` for display (e.g. stripping a "014. "
-            // track-number prefix), but `original_filename` is always the exact
-            // upload filename, unmodified -- the stable key `fileInfo.fileName`
-            // was written from.
-            const analysisResult = analysisResults.find(
-              (result) => result.track?.original_filename === track.fileInfo.fileName,
-            );
+            const analysisResult = resultsByName.get(track.fileInfo.fileName)?.shift();
             if (!analysisResult) {
               this.logger.warn(
                 `Analysis result not found for track ${track.id} ${track.fileInfo.fileName}`,

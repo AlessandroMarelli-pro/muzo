@@ -246,7 +246,7 @@ describe('MusicTrackRepository', () => {
 
       expect(prismaMock.musicTrack.upsert).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: { filePath: data.filePath, createdById: TEST_USER_ID },
+          where: { filePath: data.filePath },
         }),
       );
       expect(result.id).toBeDefined();
@@ -260,17 +260,42 @@ describe('MusicTrackRepository', () => {
       await expect(repo.upsertOne(data)).rejects.toThrow('Constraint failed');
     });
 
-    it('createdById scope: upsert where and create use current user id', async () => {
+    // The unique index is on `filePath` ALONE. Narrowing the lookup by createdById
+    // made a row owned by someone else invisible, so the create branch fired and
+    // hit the global constraint as an uncaught P2002. Ownership belongs in `create`.
+    it('lookup keys on filePath alone, never on createdById', async () => {
       const data = makeUpsertData();
       prismaMock.musicTrack.upsert.mockResolvedValue(makePrismaTrackRow());
 
       await repo.upsertOne(data);
 
-      expect(prismaMock.musicTrack.upsert).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: { filePath: data.filePath, createdById: TEST_USER_ID },
-        }),
-      );
+      const { where } = prismaMock.musicTrack.upsert.mock.calls[0][0];
+      expect(where).toEqual({ filePath: data.filePath });
+      expect(where).not.toHaveProperty('createdById');
+    });
+
+    it('race: retries a P2002 and returns the row the winner committed', async () => {
+      // Force-rescan fans out with Promise.all over batches of 10 at worker
+      // concurrency 3-4, so two jobs can upsert one path at once. Postgres rejects
+      // the loser; without the retry that failed the whole batch of 10.
+      const data = makeUpsertData();
+      const row = makePrismaTrackRow({ filePath: data.filePath });
+      const conflict = Object.assign(new Error('Unique constraint failed'), { code: 'P2002' });
+      prismaMock.musicTrack.upsert.mockRejectedValueOnce(conflict).mockResolvedValue(row);
+
+      const result = await repo.upsertOne(data);
+
+      expect(prismaMock.musicTrack.upsert).toHaveBeenCalledTimes(2);
+      expect(result.fileInfo.filePath).toBe(data.filePath);
+    });
+
+    it('race: gives up rather than spinning forever on a persistent P2002', async () => {
+      const data = makeUpsertData();
+      const conflict = Object.assign(new Error('Unique constraint failed'), { code: 'P2002' });
+      prismaMock.musicTrack.upsert.mockRejectedValue(conflict);
+
+      await expect(repo.upsertOne(data)).rejects.toThrow('Unique constraint failed');
+      expect(prismaMock.musicTrack.upsert).toHaveBeenCalledTimes(6);
     });
   });
 

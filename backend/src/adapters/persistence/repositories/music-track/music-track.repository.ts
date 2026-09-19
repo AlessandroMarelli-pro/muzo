@@ -120,12 +120,31 @@ export class MusicTrackRepository implements IMusicTrackRepository {
       );
   }
 
+  // `filePath` is globally unique (`music_tracks_filePath_key`), so the lookup must
+  // key on it ALONE. Adding `createdById` narrowed the match below the granularity
+  // the constraint enforces: a row owned by someone else was invisible here, the
+  // create branch fired, and the insert hit the global unique index as an uncaught
+  // P2002. Scope ownership in `create`, never in `where`.
+  //
+  // The retry covers the honest race: force-rescan fans out with Promise.all over
+  // batches of 10 at worker concurrency 3-4, so two jobs can upsert one path at
+  // once. Postgres rejects the loser; retrying finds the row the winner committed
+  // instead of failing the whole batch. Mirrors audio-analysis.repository.ts:68.
   async upsertOne(trackData: MusicTrackUpdateData): Promise<MusicTrack> {
+    for (let attempt = 0; ; attempt++) {
+      try {
+        return await this.upsertOneOnce(trackData);
+      } catch (error) {
+        if ((error as { code?: string }).code !== 'P2002' || attempt >= 5) throw error;
+      }
+    }
+  }
+
+  private async upsertOneOnce(trackData: MusicTrackUpdateData): Promise<MusicTrack> {
     return this.prisma.musicTrack
       .upsert({
         where: {
           filePath: trackData.filePath,
-          createdById: getCurrentUserId(),
         },
         update: toPrismaUpdate(trackData),
         create: toPrisma(

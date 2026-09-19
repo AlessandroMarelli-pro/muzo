@@ -251,6 +251,7 @@ export class TidalSyncAdapter implements ITidalSyncProvider {
     )) as {
       included?: Array<{ id: string; type: string }>;
     };
+    console.log(response);
     const trackIds =
       response?.included
         ?.filter((item) => item.type === 'tracks')
@@ -322,7 +323,6 @@ export class TidalSyncAdapter implements ITidalSyncProvider {
   private stripSearchNoise(str: string): string {
     return (
       str
-        .replace(/[[(].*?[\])]|(?:lyrics|official)/gi, ' ')
         // Tidal's search degrades badly on "!" (e.g. "CC:DISCO!" returns unrelated results),
         // likely treated as query syntax on their end. Strip it; other punctuation is fine.
         .replace(/!/g, '')
