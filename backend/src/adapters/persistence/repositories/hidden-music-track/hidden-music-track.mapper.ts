@@ -20,6 +20,8 @@ export const toDomain: ToDomain = (row) => {
     title: row.originalTitle ?? '',
     artist: row.originalArtist ?? '',
     imagePath: '',
+    imageData: row.imageData ? Buffer.from(row.imageData) : undefined,
+    imageMimeType: row.imageMimeType ?? undefined,
     fileInfo: {
       filePath: row.filePath,
       fileName: row.fileName,
@@ -48,6 +50,8 @@ export const toPrisma: ToPrisma = (domainModel) => {
     format: domainModel.technicalInfo?.format ?? '',
     bitrate: domainModel.technicalInfo?.bitrate ?? null,
     sampleRate: domainModel.technicalInfo?.sampleRate ?? null,
+    imageData: (domainModel.imageData as Uint8Array<ArrayBuffer> | undefined) ?? null,
+    imageMimeType: domainModel.imageMimeType ?? null,
     originalTitle: domainModel.title,
     originalArtist: domainModel.artist ?? null,
     originalAlbum: '',

@@ -412,7 +412,12 @@ model HiddenMusicTrack {
   format                String
   bitrate               Int?
   sampleRate            Int?
-  
+
+  // Cover art, copied from ImageSearch before the MusicTrack (and its
+  // cascade-deleted ImageSearch row) is removed on hide.
+  imageData             Bytes?
+  imageMimeType         String?
+
   // Original Metadata
   originalTitle         String?
   originalArtist        String?

@@ -1,6 +1,7 @@
 import { Controller, Get, HttpStatus, Logger, Query, Res } from '@nestjs/common';
 import { Response } from 'express';
 import path from 'path';
+import { GetHiddenTrackImageUseCase } from 'src/application/use-cases/hidden-music-track';
 import { ServeImageUseCase } from 'src/application/use-cases/image/ServeImage';
 import { ServeTrackImageUseCase } from 'src/application/use-cases/image/ServeTrackImage';
 import { models } from 'src/kernel/types/models';
@@ -15,6 +16,7 @@ export class ImageController {
   constructor(
     private readonly serveImageUseCase: ServeImageUseCase,
     private readonly serveTrackImageUseCase: ServeTrackImageUseCase,
+    private readonly getHiddenTrackImageUseCase: GetHiddenTrackImageUseCase,
   ) {}
 
   /**
@@ -61,6 +63,41 @@ export class ImageController {
         message: `Image not found: ${raw}`,
         error: 'Not Found',
       });
+    }
+  }
+
+  /** Cover art for a hidden track, copied over from ImageSearch when it was hidden. */
+  @Get('serve-hidden')
+  async serveHiddenImage(
+    @Res() res: Response,
+    @Query('hiddenTrackId') hiddenTrackIdParam?: string,
+  ): Promise<void> {
+    try {
+      if (!hiddenTrackIdParam) {
+        return await this.serveDefault(res);
+      }
+
+      const decoded = decodeURIComponent(hiddenTrackIdParam);
+      if (!UUID_RE.test(decoded)) {
+        return await this.serveDefault(res);
+      }
+
+      const image = await this.getHiddenTrackImageUseCase.execute(
+        models.hiddenMusicTrack.id(decoded),
+      );
+      if (!image) {
+        return await this.serveDefault(res);
+      }
+
+      res.set({
+        'Content-Type': image.mimeType,
+        'Cache-Control': 'public, max-age=31536000, immutable',
+        'Content-Length': image.data.length.toString(),
+      });
+      res.send(image.data);
+    } catch (error) {
+      this.logger.error(`Error serving hidden track image ${hiddenTrackIdParam}:`, error);
+      return this.serveDefault(res);
     }
   }
 

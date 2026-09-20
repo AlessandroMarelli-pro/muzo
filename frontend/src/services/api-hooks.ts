@@ -12,6 +12,7 @@ import type {
   CursorPaginatedTracks,
   CursorPaginationArgs,
   Library,
+  PaginatedHiddenTracks,
   PaginatedTracks,
   RandomTrackWithStats,
   StaticFilterOptions,
@@ -54,6 +55,12 @@ export const queryKeys = {
     orderBy?: string,
     orderDirection?: 'asc' | 'desc',
   ) => ['pendingTracks', { limit, offset, orderBy, orderDirection }] as const,
+  hiddenTracks: (
+    limit?: number,
+    offset?: number,
+    orderBy?: string,
+    orderDirection?: 'asc' | 'desc',
+  ) => ['hiddenTracks', { limit, offset, orderBy, orderDirection }] as const,
 
   recentlyPlayed: (limit?: number) => ['tracks', 'recently-played', { limit }] as const,
 
@@ -417,6 +424,64 @@ export const usePendingTracks = ({
   });
 };
 
+export const useHiddenTracks = ({
+  limit = 20,
+  offset = 0,
+  orderBy = 'createdAt',
+  orderDirection = 'desc',
+  enabled = true,
+}: {
+  limit?: number;
+  offset?: number;
+  orderBy?: string;
+  orderDirection?: 'asc' | 'desc';
+  enabled?: boolean;
+}) => {
+  return useQuery({
+    enabled,
+    queryKey: queryKeys.hiddenTracks(limit, offset, orderBy, orderDirection),
+    queryFn: async () => {
+      const response = await graffleClient.request<{
+        me: { hiddenTracks: PaginatedHiddenTracks };
+      }>(
+        gql`
+          query GetHiddenTracks($pagination: PaginationArgs) {
+            me {
+              hiddenTracks(pagination: $pagination) {
+                items {
+                  id
+                  artist
+                  title
+                  imagePath
+                  libraryId
+                  fileName
+                  fileSize
+                  duration
+                  format
+                  createdAt
+                }
+                total
+                page
+                limit
+                pages
+              }
+            }
+          }
+        `,
+        {
+          pagination: {
+            limit,
+            offset,
+            orderBy,
+            orderDirection,
+          },
+        },
+      );
+      return response.me.hiddenTracks;
+    },
+  });
+};
+
 // Static Filters Query
 export const useStaticFilters = () => {
   return useQuery({
@@ -693,6 +758,76 @@ export const useDislikeTrack = () => {
       queryClient.invalidateQueries({ queryKey: ['playlists'] });
       queryClient.invalidateQueries({ queryKey: ['playlist'] });
       queryClient.invalidateQueries({ queryKey: ['favoritePlaylist'] });
+    },
+  });
+};
+
+/** Root key for every paginated hidden-tracks query (prefix-matched). */
+const HIDDEN_TRACKS_ROOT_KEY = ['hiddenTracks'] as const;
+
+type HiddenTracksSnapshot = [readonly unknown[], PaginatedHiddenTracks | undefined][];
+
+const removeTrackFromHiddenCache = async (
+  queryClient: ReturnType<typeof useQueryClient>,
+  hiddenTrackId: string,
+): Promise<{ previous: HiddenTracksSnapshot }> => {
+  await queryClient.cancelQueries({ queryKey: HIDDEN_TRACKS_ROOT_KEY });
+
+  const previous = queryClient.getQueriesData<PaginatedHiddenTracks>({
+    queryKey: HIDDEN_TRACKS_ROOT_KEY,
+  });
+
+  queryClient.setQueriesData<PaginatedHiddenTracks>(
+    { queryKey: HIDDEN_TRACKS_ROOT_KEY },
+    (old) => {
+      if (!old?.items) return old;
+
+      const items = old.items.filter((track) => track.id !== hiddenTrackId);
+      if (items.length === old.items.length) return old;
+
+      return { ...old, items, total: Math.max(0, old.total - 1) };
+    },
+  );
+
+  return { previous };
+};
+
+const restoreHiddenCache = (
+  queryClient: ReturnType<typeof useQueryClient>,
+  context?: { previous: HiddenTracksSnapshot },
+) => {
+  context?.previous.forEach(([key, data]) => queryClient.setQueryData(key, data));
+};
+
+export const useRestoreHiddenTrack = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (hiddenTrackId: string) => {
+      const response = await graffleClient.request<{
+        restoreHiddenTrack: Track;
+      }>(
+        gql`
+          ${trackFragment}
+          mutation RestoreHiddenTrack($hiddenTrackId: Base64ID!) {
+            restoreHiddenTrack(hiddenTrackId: $hiddenTrackId) {
+              ...TrackFragment
+            }
+          }
+        `,
+        { hiddenTrackId },
+      );
+      return response.restoreHiddenTrack;
+    },
+    onMutate: (hiddenTrackId) => removeTrackFromHiddenCache(queryClient, hiddenTrackId),
+    onError: (_error, _hiddenTrackId, context) => {
+      restoreHiddenCache(queryClient, context);
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: HIDDEN_TRACKS_ROOT_KEY });
+      queryClient.invalidateQueries({ queryKey: PENDING_TRACKS_ROOT_KEY });
+      queryClient.invalidateQueries({ queryKey: ['tracksList'] });
+      queryClient.invalidateQueries({ queryKey: ['libraries'] });
     },
   });
 };

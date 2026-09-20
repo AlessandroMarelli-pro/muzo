@@ -4,6 +4,7 @@ import { UseGuards } from '@nestjs/common';
 import { Args, Query, ResolveField, Resolver } from '@nestjs/graphql';
 import {
   GetFavoriteUseCase,
+  GetHiddenTracksUseCase,
   GetPendingTracksUseCase,
   GetPlaylistsUseCase,
   GetQueueUseCase,
@@ -25,9 +26,11 @@ import { GetHomeMetricsUseCase } from 'src/application/use-cases/metrics/GetHome
 import { GetLibrariesUseCase } from 'src/application/use-cases/music-library/GetLibraries';
 import { GetRandomTrackWithStatsUseCase } from 'src/application/use-cases/music-track/GetRandomTrackWithStats';
 import { Maybe, MusicTrack } from 'src/kernel/types';
+import { toHiddenTrack } from '../mappers/hidden-track.mapper';
 import { toMusicLibrary } from '../mappers/music-library.mapper';
 import { toTrack } from '../mappers/track.mapper';
 import { Base64ID } from '../scalars/base64-id.scalar';
+import { HiddenTrack, PaginatedHiddenTracks } from '../schema/hidden-track.schema';
 import { Library } from '../schema/library.schema';
 import { HomeMetrics } from '../schema/metrics.schema';
 import { MusicPlayer } from '../schema/music-player.schema';
@@ -57,6 +60,7 @@ export class UserResolver {
     private readonly getLibrariesUseCase: GetLibrariesUseCase,
     private readonly getTracksPaginatedUseCase: GetTracksWithPaginationUseCase,
     private readonly getPendingTracksUseCase: GetPendingTracksUseCase,
+    private readonly getHiddenTracksUseCase: GetHiddenTracksUseCase,
     private readonly getRandomTrackWithStatsUseCase: GetRandomTrackWithStatsUseCase,
     private readonly getTracksWithCursorPaginationUseCase: GetTracksWithCursorPaginationUseCase,
     private readonly getFavoriteUseCase: GetFavoriteUseCase,
@@ -183,6 +187,26 @@ export class UserResolver {
         items: tracks.items.map(toTrack),
       }));
   }
+  @ResolveField(() => PaginatedHiddenTracks)
+  async hiddenTracks(
+    @Args('pagination', { type: () => PaginationArgs, nullable: true })
+    pagination: PaginationArgs,
+  ): Promise<IPaginatedType<HiddenTrack>> {
+    return this.getHiddenTracksUseCase
+      .execute({
+        pagination: {
+          limit: pagination.limit,
+          offset: pagination.offset,
+          orderBy: pagination.orderBy ?? 'createdAt',
+          orderDirection: pagination.orderDirection ?? 'desc',
+        },
+      })
+      .then((tracks) => ({
+        ...tracks,
+        items: tracks.items.map(toHiddenTrack),
+      }));
+  }
+
   @ResolveField(() => Base64ID, { nullable: true })
   async randomTrackId(): Promise<string | null> {
     return this.getRandomTrackIdUseCase.execute() ?? '';

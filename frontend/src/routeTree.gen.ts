@@ -14,6 +14,7 @@ import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as PendingRouteImport } from './routes/pending'
 import { Route as MusicRouteImport } from './routes/music'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as HiddenRouteImport } from './routes/hidden'
 import { Route as FavoritesRouteImport } from './routes/favorites'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SwipeIndexRouteImport } from './routes/swipe.index'
@@ -47,6 +48,11 @@ const MusicRoute = MusicRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HiddenRoute = HiddenRouteImport.update({
+  id: '/hidden',
+  path: '/hidden',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FavoritesRoute = FavoritesRouteImport.update({
@@ -99,6 +105,7 @@ const LibrariesLibraryIdRoute = LibrariesLibraryIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/favorites': typeof FavoritesRoute
+  '/hidden': typeof HiddenRoute
   '/login': typeof LoginRoute
   '/music': typeof MusicRoute
   '/pending': typeof PendingRoute
@@ -115,6 +122,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/favorites': typeof FavoritesRoute
+  '/hidden': typeof HiddenRoute
   '/login': typeof LoginRoute
   '/music': typeof MusicRoute
   '/pending': typeof PendingRoute
@@ -132,6 +140,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/favorites': typeof FavoritesRoute
+  '/hidden': typeof HiddenRoute
   '/login': typeof LoginRoute
   '/music': typeof MusicRoute
   '/pending': typeof PendingRoute
@@ -150,6 +159,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/favorites'
+    | '/hidden'
     | '/login'
     | '/music'
     | '/pending'
@@ -166,6 +176,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/favorites'
+    | '/hidden'
     | '/login'
     | '/music'
     | '/pending'
@@ -182,6 +193,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/favorites'
+    | '/hidden'
     | '/login'
     | '/music'
     | '/pending'
@@ -199,6 +211,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   FavoritesRoute: typeof FavoritesRoute
+  HiddenRoute: typeof HiddenRoute
   LoginRoute: typeof LoginRoute
   MusicRoute: typeof MusicRoute
   PendingRoute: typeof PendingRoute
@@ -248,6 +261,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/hidden': {
+      id: '/hidden'
+      path: '/hidden'
+      fullPath: '/hidden'
+      preLoaderRoute: typeof HiddenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/favorites': {
@@ -319,6 +339,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   FavoritesRoute: FavoritesRoute,
+  HiddenRoute: HiddenRoute,
   LoginRoute: LoginRoute,
   MusicRoute: MusicRoute,
   PendingRoute: PendingRoute,

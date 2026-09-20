@@ -70,6 +70,17 @@ export type CosineRecommendedTrack = {
   videoId?: Maybe<Scalars['String']['output']>;
 };
 
+export type CosineSimilarFiltersInput = {
+  endYear?: InputMaybe<Scalars['Int']['input']>;
+  maxHave?: InputMaybe<Scalars['Int']['input']>;
+  maxPrice?: InputMaybe<Scalars['Float']['input']>;
+  maxWant?: InputMaybe<Scalars['Int']['input']>;
+  minHave?: InputMaybe<Scalars['Int']['input']>;
+  minPrice?: InputMaybe<Scalars['Float']['input']>;
+  minWant?: InputMaybe<Scalars['Int']['input']>;
+  startYear?: InputMaybe<Scalars['Int']['input']>;
+};
+
 export type CreateLibraryInput = {
   autoScan?: InputMaybe<Scalars['Boolean']['input']>;
   includeSubdirectories?: InputMaybe<Scalars['Boolean']['input']>;
@@ -161,6 +172,20 @@ export type FilterWithId = {
   __typename?: 'FilterWithID';
   id?: Maybe<Scalars['Base64ID']['output']>;
   name?: Maybe<Scalars['String']['output']>;
+};
+
+export type HiddenTrack = {
+  __typename?: 'HiddenTrack';
+  artist?: Maybe<Scalars['String']['output']>;
+  createdAt?: Maybe<Scalars['Date']['output']>;
+  duration?: Maybe<Scalars['Float']['output']>;
+  fileName: Scalars['String']['output'];
+  fileSize: Scalars['Float']['output'];
+  format?: Maybe<Scalars['String']['output']>;
+  id: Scalars['Base64ID']['output'];
+  imagePath?: Maybe<Scalars['String']['output']>;
+  libraryId?: Maybe<Scalars['Base64ID']['output']>;
+  title?: Maybe<Scalars['String']['output']>;
 };
 
 export type HomeMetrics = {
@@ -282,6 +307,7 @@ export type Mutation = {
   removeTrackFromPlaylist: Scalars['Boolean']['output'];
   removeTrackFromQueue: RemoveTrackFromQueueResponse;
   resetQueue: Scalars['Boolean']['output'];
+  restoreHiddenTrack: Track;
   scanIncompleteTracks: Scalars['Base64ID']['output'];
   scanPlaylistTracks: Scalars['Base64ID']['output'];
   scanTrack: Scalars['Base64ID']['output'];
@@ -446,6 +472,11 @@ export type MutationRemoveTrackFromQueueArgs = {
 };
 
 
+export type MutationRestoreHiddenTrackArgs = {
+  hiddenTrackId: Scalars['Base64ID']['input'];
+};
+
+
 export type MutationScanIncompleteTracksArgs = {
   libraryId: Scalars['Base64ID']['input'];
 };
@@ -572,6 +603,15 @@ export type Node = {
   id: Scalars['Base64ID']['output'];
 };
 
+export type PaginatedHiddenTracks = {
+  __typename?: 'PaginatedHiddenTracks';
+  items?: Maybe<Array<HiddenTrack>>;
+  limit: Scalars['Int']['output'];
+  page: Scalars['Int']['output'];
+  pages: Scalars['Int']['output'];
+  total: Scalars['Int']['output'];
+};
+
 export type PaginatedTracks = {
   __typename?: 'PaginatedTracks';
   items?: Maybe<Array<Track>>;
@@ -689,12 +729,14 @@ export type QueryConnectedProvidersArgs = {
 
 
 export type QueryCosineRecommendationsForTrackArgs = {
+  filters?: InputMaybe<CosineSimilarFiltersInput>;
   trackId: Scalars['Base64ID']['input'];
   userId?: InputMaybe<Scalars['String']['input']>;
 };
 
 
 export type QueryDiscoverSimilarTracksForPlaylistArgs = {
+  filters?: InputMaybe<CosineSimilarFiltersInput>;
   playlistId: Scalars['Base64ID']['input'];
   userId: Scalars['String']['input'];
 };
@@ -936,6 +978,7 @@ export type User = Node & {
   email?: Maybe<Scalars['String']['output']>;
   favorites: Playlist;
   firstName?: Maybe<Scalars['String']['output']>;
+  hiddenTracks: PaginatedHiddenTracks;
   homeMetrics: HomeMetrics;
   id: Scalars['Base64ID']['output'];
   lastName?: Maybe<Scalars['String']['output']>;
@@ -950,6 +993,11 @@ export type User = Node & {
   recentlyPlayed: Array<Track>;
   staticFilterOptions: StaticFilterOptions;
   tracks: CursorPaginatedTracks;
+};
+
+
+export type UserHiddenTracksArgs = {
+  pagination?: InputMaybe<PaginationArgs>;
 };
 
 
@@ -1098,6 +1146,13 @@ export type GetPendingTracksQueryVariables = Exact<{
 
 export type GetPendingTracksQuery = { __typename?: 'Query', me: { __typename?: 'User', pendingTracks: { __typename?: 'PaginatedTracks', total: number, page: number, limit: number, pages: number, items?: Array<{ __typename?: 'Track', id: any, artist?: string | null, title?: string | null, metadataManuallyEdited: boolean, listeningCount: number, lastPlayedAt?: any | null, isFavorite: boolean, isLiked: boolean, isBanger: boolean, filePath: string, fileName: string, fileCreatedAt: any, fileSize: number, hqAudioPath?: string | null, duration: number, genres?: Array<string> | null, subgenres?: Array<string> | null, createdAt?: any | null, updatedAt?: any | null, mfTempo?: number | null, mfKey?: string | null, mfCamelotKey?: string | null, mfValenceMood?: string | null, mfArousalMood?: string | null, mfDanceabilityFeeling?: string | null, mfDanceability?: number | null, mfInstrumentalness?: number | null, mfVoice?: number | null, mfMoodHappy?: number | null, mfMoodSad?: number | null, mfMoodRelaxed?: number | null, mfMoodAggressive?: number | null, mfMoodParty?: number | null, imagePath?: string | null, lastScannedAt?: any | null, libraryId?: any | null, analysisStatus?: string | null, date?: any | null, format?: string | null }> | null } } };
 
+export type GetHiddenTracksQueryVariables = Exact<{
+  pagination?: InputMaybe<PaginationArgs>;
+}>;
+
+
+export type GetHiddenTracksQuery = { __typename?: 'Query', me: { __typename?: 'User', hiddenTracks: { __typename?: 'PaginatedHiddenTracks', total: number, page: number, limit: number, pages: number, items?: Array<{ __typename?: 'HiddenTrack', id: any, artist?: string | null, title?: string | null, imagePath?: string | null, libraryId?: any | null, fileName: string, fileSize: number, duration?: number | null, format?: string | null, createdAt?: any | null }> | null } } };
+
 export type GetStaticFiltersQueryVariables = Exact<{ [key: string]: never; }>;
 
 
@@ -1128,6 +1183,13 @@ export type ToggleDislikeMutationVariables = Exact<{
 
 
 export type ToggleDislikeMutation = { __typename?: 'Mutation', toggleDislike: boolean };
+
+export type RestoreHiddenTrackMutationVariables = Exact<{
+  hiddenTrackId: Scalars['Base64ID']['input'];
+}>;
+
+
+export type RestoreHiddenTrackMutation = { __typename?: 'Mutation', restoreHiddenTrack: { __typename?: 'Track', id: any, artist?: string | null, title?: string | null, metadataManuallyEdited: boolean, listeningCount: number, lastPlayedAt?: any | null, isFavorite: boolean, isLiked: boolean, isBanger: boolean, filePath: string, fileName: string, fileCreatedAt: any, fileSize: number, hqAudioPath?: string | null, duration: number, genres?: Array<string> | null, subgenres?: Array<string> | null, createdAt?: any | null, updatedAt?: any | null, mfTempo?: number | null, mfKey?: string | null, mfCamelotKey?: string | null, mfValenceMood?: string | null, mfArousalMood?: string | null, mfDanceabilityFeeling?: string | null, mfDanceability?: number | null, mfInstrumentalness?: number | null, mfVoice?: number | null, mfMoodHappy?: number | null, mfMoodSad?: number | null, mfMoodRelaxed?: number | null, mfMoodAggressive?: number | null, mfMoodParty?: number | null, imagePath?: string | null, lastScannedAt?: any | null, libraryId?: any | null, analysisStatus?: string | null, date?: any | null, format?: string | null } };
 
 export type ScanTrackMutationVariables = Exact<{
   trackId: Scalars['Base64ID']['input'];
@@ -1470,6 +1532,7 @@ export type UpdatePlaylistPositionsMutation = { __typename?: 'Mutation', updateP
 export type DiscoverSimilarTracksForPlaylistQueryVariables = Exact<{
   playlistId: Scalars['Base64ID']['input'];
   userId: Scalars['String']['input'];
+  filters?: InputMaybe<CosineSimilarFiltersInput>;
 }>;
 
 
@@ -1477,6 +1540,7 @@ export type DiscoverSimilarTracksForPlaylistQuery = { __typename?: 'Query', disc
 
 export type CosineRecommendationsForTrackQueryVariables = Exact<{
   trackId: Scalars['Base64ID']['input'];
+  filters?: InputMaybe<CosineSimilarFiltersInput>;
 }>;
 
 

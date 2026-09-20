@@ -21,9 +21,10 @@ import {
   ToggleLikeUseCase,
   UpdateTrackMetadataUseCase,
 } from 'src/application/use-cases/music-track';
+import { RestoreHiddenTrackUseCase } from 'src/application/use-cases/hidden-music-track';
 import { SessionId } from 'src/kernel/ids';
 import { getCurrentUser } from 'src/kernel/types/context';
-import { parseMusicTrackId } from '../../common/utils/parse-id';
+import { parseHiddenMusicTrackId, parseMusicTrackId } from '../../common/utils/parse-id';
 import { AuthGuard } from '../context/auth.guard';
 import { toTrack } from '../mappers/track.mapper';
 import { Base64ID } from '../scalars/base64-id.scalar';
@@ -39,6 +40,7 @@ export class MusicTrackResolver {
     private readonly toggleFavoriteUseCase: ToggleFavoriteUseCase,
     private readonly toggleLikeUseCase: ToggleLikeUseCase,
     private readonly toggleDislikeUseCase: ToggleDislikeUseCase,
+    private readonly restoreHiddenTrackUseCase: RestoreHiddenTrackUseCase,
     private readonly toggleBangerUseCase: ToggleBangerUseCase,
     private readonly updateTrackMetadataUseCase: UpdateTrackMetadataUseCase,
     private readonly deleteHqAudioUseCase: DeleteHqAudioUseCase,
@@ -80,6 +82,15 @@ export class MusicTrackResolver {
     @Args('trackId', { type: () => Base64ID }) trackId: string,
   ): Promise<boolean> {
     return this.toggleDislikeUseCase.execute(parseMusicTrackId(trackId));
+  }
+
+  @Mutation(() => Track)
+  async restoreHiddenTrack(
+    @Args('hiddenTrackId', { type: () => Base64ID }) hiddenTrackId: string,
+  ): Promise<Track> {
+    return this.restoreHiddenTrackUseCase
+      .execute(parseHiddenMusicTrackId(hiddenTrackId))
+      .then(toTrack);
   }
 
   @Mutation(() => Track)

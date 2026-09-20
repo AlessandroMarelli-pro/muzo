@@ -94,6 +94,8 @@ export type HiddenMusicTrack = Readonly<ModelBase<HiddenMusicTrackId>> & {
   artist: string;
   title: string;
   imagePath: string;
+  imageData: MaybeUndefined<Buffer>;
+  imageMimeType: MaybeUndefined<string>;
   libraryId: MusicLibraryId;
   fileInfo: AudioFileInfo;
   technicalInfo: MaybeUndefined<AudioTechnical>;

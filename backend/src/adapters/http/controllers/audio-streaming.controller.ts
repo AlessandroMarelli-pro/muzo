@@ -15,17 +15,21 @@ import * as fs from 'fs';
 import { createReadStream, statSync } from 'fs';
 import * as path from 'path';
 
+import { GetHiddenTrackUseCase } from 'src/application/use-cases/hidden-music-track';
 import { GetTrackUseCase } from 'src/application/use-cases/music-track';
-import { MusicTrackId } from 'src/kernel/ids';
+import { HiddenMusicTrackId, MusicTrackId } from 'src/kernel/ids';
 import { fromBase64Id } from '../../common/utils/id-encoding';
-import { parseMusicTrackId } from '../../common/utils/parse-id';
+import { parseHiddenMusicTrackId, parseMusicTrackId } from '../../common/utils/parse-id';
 import { HttpAuthGuard } from '../context/http-auth.guard';
 import { getContentType } from '../utils/audio-content-type';
 
 @Controller('api/audio')
 @UseGuards(HttpAuthGuard)
 export class AudioStreamingController {
-  constructor(private readonly getTrackUseCase: GetTrackUseCase) {}
+  constructor(
+    private readonly getTrackUseCase: GetTrackUseCase,
+    private readonly getHiddenTrackUseCase: GetHiddenTrackUseCase,
+  ) {}
 
   @Get('stream/:trackId')
   async streamAudio(
@@ -40,8 +44,33 @@ export class AudioStreamingController {
       throw new NotFoundException(`Track with ID ${trackId} not found`);
     }
     const filePath = track.hqAudioPath || track.fileInfo?.filePath;
+    this.streamFile(res, range, filePath, track.fileInfo?.fileName, trackId);
+  }
+
+  @Get('stream-hidden/:hiddenTrackId')
+  async streamHiddenAudio(
+    @Param('hiddenTrackId') hiddenTrackId: HiddenMusicTrackId,
+    @Res() res: Response,
+    @Headers('range') range?: string,
+  ): Promise<void> {
+    const decodedId = fromBase64Id(hiddenTrackId);
+    const track = await this.getHiddenTrackUseCase.execute(parseHiddenMusicTrackId(decodedId));
+
+    if (!track) {
+      throw new NotFoundException(`Hidden track with ID ${hiddenTrackId} not found`);
+    }
+    this.streamFile(res, range, track.fileInfo?.filePath, track.fileInfo?.fileName, hiddenTrackId);
+  }
+
+  private streamFile(
+    res: Response,
+    range: string | undefined,
+    filePath: string | undefined,
+    fileName: string | undefined,
+    idForError: string,
+  ): void {
     if (!filePath) {
-      throw new BadRequestException(`Track with ID ${trackId} has no file path`);
+      throw new BadRequestException(`Track with ID ${idForError} has no file path`);
     }
     if (!fs.existsSync(filePath)) {
       throw new BadRequestException(`Audio file not found at path: ${filePath}`);
@@ -52,7 +81,7 @@ export class AudioStreamingController {
     // AIFF isn't reliably playable in browsers, so transcode to AAC on the fly.
     // Transcoded output length is unknown up front, so range/seek support is dropped for this path.
     if (fileExtension === '.aiff' || fileExtension === '.aif') {
-      const baseName = (track.fileInfo?.fileName || 'audio').replace(/\.\w+$/, '');
+      const baseName = (fileName || 'audio').replace(/\.\w+$/, '');
       res.set({
         'Cache-Control': 'public, max-age=31536000',
         'Content-Type': 'audio/aac',
@@ -87,7 +116,7 @@ export class AudioStreamingController {
       'Accept-Ranges': 'bytes',
       'Cache-Control': 'public, max-age=31536000',
       'Content-Type': contentType,
-      'Content-Disposition': `inline; filename="${encodeURI(track.fileInfo?.fileName || '')}"`,
+      'Content-Disposition': `inline; filename="${encodeURI(fileName || '')}"`,
     });
 
     if (range) {

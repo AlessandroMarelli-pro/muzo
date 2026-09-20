@@ -1,5 +1,6 @@
 export * from './automix';
 export * from './discovery';
+export * from './hidden-music-track';
 export * from './image';
 export * from './job-scheduler';
 export * from './metrics';

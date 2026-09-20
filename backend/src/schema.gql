@@ -154,6 +154,19 @@ type FilterWithID {
   name: String
 }
 
+type HiddenTrack {
+  artist: String
+  createdAt: Date
+  duration: Float
+  fileName: String!
+  fileSize: Float!
+  format: String
+  id: Base64ID!
+  imagePath: String
+  libraryId: Base64ID
+  title: String
+}
+
 type HomeMetrics {
   artistCount: Int!
   listeningStats: ListeningStats!
@@ -254,6 +267,7 @@ type Mutation {
   removeTrackFromPlaylist(playlistId: Base64ID!, trackId: Base64ID!): Boolean!
   removeTrackFromQueue(trackId: Base64ID!): RemoveTrackFromQueueResponse!
   resetQueue: Boolean!
+  restoreHiddenTrack(hiddenTrackId: Base64ID!): Track!
   scanIncompleteTracks(libraryId: Base64ID!): Base64ID!
   scanPlaylistTracks(force: Boolean, playlistId: Base64ID!): Base64ID!
   scanTrack(force: Boolean, trackId: Base64ID!): Base64ID!
@@ -280,6 +294,14 @@ type Mutation {
 
 interface Node {
   id: Base64ID!
+}
+
+type PaginatedHiddenTracks {
+  items: [HiddenTrack!]
+  limit: Int!
+  page: Int!
+  pages: Int!
+  total: Int!
 }
 
 type PaginatedTracks {
@@ -581,6 +603,7 @@ type User implements Node {
   email: String
   favorites: Playlist!
   firstName: String
+  hiddenTracks(pagination: PaginationArgs): PaginatedHiddenTracks!
   homeMetrics: HomeMetrics!
   id: Base64ID!
   lastName: String
