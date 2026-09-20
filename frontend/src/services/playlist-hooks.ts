@@ -307,8 +307,12 @@ const UPDATE_PLAYLIST_POSITIONS = gql`
 `;
 
 const DISCOVER_SIMILAR_TRACKS_FOR_PLAYLIST = gql`
-  query DiscoverSimilarTracksForPlaylist($playlistId: Base64ID!, $userId: String!) {
-    discoverSimilarTracksForPlaylist(playlistId: $playlistId, userId: $userId) {
+  query DiscoverSimilarTracksForPlaylist(
+    $playlistId: Base64ID!
+    $userId: String!
+    $filters: CosineSimilarFiltersInput
+  ) {
+    discoverSimilarTracksForPlaylist(playlistId: $playlistId, userId: $userId, filters: $filters) {
       sourceArtist
       sourceTitle
       sourceImagePath
@@ -323,8 +327,8 @@ const DISCOVER_SIMILAR_TRACKS_FOR_PLAYLIST = gql`
 `;
 
 const COSINE_RECOMMENDATIONS_FOR_TRACK = gql`
-  query CosineRecommendationsForTrack($trackId: Base64ID!) {
-    cosineRecommendationsForTrack(trackId: $trackId) {
+  query CosineRecommendationsForTrack($trackId: Base64ID!, $filters: CosineSimilarFiltersInput) {
+    cosineRecommendationsForTrack(trackId: $trackId, filters: $filters) {
       artist
       title
       score
@@ -676,13 +680,25 @@ export interface DiscoveredTrack {
   confidence: string;
 }
 
+export interface CosineSimilarFilters {
+  startYear?: number;
+  endYear?: number;
+  minHave?: number;
+  maxHave?: number;
+  minWant?: number;
+  maxWant?: number;
+  minPrice?: number;
+  maxPrice?: number;
+}
+
 export const fetchDiscoverSimilarTracksForPlaylist = async (
   playlistId: string,
   userId: string = 'default',
+  filters?: CosineSimilarFilters,
 ): Promise<DiscoveredTrack[]> => {
   const data = await graffleClient.request<{
     discoverSimilarTracksForPlaylist: DiscoveredTrack[];
-  }>(DISCOVER_SIMILAR_TRACKS_FOR_PLAYLIST, { playlistId, userId });
+  }>(DISCOVER_SIMILAR_TRACKS_FOR_PLAYLIST, { playlistId, userId, filters });
   return data.discoverSimilarTracksForPlaylist;
 };
 
@@ -696,17 +712,18 @@ export interface CosineRecommendedTrack {
 
 export const fetchCosineRecommendationsForTrack = async (
   trackId: string,
+  filters?: CosineSimilarFilters,
 ): Promise<CosineRecommendedTrack[]> => {
   const data = await graffleClient.request<{
     cosineRecommendationsForTrack: CosineRecommendedTrack[];
-  }>(COSINE_RECOMMENDATIONS_FOR_TRACK, { trackId });
+  }>(COSINE_RECOMMENDATIONS_FOR_TRACK, { trackId, filters });
   return data.cosineRecommendationsForTrack;
 };
 
-export function useCosineRecommendationsForTrack(trackId?: string) {
+export function useCosineRecommendationsForTrack(trackId?: string, filters?: CosineSimilarFilters) {
   const { data, isLoading, error, refetch } = useQuery({
-    queryKey: ['cosineRecommendationsForTrack', trackId],
-    queryFn: () => fetchCosineRecommendationsForTrack(trackId!),
+    queryKey: ['cosineRecommendationsForTrack', trackId, filters],
+    queryFn: () => fetchCosineRecommendationsForTrack(trackId!, filters),
     enabled: !!trackId,
     staleTime: 5 * 60 * 1000,
   });
@@ -1229,10 +1246,11 @@ export function usePlaylistRecommendations(
 export function useDiscoverSimilarTracksForPlaylist(
   playlistId: string,
   userId: string = 'default',
+  filters?: CosineSimilarFilters,
 ) {
   const { data, isLoading, isFetching, error, refetch } = useQuery({
-    queryKey: ['discoverSimilarTracksForPlaylist', playlistId, userId],
-    queryFn: () => fetchDiscoverSimilarTracksForPlaylist(playlistId, userId),
+    queryKey: ['discoverSimilarTracksForPlaylist', playlistId, userId, filters],
+    queryFn: () => fetchDiscoverSimilarTracksForPlaylist(playlistId, userId, filters),
     enabled: false,
     staleTime: 5 * 60 * 1000,
   });

@@ -54,6 +54,7 @@ function makeCosineProvider(overrides: Partial<ICosineProvider> = {}): ICosinePr
     searchTrack: vi.fn(async () => null),
     lookupTrackByUrl: vi.fn(async () => null),
     getSimilarTracks: vi.fn(async () => []),
+    bulkSearch: vi.fn(async () => ({ matched: [], unmatched: [] })),
     ...overrides,
   };
 }

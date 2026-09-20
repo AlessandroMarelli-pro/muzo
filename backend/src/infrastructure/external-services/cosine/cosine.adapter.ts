@@ -1,6 +1,8 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import {
+  CosineBulkSearchResult,
+  CosineSimilarFilters,
   CosineSimilarTrack,
   CosineTrack,
   ICosineProvider,
@@ -36,15 +38,21 @@ export class CosineAdapter implements ICosineProvider {
     return settings.cosineApiKey || this.configService.get<string>('COSINE_API_KEY') || '';
   }
 
-  private async makeRequest(path: string): Promise<unknown> {
+  private async makeRequest(
+    path: string,
+    init?: { method?: string; body?: unknown },
+  ): Promise<unknown> {
     const apiKey = await this.resolveApiKey();
     if (!apiKey) return null;
     try {
       const response = await fetch(`${BASE_URL}${path}`, {
+        method: init?.method ?? 'GET',
         headers: {
           Authorization: `Bearer ${apiKey}`,
           'User-Agent': 'muzo/1.0',
+          ...(init?.body ? { 'Content-Type': 'application/json' } : {}),
         },
+        ...(init?.body ? { body: JSON.stringify(init.body) } : {}),
       });
       this.logger.debug('Cosine API request', { path, status: response.status });
       if (!response.ok) return null;
@@ -58,6 +66,23 @@ export class CosineAdapter implements ICosineProvider {
     }
   }
 
+  private static appendFilterParams(query: URLSearchParams, filters?: CosineSimilarFilters): void {
+    if (!filters) return;
+    const entries: [string, number | undefined][] = [
+      ['start_year', filters.startYear],
+      ['end_year', filters.endYear],
+      ['min_have', filters.minHave],
+      ['max_have', filters.maxHave],
+      ['min_want', filters.minWant],
+      ['max_want', filters.maxWant],
+      ['min_price', filters.minPrice],
+      ['max_price', filters.maxPrice],
+    ];
+    for (const [key, value] of entries) {
+      if (value !== undefined) query.set(key, value.toString());
+    }
+  }
+
   async searchTrack(artist: string, title: string): Promise<CosineTrack | null> {
     const query = new URLSearchParams({
       q: `${artist} ${title}`,
@@ -67,7 +92,6 @@ export class CosineAdapter implements ICosineProvider {
       data?: { id: string; artist: string; track: string }[];
     } | null;
     const results = data?.data ?? [];
-    console.log(results);
     const normalizedArtist = normalizeForMatch(artist);
     const normalizedTitle = normalizeForMatch(title);
     const strictMatch = results.find(
@@ -107,18 +131,16 @@ export class CosineAdapter implements ICosineProvider {
     return { id: firstMatch.id, artist: firstMatch.artist, title: firstMatch.track };
   }
 
-  async getSimilarTracks(trackId: string, limit = 20): Promise<CosineSimilarTrack[]> {
+  async getSimilarTracks(
+    trackId: string,
+    limit = 20,
+    filters?: CosineSimilarFilters,
+  ): Promise<CosineSimilarTrack[]> {
     const query = new URLSearchParams({ limit: limit.toString() });
+    CosineAdapter.appendFilterParams(query, filters);
     const data = (await this.makeRequest(`/tracks/${trackId}/similar?${query.toString()}`)) as {
       data?: {
-        similar_tracks?: {
-          id: string;
-          artist: string;
-          track: string;
-          score: number;
-          video_id?: string;
-          external_link?: string;
-        }[];
+        similar_tracks?: RawCosineTrack[];
       };
     } | null;
     const similarTracks = data?.data?.similar_tracks ?? [];
@@ -128,13 +150,71 @@ export class CosineAdapter implements ICosineProvider {
       similarTrackCount: similarTracks.length,
     });
 
-    return similarTracks.map((t) => ({
-      id: t.id,
-      artist: t.artist,
-      title: t.track,
-      score: t.score,
-      videoId: t.video_id,
-      externalLink: t.external_link,
-    }));
+    return similarTracks.map(toDomainSimilarTrack);
   }
+
+  async bulkSearch(
+    tracks: string[],
+    filters?: CosineSimilarFilters & { similarLimit?: number },
+  ): Promise<CosineBulkSearchResult> {
+    const body: Record<string, unknown> = { tracks };
+    if (filters?.similarLimit !== undefined) body.similar_limit = filters.similarLimit;
+    if (filters?.startYear !== undefined) body.start_year = filters.startYear;
+    if (filters?.endYear !== undefined) body.end_year = filters.endYear;
+    if (filters?.minHave !== undefined) body.min_have = filters.minHave;
+    if (filters?.maxHave !== undefined) body.max_have = filters.maxHave;
+    if (filters?.minWant !== undefined) body.min_want = filters.minWant;
+    if (filters?.maxWant !== undefined) body.max_want = filters.maxWant;
+    if (filters?.minPrice !== undefined) body.min_price = filters.minPrice;
+    if (filters?.maxPrice !== undefined) body.max_price = filters.maxPrice;
+
+    const data = (await this.makeRequest('/search/bulk', { method: 'POST', body })) as {
+      data?: {
+        results?: {
+          query: string;
+          track: RawCosineTrack;
+          similar_tracks: RawCosineTrack[];
+        }[];
+        unmatched?: string[];
+      };
+    } | null;
+
+    const results = data?.data?.results ?? [];
+    const unmatched = data?.data?.unmatched ?? [];
+
+    this.logger.debug('Cosine bulk search result', {
+      trackCount: tracks.length,
+      matchedCount: results.length,
+      unmatchedCount: unmatched.length,
+    });
+
+    return {
+      matched: results.map((r) => ({
+        query: r.query,
+        track: { id: r.track.id, artist: r.track.artist, title: r.track.track },
+        similarTracks: r.similar_tracks.map(toDomainSimilarTrack),
+      })),
+      unmatched,
+    };
+  }
+}
+
+type RawCosineTrack = {
+  id: string;
+  artist: string;
+  track: string;
+  score: number;
+  video_id?: string;
+  external_link?: string;
+};
+
+function toDomainSimilarTrack(t: RawCosineTrack): CosineSimilarTrack {
+  return {
+    id: t.id,
+    artist: t.artist,
+    title: t.track,
+    score: t.score,
+    videoId: t.video_id,
+    externalLink: t.external_link,
+  };
 }

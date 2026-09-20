@@ -2,7 +2,7 @@ import { Inject } from '@nestjs/common';
 import { ILogger, LOGGER } from 'src/application/ports/infrastructure/ILogger';
 import { LOGGER_FACTORY } from 'src/application/ports/infrastructure/ILoggerFactory';
 import { MusicTrackId, PlaylistId } from 'src/kernel/ids';
-import type { ICosineProvider } from '../../ports/infrastructure/ICosineProvider';
+import type { CosineSimilarFilters, ICosineProvider } from '../../ports/infrastructure/ICosineProvider';
 import type { IMusicTrackRepository } from '../../ports/repositories/IMusicTrackRepository';
 import type { IYouTubeSyncProvider } from '../../ports/infrastructure/IYouTubeSyncProvider';
 import type { ICosineTrackMatchRepository } from '../../ports/repositories/ICosineTrackMatchRepository';
@@ -32,6 +32,15 @@ type ArtistSeed = {
 
 const SIMILAR_TRACKS_PER_SEED_LIMIT = 10;
 const RESULTS_PER_PLAYLIST_TRACK = 10;
+const BULK_SEARCH_CHUNK_SIZE = 50;
+
+function chunk<T>(items: T[], size: number): T[][] {
+  const chunks: T[][] = [];
+  for (let i = 0; i < items.length; i += size) {
+    chunks.push(items.slice(i, i + size));
+  }
+  return chunks;
+}
 
 export class DiscoverSimilarTracksForPlaylistUseCase {
   constructor(
@@ -62,7 +71,7 @@ export class DiscoverSimilarTracksForPlaylistUseCase {
    * fallback) and fetches similar tracks, dropping a stale cached id and retrying once
    * when it yields nothing.
    */
-  private async getSimilarForSeed(seed: ArtistSeed, userId: string) {
+  private async getSimilarForSeed(seed: ArtistSeed, userId: string, filters?: CosineSimilarFilters) {
     const params = {
       musicTrackId: seed.musicTrackId,
       artist: seed.artist,
@@ -77,6 +86,7 @@ export class DiscoverSimilarTracksForPlaylistUseCase {
     let similarTracks = await this.cosineProvider.getSimilarTracks(
       resolved.id,
       SIMILAR_TRACKS_PER_SEED_LIMIT,
+      filters,
     );
 
     if (similarTracks.length === 0 && resolved.fromCache) {
@@ -86,13 +96,18 @@ export class DiscoverSimilarTracksForPlaylistUseCase {
       similarTracks = await this.cosineProvider.getSimilarTracks(
         reResolved.id,
         SIMILAR_TRACKS_PER_SEED_LIMIT,
+        filters,
       );
     }
 
     return similarTracks;
   }
 
-  async execute(playlistId: PlaylistId, userId: string): Promise<DiscoveredTrack[]> {
+  async execute(
+    playlistId: PlaylistId,
+    userId: string,
+    filters?: CosineSimilarFilters,
+  ): Promise<DiscoveredTrack[]> {
     const playlist = await this.getPlaylistUseCase.execute(playlistId);
     const playlistTracks = playlist.tracks ?? [];
     const limit = playlistTracks.length * RESULTS_PER_PLAYLIST_TRACK;
@@ -140,27 +155,7 @@ export class DiscoverSimilarTracksForPlaylistUseCase {
     };
     const candidates = new Map<string, Candidate>();
 
-    for (const seed of seedsByArtist.values()) {
-      this.logger.debug('Resolving Cosine track for seed', {
-        artist: seed.artist,
-        title: seed.title,
-      });
-
-      const similarTracks = await this.getSimilarForSeed(seed, userId);
-      if (!similarTracks) {
-        this.logger.info('No match found for seed track, skipping', {
-          artist: seed.artist,
-          title: seed.title,
-        });
-        continue;
-      }
-
-      this.logger.debug('Cosine returned similar tracks', {
-        artist: seed.artist,
-        title: seed.title,
-        similarTrackCount: similarTracks.length,
-      });
-
+    const recordCandidates = (seed: ArtistSeed, similarTracks: { artist: string; title: string; score: number; externalLink?: string; videoId?: string }[]) => {
       let addedCount = 0;
       let ownedSkippedCount = 0;
       let duplicateSkippedCount = 0;
@@ -200,6 +195,52 @@ export class DiscoverSimilarTracksForPlaylistUseCase {
         ownedSkippedCount,
         duplicateSkippedCount,
       });
+    };
+
+    const seeds = Array.from(seedsByArtist.values());
+    const seedByQuery = new Map(seeds.map((seed) => [`${seed.artist} - ${seed.title}`, seed]));
+    const unmatchedSeeds: ArtistSeed[] = [];
+
+    for (const queryChunk of chunk(Array.from(seedByQuery.keys()), BULK_SEARCH_CHUNK_SIZE)) {
+      const bulkResult = await this.cosineProvider.bulkSearch(queryChunk, {
+        ...filters,
+        similarLimit: SIMILAR_TRACKS_PER_SEED_LIMIT,
+      });
+
+      this.logger.info('Bulk search chunk result', {
+        chunkSize: queryChunk.length,
+        matchedCount: bulkResult.matched.length,
+        unmatchedCount: bulkResult.unmatched.length,
+      });
+
+      for (const match of bulkResult.matched) {
+        const seed = seedByQuery.get(match.query);
+        if (!seed) continue;
+        recordCandidates(seed, match.similarTracks);
+      }
+
+      for (const query of bulkResult.unmatched) {
+        const seed = seedByQuery.get(query);
+        if (seed) unmatchedSeeds.push(seed);
+      }
+    }
+
+    for (const seed of unmatchedSeeds) {
+      this.logger.debug('Falling back to per-track resolution for unmatched seed', {
+        artist: seed.artist,
+        title: seed.title,
+      });
+
+      const similarTracks = await this.getSimilarForSeed(seed, userId, filters);
+      if (!similarTracks) {
+        this.logger.info('No match found for seed track, skipping', {
+          artist: seed.artist,
+          title: seed.title,
+        });
+        continue;
+      }
+
+      recordCandidates(seed, similarTracks);
     }
 
     const results = Array.from(candidates.values())

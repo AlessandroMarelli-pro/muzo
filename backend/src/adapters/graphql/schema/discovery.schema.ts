@@ -1,4 +1,31 @@
-import { Field, Float, ObjectType } from '@nestjs/graphql';
+import { Field, Float, InputType, Int, ObjectType } from '@nestjs/graphql';
+
+@InputType()
+export class CosineSimilarFiltersInput {
+  @Field(() => Int, { nullable: true })
+  startYear?: number;
+
+  @Field(() => Int, { nullable: true })
+  endYear?: number;
+
+  @Field(() => Int, { nullable: true })
+  minHave?: number;
+
+  @Field(() => Int, { nullable: true })
+  maxHave?: number;
+
+  @Field(() => Int, { nullable: true })
+  minWant?: number;
+
+  @Field(() => Int, { nullable: true })
+  maxWant?: number;
+
+  @Field(() => Float, { nullable: true })
+  minPrice?: number;
+
+  @Field(() => Float, { nullable: true })
+  maxPrice?: number;
+}
 
 @ObjectType()
 export class DiscoveredTrack {

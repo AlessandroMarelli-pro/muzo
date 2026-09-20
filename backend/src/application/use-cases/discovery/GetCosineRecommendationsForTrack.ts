@@ -2,7 +2,11 @@ import { Inject } from '@nestjs/common';
 import { ILogger, LOGGER } from 'src/application/ports/infrastructure/ILogger';
 import { LOGGER_FACTORY } from 'src/application/ports/infrastructure/ILoggerFactory';
 import { MusicTrackId } from 'src/kernel/ids';
-import type { CosineSimilarTrack, ICosineProvider } from '../../ports/infrastructure/ICosineProvider';
+import type {
+  CosineSimilarFilters,
+  CosineSimilarTrack,
+  ICosineProvider,
+} from '../../ports/infrastructure/ICosineProvider';
 import type { IMusicTrackRepository } from '../../ports/repositories/IMusicTrackRepository';
 import type { IYouTubeSyncProvider } from '../../ports/infrastructure/IYouTubeSyncProvider';
 import type { ICosineTrackMatchRepository } from '../../ports/repositories/ICosineTrackMatchRepository';
@@ -24,7 +28,11 @@ export class GetCosineRecommendationsForTrackUseCase {
     this.logger = loggerFactory.createLogger('GetCosineRecommendationsForTrackUseCase');
   }
 
-  async execute(trackId: MusicTrackId, userId: string): Promise<CosineSimilarTrack[]> {
+  async execute(
+    trackId: MusicTrackId,
+    userId: string,
+    filters?: CosineSimilarFilters,
+  ): Promise<CosineSimilarTrack[]> {
     const track = await this.musicTrackRepository.getOneById(trackId);
     if (!track.artist || !track.title) {
       this.logger.info('Track missing artist/title, skipping Cosine lookup', { trackId });
@@ -53,6 +61,7 @@ export class GetCosineRecommendationsForTrackUseCase {
     let similarTracks = await this.cosineProvider.getSimilarTracks(
       resolved.id,
       RECOMMENDATIONS_LIMIT,
+      filters,
     );
 
     // A cached id that no longer yields results is stale — drop it and re-resolve once.
@@ -65,6 +74,7 @@ export class GetCosineRecommendationsForTrackUseCase {
       similarTracks = await this.cosineProvider.getSimilarTracks(
         reResolved.id,
         RECOMMENDATIONS_LIMIT,
+        filters,
       );
     }
 

@@ -2,10 +2,12 @@ import { Badge } from "@/components/ui/badge";
 import { capitalizeEveryWord, cn, formatSimilarity } from "@/lib/utils";
 import {
   type CosineRecommendedTrack,
+  type CosineSimilarFilters,
   useCosineRecommendationsForTrack,
 } from "@/services/playlist-hooks";
 import { ExternalLink, Play } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { CosineSimilarFiltersControl } from "../discovery/cosine-similar-filters";
 import { NoData } from "../no-data";
 import { Skeleton } from "../ui/skeleton";
 
@@ -146,44 +148,47 @@ interface CosineRecommendationsProps {
 }
 
 export function CosineRecommendations({ trackId }: CosineRecommendationsProps) {
-  const { tracks, isLoading, error, refetch } =
-    useCosineRecommendationsForTrack(trackId);
-
-  if (error) {
-    return (
-      <NoData
-        Icon={ExternalLink}
-        title="Couldn't load recommendations"
-        subtitle={error}
-        buttonAction={refetch}
-        buttonLabel="Try again"
-      />
-    );
-  }
-
-  if (isLoading) {
-    return (
-      <div className="divide-y">
-        {Array.from({ length: 8 }).map((_, i) => (
-          <CosineRecommendationRowSkeleton key={`cosine-recommendation-skeleton-${i}`} />
-        ))}
-      </div>
-    );
-  }
-
-  if (tracks.length === 0) {
-    return (
-      <p className="text-sm text-muted-foreground py-8 text-center">
-        No Cosine recommendations found for this track.
-      </p>
-    );
-  }
+  const [filters, setFilters] = useState<CosineSimilarFilters>({});
+  const { tracks, isLoading, error, refetch } = useCosineRecommendationsForTrack(
+    trackId,
+    filters,
+  );
 
   return (
-    <div className="divide-y">
-      {tracks.map((track) => (
-        <CosineRecommendationRow key={`${track.artist}::${track.title}`} track={track} />
-      ))}
+    <div className="space-y-3">
+      <CosineSimilarFiltersControl filters={filters} onChange={setFilters} />
+
+      {error && (
+        <NoData
+          Icon={ExternalLink}
+          title="Couldn't load recommendations"
+          subtitle={error}
+          buttonAction={refetch}
+          buttonLabel="Try again"
+        />
+      )}
+
+      {!error && isLoading && (
+        <div className="divide-y">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <CosineRecommendationRowSkeleton key={`cosine-recommendation-skeleton-${i}`} />
+          ))}
+        </div>
+      )}
+
+      {!error && !isLoading && tracks.length === 0 && (
+        <p className="text-sm text-muted-foreground py-8 text-center">
+          No Cosine recommendations found for this track.
+        </p>
+      )}
+
+      {!error && !isLoading && tracks.length > 0 && (
+        <div className="divide-y">
+          {tracks.map((track) => (
+            <CosineRecommendationRow key={`${track.artist}::${track.title}`} track={track} />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

@@ -14,8 +14,38 @@ export interface CosineSimilarTrack extends CosineTrack {
   externalLink?: string;
 }
 
+export interface CosineSimilarFilters {
+  startYear?: number;
+  endYear?: number;
+  minHave?: number;
+  maxHave?: number;
+  minWant?: number;
+  maxWant?: number;
+  minPrice?: number;
+  maxPrice?: number;
+}
+
+export interface CosineBulkSearchMatch {
+  query: string;
+  track: CosineTrack;
+  similarTracks: CosineSimilarTrack[];
+}
+
+export interface CosineBulkSearchResult {
+  matched: CosineBulkSearchMatch[];
+  unmatched: string[];
+}
+
 export interface ICosineProvider {
   searchTrack(artist: string, title: string): Promise<CosineTrack | null>;
   lookupTrackByUrl(url: string): Promise<CosineTrack | null>;
-  getSimilarTracks(trackId: string, limit?: number): Promise<CosineSimilarTrack[]>;
+  getSimilarTracks(
+    trackId: string,
+    limit?: number,
+    filters?: CosineSimilarFilters,
+  ): Promise<CosineSimilarTrack[]>;
+  bulkSearch(
+    tracks: string[],
+    filters?: CosineSimilarFilters & { similarLimit?: number },
+  ): Promise<CosineBulkSearchResult>;
 }

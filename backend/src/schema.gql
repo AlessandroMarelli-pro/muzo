@@ -53,6 +53,17 @@ type CosineRecommendedTrack {
   videoId: String
 }
 
+input CosineSimilarFiltersInput {
+  endYear: Int
+  maxHave: Int
+  maxPrice: Float
+  maxWant: Int
+  minHave: Int
+  minPrice: Float
+  minWant: Int
+  startYear: Int
+}
+
 input CreateLibraryInput {
   autoScan: Boolean
   includeSubdirectories: Boolean
@@ -347,8 +358,8 @@ type PlaylistsResult {
 type Query {
   aiServiceSettings: AiServiceSettings!
   connectedProviders(userId: String!): [ConnectedProvider!]!
-  cosineRecommendationsForTrack(trackId: Base64ID!, userId: String): [CosineRecommendedTrack!]!
-  discoverSimilarTracksForPlaylist(playlistId: Base64ID!, userId: String!): [DiscoveredTrack!]!
+  cosineRecommendationsForTrack(filters: CosineSimilarFiltersInput, trackId: Base64ID!, userId: String): [CosineRecommendedTrack!]!
+  discoverSimilarTracksForPlaylist(filters: CosineSimilarFiltersInput, playlistId: Base64ID!, userId: String!): [DiscoveredTrack!]!
   getSpotifyAuthUrl: SpotifyAuthUrl!
   getTidalAuthUrl: TidalAuthUrl!
   getYouTubeAuthUrl: YouTubeAuthUrl!

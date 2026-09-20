@@ -3,9 +3,14 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { apiUrl } from '@/lib/api-config';
 import { capitalizeEveryWord, cn, formatSimilarity } from '@/lib/utils';
-import { type DiscoveredTrack, useDiscoverSimilarTracksForPlaylist } from '@/services/playlist-hooks';
+import {
+  type CosineSimilarFilters,
+  type DiscoveredTrack,
+  useDiscoverSimilarTracksForPlaylist,
+} from '@/services/playlist-hooks';
 import { Compass, ExternalLink, ListMusic, Play } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { CosineSimilarFiltersControl } from '../discovery/cosine-similar-filters';
 import { NoData } from '../no-data';
 
 interface PlaylistDiscoveryProps {
@@ -155,7 +160,12 @@ function DiscoveryGroupSkeleton() {
 }
 
 export function PlaylistDiscovery({ playlistId }: PlaylistDiscoveryProps) {
-  const { tracks, isLoading, error, discover } = useDiscoverSimilarTracksForPlaylist(playlistId);
+  const [filters, setFilters] = useState<CosineSimilarFilters>({});
+  const { tracks, isLoading, error, discover } = useDiscoverSimilarTracksForPlaylist(
+    playlistId,
+    'default',
+    filters,
+  );
 
   const groups = useMemo(() => {
     const bySourceArtist = new Map<string, DiscoveredTrack[]>();
@@ -172,14 +182,17 @@ export function PlaylistDiscovery({ playlistId }: PlaylistDiscoveryProps) {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-muted-foreground">
           Find tracks outside your library, based on artists similar to this playlist's.
         </p>
-        <Button size="sm" onClick={() => discover()} disabled={isLoading || !playlistId}>
-          <Compass className="h-4 w-4 mr-2" />
-          {isLoading ? 'Discovering…' : tracks.length > 0 ? 'Refresh' : 'Discover'}
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <CosineSimilarFiltersControl filters={filters} onChange={setFilters} />
+          <Button size="sm" onClick={() => discover()} disabled={isLoading || !playlistId}>
+            <Compass className="h-4 w-4 mr-2" />
+            {isLoading ? 'Discovering…' : tracks.length > 0 ? 'Refresh' : 'Discover'}
+          </Button>
+        </div>
       </div>
 
       {error && (
