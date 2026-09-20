@@ -20,6 +20,7 @@ import type {
 } from '../__generated__/types';
 import { libraryFragment, trackFragment } from './fragments';
 import { gql, graffleClient } from './graffle-client';
+import { queueQueryKeys } from './queue-hooks';
 
 // Define AnalysisStatus enum locally since it's not in the generated types
 export type AnalysisStatus = 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED';
@@ -675,12 +676,23 @@ export const useDislikeTrack = () => {
       restorePendingCache(queryClient, context);
     },
     onSettled: () => {
+      // The track is deleted from MusicTrack on dislike, so every cache that
+      // could still be holding it needs to drop it, not just the pending list.
       queryClient.invalidateQueries({
         queryKey: queryKeys.randomTrackWithStats(),
       });
       queryClient.invalidateQueries({
         queryKey: PENDING_TRACKS_ROOT_KEY,
       });
+      queryClient.invalidateQueries({ queryKey: ['tracksList'] });
+      queryClient.invalidateQueries({ queryKey: ['libraries'] });
+      queryClient.invalidateQueries({ queryKey: ['tracks', 'recently-played'] });
+      queryClient.invalidateQueries({ queryKey: queueQueryKeys.all });
+      // The track cascades out of every playlist it was in on the backend
+      // (PlaylistTrack.track has onDelete: Cascade) — drop playlist caches too.
+      queryClient.invalidateQueries({ queryKey: ['playlists'] });
+      queryClient.invalidateQueries({ queryKey: ['playlist'] });
+      queryClient.invalidateQueries({ queryKey: ['favoritePlaylist'] });
     },
   });
 };

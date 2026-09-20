@@ -1,5 +1,6 @@
 import { User } from "@/__generated__/types";
 import { AppSidebar, AppSidebarProps } from "@/components/layout/app-sidebar";
+import { ClassificationGateOverlay } from "@/components/player/classification-gate-overlay";
 import { EnhancedMusicPlayer } from "@/components/player/enhanced-music-player";
 import { SiteHeader } from "@/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
@@ -144,6 +145,7 @@ function RootContent() {
           </MusicPlayerInset>
         </SidebarInset>
       </SidebarProvider>
+      <ClassificationGateOverlay />
       <EnhancedMusicPlayer />
     </TooltipProvider>
   );

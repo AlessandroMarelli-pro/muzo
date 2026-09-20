@@ -1,6 +1,15 @@
 import { Track } from '@/__generated__/types';
 import { useAudioPlayer } from '@/hooks/useAudioPlayer';
-import { createContext, ReactNode, useContext, useMemo, useState } from 'react';
+import { useDislikeTrack } from '@/services/api-hooks';
+import {
+  createContext,
+  ReactNode,
+  useCallback,
+  useContext,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 
 // Separate contexts to prevent unnecessary re-renders
 const CurrentTrackContext = createContext<{
@@ -63,6 +72,15 @@ export function useIsPlaying() {
   return useContext(IsPlayingContext);
 }
 
+/** A track is unclassified once it plays with neither `isLiked` nor `isBanger` set. */
+export function useTrackClassificationGate() {
+  const { currentTrack } = useCurrentTrack();
+  const isPlaying = useIsPlaying();
+  const needsClassification =
+    !!currentTrack && !currentTrack.isLiked && !currentTrack.isBanger;
+  return { needsClassification: needsClassification && isPlaying };
+}
+
 export function useAudioPlayerActions() {
   const context = useContext(AudioPlayerActionsContext);
   if (!context) {
@@ -77,6 +95,38 @@ export function useAudioPlayerState() {
     throw new Error('useAudioPlayerState must be used within an AudioPlayerProvider');
   }
   return context;
+}
+
+/**
+ * Dislike removes the track from the library entirely (see ToggleDislikeUseCase
+ * on the backend), so it can never keep playing or stay loaded — this advances
+ * to the next queued track, or clears the player if there's nowhere to go.
+ */
+export function useDislikeCurrentTrack() {
+  const { currentTrack, setCurrentTrack } = useCurrentTrack();
+  const actions = useAudioPlayerActions();
+  const dislikeMutation = useDislikeTrack();
+  const currentTrackRef = useRef(currentTrack);
+  currentTrackRef.current = currentTrack;
+
+  const dislikeCurrentTrack = useCallback(
+    (onError?: () => void) => {
+      if (!currentTrack) return;
+      const dislikedTrackId = currentTrack.id;
+      dislikeMutation.mutate(dislikedTrackId, {
+        onSuccess: async () => {
+          await actions.next();
+          if (currentTrackRef.current?.id === dislikedTrackId) {
+            setCurrentTrack(null);
+          }
+        },
+        onError,
+      });
+    },
+    [currentTrack, dislikeMutation, actions, setCurrentTrack],
+  );
+
+  return { dislikeCurrentTrack, isPending: dislikeMutation.isPending };
 }
 
 // Legacy hook for backward compatibility

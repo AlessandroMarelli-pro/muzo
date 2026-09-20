@@ -16,18 +16,22 @@ import {
   useAudioPlayerActions,
   useAudioPlayerContext,
   useCurrentTrack,
+  useDislikeCurrentTrack,
   useIsPlaying,
+  useTrackClassificationGate,
 } from "@/contexts/audio-player-context";
 import { usePlaybackProgressPublisher } from "@/contexts/playback-progress-context";
 import { apiUrl } from "@/lib/api-config";
 import { cn, formatTime } from "@/lib/utils";
 import { useWaveformData } from "@/services/music-player-hooks";
+import { useBangerTrack, useLikeTrack } from "@/services/api-hooks";
 import { useQueue } from "@/services/queue-hooks";
 import { useNavigate } from "@tanstack/react-router";
 import { PhaseVocoderNode } from "@soundtouchjs/phase-vocoder-worklet";
 import pitchProcessorUrl from "@soundtouchjs/phase-vocoder-worklet/processor?url";
 import {
   Disc3,
+  Flame,
   Gauge,
   Heart,
   ListMusic,
@@ -41,10 +45,14 @@ import {
   Shuffle,
   SkipBack,
   SkipForward,
+  ThumbsDown,
+  ThumbsUp,
   Volume1,
   Volume2,
   VolumeX,
 } from "lucide-react";
+import { toast } from "sonner";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import React, {
   useCallback,
   useEffect,
@@ -85,31 +93,72 @@ const HINT_DELAY = 600;
 /**
  * Small, evenly weighted transport button. The icon plus its `aria-label`
  * carry the meaning — no tooltip on these; they speak for themselves.
+ *
+ * `tapScale` swaps the plain button for a `motion.button` (via Radix Slot)
+ * so a press gets real spring physics instead of the CSS active-state dip —
+ * reserved for actions whose outcome deserves an unmistakable "this landed"
+ * (the classification trio), not the whole transport row.
  */
 function ControlButton({
   label,
   onClick,
   disabled,
   pressed,
+  className,
+  tapScale,
+  pulseKey,
+  pulseClassName,
   children,
 }: {
   label: string;
   onClick?: () => void;
   disabled?: boolean;
   pressed?: boolean;
+  className?: string;
+  tapScale?: number;
+  /** Change this value to replay the settle-ring once (e.g. on a flag flipping true). */
+  pulseKey?: string | number;
+  pulseClassName?: string;
   children: React.ReactNode;
 }) {
+  const reduceMotion = useReducedMotion();
   return (
     <Button
       variant="ghost"
       size="iconSm"
-      onClick={onClick}
+      asChild={tapScale != null}
+      onClick={tapScale == null ? onClick : undefined}
       disabled={disabled}
       aria-label={label}
       aria-pressed={pressed}
-      className={cn("size-9", pressed && "text-primary")}
+      className={cn("relative size-9", pressed && "text-primary", className)}
     >
-      {children}
+      {tapScale != null ? (
+        <motion.button
+          type="button"
+          onClick={onClick}
+          disabled={disabled}
+          whileTap={reduceMotion ? undefined : { scale: tapScale }}
+          transition={{ type: "spring", stiffness: 500, damping: 15 }}
+        >
+          {children}
+          {pulseKey != null && !reduceMotion && (
+            <motion.span
+              key={pulseKey}
+              initial={{ opacity: 0.55, scale: 0.6 }}
+              animate={{ opacity: 0, scale: 1.9 }}
+              transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+              className={cn(
+                "pointer-events-none absolute inset-0 rounded-full",
+                pulseClassName,
+              )}
+              aria-hidden
+            />
+          )}
+        </motion.button>
+      ) : (
+        children
+      )}
     </Button>
   );
 }
@@ -124,6 +173,95 @@ function tidyMeta(value?: string | null): string {
   return v ? v[0].toLocaleUpperCase() + v.slice(1) : "";
 }
 
+/**
+ * The classification gate's one authored moment: a small card that rises
+ * out of the button trio it's asking about, points back down at them with
+ * a notch, and restates the choice in words + larger icons. Entrance is
+ * springy (the app noticed it needs your attention); exit is a quick fade
+ * (the question is answered, get out of the way).
+ */
+function ClassifyPromptPanel({
+  onDislike,
+  onBanger,
+  onLike,
+}: {
+  onDislike: () => void;
+  onBanger: () => void;
+  onLike: () => void;
+}) {
+  const reduceMotion = useReducedMotion();
+
+  const choice = (
+    icon: React.ReactNode,
+    label: string,
+    onClick: () => void,
+    activeClass: string,
+  ) => (
+    <motion.button
+      type="button"
+      onClick={onClick}
+      aria-label={label}
+      whileTap={reduceMotion ? undefined : { scale: 0.82 }}
+      whileHover={reduceMotion ? undefined : { scale: 1.08 }}
+      transition={{ type: "spring", stiffness: 500, damping: 16 }}
+      className={cn(
+        "flex flex-col items-center gap-1 rounded-lg px-3 py-1.5 text-muted-foreground transition-colors",
+        "hover:bg-accent hover:text-accent-foreground",
+        activeClass,
+      )}
+    >
+      {icon}
+      <span className="text-xs font-medium leading-none">{label}</span>
+    </motion.button>
+  );
+
+  return (
+    <motion.div
+      role="status"
+      initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 10, scale: 0.94 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 6, scale: 0.96 }}
+      transition={
+        reduceMotion
+          ? { duration: 0.15 }
+          : { type: "spring", stiffness: 420, damping: 30, mass: 0.7 }
+      }
+      className="absolute bottom-full left-1/2 z-10 mb-3 w-max -translate-x-1/2"
+    >
+      <div className="flex flex-col items-center gap-2 rounded-xl border border-border bg-popover px-4 py-3 text-popover-foreground shadow-lg">
+        <p className="text-xs font-medium text-muted-foreground">
+          Rate this track to continue
+        </p>
+        <div className="flex items-center gap-1">
+          {choice(
+            <ThumbsDown className="size-5" aria-hidden />,
+            "Unlike",
+            onDislike,
+            "hover:text-destructive",
+          )}
+          {choice(
+            <Flame className="size-5" aria-hidden />,
+            "Banger",
+            onBanger,
+            "hover:text-warning",
+          )}
+          {choice(
+            <ThumbsUp className="size-5" aria-hidden />,
+            "Like",
+            onLike,
+            "hover:text-primary",
+          )}
+        </div>
+      </div>
+      {/* Notch pointing down at the player-bar buttons it's asking about. */}
+      <div
+        className="absolute left-1/2 top-full size-3 -translate-x-1/2 -translate-y-1/2 rotate-45 border-b border-r border-border bg-popover"
+        aria-hidden
+      />
+    </motion.div>
+  );
+}
+
 export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
   onToggleShuffle,
   className,
@@ -132,11 +270,15 @@ export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
   const playerBarRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
-  const { currentTrack } = useCurrentTrack();
+  const { currentTrack, setCurrentTrack } = useCurrentTrack();
   const { state: playbackState } = useAudioPlayerContext();
   const actions = useAudioPlayerActions();
   const isPlaying = useIsPlaying();
   const { data: queueItems = [] } = useQueue();
+  const { needsClassification } = useTrackClassificationGate();
+  const likeMutation = useLikeTrack();
+  const bangerMutation = useBangerTrack();
+  const { dislikeCurrentTrack, isPending: dislikePending } = useDislikeCurrentTrack();
 
   const [queueOpen, setQueueOpen] = useState(false);
   const [playlistOpen, setPlaylistOpen] = useState(false);
@@ -355,6 +497,26 @@ export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
   const handleToggleFavorite = useCallback(() => {
     if (currentTrack) actions.toggleFavorite(currentTrack.id);
   }, [currentTrack, actions]);
+
+  const handleLike = useCallback(() => {
+    if (!currentTrack) return;
+    likeMutation.mutate(currentTrack.id, {
+      onSuccess: (track) => setCurrentTrack(track),
+      onError: () => toast.error("Couldn't like this track. Try again."),
+    });
+  }, [currentTrack, likeMutation, setCurrentTrack]);
+
+  const handleBanger = useCallback(() => {
+    if (!currentTrack) return;
+    bangerMutation.mutate(currentTrack.id, {
+      onSuccess: (track) => setCurrentTrack(track),
+      onError: () => toast.error("Couldn't mark this track as a banger. Try again."),
+    });
+  }, [currentTrack, bangerMutation, setCurrentTrack]);
+
+  const handleDislike = useCallback(() => {
+    dislikeCurrentTrack(() => toast.error("Couldn't remove this track. Try again."));
+  }, [dislikeCurrentTrack]);
 
   const cycleRepeat = () =>
     setRepeatMode((m) => (m === "off" ? "all" : m === "all" ? "one" : "off"));
@@ -804,6 +966,74 @@ export const EnhancedMusicPlayer = React.memo(function EnhancedMusicPlayer({
 
           {/* ── Track actions ──────────────────────────── */}
           <div className="flex shrink-0 items-center gap-0.5 border-border/60 sm:border-l sm:pl-2">
+            <div className="relative flex items-center gap-0.5">
+              <AnimatePresence>
+                {needsClassification && (
+                  <ClassifyPromptPanel
+                    onDislike={handleDislike}
+                    onBanger={handleBanger}
+                    onLike={handleLike}
+                  />
+                )}
+              </AnimatePresence>
+              <ControlButton
+                label="Unlike (remove from library)"
+                onClick={handleDislike}
+                disabled={dislikePending}
+                tapScale={0.8}
+                className={cn(
+                  needsClassification &&
+                    "text-destructive ring-1 ring-destructive/70 ring-offset-1 ring-offset-background animate-pulse motion-reduce:animate-none",
+                )}
+              >
+                <ThumbsDown className="size-4" aria-hidden />
+              </ControlButton>
+              <ControlButton
+                label={currentTrack.isBanger ? "Banger" : "Mark as banger"}
+                onClick={handleBanger}
+                pressed={currentTrack.isBanger}
+                disabled={bangerMutation.isPending}
+                tapScale={0.8}
+                pulseKey={
+                  currentTrack.isBanger
+                    ? `${currentTrack.id}-banger`
+                    : undefined
+                }
+                pulseClassName="bg-warning"
+                className={cn(
+                  currentTrack.isBanger && "text-warning",
+                  needsClassification &&
+                    !currentTrack.isBanger &&
+                    "text-warning ring-1 ring-warning/70 ring-offset-1 ring-offset-background animate-pulse motion-reduce:animate-none",
+                )}
+              >
+                <Flame
+                  className={cn("size-4", currentTrack.isBanger && "fill-warning")}
+                  aria-hidden
+                />
+              </ControlButton>
+              <ControlButton
+                label={currentTrack.isLiked ? "Liked" : "Like"}
+                onClick={handleLike}
+                pressed={currentTrack.isLiked}
+                disabled={likeMutation.isPending}
+                tapScale={0.8}
+                pulseKey={
+                  currentTrack.isLiked ? `${currentTrack.id}-liked` : undefined
+                }
+                pulseClassName="bg-primary"
+                className={cn(
+                  needsClassification &&
+                    !currentTrack.isLiked &&
+                    "text-primary ring-1 ring-primary/70 ring-offset-1 ring-offset-background animate-pulse motion-reduce:animate-none",
+                )}
+              >
+                <ThumbsUp
+                  className={cn("size-4", currentTrack.isLiked && "fill-primary")}
+                  aria-hidden
+                />
+              </ControlButton>
+            </div>
             <ControlButton
               label={isFavorite ? "Remove from favorites" : "Add to favorites"}
               onClick={handleToggleFavorite}
