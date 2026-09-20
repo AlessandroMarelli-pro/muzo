@@ -323,6 +323,7 @@ export class TidalSyncAdapter implements ITidalSyncProvider {
   private stripSearchNoise(str: string): string {
     return (
       str
+        .replace(/[[(].*?[\])]|(?:lyrics|official)/gi, ' ')
         // Tidal's search degrades badly on "!" (e.g. "CC:DISCO!" returns unrelated results),
         // likely treated as query syntax on their end. Strip it; other punctuation is fine.
         .replace(/!/g, '')
@@ -397,6 +398,18 @@ export class TidalSyncAdapter implements ITidalSyncProvider {
     // Performed by X)") riding on shared words, not the real match.
     const MAX_EXTRA_WORDS_FOR_EXACT = 2;
 
+    // Source durations (Spotify/Discogs/tags) routinely disagree with Tidal's by
+    // more than 10s on the same recording (fade-outs, gapless trims). A candidate
+    // whose title adds NO words beyond ours is the original, not an alternate
+    // version, so trust the title and allow a wider duration window — otherwise a
+    // remix that happens to land inside 10s wins over the exact-titled original
+    // (e.g. "Inner Warmth" 542s lost to "Inner Warmth (Phynn's Remix)" 513s for a
+    // 523s source).
+    const DURATION_TOLERANCE_SEC = 10;
+    const DURATION_TOLERANCE_SEC_TITLE_EXACT = 45;
+    const durationTolerance = (extraWords: number): number =>
+      extraWords === 0 ? DURATION_TOLERANCE_SEC_TITLE_EXACT : DURATION_TOLERANCE_SEC;
+
     if (searchTerms.length > 0) {
       for (const track of tracks) {
         const trackTerms = this.meaningfulWords(`${track.artist} ${track.title}`);
@@ -412,11 +425,12 @@ export class TidalSyncAdapter implements ITidalSyncProvider {
         if (!allTermsMatch) {
           continue;
         }
-        if (extraWordCount(trackTerms, searchTerms) > MAX_EXTRA_WORDS_FOR_EXACT) {
+        const extraWords = extraWordCount(trackTerms, searchTerms);
+        if (extraWords > MAX_EXTRA_WORDS_FOR_EXACT) {
           continue;
         }
         const durationDiff = Math.abs(track.duration - trackDuration);
-        if (durationDiff <= 10) {
+        if (durationDiff <= durationTolerance(extraWords)) {
           return {
             trackId: track.id,
             confidence: 'exact',
@@ -429,20 +443,23 @@ export class TidalSyncAdapter implements ITidalSyncProvider {
     const titleWords = this.meaningfulWords(title);
     const artistWords = this.meaningfulWords(artist);
 
-    const DURATION_TOLERANCE_SEC = 10;
     let bestMatch: (typeof tracks)[0] | null = null;
     let bestScore = 0;
     let bestArtistScore = 0;
     let bestTitleScore = 0;
     for (const track of tracks) {
       const durationDiff = Math.abs(track.duration - trackDuration);
-      // Same +/-10s tolerance as sockseek. Skip the check when trackDuration is unknown (0),
+      const trackTitleWords = this.meaningfulWords(track.title);
+      // Same +/-10s tolerance as sockseek, widened for an exact-titled candidate
+      // (see durationTolerance). Skip the check when trackDuration is unknown (0),
       // since a hard filter would otherwise reject every candidate.
-      if (trackDuration > 0 && durationDiff > DURATION_TOLERANCE_SEC) {
+      if (
+        trackDuration > 0 &&
+        durationDiff > durationTolerance(extraWordCount(trackTitleWords, titleWords))
+      ) {
         continue;
       }
 
-      const trackTitleWords = this.meaningfulWords(track.title);
       const trackTitle = trackTitleWords.join(' ');
       const trackArtist = this.meaningfulWords(track.artist).join(' ');
       let score = 0;

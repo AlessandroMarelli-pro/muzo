@@ -1,6 +1,42 @@
 import * as fs from 'fs/promises';
 import * as path from 'path';
-import { normalizeForMatch } from './match';
+import type { MusicTrackId } from 'src/kernel/ids';
+
+/**
+ * A `MusicTrackId` is `MusicTrack:<uuid>` (see `kernel/ids/factory.ts`), and the
+ * `:` is not safe in a filename — illegal on Windows, and historically a path
+ * separator on macOS, which also means sockseek's own `--invalid-replace-str`
+ * may rewrite it. So the id is written into the filename with the prefix
+ * dropped, leaving the bare uuid, and restored on the way back.
+ */
+const TRACK_ID_PREFIX = 'MusicTrack:';
+
+/** The filename-safe form of a `MusicTrackId`, written into the CSV `Id` column. */
+export function trackIdToFileToken(trackId: string): string {
+  return trackId.startsWith(TRACK_ID_PREFIX)
+    ? trackId.slice(TRACK_ID_PREFIX.length)
+    : trackId;
+}
+
+/**
+ * The `MusicTrackId` sockseek encodes into every downloaded filename via
+ * `--name-format '{uri}__…'` (see `writeBatchInputCsv`'s `Id` column).
+ *
+ * This is the *only* reliable way to map a downloaded file back to its track.
+ * `_index.csv` row position cannot be used: sockseek dedupes index entries by
+ * `artist\nalbum\ntitle\nlength`, so two tracks with identical metadata collapse
+ * into a single row and shift the index of every row after them.
+ *
+ * Accepts the `MusicTrack:` prefix too, so files written before the prefix was
+ * stripped are still attributed rather than silently orphaned.
+ */
+export function trackIdFromPath(filePath: string): MusicTrackId | null {
+  const match =
+    /^(?:MusicTrack:)?([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})__/.exec(
+      path.basename(filePath),
+    );
+  return match ? (`${TRACK_ID_PREFIX}${match[1]}` as MusicTrackId) : null;
+}
 
 /** Minimal RFC-4180-ish CSV line parser (handles quoted fields containing commas). */
 export function parseCsvLine(line: string): string[] {
@@ -32,31 +68,41 @@ export function parseCsvLine(line: string): string[] {
 }
 
 /**
- * sockseek writes `<outputDir>/<queryCsvBasename>/_index.csv` with one final row
- * per input track (same order as the query CSV): columns
- * `filepath,artist,album,title,length,tracktype,state,failurereason`.
- * `state === '1'` with a non-empty `filepath` is a completed download.
+ * sockseek writes `_index.csv` (we pin its location with `--index-path`) with
+ * columns `filepath,artist,album,title,length,tracktype,state,failurereason`.
  *
- * Returns `{ rowIndex -> filepath }` (0-based, matching the query CSV data-row
- * order) for every downloaded row. An absent file returns an empty map.
+ * Returns `{ trackId -> filepath }` for every downloaded row, reading the id out
+ * of the filename (see {@link trackIdFromPath}). Rows whose filename carries no
+ * id — e.g. written by an older build — are skipped rather than guessed at.
  */
-export function parseIndexCsvDownloads(contents: string): Map<number, string> {
-  const result = new Map<number, string>();
+export function parseIndexCsvDownloads(
+  contents: string,
+  /** Directory the index file lives in — sockseek writes `./…` paths relative to it. */
+  baseDir?: string,
+): Map<MusicTrackId, string> {
+  const result = new Map<MusicTrackId, string>();
   for (const row of parseIndexCsvRows(contents)) {
-    if (row.state === 'downloaded' && row.filepath) {
-      result.set(row.index, row.filepath);
+    if (row.state !== 'downloaded' || !row.filepath) {
+      continue;
+    }
+    const trackId = trackIdFromPath(row.filepath);
+    if (trackId) {
+      result.set(trackId, baseDir ? path.resolve(baseDir, row.filepath) : row.filepath);
     }
   }
   return result;
 }
 
 export interface IndexCsvRow {
-  /** 0-based, matching the query CSV data-row order. */
-  index: number;
   filepath: string;
   artist: string;
   title: string;
-  /** downloaded (`1`) | failed (`2`) | pending (`0`/other). */
+  /**
+   * sockseek's `JobStateOld`: `0` Pending, `1` Done, `2` Failed,
+   * `3` AlreadyExists, `4` NotFoundLastTime. `3` means the file is already on
+   * disk and should be adopted, so it counts as downloaded; `4` is a prior miss
+   * that sockseek declined to re-search, so it counts as failed.
+   */
   state: 'downloaded' | 'failed' | 'pending';
   failureReason: string;
 }
@@ -72,24 +118,37 @@ export function parseIndexCsvRows(contents: string): IndexCsvRow[] {
     }
     const stateCol = cols[6];
     rows.push({
-      index: i - 1,
       filepath: cols[0],
       artist: cols[1],
       title: cols[3],
-      state: stateCol === '1' ? 'downloaded' : stateCol === '2' ? 'failed' : 'pending',
+      state:
+        stateCol === '1' || stateCol === '3'
+          ? 'downloaded'
+          : stateCol === '2' || stateCol === '4'
+            ? 'failed'
+            : 'pending',
       failureReason: cols[7],
     });
   }
   return rows;
 }
 
-/** The directory sockseek creates for a run's `_index.csv` (and partials). */
-export function indexCsvDir(queryCsvPath: string, outputDir: string): string {
-  return path.join(outputDir, path.basename(queryCsvPath, path.extname(queryCsvPath)));
+/**
+ * A batch's own directory: holds our `_input.csv` manifest, sockseek's
+ * `_index.csv`, and the downloads. Passed explicitly as `-p` and
+ * `--index-path` rather than being inferred from the query-CSV basename.
+ */
+export function batchDir(batchId: string, outputDir: string): string {
+  const safeId = batchId.replace(/[^A-Za-z0-9._-]/g, '_');
+  return path.join(outputDir, `sockseek-batch-${safeId}`);
 }
 
-export function indexCsvPath(queryCsvPath: string, outputDir: string): string {
-  return path.join(indexCsvDir(queryCsvPath, outputDir), '_index.csv');
+export function indexCsvPath(batchId: string, outputDir: string): string {
+  return path.join(batchDir(batchId, outputDir), '_index.csv');
+}
+
+export function inputCsvPath(batchId: string, outputDir: string): string {
+  return path.join(batchDir(batchId, outputDir), '_input.csv');
 }
 
 async function readIndexCsvContents(filePath: string): Promise<string | null> {
@@ -104,45 +163,47 @@ async function readIndexCsvContents(filePath: string): Promise<string | null> {
 }
 
 export async function readIndexCsvDownloads(
-  queryCsvPath: string,
+  batchId: string,
   outputDir: string,
-): Promise<Map<number, string>> {
-  const contents = await readIndexCsvContents(indexCsvPath(queryCsvPath, outputDir));
-  return contents ? parseIndexCsvDownloads(contents) : new Map();
+): Promise<Map<MusicTrackId, string>> {
+  const csvPath = indexCsvPath(batchId, outputDir);
+  const contents = await readIndexCsvContents(csvPath);
+  return contents ? parseIndexCsvDownloads(contents, path.dirname(csvPath)) : new Map();
 }
 
+/**
+ * Rows of the `_index.csv` at `indexCsvFilePath`, with every `filepath`
+ * resolved to an absolute path.
+ *
+ * sockseek writes paths relative to the index file's own directory
+ * (`./Artist - Title.flac`) whenever the download sits under it, so a row's
+ * `filepath` is not usable as-is: it only resolves correctly from that
+ * directory, and `hqAudioPath` must be absolute to survive in the DB.
+ */
 export async function readIndexCsvRowsAt(indexCsvFilePath: string): Promise<IndexCsvRow[]> {
   const contents = await readIndexCsvContents(indexCsvFilePath);
-  return contents ? parseIndexCsvRows(contents) : [];
+  if (!contents) {
+    return [];
+  }
+  const dir = path.dirname(indexCsvFilePath);
+  return parseIndexCsvRows(contents).map((row) =>
+    row.filepath ? { ...row, filepath: path.resolve(dir, row.filepath) } : row,
+  );
 }
 
 /**
- * Drops a trailing "feat./ft./featuring/with ..." segment — sockseek writes its
- * `_index.csv` with `--remove-ft` applied, so `Faithless feat. Dido` lands as
- * `faithless`. Applied to both sides of {@link indexRowMatchKey} so the DB
- * track's stored artist still cross-matches.
- */
-function stripFeatured(value: string): string {
-  return value.replace(/\s*[([]?\s*(feat\.?|ft\.?|featuring)\s+.*$/i, '').trim();
-}
-
-/** `artist|title` match key for a downloaded row, robust to sockseek's own
- *  normalisation (`--remove-ft` etc.) and CSV quoting. */
-export function indexRowMatchKey(artist: string, title: string): string {
-  return `${normalizeForMatch(stripFeatured(artist))}|${normalizeForMatch(title)}`;
-}
-
-/**
- * Scans `outputDir` for every prior batch's `_index.csv` (under a
- * `sockseek-batch-<id>` dir) and returns each track it downloaded, keyed by
- * {@link indexRowMatchKey}. Lets a
- * brand-new batch (new random `batchId`, hence a new scratch dir) still adopt files an
- * earlier run downloaded but never persisted. Newer dirs win on key collision.
+ * Scans `outputDir` for every prior batch's `_index.csv` and returns each track
+ * it downloaded, keyed by `MusicTrackId`. Lets a brand-new batch (new random
+ * `batchId`, hence a new dir) still adopt files an earlier run downloaded but
+ * never persisted. Newer dirs win on collision.
+ *
+ * Keyed off the id embedded in the filename, so unlike the artist+title matching
+ * this replaces, it cannot adopt one track's file onto another track.
  */
 export async function readAllPriorIndexCsvDownloads(
   outputDir: string,
-): Promise<Map<string, string>> {
-  const result = new Map<string, string>();
+): Promise<Map<MusicTrackId, string>> {
+  const result = new Map<MusicTrackId, string>();
   let entries: import('fs').Dirent[];
   try {
     entries = await fs.readdir(outputDir, { withFileTypes: true });
@@ -168,19 +229,20 @@ export async function readAllPriorIndexCsvDownloads(
   for (const dir of dirs) {
     const rows = await readIndexCsvRowsAt(path.join(outputDir, dir.name, '_index.csv'));
     for (const row of rows) {
-      if (row.state === 'downloaded' && row.filepath) {
-        result.set(indexRowMatchKey(row.artist, row.title), row.filepath);
+      if (row.state !== 'downloaded' || !row.filepath) {
+        continue;
+      }
+      const trackId = trackIdFromPath(row.filepath);
+      if (trackId) {
+        result.set(trackId, row.filepath);
       }
     }
   }
   return result;
 }
 
-export async function removeIndexCsvDir(
-  queryCsvPath: string,
-  outputDir: string,
-): Promise<void> {
-  await fs.rm(indexCsvDir(queryCsvPath, outputDir), { recursive: true, force: true });
+export async function removeBatchDir(batchId: string, outputDir: string): Promise<void> {
+  await fs.rm(batchDir(batchId, outputDir), { recursive: true, force: true });
 }
 
 /**

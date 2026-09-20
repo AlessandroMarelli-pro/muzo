@@ -10,7 +10,10 @@ import { IHqAudioVerifier } from 'src/application/ports/infrastructure/IHqAudioV
 import { IMusicTrackRepository } from 'src/application/ports/repositories/IMusicTrackRepository';
 import * as fs from 'fs/promises';
 import * as path from 'path';
-import { readIndexCsvRowsAt } from 'src/infrastructure/hq-audio/sockseek-index-csv';
+import {
+  readIndexCsvRowsAt,
+  trackIdFromPath,
+} from 'src/infrastructure/hq-audio/sockseek-index-csv';
 import {
   SockseekAcquirer,
   SockseekBatchTrackQuery,
@@ -323,12 +326,17 @@ export class AcquireHqAudioBatchUseCase {
     },
   ): Promise<void> {
     const rows = await readIndexCsvRowsAt(indexCsvFile);
+    const inBatch = new Set(ctx.queries.map((query) => query.key));
     for (const row of rows) {
-      const trackId = ctx.queries[row.index]?.key;
-      if (!trackId || ctx.persisted.has(trackId)) {
-        continue;
-      }
       if (row.state === 'downloaded' && row.filepath) {
+        // The track id is read off the filename sockseek wrote (see
+        // `trackIdFromPath`). Row position is NOT usable: sockseek dedupes index
+        // entries by artist/album/title/length, so identical tracks collapse
+        // into one row and shift every row after them.
+        const trackId = trackIdFromPath(row.filepath);
+        if (!trackId || !inBatch.has(trackId) || ctx.persisted.has(trackId)) {
+          continue;
+        }
         const format = extToFormat(row.filepath);
         if (!format) {
           continue;

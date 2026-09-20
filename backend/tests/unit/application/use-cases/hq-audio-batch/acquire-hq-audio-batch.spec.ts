@@ -9,7 +9,10 @@ import type { HqAudioBatchId, MusicTrackId } from 'src/kernel/ids';
 vi.mock('fs/promises', () => ({ access: vi.fn().mockResolvedValue(undefined) }));
 
 const { readRowsMock } = vi.hoisted(() => ({ readRowsMock: vi.fn() }));
-vi.mock('src/infrastructure/hq-audio/sockseek-index-csv', () => ({
+vi.mock('src/infrastructure/hq-audio/sockseek-index-csv', async (importOriginal) => ({
+  // Keep the real `trackIdFromPath` — attributing an index row to a track is
+  // exactly what these tests exercise, so stubbing it would test nothing.
+  ...(await importOriginal<typeof import('src/infrastructure/hq-audio/sockseek-index-csv')>()),
   readIndexCsvRowsAt: readRowsMock,
 }));
 
@@ -22,8 +25,13 @@ const noopLogger = {
 const loggerFactory = { createLogger: () => noopLogger };
 
 const BATCH = 'batch-1' as HqAudioBatchId;
-const T1 = 't1' as MusicTrackId;
-const T2 = 't2' as MusicTrackId;
+// Real `MusicTrackId` shape — `MusicTrack:<uuid>`, not a bare uuid. The id is
+// read back out of the downloaded filename, where it appears WITHOUT the
+// prefix (a ":" is not filename-safe), hence the separate TOKEN constants.
+const TOKEN_1 = '11111111-2222-4333-8444-555555555555';
+const TOKEN_2 = '66666666-7777-4888-8999-aaaaaaaaaaaa';
+const T1 = `MusicTrack:${TOKEN_1}` as MusicTrackId;
+const T2 = `MusicTrack:${TOKEN_2}` as MusicTrackId;
 
 const flush = () => new Promise((r) => setTimeout(r, 5));
 
@@ -147,8 +155,9 @@ describe('AcquireHqAudioBatchUseCase', () => {
   it('recovers a downloaded track the stdout stream dropped, via _index.csv', async () => {
     const update = vi.fn().mockResolvedValue(undefined);
     // Soulseek never settles T1 (dropped event); _index.csv shows it downloaded.
+    // The row is attributed by the id in the filename, not by its position.
     readRowsMock.mockResolvedValue([
-      { index: 0, filepath: '/ss/recovered.flac', artist: 'A', title: 't1', state: 'downloaded', failureReason: '' },
+      { filepath: `/ss/${TOKEN_1}__recovered.flac`, artist: 'A', title: 't1', state: 'downloaded', failureReason: '' },
     ]);
     const { uc, publisher } = makeUseCase({
       updateOneById: update,
@@ -160,21 +169,48 @@ describe('AcquireHqAudioBatchUseCase', () => {
     await flush();
 
     expect(update).toHaveBeenCalledWith(T1, {
-      hqAudioPath: '/ss/recovered.flac',
+      hqAudioPath: `/ss/${TOKEN_1}__recovered.flac`,
       hqAudioSource: 'soulseek',
     });
     expect(publisher.updateTrackStatus).toHaveBeenCalledWith(BATCH, T1, 'succeeded', undefined);
   });
 
+  /**
+   * The bug this identity scheme exists for. sockseek dedupes index entries by
+   * artist/album/title/length, so two tracks with identical metadata collapse
+   * into a single row. Positionally that row reads as index 0 — T1 — but the
+   * file belongs to T2. The old code persisted it onto T1.
+   */
+  it('persists a collapsed duplicate index row to the track that owns the file', async () => {
+    const update = vi.fn().mockResolvedValue(undefined);
+    readRowsMock.mockResolvedValue([
+      { filepath: `/ss/${TOKEN_2}__dup.flac`, artist: 'A', title: 'dup', state: 'downloaded', failureReason: '' },
+    ]);
+    const { uc } = makeUseCase({
+      updateOneById: update,
+      soulseek: { [T1]: null, [T2]: null },
+      tidalMatch: null,
+    });
+
+    await uc.execute(BATCH, [T1, T2]);
+    await flush();
+
+    expect(update).toHaveBeenCalledWith(T2, {
+      hqAudioPath: `/ss/${TOKEN_2}__dup.flac`,
+      hqAudioSource: 'soulseek',
+    });
+    expect(succeededCalls(update, T1)).toHaveLength(0);
+  });
+
   it('does not double-persist when both the event and _index.csv report a track', async () => {
     const update = vi.fn().mockResolvedValue(undefined);
     readRowsMock.mockResolvedValue([
-      { index: 0, filepath: '/ss/1.flac', artist: 'A', title: 't1', state: 'downloaded', failureReason: '' },
+      { filepath: `/ss/${TOKEN_1}__1.flac`, artist: 'A', title: 't1', state: 'downloaded', failureReason: '' },
     ]);
     const { uc } = makeUseCase({
       updateOneById: update,
       soulseek: {
-        [T1]: { status: 'succeeded', result: { filePath: '/ss/1.flac', format: 'flac' } },
+        [T1]: { status: 'succeeded', result: { filePath: `/ss/${TOKEN_1}__1.flac`, format: 'flac' } },
         [T2]: { status: 'not-found' },
       },
       tidalMatch: null,

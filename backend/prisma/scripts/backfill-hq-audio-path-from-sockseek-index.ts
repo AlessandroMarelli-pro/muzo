@@ -13,6 +13,7 @@ import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3';
 import { PrismaClient } from '@prisma/client';
 import * as fs from 'fs';
 import * as path from 'path';
+import { parseCsvLine } from '../../src/infrastructure/hq-audio/sockseek-index-csv';
 
 const dbPath = path.resolve(__dirname, '..', 'muzo.db');
 const adapter = new PrismaBetterSqlite3({ url: `file:${dbPath}` });
@@ -31,13 +32,15 @@ function normalize(value: string): string {
 function parseCsv(csvPath: string): IndexRow[] {
   const content = fs.readFileSync(csvPath, 'utf-8');
   const lines = content.split('\n').filter((line) => line.trim().length > 0);
-  const header = lines[0].split(',');
+  // Shared parser, not `line.split(',')`: a quoted filepath containing a comma
+  // ("/m/Artist, Feat - Song.flac") would otherwise shift every later column.
+  const header = parseCsvLine(lines[0]);
   const filepathIdx = header.indexOf('filepath');
   const artistIdx = header.indexOf('artist');
   const titleIdx = header.indexOf('title');
 
   return lines.slice(1).map((line) => {
-    const cols = line.split(',');
+    const cols = parseCsvLine(line);
     return {
       filepath: cols[filepathIdx],
       artist: cols[artistIdx],
