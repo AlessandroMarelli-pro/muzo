@@ -59,6 +59,12 @@ export class Track {
   @Field(() => Float, { nullable: true })
   hqAudioSpectralCutoffHz?: number;
 
+  @Field(() => String, { nullable: true })
+  bandcampUrl?: string;
+
+  @Field(() => String, { nullable: true })
+  discogsUrl?: string;
+
   @Field(() => String)
   fileName: string;
 

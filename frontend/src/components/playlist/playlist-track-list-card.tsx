@@ -15,11 +15,15 @@ import {
   isHarmonicTransition,
   toCamelotCode,
 } from "@/lib/utils";
+import { useLookupBandcampUrl, useLookupDiscogsUrl } from "@/services/api-hooks";
 import { Link } from "@tanstack/react-router";
 import {
   AudioLines,
+  Disc,
+  Disc3,
   GripVertical,
   ListMusic,
+  MoreHorizontal,
   Pause,
   Play,
   Radar,
@@ -28,6 +32,12 @@ import {
 } from "lucide-react";
 import { memo } from "react";
 import { AudioQualityBadge } from "../track/audio-quality-badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "../ui/dropdown-menu";
 import { Skeleton } from "../ui/skeleton";
 
 /** Album-art URL, or null when the track has no artwork (avoids a broken request). */
@@ -190,6 +200,8 @@ export const PlaylistTrackListCard = memo(
     const { currentTrack, setCurrentTrack } = useCurrentTrack();
     const actions = useAudioPlayerActions();
     const isPlaying = useIsPlaying();
+    const lookupBandcampUrl = useLookupBandcampUrl();
+    const lookupDiscogsUrl = useLookupDiscogsUrl();
     const track = playlistTrack.track ?? null;
 
     const isCurrentTrack = currentTrack?.id === track?.id;
@@ -357,16 +369,86 @@ export const PlaylistTrackListCard = memo(
           >
             <Trash2 className="h-4 w-4" aria-hidden />
           </Button>
-          <Button asChild size="iconSm" variant="ghost">
-            <Link
-              to="/similar/{-$trackId}"
-              params={{ trackId: track?.id ?? "" }}
-              preload="intent"
-              aria-label={`Open similar tracks for ${label}`}
-            >
-              <Radar className="h-4 w-4" aria-hidden />
-            </Link>
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="iconSm"
+                onClick={(e) => e.stopPropagation()}
+                aria-label={`More links for ${label}`}
+              >
+                <MoreHorizontal className="h-4 w-4" aria-hidden />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem asChild>
+                <Link
+                  to="/similar/{-$trackId}"
+                  params={{ trackId: track?.id ?? "" }}
+                  preload="intent"
+                >
+                  <Radar className="h-4 w-4" aria-hidden />
+                  Similar tracks
+                </Link>
+              </DropdownMenuItem>
+              {track?.bandcampUrl ? (
+                <DropdownMenuItem asChild>
+                  <a
+                    href={track.bandcampUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <Disc3 className="h-4 w-4" aria-hidden />
+                    Open on Bandcamp
+                  </a>
+                </DropdownMenuItem>
+              ) : (
+                <DropdownMenuItem
+                  onSelect={() => {
+                    if (track?.id) lookupBandcampUrl.mutate(track.id);
+                  }}
+                  disabled={lookupBandcampUrl.isPending}
+                >
+                  <Disc3
+                    className={cn(
+                      "h-4 w-4",
+                      lookupBandcampUrl.isPending && "animate-spin",
+                    )}
+                    aria-hidden
+                  />
+                  Look up on Bandcamp
+                </DropdownMenuItem>
+              )}
+              {track?.discogsUrl ? (
+                <DropdownMenuItem asChild>
+                  <a
+                    href={track.discogsUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <Disc className="h-4 w-4" aria-hidden />
+                    Open on Discogs
+                  </a>
+                </DropdownMenuItem>
+              ) : (
+                <DropdownMenuItem
+                  onSelect={() => {
+                    if (track?.id) lookupDiscogsUrl.mutate(track.id);
+                  }}
+                  disabled={lookupDiscogsUrl.isPending}
+                >
+                  <Disc
+                    className={cn(
+                      "h-4 w-4",
+                      lookupDiscogsUrl.isPending && "animate-spin",
+                    )}
+                    aria-hidden
+                  />
+                  Look up on Discogs
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
     );

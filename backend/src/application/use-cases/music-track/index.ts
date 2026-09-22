@@ -11,6 +11,8 @@ export * from './AcquireHqAudio';
 export * from './DeleteHqAudio';
 export * from './EnhanceHqAudio';
 export * from './RegisterPlayedTrack';
+export * from './ResolveBandcampUrl';
+export * from './ResolveDiscogsUrl';
 export * from './ToggleBangerTrack';
 export * from './ToggleDislikeTrack';
 export * from './ToggleFavorite';

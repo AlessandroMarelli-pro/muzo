@@ -26,6 +26,8 @@ export type MusicTrackUpdateData = {
   hqAudioSource?: HqAudioSource | null;
   hqAudioVerified?: boolean;
   hqAudioSpectralCutoffHz?: number | null;
+  bandcampUrl?: string | null;
+  discogsUrl?: string | null;
   stats?: {
     isFavorite?: boolean;
     isBanger?: boolean;

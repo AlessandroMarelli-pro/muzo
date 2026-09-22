@@ -99,7 +99,7 @@ export function applyRecommendationBoosts(
   if (selected.size === 0) {
     return ZERO_RECOMMENDATION_WEIGHTS;
   }
-  const weights = { ...ZERO_RECOMMENDATION_WEIGHTS };
+  const weights = { ...DEFAULT_RECOMMENDATION_WEIGHTS };
   for (const key of selected) {
     weights[key] = weights[key] * BOOST_MULTIPLIER;
   }

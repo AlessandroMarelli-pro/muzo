@@ -53,6 +53,8 @@ model MusicTrack {
   hqAudioSource         HqAudioSource?
   hqAudioVerified       Boolean  @default(false)
   hqAudioSpectralCutoffHz Float?
+  bandcampUrl           String?
+  discogsUrl            String?
   fileName              String
   fileSize              Int
   format                String

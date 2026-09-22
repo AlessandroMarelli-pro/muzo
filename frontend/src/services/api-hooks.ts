@@ -758,6 +758,8 @@ export const useDislikeTrack = () => {
       queryClient.invalidateQueries({ queryKey: ['playlists'] });
       queryClient.invalidateQueries({ queryKey: ['playlist'] });
       queryClient.invalidateQueries({ queryKey: ['favoritePlaylist'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.trackRecommendations() });
+      queryClient.invalidateQueries({ queryKey: ['playlistRecommendations'] });
     },
   });
 };
@@ -777,17 +779,14 @@ const removeTrackFromHiddenCache = async (
     queryKey: HIDDEN_TRACKS_ROOT_KEY,
   });
 
-  queryClient.setQueriesData<PaginatedHiddenTracks>(
-    { queryKey: HIDDEN_TRACKS_ROOT_KEY },
-    (old) => {
-      if (!old?.items) return old;
+  queryClient.setQueriesData<PaginatedHiddenTracks>({ queryKey: HIDDEN_TRACKS_ROOT_KEY }, (old) => {
+    if (!old?.items) return old;
 
-      const items = old.items.filter((track) => track.id !== hiddenTrackId);
-      if (items.length === old.items.length) return old;
+    const items = old.items.filter((track) => track.id !== hiddenTrackId);
+    if (items.length === old.items.length) return old;
 
-      return { ...old, items, total: Math.max(0, old.total - 1) };
-    },
-  );
+    return { ...old, items, total: Math.max(0, old.total - 1) };
+  });
 
   return { previous };
 };
@@ -1000,6 +999,140 @@ export const useEnhanceHqAudio = () => {
     onError: (error: any) => {
       const errorMessage =
         error?.response?.errors?.[0]?.message || error?.message || 'Failed to start enhancement';
+      toast.error(errorMessage, { duration: 3000 });
+    },
+  });
+};
+
+const BANDCAMP_RESOLVE_REFRESH_DELAYS_MS = [8_000, 20_000, 45_000];
+
+export const useLookupBandcampUrl = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (trackId: string) => {
+      const response = await graffleClient.request<{
+        lookupBandcampUrl: boolean;
+      }>(
+        gql`
+          mutation LookupBandcampUrl($trackId: Base64ID!) {
+            lookupBandcampUrl(trackId: $trackId)
+          }
+        `,
+        { trackId },
+      );
+      return response.lookupBandcampUrl;
+    },
+    onSuccess: () => {
+      toast.success('Looking up Bandcamp link', { duration: 3000 });
+      scheduleHqRefresh(queryClient, BANDCAMP_RESOLVE_REFRESH_DELAYS_MS);
+    },
+    onError: (error: any) => {
+      const errorMessage =
+        error?.response?.errors?.[0]?.message ||
+        error?.message ||
+        'Failed to look up Bandcamp link';
+      toast.error(errorMessage, { duration: 3000 });
+    },
+  });
+};
+
+export const useLookupBandcampUrlsForPlaylist = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (playlistId: string) => {
+      const response = await graffleClient.request<{
+        lookupBandcampUrlsForPlaylist: number;
+      }>(
+        gql`
+          mutation LookupBandcampUrlsForPlaylist($playlistId: Base64ID!) {
+            lookupBandcampUrlsForPlaylist(playlistId: $playlistId)
+          }
+        `,
+        { playlistId },
+      );
+      return response.lookupBandcampUrlsForPlaylist;
+    },
+    onSuccess: (count) => {
+      toast.success(
+        count > 0
+          ? `Looking up ${count} track${count === 1 ? '' : 's'} on Bandcamp…`
+          : 'All tracks already have a Bandcamp link',
+        { duration: 3000 },
+      );
+      scheduleHqRefresh(queryClient, BANDCAMP_RESOLVE_REFRESH_DELAYS_MS);
+    },
+    onError: (error: any) => {
+      const errorMessage =
+        error?.response?.errors?.[0]?.message ||
+        error?.message ||
+        'Failed to start Bandcamp lookup';
+      toast.error(errorMessage, { duration: 3000 });
+    },
+  });
+};
+
+const DISCOGS_RESOLVE_REFRESH_DELAYS_MS = [8_000, 20_000, 45_000];
+
+export const useLookupDiscogsUrl = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (trackId: string) => {
+      const response = await graffleClient.request<{
+        lookupDiscogsUrl: boolean;
+      }>(
+        gql`
+          mutation LookupDiscogsUrl($trackId: Base64ID!) {
+            lookupDiscogsUrl(trackId: $trackId)
+          }
+        `,
+        { trackId },
+      );
+      return response.lookupDiscogsUrl;
+    },
+    onSuccess: () => {
+      toast.success('Looking up Discogs link', { duration: 3000 });
+      scheduleHqRefresh(queryClient, DISCOGS_RESOLVE_REFRESH_DELAYS_MS);
+    },
+    onError: (error: any) => {
+      const errorMessage =
+        error?.response?.errors?.[0]?.message || error?.message || 'Failed to look up Discogs link';
+      toast.error(errorMessage, { duration: 3000 });
+    },
+  });
+};
+
+export const useLookupDiscogsUrlsForPlaylist = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (playlistId: string) => {
+      const response = await graffleClient.request<{
+        lookupDiscogsUrlsForPlaylist: number;
+      }>(
+        gql`
+          mutation LookupDiscogsUrlsForPlaylist($playlistId: Base64ID!) {
+            lookupDiscogsUrlsForPlaylist(playlistId: $playlistId)
+          }
+        `,
+        { playlistId },
+      );
+      return response.lookupDiscogsUrlsForPlaylist;
+    },
+    onSuccess: (count) => {
+      toast.success(
+        count > 0
+          ? `Looking up ${count} track${count === 1 ? '' : 's'} on Discogs…`
+          : 'All tracks already have a Discogs link',
+        { duration: 3000 },
+      );
+      scheduleHqRefresh(queryClient, DISCOGS_RESOLVE_REFRESH_DELAYS_MS);
+    },
+    onError: (error: any) => {
+      const errorMessage =
+        error?.response?.errors?.[0]?.message || error?.message || 'Failed to start Discogs lookup';
       toast.error(errorMessage, { duration: 3000 });
     },
   });

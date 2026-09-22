@@ -9,6 +9,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useLookupBandcampUrlsForPlaylist, useLookupDiscogsUrlsForPlaylist } from '@/services/api-hooks';
 import {
   playlistQueryOptions,
   useAddTrackToPlaylist,
@@ -16,14 +17,14 @@ import {
   useUpdatePlaylistSorting,
 } from '@/services/playlist-hooks';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowUpDown, ChevronDown, Compass, Disc3, Plus, Sparkles } from 'lucide-react';
+import { ArrowUpDown, ChevronDown, Compass, Disc, Disc3, Plus, Search, Sparkles } from 'lucide-react';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 // Note: This app uses custom view state instead of routing
 // The id should be passed as a prop from the parent component
 import { Playlist } from '@/__generated__/types';
 import { useCurrentTrack } from '@/contexts/audio-player-context';
-import { formatCoarseDuration } from '@/lib/utils';
+import { cn, formatCoarseDuration } from '@/lib/utils';
 import { Route } from '@/routes/playlists.$playlistId';
 import { Skeleton } from '../ui/skeleton';
 import { AddTrackDrawer } from './add-track-drawer';
@@ -148,6 +149,8 @@ export function PlaylistDetail({ id, onBack }: PlaylistDetailProps) {
   const { syncToYouTube, syncToTidal, syncToSpotify } = usePlaylist(id, 'default');
   const updatePlaylistSortingMutation = useUpdatePlaylistSorting('default');
   const addTrackToPlaylistMutation = useAddTrackToPlaylist();
+  const lookupBandcampUrlsForPlaylist = useLookupBandcampUrlsForPlaylist();
+  const lookupDiscogsUrlsForPlaylist = useLookupDiscogsUrlsForPlaylist();
 
   const tracksListRef = useRef<PlaylistTracksListHandle>(null);
 
@@ -274,6 +277,44 @@ export function PlaylistDetail({ id, onBack }: PlaylistDetailProps) {
 
         <TabsContent value="tracks" className="space-y-4">
           <div className="flex justify-end gap-2">
+            <Button
+              size="sm"
+              variant="ghost"
+              disabled={
+                lookupBandcampUrlsForPlaylist.isPending || !(playlist?.tracks?.length ?? 0)
+              }
+              onClick={() =>
+                playlist?.id && lookupBandcampUrlsForPlaylist.mutate(playlist.id)
+              }
+            >
+              <Search
+                className={cn(
+                  'h-4 w-4',
+                  lookupBandcampUrlsForPlaylist.isPending && 'animate-spin',
+                )}
+                aria-hidden
+              />
+              Find on Bandcamp
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              disabled={
+                lookupDiscogsUrlsForPlaylist.isPending || !(playlist?.tracks?.length ?? 0)
+              }
+              onClick={() =>
+                playlist?.id && lookupDiscogsUrlsForPlaylist.mutate(playlist.id)
+              }
+            >
+              <Disc
+                className={cn(
+                  'h-4 w-4',
+                  lookupDiscogsUrlsForPlaylist.isPending && 'animate-spin',
+                )}
+                aria-hidden
+              />
+              Find on Discogs
+            </Button>
             <Button
               size="sm"
               variant="ghost"

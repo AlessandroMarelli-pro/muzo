@@ -1,13 +1,57 @@
 import os
 import urllib.parse
-from urllib.request import urlopen, urlretrieve
+from urllib.request import urlretrieve
 
 from bs4 import BeautifulSoup
-from image_optimizer import optimize_image_in_place
-from logging_config import get_logger
+from curl_cffi import requests as curl_requests
+
+from src.scrappers.gemini_bandcamp_resolver import resolve_url_via_gemini
+from src.scrappers.image_optimizer import optimize_image_in_place
+from src.scrappers.logging_config import get_logger
 
 # Configure logger
 logger = get_logger(__name__)
+
+
+def resolve_url(artist_title: str) -> str | None:
+    """
+    Search Bandcamp and return the URL of the first matching album/track.
+
+    Args:
+        artist_title: Artist and title to search for (e.g., "datadata phone xone")
+
+    Returns:
+        The matched Bandcamp URL, or None if not found.
+    """
+    logger.debug(f"Starting Bandcamp search for: {artist_title}")
+
+    encoded_query = urllib.parse.quote(artist_title)
+    search_url = f"https://bandcamp.com/search?q={encoded_query}"
+    logger.debug(f"Search URL: {search_url}")
+
+    try:
+        # Bandcamp's search page serves a JS bot-check to generic HTTP clients;
+        # impersonating Chrome's TLS/HTTP2 fingerprint is what clears it.
+        response = curl_requests.get(search_url, impersonate="chrome")
+        soup = BeautifulSoup(response.text, "html.parser")
+
+        itemurl_div = soup.find("div", class_="itemurl")
+        album_link = itemurl_div.find("a") if itemurl_div else None
+        album_url = album_link.get("href") if album_link else None
+
+        if album_url:
+            logger.debug(f"Found album URL: {album_url}")
+            return album_url
+
+        logger.warning("Search scrape found no match, falling back to Gemini")
+
+    except Exception as e:
+        logger.error(f"Error searching Bandcamp: {e}")
+
+    # Fallback: bandcamp.com/search is behind a Private Access Token bot-check
+    # (see gemini_bandcamp_resolver docstring) -- ask Gemini with Google Search
+    # grounding to find the URL instead.
+    return resolve_url_via_gemini(artist_title)
 
 
 def get_album_art(artist_title: str) -> dict:
@@ -20,43 +64,15 @@ def get_album_art(artist_title: str) -> dict:
     Returns:
         Dict with 'imagePath' and 'imageUrl' keys, or empty dict if not found
     """
-    logger.debug(f"Starting Bandcamp search for: {artist_title}")
-
-    # Encode the search query
-    encoded_query = urllib.parse.quote(artist_title)
-    search_url = f"https://bandcamp.com/search?q={encoded_query}"
-    logger.debug(f"Search URL: {search_url}")
+    album_url = resolve_url(artist_title)
+    if not album_url:
+        return {}
 
     try:
-        # Fetch search results page
-        logger.debug("Fetching search results page")
-        page = urlopen(search_url)
-        html = page.read().decode("utf-8")
-        soup = BeautifulSoup(html, "html.parser")
-
-        # Find the first itemurl link
-        itemurl_div = soup.find("div", class_="itemurl")
-        if not itemurl_div:
-            logger.warning("No itemurl div found in search results")
-            return {}
-
-        album_link = itemurl_div.find("a")
-        if not album_link:
-            logger.warning("No album link found in itemurl div")
-            return {}
-
-        album_url = album_link.get("href")
-        if not album_url:
-            logger.warning("No href found in album link")
-            return {}
-
-        logger.debug(f"Found album URL: {album_url}")
-
         # Fetch the album page
         logger.debug("Fetching album page")
-        album_page = urlopen(album_url)
-        album_html = album_page.read().decode("utf-8")
-        album_soup = BeautifulSoup(album_html, "html.parser")
+        album_response = curl_requests.get(album_url, impersonate="chrome")
+        album_soup = BeautifulSoup(album_response.text, "html.parser")
 
         # Find the album art
         album_art_div = album_soup.find("div", id="tralbumArt")

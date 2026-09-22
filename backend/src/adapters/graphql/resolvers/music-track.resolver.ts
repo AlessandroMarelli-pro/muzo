@@ -6,6 +6,14 @@ import {
 } from 'src/application/use-cases';
 import { RecommendationSeedStrategy } from 'src/kernel/types';
 import {
+  BANDCAMP_RESOLVE_PRODUCER,
+  IBandcampResolveProducer,
+} from 'src/application/ports/infrastructure/IBandcampResolveProducer';
+import {
+  DISCOGS_RESOLVE_PRODUCER,
+  IDiscogsResolveProducer,
+} from 'src/application/ports/infrastructure/IDiscogsResolveProducer';
+import {
   HQ_AUDIO_ACQUIRE_PRODUCER,
   IHqAudioAcquireProducer,
 } from 'src/application/ports/infrastructure/IHqAudioAcquireProducer';
@@ -48,6 +56,10 @@ export class MusicTrackResolver {
     private readonly hqAudioAcquireProducer: IHqAudioAcquireProducer,
     @Inject(HQ_AUDIO_ENHANCE_PRODUCER)
     private readonly hqAudioEnhanceProducer: IHqAudioEnhanceProducer,
+    @Inject(BANDCAMP_RESOLVE_PRODUCER)
+    private readonly bandcampResolveProducer: IBandcampResolveProducer,
+    @Inject(DISCOGS_RESOLVE_PRODUCER)
+    private readonly discogsResolveProducer: IDiscogsResolveProducer,
   ) {}
 
   @ResolveField(() => [TrackRecommendation])
@@ -135,6 +147,28 @@ export class MusicTrackResolver {
     @Args('trackId', { type: () => Base64ID }) trackId: string,
   ): Promise<boolean> {
     await this.hqAudioEnhanceProducer.scheduleHqAudioEnhance(
+      parseMusicTrackId(trackId),
+      getCurrentUser(),
+    );
+    return true;
+  }
+
+  @Mutation(() => Boolean)
+  async lookupBandcampUrl(
+    @Args('trackId', { type: () => Base64ID }) trackId: string,
+  ): Promise<boolean> {
+    await this.bandcampResolveProducer.scheduleBandcampResolve(
+      parseMusicTrackId(trackId),
+      getCurrentUser(),
+    );
+    return true;
+  }
+
+  @Mutation(() => Boolean)
+  async lookupDiscogsUrl(
+    @Args('trackId', { type: () => Base64ID }) trackId: string,
+  ): Promise<boolean> {
+    await this.discogsResolveProducer.scheduleDiscogsResolve(
       parseMusicTrackId(trackId),
       getCurrentUser(),
     );

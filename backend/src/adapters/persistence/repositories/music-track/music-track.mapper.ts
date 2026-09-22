@@ -211,6 +211,8 @@ export const toDomain: ToDomain = (row) => {
     hqAudioSource: hqAudioSourceToDomain(row.hqAudioSource),
     hqAudioVerified: row.hqAudioVerified ?? undefined,
     hqAudioSpectralCutoffHz: row.hqAudioSpectralCutoffHz ?? undefined,
+    bandcampUrl: row.bandcampUrl ?? undefined,
+    discogsUrl: row.discogsUrl ?? undefined,
     stats: toMusicTrackStats(row),
     fileInfo: toAudioFileInfo(row),
     technicalInfo: toAudioTechnical(row),
@@ -245,6 +247,8 @@ export const toPrisma: ToPrisma = (domainModel) => {
     hqAudioSource: hqAudioSourceToPrisma(domainModel.hqAudioSource) ?? null,
     hqAudioVerified: domainModel.hqAudioVerified ?? false,
     hqAudioSpectralCutoffHz: domainModel.hqAudioSpectralCutoffHz ?? null,
+    bandcampUrl: domainModel.bandcampUrl ?? null,
+    discogsUrl: domainModel.discogsUrl ?? null,
     fileName: domainModel.fileInfo?.fileName ?? null,
     fileSize: domainModel.fileInfo?.fileSize ?? null,
     format: domainModel.technicalInfo?.format ?? '',
@@ -290,6 +294,8 @@ export const toPrismaUpdate: ToPrismaUpdate = (data) => {
     hqAudioVerified: data.hqAudioVerified ?? undefined,
     hqAudioSpectralCutoffHz:
       data.hqAudioSpectralCutoffHz === null ? null : data.hqAudioSpectralCutoffHz ?? undefined,
+    bandcampUrl: data.bandcampUrl === null ? null : data.bandcampUrl ?? undefined,
+    discogsUrl: data.discogsUrl === null ? null : data.discogsUrl ?? undefined,
     fileName: data.fileName ?? undefined,
     fileSize: data.fileSize ?? undefined,
   };

@@ -22,4 +22,8 @@ export interface IAudioAnalysisStructure {
     discogsClassifiers: DiscogsClassifiers;
     discogsTempo: DiscogsTempo;
   }>;
+
+  resolveBandcampUrl(artist: string, title: string): Promise<string | null>;
+
+  resolveDiscogsUrl(artist: string, title: string): Promise<string | null>;
 }

@@ -8,6 +8,8 @@ import { TidalDlAcquirer } from 'src/infrastructure/hq-audio/tidal-dl.acquirer';
 import { AI_SERVICE_POOL } from '../ports/infrastructure/IAiServicePool';
 import { AUDIO_ANALYSIS_STRUCTURE } from '../ports/infrastructure/IAudioAnalysisStructure';
 import { AUDIO_SCAN_SCHEDULER_PRODUCER } from '../ports/infrastructure/IAudioScanSchedulerProducer';
+import { BANDCAMP_RESOLVE_PRODUCER } from '../ports/infrastructure/IBandcampResolveProducer';
+import { DISCOGS_RESOLVE_PRODUCER } from '../ports/infrastructure/IDiscogsResolveProducer';
 import { DOCKER_SCALING_SERVICE } from '../ports/infrastructure/IDockerScalingService';
 import { EMBEDDING_BACKFILL_PRODUCER } from '../ports/infrastructure/IEmbeddingBackfillProducer';
 import { AUDIO_WAVEFORM_GENERATOR } from '../ports/infrastructure/IAudioWaveformGenerator';
@@ -110,6 +112,8 @@ import {
   GetTracksWithPaginationUseCase,
   GetTrackUseCase,
   GetWaveformDataUseCase,
+  LookupBandcampUrlsForPlaylistUseCase,
+  LookupDiscogsUrlsForPlaylistUseCase,
   MergePlaylistsUseCase,
   ProcessBatchAudioScanUseCase,
   ProcessEndBatchAudioScanUseCase,
@@ -120,6 +124,8 @@ import {
   RemoveTrackFromPlaylistUseCase,
   RemoveTrackFromQueueUseCase,
   ResetQueueUseCase,
+  ResolveBandcampUrlUseCase,
+  ResolveDiscogsUrlUseCase,
   RestoreHiddenTrackUseCase,
   ScheduleBatchAudioScanUseCase,
   ScheduleIncompleteTracksScanUseCase,
@@ -214,6 +220,16 @@ const useCasesProviders = [
     PLAYLIST_TRACK_REPOSITORY,
     PLAYLIST_REPOSITORY,
     MUSIC_TRACK_REPOSITORY,
+    BANDCAMP_RESOLVE_PRODUCER,
+    DISCOGS_RESOLVE_PRODUCER,
+  ]),
+  createUseCaseProvider(LookupBandcampUrlsForPlaylistUseCase, [
+    PLAYLIST_TRACK_REPOSITORY,
+    BANDCAMP_RESOLVE_PRODUCER,
+  ]),
+  createUseCaseProvider(LookupDiscogsUrlsForPlaylistUseCase, [
+    PLAYLIST_TRACK_REPOSITORY,
+    DISCOGS_RESOLVE_PRODUCER,
   ]),
   createUseCaseProvider(RemoveTrackFromPlaylistUseCase, [
     PLAYLIST_TRACK_REPOSITORY,
@@ -300,6 +316,16 @@ const useCasesProviders = [
     HQ_AUDIO_ENHANCER,
     LOGGER,
     ConfigService,
+  ]),
+  createUseCaseProvider(ResolveBandcampUrlUseCase, [
+    MUSIC_TRACK_REPOSITORY,
+    AUDIO_ANALYSIS_STRUCTURE,
+    LOGGER,
+  ]),
+  createUseCaseProvider(ResolveDiscogsUrlUseCase, [
+    MUSIC_TRACK_REPOSITORY,
+    AUDIO_ANALYSIS_STRUCTURE,
+    LOGGER,
   ]),
   createUseCaseProvider(DeleteHqAudioUseCase, [MUSIC_TRACK_REPOSITORY]),
   createUseCaseProvider(ToggleDislikeUseCase, [

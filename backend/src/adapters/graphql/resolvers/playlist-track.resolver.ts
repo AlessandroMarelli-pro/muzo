@@ -1,8 +1,11 @@
 import { UseGuards } from '@nestjs/common';
-import { Args, Mutation, Resolver } from '@nestjs/graphql';
+import { Args, Int, Mutation, Resolver } from '@nestjs/graphql';
 import { AddTrackToPlaylistUseCase } from 'src/application/use-cases/playlist-track/AddTrackToPlaylist';
+import { LookupBandcampUrlsForPlaylistUseCase } from 'src/application/use-cases/playlist-track/LookupBandcampUrlsForPlaylist';
+import { LookupDiscogsUrlsForPlaylistUseCase } from 'src/application/use-cases/playlist-track/LookupDiscogsUrlsForPlaylist';
 import { RemoveTrackFromPlaylistUseCase } from 'src/application/use-cases/playlist-track/RemoveTrackFromPlaylist';
 import { UpdatePlaylistTracksPositionsUseCase } from 'src/application/use-cases/playlist-track/UpdatePlaylistTracksPositions';
+import { getCurrentUser } from 'src/kernel/types/context';
 import { parseMusicTrackId, parsePlaylistId } from '../../common/utils/parse-id';
 import { AuthGuard } from '../context/auth.guard';
 import { Base64ID } from '../scalars/base64-id.scalar';
@@ -19,6 +22,8 @@ export class PlaylistTrackResolver {
     private readonly addTrackToPlaylistUseCase: AddTrackToPlaylistUseCase,
     private readonly removeTrackFromPlaylistUseCase: RemoveTrackFromPlaylistUseCase,
     private readonly updatePlaylistTracksPositionsUseCase: UpdatePlaylistTracksPositionsUseCase,
+    private readonly lookupBandcampUrlsForPlaylistUseCase: LookupBandcampUrlsForPlaylistUseCase,
+    private readonly lookupDiscogsUrlsForPlaylistUseCase: LookupDiscogsUrlsForPlaylistUseCase,
   ) {}
 
   @Mutation(() => PlaylistTrack)
@@ -50,6 +55,26 @@ export class PlaylistTrackResolver {
     return this.updatePlaylistTracksPositionsUseCase.execute(
       parsePlaylistId(playlistId),
       input.positions,
+    );
+  }
+
+  @Mutation(() => Int)
+  async lookupBandcampUrlsForPlaylist(
+    @Args('playlistId', { type: () => Base64ID }) playlistId: string,
+  ): Promise<number> {
+    return this.lookupBandcampUrlsForPlaylistUseCase.execute(
+      parsePlaylistId(playlistId),
+      getCurrentUser(),
+    );
+  }
+
+  @Mutation(() => Int)
+  async lookupDiscogsUrlsForPlaylist(
+    @Args('playlistId', { type: () => Base64ID }) playlistId: string,
+  ): Promise<number> {
+    return this.lookupDiscogsUrlsForPlaylistUseCase.execute(
+      parsePlaylistId(playlistId),
+      getCurrentUser(),
     );
   }
 }

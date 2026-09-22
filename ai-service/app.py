@@ -23,8 +23,10 @@ load_dotenv()
 
 # Import API resources
 from src.api.audio_enhancement import AudioEnhancementResource
+from src.api.bandcamp_resolve import BandcampResolveResource
 from src.api.batch_simple_analysis import BatchSimpleAnalysisResource
 from src.api.discogs_embedding import DiscogsEmbeddingResource
+from src.api.discogs_resolve import DiscogsResolveResource
 from src.api.health import HealthResource
 from src.api.simple_analysis import SimpleAnalysisResource
 from src.api.verify_lossless import VerifyLosslessResource
@@ -236,6 +238,14 @@ def register_resources(api, app):
     # Fake-lossless verification (always enabled; cheap, no model load)
     api.add_resource(VerifyLosslessResource, "/audio/verify-lossless")
     logger.debug("✅ Verify-lossless endpoint registered")
+
+    # Bandcamp URL resolution (always enabled; cheap, no model load)
+    api.add_resource(BandcampResolveResource, "/bandcamp/resolve-url")
+    logger.debug("✅ Bandcamp resolve-url endpoint registered")
+
+    # Discogs URL resolution (always enabled; cheap, no model load)
+    api.add_resource(DiscogsResolveResource, "/discogs/resolve-url")
+    logger.debug("✅ Discogs resolve-url endpoint registered")
 
     logger.debug("API resources registered successfully")
 

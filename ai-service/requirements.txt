@@ -48,6 +48,10 @@ requests>=2.31.0
 
 # Web scraping
 beautifulsoup4>=4.12.0
+curl-cffi>=0.7.0
+
+# Discogs API client
+python3-discogs-client>=2.8
 
 # Development and testing
 pytest>=7.4.0

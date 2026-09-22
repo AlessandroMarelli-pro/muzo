@@ -2,6 +2,8 @@ import { BullModule } from '@nestjs/bullmq';
 import { Global, Module } from '@nestjs/common';
 import { AUDIO_SCAN_SCHEDULER_CONSUMER } from 'src/application/ports/infrastructure/IAudioScanSchedulerConsumer';
 import { AUDIO_SCAN_SCHEDULER_PRODUCER } from 'src/application/ports/infrastructure/IAudioScanSchedulerProducer';
+import { BANDCAMP_RESOLVE_PRODUCER } from 'src/application/ports/infrastructure/IBandcampResolveProducer';
+import { DISCOGS_RESOLVE_PRODUCER } from 'src/application/ports/infrastructure/IDiscogsResolveProducer';
 import { EMBEDDING_BACKFILL_PRODUCER } from 'src/application/ports/infrastructure/IEmbeddingBackfillProducer';
 import { HQ_AUDIO_ACQUIRE_PRODUCER } from 'src/application/ports/infrastructure/IHqAudioAcquireProducer';
 import { HQ_AUDIO_BATCH_ACQUIRE_PRODUCER } from 'src/application/ports/infrastructure/IHqAudioBatchAcquireProducer';
@@ -10,12 +12,16 @@ import { LIBRARY_SCAN_SCHEDULER_CONSUMER } from 'src/application/ports/infrastru
 import { LIBRARY_SCAN_SCHEDULER_PRODUCER } from 'src/application/ports/infrastructure/ILibraryScanSchedulerProducer';
 import { UseCasesModule } from 'src/application/use-cases/use-cases.module';
 import { AudioScanSchedulerProducerAdapter } from 'src/infrastructure/job-scheduler/audio-scan-scheduler-producer.adapter';
+import { BandcampResolveProducerAdapter } from 'src/infrastructure/job-scheduler/bandcamp-resolve-producer.adapter';
+import { DiscogsResolveProducerAdapter } from 'src/infrastructure/job-scheduler/discogs-resolve-producer.adapter';
 import { EmbeddingBackfillProducerAdapter } from 'src/infrastructure/job-scheduler/embedding-backfill-producer.adapter';
 import { HqAudioAcquireProducerAdapter } from 'src/infrastructure/job-scheduler/hq-audio-acquire-producer.adapter';
 import { HqAudioBatchAcquireProducerAdapter } from 'src/infrastructure/job-scheduler/hq-audio-batch-acquire-producer.adapter';
 import { HqAudioEnhanceProducerAdapter } from 'src/infrastructure/job-scheduler/hq-audio-enhance-producer.adapter';
 import { LibraryScanSchedulerProducerAdapter } from 'src/infrastructure/job-scheduler/library-scan-scheduler-producer.adapter';
 import { AudioScanSchedulerConsumerAdapter } from './audio-scan-scheduler-consumer.adapter';
+import { BandcampResolveConsumerAdapter } from './bandcamp-resolve-consumer.adapter';
+import { DiscogsResolveConsumerAdapter } from './discogs-resolve-consumer.adapter';
 import { EmbeddingBackfillConsumerAdapter } from './embedding-backfill-consumer.adapter';
 import { HqAudioAcquireConsumerAdapter } from './hq-audio-acquire-consumer.adapter';
 import { HqAudioBatchAcquireConsumerAdapter } from './hq-audio-batch-acquire-consumer.adapter';
@@ -59,6 +65,16 @@ const providers = [
     useClass: EmbeddingBackfillProducerAdapter,
   },
   EmbeddingBackfillConsumerAdapter,
+  {
+    provide: BANDCAMP_RESOLVE_PRODUCER,
+    useClass: BandcampResolveProducerAdapter,
+  },
+  BandcampResolveConsumerAdapter,
+  {
+    provide: DISCOGS_RESOLVE_PRODUCER,
+    useClass: DiscogsResolveProducerAdapter,
+  },
+  DiscogsResolveConsumerAdapter,
 ];
 
 @Global()
@@ -71,6 +87,8 @@ const providers = [
       { name: 'hq-audio-batch-acquire' },
       { name: 'hq-audio-enhance' },
       { name: 'embedding-backfill' },
+      { name: 'bandcamp-resolve' },
+      { name: 'discogs-resolve' },
     ),
     UseCasesModule,
   ],
@@ -84,6 +102,8 @@ const providers = [
     HQ_AUDIO_BATCH_ACQUIRE_PRODUCER,
     HQ_AUDIO_ENHANCE_PRODUCER,
     EMBEDDING_BACKFILL_PRODUCER,
+    BANDCAMP_RESOLVE_PRODUCER,
+    DISCOGS_RESOLVE_PRODUCER,
   ],
 })
 export class JobSchedulersModule {}

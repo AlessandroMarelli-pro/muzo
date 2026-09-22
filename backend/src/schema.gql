@@ -262,6 +262,10 @@ type Mutation {
   duplicatePlaylist(id: Base64ID!): Playlist!
   enhanceHqAudio(trackId: Base64ID!): Boolean!
   exportPlaylistToM3U(playlistId: Base64ID!): String!
+  lookupBandcampUrl(trackId: Base64ID!): Boolean!
+  lookupBandcampUrlsForPlaylist(playlistId: Base64ID!): Int!
+  lookupDiscogsUrl(trackId: Base64ID!): Boolean!
+  lookupDiscogsUrlsForPlaylist(playlistId: Base64ID!): Int!
   mergePlaylists(input: MergePlaylistsInput!): Playlist!
   registerPlayedTrack(trackId: Base64ID!): Boolean!
   removeTrackFromPlaylist(playlistId: Base64ID!, trackId: Base64ID!): Boolean!
@@ -495,8 +499,10 @@ type TopGenre {
 type Track implements Node {
   analysisStatus: String
   artist: String
+  bandcampUrl: String
   createdAt: Date
   date: Date
+  discogsUrl: String
   duration: Float!
   fileCreatedAt: Date!
   fileName: String!

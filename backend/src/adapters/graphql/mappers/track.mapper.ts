@@ -128,6 +128,8 @@ export function toTrack(domain: MusicTrack): Track {
     hqAudioSource: domain.hqAudioSource,
     hqAudioVerified: domain.hqAudioVerified,
     hqAudioSpectralCutoffHz: domain.hqAudioSpectralCutoffHz,
+    bandcampUrl: domain.bandcampUrl,
+    discogsUrl: domain.discogsUrl,
     ...toTrackTechnicalInfo(domain.technicalInfo),
     ...toTrackMetadata(domain.metadata),
     ...toTrackMusicalFeatures(domain.features),

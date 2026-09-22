@@ -16,6 +16,8 @@ export const trackFragment = gql`
     fileCreatedAt
     fileSize
     hqAudioPath
+    bandcampUrl
+    discogsUrl
     duration
     genres
     subgenres

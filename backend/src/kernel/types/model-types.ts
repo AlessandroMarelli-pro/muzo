@@ -119,6 +119,8 @@ export type MusicTrack = Readonly<ModelBase<MusicTrackId>> & {
   hqAudioSource?: HqAudioSource;
   hqAudioVerified?: boolean;
   hqAudioSpectralCutoffHz?: number;
+  bandcampUrl?: string;
+  discogsUrl?: string;
   libraryId: MusicLibraryId;
   stats: MaybeUndefined<MusicTrackStats>;
   fileInfo: AudioFileInfo;

@@ -58,3 +58,13 @@ export interface EmbeddingBackfillJobData {
   filePath: string;
   contextUser: ActionContext['user'];
 }
+
+export interface BandcampResolveJobData {
+  trackId: MusicTrackId;
+  contextUser: ActionContext['user'];
+}
+
+export interface DiscogsResolveJobData {
+  trackId: MusicTrackId;
+  contextUser: ActionContext['user'];
+}

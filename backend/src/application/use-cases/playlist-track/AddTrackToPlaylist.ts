@@ -1,4 +1,14 @@
+import { Inject } from '@nestjs/common';
+import {
+  BANDCAMP_RESOLVE_PRODUCER,
+  IBandcampResolveProducer,
+} from 'src/application/ports/infrastructure/IBandcampResolveProducer';
+import {
+  DISCOGS_RESOLVE_PRODUCER,
+  IDiscogsResolveProducer,
+} from 'src/application/ports/infrastructure/IDiscogsResolveProducer';
 import { PlaylistId } from 'src/kernel/ids';
+import { getCurrentUser } from 'src/kernel/types/context';
 import { createConflictError } from 'src/kernel/types/errors';
 import { PlaylistTrack } from 'src/kernel/types/model-types';
 import { models } from 'src/kernel/types/models';
@@ -16,6 +26,12 @@ export class AddTrackToPlaylistUseCase {
     private readonly playlistRepository: IPlaylistRepository,
 
     private readonly musicTrackRepository: IMusicTrackRepository,
+
+    @Inject(BANDCAMP_RESOLVE_PRODUCER)
+    private readonly bandcampResolveProducer: IBandcampResolveProducer,
+
+    @Inject(DISCOGS_RESOLVE_PRODUCER)
+    private readonly discogsResolveProducer: IDiscogsResolveProducer,
   ) {}
 
   async execute(
@@ -47,6 +63,10 @@ export class AddTrackToPlaylistUseCase {
       position: addTrackDto.position ?? nextPosition,
       addedAt: new Date(),
     });
-    return this.playlistTrackRepository.save(playlistTrack);
+    const saved = await this.playlistTrackRepository.save(playlistTrack);
+    const contextUser = getCurrentUser();
+    await this.bandcampResolveProducer.scheduleBandcampResolve(addTrackDto.trackId, contextUser);
+    await this.discogsResolveProducer.scheduleDiscogsResolve(addTrackDto.trackId, contextUser);
+    return saved;
   }
 }

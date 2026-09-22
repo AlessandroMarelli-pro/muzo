@@ -127,4 +127,64 @@ export class AiAudioAnalysisAdapter implements IAudioAnalysisStructure {
       );
     }
   }
+
+  async resolveBandcampUrl(artist: string, title: string): Promise<string | null> {
+    try {
+      const target = this.aiServicePool.getTarget();
+
+      const response = await firstValueFrom(
+        this.httpService.post(
+          `${target.url}/api/v1/bandcamp/resolve-url`,
+          { artist, title },
+          {
+            headers: target.headers,
+            timeout: this.aiServiceConfig.timeout,
+          },
+        ),
+      );
+
+      return response.data.bandcampUrl ?? null;
+    } catch (error) {
+      this.logger.error(`Bandcamp URL resolution failed:`, error.message);
+
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
+      throw new HttpException(
+        `Bandcamp URL resolution failed: ${error.message}`,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  async resolveDiscogsUrl(artist: string, title: string): Promise<string | null> {
+    try {
+      const target = this.aiServicePool.getTarget();
+
+      const response = await firstValueFrom(
+        this.httpService.post(
+          `${target.url}/api/v1/discogs/resolve-url`,
+          { artist, title },
+          {
+            headers: target.headers,
+            timeout: this.aiServiceConfig.timeout,
+          },
+        ),
+      );
+
+      return response.data.discogsUrl ?? null;
+    } catch (error) {
+      this.logger.error(`Discogs URL resolution failed:`, error.message);
+
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
+      throw new HttpException(
+        `Discogs URL resolution failed: ${error.message}`,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
 }
